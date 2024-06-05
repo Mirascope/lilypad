@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "lillypad"
+version = "0.0.0"
+description = ""
+authors = ["William Bakst <william@mirascope.io>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
