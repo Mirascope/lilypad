@@ -1,5 +1,5 @@
 name: 🐛 Bug
-description: Report any issue with MEvals
+description: Report any issue with Lillypad
 labels: [Bug]
 
 body:
@@ -14,8 +14,8 @@ body:
   - type: textarea
     id: version
     attributes:
-      label: Python, MEvals & OS Versions, related packages (not required)
+      label: Python, Lillypad & OS Versions, related packages (not required)
       description: |
-        Which version of Python and MEvals are you using? Which Operating System?
+        Which version of Python and Lillypad are you using? Which Operating System?
 
       render: TOML
