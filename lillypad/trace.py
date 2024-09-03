@@ -1,6 +1,6 @@
 """A decorator for tracing functions."""
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from functools import wraps
 from typing import ParamSpec, TypeVar, overload
 
@@ -29,7 +29,6 @@ def trace(
         def decorator(fn: Callable[_P, _R]) -> Callable[_P, _R]:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                print("TRACKING")
                 return fn(*args, **kwargs)
 
             return inner
@@ -40,7 +39,6 @@ def trace(
 
         @wraps(fn)
         def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            print("TRACKING")
             return fn(*args, **kwargs)
 
         return inner

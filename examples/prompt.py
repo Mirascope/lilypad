@@ -20,24 +20,24 @@ lillypad.dummy_database.set_dummy_database(DUMMY_DATABASE)
 client = OpenAI()
 
 
-@lillypad.track()
-def recommend_book(genre: str, topic: str) -> str | None:
-    """Recommends a `genre` book using OpenAI"""
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=lillypad.openai.messages(recommend_book)(genre),
-    )
-    message = completion.choices[0].message
-    return message.content
+# @lillypad.track()
+# def recommend_book(genre: str, topic: str) -> str | None:
+#     """Recommends a `genre` book using OpenAI"""
+#     completion = client.chat.completions.create(
+#         model="gpt-4o-mini",
+#         messages=lillypad.openai.messages(recommend_book)(genre),
+#     )
+#     message = completion.choices[0].message
+#     return message.content
 
 
-@lillypad.evaluate(recommend_book)
-def test_recommend_book(genre: str, expected_output: str):
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=lillypad.openai.messages(recommend_book)(genre),
-    )
-    assert completion.choices[0].message.content == expected_output
+# @lillypad.evaluate(recommend_book)
+# def test_recommend_book(genre: str, expected_output: str):
+#     completion = client.chat.completions.create(
+#         model="gpt-4o-mini",
+#         messages=lillypad.openai.messages(recommend_book)(genre),
+#     )
+#     assert completion.choices[0].message.content == expected_output
 
 
 # @lillypad.track()
@@ -57,8 +57,8 @@ def test_recommend_book(genre: str, expected_output: str):
 #     return message.content
 
 
-response = recommend_book("fantasy", "")
-print(response)
+# response = recommend_book("fantasy", "")
+# print(response)
 
 
 # from mirascope.core import BaseTool, openai
