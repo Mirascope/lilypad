@@ -2,10 +2,10 @@
 
 from openai import OpenAI
 
-import lillypad
-import lillypad.dummy_database
+import lilypad
+import lilypad.dummy_database
 
-DUMMY_DATABASE: dict[str, lillypad.dummy_database._Info] = {
+DUMMY_DATABASE: dict[str, lilypad.dummy_database._Info] = {
     "05b1d201926c00bd1033a119f3c536466719b33196c416b8dd6b312417bae3f6": {
         "prompt_template": "Recommend a {genre} book",
         "tools": [
@@ -14,7 +14,7 @@ DUMMY_DATABASE: dict[str, lillypad.dummy_database._Info] = {
     }
 }
 
-lillypad.dummy_database.set_dummy_database(DUMMY_DATABASE)
+lilypad.dummy_database.set_dummy_database(DUMMY_DATABASE)
 
 
 client = OpenAI()
