@@ -12,7 +12,7 @@ repos:
         files: "^lillypad|^tests|^examples"
         args: [--fix, --config=pyproject.toml]
       - id: ruff-format
-        files: "^mirascope|^tests|^examples"
+        files: "^lillypad|^tests|^examples"
         args: [--config=pyproject.toml]
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.377
