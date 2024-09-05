@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMX 2.0 Input Example</title>
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+  </head>
+  <body>
+    <h1>HTMX 2.0 Input Example</h1>
+    <form hx-post="/submit" hx-target="#result">
+      <input type="text" name="input_value" placeholder="Type something..." />
+      <button type="submit">Submit</button>
+    </form>
+    <div id="result"></div>
+  </body>
+</html>
