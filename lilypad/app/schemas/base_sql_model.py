@@ -1,3 +1,5 @@
+"""Base SQLModel class for all SQLModel classes to inherit from"""
+
 from pydantic import ConfigDict
 from sqlmodel import SQLModel
 

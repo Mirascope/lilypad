@@ -4,8 +4,6 @@ from collections.abc import Generator
 
 from sqlmodel import Session, create_engine
 
-from lilypad.app.models.projects import ProjectTable
-
 engine = create_engine("sqlite:///database.db")
 
 
