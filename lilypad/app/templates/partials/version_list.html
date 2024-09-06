@@ -1,0 +1,5 @@
+{% for prompt_version in prompt_versions %}
+<li>
+  <a href="{{prompt_version.id}}" hx-push-url="true">{{ prompt_version.id}}</a>
+</li>
+{% endfor %}

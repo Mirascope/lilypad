@@ -1,7 +1,5 @@
 {% for project in projects %}
 <li>
-  <a href="create-project/{{project.name}}" hx-push-url="true"
-    >{{ project.name }}</a
-  >
+  <a href="projects/{{project.name}}" hx-push-url="true">{{ project.name }}</a>
 </li>
 {% endfor %}
