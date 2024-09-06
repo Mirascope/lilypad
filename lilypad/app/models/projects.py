@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship
 
 from lilypad.app.models import BaseSQLModel
 
-from .table_names import PROJECT_TABLE_NAME, PROMPT_VERSION_TABLE_NAME
+from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
     from lilypad.app.models import PromptVersionTable
