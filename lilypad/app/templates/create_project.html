@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMX Form</title>
+    <script src="https://unpkg.com/htmx.org@2.0.0/dist/htmx.min.js"></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+  </head>
+  <body
+    x-data="{
+    prompt_template: '{{ prompt_template }}',
+    projectName: '{{ project.name }}',
+    versionId: '{{ version_id }}'
+  }"
+  >
+    <button hx-get="/" hx-target="body" hx-push-url="true">Back</button>
+    <h1>{{ project.name }}</h1>
+    <form
+      hx-post="/projects/{{ project.name }}/versions"
+      hx-target="body"
+      hx-push-url="true"
+    >
+      <textarea
+        name="prompt_template"
+        rows="4"
+        cols="50"
+        x-model="prompt_template"
+      ></textarea>
+      <br />
+      <button type="submit">Submit</button>
+    </form>
+    <div id="prompt-versions-list-container">
+      <h2>Prompt Versions:</h2>
+      <ul
+        id="prompt-versions-list"
+        hx-get="/projects/{{ project.name }}/versions"
+        hx-trigger="load"
+      ></ul>
+    </div>
+  </body>
+</html>
