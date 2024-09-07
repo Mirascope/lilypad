@@ -10,7 +10,7 @@ from lilypad.app.models import BaseSQLModel
 from .table_names import PROJECT_TABLE_NAME, PROMPT_VERSION_TABLE_NAME
 
 if TYPE_CHECKING:
-    from lilypad.app.models import ProjectTable
+    from lilypad.app.models import CallTable, ProjectTable
 
 
 class PromptVersionTable(BaseSQLModel, table=True):
@@ -18,8 +18,8 @@ class PromptVersionTable(BaseSQLModel, table=True):
 
     __tablename__ = PROMPT_VERSION_TABLE_NAME  # type: ignore
 
-    id: int | None = Field(default=None, primary_key=True)
-    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    id: int = Field(default=None, primary_key=True)
+    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     prompt_template: str = Field(nullable=False)
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.UTC), nullable=False
@@ -29,3 +29,6 @@ class PromptVersionTable(BaseSQLModel, table=True):
     )
 
     project: "ProjectTable" = Relationship(back_populates="prompt_versions")
+    calls: list["CallTable"] = Relationship(
+        back_populates="prompt_version", cascade_delete=True
+    )
