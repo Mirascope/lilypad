@@ -60,7 +60,7 @@ def trace(
             try:
                 requests.post(url, json=data)
             except requests.exceptions.RequestException as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred: {e}")  # noqa: T201
             return output
 
         return inner
