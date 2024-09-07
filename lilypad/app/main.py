@@ -5,10 +5,11 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from lilypad.app.db.session import get_session
-from lilypad.app.models import ProjectTable, PromptVersionTable
+from lilypad.app.models import CallTable, ProjectTable, PromptVersionTable
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -163,3 +164,41 @@ async def view_version(
             "project": prompt_version.project,
         },
     )
+
+
+class CallCreate(BaseModel):
+    """Call create model."""
+
+    project_name: str
+    input: str
+    output: str
+
+
+@app.post("/calls")
+async def create_calls(
+    session: Annotated[Session, Depends(get_session)], call_create: CallCreate
+) -> bool:
+    """Creates a logged call."""
+    project = session.exec(
+        select(ProjectTable).where(ProjectTable.name == call_create.project_name)
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404)
+
+    prompt_version = sorted(
+        project.prompt_versions, key=lambda x: x.id or 0, reverse=True
+    )[:1][0]
+
+    if not prompt_version:
+        raise HTTPException(status_code=404)
+
+    call = CallTable(
+        prompt_version_id=prompt_version.id,
+        input=call_create.input,
+        output=call_create.output,
+    )
+    session.add(call)
+    session.commit()
+    session.flush()
+    return True
