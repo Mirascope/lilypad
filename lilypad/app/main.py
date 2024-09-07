@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -76,33 +76,39 @@ async def show_project(
     )
 
 
-@app.get("/projects/{project_name}/versions", response_class=HTMLResponse)
+@app.get(
+    "/projects/{project_name}/versions",
+    response_model=PromptVersionTable,
+)
 async def get_prompt_versions(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     project_name: str,
-) -> HTMLResponse:
+    hx_request: str | None = Header(None),
+) -> HTMLResponse | PromptVersionTable:
     """Render the version_list.html template."""
     project = session.exec(
         select(ProjectTable).where(ProjectTable.name == project_name)
     ).first()
-
     if not project:
         raise HTTPException(status_code=404)
-
-    return templates.TemplateResponse(
-        "partials/version_list.html",
-        {
-            "request": request,
-            "project": project,
-            "prompt_versions": project.prompt_versions,
-        },
-    )
+    if hx_request:
+        return templates.TemplateResponse(
+            "partials/version_list.html",
+            {
+                "request": request,
+                "project": project,
+                "prompt_versions": project.prompt_versions,
+            },
+        )
+    else:
+        return sorted(project.prompt_versions, key=lambda x: x.id or 0, reverse=True)[
+            :1
+        ][0]
 
 
 @app.post("/projects/{project_name}/versions")
 async def create_version(
-    request: Request,
     session: Annotated[Session, Depends(get_session)],
     project_name: str,
     prompt_template: str = Form(...),

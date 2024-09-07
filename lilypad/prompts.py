@@ -1,7 +1,5 @@
 """Utility for retrieving the prompt for a function."""
 
-import hashlib
-import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, ParamSpec, TypeVar
@@ -9,7 +7,7 @@ from typing import Any, ParamSpec, TypeVar
 from mirascope.core import base
 from pydantic import create_model
 
-from .dummy_database import get_dummy_database
+from .commands import pull
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -17,10 +15,7 @@ _R = TypeVar("_R")
 
 def prompt(fn: Callable[_P, _R]) -> Callable[_P, base.BasePrompt]:
     """Returns a method for constructing a `BasePrompt` using `fn`'s args."""
-    unique_id = hashlib.sha256(
-        f"{fn.__name__}:{inspect.signature(fn)}".encode()
-    ).hexdigest()
-    prompt_template = get_dummy_database()[unique_id]["prompt_template"]
+    prompt_template = pull(fn.__name__)
     template_vars = base._utils.get_template_variables(
         prompt_template, include_format_spec=False
     )
