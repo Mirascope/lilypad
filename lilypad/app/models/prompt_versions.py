@@ -18,7 +18,7 @@ class PromptVersionTable(BaseSQLModel, table=True):
 
     __tablename__ = PROMPT_VERSION_TABLE_NAME  # type: ignore
 
-    id: int = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     prompt_template: str = Field(nullable=False)
     created_at: datetime.datetime = Field(

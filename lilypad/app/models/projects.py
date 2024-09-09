@@ -18,7 +18,7 @@ class ProjectTable(BaseSQLModel, table=True):
 
     __tablename__ = PROJECT_TABLE_NAME  # type: ignore
 
-    id: int = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(nullable=False, unique=True)
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.UTC), nullable=False
