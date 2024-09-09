@@ -18,7 +18,7 @@ class CallTable(BaseSQLModel, table=True):
 
     __tablename__ = CALL_TABLE_NAME  # type: ignore
 
-    id: int = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     prompt_version_id: int = Field(
         default=None, foreign_key=f"{PROMPT_VERSION_TABLE_NAME}.id"
     )

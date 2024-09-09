@@ -119,7 +119,7 @@ async def create_version(
         select(ProjectTable).where(ProjectTable.name == project_name)
     ).first()
 
-    if not project:
+    if not project or not project.id:
         raise HTTPException(status_code=404)
 
     latest_prompt_version = session.exec(
@@ -190,7 +190,7 @@ async def create_calls(
         project.prompt_versions, key=lambda x: x.id or 0, reverse=True
     )[:1][0]
 
-    if not prompt_version:
+    if not prompt_version or not prompt_version.id:
         raise HTTPException(status_code=404)
 
     call = CallTable(
