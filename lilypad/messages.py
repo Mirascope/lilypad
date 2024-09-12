@@ -27,7 +27,7 @@ class Message(Generic[Unpack[_ToolsT]]):
         return self.response.content
 
     def call_tools(self) -> list[Any] | Coroutine[Any, Any, list[Any]]:
-        """Returns the tool message parameters constructred from calling each tool."""
+        """Returns the tool message parameters constructed from calling each tool."""
         if not (tools := self.response.tools):
             return []
         if fn_is_async(tools[0].call):
