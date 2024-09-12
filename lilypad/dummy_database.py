@@ -11,6 +11,7 @@ class Data(TypedDict):
     prompt_template: str
     provider: str
     model: str
+    json_mode: bool
     call_params: base.BaseCallParams
 
 

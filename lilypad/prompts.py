@@ -43,7 +43,7 @@ class Prompt(Protocol):
         ...
 
 
-def prompt(json_mode: bool = False) -> Prompt:
+def prompt() -> Prompt:
     """Returns a decorator for turining a typed function into an LLM API call."""
 
     @overload
@@ -86,7 +86,7 @@ def prompt(json_mode: bool = False) -> Prompt:
             # realistically we should never reach this point since we're in control
             # of what providers we allow the user to set in the editor.
             raise ValueError(f"Unknown provider: {provider}")
-        call = partial(call_decorator, model=data["model"], json_mode=json_mode)
+        call = partial(call_decorator, model=data["model"], json_mode=data["json_mode"])
         return_type = get_type_hints(fn).get("return", type(None))
 
         if fn_is_async(fn):
