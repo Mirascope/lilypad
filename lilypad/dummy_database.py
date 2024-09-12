@@ -2,22 +2,28 @@
 
 from typing import TypedDict
 
+from mirascope.core import base
 
-class _Info(TypedDict):
+
+class Data(TypedDict):
+    """Mock Data From DB."""
+
     prompt_template: str
-    tools: list[str]
+    provider: str
+    model: str
+    call_params: base.BaseCallParams
 
 
-DUMMY_DATABASE: dict[str, _Info] = {}
+DUMMY_DATABASE: dict[str, Data] = {}
 
 
-def set_dummy_database(database: dict[str, _Info]) -> None:
+def set_dummy_database(database: dict[str, Data]) -> None:
     """Sets the dummy database."""
     global DUMMY_DATABASE
     DUMMY_DATABASE = database
 
 
-def get_dummy_database() -> dict[str, _Info]:
+def get_dummy_database() -> dict[str, Data]:
     """Gets the dummy database."""
     global DUMMY_DATABASE
     return DUMMY_DATABASE

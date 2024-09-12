@@ -1,14 +1,9 @@
 """The lillypad package."""
 
-from contextlib import suppress
-
 from . import app as app
+from .messages import Message
 from .prompts import prompt
-from .tools import tools
+from .tools import tool
 from .trace import trace
 
-with suppress(ImportError):
-    from . import openai as openai
-
-
-__all__ = ["app", "openai", "prompt", "tools", "trace"]
+__all__ = ["app", "Message", "prompt", "tool", "trace"]
