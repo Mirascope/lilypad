@@ -1,3 +1,5 @@
+"""Basic usage example of recommending a `Book` response model."""
+
 from mirascope.core import openai
 from pydantic import BaseModel
 
@@ -17,13 +19,13 @@ mock_db = {
 lilypad.dummy_database.set_dummy_database(mock_db)
 
 
-class Book(BaseModel):
+class Book(BaseModel):  # noqa: D100,D101
     title: str
     author: str
 
 
 @lilypad.prompt()
-def recommend_book(genre: str) -> Book: ...
+def recommend_book(genre: str) -> Book: ...  # noqa: D103
 
 
 book = recommend_book("fantasy")
