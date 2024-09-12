@@ -300,12 +300,10 @@ wheels = [
 [package.optional-dependencies]
 standard = [
     { name = "email-validator" },
-    { name = "fastapi-cli" },
     { name = "fastapi-cli", extra = ["standard"] },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "python-multipart" },
-    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -324,7 +322,6 @@ wheels = [
 
 [package.optional-dependencies]
 standard = [
-    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -665,7 +662,7 @@ wheels = [
 
 [[package]]
 name = "mirascope"
-version = "1.1.2"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -673,9 +670,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/39/67352b3cfa8cec5a7d1477fea6a5d6057934a2d883310a56f77be81a75b4/mirascope-1.1.2.tar.gz", hash = "sha256:07f4e357ff7662025df7cce1941a2cdb6b916e1dcc676eeec1db02ef84831d7f", size = 1851771 }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/30/de2a93ca6b58122f63fda0e84a39f37cebdc9a5dc256602164ae6a0009b4/mirascope-1.2.0.tar.gz", hash = "sha256:d4f8a6649f0e7bbfe57942d24aaa9aa69e33a243da4e24cbc8bdfaea82bebcbf", size = 1907423 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/1e/3f6e5b00c382af02765aefbd390fe61508ce0f0b6b367de1c39e8cdb1851/mirascope-1.1.2-py3-none-any.whl", hash = "sha256:09705616b6fbfb7ecc77c787c2b632b8600a787c39dbfe2e649c032abc5b164b", size = 176131 },
+    { url = "https://files.pythonhosted.org/packages/e1/c5/7dd7b4e858a412d0b545bef478d7f7e5ce9ea67a41a7aacaa7e8115736cc/mirascope-1.2.0-py3-none-any.whl", hash = "sha256:1d962af89fb91494d2abd6f29175d5a03979f94c7a115806bed4b0471d83e33e", size = 204303 },
 ]
 
 [[package]]
@@ -1158,7 +1155,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
-    { name = "mirascope", specifier = ">=1.1.2" },
+    { name = "mirascope", specifier = ">=1.2.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.43.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
     { name = "sqlmodel", specifier = ">=0.0.22" },

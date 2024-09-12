@@ -1,21 +1,25 @@
-"""Utility for retrieving the tools for a function."""
+"""The lilypad `tool` decorator."""
 
-import hashlib
-import inspect
 from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar
 
 from mirascope.core import BaseTool
 
-from .dummy_database import get_dummy_database
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
-def tools(fn: Callable) -> list[BaseTool | Callable]:
-    """Returns the list of tools (or `None`) for `fn`."""
-    unique_id = hashlib.sha256(
-        f"{fn.__name__}:{inspect.signature(fn)}".encode()
-    ).hexdigest()
-    tools = get_dummy_database()[unique_id]["tools"]
-    namespace = {"BaseTool": BaseTool}
-    for tool in tools:
-        exec(tool, namespace)
-    return list(namespace.values())
+def tool() -> Callable[[Callable[_P, Any]], type[BaseTool]]:
+    """Returns a decorator for marking a function as a tool."""
+
+    def decorator(fn: Callable[_P, Any]) -> type[BaseTool]:
+        # this function needs to be patched with all of the information that would go
+        # into the prompt. for example, the description, the argument descriptions,
+        # the final string output, etc.
+        #
+        # since the final string output is part of the prompt, that should be written
+        # in the editor with access to the original arguments and the output of the
+        # function as template variables.
+        return BaseTool.type_from_fn(fn)
+
+    return decorator
