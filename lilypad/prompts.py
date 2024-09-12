@@ -123,7 +123,7 @@ def prompt() -> Prompt:
                     return_type, BaseModel
                 ):
                     llm_fn = call(response_model=return_type)(prompt_template)
-                    return cast(_R, await llm_fn(*args, **kwargs))
+                    return cast(_R, await llm_fn(*args, **kwargs))  # pyright: ignore [reportGeneralTypeIssues]
                 else:
                     raise ValueError(f"Unsupported return type `{return_type}`.")
 
