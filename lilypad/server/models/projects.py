@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from lilypad.app.models import BaseSQLModel
+from lilypad.server.models import BaseSQLModel
 
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
-    from lilypad.app.models import PromptVersionTable
+    from lilypad.server.models import PromptVersionTable
 
 
 class ProjectTable(BaseSQLModel, table=True):

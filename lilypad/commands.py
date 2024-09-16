@@ -2,7 +2,7 @@
 
 import requests
 
-from lilypad.app.models import PromptVersionTable
+from lilypad.server.models import PromptVersionTable
 
 
 def pull(project_name: str) -> str:

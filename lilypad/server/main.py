@@ -8,8 +8,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from lilypad.app.db.session import get_session
-from lilypad.app.models import CallTable, ProjectTable, PromptVersionTable
+from lilypad.server.db.session import get_session
+from lilypad.server.models import CallTable, ProjectTable, PromptVersionTable
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
