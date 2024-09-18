@@ -1,0 +1,113 @@
+copyright: Copyright &copy; 2024 Mirascope, Inc.
+site_name: Lilypad
+site_url: https://docs.lilypad.mirascope.io/
+site_description: Mirascope is an intuitive approach to building with LLMs.
+repo_name: lilypad
+repo_url: https://github.com/Mirascope/lilypad/
+strict: true
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.tabs.link
+    - content.code.annotate
+    - content.code.copy
+    - content.code.link
+    - navigation.footer
+    - navigation.indexes
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      primary: teal
+      accent: teal
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      primary: teal
+      accent: teal
+  font:
+    text: Roboto
+    code: Roboto Mono
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/mirascope
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/WilliamBakst
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/wbakst/
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format ""
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.mark
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+
+plugins:
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            members_order: source
+            separate_signature: true
+            filters: ["!^_"]
+            show_root_heading: false
+            show_root_toc_entry: false
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+          import:
+            - https://docs.python.org/3/objects.inv
+
+validation:
+  omitted_files: warn
+  absolute_links: relative_to_docs
+  unrecognized_links: warn
+  not_found: warn
+
+nav:
+  - Get Started: "index.md"
