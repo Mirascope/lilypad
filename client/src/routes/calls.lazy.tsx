@@ -1,3 +1,4 @@
+import { CallPublicWithPromptVersion } from '@/types/types';
 import { useQuery } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
@@ -8,13 +9,15 @@ export const Route = createLazyFileRoute("/calls")({
 });
 
 export const Call = () => {
-  const { isPending, error, data, isFetching } = useQuery({
+  const { isPending, error, data } = useQuery<CallPublicWithPromptVersion[]>({
     queryKey: ["calls"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:3000/api/calls");
+      const response = await fetch("http://localhost:8000/api/calls");
       return await response.json();
     },
   });
+  if (isPending) return <div>Loading...</div>;
+  if (error) return <div>An error occurred: {error.message}</div>;
   console.log(data);
   return <DataTableDemo data={data} />;
 };

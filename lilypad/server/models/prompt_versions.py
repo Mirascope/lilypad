@@ -13,19 +13,25 @@ if TYPE_CHECKING:
     from lilypad.server.models import CallTable, ProjectTable
 
 
-class PromptVersionTable(BaseSQLModel, table=True):
+class PromptVersionBase(BaseSQLModel):
+    """Prompt version model"""
+
+    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    function_name: str = Field(nullable=False)
+    prompt_template: str
+    previous_version_id: int | None = Field(
+        default=None, foreign_key=f"{PROMPT_VERSION_TABLE_NAME}.id"
+    )
+
+
+class PromptVersionTable(PromptVersionBase, table=True):
     """Prompt version model"""
 
     __tablename__ = PROMPT_VERSION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    prompt_template: str = Field(nullable=False)
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.UTC), nullable=False
-    )
-    previous_version_id: int | None = Field(
-        default=None, foreign_key=f"{PROMPT_VERSION_TABLE_NAME}.id"
     )
 
     project: "ProjectTable" = Relationship(back_populates="prompt_versions")

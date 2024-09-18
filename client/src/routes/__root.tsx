@@ -14,6 +14,9 @@ export const Route = createRootRoute({
         <Link to='/calls' className='[&.active]:font-bold'>
           Calls
         </Link>
+        <Link to='/diff' className='[&.active]:font-bold'>
+          Diff
+        </Link>
       </div>
       <hr />
       <Outlet />

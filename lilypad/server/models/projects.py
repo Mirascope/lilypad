@@ -13,15 +13,21 @@ if TYPE_CHECKING:
     from lilypad.server.models import PromptVersionTable
 
 
-class ProjectTable(BaseSQLModel, table=True):
+class ProjectBase(BaseSQLModel):
+    """Project model"""
+
+    name: str = Field(nullable=False, unique=True)
+
+
+class ProjectTable(ProjectBase, table=True):
     """Project model"""
 
     __tablename__ = PROJECT_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(nullable=False, unique=True)
     created_at: datetime.datetime = Field(
-        default=datetime.datetime.now(datetime.UTC), nullable=False
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=False,
     )
     prompt_versions: list["PromptVersionTable"] = Relationship(
         back_populates="project", cascade_delete=True

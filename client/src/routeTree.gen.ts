@@ -16,11 +16,17 @@ import { Route as rootRoute } from './routes/__root'
 
 // Create Virtual Routes
 
+const DiffLazyImport = createFileRoute('/diff')()
 const CallsLazyImport = createFileRoute('/calls')()
 const AboutLazyImport = createFileRoute('/about')()
 const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
+
+const DiffLazyRoute = DiffLazyImport.update({
+  path: '/diff',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/diff.lazy').then((d) => d.Route))
 
 const CallsLazyRoute = CallsLazyImport.update({
   path: '/calls',
@@ -62,6 +68,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CallsLazyImport
       parentRoute: typeof rootRoute
     }
+    '/diff': {
+      id: '/diff'
+      path: '/diff'
+      fullPath: '/diff'
+      preLoaderRoute: typeof DiffLazyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -71,12 +84,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/about': typeof AboutLazyRoute
   '/calls': typeof CallsLazyRoute
+  '/diff': typeof DiffLazyRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/about': typeof AboutLazyRoute
   '/calls': typeof CallsLazyRoute
+  '/diff': typeof DiffLazyRoute
 }
 
 export interface FileRoutesById {
@@ -84,14 +99,15 @@ export interface FileRoutesById {
   '/': typeof IndexLazyRoute
   '/about': typeof AboutLazyRoute
   '/calls': typeof CallsLazyRoute
+  '/diff': typeof DiffLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/calls'
+  fullPaths: '/' | '/about' | '/calls' | '/diff'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/calls'
-  id: '__root__' | '/' | '/about' | '/calls'
+  to: '/' | '/about' | '/calls' | '/diff'
+  id: '__root__' | '/' | '/about' | '/calls' | '/diff'
   fileRoutesById: FileRoutesById
 }
 
@@ -99,12 +115,14 @@ export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   AboutLazyRoute: typeof AboutLazyRoute
   CallsLazyRoute: typeof CallsLazyRoute
+  DiffLazyRoute: typeof DiffLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   AboutLazyRoute: AboutLazyRoute,
   CallsLazyRoute: CallsLazyRoute,
+  DiffLazyRoute: DiffLazyRoute,
 }
 
 export const routeTree = rootRoute
@@ -121,7 +139,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
-        "/calls"
+        "/calls",
+        "/diff"
       ]
     },
     "/": {
@@ -132,6 +151,9 @@ export const routeTree = rootRoute
     },
     "/calls": {
       "filePath": "calls.lazy.tsx"
+    },
+    "/diff": {
+      "filePath": "diff.lazy.tsx"
     }
   }
 }
