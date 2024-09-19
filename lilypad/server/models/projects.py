@@ -29,6 +29,6 @@ class ProjectTable(ProjectBase, table=True):
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
         nullable=False,
     )
-    prompt_versions: list["PromptVersionTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
+    # prompt_versions: list["PromptVersionTable"] = Relationship(
+    #     back_populates="project", cascade_delete=True
+    # )

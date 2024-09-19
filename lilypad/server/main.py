@@ -31,18 +31,43 @@ templates = Jinja2Templates(directory="templates")
 api = FastAPI()
 
 
-class CallCreate(BaseModel):
-    """Call create model."""
-
-    project_name: str
-    input: str
-    output: str
-
-
 class PromptVersionPublic(PromptVersionBase):
     """Prompt Version public model."""
 
     id: int
+
+
+@api.get("/prompt-versions/{version_hash}")
+async def get_prompt_version_id_by_hash(
+    version_hash: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> int:
+    """Get prompt version id by hash."""
+    prompt_version = session.exec(
+        select(PromptVersionTable).where(
+            PromptVersionTable.version_hash == version_hash
+        )
+    ).first()
+    # Stainless does not handle `int | None` return types properly
+    return (
+        PromptVersionPublic.model_validate(prompt_version).id if prompt_version else -1
+    )
+
+
+@api.post(
+    "/prompt-versions",
+    response_model=PromptVersionPublic,
+)
+async def create_prompt_version(
+    prompt_version_create: PromptVersionBase,
+    session: Annotated[Session, Depends(get_session)],
+) -> PromptVersionTable:
+    """Creates a prompt version."""
+    prompt_version = PromptVersionTable.model_validate(prompt_version_create)
+    session.add(prompt_version)
+    session.commit()
+    session.refresh(prompt_version)
+    return prompt_version
 
 
 class CallPublicWithPromptVersion(CallBase):
@@ -63,32 +88,14 @@ async def get_calls(
 
 @api.post("/calls")
 async def create_calls(
-    session: Annotated[Session, Depends(get_session)], call_create: CallCreate
-) -> bool:
+    session: Annotated[Session, Depends(get_session)], call_create: CallBase
+) -> CallTable:
     """Creates a logged call."""
-    project = session.exec(
-        select(ProjectTable).where(ProjectTable.name == call_create.project_name)
-    ).first()
-
-    if not project:
-        raise HTTPException(status_code=404)
-
-    prompt_version = sorted(
-        project.prompt_versions, key=lambda x: x.id or 0, reverse=True
-    )[:1][0]
-
-    if not prompt_version or not prompt_version.id:
-        raise HTTPException(status_code=404)
-
-    call = CallTable(
-        prompt_version_id=prompt_version.id,
-        input=call_create.input,
-        output=call_create.output,
-    )
+    call = CallTable.model_validate(call_create)
     session.add(call)
     session.commit()
-    session.flush()
-    return True
+    session.refresh(call)
+    return call
 
 
 app.mount("/api", api)

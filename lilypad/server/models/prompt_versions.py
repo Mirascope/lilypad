@@ -16,9 +16,12 @@ if TYPE_CHECKING:
 class PromptVersionBase(BaseSQLModel):
     """Prompt version model"""
 
-    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    function_name: str = Field(nullable=False)
+    # project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    function_name: str = Field(nullable=False, index=True)
+    version_hash: str | None = Field(default=None, index=True)
+    lexical_closure: str | None = Field(default=None)
     prompt_template: str
+    input_arguments: str | None = Field(default=None)
     previous_version_id: int | None = Field(
         default=None, foreign_key=f"{PROMPT_VERSION_TABLE_NAME}.id"
     )
@@ -34,7 +37,7 @@ class PromptVersionTable(PromptVersionBase, table=True):
         default=datetime.datetime.now(datetime.UTC), nullable=False
     )
 
-    project: "ProjectTable" = Relationship(back_populates="prompt_versions")
+    # project: "ProjectTable" = Relationship(back_populates="prompt_versions")
     calls: list["CallTable"] = Relationship(
         back_populates="prompt_version", cascade_delete=True
     )

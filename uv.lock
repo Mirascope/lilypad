@@ -300,10 +300,12 @@ wheels = [
 [package.optional-dependencies]
 standard = [
     { name = "email-validator" },
+    { name = "fastapi-cli" },
     { name = "fastapi-cli", extra = ["standard"] },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "python-multipart" },
+    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -322,6 +324,7 @@ wheels = [
 
 [package.optional-dependencies]
 standard = [
+    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -562,6 +565,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/33/4f/9f23d79c0795e0a8e56e7988e8785c2dcda27e0ed37977256d50c77c6a19/jiter-0.5.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:ea189db75f8eca08807d02ae27929e890c7d47599ce3d0a6a5d41f2419ecf338", size = 493042 },
     { url = "https://files.pythonhosted.org/packages/df/67/8a4f975aa834b8aecdb6b131422390173928fd47f42f269dcc32034ab432/jiter-0.5.0-cp312-none-win32.whl", hash = "sha256:e3bbe3910c724b877846186c25fe3c802e105a2c1fc2b57d6688b9f8772026e4", size = 195405 },
     { url = "https://files.pythonhosted.org/packages/15/81/296b1e25c43db67848728cdab34ac3eb5c5cbb4955ceb3f51ae60d4a5e3d/jiter-0.5.0-cp312-none-win_amd64.whl", hash = "sha256:a586832f70c3f1481732919215f36d41c59ca080fa27a65cf23d9490e75b2ef5", size = 189720 },
+]
+
+[[package]]
+name = "lilypad-sdk"
+version = "0.0.1a0"
+source = { git = "ssh://github.com/stainless-sdks/lilypad-sdk-python.git#14824efc0fe5773ff3bbc5384f66d2c1afe8b187" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
 ]
 
 [[package]]
@@ -1126,6 +1142,7 @@ version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
+    { name = "lilypad-sdk" },
     { name = "mirascope" },
     { name = "psycopg2-binary" },
     { name = "sqlmodel" },
@@ -1155,6 +1172,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
+    { name = "lilypad-sdk", git = "ssh://github.com/stainless-sdks/lilypad-sdk-python.git" },
     { name = "mirascope", specifier = ">=1.2.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.43.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
