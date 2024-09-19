@@ -37,6 +37,35 @@ class PromptVersionPublic(PromptVersionBase):
     id: int
 
 
+@api.get("/prompt-versions")
+async def get_prompt_versions(
+    session: Annotated[Session, Depends(get_session)],
+) -> Sequence[str]:
+    """Get prompt version unique function names by hash."""
+    function_names = session.exec(
+        select(PromptVersionTable.function_name).distinct()
+    ).all()
+    return function_names
+
+
+@api.get(
+    "/prompt-versions/function_names/{function_name}",
+    response_model=Sequence[PromptVersionPublic],
+)
+async def get_prompt_versions_by_function_name(
+    function_name: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> Sequence[PromptVersionPublic]:
+    """Get prompt version id by hash."""
+    prompt_versions = session.exec(
+        select(PromptVersionTable).where(
+            PromptVersionTable.function_name == function_name
+        )
+    ).all()
+    # Stainless does not handle `int | None` return types properly
+    return prompt_versions
+
+
 @api.get("/prompt-versions/{version_hash}")
 async def get_prompt_version_id_by_hash(
     version_hash: str,

@@ -10,16 +10,22 @@
  */
 
 /**
- * CallCreate
- * Call create model.
+ * CallBase
+ * Call model
  */
-export interface CallCreate {
-  /** Project Name */
-  project_name: string;
+export interface CallBase {
+  /** Prompt Version Id */
+  prompt_version_id?: number;
   /** Input */
   input: string;
   /** Output */
   output: string;
+  /**
+   * Created At
+   * @format date-time
+   * @default "2024-09-19T23:07:10.231056Z"
+   */
+  created_at?: string;
 }
 
 /**
@@ -36,13 +42,34 @@ export interface CallPublicWithPromptVersion {
   /**
    * Created At
    * @format date-time
-   * @default "2024-09-16T23:51:18.634283Z"
+   * @default "2024-09-19T23:07:10.231056Z"
    */
   created_at?: string;
   /** Id */
   id: number;
   /** Prompt Version public model. */
   prompt_version: PromptVersionPublic;
+}
+
+/**
+ * CallTable
+ * Call table
+ */
+export interface CallTable {
+  /** Prompt Version Id */
+  prompt_version_id?: number;
+  /** Input */
+  input: string;
+  /** Output */
+  output: string;
+  /**
+   * Created At
+   * @format date-time
+   * @default "2024-09-19T23:07:10.231056Z"
+   */
+  created_at?: string;
+  /** Id */
+  id?: number | null;
 }
 
 /** HTTPValidationError */
@@ -52,16 +79,39 @@ export interface HTTPValidationError {
 }
 
 /**
+ * PromptVersionBase
+ * Prompt version model
+ */
+export interface PromptVersionBase {
+  /** Function Name */
+  function_name: string;
+  /** Version Hash */
+  version_hash?: string | null;
+  /** Lexical Closure */
+  lexical_closure: string;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Input Arguments */
+  input_arguments?: string | null;
+  /** Previous Version Id */
+  previous_version_id?: number | null;
+}
+
+/**
  * PromptVersionPublic
  * Prompt Version public model.
  */
 export interface PromptVersionPublic {
-  /** Project Id */
-  project_id?: number;
   /** Function Name */
   function_name: string;
+  /** Version Hash */
+  version_hash?: string | null;
+  /** Lexical Closure */
+  lexical_closure: string;
   /** Prompt Template */
   prompt_template: string;
+  /** Input Arguments */
+  input_arguments?: string | null;
   /** Previous Version Id */
   previous_version_id?: number | null;
   /** Id */

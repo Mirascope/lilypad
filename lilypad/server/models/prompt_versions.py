@@ -19,7 +19,7 @@ class PromptVersionBase(BaseSQLModel):
     # project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     function_name: str = Field(nullable=False, index=True)
     version_hash: str | None = Field(default=None, index=True)
-    lexical_closure: str | None = Field(default=None)
+    lexical_closure: str
     prompt_template: str
     input_arguments: str | None = Field(default=None)
     previous_version_id: int | None = Field(
