@@ -36,23 +36,30 @@ const processDiffData = (diffedLines) => {
       i += 2; // Skip the next item as we've processed it
     } else if (current.removed) {
       // This is a removal
+      const oldValue = current.value;
+      const newValue = Array(oldValue.length).fill(PLACEHOLDER);
       result.push({
         type: "removed",
-        value: current.value,
+        oldValue,
+        newValue,
       });
       i++;
     } else if (current.added) {
       // This is an addition
+      const newValue = current.value;
+      const oldValue = Array(newValue.length).fill(PLACEHOLDER);
       result.push({
         type: "added",
-        value: current.value,
+        oldValue,
+        newValue,
       });
       i++;
     } else {
       // This is an unchanged line
       result.push({
         type: "unchanged",
-        value: current.value,
+        oldValue: current.value,
+        newValue: current.value,
       });
       i++;
     }
@@ -60,25 +67,18 @@ const processDiffData = (diffedLines) => {
 
   return result;
 };
+
 const CodeBlockWithLineNumbersSideBySide = ({ diffedLines }) => {
   const processedData = processDiffData(diffedLines);
-
   const renderColumn = (side) => {
     const code = [];
     let lineNumber = 0;
     const lineNumbers = [];
 
     processedData.forEach((block, blockIndex) => {
-      const lines =
-        side === "before"
-          ? block.oldValue || block.value
-          : block.newValue || block.value;
-
-      if (!lines && side === "before" && block.type === "added") return;
-      if (!lines && side === "after" && block.type === "removed") return;
+      const lines = side === "before" ? block.oldValue : block.newValue;
 
       lines.forEach((line, lineIndex) => {
-        console.log(line);
         if (line !== PLACEHOLDER) {
           lineNumber++;
           lineNumbers.push(
@@ -107,9 +107,9 @@ const CodeBlockWithLineNumbersSideBySide = ({ diffedLines }) => {
               ? side === "before"
                 ? "bg-red-100"
                 : "bg-green-100"
-              : block.type === "added"
+              : block.type === "added" && side === "after"
                 ? "bg-green-100"
-                : block.type === "removed"
+                : block.type === "removed" && side === "before"
                   ? "bg-red-100"
                   : "";
 
@@ -253,7 +253,6 @@ export const DiffTool = ({ value }: { value: string }) => {
   const handleModeChange = (checked: boolean) => {
     setMode(checked ? "split" : "unified");
   };
-  console.log(data);
   let diffed = null;
   if (firstLexicalClosure && secondLexicalClosure) {
     const firstClosure = firstLexicalClosure.split("\n");
