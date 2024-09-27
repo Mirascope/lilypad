@@ -2,6 +2,9 @@ import openai
 from pydantic import BaseModel
 
 import lilypad
+from lilypad.configure import init
+
+init()
 
 
 class Book(BaseModel):  # noqa: D100,D101

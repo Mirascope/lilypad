@@ -260,42 +260,52 @@ export const DiffTool = ({ value }: { value: string }) => {
     diffed = diffArrays(firstClosure, secondClosure);
   }
   return (
-    <div>
-      <div className='flex items-center space-x-2'>
-        <Switch
-          id='diff-view'
-          checked={mode === "split"}
-          onCheckedChange={handleModeChange}
-        />
-        <Label htmlFor='diff-view'>Diff View</Label>
-      </div>
-      <div>
-        <Combobox
-          items={data.map((item, i) => ({
-            value: item.lexical_closure,
-            label: i.toString(),
-          }))}
-          value={firstLexicalClosure}
-          setValue={setFirstLexicalClosure}
-        />
-        <Combobox
-          items={data.map((item, i) => ({
-            value: item.lexical_closure,
-            label: i.toString(),
-          }))}
-          value={secondLexicalClosure}
-          setValue={setSecondLexicalClosure}
-        />
+    <>
+      <div className='flex gap-2'>
+        <div className='flex flex-col'>
+          <Label htmlFor='first-lexical-closure'>First Version</Label>
+          <Combobox
+            items={data.map((item, i) => ({
+              value: item.lexical_closure,
+              label: i.toString(),
+            }))}
+            value={firstLexicalClosure}
+            setValue={setFirstLexicalClosure}
+          />
+        </div>
+        <div className='flex flex-col'>
+          <Label htmlFor='second-lexical-closure'>Second Version</Label>
+          <Combobox
+            items={data.map((item, i) => ({
+              value: item.lexical_closure,
+              label: i.toString(),
+            }))}
+            value={secondLexicalClosure}
+            setValue={setSecondLexicalClosure}
+          />
+        </div>
       </div>
       {diffed && (
-        <div className='flex'>
-          {mode === "unified" ? (
-            <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} />
-          ) : (
-            <CodeBlockWithLineNumbersSideBySide diffedLines={diffed} />
-          )}
-        </div>
+        <>
+          <div className='flex items-center space-x-2'>
+            <Switch
+              id='diff-view'
+              checked={mode === "split"}
+              onCheckedChange={handleModeChange}
+            />
+            <Label htmlFor='diff-view'>
+              {mode === "split" ? "Split" : "Unified"} View
+            </Label>
+          </div>
+          <div className='flex'>
+            {mode === "unified" ? (
+              <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} />
+            ) : (
+              <CodeBlockWithLineNumbersSideBySide diffedLines={diffed} />
+            )}
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 };

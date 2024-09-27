@@ -300,12 +300,10 @@ wheels = [
 [package.optional-dependencies]
 standard = [
     { name = "email-validator" },
-    { name = "fastapi-cli" },
     { name = "fastapi-cli", extra = ["standard"] },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "python-multipart" },
-    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -324,7 +322,6 @@ wheels = [
 
 [package.optional-dependencies]
 standard = [
-    { name = "uvicorn" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 

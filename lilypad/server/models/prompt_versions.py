@@ -10,7 +10,7 @@ from lilypad.server.models import BaseSQLModel
 from .table_names import PROJECT_TABLE_NAME, PROMPT_VERSION_TABLE_NAME
 
 if TYPE_CHECKING:
-    from lilypad.server.models import CallTable, ProjectTable
+    from lilypad.server.models import CallTable, SpanTable
 
 
 class PromptVersionBase(BaseSQLModel):
@@ -39,5 +39,8 @@ class PromptVersionTable(PromptVersionBase, table=True):
 
     # project: "ProjectTable" = Relationship(back_populates="prompt_versions")
     calls: list["CallTable"] = Relationship(
+        back_populates="prompt_version", cascade_delete=True
+    )
+    spans: list["SpanTable"] = Relationship(
         back_populates="prompt_version", cascade_delete=True
     )

@@ -4,6 +4,7 @@ from .base_sql_model import BaseSQLModel
 from .calls import CallBase, CallTable
 from .projects import ProjectBase, ProjectTable
 from .prompt_versions import PromptVersionBase, PromptVersionTable
+from .spans import Scope, SpanBase, SpanTable
 
 __all__ = [
     "BaseSQLModel",
@@ -13,4 +14,7 @@ __all__ = [
     "ProjectTable",
     "PromptVersionBase",
     "PromptVersionTable",
+    "SpanBase",
+    "SpanTable",
+    "Scope",
 ]

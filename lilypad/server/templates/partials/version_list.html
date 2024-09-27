@@ -1,9 +1,0 @@
-{% for prompt_version in prompt_versions %}
-<li>
-  <a
-    href="/projects/{{project.name}}/versions/{{prompt_version.id}}"
-    hx-push-url="true"
-    >{{ prompt_version.id}}</a
-  >
-</li>
-{% endfor %}

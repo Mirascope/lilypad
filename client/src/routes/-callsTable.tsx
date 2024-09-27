@@ -1,7 +1,12 @@
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
-
-import { Button } from '@/components/ui/button';
+import {
+  ArrowUpDown,
+  ChevronRight,
+  ChevronDown,
+  MoreHorizontal,
+} from "lucide-react";
+import { useState } from "react";
+import { Scope } from "@/types/types";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -10,8 +15,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -19,9 +24,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CallPublicWithPromptVersion } from '@/types/types';
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { SpanPublic } from "@/types/types";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -29,12 +38,67 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  Row,
   SortingState,
   useReactTable,
   VisibilityState,
-} from '@tanstack/react-table';
-
-const columns: ColumnDef<CallPublicWithPromptVersion>[] = [
+} from "@tanstack/react-table";
+import { LilypadPanel } from "@/routes/-lilypadPanel";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { LlmPanel } from "@/routes/-llmPanel";
+const columns: ColumnDef<SpanPublic>[] = [
+  {
+    accessorKey: "display_name",
+    header: "Name",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const depth = row.depth;
+      const paddingLeft = `${depth * 1}rem`;
+      const hasSubRows = row.subRows.length > 0;
+      return (
+        <div
+          style={{ paddingLeft }}
+          onClick={(event) => {
+            row.toggleExpanded();
+            event.stopPropagation();
+          }}
+        >
+          {hasSubRows && (
+            <ChevronRight
+              className={`h-4 w-4 inline mr-2 ${
+                row.getIsExpanded() ? "rotate-90" : ""
+              }`}
+            />
+          )}
+          {row.getValue("display_name")}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "scope",
+    header: "Scope",
+  },
+  // {
+  //   accessorKey: "output",
+  //   header: "Output",
+  //   cell: ({ row }) => {
+  //     return (
+  //       <Tooltip>
+  //         <TooltipTrigger asChild>
+  //           <div className='line-clamp-1'>{row.getValue("output")}</div>
+  //         </TooltipTrigger>
+  //         <TooltipContent>
+  //           <p className='max-w-xs break-words'>{row.getValue("output")}</p>
+  //         </TooltipContent>
+  //       </Tooltip>
+  //     );
+  //   },
+  // },
   {
     accessorKey: "created_at",
     id: "timestamp",
@@ -52,31 +116,6 @@ const columns: ColumnDef<CallPublicWithPromptVersion>[] = [
     cell: ({ row }) => (
       <div className='lowercase'>{row.getValue("timestamp")}</div>
     ),
-  },
-  {
-    accessorKey: "prompt_version.function_name",
-    id: "function_name",
-    header: "Function Name",
-  },
-  {
-    accessorKey: "input",
-    header: "Input",
-  },
-  {
-    accessorKey: "output",
-    header: "Output",
-    cell: ({ row }) => {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className='line-clamp-1'>{row.getValue("output")}</div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className='max-w-xs break-words'>{row.getValue("output")}</p>
-          </TooltipContent>
-        </Tooltip>
-      );
-    },
   },
   {
     id: "actions",
@@ -104,26 +143,24 @@ const columns: ColumnDef<CallPublicWithPromptVersion>[] = [
   },
 ];
 
-export function DataTableDemo({
-  data,
-}: {
-  data: CallPublicWithPromptVersion[];
-}) {
+export function DataTableDemo({ data }: { data: SpanPublic[] }) {
+  const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedRow, setSelectedRow] =
-    useState<CallPublicWithPromptVersion | null>(null);
+  const [selectedRow, setSelectedRow] = useState<SpanPublic | null>(null);
 
   const table = useReactTable({
     data,
     columns,
+    onExpandedChange: setExpanded,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getRowCanExpand: (row) => row.original.child_spans.length > 0,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
@@ -131,29 +168,58 @@ export function DataTableDemo({
       columnFilters,
       columnVisibility,
       rowSelection,
+      expanded,
     },
+    getSubRows: (row) => row.child_spans || [],
   });
 
-  const toggleRowSelection = (row: CallPublicWithPromptVersion) => {
-    setSelectedRow((prevSelectedRow: CallPublicWithPromptVersion | null) =>
+  const toggleRowSelection = (row: SpanPublic) => {
+    setSelectedRow((prevSelectedRow: SpanPublic | null) =>
       prevSelectedRow && prevSelectedRow.id === row.id ? null : row
     );
   };
+
+  const CollapsibleRow = ({ row }: { row: Row<SpanPublic> }) => {
+    return (
+      <>
+        <TableRow
+          key={row.id}
+          data-state={row.getIsSelected() && "selected"}
+          className='cursor-pointer hover:bg-gray-100'
+          onClick={() => toggleRowSelection(row.original)}
+        >
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+        </TableRow>
+        {row.getIsExpanded() &&
+          row.subRows.map((subRow) => (
+            <CollapsibleRow key={subRow.id} row={subRow} />
+          ))}
+      </>
+    );
+  };
+
   return (
-    <div className='flex w-full'>
-      <div
-        className={`transition-all duration-100 ease-in-out ${selectedRow ? "w-2/3" : "w-full"}`}
+    <ResizablePanelGroup direction='horizontal' className='rounded-lg border'>
+      <ResizablePanel
+        defaultSize={selectedRow ? 50 : 100}
+        order={1}
+        id={"traces-table-container"}
+        className='p-2 flex flex-col gap-2'
       >
-        <div className='flex items-center py-4'>
+        <div className='flex items-center rounded-md overflow-auto'>
           <Input
-            placeholder='Filter function name...'
+            placeholder='Filter name...'
             value={
-              (table.getColumn("function_name")?.getFilterValue() as string) ??
+              (table.getColumn("display_name")?.getFilterValue() as string) ??
               ""
             }
             onChange={(event) =>
               table
-                .getColumn("function_name")
+                .getColumn("display_name")
                 ?.setFilterValue(event.target.value)
             }
             className='max-w-sm'
@@ -207,23 +273,9 @@ export function DataTableDemo({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className='cursor-pointer hover:bg-gray-100'
-                    onClick={() => toggleRowSelection(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table
+                  .getRowModel()
+                  .rows.map((row) => <CollapsibleRow key={row.id} row={row} />)
               ) : (
                 <TableRow>
                   <TableCell
@@ -237,15 +289,30 @@ export function DataTableDemo({
             </TableBody>
           </Table>
         </div>
-      </div>
+      </ResizablePanel>
       {selectedRow && (
-        <div className='w-1/2 ml-4 p-4 border rounded-md'>
-          <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-          <pre className='whitespace-pre-wrap'>
-            {JSON.stringify(selectedRow, null, 2)}
-          </pre>
-        </div>
+        <>
+          <ResizableHandle withHandle />
+          <ResizablePanel
+            defaultSize={50}
+            order={2}
+            id={`${selectedRow.id}-details`}
+            style={{ overflowY: "auto" }}
+            collapsible={true}
+            minSize={12}
+            onCollapse={() => setSelectedRow(null)}
+          >
+            <div className='p-4 border rounded-md overflow-auto'>
+              <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
+              {selectedRow.scope === Scope.LILYPAD ? (
+                <LilypadPanel span={selectedRow} />
+              ) : (
+                <LlmPanel span={selectedRow} />
+              )}
+            </div>
+          </ResizablePanel>
+        </>
       )}
-    </div>
+    </ResizablePanelGroup>
   );
 }

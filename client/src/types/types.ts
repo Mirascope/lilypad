@@ -23,7 +23,7 @@ export interface CallBase {
   /**
    * Created At
    * @format date-time
-   * @default "2024-09-19T23:07:10.231056Z"
+   * @default "2024-09-24T23:49:34.097933Z"
    */
   created_at?: string;
 }
@@ -42,7 +42,7 @@ export interface CallPublicWithPromptVersion {
   /**
    * Created At
    * @format date-time
-   * @default "2024-09-19T23:07:10.231056Z"
+   * @default "2024-09-24T23:49:34.097933Z"
    */
   created_at?: string;
   /** Id */
@@ -65,7 +65,7 @@ export interface CallTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-09-19T23:07:10.231056Z"
+   * @default "2024-09-24T23:49:34.097933Z"
    */
   created_at?: string;
   /** Id */
@@ -116,6 +116,43 @@ export interface PromptVersionPublic {
   previous_version_id?: number | null;
   /** Id */
   id: number;
+}
+
+/**
+ * Scope
+ * Instrumentation Scope name of the span
+ */
+export enum Scope {
+  LILYPAD = "lilypad",
+  LLM = "llm",
+}
+
+/**
+ * SpanPublic
+ * Call public model with prompt version.
+ */
+export interface SpanPublic {
+  /** Prompt Version Id */
+  prompt_version_id?: number | null;
+  /** Instrumentation Scope name of the span */
+  scope: Scope;
+  /** Data */
+  data: string;
+  /**
+   * Created At
+   * @format date-time
+   * @default "2024-09-24T23:49:34.106051Z"
+   */
+  created_at?: string;
+  /** Parent Span Id */
+  parent_span_id?: string | null;
+  /** Id */
+  id: string;
+  /** Display Name */
+  display_name?: string | null;
+  prompt_version: PromptVersionPublic | null;
+  /** Child Spans */
+  child_spans: SpanPublic[];
 }
 
 /** ValidationError */
