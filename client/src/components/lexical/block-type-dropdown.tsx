@@ -20,6 +20,7 @@ import {
 } from "@lexical/rich-text";
 import { $setBlocksType } from "@lexical/selection";
 import { $createCodeNode } from "@lexical/code";
+import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/lexical/collapsible-plugin";
 
 export const blockTypeToBlockName: Record<string, string> = {
   h1: "Heading 1",
@@ -33,6 +34,9 @@ export const blockTypeToBlockName: Record<string, string> = {
   bullet: "Bulleted List",
   number: "Numbered List",
   code: "Code Block",
+  system: "System",
+  assistant: "Assistant",
+  user: "User",
 };
 
 interface BlockTypeDropdownProps {
@@ -87,6 +91,9 @@ export const BlockTypeDropdown = ({ blockType }: BlockTypeDropdownProps) => {
       });
     }
   };
+  const formatSection = (role: string) => {
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, role);
+  };
 
   return (
     <Select
@@ -125,6 +132,16 @@ export const BlockTypeDropdown = ({ blockType }: BlockTypeDropdownProps) => {
             break;
           case "code":
             formatCode();
+            break;
+          case "system":
+            formatSection("system");
+            break;
+          case "assistant":
+            formatSection("assistant");
+            break;
+          case "user":
+            formatSection("user");
+            break;
         }
       }}
     >

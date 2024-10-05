@@ -32,6 +32,7 @@ import {
 } from "@radix-ui/react-icons";
 
 import { BlockTypeDropdown, blockTypeToBlockName } from "./block-type-dropdown";
+import { MessageTypeDropdown } from "@/components/lexical/messages-dropdown";
 
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -135,7 +136,7 @@ export default function ToolbarPlugin() {
       <div className='flex space-x-2 justify-center p-1'>
         <Button
           className='h-8 px-2'
-          variant={"ghost"}
+          variant='ghost'
           disabled={!canUndo}
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         >
@@ -145,7 +146,7 @@ export default function ToolbarPlugin() {
 
         <Button
           className='h-8 px-2'
-          variant={"ghost"}
+          variant='ghost'
           disabled={!canRedo}
           onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
         >
@@ -204,6 +205,8 @@ export default function ToolbarPlugin() {
         >
           <CodeIcon />
         </Toggle>
+        <Separator orientation='vertical' className='h-auto my-1' />
+        <MessageTypeDropdown />
       </div>
     </div>
   );

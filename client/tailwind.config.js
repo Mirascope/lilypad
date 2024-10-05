@@ -51,6 +51,26 @@ export default {
           5: "hsl(var(--chart-5))",
         },
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            code: {
+              fontSize: "inherit", // Remove any specific font size
+              fontFamily: "inherit", // Remove any specific font family
+              backgroundColor: "transparent", // Remove background color
+              padding: "0", // Remove padding
+              borderRadius: "0", // Remove border radius
+              color: "inherit", // Use inherited color
+            },
+            "code::before": {
+              content: "none", // Remove the `::before` element
+            },
+            "code::after": {
+              content: "none", // Remove the `::after` element
+            },
+          },
+        },
+      }),
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],

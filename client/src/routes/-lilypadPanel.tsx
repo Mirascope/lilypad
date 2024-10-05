@@ -12,12 +12,14 @@ import { marked } from "marked";
 import { SpanPublic } from "@/types/types";
 import { CodeSnippet } from "@/routes/-codeSnippet";
 import { Typography } from "@/components/ui/typography";
+import { InputsCards } from "@/components/InputsCards";
 import DOMPurify from "dompurify";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   const data = JSON.parse(span.data);
+  console.log(data);
   const inputValues = JSON.parse(data.attributes["lilypad.input_values"]);
   const rawHtml: string = marked.parse(data.attributes["lilypad.output"], {
     async: false,
@@ -34,20 +36,12 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CodeSnippet code={data.attributes["lilypad.lexical_closure"]} />
         </CardContent>
       </Card>
+      <InputsCards inputValues={inputValues} />
       <Card>
         <CardHeader>
-          <CardTitle>{"Inputs"}</CardTitle>
+          <CardTitle>{"Prompt Template"}</CardTitle>
         </CardHeader>
-        <CardContent className='flex'>
-          {Object.entries(inputValues).map(([key, value]) => (
-            <Card key={key}>
-              <CardHeader>
-                <CardTitle>{key}</CardTitle>
-              </CardHeader>
-              <CardContent>{`${value}`}</CardContent>
-            </Card>
-          ))}
-        </CardContent>
+        <CardContent>{data.attributes["lilypad.prompt_template"]}</CardContent>
       </Card>
       <Card>
         <CardHeader>

@@ -10,66 +10,33 @@
  */
 
 /**
- * CallBase
- * Call model
+ * CallArgsCreate
+ * Call args model.
  */
-export interface CallBase {
-  /** Prompt Version Id */
-  prompt_version_id?: number;
-  /** Input */
-  input: string;
-  /** Output */
-  output: string;
-  /**
-   * Created At
-   * @format date-time
-   * @default "2024-09-24T23:49:34.097933Z"
-   */
-  created_at?: string;
+export interface CallArgsCreate {
+  /** Model */
+  model: string;
+  /** Provider name enum */
+  provider: Provider;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Call Params */
+  call_params: object | null;
 }
 
 /**
- * CallPublicWithPromptVersion
- * Call public model with prompt version.
+ * CallArgsPublic
+ * Call args model.
  */
-export interface CallPublicWithPromptVersion {
-  /** Prompt Version Id */
-  prompt_version_id?: number;
-  /** Input */
-  input: string;
-  /** Output */
-  output: string;
-  /**
-   * Created At
-   * @format date-time
-   * @default "2024-09-24T23:49:34.097933Z"
-   */
-  created_at?: string;
-  /** Id */
-  id: number;
-  /** Prompt Version public model. */
-  prompt_version: PromptVersionPublic;
-}
-
-/**
- * CallTable
- * Call table
- */
-export interface CallTable {
-  /** Prompt Version Id */
-  prompt_version_id?: number;
-  /** Input */
-  input: string;
-  /** Output */
-  output: string;
-  /**
-   * Created At
-   * @format date-time
-   * @default "2024-09-24T23:49:34.097933Z"
-   */
-  created_at?: string;
-  /** Id */
-  id?: number | null;
+export interface CallArgsPublic {
+  /** Model */
+  model: string;
+  /** Provider name enum */
+  provider: Provider;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Call Params */
+  call_params: object | null;
 }
 
 /** HTTPValidationError */
@@ -79,43 +46,88 @@ export interface HTTPValidationError {
 }
 
 /**
- * PromptVersionBase
- * Prompt version model
+ * LLMFunctionBasePublic
+ * LLM function base public model
  */
-export interface PromptVersionBase {
+export interface LLMFunctionBasePublic {
   /** Function Name */
   function_name: string;
   /** Version Hash */
   version_hash?: string | null;
-  /** Lexical Closure */
-  lexical_closure: string;
-  /** Prompt Template */
-  prompt_template: string;
+  /** Code */
+  code: string;
   /** Input Arguments */
   input_arguments?: string | null;
-  /** Previous Version Id */
-  previous_version_id?: number | null;
+  /** Id */
+  id: number;
+  /** Provider Call Params */
+  provider_call_params: ProviderCallParamsTable[] | null;
 }
 
 /**
- * PromptVersionPublic
- * Prompt Version public model.
+ * LLMFunctionCreate
+ * LLM function create model.
  */
-export interface PromptVersionPublic {
+export interface LLMFunctionCreate {
+  /** Function Name */
+  function_name: string;
+  /** Code */
+  code: string;
+  /** Version Hash */
+  version_hash: string;
+  /** Input Arguments */
+  input_arguments?: string | null;
+}
+
+/**
+ * LLMFunctionTable
+ * LLM function table
+ */
+export interface LLMFunctionTable {
   /** Function Name */
   function_name: string;
   /** Version Hash */
   version_hash?: string | null;
-  /** Lexical Closure */
-  lexical_closure: string;
-  /** Prompt Template */
-  prompt_template: string;
+  /** Code */
+  code: string;
   /** Input Arguments */
   input_arguments?: string | null;
-  /** Previous Version Id */
-  previous_version_id?: number | null;
   /** Id */
-  id: number;
+  id?: number | null;
+  /**
+   * Created At
+   * @format date-time
+   * @default "2024-10-04T22:59:45.795314Z"
+   */
+  created_at?: string;
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+}
+
+/**
+ * ProviderCallParamsTable
+ * Provider call params table
+ */
+export interface ProviderCallParamsTable {
+  /** Llm Function Id */
+  llm_function_id: number | null;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Call Params */
+  call_params?: string | null;
+  /** Id */
+  id?: number | null;
 }
 
 /**
@@ -132,8 +144,8 @@ export enum Scope {
  * Call public model with prompt version.
  */
 export interface SpanPublic {
-  /** Prompt Version Id */
-  prompt_version_id?: number | null;
+  /** Llm Function Id */
+  llm_function_id?: number | null;
   /** Instrumentation Scope name of the span */
   scope: Scope;
   /** Data */
@@ -141,7 +153,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-09-24T23:49:34.106051Z"
+   * @default "2024-10-04T22:59:45.798408Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -150,7 +162,7 @@ export interface SpanPublic {
   id: string;
   /** Display Name */
   display_name?: string | null;
-  prompt_version: PromptVersionPublic | null;
+  llm_function?: LLMFunctionTable | null;
   /** Child Spans */
   child_spans: SpanPublic[];
 }

@@ -34,6 +34,8 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "psycopg2-binary>=2.9.9",
     "fastapi[standard]>=0.114.0",
+    "opentelemetry-api>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
     "lilypad-sdk",
 ]
 
@@ -45,7 +47,7 @@ Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
 
 [project.optional-dependencies]
-openai = ["openai>=1.43.0"]
+openai = ["openai>=1.43.0", "opentelemetry-instrumentation-openai>=0.31.2"]
 
 [tool.uv]
 dev-dependencies = [
@@ -64,7 +66,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-lilypad-sdk = { git = "ssh://github.com/stainless-sdks/lilypad-sdk-python.git" }
+lilypad-sdk = { git = "ssh://git@github.com/stainless-sdks/lilypad-sdk-python.git" }
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]

@@ -1,19 +1,24 @@
 """This module initializes the models package."""
 
 from .base_sql_model import BaseSQLModel
-from .calls import CallBase, CallTable
+from .llm_functions import LLMFunctionBase, LLMFunctionTable
 from .projects import ProjectBase, ProjectTable
-from .prompt_versions import PromptVersionBase, PromptVersionTable
+from .provider_call_params import (
+    Provider,
+    ProviderCallParamsBase,
+    ProviderCallParamsTable,
+)
 from .spans import Scope, SpanBase, SpanTable
 
 __all__ = [
     "BaseSQLModel",
-    "CallBase",
-    "CallTable",
+    "LLMFunctionBase",
+    "LLMFunctionTable",
     "ProjectBase",
     "ProjectTable",
-    "PromptVersionBase",
-    "PromptVersionTable",
+    "Provider",
+    "ProviderCallParamsBase",
+    "ProviderCallParamsTable",
     "SpanBase",
     "SpanTable",
     "Scope",

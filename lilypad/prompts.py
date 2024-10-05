@@ -13,9 +13,14 @@ from typing import (
     overload,
 )
 
+import lilypad_sdk
+import requests
 from lilypad_sdk import LilypadSDK
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
+
+from lilypad import lexical_closure
+from lilypad.trace import trace
 
 from .lexical_closure import compute_function_hash
 from .utils import fn_is_async
@@ -90,12 +95,31 @@ def prompt() -> Prompt:
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                # input = inspect_arguments(*args, **kwargs)
-                # output = await fn(*args, **kwargs)
+                input = inspect_arguments(*args, **kwargs)
+                hash, code = compute_function_hash(fn)
+                input_types: dict[str, type[Any]] = {}
+                input_values: dict[str, Any] = {}
 
-                # Thread(target=api_request, args=((fn, input, output))).start()
-                # return output
-                ...
+                for arg_name, arg_info in input.items():
+                    input_types[arg_name] = arg_info["type"]
+                    input_values[arg_name] = arg_info["value"]
+                try:
+                    llm_version = client.llm_functions.retrieve(hash)
+                except lilypad_sdk.NotFoundError:
+                    print("New version detected")
+                    llm_version = client.llm_functions.create(
+                        function_name=fn.__name__,
+                        code=code,
+                        version_hash=hash,
+                        input_arguments=json.dumps(input_types),
+                    )
+                decorated_trace = trace(
+                    llm_version_id=llm_version.id,
+                    input_values=input_values,
+                    input_types=input_types,
+                    lexical_closure=code,
+                )(fn)
+                return await decorated_trace(*args, **kwargs)
 
             return inner_async
 
@@ -103,57 +127,32 @@ def prompt() -> Prompt:
 
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__name__}"
-                ) as span:
-                    input = inspect_arguments(*args, **kwargs)
-                    hash, lexical_closure = compute_function_hash(fn)
-                    input_types: dict[str, type[Any]] = {}
-                    input_values: dict[str, Any] = {}
+                input = inspect_arguments(*args, **kwargs)
+                hash, code = compute_function_hash(fn)
+                input_types: dict[str, type[Any]] = {}
+                input_values: dict[str, Any] = {}
 
-                    for arg_name, arg_info in input.items():
-                        input_types[arg_name] = arg_info["type"]
-                        input_values[arg_name] = arg_info["value"]
-                    prompt_version_id = client.prompt_versions.retrieve(
-                        version_hash=hash
+                for arg_name, arg_info in input.items():
+                    input_types[arg_name] = arg_info["type"]
+                    input_values[arg_name] = arg_info["value"]
+                try:
+                    llm_version = client.llm_functions.retrieve(hash)
+                except lilypad_sdk.NotFoundError:
+                    print("New version detected")
+                    llm_version = client.llm_functions.create(
+                        function_name=fn.__name__,
+                        code=code,
+                        version_hash=hash,
+                        input_arguments=json.dumps(input_types),
                     )
-                    if prompt_version_id == -1:
-                        print("New version detected")
-                        prompt_version = client.prompt_versions.create(
-                            function_name=fn.__name__,
-                            version_hash=hash,
-                            lexical_closure=lexical_closure,
-                            prompt_template="",
-                            input_arguments=json.dumps(input_types),
-                        )
-                        prompt_version_id = prompt_version.id
-                    output = fn(*args, **kwargs)
-                    attributes: dict[str, AttributeValue] = {
-                        "lilypad.function_name": fn.__name__,
-                        "lilypad.version_hash": hash,
-                        "lilypad.prompt_version_id": prompt_version_id,  # type: ignore update stainless api
-                        "lilypad.input_values": json.dumps(input_values),
-                        "lilypad.input_types": json.dumps(input_types),
-                        "lilypad.lexical_closure": lexical_closure,
-                        "lilypad.prompt_template": "",
-                        "lilypad.output": output,
-                    }
-                    span.set_attributes(attributes)
-                Thread(
-                    target=api_request, args=((prompt_version_id, input_values, output))
-                ).start()
-                return output
+                decorated_trace = trace(
+                    llm_version_id=llm_version.id,
+                    input_values=input_values,
+                    input_types=input_types,
+                    lexical_closure=code,
+                )(fn)
+                return decorated_trace(*args, **kwargs)
 
             return inner
 
     return decorator
-
-
-def api_request(prompt_version_id: int, input_values: dict, output: str) -> None:
-    call = client.calls.create(
-        prompt_version_id=prompt_version_id,
-        input=json.dumps(input_values),
-        output=output,
-    )
-
-    print(f"API request complete {call.model_dump()}")

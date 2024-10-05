@@ -1,9 +1,10 @@
 """The lillypad package."""
 
 from . import server as server
+from . import synced as synced
 from .messages import Message
 from .prompts import prompt
 from .tools import tool
 from .trace import trace
 
-__all__ = ["server", "Message", "prompt", "tool", "trace"]
+__all__ = ["server", "synced", "Message", "prompt", "tool", "trace"]

@@ -19,7 +19,6 @@ export const Trace = () => {
   });
   if (isPending) return <div>Loading...</div>;
   if (error) return <div>An error occurred: {error.message}</div>;
-  console.log(data);
   return (
     <div className='h-screen p-2'>
       <DataTableDemo data={data} />

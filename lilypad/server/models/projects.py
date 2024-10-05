@@ -9,9 +9,6 @@ from lilypad.server.models import BaseSQLModel
 
 from .table_names import PROJECT_TABLE_NAME
 
-if TYPE_CHECKING:
-    from lilypad.server.models import PromptVersionTable
-
 
 class ProjectBase(BaseSQLModel):
     """Project model"""

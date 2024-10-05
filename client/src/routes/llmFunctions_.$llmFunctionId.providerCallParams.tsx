@@ -1,4 +1,8 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLoaderData,
+  useMatch,
+} from "@tanstack/react-router";
 import { Editor } from "@/routes/-editor";
 import {
   Select,
@@ -12,47 +16,82 @@ import { Button } from "@/components/ui/button";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
-import { CallArgsCreate, Provider } from "@/types/types";
+import { CallArgsCreate, LLMFunctionBasePublic, Provider } from "@/types/types";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { LexicalEditor } from "lexical";
+import { Typography } from "@/components/ui/typography";
+import { InputsCards } from "@/components/InputsCards";
 
-export const Route = createLazyFileRoute("/editor")({
+type LoaderData = {
+  llmFunction: LLMFunctionBasePublic;
+  providerCallParams: CallArgsCreate;
+};
+
+export const Route = createFileRoute(
+  "/llmFunctions/$llmFunctionId/providerCallParams"
+)({
+  loader: async ({ params: { llmFunctionId } }): Promise<LoaderData> => {
+    const [llmFunction, providerCallParams] = await Promise.all([
+      api.get<LLMFunctionBasePublic>(`/llm-functions/${llmFunctionId}`),
+      api.get<CallArgsCreate>(
+        `/llm-functions/${Number(llmFunctionId)}/provider-call-params`
+      ),
+    ]);
+    return {
+      llmFunction: llmFunction.data,
+      providerCallParams: providerCallParams.data,
+    };
+  },
+  pendingComponent: () => <div>Loading...</div>,
+  errorComponent: ({ error }) => <div>{error.message}</div>,
   component: () => <EditorContainer />,
 });
 
 const EditorContainer = () => {
+  const { llmFunction, providerCallParams } = useLoaderData({
+    from: Route.id,
+  });
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (callArgsCreate: CallArgsCreate) => {
-      return api.patch(`/${1}`, callArgsCreate);
+      return api.post(
+        `/llm-functions/${llmFunction.id}/provider-call-params`,
+        callArgsCreate
+      );
     },
     onSuccess: () => {
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({
+        queryKey: [`llmFunctions-${llmFunction.id}-providerCallParams`],
+      });
     },
   });
+
   const [callParams, setCallParams] = useState<string>("");
+  const isInitialRender = useRef<boolean>(true);
   const editorRef = useRef<LexicalEditor>(null);
   const { control, handleSubmit, setValue, clearErrors, setError, getValues } =
     useForm<CallArgsCreate>({
       defaultValues: {
-        provider: Provider.OPENAI,
-        model: "",
-        call_params: {},
+        provider: providerCallParams.provider,
+        model: providerCallParams.model || "foo",
+        call_params: providerCallParams.call_params,
       },
     });
-
   const provider = useWatch({
     control,
     name: "provider",
   });
 
   useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
     setValue("model", "");
   }, [provider]);
 
@@ -79,18 +118,33 @@ const EditorContainer = () => {
     const editorState = editorRef.current.getEditorState();
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      console.log(data);
+      data.prompt_template = markdown;
       mutation.mutate(data);
+      window.close();
     });
   };
+  const inputs = llmFunction.input_arguments
+    ? Object.keys(JSON.parse(llmFunction.input_arguments))
+    : [];
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='p-2'>
-      <div className='flex gap-2'>
-        <div className='lexical flex flex-col'>
-          <Editor inputs={[]} ref={editorRef} />
+    <div className='p-2 flex flex-col gap-2'>
+      <Typography variant='h3'>{llmFunction.function_name}</Typography>
+      {llmFunction.input_arguments && (
+        <div className='flex'>
+          <InputsCards inputValues={JSON.parse(llmFunction.input_arguments)} />
         </div>
-        <div id='call-args'>
-          <div className='grid w-full max-w-sm items-center gap-1.5'>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className='flex gap-2'>
+          <div className='lexical form-group'>
+            <Label htmlFor='prompt-template'>Prompt Template</Label>
+            <Editor
+              inputs={inputs}
+              ref={editorRef}
+              promptTemplate={providerCallParams.prompt_template}
+            />
+          </div>
+          <div className='w-full max-w-sm gap-1.5'>
             <div className='form-group'>
               <Label htmlFor='provider'>Provider</Label>
               <Controller
@@ -114,24 +168,25 @@ const EditorContainer = () => {
               />
             </div>
             {/* <div className='flex items-center space-x-2'>
-              <Controller
-                name='json_mode'
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    checked={field.value === true}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
-              <Label htmlFor='diff-view'>JSON Mode</Label>
-            </div> */}
+                <Controller
+                  name='json_mode'
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      checked={field.value === true}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+                <Label htmlFor='diff-view'>JSON Mode</Label>
+              </div> */}
             <div className='form-group mt-4'>
-              <ModelCombobox<CallArgsCreate>
+              <ModelCombobox<CallArgsCreate, "model">
                 control={control}
                 name='model'
                 label='Choose a Model'
                 options={options}
+                defaultValue={getValues("model")}
               />
             </div>
             <Controller
@@ -174,10 +229,10 @@ const EditorContainer = () => {
             />
           </div>
         </div>
-      </div>
-      <Button type='submit' className='mt-2'>
-        Submit
-      </Button>
-    </form>
+        <Button type='submit' className='mt-2'>
+          Submit
+        </Button>
+      </form>
+    </div>
   );
 };

@@ -8,10 +8,13 @@ from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel
 
-from .table_names import PROMPT_VERSION_TABLE_NAME, SPAN_TABLE_NAME
+from .table_names import (
+    LLM_FUNCTION_TABLE_NAME,
+    SPAN_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
-    from lilypad.server.models import PromptVersionTable
+    from lilypad.server.models import LLMFunctionTable
 
 
 class Scope(str, Enum):
@@ -24,8 +27,8 @@ class Scope(str, Enum):
 class SpanBase(BaseSQLModel):
     """Span base model"""
 
-    prompt_version_id: int | None = Field(
-        default=None, foreign_key=f"{PROMPT_VERSION_TABLE_NAME}.id"
+    llm_function_id: int | None = Field(
+        default=None, foreign_key=f"{LLM_FUNCTION_TABLE_NAME}.id"
     )
     scope: Scope = Field(nullable=False)
     data: str
@@ -43,7 +46,7 @@ class SpanTable(SpanBase, table=True):
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
 
     id: str = Field(primary_key=True)
-    prompt_version: "PromptVersionTable" = Relationship(back_populates="spans")
+    llm_function: "LLMFunctionTable" = Relationship(back_populates="spans")
 
     child_spans: list["SpanTable"] = Relationship(back_populates="parent_span")
 
