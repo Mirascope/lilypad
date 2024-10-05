@@ -1,5 +1,6 @@
 """Table names for the database models."""
 
 PROJECT_TABLE_NAME = "projects"
-PROMPT_VERSION_TABLE_NAME = "prompt_versions"
-CALL_TABLE_NAME = "calls"
+PROVIDER_CALL_PARAMS_TABLE_NAME = "provider_call_params"
+SPAN_TABLE_NAME = "spans"
+LLM_FUNCTION_TABLE_NAME = "llm_functions"

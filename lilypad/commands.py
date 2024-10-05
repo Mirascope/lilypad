@@ -2,11 +2,9 @@
 
 import requests
 
-from lilypad.app.models import PromptVersionTable
 
-
-def pull(project_name: str) -> str:
+def pull(hash: str) -> str:
     """Pull the latest prompt version."""
-    url = f"http://localhost:8000/projects/{project_name}/versions"
+    url = f"http://localhost:8000/api/prompt-versions/{hash}"
     response = requests.get(url)
-    return PromptVersionTable(**response.json()).prompt_template
+    return response.json()["prompt_template"]
