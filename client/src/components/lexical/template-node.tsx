@@ -11,8 +11,8 @@ import {
   TextNode,
 } from "lexical";
 
-// Define the type for the serialized custom node
-export type SerializedCustomNode = Spread<
+// Define the type for the serialized template node
+export type SerializedTemplateNode = Spread<
   {
     value: string;
     moreDetails?: object;
@@ -20,14 +20,14 @@ export type SerializedCustomNode = Spread<
   SerializedTextNode
 >;
 
-// Function to convert a DOM element to a custom node
-function $convertCustomElement(
+// Function to convert a DOM element to a template node
+function $convertTemplateElement(
   domNode: HTMLElement
 ): DOMConversionOutput | null {
   const textContent = domNode.textContent;
 
   if (textContent !== null) {
-    const node = $createCustomNode(textContent);
+    const node = $createTemplateNode(textContent);
     return {
       node,
     };
@@ -36,18 +36,18 @@ function $convertCustomElement(
   return null;
 }
 
-export class CustomNode extends TextNode {
+export class TemplateNode extends TextNode {
   __value: string;
   __moreDetails?: object;
 
   // Return the type of the node
   static getType(): string {
-    return "custom-node";
+    return "template-node";
   }
 
   // Clone the node
-  static clone(node: CustomNode): CustomNode {
-    return new CustomNode(
+  static clone(node: TemplateNode): TemplateNode {
+    return new TemplateNode(
       node.__value,
       node.__moreDetails,
       node.__text,
@@ -56,8 +56,8 @@ export class CustomNode extends TextNode {
   }
 
   // Import the serialized node
-  static importJSON(serializedNode: SerializedCustomNode): CustomNode {
-    const node = $createCustomNode(
+  static importJSON(serializedNode: SerializedTemplateNode): TemplateNode {
+    const node = $createTemplateNode(
       serializedNode.value,
       serializedNode.moreDetails
     );
@@ -81,12 +81,12 @@ export class CustomNode extends TextNode {
   }
 
   // Export the node to a serialized format
-  exportJSON(): SerializedCustomNode {
+  exportJSON(): SerializedTemplateNode {
     return {
       ...super.exportJSON(),
       value: this.__value,
       moreDetails: this.__moreDetails,
-      type: "custom-node",
+      type: "template-node",
       version: 1,
     };
   }
@@ -95,6 +95,7 @@ export class CustomNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.textContent = this.__value;
+    dom.setAttribute("data-lexical-template", "true");
     dom.className = "text-purple-500 font-normal ";
     return dom;
   }
@@ -102,7 +103,7 @@ export class CustomNode extends TextNode {
   // Export the DOM representation of the node
   exportDOM(): DOMExportOutput {
     const element = document.createElement("span");
-    element.setAttribute("data-lexical-custom", "true");
+    element.setAttribute("data-lexical-template", "true");
     element.textContent = this.__text;
     return { element };
   }
@@ -111,11 +112,11 @@ export class CustomNode extends TextNode {
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute("data-lexical-custom")) {
+        if (!domNode.hasAttribute("data-lexical-template")) {
           return null;
         }
         return {
-          conversion: $convertCustomElement,
+          conversion: $convertTemplateElement,
           priority: 1,
         };
       },
@@ -135,19 +136,19 @@ export class CustomNode extends TextNode {
   }
 }
 
-// Helper function to create a new custom node
-export function $createCustomNode(
+// Helper function to create a new template node
+export function $createTemplateNode(
   value: string,
   moreDetails?: object
-): CustomNode {
-  const customNode = new CustomNode(value, moreDetails);
-  customNode.setMode("segmented").toggleDirectionless();
-  return $applyNodeReplacement(customNode);
+): TemplateNode {
+  const templateNode = new TemplateNode(value, moreDetails);
+  templateNode.setMode("segmented").toggleDirectionless();
+  return $applyNodeReplacement(templateNode);
 }
 
-// Helper function to check if a node is a custom node
-export function $isCustomNode(
+// Helper function to check if a node is a template node
+export function $isTemplateNode(
   node: LexicalNode | null | undefined
-): node is CustomNode {
-  return node instanceof CustomNode;
+): node is TemplateNode {
+  return node instanceof TemplateNode;
 }

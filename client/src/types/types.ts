@@ -20,6 +20,8 @@ export interface CallArgsCreate {
   provider: Provider;
   /** Prompt Template */
   prompt_template: string;
+  /** Editor State */
+  editor_state: string;
   /** Call Params */
   call_params: object | null;
 }
@@ -35,6 +37,8 @@ export interface CallArgsPublic {
   provider: Provider;
   /** Prompt Template */
   prompt_template: string;
+  /** Editor State */
+  editor_state: string;
   /** Call Params */
   call_params: object | null;
 }
@@ -97,7 +101,7 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-04T22:59:45.795314Z"
+   * @default "2024-10-06T17:42:03.364387Z"
    */
   created_at?: string;
 }
@@ -124,6 +128,8 @@ export interface ProviderCallParamsTable {
   model: string;
   /** Prompt Template */
   prompt_template: string;
+  /** Editor State */
+  editor_state: string;
   /** Call Params */
   call_params?: string | null;
   /** Id */
@@ -153,7 +159,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-04T22:59:45.798408Z"
+   * @default "2024-10-06T17:42:03.367952Z"
    */
   created_at?: string;
   /** Parent Span Id */

@@ -161,6 +161,7 @@ class CallArgsCreate(BaseModel):
     model: str
     provider: Provider
     prompt_template: str
+    editor_state: str
     call_params: dict[str, Any] | None
 
 
@@ -194,6 +195,7 @@ class CallArgsPublic(BaseModel):
     model: str
     provider: Provider
     prompt_template: str
+    editor_state: str
     call_params: dict[str, Any] | None
 
 
@@ -214,6 +216,7 @@ async def get_call_args_from_llm_function_by_id(
             model="gpt-4o",
             provider=Provider.OPENAI,
             prompt_template="",
+            editor_state="",
             call_params={},
         )
     latest_provider_call_params = llm_function.provider_call_params[-1]
@@ -221,6 +224,7 @@ async def get_call_args_from_llm_function_by_id(
         model=latest_provider_call_params.model,
         provider=latest_provider_call_params.provider,
         prompt_template=latest_provider_call_params.prompt_template,
+        editor_state=latest_provider_call_params.editor_state,
         call_params=json.loads(latest_provider_call_params.call_params)
         if latest_provider_call_params.call_params
         else {},
@@ -246,6 +250,7 @@ async def get_call_args_from_llm_function_by_hash(
         model=latest_provider_call_params.model,
         provider=latest_provider_call_params.provider,
         prompt_template=latest_provider_call_params.prompt_template,
+        editor_state=latest_provider_call_params.editor_state,
         call_params=json.loads(latest_provider_call_params.call_params)
         if latest_provider_call_params.call_params
         else {},

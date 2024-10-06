@@ -6,7 +6,7 @@ import {
 import { TextNode } from "lexical";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { $createCustomNode } from "./custom-node";
+import { $createTemplateNode } from "./template-node";
 import { TriggerFn } from "@lexical/react/LexicalTypeaheadMenuPlugin";
 
 const PUNCTUATION =
@@ -144,14 +144,14 @@ export const CustomDataSuggestionPlugin = ({
       closeMenu: () => void
     ) => {
       editor.update(() => {
-        const customNode = $createCustomNode(
+        const templateNode = $createTemplateNode(
           selectedOption.key,
           selectedOption.metadata
         );
         if (nodeToReplace) {
-          nodeToReplace.replace(customNode);
+          nodeToReplace.replace(templateNode);
         }
-        customNode.select();
+        templateNode.select();
         closeMenu();
       });
     },

@@ -8,6 +8,9 @@ import react from "@vitejs/plugin-react-swc";
 export default defineConfig({
   base: "/lilypad/",
   plugins: [TanStackRouterVite(), react()],
+  build: {
+    outDir: "../lilypad/server/dist",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

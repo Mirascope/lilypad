@@ -119,6 +119,7 @@ const EditorContainer = () => {
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.prompt_template = markdown;
+      data.editor_state = JSON.stringify(editorState);
       mutation.mutate(data);
       window.close();
     });
@@ -141,7 +142,7 @@ const EditorContainer = () => {
             <Editor
               inputs={inputs}
               ref={editorRef}
-              promptTemplate={providerCallParams.prompt_template}
+              editorState={providerCallParams.editor_state}
             />
           </div>
           <div className='w-full max-w-sm gap-1.5'>
