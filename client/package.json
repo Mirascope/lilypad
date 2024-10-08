@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:notypescript": "vite build",
+    "build:notypescript": "vite build --emptyOutDir",
     "lint": "eslint .",
     "preview": "vite preview"
   },

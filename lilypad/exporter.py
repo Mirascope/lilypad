@@ -1,34 +1,49 @@
+"""Custom span exporter that sends spans to a custom endpoint as JSON."""
+
 import json
 from collections.abc import Sequence
 
-import requests
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import (
     SpanExporter,
     SpanExportResult,
 )
+from rich import print
+
+from lilypad.models import SpanPublic
+from lilypad.server.client import LilypadClient
 
 
 class JSONSpanExporter(SpanExporter):
     """A custom span exporter that sends spans to a custom endpoint as JSON."""
 
-    def __init__(self, endpoint: str) -> None:
+    def __init__(self, base_url: str) -> None:
         """Initialize the exporter with the custom endpoint URL."""
-        self.endpoint = endpoint
+        self.client = LilypadClient(base_url, timeout=10)
+
+    def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
+        """Extract and pretty print the display_name attribute from each span, handling nested spans."""
+        for span in spans:
+            self._print_span_node(span, indent=0)
+
+    def _print_span_node(self, span: SpanPublic, indent: int):
+        """Recursively print a SpanNode and its children with indentation."""
+        indent_str = "    " * indent  # 4 spaces per indent level
+
+        print(f"{indent_str}{span.display_name}")
+
+        for child in span.child_spans:
+            self._print_span_node(child, indent + 1)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries"""
         span_data = [self._span_to_dict(span) for span in spans]
-        print(span_data)
         json_data = json.dumps(span_data)
 
         try:
-            response = requests.post(
-                self.endpoint,
-                headers={"Content-Type": "application/json"},
-                data=json_data,
-            )
-            if response.status_code == 200:
+            response_spans = self.client.post_traces(data=json_data)
+            if response_spans:
+                self.pretty_print_display_names(response_spans)
                 return SpanExportResult.SUCCESS
             else:
                 return SpanExportResult.FAILURE

@@ -36,7 +36,7 @@ export const Editor = forwardRef(
     const config = useMemo(
       () => ({
         namespace: "editor",
-        editorState: editorState,
+        ...(editorState ? { editorState } : {}),
         theme: exampleTheme,
         nodes: [
           HeadingNode,

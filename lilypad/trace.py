@@ -1,3 +1,5 @@
+"""The `trace` decorator, which is used to instrument functions for LLM API calls."""
+
 import json
 from collections.abc import Callable, Coroutine
 from functools import wraps

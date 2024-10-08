@@ -1,17 +1,22 @@
+"""Initialize Lilypad OpenTelemetry instrumentation."""
+
 import importlib.util
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from .exporter import JSONSpanExporter
+from lilypad.exporter import JSONSpanExporter
 
 
 def init():
-    trace_url = "http://localhost:8000/api/v1/traces"
+    """Initialize the OpenTelemetry instrumentation for Lilypad."""
+    if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
+        print("TracerProvider already initialized.")
+        return
 
     otlp_exporter = JSONSpanExporter(
-        endpoint=trace_url,
+        base_url="http://127.0.0.1:8000/api",
     )
 
     provider = TracerProvider()
@@ -22,8 +27,7 @@ def init():
     if importlib.util.find_spec("opentelemetry.instrumentation.openai") is not None:
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
-        # Now that it is confirmed to be available, you can use it
         OpenAIInstrumentor().instrument()
-        print("OpenAIInstrumentor successfully instrumented.")
+        print("OpenAIInstrumentor initialized.")
     else:
         print("opentelemetry.instrumentation.openai is not installed or available.")

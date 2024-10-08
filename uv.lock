@@ -577,19 +577,6 @@ wheels = [
 ]
 
 [[package]]
-name = "lilypad-sdk"
-version = "0.0.1a0"
-source = { git = "ssh://git@github.com/stainless-sdks/lilypad-sdk-python.git#a60ac00e1e63462414e0994c7705eed8c5c65d77" }
-dependencies = [
-    { name = "anyio" },
-    { name = "distro" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "typing-extensions" },
-]
-
-[[package]]
 name = "markdown"
 version = "3.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1230,12 +1217,12 @@ version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
-    { name = "lilypad-sdk" },
     { name = "mirascope" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-sdk" },
     { name = "psycopg2-binary" },
     { name = "sqlmodel" },
+    { name = "typer" },
 ]
 
 [package.optional-dependencies]
@@ -1263,7 +1250,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
-    { name = "lilypad-sdk", git = "ssh://git@github.com/stainless-sdks/lilypad-sdk-python.git" },
     { name = "mirascope", specifier = ">=1.2.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.43.0" },
     { name = "opentelemetry-api", specifier = ">=1.27.0" },
@@ -1271,6 +1257,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.27.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
     { name = "sqlmodel", specifier = ">=0.0.22" },
+    { name = "typer", specifier = ">=0.12.5" },
 ]
 
 [package.metadata.requires-dev]
