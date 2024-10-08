@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import os
 import time
 import webbrowser
 from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
@@ -18,13 +19,11 @@ from typing import (
     overload,
 )
 
-import lilypad_sdk
-import requests
-from lilypad_sdk.types import LlmFunctionBasePublic
-from lilypad_sdk.types.llm_functions import CallArgsPublic
 from mirascope import core as mcore
 from pydantic import BaseModel
 
+from lilypad.models import CallArgsPublic, LLMFunctionBasePublic
+from lilypad.server import client
 from lilypad.trace import trace
 
 from ..lexical_closure import compute_function_hash
@@ -34,21 +33,21 @@ from ..utils import fn_is_async
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-client = lilypad_sdk.LilypadSDK(base_url="http://localhost:8000/api", timeout=10)
+lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
 
 
 def poll_call_args(hash: str) -> CallArgsPublic:
     """Polls the LLM API for the call args."""
     while True:
         try:
-            provider_call_args = client.llm_functions.provider_call_params.retrieve(
-                hash
+            provider_call_args = (
+                lilypad_client.get_provider_call_params_by_llm_function_hash(hash)
             )
-        except lilypad_sdk.NotFoundError:
+        except client.NotFoundError:
             print("Waiting for provider call arguments...")
             time.sleep(1)
             continue
-        except lilypad_sdk.APIConnectionError:
+        except client.APIConnectionError:
             print("Connection error, API may not be running...")
             time.sleep(1)
             continue
@@ -118,7 +117,7 @@ def prompt() -> Prompt:
 
         def get_call_params(
             *args: _P.args, **kwargs: _P.kwargs
-        ) -> tuple[Callable, CallArgsPublic, LlmFunctionBasePublic, dict[str, Any]]:
+        ) -> tuple[Callable, CallArgsPublic, LLMFunctionBasePublic, dict[str, Any]]:
             """Retrieve the call parameters for the function."""
             input = inspect_arguments(*args, **kwargs)
             hash, code = compute_function_hash(fn)
@@ -128,17 +127,20 @@ def prompt() -> Prompt:
                 input_types[arg_name] = arg_info["type"]
                 input_values[arg_name] = arg_info["value"]
             try:
-                llm_version = client.llm_functions.retrieve(hash)
-            except lilypad_sdk.NotFoundError:
+                llm_version = lilypad_client.get_llm_function_by_hash(hash)
+            except client.NotFoundError:
                 print("New version detected")
-                llm_version = client.llm_functions.create(
+                llm_version = lilypad_client.post_llm_function(
                     function_name=fn.__name__,
                     code=code,
                     version_hash=hash,
                     input_arguments=json.dumps(input_types),
                 )
 
-            if not llm_version.provider_call_params:
+            if (
+                os.getenv("LILYPAD_EDITOR_OPEN") == "True"
+                or not llm_version.provider_call_params
+            ):
                 webbrowser.open(
                     f"http://localhost:8000/lilypad/llmFunctions/{llm_version.id}/providerCallParams"
                 )

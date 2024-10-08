@@ -29,6 +29,7 @@ class ProviderCallParamsBase(BaseSQLModel):
     provider: Provider
     model: str
     prompt_template: str
+    editor_state: str
     call_params: str | None = Field(default=None)
 
 

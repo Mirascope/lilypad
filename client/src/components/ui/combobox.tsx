@@ -1,6 +1,3 @@
-"use client";
-
-import * as React from "react";
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
@@ -18,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useState } from "react";
 
 type ComboboxProps = {
   items: { value: string; label: string }[];
@@ -25,7 +23,7 @@ type ComboboxProps = {
   setValue: (value: string) => void;
 };
 export function Combobox({ items, value, setValue }: ComboboxProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

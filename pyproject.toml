@@ -36,7 +36,7 @@ dependencies = [
     "fastapi[standard]>=0.114.0",
     "opentelemetry-api>=1.27.0",
     "opentelemetry-sdk>=1.27.0",
-    "lilypad-sdk",
+    "typer>=0.12.5",
 ]
 
 [project.urls]
@@ -66,7 +66,10 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-lilypad-sdk = { git = "ssh://git@github.com/stainless-sdks/lilypad-sdk-python.git" }
+
+
+[project.scripts]
+lilypad-cli = "lilypad.cli.main:app"
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]

@@ -10,14 +10,18 @@ export const InputsCards = ({ inputValues }: { inputValues: InputValues }) => {
         <CardTitle>{"Inputs"}</CardTitle>
       </CardHeader>
       <CardContent className='flex gap-2'>
-        {Object.entries(inputValues).map(([key, value]) => (
-          <Card key={key}>
-            <CardHeader>
-              <CardTitle>{key}</CardTitle>
-            </CardHeader>
-            <CardContent>{`${value}`}</CardContent>
-          </Card>
-        ))}
+        {Object.keys(inputValues).length > 0 ? (
+          Object.entries(inputValues).map(([key, value]) => (
+            <Card key={key}>
+              <CardHeader>
+                <CardTitle>{key}</CardTitle>
+              </CardHeader>
+              <CardContent>{`${value}`}</CardContent>
+            </Card>
+          ))
+        ) : (
+          <CardContent>{"No inputs"}</CardContent>
+        )}
       </CardContent>
     </Card>
   );

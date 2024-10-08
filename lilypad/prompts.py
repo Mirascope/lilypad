@@ -4,7 +4,6 @@ import inspect
 import json
 from collections.abc import Callable, Coroutine
 from functools import wraps
-from threading import Thread
 from typing import (
     Any,
     ParamSpec,
@@ -13,13 +12,7 @@ from typing import (
     overload,
 )
 
-import lilypad_sdk
-import requests
-from lilypad_sdk import LilypadSDK
-from opentelemetry.trace import get_tracer
-from opentelemetry.util.types import AttributeValue
-
-from lilypad import lexical_closure
+from lilypad.server import client
 from lilypad.trace import trace
 
 from .lexical_closure import compute_function_hash
@@ -28,7 +21,7 @@ from .utils import fn_is_async
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-client = LilypadSDK(base_url="http://localhost:8000/api")
+lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
 
 
 class Prompt(Protocol):
@@ -104,17 +97,18 @@ def prompt() -> Prompt:
                     input_types[arg_name] = arg_info["type"]
                     input_values[arg_name] = arg_info["value"]
                 try:
-                    llm_version = client.llm_functions.retrieve(hash)
-                except lilypad_sdk.NotFoundError:
+                    llm_version = lilypad_client.get_llm_function_by_hash(hash)
+                except client.NotFoundError:
                     print("New version detected")
-                    llm_version = client.llm_functions.create(
+                    llm_version = lilypad_client.post_llm_function(
                         function_name=fn.__name__,
                         code=code,
                         version_hash=hash,
                         input_arguments=json.dumps(input_types),
                     )
                 decorated_trace = trace(
-                    llm_version_id=llm_version.id,
+                    llm_function_id=llm_version.id,
+                    version_hash=hash,
                     input_values=input_values,
                     input_types=input_types,
                     lexical_closure=code,
@@ -136,17 +130,18 @@ def prompt() -> Prompt:
                     input_types[arg_name] = arg_info["type"]
                     input_values[arg_name] = arg_info["value"]
                 try:
-                    llm_version = client.llm_functions.retrieve(hash)
-                except lilypad_sdk.NotFoundError:
+                    llm_version = lilypad_client.get_llm_function_by_hash(hash)
+                except client.NotFoundError:
                     print("New version detected")
-                    llm_version = client.llm_functions.create(
+                    llm_version = lilypad_client.post_llm_function(
                         function_name=fn.__name__,
                         code=code,
                         version_hash=hash,
                         input_arguments=json.dumps(input_types),
                     )
                 decorated_trace = trace(
-                    llm_version_id=llm_version.id,
+                    llm_function_id=llm_version.id,
+                    version_hash=hash,
                     input_values=input_values,
                     input_types=input_types,
                     lexical_closure=code,

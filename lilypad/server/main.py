@@ -1,27 +1,26 @@
 """Main FastAPI application module for Lilypad."""
 
 import json
-from typing import Annotated, Any, Sequence
+from collections.abc import Sequence
+from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from sqlmodel import Session, SQLModel, select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from lilypad.models import CallArgsPublic, LLMFunctionBasePublic, SpanPublic
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
-    LLMFunctionBase,
     Provider,
     Scope,
-    SpanBase,
     SpanTable,
-    llm_functions,
 )
 from lilypad.server.models.llm_functions import LLMFunctionTable
 from lilypad.server.models.provider_call_params import ProviderCallParamsTable
@@ -104,13 +103,6 @@ class LLMFunctionCreate(BaseModel):
     input_arguments: str | None = None
 
 
-class LLMFunctionBasePublic(LLMFunctionBase):
-    """LLM function base public model"""
-
-    id: int
-    provider_call_params: list[ProviderCallParamsTable] | None
-
-
 @api.post(
     "/llm-functions/",
     response_model=LLMFunctionBasePublic,
@@ -161,6 +153,7 @@ class CallArgsCreate(BaseModel):
     model: str
     provider: Provider
     prompt_template: str
+    editor_state: str
     call_params: dict[str, Any] | None
 
 
@@ -188,15 +181,6 @@ async def create_provider_call_params(
     return provider_call_params
 
 
-class CallArgsPublic(BaseModel):
-    """Call args model."""
-
-    model: str
-    provider: Provider
-    prompt_template: str
-    call_params: dict[str, Any] | None
-
-
 @api.get(
     "/llm-functions/{id:int}/provider-call-params",
     response_model=CallArgsPublic,
@@ -214,6 +198,7 @@ async def get_call_args_from_llm_function_by_id(
             model="gpt-4o",
             provider=Provider.OPENAI,
             prompt_template="",
+            editor_state="",
             call_params={},
         )
     latest_provider_call_params = llm_function.provider_call_params[-1]
@@ -221,6 +206,7 @@ async def get_call_args_from_llm_function_by_id(
         model=latest_provider_call_params.model,
         provider=latest_provider_call_params.provider,
         prompt_template=latest_provider_call_params.prompt_template,
+        editor_state=latest_provider_call_params.editor_state,
         call_params=json.loads(latest_provider_call_params.call_params)
         if latest_provider_call_params.call_params
         else {},
@@ -246,6 +232,7 @@ async def get_call_args_from_llm_function_by_hash(
         model=latest_provider_call_params.model,
         provider=latest_provider_call_params.provider,
         prompt_template=latest_provider_call_params.prompt_template,
+        editor_state=latest_provider_call_params.editor_state,
         call_params=json.loads(latest_provider_call_params.call_params)
         if latest_provider_call_params.call_params
         else {},
@@ -315,8 +302,9 @@ async def metrics(request: Request) -> None:
 @api.post("/v1/traces")
 async def traces(
     request: Request, session: Annotated[Session, Depends(get_session)]
-) -> None:
+) -> list[SpanPublic]:
     traces_json: list[dict] = await request.json()
+    span_tables: list[SpanTable] = []
     for trace in traces_json:
         if trace["instrumentation_scope"]["name"] == "lilypad":
             scope = Scope.LILYPAD
@@ -331,17 +319,16 @@ async def traces(
                 "lilypad.llm_function_id", None
             ),
         )
+        span_tables.append(span_table)
         session.add(span_table)
     session.commit()
+    parent_traces: list[SpanPublic] = []
+    for span_table in span_tables:
+        session.refresh(span_table)
+        if not span_table.parent_span_id:
+            parent_traces.append(set_display_name_and_convert(span_table))
 
-
-class SpanPublic(SpanBase):
-    """Call public model with prompt version."""
-
-    id: str
-    display_name: str | None = None
-    llm_function: LLMFunctionTable | None = None
-    child_spans: list["SpanPublic"]
+    return parent_traces
 
 
 def set_display_name_and_convert(
