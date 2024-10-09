@@ -13,40 +13,40 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as LlmFunctionsLlmFunctionIdProviderCallParamsImport } from './routes/llmFunctions_.$llmFunctionId.providerCallParams'
+import { Route as IndexImport } from './routes/index'
+import { Route as ProjectsIndexImport } from './routes/projects/index'
+import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
+import { Route as ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport } from './routes/projects_/$projectId.llm-fns_.$llmFunctionId.fn-params'
 
 // Create Virtual Routes
 
-const TracesLazyImport = createFileRoute('/traces')()
-const EditorLazyImport = createFileRoute('/editor')()
 const DiffLazyImport = createFileRoute('/diff')()
-const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
-
-const TracesLazyRoute = TracesLazyImport.update({
-  path: '/traces',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/traces.lazy').then((d) => d.Route))
-
-const EditorLazyRoute = EditorLazyImport.update({
-  path: '/editor',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/editor.lazy').then((d) => d.Route))
 
 const DiffLazyRoute = DiffLazyImport.update({
   path: '/diff',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/diff.lazy').then((d) => d.Route))
 
-const IndexLazyRoute = IndexLazyImport.update({
+const IndexRoute = IndexImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+} as any)
 
-const LlmFunctionsLlmFunctionIdProviderCallParamsRoute =
-  LlmFunctionsLlmFunctionIdProviderCallParamsImport.update({
-    path: '/llmFunctions/$llmFunctionId/providerCallParams',
+const ProjectsIndexRoute = ProjectsIndexImport.update({
+  path: '/projects/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
+  path: '/projects/$projectId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute =
+  ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport.update({
+    path: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params',
     getParentRoute: () => rootRoute,
   } as any)
 
@@ -58,7 +58,7 @@ declare module '@tanstack/react-router' {
       id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
+      preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
     '/diff': {
@@ -68,25 +68,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiffLazyImport
       parentRoute: typeof rootRoute
     }
-    '/editor': {
-      id: '/editor'
-      path: '/editor'
-      fullPath: '/editor'
-      preLoaderRoute: typeof EditorLazyImport
+    '/projects/$projectId': {
+      id: '/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdImport
       parentRoute: typeof rootRoute
     }
-    '/traces': {
-      id: '/traces'
-      path: '/traces'
-      fullPath: '/traces'
-      preLoaderRoute: typeof TracesLazyImport
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/llmFunctions/$llmFunctionId/providerCallParams': {
-      id: '/llmFunctions/$llmFunctionId/providerCallParams'
-      path: '/llmFunctions/$llmFunctionId/providerCallParams'
-      fullPath: '/llmFunctions/$llmFunctionId/providerCallParams'
-      preLoaderRoute: typeof LlmFunctionsLlmFunctionIdProviderCallParamsImport
+    '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': {
+      id: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
+      path: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
+      fullPath: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
+      preLoaderRoute: typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport
       parentRoute: typeof rootRoute
     }
   }
@@ -95,28 +95,28 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexLazyRoute
+  '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/editor': typeof EditorLazyRoute
-  '/traces': typeof TracesLazyRoute
-  '/llmFunctions/$llmFunctionId/providerCallParams': typeof LlmFunctionsLlmFunctionIdProviderCallParamsRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexLazyRoute
+  '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/editor': typeof EditorLazyRoute
-  '/traces': typeof TracesLazyRoute
-  '/llmFunctions/$llmFunctionId/providerCallParams': typeof LlmFunctionsLlmFunctionIdProviderCallParamsRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/': typeof IndexLazyRoute
+  '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/editor': typeof EditorLazyRoute
-  '/traces': typeof TracesLazyRoute
-  '/llmFunctions/$llmFunctionId/providerCallParams': typeof LlmFunctionsLlmFunctionIdProviderCallParamsRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
 export interface FileRouteTypes {
@@ -124,41 +124,41 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/diff'
-    | '/editor'
-    | '/traces'
-    | '/llmFunctions/$llmFunctionId/providerCallParams'
+    | '/projects/$projectId'
+    | '/projects'
+    | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/diff'
-    | '/editor'
-    | '/traces'
-    | '/llmFunctions/$llmFunctionId/providerCallParams'
+    | '/projects/$projectId'
+    | '/projects'
+    | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   id:
     | '__root__'
     | '/'
     | '/diff'
-    | '/editor'
-    | '/traces'
-    | '/llmFunctions/$llmFunctionId/providerCallParams'
+    | '/projects/$projectId'
+    | '/projects/'
+    | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  IndexLazyRoute: typeof IndexLazyRoute
+  IndexRoute: typeof IndexRoute
   DiffLazyRoute: typeof DiffLazyRoute
-  EditorLazyRoute: typeof EditorLazyRoute
-  TracesLazyRoute: typeof TracesLazyRoute
-  LlmFunctionsLlmFunctionIdProviderCallParamsRoute: typeof LlmFunctionsLlmFunctionIdProviderCallParamsRoute
+  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+  ProjectsIndexRoute: typeof ProjectsIndexRoute
+  ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute: typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexLazyRoute: IndexLazyRoute,
+  IndexRoute: IndexRoute,
   DiffLazyRoute: DiffLazyRoute,
-  EditorLazyRoute: EditorLazyRoute,
-  TracesLazyRoute: TracesLazyRoute,
-  LlmFunctionsLlmFunctionIdProviderCallParamsRoute:
-    LlmFunctionsLlmFunctionIdProviderCallParamsRoute,
+  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+  ProjectsIndexRoute: ProjectsIndexRoute,
+  ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute:
+    ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute,
 }
 
 export const routeTree = rootRoute
@@ -175,25 +175,25 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/diff",
-        "/editor",
-        "/traces",
-        "/llmFunctions/$llmFunctionId/providerCallParams"
+        "/projects/$projectId",
+        "/projects/",
+        "/projects/$projectId/llm-fns/$llmFunctionId/fn-params"
       ]
     },
     "/": {
-      "filePath": "index.lazy.tsx"
+      "filePath": "index.tsx"
     },
     "/diff": {
       "filePath": "diff.lazy.tsx"
     },
-    "/editor": {
-      "filePath": "editor.lazy.tsx"
+    "/projects/$projectId": {
+      "filePath": "projects/$projectId.tsx"
     },
-    "/traces": {
-      "filePath": "traces.lazy.tsx"
+    "/projects/": {
+      "filePath": "projects/index.tsx"
     },
-    "/llmFunctions/$llmFunctionId/providerCallParams": {
-      "filePath": "llmFunctions_.$llmFunctionId.providerCallParams.tsx"
+    "/projects/$projectId/llm-fns/$llmFunctionId/fn-params": {
+      "filePath": "projects_/$projectId.llm-fns_.$llmFunctionId.fn-params.tsx"
     }
   }
 }

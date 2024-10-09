@@ -2,13 +2,13 @@ import openai
 from pydantic import BaseModel
 
 import lilypad
-from lilypad.configure import init
+from lilypad import configure
 
 # client = openai.Client()
-init()
+configure()
 
 
-@lilypad.synced.prompt()
+@lilypad.synced.llm_fn()
 def recommend_book(genre: str) -> str: ...
 
 

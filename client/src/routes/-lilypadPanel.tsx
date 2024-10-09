@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import markdown from "highlight.js/lib/languages/markdown";

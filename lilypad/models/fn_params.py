@@ -10,6 +10,7 @@ from lilypad.server.models import Provider
 class CallArgsPublic(BaseModel):
     """Call args model."""
 
+    id: int | None
     model: str
     provider: Provider
     prompt_template: str

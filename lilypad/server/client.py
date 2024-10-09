@@ -1,3 +1,9 @@
+"""Lilypad Client"""
+
+import json
+import os
+from logging import root
+from pathlib import Path
 from typing import Any, Literal, TypeVar, get_origin, overload
 
 import requests
@@ -5,12 +11,13 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
-from lilypad.models import CallArgsPublic, LLMFunctionBasePublic, SpanPublic
+from lilypad.models import (
+    CallArgsPublic,
+    LLMFunctionBasePublic,
+    ProjectPublic,
+    SpanPublic,
+)
 
-# Configure logging
-
-
-# Define a generic type variable for Pydantic models
 T = TypeVar("T", bound=BaseModel)
 
 
@@ -27,6 +34,8 @@ class APIConnectionError(Exception):
 
 
 class LilypadClient:
+    """Client for interacting with the Lilypad API."""
+
     def __init__(
         self,
         base_url: str,
@@ -45,6 +54,15 @@ class LilypadClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
+        project_dir = os.getenv("LILYPAD_PROJECT_DIR", Path.cwd())
+        try:
+            with open(f"{project_dir}/.lilypad/config.json") as f:
+                config = json.load(f)
+            self.project_id = (
+                int(config["project_id"]) if config.get("project_id", None) else None
+            )
+        except FileNotFoundError:
+            self.project_id = None
 
         if headers:
             self.session.headers.update(headers)
@@ -121,8 +139,7 @@ class LilypadClient:
             raise HTTPError(
                 f"HTTP error during request to {url}: {http_err.response.text}"
             )
-        except RequestException as err:
-            print(f"Error during request to {url}: {err}")
+        except RequestException:
             raise
 
         try:
@@ -163,8 +180,22 @@ class LilypadClient:
         """Creates span traces."""
         return self._request(
             "GET",
-            f"/llm-functions/{version_hash}",
+            f"/projects/{self.project_id}/llm-fns/{version_hash}",
             response_model=LLMFunctionBasePublic,
+            **kwargs,
+        )
+
+    def get_health(self) -> dict[str, Any]:
+        """Get the health status of the server."""
+        return self._request("GET", "/health", response_model=None)
+
+    def post_project(self, project_name: str, **kwargs: Any) -> ProjectPublic:
+        """Creates span traces."""
+        return self._request(
+            "POST",
+            "/projects/",
+            response_model=ProjectPublic,
+            json={"name": project_name},
             **kwargs,
         )
 
@@ -179,7 +210,10 @@ class LilypadClient:
         """Creates span traces.
 
         Args:
-            params (dict, optional): Dictionary of query parameters. Defaults to None.
+            function_name (str): The name of the function.
+            code (str): The code of the function.
+            version_hash (str): The hash of the function.
+            input_arguments (str): The input arguments of the function.
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
@@ -188,7 +222,7 @@ class LilypadClient:
         """
         return self._request(
             "POST",
-            "/llm-functions/",
+            f"/projects/{self.project_id}/llm-fns/",
             response_model=LLMFunctionBasePublic,
             json={
                 "function_name": function_name,
@@ -205,7 +239,16 @@ class LilypadClient:
         """Creates span traces."""
         return self._request(
             "GET",
-            f"/llm-functions/{version_hash}/provider-call-params",
+            f"/projects/{self.project_id}/llm-fns/{version_hash}/fn-params",
             response_model=CallArgsPublic,
             **kwargs,
+        )
+
+    def get_editor_url(self, llm_function_id: int) -> str:
+        """Get the URL for the editor."""
+        root_url = self.base_url
+        if self.base_url.endswith("/api"):
+            root_url = self.base_url[:-4]
+        return (
+            f"{root_url}/projects/{self.project_id}/llm-fns/{llm_function_id}/fn-params"
         )

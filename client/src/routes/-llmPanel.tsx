@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import markdown from "highlight.js/lib/languages/markdown";
@@ -12,7 +6,6 @@ import { marked } from "marked";
 import { SpanPublic } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Typography } from "@/components/ui/typography";
-import { Label } from "@/components/ui/label";
 import DOMPurify from "dompurify";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);

@@ -9,6 +9,9 @@ from lilypad.server.models import BaseSQLModel
 
 from .table_names import PROJECT_TABLE_NAME
 
+if TYPE_CHECKING:
+    from lilypad.server.models import LLMFunctionTable
+
 
 class ProjectBase(BaseSQLModel):
     """Project model"""
@@ -26,6 +29,4 @@ class ProjectTable(ProjectBase, table=True):
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
         nullable=False,
     )
-    # prompt_versions: list["PromptVersionTable"] = Relationship(
-    #     back_populates="project", cascade_delete=True
-    # )
+    llm_fns: list["LLMFunctionTable"] = Relationship(back_populates="project")

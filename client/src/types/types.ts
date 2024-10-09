@@ -31,6 +31,8 @@ export interface CallArgsCreate {
  * Call args model.
  */
 export interface CallArgsPublic {
+  /** Id */
+  id: number | null;
   /** Model */
   model: string;
   /** Provider name enum */
@@ -41,6 +43,27 @@ export interface CallArgsPublic {
   editor_state: string;
   /** Call Params */
   call_params: object | null;
+}
+
+/**
+ * FnParamsTable
+ * Provider call params table
+ */
+export interface FnParamsTable {
+  /** Llm Function Id */
+  llm_function_id: number | null;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Editor State */
+  editor_state: string;
+  /** Call Params */
+  call_params?: string | null;
+  /** Id */
+  id?: number | null;
 }
 
 /** HTTPValidationError */
@@ -54,6 +77,8 @@ export interface HTTPValidationError {
  * LLM function base public model
  */
 export interface LLMFunctionBasePublic {
+  /** Project Id */
+  project_id?: number;
   /** Function Name */
   function_name: string;
   /** Version Hash */
@@ -64,8 +89,8 @@ export interface LLMFunctionBasePublic {
   input_arguments?: string | null;
   /** Id */
   id: number;
-  /** Provider Call Params */
-  provider_call_params: ProviderCallParamsTable[] | null;
+  /** Fn Params */
+  fn_params: FnParamsTable[] | null;
 }
 
 /**
@@ -88,6 +113,8 @@ export interface LLMFunctionCreate {
  * LLM function table
  */
 export interface LLMFunctionTable {
+  /** Project Id */
+  project_id?: number;
   /** Function Name */
   function_name: string;
   /** Version Hash */
@@ -101,7 +128,43 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-06T17:42:03.364387Z"
+   * @default "2024-10-09T04:29:25.380066Z"
+   */
+  created_at?: string;
+}
+
+/**
+ * ProjectCreate
+ * Project create model
+ */
+export interface ProjectCreate {
+  /** Name */
+  name: string;
+}
+
+/**
+ * ProjectPublic
+ * Project public model
+ */
+export interface ProjectPublic {
+  /** Name */
+  name: string;
+  /** Id */
+  id: number;
+}
+
+/**
+ * ProjectTable
+ * Project model
+ */
+export interface ProjectTable {
+  /** Name */
+  name: string;
+  /** Id */
+  id?: number | null;
+  /**
+   * Created At
+   * @format date-time
    */
   created_at?: string;
 }
@@ -113,27 +176,6 @@ export interface LLMFunctionTable {
 export enum Provider {
   OPENAI = "openai",
   ANTHROPIC = "anthropic",
-}
-
-/**
- * ProviderCallParamsTable
- * Provider call params table
- */
-export interface ProviderCallParamsTable {
-  /** Llm Function Id */
-  llm_function_id: number | null;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
-  /** Prompt Template */
-  prompt_template: string;
-  /** Editor State */
-  editor_state: string;
-  /** Call Params */
-  call_params?: string | null;
-  /** Id */
-  id?: number | null;
 }
 
 /**
@@ -154,12 +196,14 @@ export interface SpanPublic {
   llm_function_id?: number | null;
   /** Instrumentation Scope name of the span */
   scope: Scope;
+  /** Version */
+  version?: number | null;
   /** Data */
   data: string;
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-06T17:42:03.367952Z"
+   * @default "2024-10-09T04:29:25.383832Z"
    */
   created_at?: string;
   /** Parent Span Id */

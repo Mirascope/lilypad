@@ -25,15 +25,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { SpanPublic } from "@/types/types";
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -50,11 +46,29 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { LlmPanel } from "@/routes/-llmPanel";
+
+// Custom filter function
+const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
+  const isParent =
+    row.original.child_spans && row.original.child_spans.length > 0;
+
+  if (isParent) {
+    const cellValue = row.getValue(columnId);
+    return String(cellValue)
+      .toLowerCase()
+      .includes(String(filterValue).toLowerCase());
+  }
+
+  // Always include child rows
+  return true;
+};
+
 const columns: ColumnDef<SpanPublic>[] = [
   {
     accessorKey: "display_name",
     header: "Name",
     enableHiding: false,
+    filterFn: onlyParentFilter,
     cell: ({ row }) => {
       const depth = row.depth;
       const paddingLeft = `${depth * 1}rem`;
@@ -82,6 +96,10 @@ const columns: ColumnDef<SpanPublic>[] = [
   {
     accessorKey: "scope",
     header: "Scope",
+  },
+  {
+    accessorKey: "version",
+    header: "Version",
   },
   // {
   //   accessorKey: "output",

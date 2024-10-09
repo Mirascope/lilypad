@@ -2,10 +2,7 @@ import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { TRANSFORMERS } from "@lexical/markdown";
-import {
-  InitialConfigType,
-  LexicalComposer,
-} from "@lexical/react/LexicalComposer";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import exampleTheme from "@/utils/lexical-theme";
 import { CustomDataSuggestionPlugin } from "@/components/lexical/custom-data-plugin";
 import { TemplateNode } from "@/components/lexical/template-node";

@@ -2,34 +2,24 @@
 
 Hopefully something cool and useful lol
 
-## For the demo
+## Getting Started
 
-### Create DB (One time only)
+### Tab Completion
 
-cd lilypad/server
-`uv run db/setup.py` 
+`lilypad --install-completion`
 
-### Run backend
+### Start Server
 
-`fastapi dev`
+`lilypad start`
 
-### Run example
+### Create stub
 
-cd lilypad/example
-`uv run synced.py`
-or any example w/ `synced.prompt`
+`lilypad create {FN_NAME}`
 
-### The traces url
+### Run llm function
 
-http://127.0.0.1:8000/lilypad/traces
+`lilypad run {FN_NAME}`
 
-### Edit the prompt template
+### Edit function params
 
-Replace `LLM_FUNCTION_ID` with number (most likely 1)
-http://127.0.0.1:8000/lilypad/llmFunctions/{LLM_FUNCTION_ID}/providerCallParams
-
-### Install VSCode extension
-
-SQLite3 Editor by yy0931
-
-When you open `database.db` you can view the SQL tables, easier.
+`lilypad run --edit {FN_NAME}`

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PromptVersionPublic } from "@/types/types";
+import { FnParamsTable } from "@/types/types";
 import { diffArrays } from "diff";
 import { Combobox } from "@/components/ui/combobox";
 
@@ -238,12 +238,10 @@ export const DiffTool = ({ value }: { value: string }) => {
   const [mode, setMode] = useState("split");
   const [firstLexicalClosure, setFirstLexicalClosure] = useState<string>("");
   const [secondLexicalClosure, setSecondLexicalClosure] = useState<string>("");
-  const { isPending, error, data } = useQuery<PromptVersionPublic[]>({
-    queryKey: ["prompt_versions_by_name"],
+  const { isPending, error, data } = useQuery<FnParamsTable[]>({
+    queryKey: ["fnParams"],
     queryFn: async () => {
-      const response = await fetch(
-        `http://localhost:8000/api/prompt-versions/function_names/${value}`
-      );
+      const response = await fetch(`/llm-fns/names`);
       return await response.json();
     },
   });

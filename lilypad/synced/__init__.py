@@ -1,5 +1,5 @@
 """The `synced` module for synced prompt engineering workflows."""
 
-from .prompts import prompt
+from .llm_fn import llm_fn
 
-__all__ = ["prompt"]
+__all__ = ["llm_fn"]
