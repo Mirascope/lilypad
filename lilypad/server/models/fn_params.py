@@ -6,8 +6,8 @@ from sqlmodel import Field, Relationship
 from lilypad.server.models.base_sql_model import BaseSQLModel
 
 from .table_names import (
-    LLM_FUNCTION_TABLE_NAME,
-    PROVIDER_CALL_PARAMS_TABLE_NAME,
+    FN_PARAMS_TABLE_NAME,
+    LLM_FN_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
@@ -21,11 +21,10 @@ class Provider(str, Enum):
     ANTHROPIC = "anthropic"
 
 
-class ProviderCallParamsBase(BaseSQLModel):
+class FnParamsBase(BaseSQLModel):
     """Provider call params base model"""
 
-    # project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    llm_function_id: int | None = Field(foreign_key=f"{LLM_FUNCTION_TABLE_NAME}.id")
+    llm_function_id: int | None = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
     provider: Provider
     model: str
     prompt_template: str
@@ -33,12 +32,10 @@ class ProviderCallParamsBase(BaseSQLModel):
     call_params: str | None = Field(default=None)
 
 
-class ProviderCallParamsTable(ProviderCallParamsBase, table=True):
+class FnParamsTable(FnParamsBase, table=True):
     """Provider call params table"""
 
-    __tablename__ = PROVIDER_CALL_PARAMS_TABLE_NAME  # type: ignore
+    __tablename__ = FN_PARAMS_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    llm_function: "LLMFunctionTable" = Relationship(
-        back_populates="provider_call_params"
-    )
+    llm_fn: "LLMFunctionTable" = Relationship(back_populates="fn_params")

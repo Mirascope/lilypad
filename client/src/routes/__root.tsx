@@ -1,29 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/router-devtools";
-
+import { lazy } from "react";
+const TanStackRouterDevtools =
+  process.env.NODE_ENV === "production"
+    ? () => null // Render nothing in production
+    : lazy(() =>
+        // Lazy load in development
+        import("@tanstack/router-devtools").then((res) => ({
+          default: res.TanStackRouterDevtools,
+          // For Embedded Mode
+          // default: res.TanStackRouterDevtoolsPanel
+        }))
+      );
 export const Route = createRootRoute({
   component: () => (
     <>
       <div className='p-2 flex gap-2'>
         <Button variant='link' asChild>
           <Link to='/' className='[&.active]:font-bold'>
-            Home
-          </Link>
-        </Button>
-        <Button variant='link' asChild>
-          <Link to='/editor' className='[&.active]:font-bold'>
-            Prompt Editor
-          </Link>
-        </Button>
-        <Button variant='link' asChild>
-          <Link to='/traces' className='[&.active]:font-bold'>
-            Calls
-          </Link>
-        </Button>
-        <Button variant='link' asChild>
-          <Link to='/diff' className='[&.active]:font-bold'>
-            Diff
+            Projects
           </Link>
         </Button>
       </div>

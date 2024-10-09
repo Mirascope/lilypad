@@ -1,4 +1,4 @@
-"""The lilypad `prompt` decorator."""
+"""The lilypad `llm_fn` decorator."""
 
 import inspect
 import json
@@ -24,8 +24,8 @@ _R = TypeVar("_R")
 lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
 
 
-class Prompt(Protocol):
-    """Protocol for the `prompt` decorator return type."""
+class LLMFn(Protocol):
+    """Protocol for the `llm_fn` decorator return type."""
 
     @overload
     def __call__(
@@ -38,11 +38,11 @@ class Prompt(Protocol):
     def __call__(
         self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        """Protocol `call` definition for `prompt` decorator return type."""
+        """Protocol `call` definition for `llm_fn` decorator return type."""
         ...
 
 
-def prompt() -> Prompt:
+def llm_fn() -> LLMFn:
     """Returns a decorator for turining a typed function into an LLM API call."""
 
     @overload

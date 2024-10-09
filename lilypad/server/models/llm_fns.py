@@ -5,19 +5,18 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from lilypad.server.models import BaseSQLModel
-from lilypad.server.models.provider_call_params import ProviderCallParamsTable
+from lilypad.server.models import BaseSQLModel, FnParamsTable
 
-from .table_names import LLM_FUNCTION_TABLE_NAME
+from .table_names import LLM_FN_TABLE_NAME, PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
-    from lilypad.server.models import SpanTable
+    from lilypad.server.models import ProjectTable, SpanTable
 
 
 class LLMFunctionBase(BaseSQLModel):
     """LLM function base model"""
 
-    # project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     function_name: str = Field(nullable=False, index=True)
     version_hash: str | None = Field(default=None, index=True)
     code: str
@@ -27,15 +26,13 @@ class LLMFunctionBase(BaseSQLModel):
 class LLMFunctionTable(LLMFunctionBase, table=True):
     """LLM function table"""
 
-    __tablename__ = LLM_FUNCTION_TABLE_NAME  # type: ignore
+    __tablename__ = LLM_FN_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.UTC), nullable=False
     )
 
-    provider_call_params: list["ProviderCallParamsTable"] = Relationship(
-        back_populates="llm_function"
-    )
-
-    spans: list["SpanTable"] = Relationship(back_populates="llm_function")
+    fn_params: list["FnParamsTable"] = Relationship(back_populates="llm_fn")
+    project: "ProjectTable" = Relationship(back_populates="llm_fns")
+    spans: list["SpanTable"] = Relationship(back_populates="llm_fn")

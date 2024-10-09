@@ -1,4 +1,8 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from "@tanstack/react-router";
 import { Editor } from "@/routes/-editor";
 import {
   Select,
@@ -14,45 +18,85 @@ import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
-import { CallArgsCreate, Provider } from "@/types/types";
+import { CallArgsCreate, LLMFunctionBasePublic, Provider } from "@/types/types";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { LexicalEditor } from "lexical";
+import { Typography } from "@/components/ui/typography";
+import { InputsCards } from "@/components/InputsCards";
 
-export const Route = createLazyFileRoute("/editor")({
+type LoaderData = {
+  llmFunction: LLMFunctionBasePublic;
+  fnParams: CallArgsCreate;
+};
+
+export const Route = createFileRoute(
+  "/projects/$projectId/llm-fns/$llmFunctionId/fn-params"
+)({
+  loader: async ({
+    params: { projectId, llmFunctionId },
+  }): Promise<LoaderData> => {
+    const [llmFunction, fnParams] = await Promise.all([
+      api.get<LLMFunctionBasePublic>(
+        `projects/${projectId}/llm-fns/${llmFunctionId}`
+      ),
+      api.get<CallArgsCreate>(
+        `projects/${projectId}/llm-fns/${Number(llmFunctionId)}/fn-params`
+      ),
+    ]);
+    return {
+      llmFunction: llmFunction.data,
+      fnParams: fnParams.data,
+    };
+  },
+  pendingComponent: () => <div>Loading...</div>,
+  errorComponent: ({ error }) => <div>{error.message}</div>,
   component: () => <EditorContainer />,
 });
 
 const EditorContainer = () => {
+  const { llmFunction, fnParams } = useLoaderData({
+    from: Route.id,
+  });
+  const { projectId } = useParams({ from: Route.id });
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (callArgsCreate: CallArgsCreate) => {
-      return api.patch(`/${1}`, callArgsCreate);
+      return api.post(
+        `projects/${projectId}/llm-fns/${llmFunction.id}/fn-params`,
+        callArgsCreate
+      );
     },
     onSuccess: () => {
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({
+        queryKey: [`llmFunctions-${llmFunction.id}-fnParams`],
+      });
     },
   });
+
   const [callParams, setCallParams] = useState<string>("");
+  const isInitialRender = useRef<boolean>(true);
   const editorRef = useRef<LexicalEditor>(null);
   const { control, handleSubmit, setValue, clearErrors, setError, getValues } =
     useForm<CallArgsCreate>({
       defaultValues: {
-        provider: Provider.OPENAI,
-        model: "",
-        call_params: {},
+        provider: fnParams.provider,
+        model: fnParams.model || "",
+        call_params: fnParams.call_params,
       },
     });
-
   const provider = useWatch({
     control,
     name: "provider",
   });
 
   useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
     setValue("model", "");
   }, [provider]);
 
@@ -65,12 +109,12 @@ const EditorContainer = () => {
       { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
       { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
     ],
-    [Provider.ANTHROPIC]: [
-      { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet" },
-      { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
-      { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
-      { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
-    ],
+    // [Provider.ANTHROPIC]: [
+    //   { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet" },
+    //   { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+    //   { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
+    //   { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+    // ],
   };
 
   const options = modelOptions[provider] || [];
@@ -79,18 +123,34 @@ const EditorContainer = () => {
     const editorState = editorRef.current.getEditorState();
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      console.log(data);
+      data.prompt_template = markdown;
+      data.editor_state = JSON.stringify(editorState);
       mutation.mutate(data);
+      window.close();
     });
   };
+  const inputs = llmFunction.input_arguments
+    ? Object.keys(JSON.parse(llmFunction.input_arguments))
+    : [];
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='p-2'>
-      <div className='flex gap-2'>
-        <div className='lexical flex flex-col'>
-          <Editor inputs={[]} ref={editorRef} />
+    <div className='p-2 flex flex-col gap-2'>
+      <Typography variant='h3'>{llmFunction.function_name}</Typography>
+      {llmFunction.input_arguments && (
+        <div className='flex'>
+          <InputsCards inputValues={JSON.parse(llmFunction.input_arguments)} />
         </div>
-        <div id='call-args'>
-          <div className='grid w-full max-w-sm items-center gap-1.5'>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className='flex gap-2'>
+          <div className='lexical form-group'>
+            <Label htmlFor='prompt-template'>Prompt Template</Label>
+            <Editor
+              inputs={inputs}
+              ref={editorRef}
+              editorState={fnParams.editor_state}
+            />
+          </div>
+          <div className='w-full max-w-sm gap-1.5'>
             <div className='form-group'>
               <Label htmlFor='provider'>Provider</Label>
               <Controller
@@ -107,31 +167,32 @@ const EditorContainer = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='openai'>OpenAI</SelectItem>
-                      <SelectItem value='anthropic'>Anthropic</SelectItem>
+                      {/* <SelectItem value='anthropic'>Anthropic</SelectItem> */}
                     </SelectContent>
                   </Select>
                 )}
               />
             </div>
             {/* <div className='flex items-center space-x-2'>
-              <Controller
-                name='json_mode'
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    checked={field.value === true}
-                    onCheckedChange={field.onChange}
+                  <Controller
+                    name='json_mode'
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        checked={field.value === true}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
                   />
-                )}
-              />
-              <Label htmlFor='diff-view'>JSON Mode</Label>
-            </div> */}
+                  <Label htmlFor='diff-view'>JSON Mode</Label>
+                </div> */}
             <div className='form-group mt-4'>
-              <ModelCombobox<CallArgsCreate>
+              <ModelCombobox<CallArgsCreate, "model">
                 control={control}
                 name='model'
                 label='Choose a Model'
                 options={options}
+                defaultValue={getValues("model")}
               />
             </div>
             <Controller
@@ -174,10 +235,10 @@ const EditorContainer = () => {
             />
           </div>
         </div>
-      </div>
-      <Button type='submit' className='mt-2'>
-        Submit
-      </Button>
-    </form>
+        <Button type='submit' className='mt-2'>
+          Submit
+        </Button>
+      </form>
+    </div>
   );
 };

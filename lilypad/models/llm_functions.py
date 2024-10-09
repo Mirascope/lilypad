@@ -1,10 +1,10 @@
 """LLM functions models"""
 
-from lilypad.server.models import LLMFunctionBase, ProviderCallParamsTable
+from lilypad.server.models import FnParamsTable, LLMFunctionBase
 
 
 class LLMFunctionBasePublic(LLMFunctionBase):
     """LLM function base public model"""
 
     id: int
-    provider_call_params: list[ProviderCallParamsTable] | None
+    fn_params: list[FnParamsTable] | None

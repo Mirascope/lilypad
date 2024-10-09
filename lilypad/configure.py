@@ -9,7 +9,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from lilypad.exporter import JSONSpanExporter
 
 
-def init():
+def configure() -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad."""
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
         print("TracerProvider already initialized.")
@@ -28,6 +28,5 @@ def init():
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
         OpenAIInstrumentor().instrument()
-        print("OpenAIInstrumentor initialized.")
     else:
         print("opentelemetry.instrumentation.openai is not installed or available.")

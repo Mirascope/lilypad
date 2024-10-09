@@ -1,4 +1,4 @@
-"""The lilypad `prompt` decorator."""
+"""The lilypad `llm_fn` decorator."""
 
 import inspect
 import json
@@ -36,27 +36,33 @@ _R = TypeVar("_R")
 lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
 
 
-def poll_call_args(hash: str) -> CallArgsPublic:
+def poll_call_args(
+    hash: str, current_fn_params_id: int | None = None
+) -> CallArgsPublic:
     """Polls the LLM API for the call args."""
     while True:
         try:
-            provider_call_args = (
+            latest_fn_params = (
                 lilypad_client.get_provider_call_params_by_llm_function_hash(hash)
             )
+            if (
+                os.getenv("LILYPAD_EDITOR_OPEN") == "True"
+                and current_fn_params_id
+                and latest_fn_params.id == current_fn_params_id
+            ):
+                continue
         except client.NotFoundError:
-            print("Waiting for provider call arguments...")
             time.sleep(1)
             continue
         except client.APIConnectionError:
-            print("Connection error, API may not be running...")
             time.sleep(1)
             continue
         else:
-            return provider_call_args
+            return latest_fn_params
 
 
-class Prompt(Protocol):
-    """Protocol for the `prompt` decorator return type."""
+class LLMFn(Protocol):
+    """Protocol for the `llm_fn` decorator return type."""
 
     @overload
     def __call__(
@@ -69,11 +75,11 @@ class Prompt(Protocol):
     def __call__(
         self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        """Protocol `call` definition for `prompt` decorator return type."""
+        """Protocol `call` definition for `llm_fn` decorator return type."""
         ...
 
 
-def prompt() -> Prompt:
+def llm_fn() -> LLMFn:
     """Returns a decorator for turining a typed function into an LLM API call."""
 
     @overload
@@ -137,15 +143,12 @@ def prompt() -> Prompt:
                     input_arguments=json.dumps(input_types),
                 )
 
-            if (
-                os.getenv("LILYPAD_EDITOR_OPEN") == "True"
-                or not llm_version.provider_call_params
-            ):
-                webbrowser.open(
-                    f"http://localhost:8000/lilypad/llmFunctions/{llm_version.id}/providerCallParams"
-                )
-
-            call_args = poll_call_args(hash)
+            if os.getenv("LILYPAD_EDITOR_OPEN") == "True" or not llm_version.fn_params:
+                webbrowser.open(lilypad_client.get_editor_url(llm_version.id))
+            fn_params_id = (
+                llm_version.fn_params[0].id if llm_version.fn_params else None
+            )
+            call_args = poll_call_args(hash, fn_params_id)
             # running into weird type errors, so forcing openai right now
             if (provider := call_args.provider) == "openai":
                 call_decorator = mcore.openai.call
@@ -205,31 +208,37 @@ def prompt() -> Prompt:
                     return {"call_params": call_args.call_params}
 
                 if return_type is str:
-                    llm_fn = traced_call()(prompt_template)
-                    return cast(_R, (await llm_fn(*args, **kwargs)).content)
+                    mirascope_fn = traced_call()(prompt_template)
+                    return cast(_R, (await mirascope_fn(*args, **kwargs)).content)
                 elif get_origin(return_type) is AsyncIterable and get_args(
                     return_type
                 ) == (str,):
-                    llm_fn = traced_call(stream=True)(prompt_template)
+                    mirascope_fn = traced_call(stream=True)(prompt_template)
 
                     async def iterable() -> AsyncIterable[str]:
-                        async for chunk, _ in await llm_fn(*args, **kwargs):
+                        async for chunk, _ in await mirascope_fn(*args, **kwargs):
                             yield chunk.content
 
                     return cast(_R, iterable())
                 elif get_origin(return_type) is Message:
-                    llm_fn = traced_call(tools=list(get_args(return_type)))(
+                    mirascope_fn = traced_call(tools=list(get_args(return_type)))(
                         prompt_template
                     )
-                    return cast(_R, Message(response=await llm_fn(*args, **kwargs)))
+                    return cast(
+                        _R, Message(response=await mirascope_fn(*args, **kwargs))
+                    )
                 elif issubclass(return_type, Message):
-                    llm_fn = traced_call()(prompt_template)
-                    return cast(_R, Message(response=await llm_fn(*args, **kwargs)))
+                    mirascope_fn = traced_call()(prompt_template)
+                    return cast(
+                        _R, Message(response=await mirascope_fn(*args, **kwargs))
+                    )
                 elif mcore.base._utils.is_base_type(return_type) or issubclass(
                     return_type, BaseModel
                 ):
-                    llm_fn = traced_call(response_model=return_type)(prompt_template)
-                    return cast(_R, await llm_fn(*args, **kwargs))  # pyright: ignore [reportGeneralTypeIssues]
+                    mirascope_fn = traced_call(response_model=return_type)(
+                        prompt_template
+                    )
+                    return cast(_R, await mirascope_fn(*args, **kwargs))  # pyright: ignore [reportGeneralTypeIssues]
                 else:
                     raise ValueError(f"Unsupported return type `{return_type}`.")
 
@@ -263,14 +272,14 @@ def prompt() -> Prompt:
                     return {"call_params": call_args.call_params}
 
                 if return_type is str:
-                    llm_fn = call()(prompt_template)
-                    traced_llm_fn = traced_call(llm_fn)
+                    mirascope_fn = call()(prompt_template)
+                    traced_llm_fn = traced_call(mirascope_fn)
                     return cast(_R, traced_llm_fn(*args, **kwargs).content)
                 elif get_origin(return_type) is Iterable and get_args(return_type) == (
                     str,
                 ):
-                    llm_fn = call(stream=True)(prompt_template)
-                    traced_llm_fn = traced_call(llm_fn)
+                    mirascope_fn = call(stream=True)(prompt_template)
+                    traced_llm_fn = traced_call(mirascope_fn)
 
                     def iterable() -> Iterable[str]:
                         for chunk, _ in traced_llm_fn(*args, **kwargs):
@@ -278,18 +287,20 @@ def prompt() -> Prompt:
 
                     return cast(_R, iterable())
                 elif get_origin(return_type) is Message:
-                    llm_fn = call(tools=list(get_args(return_type)))(prompt_template)
-                    traced_llm_fn = traced_call(llm_fn)
+                    mirascope_fn = call(tools=list(get_args(return_type)))(
+                        prompt_template
+                    )
+                    traced_llm_fn = traced_call(mirascope_fn)
                     return cast(_R, Message(response=traced_llm_fn(*args, **kwargs)))
                 elif issubclass(return_type, Message):
-                    llm_fn = call()(prompt_template)
-                    traced_llm_fn = traced_call(llm_fn)
+                    mirascope_fn = call()(prompt_template)
+                    traced_llm_fn = traced_call(mirascope_fn)
                     return cast(_R, Message(response=traced_llm_fn(*args, **kwargs)))
                 elif mcore.base._utils.is_base_type(return_type) or issubclass(
                     return_type, BaseModel
                 ):
-                    llm_fn = call(response_model=return_type)(prompt_template)
-                    traced_llm_fn = traced_call(llm_fn)
+                    mirascope_fn = call(response_model=return_type)(prompt_template)
+                    traced_llm_fn = traced_call(mirascope_fn)
                     return cast(_R, traced_llm_fn(*args, **kwargs))
                 else:
                     raise ValueError(f"Unsupported return type `{return_type}`.")
