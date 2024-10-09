@@ -34,7 +34,7 @@ class SpanBase(BaseSQLModel):
     version: int | None = Field(default=None)
     data: str
     created_at: datetime.datetime = Field(
-        default=datetime.datetime.now(datetime.UTC), nullable=False
+        default=datetime.datetime.now(datetime.timezone.utc), nullable=False
     )
     parent_span_id: str | None = Field(
         default=None, foreign_key=f"{SPAN_TABLE_NAME}.id"

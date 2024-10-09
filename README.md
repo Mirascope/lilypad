@@ -1,6 +1,8 @@
 # Lilypad
 
-Hopefully something cool and useful lol
+An open-source prompt engineering framework.
+
+Automatic versioning and tr
 
 ## Getting Started
 

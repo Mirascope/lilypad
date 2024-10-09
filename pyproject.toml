@@ -19,7 +19,8 @@ keywords = [
     "artificial intelligence",
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
+    "Framework :: OpenTelemetry",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -40,8 +41,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://lilypad.mirascope.io"
-Documentation = "https://lilypad.mirascope.io/docs"
+# Homepage = "https://mirascope.com/lilypad"
+# Documentation = "https://lilypad.mirascope.com/docs"
 Repository = "https://github.com/Mirascope/lilypad"
 Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
