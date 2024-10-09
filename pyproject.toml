@@ -1,7 +1,7 @@
 [project]
 name = "python-lilypad"
 version = "0.0.1"
-description = "Hopefully something cool and useful lol"
+description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
