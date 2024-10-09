@@ -22,7 +22,7 @@ from typing import (
 from mirascope import core as mcore
 from pydantic import BaseModel
 
-from lilypad.models import CallArgsPublic, LLMFunctionBasePublic
+from lilypad.models import VersionPublic
 from lilypad.server import client
 from lilypad.trace import trace
 
@@ -36,20 +36,19 @@ _R = TypeVar("_R")
 lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
 
 
-def poll_call_args(
-    hash: str, current_fn_params_id: int | None = None
-) -> CallArgsPublic:
-    """Polls the LLM API for the call args."""
+def poll_active_version(
+    hash: str, function_name: str, fn_params_hash: str | None = None
+) -> VersionPublic:
+    """Polls the LLM API for the active version."""
     while True:
         try:
-            latest_fn_params = (
-                lilypad_client.get_provider_call_params_by_llm_function_hash(hash)
+            active_version = lilypad_client.get_active_version_by_function_name(
+                function_name
             )
             if (
                 os.getenv("LILYPAD_EDITOR_OPEN") == "True"
-                and current_fn_params_id
-                and latest_fn_params.id == current_fn_params_id
-            ):
+                and (fn_params_hash and fn_params_hash == active_version.fn_params.hash)
+            ) or active_version.llm_function_hash != hash:
                 continue
         except client.NotFoundError:
             time.sleep(1)
@@ -58,7 +57,7 @@ def poll_call_args(
             time.sleep(1)
             continue
         else:
-            return latest_fn_params
+            return active_version
 
 
 class LLMFn(Protocol):
@@ -123,7 +122,7 @@ def llm_fn() -> LLMFn:
 
         def get_call_params(
             *args: _P.args, **kwargs: _P.kwargs
-        ) -> tuple[Callable, CallArgsPublic, LLMFunctionBasePublic, dict[str, Any]]:
+        ) -> tuple[Callable, VersionPublic, dict[str, Any]]:
             """Retrieve the call parameters for the function."""
             input = inspect_arguments(*args, **kwargs)
             hash, code = compute_function_hash(fn)
@@ -142,13 +141,25 @@ def llm_fn() -> LLMFn:
                     version_hash=hash,
                     input_arguments=json.dumps(input_types),
                 )
-
-            if os.getenv("LILYPAD_EDITOR_OPEN") == "True" or not llm_version.fn_params:
+            try:
+                active_version = lilypad_client.get_active_version_by_function_name(
+                    fn.__name__
+                )
+            except client.NotFoundError:
+                active_version = None
+            if (
+                os.getenv("LILYPAD_EDITOR_OPEN") == "True"
+                or not llm_version.fn_params
+                or (active_version and active_version.llm_function_hash != hash)
+            ):
                 webbrowser.open(lilypad_client.get_editor_url(llm_version.id))
-            fn_params_id = (
-                llm_version.fn_params[0].id if llm_version.fn_params else None
+
+            version = poll_active_version(
+                hash,
+                fn.__name__,
+                active_version.fn_params.hash if active_version else None,
             )
-            call_args = poll_call_args(hash, fn_params_id)
+            call_args = version.fn_params
             # running into weird type errors, so forcing openai right now
             if (provider := call_args.provider) == "openai":
                 call_decorator = mcore.openai.call
@@ -176,7 +187,7 @@ def llm_fn() -> LLMFn:
                 # of what providers we allow the user to set in the editor.
                 raise ValueError(f"Unknown provider: {provider}")
             call = partial(call_decorator, model=call_args.model, json_mode=False)
-            return call, call_args, llm_version, input_values
+            return call, version, input_values
 
         return_type = get_type_hints(fn).get("return", type(None))
 
@@ -184,20 +195,18 @@ def llm_fn() -> LLMFn:
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                call, call_args, llm_function, input_values = get_call_params(
-                    *args, **kwargs
-                )
+                call, version, input_values = get_call_params(*args, **kwargs)
+                llm_function = version.llm_fn
+                call_args = version.fn_params
                 traced_call = trace(
                     llm_function_id=llm_function.id,
-                    version_hash=llm_function.version_hash
-                    if llm_function.version_hash
-                    else "",
                     input_values=input_values,
                     input_types=json.loads(llm_function.input_arguments)
                     if llm_function.input_arguments
                     else {},
                     lexical_closure=llm_function.code,
                     prompt_template=call_args.prompt_template,
+                    version=version.version,
                 )(call)
 
                 @mcore.base.prompt_template(call_args.prompt_template)
@@ -205,7 +214,11 @@ def llm_fn() -> LLMFn:
                 async def prompt_template(
                     *args: _P.args, **kwargs: _P.kwargs
                 ) -> mcore.base.BaseDynamicConfig:
-                    return {"call_params": call_args.call_params}
+                    return {
+                        "call_params": json.loads(call_args.call_params)
+                        if call_args.call_params
+                        else {}
+                    }
 
                 if return_type is str:
                     mirascope_fn = traced_call()(prompt_template)
@@ -248,20 +261,18 @@ def llm_fn() -> LLMFn:
 
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                call, call_args, llm_function, input_values = get_call_params(
-                    *args, **kwargs
-                )
+                call, version, input_values = get_call_params(*args, **kwargs)
+                llm_function = version.llm_fn
+                call_args = version.fn_params
                 traced_call = trace(
                     llm_function_id=llm_function.id,
-                    version_hash=llm_function.version_hash
-                    if llm_function.version_hash
-                    else "",
                     input_values=input_values,
                     input_types=json.loads(llm_function.input_arguments)
                     if llm_function.input_arguments
                     else {},
                     lexical_closure=llm_function.code,
                     prompt_template=call_args.prompt_template,
+                    version=version.version,
                 )
 
                 @mcore.base.prompt_template(call_args.prompt_template)
@@ -269,7 +280,11 @@ def llm_fn() -> LLMFn:
                 def prompt_template(
                     *args: _P.args, **kwargs: _P.kwargs
                 ) -> mcore.base.BaseDynamicConfig:
-                    return {"call_params": call_args.call_params}
+                    return {
+                        "call_params": json.loads(call_args.call_params)
+                        if call_args.call_params
+                        else {}
+                    }
 
                 if return_type is str:
                     mirascope_fn = call()(prompt_template)

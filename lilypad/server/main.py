@@ -18,10 +18,12 @@ from starlette.types import Scope as StarletteScope
 
 from lilypad.models import (
     CallArgsPublic,
+    FnParamsPublic,
     LLMFunctionBasePublic,
     ProjectCreate,
     ProjectPublic,
     SpanPublic,
+    VersionPublic,
 )
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
@@ -31,7 +33,9 @@ from lilypad.server.models import (
     Provider,
     Scope,
     SpanTable,
+    VersionTable,
 )
+from lilypad.server.utils import calculate_fn_params_hash
 
 
 class SPAStaticFiles(StaticFiles):
@@ -196,6 +200,39 @@ async def get_llm_function_id_by_hash(
     return llm_function if llm_function else None
 
 
+@api.get(
+    "/projects/{project_id}/versions/{function_name}/active",
+    response_model=VersionPublic,
+)
+async def get_active_version(
+    project_id: int,
+    function_name: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> VersionPublic:
+    """Get active version of the function."""
+    version = session.exec(
+        select(VersionTable).where(
+            VersionTable.is_active == True, VersionTable.function_name == function_name
+        )
+    ).first()
+    if not version or not version.id:
+        raise HTTPException(status_code=404, detail="Active version not found")
+
+    version_public = VersionPublic(
+        id=version.id,
+        version=version.version,
+        function_name=version.function_name,
+        is_active=version.is_active,
+        fn_params_id=version.fn_params_id,
+        llm_function_id=version.llm_function_id,
+        fn_params_hash=version.fn_params_hash,
+        llm_function_hash=version.llm_function_hash,
+        fn_params=FnParamsPublic.model_validate(version.fn_params),
+        llm_fn=LLMFunctionBasePublic.model_validate(version.llm_fn),
+    )
+    return version_public
+
+
 class CallArgsCreate(BaseModel):
     """Call args model."""
 
@@ -222,9 +259,50 @@ async def create_fn_params(
         "llm_function_id": llm_function_id,
     }
     fn_params = FnParamsTable.model_validate(fn_params_create)
+    fn_params.hash = calculate_fn_params_hash(fn_params)
+
+    llm_fn = session.exec(
+        select(LLMFunctionTable).where(LLMFunctionTable.id == llm_function_id)
+    ).first()
+    if not llm_fn:
+        raise HTTPException(status_code=404, detail="LLM function not found")
+    # Check if the function parameters already exist
+    existing_version = session.exec(
+        select(VersionTable).where(
+            VersionTable.fn_params_hash == fn_params.hash,
+            VersionTable.llm_function_hash == llm_fn.version_hash,
+        )
+    ).first()
+    if existing_version:
+        existing_version.is_active = True
+        session.add(existing_version)
+        session.commit()
+        return existing_version.fn_params
+
+    # Create a new version
     session.add(fn_params)
-    session.commit()
+    session.flush()
     session.refresh(fn_params)
+    versions = session.exec(
+        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
+    ).all()
+    for version in versions:
+        if version.is_active:
+            version.is_active = False
+            session.add(version)
+    session.flush()
+    new_version = VersionTable(
+        version=len(versions) + 1,
+        function_name=llm_fn.function_name,
+        is_active=True,
+        fn_params_id=fn_params.id,
+        llm_function_id=llm_function_id,
+        fn_params_hash=fn_params.hash,
+        llm_function_hash=fn_params.llm_fn.version_hash,
+    )
+    session.add(new_version)
+
+    session.commit()
     return fn_params
 
 
@@ -338,42 +416,13 @@ async def traces(
     traces_json: list[dict] = await request.json()
     span_tables: list[SpanTable] = []
     for trace in traces_json:
-        version = None
         if trace["instrumentation_scope"]["name"] == "lilypad":
             scope = Scope.LILYPAD
-            if llm_function_id := trace.get("attributes", {}).get(
-                "lilypad.llm_function_id", None
-            ):
-                span_llm_function = session.exec(
-                    select(LLMFunctionTable).where(
-                        LLMFunctionTable.id == llm_function_id
-                    )
-                ).first()
-                if not span_llm_function:
-                    raise HTTPException(
-                        status_code=404, detail="LLM function not found"
-                    )
-
-                llm_functions = session.exec(
-                    select(LLMFunctionTable).where(
-                        LLMFunctionTable.function_name
-                        == span_llm_function.function_name
-                    )
-                ).all()
-                version = 1
-                for llm_function in llm_functions:
-                    for fn_params in llm_function.fn_params:
-                        if span_llm_function.fn_params[-1].id == fn_params.id:
-                            break
-                        else:
-                            version += 1
-
         else:
             scope = Scope.LLM
-        # TODO: Optimize
         span_table = SpanTable(
             id=trace["span_id"],
-            version=version or None,
+            version=trace.get("attributes", {}).get("lilypad.version", None),
             parent_span_id=trace.get("parent_span_id", None),
             data=json.dumps(trace),
             scope=scope,

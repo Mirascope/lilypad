@@ -5,12 +5,17 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from lilypad.server.models import BaseSQLModel, FnParamsTable
+from lilypad.server.models import BaseSQLModel
 
 from .table_names import LLM_FN_TABLE_NAME, PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
-    from lilypad.server.models import ProjectTable, SpanTable
+    from lilypad.server.models import (
+        FnParamsTable,
+        ProjectTable,
+        SpanTable,
+        VersionTable,
+    )
 
 
 class LLMFunctionBase(BaseSQLModel):
@@ -18,7 +23,7 @@ class LLMFunctionBase(BaseSQLModel):
 
     project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     function_name: str = Field(nullable=False, index=True)
-    version_hash: str | None = Field(default=None, index=True)
+    version_hash: str = Field(nullable=False, index=True)
     code: str
     input_arguments: str | None = Field(default=None)
 
@@ -36,3 +41,4 @@ class LLMFunctionTable(LLMFunctionBase, table=True):
     fn_params: list["FnParamsTable"] = Relationship(back_populates="llm_fn")
     project: "ProjectTable" = Relationship(back_populates="llm_fns")
     spans: list["SpanTable"] = Relationship(back_populates="llm_fn")
+    version: "VersionTable" = Relationship(back_populates="llm_fn")

@@ -45,6 +45,26 @@ export interface CallArgsPublic {
   call_params: object | null;
 }
 
+/** FnParamsPublic */
+export interface FnParamsPublic {
+  /** Llm Function Id */
+  llm_function_id: number | null;
+  /** Provider name enum */
+  provider: Provider;
+  /** Hash */
+  hash?: string | null;
+  /** Model */
+  model: string;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Editor State */
+  editor_state: string;
+  /** Call Params */
+  call_params?: string | null;
+  /** Id */
+  id: number;
+}
+
 /**
  * FnParamsTable
  * Provider call params table
@@ -54,6 +74,8 @@ export interface FnParamsTable {
   llm_function_id: number | null;
   /** Provider name enum */
   provider: Provider;
+  /** Hash */
+  hash?: string | null;
   /** Model */
   model: string;
   /** Prompt Template */
@@ -82,7 +104,7 @@ export interface LLMFunctionBasePublic {
   /** Function Name */
   function_name: string;
   /** Version Hash */
-  version_hash?: string | null;
+  version_hash: string;
   /** Code */
   code: string;
   /** Input Arguments */
@@ -118,7 +140,7 @@ export interface LLMFunctionTable {
   /** Function Name */
   function_name: string;
   /** Version Hash */
-  version_hash?: string | null;
+  version_hash: string;
   /** Code */
   code: string;
   /** Input Arguments */
@@ -128,7 +150,7 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-09T04:29:25.380066Z"
+   * @default "2024-10-09T07:52:29.464898Z"
    */
   created_at?: string;
 }
@@ -203,7 +225,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-09T04:29:25.383832Z"
+   * @default "2024-10-09T07:52:29.469012Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -225,4 +247,33 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
+}
+
+/**
+ * VersionPublic
+ * Version public model
+ */
+export interface VersionPublic {
+  /** Llm Function Id */
+  llm_function_id: number;
+  /** Fn Params Id */
+  fn_params_id: number;
+  /** Version */
+  version: number;
+  /** Function Name */
+  function_name: string;
+  /** Llm Function Hash */
+  llm_function_hash: string;
+  /** Fn Params Hash */
+  fn_params_hash: string;
+  /**
+   * Is Active
+   * @default false
+   */
+  is_active?: boolean;
+  /** Id */
+  id: number;
+  fn_params: FnParamsPublic;
+  /** LLM function base public model */
+  llm_fn: LLMFunctionBasePublic;
 }

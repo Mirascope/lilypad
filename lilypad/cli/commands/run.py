@@ -39,7 +39,7 @@ def run_command(
         os.environ["LILYPAD_EDITOR_OPEN"] = "True"
     runpy.run_path(str(lily_file_path / prompt_file_name), run_name="__main__")
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             config = json.loads(f.read())
             if config_id := config.get("project_id", None):
                 print(f"\nTraces url: http://localhost:8000/projects/{config_id}")
