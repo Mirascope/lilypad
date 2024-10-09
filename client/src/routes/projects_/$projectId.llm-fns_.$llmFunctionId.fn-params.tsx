@@ -18,7 +18,12 @@ import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
-import { CallArgsCreate, LLMFunctionBasePublic, Provider } from "@/types/types";
+import {
+  CallArgsCreate,
+  LLMFunctionBasePublic,
+  Provider,
+  VersionPublic,
+} from "@/types/types";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +33,7 @@ import { InputsCards } from "@/components/InputsCards";
 
 type LoaderData = {
   llmFunction: LLMFunctionBasePublic;
-  fnParams: CallArgsCreate;
+  latestVersion: VersionPublic;
 };
 
 export const Route = createFileRoute(
@@ -37,17 +42,19 @@ export const Route = createFileRoute(
   loader: async ({
     params: { projectId, llmFunctionId },
   }): Promise<LoaderData> => {
-    const [llmFunction, fnParams] = await Promise.all([
-      api.get<LLMFunctionBasePublic>(
+    const llmFunction = (
+      await api.get<LLMFunctionBasePublic>(
         `projects/${projectId}/llm-fns/${llmFunctionId}`
-      ),
-      api.get<CallArgsCreate>(
-        `projects/${projectId}/llm-fns/${Number(llmFunctionId)}/fn-params`
-      ),
-    ]);
+      )
+    ).data;
+    const latestVersion = (
+      await api.get<VersionPublic>(
+        `projects/${projectId}/versions/${llmFunction.function_name}/active`
+      )
+    ).data;
     return {
-      llmFunction: llmFunction.data,
-      fnParams: fnParams.data,
+      llmFunction: llmFunction,
+      latestVersion: latestVersion,
     };
   },
   pendingComponent: () => <div>Loading...</div>,
@@ -56,7 +63,7 @@ export const Route = createFileRoute(
 });
 
 const EditorContainer = () => {
-  const { llmFunction, fnParams } = useLoaderData({
+  const { llmFunction, latestVersion } = useLoaderData({
     from: Route.id,
   });
   const { projectId } = useParams({ from: Route.id });
@@ -82,9 +89,11 @@ const EditorContainer = () => {
   const { control, handleSubmit, setValue, clearErrors, setError, getValues } =
     useForm<CallArgsCreate>({
       defaultValues: {
-        provider: fnParams.provider,
-        model: fnParams.model || "",
-        call_params: fnParams.call_params,
+        provider: latestVersion.fn_params.provider,
+        model: latestVersion.fn_params.model || "",
+        call_params: latestVersion.fn_params.call_params
+          ? JSON.parse(latestVersion.fn_params.call_params)
+          : {},
       },
     });
   const provider = useWatch({
@@ -147,7 +156,7 @@ const EditorContainer = () => {
             <Editor
               inputs={inputs}
               ref={editorRef}
-              editorState={fnParams.editor_state}
+              editorState={latestVersion.fn_params.editor_state}
             />
           </div>
           <div className='w-full max-w-sm gap-1.5'>

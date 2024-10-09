@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from lilypad.server.models.base_sql_model import BaseSQLModel
+from lilypad.server.models import BaseSQLModel
 
 from .table_names import (
     FN_PARAMS_TABLE_NAME,
@@ -11,7 +11,7 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
-    from lilypad.server.models import LLMFunctionTable
+    from lilypad.server.models import LLMFunctionTable, VersionTable
 
 
 class Provider(str, Enum):
@@ -26,6 +26,7 @@ class FnParamsBase(BaseSQLModel):
 
     llm_function_id: int | None = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
     provider: Provider
+    hash: str | None = Field(default=None)
     model: str
     prompt_template: str
     editor_state: str
@@ -39,3 +40,4 @@ class FnParamsTable(FnParamsBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     llm_fn: "LLMFunctionTable" = Relationship(back_populates="fn_params")
+    version: "VersionTable" = Relationship(back_populates="fn_params")

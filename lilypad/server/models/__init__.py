@@ -9,6 +9,7 @@ from .fn_params import (
 from .llm_fns import LLMFunctionBase, LLMFunctionTable
 from .projects import ProjectBase, ProjectTable
 from .spans import Scope, SpanBase, SpanTable
+from .versions import VersionBase, VersionTable
 
 __all__ = [
     "BaseSQLModel",
@@ -22,4 +23,6 @@ __all__ = [
     "SpanBase",
     "SpanTable",
     "Scope",
+    "VersionBase",
+    "VersionTable",
 ]

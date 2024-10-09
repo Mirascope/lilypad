@@ -2,7 +2,6 @@
 
 import json
 import os
-from logging import root
 from pathlib import Path
 from typing import Any, Literal, TypeVar, get_origin, overload
 
@@ -16,6 +15,7 @@ from lilypad.models import (
     LLMFunctionBasePublic,
     ProjectPublic,
     SpanPublic,
+    VersionPublic,
 )
 
 T = TypeVar("T", bound=BaseModel)
@@ -182,6 +182,17 @@ class LilypadClient:
             "GET",
             f"/projects/{self.project_id}/llm-fns/{version_hash}",
             response_model=LLMFunctionBasePublic,
+            **kwargs,
+        )
+
+    def get_active_version_by_function_name(
+        self, function_name: str, **kwargs: Any
+    ) -> VersionPublic:
+        """Get the active version."""
+        return self._request(
+            "GET",
+            f"/projects/{self.project_id}/versions/{function_name}/active",
+            response_model=VersionPublic,
             **kwargs,
         )
 

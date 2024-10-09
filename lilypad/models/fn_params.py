@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from lilypad.server.models import Provider
+from lilypad.server.models import FnParamsBase, Provider
 
 
 class CallArgsPublic(BaseModel):
@@ -16,3 +16,9 @@ class CallArgsPublic(BaseModel):
     prompt_template: str
     editor_state: str
     call_params: dict[str, Any] | None
+
+
+class FnParamsPublic(FnParamsBase):
+    """Fn params public model"""
+
+    id: int

@@ -40,11 +40,11 @@ class Trace(Protocol):
 
 def trace(
     llm_function_id: int,
-    version_hash: str,
     input_values: dict[str, Any],
     input_types: dict[str, type[Any]],
     lexical_closure: str,
     prompt_template: str = "",
+    version: int | None = None,
 ) -> Trace:
     """Returns a decorator for turining a typed function into an LLM API call."""
 
@@ -70,7 +70,7 @@ def trace(
                     span.set_attributes(
                         {
                             "lilypad.function_name": fn.__name__,
-                            "lilypad.version_hash": version_hash,
+                            "lilypad.version": version if version else "",
                             "lilypad.llm_function_id": llm_function_id,
                             "lilypad.input_values": json.dumps(input_values),
                             "lilypad.input_types": json.dumps(input_types),
@@ -94,7 +94,7 @@ def trace(
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = {
                         "lilypad.function_name": fn.__name__,
-                        "lilypad.version_hash": version_hash,
+                        "lilypad.version": version if version else "",
                         "lilypad.llm_function_id": llm_function_id,
                         "lilypad.input_values": json.dumps(input_values),
                         "lilypad.input_types": json.dumps(input_types),
