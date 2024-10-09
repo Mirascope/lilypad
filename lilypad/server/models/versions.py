@@ -1,3 +1,5 @@
+"""Version table model"""
+
 from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel, FnParamsTable, LLMFunctionTable

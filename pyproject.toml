@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.0"
+version = "0.0.1"
 description = "Hopefully something cool and useful lol"
 readme = "README.md"
 license = { file = "LICENSE" }

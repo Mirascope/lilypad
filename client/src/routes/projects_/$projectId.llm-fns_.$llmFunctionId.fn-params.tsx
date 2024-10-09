@@ -33,7 +33,7 @@ import { InputsCards } from "@/components/InputsCards";
 
 type LoaderData = {
   llmFunction: LLMFunctionBasePublic;
-  latestVersion: VersionPublic;
+  latestVersion: VersionPublic | null;
 };
 
 export const Route = createFileRoute(
@@ -47,11 +47,14 @@ export const Route = createFileRoute(
         `projects/${projectId}/llm-fns/${llmFunctionId}`
       )
     ).data;
-    const latestVersion = (
-      await api.get<VersionPublic>(
-        `projects/${projectId}/versions/${llmFunction.function_name}/active`
-      )
-    ).data;
+    let latestVersion = null;
+    try {
+      latestVersion = (
+        await api.get<VersionPublic>(
+          `projects/${projectId}/versions/${llmFunction.function_name}/active`
+        )
+      ).data;
+    } catch (error) {}
     return {
       llmFunction: llmFunction,
       latestVersion: latestVersion,
@@ -89,10 +92,14 @@ const EditorContainer = () => {
   const { control, handleSubmit, setValue, clearErrors, setError, getValues } =
     useForm<CallArgsCreate>({
       defaultValues: {
-        provider: latestVersion.fn_params.provider,
-        model: latestVersion.fn_params.model || "",
-        call_params: latestVersion.fn_params.call_params
-          ? JSON.parse(latestVersion.fn_params.call_params)
+        provider: latestVersion
+          ? latestVersion.fn_params.provider
+          : Provider.OPENAI,
+        model: latestVersion ? latestVersion.fn_params.model : "",
+        call_params: latestVersion
+          ? latestVersion.fn_params.call_params
+            ? JSON.parse(latestVersion.fn_params.call_params)
+            : {}
           : {},
       },
     });
@@ -156,7 +163,9 @@ const EditorContainer = () => {
             <Editor
               inputs={inputs}
               ref={editorRef}
-              editorState={latestVersion.fn_params.editor_state}
+              editorState={
+                latestVersion ? latestVersion.fn_params.editor_state : ""
+              }
             />
           </div>
           <div className='w-full max-w-sm gap-1.5'>
