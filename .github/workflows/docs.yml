@@ -14,6 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: "./client/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: pnpm install
+
+      - name: Build client
+        working-directory: ./client
+        run: pnpm run build:notypescript
+
       - name: Set up uv
         run: curl -LsSf https://astral.sh/uv/0.4.6/install.sh | sh
 
