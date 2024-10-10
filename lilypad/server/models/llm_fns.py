@@ -25,7 +25,7 @@ class LLMFunctionBase(BaseSQLModel):
     function_name: str = Field(nullable=False, index=True)
     version_hash: str = Field(nullable=False, index=True)
     code: str
-    input_arguments: str | None = Field(default=None)
+    arg_types: str | None = Field(default=None)
 
 
 class LLMFunctionTable(LLMFunctionBase, table=True):

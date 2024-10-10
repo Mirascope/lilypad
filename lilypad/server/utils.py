@@ -1,3 +1,5 @@
+"""Utilities for the FastAPI server."""
+
 import hashlib
 
 from lilypad.server.models.fn_params import FnParamsTable

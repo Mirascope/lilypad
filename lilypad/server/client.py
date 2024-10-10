@@ -185,6 +185,18 @@ class LilypadClient:
             **kwargs,
         )
 
+    def create_non_synced_version(
+        self, function_id: int, function_name: str, **kwargs: Any
+    ) -> VersionPublic:
+        """Creates a new version for a non-synced LLM function."""
+        return self._request(
+            "POST",
+            f"/projects/{self.project_id}/versions/{function_name}",
+            response_model=VersionPublic,
+            json={"llm_function_id": function_id},
+            **kwargs,
+        )
+
     def get_active_version_by_function_name(
         self, function_name: str, **kwargs: Any
     ) -> VersionPublic:
@@ -215,8 +227,8 @@ class LilypadClient:
         function_name: str,
         code: str,
         version_hash: str,
-        input_arguments: str,
-        **kwargs: Any,
+        arg_types: dict[str, str],
+        **kwargs: Any,  # noqa: ANN401
     ) -> LLMFunctionBasePublic:
         """Creates span traces.
 
@@ -224,7 +236,7 @@ class LilypadClient:
             function_name (str): The name of the function.
             code (str): The code of the function.
             version_hash (str): The hash of the function.
-            input_arguments (str): The input arguments of the function.
+            arg_types (str): The argument types of the function.
             **kwargs: Additional keyword arguments for the request.
 
         Returns:
@@ -239,13 +251,15 @@ class LilypadClient:
                 "function_name": function_name,
                 "code": code,
                 "version_hash": version_hash,
-                "input_arguments": input_arguments,
+                "arg_types": json.dumps(arg_types),
             },
             **kwargs,
         )
 
     def get_provider_call_params_by_llm_function_hash(
-        self, version_hash: str, **kwargs: Any
+        self,
+        version_hash: str,
+        **kwargs: Any,  # noqa: ANN401
     ) -> CallArgsPublic:
         """Creates span traces."""
         return self._request(

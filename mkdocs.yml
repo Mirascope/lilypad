@@ -1,12 +1,13 @@
 copyright: Copyright &copy; 2024 Mirascope, Inc.
 site_name: Lilypad
-site_url: https://docs.lilypad.mirascope.io/
+site_url: https://lilypad.mirascope.com/docs
 site_description: Mirascope is an intuitive approach to building with LLMs.
 repo_name: lilypad
 repo_url: https://github.com/Mirascope/lilypad/
 strict: true
 theme:
   name: material
+  custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
   features:
@@ -15,7 +16,6 @@ theme:
     - content.code.copy
     - content.code.link
     - navigation.footer
-    - navigation.indexes
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.top
@@ -28,27 +28,31 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: teal
+      primary: custom
       accent: teal
     - scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: teal
+      primary: custom
       accent: teal
   font:
     text: Roboto
     code: Roboto Mono
 extra:
-  version:
-    provider: mike
   social:
     - icon: fontawesome/brands/github-alt
-      link: https://github.com/mirascope
+      link: https://github.com/Mirascope
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/WilliamBakst
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/wbakst/
+  analytics:
+    provider: google
+    property: G-DJHT1QG9GK
+  supported_llm_providers:
+    - OpenAI
+    - Anthropic
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -78,10 +82,9 @@ markdown_extensions:
       permalink: true
 
 plugins:
-  - mike:
-      alias_type: symlink
-      canonical_version: latest
   - search
+  - macros:
+      module_name: docs/macros
   - mkdocstrings:
       handlers:
         python:
@@ -103,6 +106,9 @@ plugins:
           import:
             - https://docs.python.org/3/objects.inv
 
+extra_css:
+  - "extra/tweaks.css"
+
 validation:
   omitted_files: warn
   absolute_links: relative_to_docs
@@ -110,4 +116,5 @@ validation:
   not_found: warn
 
 nav:
-  - Get Started: "index.md"
+  - Get Started:
+      - Welcome to Lilypad: "index.md"

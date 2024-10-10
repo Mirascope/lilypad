@@ -1,5 +1,6 @@
 """The `trace` decorator, which is used to instrument functions for LLM API calls."""
 
+import inspect
 import json
 from collections.abc import Callable, Coroutine
 from functools import wraps
@@ -13,8 +14,6 @@ from typing import (
 
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
-
-from .utils import fn_is_async
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -40,8 +39,8 @@ class Trace(Protocol):
 
 def trace(
     llm_function_id: int,
-    input_values: dict[str, Any],
-    input_types: dict[str, type[Any]],
+    arg_types: dict[str, str],
+    arg_values: dict[str, Any],
     lexical_closure: str,
     prompt_template: str = "",
     version: int | None = None,
@@ -59,21 +58,21 @@ def trace(
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        if fn_is_async(fn):
+        if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
                     f"{fn.__name__}"
                 ) as span:
-                    output = fn(*args, **kwargs)
+                    output = await fn(*args, **kwargs)
                     span.set_attributes(
                         {
                             "lilypad.function_name": fn.__name__,
                             "lilypad.version": version if version else "",
                             "lilypad.llm_function_id": llm_function_id,
-                            "lilypad.input_values": json.dumps(input_values),
-                            "lilypad.input_types": json.dumps(input_types),
+                            "lilypad.arg_types": json.dumps(arg_types),
+                            "lilypad.arg_values": json.dumps(arg_values),
                             "lilypad.lexical_closure": lexical_closure,
                             "lilypad.prompt_template": prompt_template,
                             "lilypad.output": str(output),
@@ -96,15 +95,15 @@ def trace(
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version": version if version else "",
                         "lilypad.llm_function_id": llm_function_id,
-                        "lilypad.input_values": json.dumps(input_values),
-                        "lilypad.input_types": json.dumps(input_types),
+                        "lilypad.arg_types": json.dumps(arg_types),
+                        "lilypad.arg_values": json.dumps(arg_values),
                         "lilypad.lexical_closure": lexical_closure,
                         "lilypad.prompt_template": prompt_template,
                         "lilypad.output": str(output),
                         "lilypad.is_async": False,
                     }
                     span.set_attributes(attributes)
-                return output
+                return output  # pyright: ignore [reportReturnType]
 
             return inner
 

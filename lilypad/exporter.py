@@ -26,11 +26,11 @@ class JSONSpanExporter(SpanExporter):
         for span in spans:
             self._print_span_node(span, indent=0)
 
-    def _print_span_node(self, span: SpanPublic, indent: int):
+    def _print_span_node(self, span: SpanPublic, indent: int) -> None:
         """Recursively print a SpanNode and its children with indentation."""
         indent_str = "    " * indent  # 4 spaces per indent level
 
-        print(f"{indent_str}{span.display_name}")
+        print(f"{indent_str}{span.display_name}")  # noqa: T201
 
         for child in span.child_spans:
             self._print_span_node(child, indent + 1)
@@ -59,7 +59,9 @@ class JSONSpanExporter(SpanExporter):
                 "name": span.instrumentation_scope.name,
                 "version": span.instrumentation_scope.version,
                 "schema_url": span.instrumentation_scope.schema_url,
-                "attributes": dict(span.instrumentation_scope.attributes),
+                "attributes": dict(span.instrumentation_scope.attributes.items())
+                if span.instrumentation_scope.attributes
+                else None,
             }
             if span.instrumentation_scope
             else {
@@ -78,7 +80,7 @@ class JSONSpanExporter(SpanExporter):
             "name": span.name,
             "start_time": span.start_time,
             "end_time": span.end_time,
-            "attributes": dict(span.attributes),
+            "attributes": dict(span.attributes.items()) if span.attributes else None,
             "status": span.status.status_code.name,
             "events": [
                 {

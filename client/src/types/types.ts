@@ -107,8 +107,8 @@ export interface LLMFunctionBasePublic {
   version_hash: string;
   /** Code */
   code: string;
-  /** Input Arguments */
-  input_arguments?: string | null;
+  /** Arg Types */
+  arg_types?: string | null;
   /** Id */
   id: number;
   /** Fn Params */
@@ -126,8 +126,8 @@ export interface LLMFunctionCreate {
   code: string;
   /** Version Hash */
   version_hash: string;
-  /** Input Arguments */
-  input_arguments?: string | null;
+  /** Arg Types */
+  arg_types?: string | null;
 }
 
 /**
@@ -143,8 +143,8 @@ export interface LLMFunctionTable {
   version_hash: string;
   /** Code */
   code: string;
-  /** Input Arguments */
-  input_arguments?: string | null;
+  /** Arg Types */
+  arg_types?: string | null;
   /** Id */
   id?: number | null;
   /**

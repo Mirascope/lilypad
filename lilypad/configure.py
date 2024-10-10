@@ -12,7 +12,7 @@ from lilypad.exporter import JSONSpanExporter
 def configure() -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad."""
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
-        print("TracerProvider already initialized.")
+        print("TracerProvider already initialized.")  # noqa: T201
         return
 
     otlp_exporter = JSONSpanExporter(
@@ -24,9 +24,13 @@ def configure() -> None:
     provider.add_span_processor(processor)
 
     trace.set_tracer_provider(provider)
+
     if importlib.util.find_spec("opentelemetry.instrumentation.openai") is not None:
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
         OpenAIInstrumentor().instrument()
-    else:
-        print("opentelemetry.instrumentation.openai is not installed or available.")
+
+    if importlib.util.find_spec("opentelemetry.instrumentation.anthropic") is not None:
+        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+
+        AnthropicInstrumentor().instrument()

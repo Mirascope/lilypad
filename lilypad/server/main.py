@@ -60,7 +60,7 @@ async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """Handle validation exceptions."""
-    print(request, exc)
+    print(request, exc)  # noqa: T201
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
@@ -142,7 +142,7 @@ class LLMFunctionCreate(BaseModel):
     function_name: str
     code: str
     version_hash: str
-    input_arguments: str | None = None
+    arg_types: str | None = None
 
 
 @api.post(
@@ -200,6 +200,55 @@ async def get_llm_function_id_by_hash(
     return llm_function if llm_function else None
 
 
+class NonSyncedVersionCreate(BaseModel):
+    """Non-synced LLM function version create model."""
+
+    llm_function_id: int
+
+
+@api.post(
+    "/projects/{project_id}/versions/{function_name}",
+    response_model=VersionPublic,
+)
+async def create_non_synced_version(
+    non_synced_version_create: NonSyncedVersionCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> VersionPublic:
+    """Creates a new version for a non-synced LLM function."""
+    llm_fn = session.exec(
+        select(LLMFunctionTable).where(
+            LLMFunctionTable.id == non_synced_version_create.llm_function_id
+        )
+    ).first()
+    if not llm_fn:
+        raise HTTPException(status_code=404, detail="LLM function not found")
+    versions = session.exec(
+        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
+    ).all()
+    for version in versions:
+        if version.is_active:
+            version.is_active = False
+            session.add(version)
+    session.flush()
+    new_version = VersionTable(
+        version=len(versions) + 1,
+        function_name=llm_fn.function_name,
+        is_active=True,
+        fn_params_id=None,
+        llm_function_id=non_synced_version_create.llm_function_id,
+        fn_params_hash=None,
+        llm_function_hash=llm_fn.version_hash,
+    )
+    session.add(new_version)
+    session.commit()
+    session.refresh(new_version)
+    return VersionPublic(
+        **new_version.model_dump(),
+        fn_params=None,
+        llm_fn=LLMFunctionBasePublic.model_validate(llm_fn),
+    )
+
+
 @api.get(
     "/projects/{project_id}/versions/{function_name}/active",
     response_model=VersionPublic,
@@ -212,7 +261,7 @@ async def get_active_version(
     """Get active version of the function."""
     version = session.exec(
         select(VersionTable).where(
-            VersionTable.is_active == True, VersionTable.function_name == function_name
+            VersionTable.is_active, VersionTable.function_name == function_name
         )
     ).first()
     if not version or not version.id:
@@ -227,7 +276,9 @@ async def get_active_version(
         llm_function_id=version.llm_function_id,
         fn_params_hash=version.fn_params_hash,
         llm_function_hash=version.llm_function_hash,
-        fn_params=FnParamsPublic.model_validate(version.fn_params),
+        fn_params=FnParamsPublic.model_validate(version.fn_params)
+        if version.fn_params
+        else None,
         llm_fn=LLMFunctionBasePublic.model_validate(version.llm_fn),
     )
     return version_public
@@ -401,11 +452,6 @@ async def get_call_args_from_llm_function_by_hash(
         if latest_fn_params.call_params
         else {},
     )
-
-
-@api.post("/v1/metrics")
-async def metrics(request: Request) -> None:
-    json = await request.json()
 
 
 @api.post("/v1/traces")
