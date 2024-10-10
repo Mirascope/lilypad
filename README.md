@@ -1,94 +1,56 @@
 # Lilypad
 
-An open-source prompt engineering framework.
+# Lilypad
 
-> [!IMPORTANT]
-> We're looking for early design partners!
+> [!WARNING] Project is in alpha phase
+> This means that things like the user interface, database schemas, etc. are still subject to change. We do not yet recommend fully relying on this project in production, but we've found it works quite well for local development in its current stage.
+
+An open-source prompt engineering framework built on these principles:
+
+- Prompt engineering is an optimization process, which requires...
+- Automatic versioning and tracing
+- Developer-centric prompt template editor
+- Proper syncing between prompts and code
+
+> [!INFO] We're looking for early design partners!
+> We are also working on tooling for improved collaboration between technical and non-technical team members. This is particularly important for involving domain experts who may not have the technical chops to contribute to a code base.
+>
 > If you're interested, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and DM William Bakst :)
+>
+> There are limited spots.
 
-> [!WARNING]  
-> This project is in its alpha phase of development.
-> This means that things like the user interface, database schemas, etc. are subject to change.
+## 30 Second Quickstart
 
-## Installation
-
-> [!NOTE]
-> We currently only support OpenAI. If there are particular providers you would like us to support, let us know!
+Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
 
 ```bash
-pip install "python-lilypad[openai]"
-lilypad --install-completion  # auto-complete for the CLI
+pip install "python-lilypad[openai]==0.0.1"
+
+export OPENAI_API_KEY=XXXXX
 ```
 
-Once installed, navigate to the root directory where you'll be developing your application and run:
+Create your first synced prompt to recommend a book.
+
+For example, you could use the prompt `Recommend a fantasy book`:
 
 ```bash
-lilypad start
+lilypad start                  # initialize local project
+lilypad create recommend_book  # creates a synced LLM function
+lilypad run recommend_book     # runs the function (and opens editor)
 ```
 
-This will initialize your project, create a local SQLite database, and spin up a local server.
+Once you hit "Submit" you'll see the function run in your shell. Follow the link to see the version and trace in an interactive UI.
 
-## Quickstart: Synced LLM Functions
+Next, try editing the function signature to take a `genre: str` argument. When you run the function again it will open the editor and give you access to the `{genre}` template variable (with autocomplete).
 
-The core feature `lilypad` has to offer is what we called Synced LLM Functions.
+## Usage
 
-First, create a new prompt:
+We are actively working on this library and it's documentation, which you can find [here](https://lilypad.mirascope.com/docs)
 
-```bash
-lilypad create recommend_book
-```
+## Versioning
 
-This will create the following shim:
+Lilypad uses [Semantic Versioning](https://semver.org/)
 
-```python
-# lily/recommend_book.py
-import lilypad
+## License
 
-
-@lilypad.synced.llm_fn()
-def recommend_book() -> str: ...
-
-
-if __name__ == "__main__":
-    output = recommend_book()
-    print(output)
-```
-
-Next, edit the shim to take any template variables you want to use. For example, we can add genre:
-
-```python
-# lily/recommend_book.py
-import lilypad
-
-
-@lilypad.synced.llm_fn()
-def recommend_book(genre: str) -> str: ...
-
-
-if __name__ == "__main__":
-    output = recommend_book("fantasy")
-    print(output)
-```
-
-Now you can run the function, which will open the editor:
-
-```bash
-lilypad run recommend_book
-```
-
-Once you hit submit, this will run the function, automatically versioning and tracing everything.
-
-Run running an LLM function, any changes to the shim will get detected automatically and always open the editor. If you want to edit the prompt without changing the shim, simply use the `--edit` flag:
-
-```bash
-lilypad run --edit recommend_book
-```
-
-## Coming Soon
-
-There are a lot of things on our roadmap, so if there are particular features you want to see, raise an issue and let us know!
-
-Top of mind are:
-1. Automatic versioning/tracing of non-synced functions (i.e. using OpenAI directly). We had an early version of this, but it's currently broken
-2. More support for API interactions through synced functions (such as computed fields).
-3. Evaluations
+This project is currently licensed under the terms of the [MIT License](https://github.com/Mirascope/mirascope/blob/main/LICENSE); however, we expect certain future features to be licensed separately, which we will make extremely clear and evident.
