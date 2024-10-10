@@ -27,23 +27,21 @@ jobs:
           version: 9
           run_install: false
 
-      - name: Move to client directory
-        run: cd ./client
-
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
+        env:
+          PNPM_HOME: ${{ github.workspace }}/client
 
       - name: Install dependencies
+        working-directory: ./client
         run: pnpm install
 
       - name: Build client
+        working-directory: ./client
         run: pnpm run build:notypescript
-
-      - name: Return to top level directory
-        run: cd ../
 
       - name: Set up uv
         run: curl -LsSf https://astral.sh/uv/0.4.4/install.sh | sh
