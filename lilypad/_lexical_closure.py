@@ -102,19 +102,19 @@ def serialize_variable(name: str, value: Any) -> str:
 
 def extract_dependencies(tree: ast.AST | None) -> list[str]:
     class DependencyVisitor(ast.NodeVisitor):
-        def __init__(self):
+        def __init__(self) -> None:
             self.dependencies = []
 
-        def visit_Name(self, node):
+        def visit_Name(self, node: Any) -> None:
             self.dependencies.append(node.id)
             self.generic_visit(node)
 
-        def visit_Attribute(self, node):
+        def visit_Attribute(self, node: Any) -> None:
             if isinstance(node.value, ast.Name):
                 self.dependencies.append(node.value.id)
             self.generic_visit(node)
 
-        def visit_FunctionDef(self, node):
+        def visit_FunctionDef(self, node: Any) -> None:
             # Include decorator dependencies
             for decorator in node.decorator_list:
                 self.visit(decorator)

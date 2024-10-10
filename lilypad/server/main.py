@@ -60,7 +60,7 @@ async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """Handle validation exceptions."""
-    print(request, exc)
+    print(request, exc)  # noqa: T201
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
@@ -261,7 +261,7 @@ async def get_active_version(
     """Get active version of the function."""
     version = session.exec(
         select(VersionTable).where(
-            VersionTable.is_active == True, VersionTable.function_name == function_name
+            VersionTable.is_active, VersionTable.function_name == function_name
         )
     ).first()
     if not version or not version.id:
@@ -456,7 +456,7 @@ async def get_call_args_from_llm_function_by_hash(
 
 @api.post("/v1/metrics")
 async def metrics(request: Request) -> None:
-    json = await request.json()
+    _ = await request.json()
 
 
 @api.post("/v1/traces")

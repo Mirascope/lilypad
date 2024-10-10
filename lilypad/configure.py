@@ -12,7 +12,7 @@ from lilypad.exporter import JSONSpanExporter
 def configure() -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad."""
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
-        print("TracerProvider already initialized.")
+        print("TracerProvider already initialized.")  # noqa: T201
         return
 
     otlp_exporter = JSONSpanExporter(

@@ -26,11 +26,11 @@ class JSONSpanExporter(SpanExporter):
         for span in spans:
             self._print_span_node(span, indent=0)
 
-    def _print_span_node(self, span: SpanPublic, indent: int):
+    def _print_span_node(self, span: SpanPublic, indent: int) -> None:
         """Recursively print a SpanNode and its children with indentation."""
         indent_str = "    " * indent  # 4 spaces per indent level
 
-        print(f"{indent_str}{span.display_name}")
+        print(f"{indent_str}{span.display_name}")  # noqa: T201
 
         for child in span.child_spans:
             self._print_span_node(child, indent + 1)

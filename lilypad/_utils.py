@@ -8,21 +8,10 @@ import webbrowser
 from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
 from functools import partial, wraps
 from importlib import import_module
-from typing import (
-    Any,
-    ParamSpec,
-    Protocol,
-    TypeVar,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
-    overload,
-)
+from typing import Any, ParamSpec, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from mirascope.core import base as mb
 from pydantic import BaseModel
-from typing_extensions import TypeIs
 
 from lilypad.models import FnParamsPublic, VersionPublic
 from lilypad.server import client
@@ -158,7 +147,7 @@ def traced_synced_llm_function_constructor(
 ]:
     """Returns a method for converting a function signature into a traced/synced fn."""
     if not trace_decorator:
-        trace_decorator = lambda x: x
+        trace_decorator = lambda x: x  # noqa: E731
 
     call_decorator = partial(
         import_module(f"mirascope.core.{fn_params.provider}").call,

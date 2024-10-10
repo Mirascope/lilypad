@@ -115,7 +115,7 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = [
-    "D",
+    # "D",
     "E",
     "F",
     "I",
@@ -140,6 +140,7 @@ ignore = [
     'B904',
     'ANN101',
     'ANN102',
+    'ANN401',
 ]
 fixable = ["ALL"]
 isort = { known-first-party = ['lilypad', 'tests', 'examples'] }
