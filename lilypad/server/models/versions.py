@@ -15,7 +15,7 @@ class VersionBase(BaseSQLModel):
     version: int
     function_name: str = Field(nullable=False, index=True)
     llm_function_hash: str = Field(nullable=False, index=True)
-    fn_params_hash: str | None = Field(nullable=True, index=True)
+    fn_params_hash: str | None = Field(default=None, index=True)
     is_active: bool = Field(default=False)
 
 
