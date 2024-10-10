@@ -1,8 +1,12 @@
+"""Mkdocs Macros."""
+
 import builtins
 from typing import Any
 
 
 def define_env(env: Any) -> None:
+    """Defines the environment filters and macros."""
+
     @env.filter
     def provider_dir(provider: Any) -> str:
         # Convert to lowercase

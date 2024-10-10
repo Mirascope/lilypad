@@ -1,3 +1,5 @@
+"""Project Models."""
+
 from pydantic import BaseModel
 
 from lilypad.server.models import ProjectBase

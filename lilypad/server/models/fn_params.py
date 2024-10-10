@@ -1,3 +1,5 @@
+"""FnParams Models."""
+
 from enum import Enum
 from typing import TYPE_CHECKING
 

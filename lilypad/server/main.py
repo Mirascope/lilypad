@@ -454,11 +454,6 @@ async def get_call_args_from_llm_function_by_hash(
     )
 
 
-@api.post("/v1/metrics")
-async def metrics(request: Request) -> None:
-    _ = await request.json()
-
-
 @api.post("/v1/traces")
 async def traces(
     request: Request, session: Annotated[Session, Depends(get_session)]
