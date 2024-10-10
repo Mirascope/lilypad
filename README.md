@@ -1,8 +1,8 @@
 # Lilypad
 
-# Lilypad
-
-> [!WARNING] Project is in alpha phase
+> [!WARNING]
+> __Project is in alpha phase__
+> 
 > This means that things like the user interface, database schemas, etc. are still subject to change. We do not yet recommend fully relying on this project in production, but we've found it works quite well for local development in its current stage.
 
 An open-source prompt engineering framework built on these principles:
@@ -12,7 +12,9 @@ An open-source prompt engineering framework built on these principles:
 - Developer-centric prompt template editor
 - Proper syncing between prompts and code
 
-> [!INFO] We're looking for early design partners!
+> [!IMPORTANT]
+> __We're looking for early design partners!__
+> 
 > We are also working on tooling for improved collaboration between technical and non-technical team members. This is particularly important for involving domain experts who may not have the technical chops to contribute to a code base.
 >
 > If you're interested, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and DM William Bakst :)
