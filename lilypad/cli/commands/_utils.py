@@ -36,7 +36,7 @@ def generate_llm_fn_stub(function_name: str) -> str:
     return f"""import lilypad
 
     
-@lilypad.synced.llm_fn()
+@lilypad.llm_fn(synced=True)
 def {function_name}() -> str: ...
 
 

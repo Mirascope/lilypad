@@ -11,11 +11,11 @@ class VersionBase(BaseSQLModel):
     """Version base model"""
 
     llm_function_id: int = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
-    fn_params_id: int = Field(foreign_key=f"{FN_PARAMS_TABLE_NAME}.id")
+    fn_params_id: int | None = Field(foreign_key=f"{FN_PARAMS_TABLE_NAME}.id")
     version: int
     function_name: str = Field(nullable=False, index=True)
     llm_function_hash: str = Field(nullable=False, index=True)
-    fn_params_hash: str = Field(nullable=False, index=True)
+    fn_params_hash: str | None = Field(nullable=True, index=True)
     is_active: bool = Field(default=False)
 
 

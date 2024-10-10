@@ -1,17 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface InputValues {
+interface Args {
   [key: string]: string;
 }
-export const InputsCards = ({ inputValues }: { inputValues: InputValues }) => {
+export const ArgsCards = ({ args }: { args: Args }) => {
   return (
-    <Card className='w-auto'>
+    <Card className="w-auto">
       <CardHeader>
-        <CardTitle>{"Inputs"}</CardTitle>
+        <CardTitle>{"Function Arguments"}</CardTitle>
       </CardHeader>
-      <CardContent className='flex gap-2'>
-        {Object.keys(inputValues).length > 0 ? (
-          Object.entries(inputValues).map(([key, value]) => (
+      <CardContent className="flex gap-2">
+        {Object.keys(args).length > 0 ? (
+          Object.entries(args).map(([key, value]) => (
             <Card key={key}>
               <CardHeader>
                 <CardTitle>{key}</CardTitle>

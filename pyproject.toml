@@ -49,6 +49,10 @@ Changelog = "https://github.com/Mirascope/lilypad/releases"
 
 [project.optional-dependencies]
 openai = ["openai>=1.43.0", "opentelemetry-instrumentation-openai>=0.31.2"]
+anthropic = [
+    "anthropic>=0.36.0",
+    "opentelemetry-instrumentation-anthropic>=0.32.2",
+]
 
 [tool.uv]
 dev-dependencies = [

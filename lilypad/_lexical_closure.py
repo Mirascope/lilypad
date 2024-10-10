@@ -100,7 +100,7 @@ def serialize_variable(name: str, value: Any) -> str:
         return f"{name} = {repr(value)}"
 
 
-def extract_dependencies(tree: ast.AST) -> list[str]:
+def extract_dependencies(tree: ast.AST | None) -> list[str]:
     class DependencyVisitor(ast.NodeVisitor):
         def __init__(self):
             self.dependencies = []
@@ -119,6 +119,9 @@ def extract_dependencies(tree: ast.AST) -> list[str]:
             for decorator in node.decorator_list:
                 self.visit(decorator)
             self.generic_visit(node)
+
+    if not tree:
+        return []
 
     visitor = DependencyVisitor()
     visitor.visit(tree)

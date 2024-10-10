@@ -59,7 +59,9 @@ class JSONSpanExporter(SpanExporter):
                 "name": span.instrumentation_scope.name,
                 "version": span.instrumentation_scope.version,
                 "schema_url": span.instrumentation_scope.schema_url,
-                "attributes": dict(span.instrumentation_scope.attributes),
+                "attributes": dict(span.instrumentation_scope.attributes.items())
+                if span.instrumentation_scope.attributes
+                else None,
             }
             if span.instrumentation_scope
             else {
@@ -78,7 +80,7 @@ class JSONSpanExporter(SpanExporter):
             "name": span.name,
             "start_time": span.start_time,
             "end_time": span.end_time,
-            "attributes": dict(span.attributes),
+            "attributes": dict(span.attributes.items()) if span.attributes else None,
             "status": span.status.status_code.name,
             "events": [
                 {

@@ -6,5 +6,5 @@ class VersionPublic(VersionBase):
     """Version public model"""
 
     id: int
-    fn_params: FnParamsPublic
+    fn_params: FnParamsPublic | None = None
     llm_fn: LLMFunctionBasePublic

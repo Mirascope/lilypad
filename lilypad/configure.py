@@ -24,9 +24,13 @@ def configure() -> None:
     provider.add_span_processor(processor)
 
     trace.set_tracer_provider(provider)
+
     if importlib.util.find_spec("opentelemetry.instrumentation.openai") is not None:
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
         OpenAIInstrumentor().instrument()
-    else:
-        print("opentelemetry.instrumentation.openai is not installed or available.")
+
+    if importlib.util.find_spec("opentelemetry.instrumentation.anthropic") is not None:
+        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+
+        AnthropicInstrumentor().instrument()
