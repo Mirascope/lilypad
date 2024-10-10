@@ -32,8 +32,7 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
-        env:
-          PNPM_HOME: ${{ github.workspace }}/client
+          cache-dependency-path: "**/pnpm-lock.json"
 
       - name: Install dependencies
         working-directory: ./client
