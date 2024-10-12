@@ -26,7 +26,7 @@ An open-source prompt engineering framework built on these principles:
 Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
 
 ```bash
-pip install "python-lilypad[openai]==0.0.1"
+pip install "python-lilypad[openai]"
 
 export OPENAI_API_KEY=XXXXX
 ```
