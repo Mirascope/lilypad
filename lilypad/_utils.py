@@ -118,27 +118,6 @@ def get_llm_function_version(
     )
 
 
-def _construct_prompt_template_and_call_decorator(
-    fn: Callable[_P, _R], fn_params: FnParamsPublic
-) -> tuple[Callable[_P, mb.BaseDynamicConfig], Callable]:
-    """Returns a prompt template and call decorator constructed from `fn_params`"""
-
-    @mb.prompt_template(fn_params.prompt_template)
-    @wraps(fn)
-    def prompt_template(*args: _P.args, **kwargs: _P.kwargs) -> mb.BaseDynamicConfig:
-        return {
-            "call_params": json.loads(fn_params.call_params)
-            if fn_params.call_params
-            else {}
-        }
-
-    return prompt_template, partial(
-        import_module(f"mirascope.core.{fn_params.provider}").call,
-        model=fn_params.model,
-        json_mode=False,
-    )
-
-
 def traced_synced_llm_function_constructor(
     fn_params: FnParamsPublic, trace_decorator: Callable | None
 ) -> Callable[
@@ -150,7 +129,7 @@ def traced_synced_llm_function_constructor(
         trace_decorator = lambda x: x  # noqa: E731
 
     call_decorator = partial(
-        import_module(f"mirascope.core.{fn_params.provider}").call,
+        import_module(f"mirascope.core.{fn_params.provider.value}").call,
         model=fn_params.model,
         json_mode=False,
     )
