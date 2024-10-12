@@ -8,10 +8,7 @@ from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel
 
-from .table_names import (
-    LLM_FN_TABLE_NAME,
-    SPAN_TABLE_NAME,
-)
+from .table_names import LLM_FN_TABLE_NAME, PROJECT_TABLE_NAME, SPAN_TABLE_NAME
 
 if TYPE_CHECKING:
     from lilypad.server.models import LLMFunctionTable
@@ -27,6 +24,7 @@ class Scope(str, Enum):
 class SpanBase(BaseSQLModel):
     """Span base model"""
 
+    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     llm_function_id: int | None = Field(
         default=None, foreign_key=f"{LLM_FN_TABLE_NAME}.id"
     )

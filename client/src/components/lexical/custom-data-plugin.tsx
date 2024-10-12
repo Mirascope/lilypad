@@ -144,10 +144,7 @@ export const CustomDataSuggestionPlugin = ({
       closeMenu: () => void
     ) => {
       editor.update(() => {
-        const templateNode = $createTemplateNode(
-          selectedOption.key,
-          selectedOption.metadata
-        );
+        const templateNode = $createTemplateNode(selectedOption.key);
         if (nodeToReplace) {
           nodeToReplace.replace(templateNode);
         }

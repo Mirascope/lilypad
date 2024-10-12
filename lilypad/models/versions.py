@@ -1,5 +1,3 @@
-"""Version Models."""
-
 from lilypad.models import FnParamsPublic, LLMFunctionBasePublic
 from lilypad.server.models.versions import VersionBase
 

@@ -4,12 +4,18 @@ from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel, FnParamsTable, LLMFunctionTable
 
-from .table_names import FN_PARAMS_TABLE_NAME, LLM_FN_TABLE_NAME, VERSION_TABLE_NAME
+from .table_names import (
+    FN_PARAMS_TABLE_NAME,
+    LLM_FN_TABLE_NAME,
+    PROJECT_TABLE_NAME,
+    VERSION_TABLE_NAME,
+)
 
 
 class VersionBase(BaseSQLModel):
     """Version base model"""
 
+    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     llm_function_id: int = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
     fn_params_id: int | None = Field(foreign_key=f"{FN_PARAMS_TABLE_NAME}.id")
     version: int

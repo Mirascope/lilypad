@@ -2,7 +2,11 @@ import { ProjectTable, SpanPublic } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
 
 import { DataTableDemo } from "@/components/TracesTable";
-import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from "@tanstack/react-router";
 import api from "@/api";
 import { Typography } from "@/components/ui/typography";
 
@@ -15,11 +19,14 @@ export const Route = createFileRoute("/projects/$projectId")({
 });
 
 export const Trace = () => {
+  const { projectId } = useParams({ from: Route.id });
   const project = useLoaderData({ from: Route.id }) as ProjectTable;
   const { isPending, error, data } = useQuery<SpanPublic[]>({
     queryKey: ["traces"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:8000/api/traces");
+      const response = await fetch(
+        `http://localhost:8000/api/projects/${projectId}/traces`
+      );
       return await response.json();
     },
     refetchInterval: 1000,

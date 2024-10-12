@@ -39,13 +39,13 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { LilypadPanel } from "@/routes/-lilypadPanel";
+import { LilypadPanel } from "@/components/LilypadPanel";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { LlmPanel } from "@/routes/-llmPanel";
+import { LlmPanel } from "@/components/LlmPanel";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {

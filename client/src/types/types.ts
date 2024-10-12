@@ -11,7 +11,7 @@
 
 /**
  * CallArgsCreate
- * Call args model.
+ * Call args create model.
  */
 export interface CallArgsCreate {
   /** Model */
@@ -20,15 +20,12 @@ export interface CallArgsCreate {
   provider: Provider;
   /** Prompt Template */
   prompt_template: string;
-  /** Editor State */
-  editor_state: string;
-  /** Call Params */
-  call_params: object | null;
+  call_params?: OpenAICallArgsCreate | null;
 }
 
 /**
  * CallArgsPublic
- * Call args model.
+ * Call args public model.
  */
 export interface CallArgsPublic {
   /** Id */
@@ -38,31 +35,10 @@ export interface CallArgsPublic {
   /** Provider name enum */
   provider: Provider;
   /** Prompt Template */
-  prompt_template: string;
-  /** Editor State */
-  editor_state: string;
-  /** Call Params */
-  call_params: object | null;
-}
-
-/** FnParamsPublic */
-export interface FnParamsPublic {
-  /** Llm Function Id */
-  llm_function_id: number | null;
-  /** Provider name enum */
-  provider: Provider;
+  prompt_template?: string | null;
   /** Hash */
   hash?: string | null;
-  /** Model */
-  model: string;
-  /** Prompt Template */
-  prompt_template: string;
-  /** Editor State */
-  editor_state: string;
-  /** Call Params */
-  call_params?: string | null;
-  /** Id */
-  id: number;
+  call_params?: OpenAICallArgsCreate | null;
 }
 
 /**
@@ -75,13 +51,11 @@ export interface FnParamsTable {
   /** Provider name enum */
   provider: Provider;
   /** Hash */
-  hash?: string | null;
+  hash: string;
   /** Model */
   model: string;
   /** Prompt Template */
   prompt_template: string;
-  /** Editor State */
-  editor_state: string;
   /** Call Params */
   call_params?: string | null;
   /** Id */
@@ -150,9 +124,39 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-09T07:52:29.464898Z"
+   * @default "2024-10-11T17:12:17.660788Z"
    */
   created_at?: string;
+}
+
+/**
+ * NonSyncedVersionCreate
+ * Non-synced LLM function version create model.
+ */
+export interface NonSyncedVersionCreate {
+  /** Llm Function Id */
+  llm_function_id: number;
+}
+
+/**
+ * OpenAICallArgsCreate
+ * OpenAI call args model.
+ */
+export interface OpenAICallArgsCreate {
+  /** Max Tokens */
+  max_tokens: number;
+  /** Temperature */
+  temperature: number;
+  /** Top P */
+  top_p: number;
+  /** Frequency Penalty */
+  frequency_penalty: number;
+  /** Presence Penalty */
+  presence_penalty: number;
+  /** Response format model. */
+  response_format: ResponseFormat;
+  /** Stop */
+  stop?: string | string[] | null;
 }
 
 /**
@@ -201,6 +205,15 @@ export enum Provider {
 }
 
 /**
+ * ResponseFormat
+ * Response format model.
+ */
+export interface ResponseFormat {
+  /** Type */
+  type: "text" | "json_object" | "json_schema";
+}
+
+/**
  * Scope
  * Instrumentation Scope name of the span
  */
@@ -225,7 +238,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-09T07:52:29.469012Z"
+   * @default "2024-10-11T17:12:17.666073Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -257,7 +270,7 @@ export interface VersionPublic {
   /** Llm Function Id */
   llm_function_id: number;
   /** Fn Params Id */
-  fn_params_id: number;
+  fn_params_id: number | null;
   /** Version */
   version: number;
   /** Function Name */
@@ -265,7 +278,7 @@ export interface VersionPublic {
   /** Llm Function Hash */
   llm_function_hash: string;
   /** Fn Params Hash */
-  fn_params_hash: string;
+  fn_params_hash?: string | null;
   /**
    * Is Active
    * @default false
@@ -273,7 +286,7 @@ export interface VersionPublic {
   is_active?: boolean;
   /** Id */
   id: number;
-  fn_params: FnParamsPublic;
+  fn_params?: CallArgsPublic | null;
   /** LLM function base public model */
   llm_fn: LLMFunctionBasePublic;
 }

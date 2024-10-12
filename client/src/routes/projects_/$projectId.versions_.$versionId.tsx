@@ -3,88 +3,50 @@ import {
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
-import { Editor } from "@/routes/-editor";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Controller, useForm, useWatch } from "react-hook-form";
+
+import { useRef, useState } from "react";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
-import {
-  CallArgsCreate,
-  LLMFunctionBasePublic,
-  Provider,
-  VersionPublic,
-  ResponseFormat,
-} from "@/types/types";
-import { Label } from "@/components/ui/label";
-import { ModelCombobox } from "@/components/ui/model-combobox";
+import { CallArgsCreate, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
-import { Typography } from "@/components/ui/typography";
-import { ArgsCards } from "@/components/ArgsCards";
-import { FormSlider } from "@/components/FormSlider";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
 
-type LoaderData = {
-  llmFunction: LLMFunctionBasePublic;
-  latestVersion: VersionPublic | null;
-};
-
 export const Route = createFileRoute(
-  "/projects/$projectId/llm-fns/$llmFunctionId/fn-params"
+  "/projects/$projectId/versions/$versionId"
 )({
   loader: async ({
-    params: { projectId, llmFunctionId },
-  }): Promise<LoaderData> => {
-    const llmFunction = (
-      await api.get<LLMFunctionBasePublic>(
-        `projects/${projectId}/llm-fns/${llmFunctionId}`
+    params: { projectId, versionId },
+  }): Promise<VersionPublic> =>
+    (
+      await api.get<VersionPublic>(
+        `projects/${projectId}/versions/${versionId}`
       )
-    ).data;
-    let latestVersion = null;
-    try {
-      latestVersion = (
-        await api.get<VersionPublic>(
-          `projects/${projectId}/versions/${llmFunction.function_name}/active`
-        )
-      ).data;
-    } catch (error) {}
-    return {
-      llmFunction: llmFunction,
-      latestVersion: latestVersion,
-    };
-  },
+    ).data,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ({ error }) => <div>{error.message}</div>,
   component: () => <EditorContainer />,
 });
 
 const EditorContainer = () => {
-  const { llmFunction, latestVersion } = useLoaderData({
+  const version = useLoaderData({
     from: Route.id,
   });
-  const { projectId } = useParams({ from: Route.id });
+  const { projectId, versionId } = useParams({ from: Route.id });
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (callArgsCreate: CallArgsCreate) => {
       return api.post(
-        `projects/${projectId}/llm-fns/${llmFunction.id}/fn-params`,
+        `projects/${projectId}/llm-fns/${version.llm_fn.id}/fn-params`,
         callArgsCreate
       );
     },
     onSuccess: () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({
-        queryKey: [`llmFunctions-${llmFunction.id}-fnParams`],
+        queryKey: [`versions-${versionId}`],
       });
     },
   });
@@ -115,8 +77,8 @@ const EditorContainer = () => {
   return (
     <EditorForm
       {...{
-        llmFunction,
-        latestVersion,
+        llmFunction: version.llm_fn,
+        latestVersion: version,
         editorErrors,
         onSubmit,
         ref: editorRef,

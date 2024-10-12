@@ -1,5 +1,15 @@
-import type { ElementTransformer, Transformer } from "@lexical/markdown";
-import type { ElementNode, LexicalNode } from "lexical";
+import type {
+  ElementTransformer,
+  MultilineElementTransformer,
+  Transformer,
+} from "@lexical/markdown";
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $isTextNode,
+  ElementNode,
+  type LexicalNode,
+} from "lexical";
 
 import {
   $convertToMarkdownString,
@@ -18,12 +28,17 @@ import {
   $isCollapsibleContainerNode,
   CollapsibleContainerNode,
 } from "./collapsible-container-node";
-import { UneditableParagraphNode } from "./uneditable-paragraph-node";
 import {
+  $createUneditableParagraphNode,
+  UneditableParagraphNode,
+} from "./uneditable-paragraph-node";
+import {
+  $createCollapsibleTitleNode,
   $isCollapsibleTitleNode,
   CollapsibleTitleNode,
 } from "./collapsible-title-node";
 import {
+  $createCollapsibleContentNode,
   $isCollapsibleContentNode,
   CollapsibleContentNode,
 } from "./collapsible-content-node";
@@ -58,24 +73,49 @@ export const CODE_BLOCK_TRANSFORMER: ElementTransformer = {
     codeNode.selectNext();
   },
 };
-export const COLLAPSIBLE_TRANSFORMER: ElementTransformer = {
+
+const trimEmptyStrings = (arr: string[]): string[] => {
+  const result: string[] = [];
+  let lastContentIndex = -1;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (
+      arr[i] !== "" ||
+      (lastContentIndex !== -1 && arr.slice(i).some((item) => item !== ""))
+    ) {
+      result.push(arr[i]);
+      if (arr[i] !== "") {
+        lastContentIndex = result.length - 1;
+      }
+    }
+  }
+
+  return result;
+};
+export const COLLAPSIBLE_TRANSFORMER: MultilineElementTransformer = {
   dependencies: [CollapsibleContainerNode],
-  type: "element",
+  type: "multiline-element",
 
   // Export function for code blocks
   export: (node, traverseChildren) => {
     if ($isCollapsibleContainerNode(node)) {
-      const titleNode = node.getFirstChild();
-      const contentNode = node.getLastChild();
+      const titleNode = node.getFirstChild<CollapsibleTitleNode>();
+      const contentNode = node.getLastChild<CollapsibleContainerNode>();
       let titleMarkdown = "";
       let contentMarkdown = "";
 
       if ($isCollapsibleTitleNode(titleNode)) {
         titleMarkdown = traverseChildren(titleNode).trim();
+        if (titleMarkdown.endsWith(":")) {
+          titleMarkdown = titleMarkdown.slice(0, -1);
+        }
       }
 
       if ($isCollapsibleContentNode(contentNode)) {
-        contentMarkdown = $convertToMarkdownString(TRANSFORMERS, contentNode);
+        const contentChildren = contentNode.getChildren();
+        for (const child of contentChildren) {
+          contentMarkdown += `${child.getTextContent()}\n`;
+        }
       }
 
       // Combine the title and content markdown with desired formatting
@@ -86,18 +126,38 @@ export const COLLAPSIBLE_TRANSFORMER: ElementTransformer = {
   },
 
   // RegExp to match code blocks in markdown
-  regExp: /^([A-Z]*):$/gm,
+  regExpStart: /^([A-Z]*):$/gm,
+  regExpEnd: {
+    regExp: /^(\s*$)/m,
+    optional: true,
+  },
 
   // Replace function to convert markdown code blocks back to Lexical nodes
-  replace: (parentNode, _1, _2, isImport) => {
+  replace: (
+    rootNode,
+    children,
+    startMatch,
+    endMatch,
+    linesInBetween,
+    isImport
+  ) => {
+    if (!isImport) return true;
     const containerNode = $createCollapsibleContainerNode(true);
-    if (isImport || parentNode.getNextSibling() != null) {
-      parentNode.replace(containerNode);
-    } else {
-      parentNode.insertBefore(containerNode);
+    // create title node
+    const titleNode = $createCollapsibleTitleNode().append(
+      $createUneditableParagraphNode().append($createTextNode(startMatch[0]))
+    );
+    const contentNode = $createCollapsibleContentNode();
+    // TODO: Look into why linesInBetween has many empty strings not in the original markdown
+    // Remove empty lines from the start and end, keep the ones in between
+    if (linesInBetween) {
+      linesInBetween = trimEmptyStrings(linesInBetween);
     }
-
-    containerNode.selectNext();
+    for (const line of linesInBetween || []) {
+      contentNode.append($createParagraphNode().append($createTextNode(line)));
+    }
+    containerNode.append(titleNode, contentNode);
+    rootNode.append(containerNode);
   },
 };
 export const HR: ElementTransformer = {
@@ -123,6 +183,6 @@ export const HR: ElementTransformer = {
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   HR,
   CODE_BLOCK_TRANSFORMER,
-  COLLAPSIBLE_TRANSFORMER,
   ...TRANSFORMERS,
+  COLLAPSIBLE_TRANSFORMER,
 ];

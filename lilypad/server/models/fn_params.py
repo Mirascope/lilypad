@@ -28,10 +28,9 @@ class FnParamsBase(BaseSQLModel):
 
     llm_function_id: int | None = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
     provider: Provider
-    hash: str | None = Field(default=None)
+    hash: str
     model: str
     prompt_template: str
-    editor_state: str
     call_params: str | None = Field(default=None)
 
 

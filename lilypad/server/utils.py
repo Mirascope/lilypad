@@ -2,16 +2,16 @@
 
 import hashlib
 
-from lilypad.server.models.fn_params import FnParamsTable
+from lilypad.models import CallArgsCreate
+from lilypad.server.models import FnParamsTable
 
 
-def calculate_fn_params_hash(fn_params_table: FnParamsTable) -> str:
+def calculate_fn_params_hash(call_args: FnParamsTable | CallArgsCreate) -> str:
     """Calculate the hash of the function parameters."""
     fn_params_str = (
-        str(fn_params_table.call_params)
-        + str(fn_params_table.prompt_template)
-        + str(fn_params_table.editor_state)
-        + str(fn_params_table.model)
-        + str(fn_params_table.provider)
+        str(call_args.call_params)
+        + str(call_args.prompt_template)
+        + str(call_args.model)
+        + str(call_args.provider)
     )
     return hashlib.sha256(fn_params_str.encode("utf-8")).hexdigest()

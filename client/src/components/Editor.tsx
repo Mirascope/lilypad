@@ -1,7 +1,7 @@
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
 import { ListItemNode, ListNode } from "@lexical/list";
-import { TRANSFORMERS } from "@lexical/markdown";
+import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import exampleTheme from "@/utils/lexical-theme";
 import { CustomDataSuggestionPlugin } from "@/components/lexical/custom-data-plugin";
@@ -11,6 +11,7 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
+import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
@@ -22,18 +23,21 @@ import { CollapsibleContentNode } from "@/components/lexical/collapsible-content
 import { CollapsibleTitleNode } from "@/components/lexical/collapsible-title-node";
 import CollapsiblePlugin from "@/components/lexical/collapsible-plugin";
 import { UneditableParagraphNode } from "@/components/lexical/uneditable-paragraph-node";
-import { forwardRef, useMemo } from "react";
+import { ForwardedRef, forwardRef, useMemo } from "react";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { TemplatePlugin } from "@/components/lexical/template-plugin";
+import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
+import { LexicalEditor } from "lexical";
 export const Editor = forwardRef(
   (
-    { inputs, editorState }: { inputs: string[]; editorState: string },
-    ref: any
+    { inputs, promptTemplate }: { inputs: string[]; promptTemplate: string },
+    ref: ForwardedRef<LexicalEditor>
   ) => {
     const config = useMemo(
       () => ({
         namespace: "editor",
-        ...(editorState ? { editorState } : {}),
+        editorState: () =>
+          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS),
         theme: exampleTheme,
         nodes: [
           HeadingNode,
@@ -52,7 +56,7 @@ export const Editor = forwardRef(
           CollapsibleTitleNode,
           UneditableParagraphNode,
         ],
-        onError: (error) => {
+        onError: (error: Error) => {
           console.error(error);
         },
       }),
@@ -87,8 +91,8 @@ export const Editor = forwardRef(
           {inputs && <CustomDataSuggestionPlugin inputs={inputs} />}
           <CodeHighlightPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-          {/* TODO: Fix too many rerenders */}
           <CollapsiblePlugin />
+          <TabIndentationPlugin />
         </div>
       </LexicalComposer>
     );

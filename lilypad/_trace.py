@@ -43,6 +43,7 @@ def trace(
     arg_values: dict[str, Any],
     lexical_closure: str,
     prompt_template: str = "",
+    project_id: int | None = None,
     version: int | None = None,
 ) -> Trace:
     """Returns a decorator for turining a typed function into an LLM API call."""
@@ -68,6 +69,7 @@ def trace(
                     output = await fn(*args, **kwargs)
                     span.set_attributes(
                         {
+                            "lilypad.project_id": project_id,
                             "lilypad.function_name": fn.__name__,
                             "lilypad.version": version if version else "",
                             "lilypad.llm_function_id": llm_function_id,
@@ -92,6 +94,7 @@ def trace(
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = {
+                        "lilypad.project_id": project_id if project_id else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version": version if version else "",
                         "lilypad.llm_function_id": llm_function_id,

@@ -16,6 +16,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
 import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
+import { Route as ProjectsProjectIdVersionsVersionIdImport } from './routes/projects_/$projectId.versions_.$versionId'
 import { Route as ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport } from './routes/projects_/$projectId.llm-fns_.$llmFunctionId.fn-params'
 
 // Create Virtual Routes
@@ -43,6 +44,12 @@ const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
   path: '/projects/$projectId',
   getParentRoute: () => rootRoute,
 } as any)
+
+const ProjectsProjectIdVersionsVersionIdRoute =
+  ProjectsProjectIdVersionsVersionIdImport.update({
+    path: '/projects/$projectId/versions/$versionId',
+    getParentRoute: () => rootRoute,
+  } as any)
 
 const ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute =
   ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport.update({
@@ -82,6 +89,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexImport
       parentRoute: typeof rootRoute
     }
+    '/projects/$projectId/versions/$versionId': {
+      id: '/projects/$projectId/versions/$versionId'
+      path: '/projects/$projectId/versions/$versionId'
+      fullPath: '/projects/$projectId/versions/$versionId'
+      preLoaderRoute: typeof ProjectsProjectIdVersionsVersionIdImport
+      parentRoute: typeof rootRoute
+    }
     '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': {
       id: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
       path: '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
@@ -99,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/diff': typeof DiffLazyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
   '/diff': typeof DiffLazyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
@@ -116,6 +132,7 @@ export interface FileRoutesById {
   '/diff': typeof DiffLazyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
@@ -126,6 +143,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -133,6 +151,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   id:
     | '__root__'
@@ -140,6 +159,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesById: FileRoutesById
 }
@@ -149,6 +169,7 @@ export interface RootRouteChildren {
   DiffLazyRoute: typeof DiffLazyRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  ProjectsProjectIdVersionsVersionIdRoute: typeof ProjectsProjectIdVersionsVersionIdRoute
   ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute: typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
 
@@ -157,6 +178,8 @@ const rootRouteChildren: RootRouteChildren = {
   DiffLazyRoute: DiffLazyRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  ProjectsProjectIdVersionsVersionIdRoute:
+    ProjectsProjectIdVersionsVersionIdRoute,
   ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute:
     ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute,
 }
@@ -177,6 +200,7 @@ export const routeTree = rootRoute
         "/diff",
         "/projects/$projectId",
         "/projects/",
+        "/projects/$projectId/versions/$versionId",
         "/projects/$projectId/llm-fns/$llmFunctionId/fn-params"
       ]
     },
@@ -191,6 +215,9 @@ export const routeTree = rootRoute
     },
     "/projects/": {
       "filePath": "projects/index.tsx"
+    },
+    "/projects/$projectId/versions/$versionId": {
+      "filePath": "projects_/$projectId.versions_.$versionId.tsx"
     },
     "/projects/$projectId/llm-fns/$llmFunctionId/fn-params": {
       "filePath": "projects_/$projectId.llm-fns_.$llmFunctionId.fn-params.tsx"
