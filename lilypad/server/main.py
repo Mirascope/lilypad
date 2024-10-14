@@ -1,6 +1,7 @@
 """Main FastAPI application module for Lilypad."""
 
 import json
+import os
 from collections.abc import Sequence
 from typing import Annotated, Any
 
@@ -67,10 +68,13 @@ async def validation_exception_handler(
     )
 
 
+port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
 origins = [
     "http://localhost:5173",
     "http://localhost:8000/*",
     "http://127.0.0.1:8000",
+    f"http://localhost/{port}",
+    f"http://127.0.0.1/{port}",
 ]
 
 app.add_middleware(

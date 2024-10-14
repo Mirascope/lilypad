@@ -38,10 +38,11 @@ def run_command(
     if edit:
         os.environ["LILYPAD_EDITOR_OPEN"] = "True"
     runpy.run_path(str(lily_file_path / prompt_file_name), run_name="__main__")
+    port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
     try:
         with open(config_path) as f:
             config = json.loads(f.read())
             if config_id := config.get("project_id", None):
-                print(f"\nTraces url: http://localhost:8000/projects/{config_id}")
+                print(f"\nTraces url: http://localhost:{port}/projects/{config_id}")
     except FileNotFoundError:
         return

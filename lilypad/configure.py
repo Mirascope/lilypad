@@ -1,6 +1,7 @@
 """Initialize Lilypad OpenTelemetry instrumentation."""
 
 import importlib.util
+import os
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -15,8 +16,9 @@ def configure() -> None:
         print("TracerProvider already initialized.")  # noqa: T201
         return
 
+    port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
     otlp_exporter = JSONSpanExporter(
-        base_url="http://127.0.0.1:8000/api",
+        base_url=f"http://127.0.0.1:{port}/api",
     )
 
     provider = TracerProvider()

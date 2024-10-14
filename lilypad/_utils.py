@@ -22,7 +22,10 @@ from .messages import Message
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
+port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+lilypad_client = client.LilypadClient(
+    base_url=f"http://localhost:{port}/api", timeout=10
+)
 
 
 def stringify_type(t: Any) -> str:  # noqa: ANN401

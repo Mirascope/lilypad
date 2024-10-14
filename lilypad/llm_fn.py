@@ -1,6 +1,7 @@
 """The lilypad `llm_fn` decorator."""
 
 import inspect
+import os
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import (
@@ -23,8 +24,10 @@ from ._utils import (
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-
-lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
+port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+lilypad_client = client.LilypadClient(
+    base_url=f"http://localhost:{port}/api", timeout=10
+)
 
 
 class LLMFn(Protocol):
