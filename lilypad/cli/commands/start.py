@@ -1,6 +1,7 @@
 """The `start` command to initialize Lilypad."""
 
 import contextlib
+import json
 import os
 import signal
 import subprocess
@@ -12,7 +13,9 @@ from types import FrameType
 
 import typer
 from rich import print
+from typer import Option
 
+from lilypad._utils import load_config
 from lilypad.server import client
 
 from ...server.db.setup import create_tables
@@ -98,7 +101,9 @@ def terminate_process(process: subprocess.Popen) -> None:
         print("Server process already terminated.")
 
 
-def start_command() -> None:
+def start_command(
+    port: str = Option(default="8000", help="Port to run the FastAPI server on."),
+) -> None:
     """Initialize Lilypad.
 
     - Create prompts directory if it doesn't exist
@@ -120,7 +125,8 @@ def start_command() -> None:
         lily_init = destination_dir / "lily" / "__init__.py"
         lily_init.touch()
 
-    port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+    config = load_config()
+    port = config.get("port", port)
     lilypad_client = client.LilypadClient(
         base_url=f"http://localhost:{port}/api", timeout=10
     )

@@ -1,7 +1,6 @@
 """The lilypad `llm_fn` decorator."""
 
 import inspect
-import os
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import (
@@ -19,12 +18,15 @@ from lilypad.server import client
 from ._utils import (
     get_llm_function_version,
     inspect_arguments,
+    load_config,
     traced_synced_llm_function_constructor,
 )
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+
+config = load_config()
+port = config.get("port", 8000)
 lilypad_client = client.LilypadClient(
     base_url=f"http://localhost:{port}/api", timeout=10
 )

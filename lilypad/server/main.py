@@ -3,6 +3,7 @@
 import json
 import os
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -17,6 +18,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
+from lilypad._utils import load_config
 from lilypad.models import (
     CallArgsPublic,
     FnParamsPublic,
@@ -68,7 +70,9 @@ async def validation_exception_handler(
     )
 
 
-port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+config = load_config()
+port = config.get("port", 8000)
+
 origins = [
     "http://localhost:5173",
     "http://localhost:8000/*",

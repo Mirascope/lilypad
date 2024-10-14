@@ -7,6 +7,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from lilypad._utils import load_config
 from lilypad.exporter import JSONSpanExporter
 
 
@@ -16,7 +17,8 @@ def configure() -> None:
         print("TracerProvider already initialized.")  # noqa: T201
         return
 
-    port = os.environ.get("LILYPAD_BACKEND_PORT", "8000")
+    config = load_config()
+    port = config.get("port", 8000)
     otlp_exporter = JSONSpanExporter(
         base_url=f"http://127.0.0.1:{port}/api",
     )
