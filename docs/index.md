@@ -33,7 +33,7 @@ Install Lilypad, specifying the provider(s) you intend to use, and set your API 
         === "{{ provider }}"
 
             ```bash
-            pip install "python-lilypad[{{ provider | provider_dir }}]==0.0.1"
+            pip install "python-lilypad[{{ provider | provider_dir }}]"
             {% if os == "Windows" %}set {{ upper(provider | provider_dir) }}_API_KEY=XXXXX
             {% else %}export {{ upper(provider | provider_dir) }}_API_KEY=XXXXX
             {% endif %}

@@ -8,6 +8,7 @@ import webbrowser
 from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
 from functools import partial, wraps
 from importlib import import_module
+from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from mirascope.core import base as mb
@@ -22,7 +23,23 @@ from .messages import Message
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
+
+def load_config() -> dict[str, Any]:
+    try:
+        project_dir = os.getenv("LILYPAD_PROJECT_DIR", Path.cwd())
+        with open(f"{project_dir}/.lilypad/config.json") as f:
+            config = json.loads(f.read())
+        return config
+    except FileNotFoundError:
+        return {}
+
+
+config = load_config()
+port = config.get("port", 8000)
+
+lilypad_client = client.LilypadClient(
+    base_url=f"http://localhost:{port}/api", timeout=10
+)
 
 
 def stringify_type(t: Any) -> str:  # noqa: ANN401
@@ -118,23 +135,6 @@ def get_llm_function_version(
     )
 
 
-def _construct_prompt_template_and_call_decorator(
-    fn: Callable[_P, _R], fn_params: FnParamsPublic
-) -> tuple[Callable[_P, mb.BaseDynamicConfig], Callable]:
-    """Returns a prompt template and call decorator constructed from `fn_params`"""
-
-    @mb.prompt_template(fn_params.prompt_template)
-    @wraps(fn)
-    def prompt_template(*args: _P.args, **kwargs: _P.kwargs) -> mb.BaseDynamicConfig:
-        return {"call_params": fn_params.call_params if fn_params.call_params else {}}
-
-    return prompt_template, partial(
-        import_module(f"mirascope.core.{fn_params.provider}").call,
-        model=fn_params.model,
-        json_mode=False,
-    )
-
-
 def traced_synced_llm_function_constructor(
     fn_params: FnParamsPublic, trace_decorator: Callable | None
 ) -> Callable[
@@ -162,7 +162,7 @@ def traced_synced_llm_function_constructor(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
                 return {
-                    "call_params": json.loads(fn_params.call_params)
+                    "call_params": fn_params.call_params
                     if fn_params.call_params
                     else {}
                 }
