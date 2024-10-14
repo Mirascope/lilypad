@@ -18,13 +18,18 @@ from lilypad.server import client
 from ._utils import (
     get_llm_function_version,
     inspect_arguments,
+    load_config,
     traced_synced_llm_function_constructor,
 )
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-lilypad_client = client.LilypadClient(base_url="http://localhost:8000/api", timeout=10)
+config = load_config()
+port = config.get("port", 8000)
+lilypad_client = client.LilypadClient(
+    base_url=f"http://localhost:{port}/api", timeout=10
+)
 
 
 class LLMFn(Protocol):
