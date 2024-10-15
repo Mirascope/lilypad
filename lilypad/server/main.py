@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -16,7 +16,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
-from lilypad._utils import load_config
+from lilypad import configure
+from lilypad._trace import trace
+from lilypad._utils import load_config, traced_synced_llm_function_constructor
 from lilypad.models import (
     CallArgsCreate,
     CallArgsPublic,
@@ -206,6 +208,74 @@ async def get_llm_function_id_by_hash(
     if not llm_function:
         raise HTTPException(status_code=404, detail="LLM function not found")
     return llm_function if llm_function else None
+
+
+def create_dynamic_function(
+    name: str, args_dict: dict[str, str], return_annotation: type
+):
+    """Create a dynamic function with the given name, arguments, and return type."""
+    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in args_dict.items()]
+    arg_string = ", ".join(arg_list)
+
+    func_def = f"def {name}({arg_string}) -> {return_annotation.__name__}:\n    ..."
+
+    namespace = {}
+    exec(func_def, namespace)
+
+    return namespace[name]
+
+
+@api.post("/projects/{project_id}/versions/{version_id:int}/vibe")
+def vibe_check(
+    project_id: int,
+    version_id: int,
+    arg_values: dict[str, Any],
+    session: Annotated[Session, Depends(get_session)],
+):
+    """Check if the vibes are good."""
+    version = session.exec(
+        select(VersionTable).where(
+            VersionTable.project_id == project_id, VersionTable.id == version_id
+        )
+    ).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    args_dict = json.loads(version.llm_fn.arg_types) if version.llm_fn.arg_types else {}
+
+    configure()
+    trace_decorator = trace(
+        project_id=project_id,
+        llm_function_id=version.llm_fn.id,
+        arg_types=args_dict,
+        arg_values=arg_values,
+        lexical_closure=version.llm_fn.code,
+        prompt_template=version.fn_params.prompt_template if version.fn_params else "",
+        version=version.version,
+    )
+
+    fn = create_dynamic_function(
+        name=version.llm_fn.function_name,
+        args_dict=args_dict,
+        return_annotation=str,
+    )
+
+    if not version.fn_params:
+        return trace_decorator(fn)(**arg_values)
+
+    call_params = None
+    if version.fn_params.call_params and version.fn_params.provider == Provider.OPENAI:
+        call_params = OpenAICallArgsCreate.model_validate(
+            json.loads(version.fn_params.call_params)
+        )
+    fn_params = FnParamsPublic.model_validate(
+        {
+            **version.fn_params.model_dump(exclude={"call_params"}),
+            "call_params": call_params,
+        }
+    )
+    return traced_synced_llm_function_constructor(fn_params, trace_decorator)(fn)(
+        **arg_values
+    )
 
 
 @api.get(

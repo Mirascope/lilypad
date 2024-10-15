@@ -107,7 +107,6 @@ const EditorContainer = () => {
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.prompt_template = markdown;
-      console.log(data);
       mutation.mutate(data);
       window.close();
     });
@@ -120,6 +119,8 @@ const EditorContainer = () => {
         editorErrors,
         onSubmit,
         ref: editorRef,
+        isSynced:
+          !latestVersion || Boolean(latestVersion && latestVersion.fn_params),
       }}
     />
   );

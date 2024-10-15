@@ -28,10 +28,17 @@ interface EditorFormProps {
   llmFunction: LLMFunctionBasePublic;
   onSubmit: SubmitHandler<CallArgsCreate>;
   editorErrors: string[];
+  formButtons?: React.ReactNode[];
 }
 export const EditorForm = forwardRef(
   (
-    { latestVersion, llmFunction, onSubmit, editorErrors }: EditorFormProps,
+    {
+      latestVersion,
+      llmFunction,
+      onSubmit,
+      editorErrors,
+      formButtons,
+    }: EditorFormProps,
     ref: ForwardedRef<LexicalEditor>
   ) => {
     const isInitialRender = useRef<boolean>(true);
@@ -264,9 +271,12 @@ export const EditorForm = forwardRef(
               />
             </div>
           </div>
-          <Button type='submit' className='mt-2'>
-            Submit
-          </Button>
+          <div className='button-group'>
+            <Button type='submit' className='mt-2'>
+              Create version
+            </Button>
+            {formButtons && formButtons.map((button) => button)}
+          </div>
         </form>
       </div>
     );

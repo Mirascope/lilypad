@@ -13,6 +13,8 @@ import { CallArgsCreate, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
+import { Typography } from "@/components/ui/typography";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute(
   "/projects/$projectId/versions/$versionId"
@@ -69,20 +71,32 @@ const EditorContainer = () => {
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.prompt_template = markdown;
-      console.log(data);
       mutation.mutate(data);
       window.close();
     });
   };
+  const vibeCheck = async () => {
+    await api.get(`projects/${projectId}/versions/${versionId}/vibe`);
+  };
+  const playgroundButton = (
+    <Button variant='outline' onClick={vibeCheck}>
+      {"Vibe"}
+    </Button>
+  );
   return (
-    <EditorForm
-      {...{
-        llmFunction: version.llm_fn,
-        latestVersion: version,
-        editorErrors,
-        onSubmit,
-        ref: editorRef,
-      }}
-    />
+    <>
+      <Typography variant='h2'>{"Playground"}</Typography>
+      <EditorForm
+        {...{
+          llmFunction: version.llm_fn,
+          latestVersion: version,
+          editorErrors,
+          onSubmit,
+          ref: editorRef,
+          isSynced: !version || Boolean(version && version.fn_params),
+          formButtons: [playgroundButton],
+        }}
+      />
+    </>
   );
 };
