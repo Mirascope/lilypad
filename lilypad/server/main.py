@@ -230,7 +230,7 @@ async def vibe_check(
     version_id: int,
     arg_values: dict[str, Any],
     session: Annotated[Session, Depends(get_session)],
-):
+) -> str:
     """Check if the vibes are good."""
     version_table = session.exec(
         select(VersionTable).where(
@@ -552,6 +552,25 @@ def set_display_name_and_convert(
     ]
 
     return span_public
+
+
+@api.get("/projects/{project_id}/spans/{span_id}", response_model=SpanPublic)
+async def get_span(
+    project_id: int,
+    span_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> SpanPublic:
+    """Get span by id."""
+    span = session.exec(
+        select(SpanTable).where(
+            SpanTable.project_id == project_id,
+            SpanTable.id == span_id,
+            SpanTable.parent_span_id.is_(None),  # type: ignore
+        )
+    ).first()
+    if not span:
+        raise HTTPException(status_code=404, detail="Span not found")
+    return set_display_name_and_convert(span)
 
 
 @api.get("/projects/{project_id}/traces", response_model=Sequence[SpanPublic])

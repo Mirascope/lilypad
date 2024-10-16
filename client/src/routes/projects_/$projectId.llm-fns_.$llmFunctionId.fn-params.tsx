@@ -3,17 +3,7 @@ import {
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
-import { Editor } from "@/routes/-editor";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useRef, useState } from "react";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,16 +11,11 @@ import api from "@/api";
 import {
   CallArgsCreate,
   LLMFunctionBasePublic,
-  Provider,
   VersionPublic,
-  ResponseFormat,
 } from "@/types/types";
-import { Label } from "@/components/ui/label";
-import { ModelCombobox } from "@/components/ui/model-combobox";
 import { LexicalEditor } from "lexical";
 import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
-import { FormSlider } from "@/components/FormSlider";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
 
@@ -84,7 +69,7 @@ const EditorContainer = () => {
     onSuccess: () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({
-        queryKey: [`llmFunctions-${llmFunction.id}-fnParams`],
+        queryKey: ["llmFunctions", llmFunction.id, "fnParams"],
       });
     },
   });

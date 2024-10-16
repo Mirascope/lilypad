@@ -266,7 +266,7 @@ export const EditorForm = forwardRef(
             </div>
           </div>
           <div className='button-group'>
-            <Button type='submit' name='create-version' className='mt-2'>
+            <Button type='submit' name='create-version'>
               Create version
             </Button>
             {formButtons && formButtons.map((button) => button)}

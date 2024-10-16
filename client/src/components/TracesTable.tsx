@@ -46,6 +46,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { LlmPanel } from "@/components/LlmPanel";
+import { useNavigate } from "@tanstack/react-router";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -63,112 +64,121 @@ const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
   return true;
 };
 
-const columns: ColumnDef<SpanPublic>[] = [
-  {
-    accessorKey: "display_name",
-    header: "Name",
-    enableHiding: false,
-    filterFn: onlyParentFilter,
-    cell: ({ row }) => {
-      const depth = row.depth;
-      const paddingLeft = `${depth * 1}rem`;
-      const hasSubRows = row.subRows.length > 0;
-      return (
-        <div
-          style={{ paddingLeft }}
-          onClick={(event) => {
-            row.toggleExpanded();
-            event.stopPropagation();
-          }}
-        >
-          {hasSubRows && (
-            <ChevronRight
-              className={`h-4 w-4 inline mr-2 ${
-                row.getIsExpanded() ? "rotate-90" : ""
-              }`}
-            />
-          )}
-          {row.getValue("display_name")}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "scope",
-    header: "Scope",
-  },
-  {
-    accessorKey: "version",
-    header: "Version",
-  },
-  // {
-  //   accessorKey: "output",
-  //   header: "Output",
-  //   cell: ({ row }) => {
-  //     return (
-  //       <Tooltip>
-  //         <TooltipTrigger asChild>
-  //           <div className='line-clamp-1'>{row.getValue("output")}</div>
-  //         </TooltipTrigger>
-  //         <TooltipContent>
-  //           <p className='max-w-xs break-words'>{row.getValue("output")}</p>
-  //         </TooltipContent>
-  //       </Tooltip>
-  //     );
-  //   },
-  // },
-  {
-    accessorKey: "created_at",
-    id: "timestamp",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant='ghost'
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Timestamp
-          <ArrowUpDown className='ml-2 h-4 w-4' />
-        </Button>
-      );
-    },
-    cell: ({ row }) => (
-      <div className='lowercase'>{row.getValue("timestamp")}</div>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: () => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='ghost' className='h-8 w-8 p-0'>
-              <span className='sr-only'>Open menu</span>
-              <MoreHorizontal className='h-4 w-4' />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => {}}>
-              Open Playground
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View more details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
-
 export function DataTableDemo({ data }: { data: SpanPublic[] }) {
+  const navigate = useNavigate();
+  const columns: ColumnDef<SpanPublic>[] = [
+    {
+      accessorKey: "display_name",
+      header: "Name",
+      enableHiding: false,
+      filterFn: onlyParentFilter,
+      cell: ({ row }) => {
+        const depth = row.depth;
+        const paddingLeft = `${depth * 1}rem`;
+        const hasSubRows = row.subRows.length > 0;
+        return (
+          <div
+            style={{ paddingLeft }}
+            onClick={(event) => {
+              row.toggleExpanded();
+              event.stopPropagation();
+            }}
+          >
+            {hasSubRows && (
+              <ChevronRight
+                className={`h-4 w-4 inline mr-2 ${
+                  row.getIsExpanded() ? "rotate-90" : ""
+                }`}
+              />
+            )}
+            {row.getValue("display_name")}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "scope",
+      header: "Scope",
+    },
+    {
+      accessorKey: "version",
+      header: "Version",
+    },
+    // {
+    //   accessorKey: "output",
+    //   header: "Output",
+    //   cell: ({ row }) => {
+    //     return (
+    //       <Tooltip>
+    //         <TooltipTrigger asChild>
+    //           <div className='line-clamp-1'>{row.getValue("output")}</div>
+    //         </TooltipTrigger>
+    //         <TooltipContent>
+    //           <p className='max-w-xs break-words'>{row.getValue("output")}</p>
+    //         </TooltipContent>
+    //       </Tooltip>
+    //     );
+    //   },
+    // },
+    {
+      accessorKey: "created_at",
+      id: "timestamp",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant='ghost'
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Timestamp
+            <ArrowUpDown className='ml-2 h-4 w-4' />
+          </Button>
+        );
+      },
+      cell: ({ row }) => (
+        <div className='lowercase'>{row.getValue("timestamp")}</div>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' className='h-8 w-8 p-0'>
+                <span className='sr-only'>Open menu</span>
+                <MoreHorizontal className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  const { project_id, version, id } = row.original;
+                  navigate({
+                    to: `/projects/${project_id}/versions/${version}`,
+                    search: {
+                      spanId: id,
+                    },
+                  });
+                }}
+              >
+                Open Playground
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>View more details</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [selectedRow, setSelectedRow] = useState<SpanPublic | null>(null);
-
   const table = useReactTable({
     data,
     columns,

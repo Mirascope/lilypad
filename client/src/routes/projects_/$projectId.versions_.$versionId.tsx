@@ -3,14 +3,15 @@ import {
   useLoaderData,
   useNavigate,
   useParams,
+  useSearch,
 } from "@tanstack/react-router";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { QueryClient, useMutation } from "@tanstack/react-query";
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/api";
-import { CallArgsCreate, VersionPublic } from "@/types/types";
+import { CallArgsCreate, SpanPublic, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
@@ -18,14 +19,17 @@ import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { ArgsCards } from "@/components/ArgsCards";
 import { AxiosResponse } from "axios";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
-  Controller,
-  FormProvider,
-  SubmitHandler,
-  useForm,
-} from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SkeletonCard } from "@/components/SkeletonCard";
+import { getErrorMessage } from "@/lib/utils";
 
 const versionQuery = (projectId: string, versionId: string) => ({
   queryKey: ["project", projectId, "version", versionId],
@@ -36,6 +40,11 @@ const versionQuery = (projectId: string, versionId: string) => ({
 type PlaygroundCallArgsCreate = CallArgsCreate & {
   shouldRunVibes?: boolean;
 };
+
+type PlaygroundSearchParams = {
+  spanId?: string;
+};
+
 export const loader =
   (queryClient: QueryClient) =>
   async ({
@@ -56,15 +65,27 @@ export const Route = createFileRoute(
   loader: loader(queryClient),
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ({ error }) => <div>{error.message}</div>,
+  validateSearch: (search: Record<string, unknown>): PlaygroundSearchParams => {
+    return search.spanId ? { spanId: search.spanId as string } : {};
+  },
   component: () => <PlaygroundContainer />,
 });
 
 const PlaygroundContainer = () => {
   const version = useLoaderData({
     from: Route.id,
-  });
+  }) as VersionPublic;
   const navigate = useNavigate();
   const { projectId } = useParams({ from: Route.id });
+  const { spanId } = useSearch({ from: Route.id });
+
+  const { isLoading, data: spanData } = useQuery<SpanPublic>({
+    queryKey: ["span", spanId],
+    queryFn: async () =>
+      (await api.get(`/projects/${projectId}/spans/${spanId}`)).data,
+    retry: false,
+    enabled: Boolean(spanId),
+  });
   const mutation = useMutation({
     mutationFn: ({
       shouldRunVibes,
@@ -74,21 +95,63 @@ const PlaygroundContainer = () => {
         `projects/${projectId}/llm-fns/${version.llm_fn.id}/fn-params`,
         callArgsCreate
       ),
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       navigate({
         to: `/projects/${projectId}/versions/${data.data.id.toString()}`,
         replace: true,
       });
       if (variables.shouldRunVibes) {
-        vibeCheck(data.data);
+        const isValid = await trigger();
+        if (isValid) {
+          vibeMutation.mutate();
+        }
       }
     },
   });
-  const { control, trigger, getValues } = useForm({});
-  const [output, setOutput] = useState<string>("");
+  const vibeMutation = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post(
+          `projects/${projectId}/versions/${version.id}/vibe`,
+          getValues()
+        )
+      ).data,
+  });
+
+  let argTypes = version.llm_fn.arg_types
+    ? JSON.parse(version.llm_fn.arg_types)
+    : {};
+  argTypes = Object.keys(argTypes).reduce(
+    (acc, key) => {
+      acc[key as keyof string] = "";
+      return acc;
+    },
+    {} as Record<keyof string, string>
+  );
+  const {
+    control,
+    trigger,
+    getValues,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: argTypes,
+  });
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
+  useEffect(() => {
+    if (!spanData) return;
+    const data = JSON.parse(spanData.data);
+
+    let argValues;
+    try {
+      argValues = JSON.parse(data.attributes["lilypad.arg_values"]);
+    } catch (e) {
+      argValues = {};
+    }
+    reset(argValues);
+  }, [spanData, reset]);
   const onSubmit: SubmitHandler<CallArgsCreate> = (data, event) => {
     const nativeEvent = event?.nativeEvent as SubmitEvent;
     const actionType = (nativeEvent.submitter as HTMLButtonElement).name;
@@ -114,21 +177,13 @@ const PlaygroundContainer = () => {
       });
     });
   };
-  const vibeCheck = async (version: VersionPublic) => {
-    trigger();
-
-    const results = await api.post(
-      `projects/${projectId}/versions/${version.id}/vibe`,
-      getValues()
-    );
-    setOutput(results.data);
-  };
   const playgroundButton = (
     <Button
       key={"vibe-button"}
       type='submit'
       variant='outline'
       name='vibe-button'
+      loading={vibeMutation.isPending}
     >
       {"Vibe"}
     </Button>
@@ -137,34 +192,17 @@ const PlaygroundContainer = () => {
     let component;
     switch (value) {
       case "str":
-        component = (
-          <Controller
-            name={key}
-            control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <Input
-                {...field}
-                placeholder='Enter value'
-                type='text'
-                value={field.value}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        );
-        break;
       case "int":
         component = (
           <Controller
             name={key}
             control={control}
-            rules={{ required: true }}
+            rules={{ required: "This field is required" }}
             render={({ field }) => (
               <Input
                 {...field}
                 placeholder='Enter value'
-                type='number'
+                type={value === "str" ? "text" : "number"}
                 value={field.value}
                 onChange={field.onChange}
               />
@@ -173,18 +211,34 @@ const PlaygroundContainer = () => {
         );
         break;
     }
-    return <CardContent>{component}</CardContent>;
+    return (
+      <>
+        <CardContent>{component}</CardContent>
+        {errors[key] && (
+          <CardFooter className='text-red-500 text-sm mt-1'>
+            {getErrorMessage(errors[key].message)}
+          </CardFooter>
+        )}
+      </>
+    );
   };
+  if (version && !version.fn_params) {
+    return <div>{"Playground is unavailable for non-synced calls"}</div>;
+  }
   return (
     <div className='p-2'>
       <Typography variant='h2'>{"Playground"}</Typography>
       <Typography variant='h3'>{version.llm_fn.function_name}</Typography>
       {version.llm_fn.arg_types && (
         <div className='flex'>
-          <ArgsCards
-            args={JSON.parse(version.llm_fn.arg_types)}
-            customContent={renderEditableArgs}
-          />
+          {isLoading ? (
+            <SkeletonCard />
+          ) : (
+            <ArgsCards
+              args={JSON.parse(version.llm_fn.arg_types)}
+              customContent={renderEditableArgs}
+            />
+          )}
         </div>
       )}
       <EditorForm
@@ -198,12 +252,12 @@ const PlaygroundContainer = () => {
           formButtons: [playgroundButton],
         }}
       />
-      {output && (
+      {vibeMutation.isSuccess && (
         <Card>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent className='flex'>{output}</CardContent>
+          <CardContent className='flex'>{vibeMutation.data}</CardContent>
         </Card>
       )}
     </div>

@@ -331,3 +331,9 @@
   list-style-type: lower-roman;
   list-style-position: inside;
 }
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
