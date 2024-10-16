@@ -145,10 +145,24 @@ def traced_synced_llm_function_constructor(
     if not trace_decorator:
         trace_decorator = lambda x: x  # noqa: E731
 
+    provider = fn_params.provider.value
+
+    # Custom Clients
+    client = None
+    if fn_params.provider.value == "openrouter":
+        from openai import OpenAI
+
+        provider = "openai"
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+        )
+
     call_decorator = partial(
-        import_module(f"mirascope.core.{fn_params.provider.value}").call,
+        import_module(f"mirascope.core.{provider}").call,
         model=fn_params.model,
         json_mode=False,
+        client=client,
     )
 
     def decorator(

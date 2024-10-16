@@ -1,7 +1,6 @@
 """The `start` command to initialize Lilypad."""
 
 import contextlib
-import json
 import os
 import signal
 import subprocess

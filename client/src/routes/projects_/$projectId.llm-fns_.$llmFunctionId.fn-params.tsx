@@ -128,13 +128,26 @@ const EditorContainer = () => {
       { value: "o1-preview", label: "o1-preview" },
       { value: "o1-mini", label: "o1-mini" },
       { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-      { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
     ],
     [Provider.ANTHROPIC]: [
       { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet" },
       { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
       { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
       { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+    ],
+    [Provider.OPENROUTER]: [
+      { value: "openai/chatgpt-4o-latest", label: "GPT-4o" },
+      { value: "openai/gpt-4o-mini", label: "GPT-4o-mini" },
+      { value: "openai/o1-preview", label: "o1-preview" },
+      { value: "openai/o1-mini", label: "o1-mini" },
+      { value: "openai/gpt-4-turbo", label: "GPT-4 Turbo" },
+      {
+        value: "anthropic/claude-3.5-sonnet",
+        label: "Claude 3.5 Sonnet",
+      },
+      { value: "anthropic/claude-3-opus", label: "Claude 3 Opus" },
+      { value: "anthropic/claude-3-sonnet", label: "Claude 3 Sonnet" },
+      { value: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" },
     ],
   };
 
@@ -193,6 +206,7 @@ const EditorContainer = () => {
                     <SelectContent>
                       <SelectItem value="openai">OpenAI</SelectItem>
                       <SelectItem value="anthropic">Anthropic</SelectItem>
+                      <SelectItem value="openrouter">OpenRouter</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

@@ -21,6 +21,7 @@ class Provider(str, Enum):
 
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
+    OPENROUTER = "openrouter"
 
 
 class FnParamsBase(BaseSQLModel):

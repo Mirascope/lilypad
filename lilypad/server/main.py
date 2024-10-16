@@ -1,9 +1,7 @@
 """Main FastAPI application module for Lilypad."""
 
 import json
-import os
 from collections.abc import Sequence
-from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
