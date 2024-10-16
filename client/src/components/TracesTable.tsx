@@ -152,19 +152,21 @@ export function DataTableDemo({ data }: { data: SpanPublic[] }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  const { project_id, version, id } = row.original;
-                  navigate({
-                    to: `/projects/${project_id}/versions/${version}`,
-                    search: {
-                      spanId: id,
-                    },
-                  });
-                }}
-              >
-                Open Playground
-              </DropdownMenuItem>
+              {row.original.scope === Scope.LILYPAD && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    const { project_id, version, id } = row.original;
+                    navigate({
+                      to: `/projects/${project_id}/versions/${version}`,
+                      search: {
+                        spanId: id,
+                      },
+                    });
+                  }}
+                >
+                  Open Playground
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
