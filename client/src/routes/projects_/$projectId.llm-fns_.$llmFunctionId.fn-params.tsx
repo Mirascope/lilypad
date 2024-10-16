@@ -112,16 +112,24 @@ const EditorContainer = () => {
     });
   };
   return (
-    <EditorForm
-      {...{
-        llmFunction,
-        latestVersion,
-        editorErrors,
-        onSubmit,
-        ref: editorRef,
-        isSynced:
-          !latestVersion || Boolean(latestVersion && latestVersion.fn_params),
-      }}
-    />
+    <div className='p-2'>
+      <Typography variant='h3'>{llmFunction.function_name}</Typography>
+      {llmFunction.arg_types && (
+        <div className='flex'>
+          <ArgsCards args={JSON.parse(llmFunction.arg_types)} />
+        </div>
+      )}
+      <EditorForm
+        {...{
+          llmFunction,
+          latestVersion,
+          editorErrors,
+          onSubmit,
+          ref: editorRef,
+          isSynced:
+            !latestVersion || Boolean(latestVersion && latestVersion.fn_params),
+        }}
+      />
+    </div>
   );
 };

@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel
@@ -31,7 +32,7 @@ class FnParamsBase(BaseSQLModel):
     hash: str
     model: str
     prompt_template: str
-    call_params: str | None = Field(default=None)
+    call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
 
 
 class FnParamsTable(FnParamsBase, table=True):

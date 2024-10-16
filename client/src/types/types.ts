@@ -42,6 +42,26 @@ export interface CallArgsPublic {
 }
 
 /**
+ * FnParamsPublic
+ * Fn params public model
+ */
+export interface FnParamsPublic {
+  /** Llm Function Id */
+  llm_function_id: number | null;
+  /** Provider name enum */
+  provider: Provider;
+  /** Hash */
+  hash: string;
+  /** Model */
+  model: string;
+  /** Prompt Template */
+  prompt_template: string;
+  call_params?: OpenAICallArgsCreate | null;
+  /** Id */
+  id: number;
+}
+
+/**
  * FnParamsTable
  * Provider call params table
  */
@@ -57,7 +77,7 @@ export interface FnParamsTable {
   /** Prompt Template */
   prompt_template: string;
   /** Call Params */
-  call_params?: string | null;
+  call_params?: object | null;
   /** Id */
   id?: number | null;
 }
@@ -124,7 +144,7 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-11T17:12:17.660788Z"
+   * @default "2024-10-15T18:15:46.957058Z"
    */
   created_at?: string;
 }
@@ -227,6 +247,8 @@ export enum Scope {
  * Call public model with prompt version.
  */
 export interface SpanPublic {
+  /** Project Id */
+  project_id?: number | null;
   /** Llm Function Id */
   llm_function_id?: number | null;
   /** Instrumentation Scope name of the span */
@@ -238,7 +260,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-11T17:12:17.666073Z"
+   * @default "2024-10-15T18:15:46.961053Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -267,6 +289,8 @@ export interface ValidationError {
  * Version public model
  */
 export interface VersionPublic {
+  /** Project Id */
+  project_id?: number | null;
   /** Llm Function Id */
   llm_function_id: number;
   /** Fn Params Id */
@@ -286,7 +310,7 @@ export interface VersionPublic {
   is_active?: boolean;
   /** Id */
   id: number;
-  fn_params?: CallArgsPublic | null;
+  fn_params?: FnParamsPublic | null;
   /** LLM function base public model */
   llm_fn: LLMFunctionBasePublic;
 }

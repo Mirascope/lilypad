@@ -36,7 +36,7 @@ def check_if_lily_exists() -> bool:
     return os.path.exists("lily")
 
 
-def start_lilypad(project_dir: Path, port: str) -> subprocess.Popen:
+def start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
     """Starts the FastAPI server using subprocess.Popen.
 
     Args:
@@ -52,7 +52,7 @@ def start_lilypad(project_dir: Path, port: str) -> subprocess.Popen:
     env["LILYPAD_PROJECT_DIR"] = str(project_dir)
     files_dir = files("lilypad").joinpath("server")
     process = subprocess.Popen(
-        ["fastapi", "dev", "--port", port],
+        ["fastapi", "dev", "--port", str(port)],
         cwd=str(files_dir),
         env=env,
     )

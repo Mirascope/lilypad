@@ -19,8 +19,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import { LexicalEditor } from "lexical";
-import { Typography } from "@/components/ui/typography";
-import { ArgsCards } from "@/components/ArgsCards";
 import { FormSlider } from "@/components/FormSlider";
 
 interface EditorFormProps {
@@ -106,13 +104,7 @@ export const EditorForm = forwardRef(
       ? Object.keys(JSON.parse(llmFunction.arg_types))
       : [];
     return (
-      <div className='p-2 flex flex-col gap-2'>
-        <Typography variant='h3'>{llmFunction.function_name}</Typography>
-        {llmFunction.arg_types && (
-          <div className='flex'>
-            <ArgsCards args={JSON.parse(llmFunction.arg_types)} />
-          </div>
-        )}
+      <div className='flex flex-col gap-2'>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className='flex gap-2'>
             <div className='lexical form-group'>
@@ -128,8 +120,10 @@ export const EditorForm = forwardRef(
                 }
               />
               {editorErrors.length > 0 &&
-                editorErrors.map((error) => (
-                  <div className='text-red-500 text-sm mt-1'>{error}</div>
+                editorErrors.map((error, i) => (
+                  <div key={i} className='text-red-500 text-sm mt-1'>
+                    {error}
+                  </div>
                 ))}
             </div>
             <div className='w-full max-w-sm flex flex-col gap-3'>
@@ -272,7 +266,7 @@ export const EditorForm = forwardRef(
             </div>
           </div>
           <div className='button-group'>
-            <Button type='submit' className='mt-2'>
+            <Button type='submit' name='create-version' className='mt-2'>
               Create version
             </Button>
             {formButtons && formButtons.map((button) => button)}
