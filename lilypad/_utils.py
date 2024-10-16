@@ -5,7 +5,6 @@ import json
 import os
 import time
 import webbrowser
-from asyncio import iscoroutinefunction
 from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
 from functools import partial, wraps
 from importlib import import_module
