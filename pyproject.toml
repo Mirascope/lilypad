@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.3"
+version = "0.0.4"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -42,7 +42,7 @@ dependencies = [
 
 [project.urls]
 # Homepage = "https://mirascope.com/lilypad"
-# Documentation = "https://lilypad.mirascope.com/docs"
+Documentation = "https://lilypad.mirascope.com/docs"
 Repository = "https://github.com/Mirascope/lilypad"
 Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
