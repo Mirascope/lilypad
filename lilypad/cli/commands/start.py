@@ -103,6 +103,8 @@ def terminate_process(process: subprocess.Popen) -> None:
 
 def update_port(filename: str, new_port: str) -> None:
     """Update the port in the config file."""
+    if not os.path.exists(filename):
+        return
     with open(filename) as f:
         data = json.load(f)
 
@@ -162,7 +164,7 @@ def start_command(
                     data = {
                         "project_name": project_name,
                         "project_id": project.id,
-                        "port": port,
+                        "port": new_port,
                     }
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:

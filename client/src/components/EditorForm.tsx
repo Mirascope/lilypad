@@ -96,16 +96,19 @@ export const EditorForm = forwardRef(
       }
       if (provider === Provider.OPENAI) {
         reset({
+          provider: Provider.OPENAI,
           model: "gpt-4o",
           call_params: openaiCallParamsDefault,
         });
       } else if (provider === Provider.ANTHROPIC) {
         reset({
+          provider: Provider.ANTHROPIC,
           model: "claude-3-5-sonnet-20240620",
           call_params: anthropicCallParamsDefault,
         });
       } else if (provider === Provider.OPENROUTER) {
         reset({
+          provider: Provider.OPENROUTER,
           model: "openai/chatgpt-4o-latest",
           call_params: openaiCallParamsDefault,
         });
@@ -325,6 +328,7 @@ export const EditorForm = forwardRef(
                       <SelectContent>
                         <SelectItem value='openai'>OpenAI</SelectItem>
                         <SelectItem value='anthropic'>Anthropic</SelectItem>
+                        <SelectItem value='openrouter'>OpenRouter</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -352,7 +356,7 @@ export const EditorForm = forwardRef(
                   defaultValue={getValues("model")}
                 />
               </div>
-              {provider === Provider.OPENAI
+              {provider === Provider.OPENAI || provider === Provider.OPENROUTER
                 ? openaiParams
                 : provider === Provider.ANTHROPIC
                   ? anthropicParams
