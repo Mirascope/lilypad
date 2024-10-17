@@ -23,13 +23,14 @@ from lilypad.models import (
     CallArgsCreate,
     CallArgsPublic,
     FnParamsPublic,
-    LLMFunctionBasePublic,
+    LLMFunctionCreate,
+    LLMFunctionPublic,
     ProjectCreate,
     ProjectPublic,
     SpanPublic,
     VersionPublic,
 )
-from lilypad.models.fn_params import OpenAICallArgsCreate
+from lilypad.models.fn_params import AnthropicCallArgsCreate, OpenAICallArgsCreate
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     FnParamsTable,
@@ -145,18 +146,9 @@ async def get_code_by_function_name(
     return llm_functions
 
 
-class LLMFunctionCreate(BaseModel):
-    """LLM function create model."""
-
-    function_name: str
-    code: str
-    version_hash: str
-    arg_types: str | None = None
-
-
 @api.post(
     "/projects/{project_id}/llm-fns/",
-    response_model=LLMFunctionBasePublic,
+    response_model=LLMFunctionPublic,
 )
 async def create_llm_functions(
     project_id: int,
@@ -176,9 +168,7 @@ async def create_llm_functions(
     return llm_function
 
 
-@api.get(
-    "/projects/{project_id}/llm-fns/{id:int}", response_model=LLMFunctionBasePublic
-)
+@api.get("/projects/{project_id}/llm-fns/{id:int}", response_model=LLMFunctionPublic)
 async def get_llm_function_by_id(
     id: int,
     session: Annotated[Session, Depends(get_session)],
@@ -194,7 +184,7 @@ async def get_llm_function_by_id(
 
 @api.get(
     "/projects/{project_id}/llm-fns/{version_hash:str}",
-    response_model=LLMFunctionBasePublic,
+    response_model=LLMFunctionPublic,
 )
 async def get_llm_function_id_by_hash(
     version_hash: str,
@@ -240,11 +230,11 @@ async def vibe_check(
     if not version_table:
         raise HTTPException(status_code=404, detail="Version not found")
     version = VersionPublic.model_validate(version_table)
-    args_dict = json.loads(version.llm_fn.arg_types) if version.llm_fn.arg_types else {}
+    args_dict = version.llm_fn.arg_types or {}
     configure()
     trace_decorator = trace(
         project_id=project_id,
-        llm_function_id=version.llm_fn.id,
+        version_id=version.id,
         arg_types=args_dict,
         arg_values=arg_values,
         lexical_closure=version.llm_fn.code,
@@ -298,13 +288,15 @@ class NonSyncedVersionCreate(BaseModel):
     response_model=VersionPublic,
 )
 async def create_non_synced_version(
+    project_id: int,
     non_synced_version_create: NonSyncedVersionCreate,
     session: Annotated[Session, Depends(get_session)],
 ) -> VersionPublic:
     """Creates a new version for a non-synced LLM function."""
     llm_fn = session.exec(
         select(LLMFunctionTable).where(
-            LLMFunctionTable.id == non_synced_version_create.llm_function_id
+            LLMFunctionTable.project_id == project_id,
+            LLMFunctionTable.id == non_synced_version_create.llm_function_id,
         )
     ).first()
     if not llm_fn:
@@ -318,6 +310,7 @@ async def create_non_synced_version(
             session.add(version)
     session.flush()
     new_version = VersionTable(
+        project_id=project_id,
         version=len(versions) + 1,
         function_name=llm_fn.function_name,
         is_active=True,
@@ -332,7 +325,7 @@ async def create_non_synced_version(
     return VersionPublic(
         **new_version.model_dump(),
         fn_params=None,
-        llm_fn=LLMFunctionBasePublic.model_validate(llm_fn),
+        llm_fn=LLMFunctionPublic.model_validate(llm_fn),
     )
 
 
@@ -483,15 +476,23 @@ async def get_call_args_from_llm_function_by_id(
                 latest_fn_params = second_llm_function.fn_params[-1]
     else:
         latest_fn_params = llm_function.fn_params[-1]
+
+    if latest_fn_params.provider == Provider.OPENAI:
+        call_params = OpenAICallArgsCreate.model_validate(latest_fn_params.call_params)
+    elif latest_fn_params.provider == Provider.ANTHROPIC:
+        call_params = AnthropicCallArgsCreate.model_validate(
+            latest_fn_params.call_params
+        )
+    else:
+        call_params = None
+
     return CallArgsPublic(
         id=latest_fn_params.id,
         model=latest_fn_params.model,
         provider=latest_fn_params.provider,
         hash=latest_fn_params.hash,
         prompt_template=latest_fn_params.prompt_template,
-        call_params=OpenAICallArgsCreate.model_validate(latest_fn_params.call_params)
-        if latest_fn_params.call_params
-        else None,
+        call_params=call_params,
     )
 
 
@@ -511,10 +512,10 @@ async def traces(
             id=lilypad_trace["span_id"],
             version=lilypad_trace.get("attributes", {}).get("lilypad.version", None),
             parent_span_id=lilypad_trace.get("parent_span_id", None),
-            data=json.dumps(lilypad_trace),
+            data=lilypad_trace,
             scope=scope,
-            llm_function_id=lilypad_trace.get("attributes", {}).get(
-                "lilypad.llm_function_id", None
+            version_id=lilypad_trace.get("attributes", {}).get(
+                "lilypad.version_id", None
             ),
             project_id=lilypad_trace.get("attributes", {}).get(
                 "lilypad.project_id", None
@@ -537,9 +538,13 @@ def set_display_name_and_convert(
 ) -> SpanPublic:
     """Set the display name based on the scope."""
     if span.scope == Scope.LILYPAD:
-        display_name = span.llm_fn.function_name if span.llm_fn else None
+        display_name = (
+            span.version_table.llm_fn.function_name
+            if span.version_table.llm_fn
+            else None
+        )
     elif span.scope == Scope.LLM:
-        data = json.loads(span.data)
+        data = span.data
         display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
     else:
         display_name = "Unknown"

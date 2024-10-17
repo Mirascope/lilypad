@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
 import {
   CallArgsCreate,
-  LLMFunctionBasePublic,
+  LLMFunctionPublic,
   VersionPublic,
 } from "@/types/types";
 import { LexicalEditor } from "lexical";
@@ -20,7 +20,7 @@ import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
 
 type LoaderData = {
-  llmFunction: LLMFunctionBasePublic;
+  llmFunction: LLMFunctionPublic;
   latestVersion: VersionPublic | null;
 };
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute(
     params: { projectId, llmFunctionId },
   }): Promise<LoaderData> => {
     const llmFunction = (
-      await api.get<LLMFunctionBasePublic>(
+      await api.get<LLMFunctionPublic>(
         `projects/${projectId}/llm-fns/${llmFunctionId}`
       )
     ).data;
@@ -101,7 +101,7 @@ const EditorContainer = () => {
       <Typography variant='h3'>{llmFunction.function_name}</Typography>
       {llmFunction.arg_types && (
         <div className='flex'>
-          <ArgsCards args={JSON.parse(llmFunction.arg_types)} />
+          <ArgsCards args={llmFunction.arg_types} />
         </div>
       )}
       <EditorForm

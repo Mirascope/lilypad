@@ -25,6 +25,16 @@ class OpenAICallArgsCreate(BaseModel):
     stop: str | list[str] | None = None
 
 
+class AnthropicCallArgsCreate(BaseModel):
+    """Anthropic call args model."""
+
+    max_tokens: int
+    temperature: float
+    stop_sequences: list[str] | None = None
+    top_k: int | None = None
+    top_p: float | None = None
+
+
 class CallArgsPublic(BaseModel):
     """Call args public model."""
 
@@ -33,7 +43,7 @@ class CallArgsPublic(BaseModel):
     provider: Provider
     prompt_template: str | None = None
     hash: str | None = None
-    call_params: OpenAICallArgsCreate | None = None
+    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None
 
 
 class CallArgsCreate(BaseModel):
@@ -42,11 +52,12 @@ class CallArgsCreate(BaseModel):
     model: str
     provider: Provider
     prompt_template: str
-    call_params: OpenAICallArgsCreate | None = None
+    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None
 
 
 class FnParamsPublic(FnParamsBase):
     """Fn params public model"""
 
     id: int
-    call_params: OpenAICallArgsCreate | None = None
+    llm_function_id: int
+    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None

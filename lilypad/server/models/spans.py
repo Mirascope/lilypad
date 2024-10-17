@@ -4,14 +4,19 @@ import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
+from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship
 
 from lilypad.server.models import BaseSQLModel
 
-from .table_names import LLM_FN_TABLE_NAME, PROJECT_TABLE_NAME, SPAN_TABLE_NAME
+from .table_names import (
+    PROJECT_TABLE_NAME,
+    SPAN_TABLE_NAME,
+    VERSION_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
-    from lilypad.server.models import LLMFunctionTable
+    from lilypad.server.models import VersionTable
 
 
 class Scope(str, Enum):
@@ -25,12 +30,9 @@ class SpanBase(BaseSQLModel):
     """Span base model"""
 
     project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    llm_function_id: int | None = Field(
-        default=None, foreign_key=f"{LLM_FN_TABLE_NAME}.id"
-    )
+    version_id: int | None = Field(default=None, foreign_key=f"{VERSION_TABLE_NAME}.id")
     scope: Scope = Field(nullable=False)
     version: int | None = Field(default=None)
-    data: str
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.timezone.utc), nullable=False
     )
@@ -45,7 +47,8 @@ class SpanTable(SpanBase, table=True):
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
 
     id: str = Field(primary_key=True)
-    llm_fn: "LLMFunctionTable" = Relationship(back_populates="spans")
+    data: dict = Field(sa_column=Column(JSON), default_factory=dict)
+    version_table: "VersionTable" = Relationship(back_populates="spans")
 
     child_spans: list["SpanTable"] = Relationship(back_populates="parent_span")
 

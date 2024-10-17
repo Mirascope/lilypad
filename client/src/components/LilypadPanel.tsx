@@ -12,7 +12,7 @@ hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
-  const data = JSON.parse(span.data);
+  const data = span.data;
   const rawOutputHtml: string = marked.parse(
     data.attributes["lilypad.output"],
     {
@@ -47,7 +47,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Output"}</CardTitle>
         </CardHeader>
         <CardContent
-          className='flex'
+          className='flex flex-col'
           dangerouslySetInnerHTML={{ __html: sanitizedOutputHtml }}
         />
       </Card>

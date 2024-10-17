@@ -118,9 +118,7 @@ const PlaygroundContainer = () => {
       ).data,
   });
 
-  let argTypes = version.llm_fn.arg_types
-    ? JSON.parse(version.llm_fn.arg_types)
-    : {};
+  let argTypes = version.llm_fn.arg_types || {};
   argTypes = Object.keys(argTypes).reduce(
     (acc, key) => {
       acc[key as keyof string] = "";
@@ -142,7 +140,7 @@ const PlaygroundContainer = () => {
 
   useEffect(() => {
     if (!spanData) return;
-    const data = JSON.parse(spanData.data);
+    const data = spanData.data;
 
     let argValues;
     try {
@@ -223,7 +221,20 @@ const PlaygroundContainer = () => {
     );
   };
   if (version && !version.fn_params) {
-    return <div>{"Playground is unavailable for non-synced calls"}</div>;
+    return (
+      <div className='flex flex-col justify-center items-center'>
+        {"Playground is unavailable for non-synced calls"}
+        <Button
+          onClick={() => {
+            navigate({
+              to: `/projects/${projectId}/`,
+            });
+          }}
+        >
+          Back to Traces
+        </Button>
+      </div>
+    );
   }
   return (
     <div className='p-2'>
@@ -235,7 +246,7 @@ const PlaygroundContainer = () => {
             <SkeletonCard />
           ) : (
             <ArgsCards
-              args={JSON.parse(version.llm_fn.arg_types)}
+              args={version.llm_fn.arg_types}
               customContent={renderEditableArgs}
             />
           )}

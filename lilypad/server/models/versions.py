@@ -2,7 +2,12 @@
 
 from sqlmodel import Field, Relationship
 
-from lilypad.server.models import BaseSQLModel, FnParamsTable, LLMFunctionTable
+from lilypad.server.models import (
+    BaseSQLModel,
+    FnParamsTable,
+    LLMFunctionTable,
+    SpanTable,
+)
 
 from .table_names import (
     FN_PARAMS_TABLE_NAME,
@@ -31,5 +36,6 @@ class VersionTable(VersionBase, table=True):
     __tablename__ = VERSION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
+    spans: list["SpanTable"] = Relationship(back_populates="version_table")
     llm_fn: "LLMFunctionTable" = Relationship(back_populates="version")
     fn_params: "FnParamsTable" = Relationship(back_populates="version")

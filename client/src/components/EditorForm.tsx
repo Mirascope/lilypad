@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Controller, SubmitHandler, useForm, useWatch } from "react-hook-form";
 import {
   CallArgsCreate,
-  LLMFunctionBasePublic,
+  LLMFunctionPublic,
   Provider,
   VersionPublic,
   ResponseFormat,
+  AnthropicCallArgsCreate,
+  OpenAICallArgsCreate,
 } from "@/types/types";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
@@ -23,11 +25,23 @@ import { FormSlider } from "@/components/FormSlider";
 
 interface EditorFormProps {
   latestVersion?: VersionPublic | null;
-  llmFunction: LLMFunctionBasePublic;
+  llmFunction: LLMFunctionPublic;
   onSubmit: SubmitHandler<CallArgsCreate>;
   editorErrors: string[];
   formButtons?: React.ReactNode[];
 }
+
+type OptionalKeys<T> = {
+  [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
+}[keyof T];
+
+// TODO: Add optional components for optional parameters
+function getOptionalKeys<T extends object>(obj: T): OptionalKeys<T>[] {
+  return Object.keys(obj).filter((key) => {
+    return obj[key as keyof T] === undefined;
+  }) as OptionalKeys<T>[];
+}
+
 export const EditorForm = forwardRef(
   (
     {
@@ -40,32 +54,36 @@ export const EditorForm = forwardRef(
     ref: ForwardedRef<LexicalEditor>
   ) => {
     const isInitialRender = useRef<boolean>(true);
-    const { control, handleSubmit, setValue, getValues } =
-      useForm<CallArgsCreate>({
+    const anthropicCallParamsDefault: AnthropicCallArgsCreate = {
+      max_tokens: 1024,
+      temperature: 1.0,
+    };
+    // const optionalAnthropicParams = getOptionalKeys(anthropicCallParamsDefault);
+    const openaiCallParamsDefault: OpenAICallArgsCreate = {
+      response_format: {
+        type: "text",
+      },
+      temperature: 1,
+      max_tokens: 2048,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+    };
+    const { control, handleSubmit, getValues, reset } = useForm<CallArgsCreate>(
+      {
         defaultValues: {
-          provider:
-            latestVersion && latestVersion.fn_params
-              ? latestVersion.fn_params.provider
-              : Provider.OPENAI,
-          model:
-            latestVersion && latestVersion.fn_params
-              ? latestVersion.fn_params.model
-              : "",
+          ...latestVersion?.fn_params,
           call_params:
             latestVersion && latestVersion.fn_params
-              ? latestVersion.fn_params.call_params
-              : {
-                  response_format: {
-                    type: "text",
-                  },
-                  temperature: 1,
-                  max_tokens: 2048,
-                  top_p: 1,
-                  frequency_penalty: 0,
-                  presence_penalty: 0,
-                },
+              ? latestVersion.fn_params.provider === Provider.OPENAI
+                ? openaiCallParamsDefault
+                : latestVersion.fn_params.provider === Provider.ANTHROPIC
+                  ? anthropicCallParamsDefault
+                  : {}
+              : {},
         },
-      });
+      }
+    );
     const provider = useWatch({
       control,
       name: "provider",
@@ -75,8 +93,18 @@ export const EditorForm = forwardRef(
         isInitialRender.current = false;
         return;
       }
-      setValue("model", "");
-    }, [provider]);
+      if (provider === Provider.OPENAI) {
+        reset({
+          model: "gpt-4o",
+          call_params: openaiCallParamsDefault,
+        });
+      } else if (provider === Provider.ANTHROPIC) {
+        reset({
+          model: "claude-3-5-sonnet-20240620",
+          call_params: anthropicCallParamsDefault,
+        });
+      }
+    }, [provider, reset]);
     const modelOptions = {
       [Provider.OPENAI]: [
         { value: "gpt-4o", label: "GPT-4o" },
@@ -95,14 +123,151 @@ export const EditorForm = forwardRef(
     };
 
     const options = modelOptions[provider] || [];
-    const responseFormatTypes: ResponseFormat["type"][] = [
-      "text",
-      "json_object",
-      "json_schema",
-    ];
+
     const inputs = llmFunction.arg_types
-      ? Object.keys(JSON.parse(llmFunction.arg_types))
+      ? Object.keys(llmFunction.arg_types)
       : [];
+
+    const renderMaxTokens = () => {
+      return (
+        <FormSlider<CallArgsCreate>
+          key='editor-max-tokens'
+          {...{
+            control,
+            name: "call_params.max_tokens",
+            label: "Max Tokens",
+            sliderProps: {
+              name: "max-tokens",
+              min: 1,
+              max: 4095,
+              step: 1,
+            },
+            showInput: true,
+            inputProps: { step: 1, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const renderResponseFormat = () => {
+      const responseFormatTypes: ResponseFormat["type"][] = [
+        "text",
+        "json_object",
+        "json_schema",
+      ];
+      return (
+        <div key='editor-response-format' className='form-group'>
+          <Label htmlFor='response-format'>Response Format</Label>
+          <Controller
+            name='call_params.response_format.type'
+            control={control}
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder='Select a response format' />
+                </SelectTrigger>
+                <SelectContent>
+                  {responseFormatTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+      );
+    };
+    const renderTemperature = () => {
+      return (
+        <FormSlider<CallArgsCreate>
+          key='editor-temperature'
+          {...{
+            control,
+            name: "call_params.temperature",
+            label: "Temperature",
+            sliderProps: {
+              name: "temperature",
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            showInput: true,
+            inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const renderTopP = (optional?: boolean) => {
+      return (
+        <FormSlider<CallArgsCreate>
+          key='editor-top-p'
+          {...{
+            control,
+            name: "call_params.top_p",
+            label: "Top P",
+            optional,
+            sliderProps: {
+              name: "top-p",
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            showInput: true,
+            inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const renderFrequencyPenalty = () => {
+      return (
+        <FormSlider<CallArgsCreate>
+          key='editor-frequency-penalty'
+          {...{
+            control,
+            name: "call_params.frequency_penalty",
+            label: "Frequency Penalty",
+            sliderProps: {
+              name: "frequency-penalty",
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            showInput: true,
+            inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const renderPresencePenalty = () => {
+      return (
+        <FormSlider<CallArgsCreate>
+          key='editor-presence-penalty'
+          {...{
+            control,
+            name: "call_params.presence_penalty",
+            label: "Presence Penalty",
+            sliderProps: {
+              name: "presence-penalty",
+              min: 0,
+              max: 2,
+              step: 0.01,
+            },
+            showInput: true,
+            inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const openaiParams = [
+      renderMaxTokens(),
+      renderResponseFormat(),
+      renderTemperature(),
+      renderTopP(),
+      renderFrequencyPenalty(),
+      renderPresencePenalty(),
+    ];
+    const anthropicParams = [renderMaxTokens(), renderTemperature()];
     return (
       <div className='flex flex-col gap-2'>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -167,102 +332,11 @@ export const EditorForm = forwardRef(
                   defaultValue={getValues("model")}
                 />
               </div>
-              <div className='form-group'>
-                <Label htmlFor='response-format'>Response Format</Label>
-                <Controller
-                  name='call_params.response_format.type'
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a response format' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {responseFormatTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              <FormSlider<CallArgsCreate>
-                {...{
-                  control,
-                  name: "call_params.max_tokens",
-                  label: "Max Tokens",
-                  sliderProps: {
-                    name: "max-tokens",
-                    min: 1,
-                    max: 4095,
-                    step: 1,
-                  },
-                  showInput: true,
-                  inputProps: { step: 1, className: "w-[100px] h-[1.5rem]" },
-                }}
-              />
-              <FormSlider<CallArgsCreate>
-                {...{
-                  control,
-                  name: "call_params.temperature",
-                  label: "Temperature",
-                  sliderProps: {
-                    name: "temperature",
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                  },
-                  showInput: true,
-                  inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
-                }}
-              />
-              <FormSlider<CallArgsCreate>
-                {...{
-                  control,
-                  name: "call_params.top_p",
-                  label: "Top P",
-                  sliderProps: {
-                    name: "top-p",
-                    min: 0,
-                    max: 1,
-                    step: 0.01,
-                  },
-                  showInput: true,
-                  inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
-                }}
-              />
-              <FormSlider<CallArgsCreate>
-                {...{
-                  control,
-                  name: "call_params.frequency_penalty",
-                  label: "Frequency Penalty",
-                  sliderProps: {
-                    name: "frequency-penalty",
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                  },
-                  showInput: true,
-                  inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
-                }}
-              />
-              <FormSlider<CallArgsCreate>
-                {...{
-                  control,
-                  name: "call_params.presence_penalty",
-                  label: "Presence Penalty",
-                  sliderProps: {
-                    name: "presence-penalty",
-                    min: 0,
-                    max: 2,
-                    step: 0.01,
-                  },
-                  showInput: true,
-                  inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
-                }}
-              />
+              {provider === Provider.OPENAI
+                ? openaiParams
+                : provider === Provider.ANTHROPIC
+                  ? anthropicParams
+                  : null}
             </div>
           </div>
           <div className='button-group'>

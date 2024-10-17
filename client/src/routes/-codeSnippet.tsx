@@ -13,8 +13,7 @@ export const CodeSnippet = ({ code }: { code: string }) => {
       // Highlights the code snippet
       hljs.highlightElement(codeRef.current);
     }
-  }, []);
-
+  }, [code]);
   return (
     <pre>
       <code ref={codeRef} className='language-python text-sm' key={code}>

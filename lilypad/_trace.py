@@ -38,7 +38,7 @@ class Trace(Protocol):
 
 
 def trace(
-    llm_function_id: int,
+    version_id: int,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     lexical_closure: str,
@@ -72,7 +72,7 @@ def trace(
                             "lilypad.project_id": project_id if project_id else 0,
                             "lilypad.function_name": fn.__name__,
                             "lilypad.version": version if version else "",
-                            "lilypad.llm_function_id": llm_function_id,
+                            "lilypad.version_id": version_id,
                             "lilypad.arg_types": json.dumps(arg_types),
                             "lilypad.arg_values": json.dumps(arg_values),
                             "lilypad.lexical_closure": lexical_closure,
@@ -97,7 +97,7 @@ def trace(
                         "lilypad.project_id": project_id if project_id else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version": version if version else "",
-                        "lilypad.llm_function_id": llm_function_id,
+                        "lilypad.version_id": version_id,
                         "lilypad.arg_types": json.dumps(arg_types),
                         "lilypad.arg_values": json.dumps(arg_values),
                         "lilypad.lexical_closure": lexical_closure,

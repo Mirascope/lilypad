@@ -162,7 +162,9 @@ def traced_synced_llm_function_constructor(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
                 return {
-                    "call_params": fn_params.call_params
+                    "call_params": fn_params.call_params.model_dump(
+                        exclude_defaults=True
+                    )
                     if fn_params.call_params
                     else {}
                 }
@@ -230,7 +232,9 @@ def traced_synced_llm_function_constructor(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
                 return {
-                    "call_params": fn_params.call_params
+                    "call_params": fn_params.call_params.model_dump(
+                        exclude_defaults=True
+                    )
                     if fn_params.call_params
                     else {}
                 }

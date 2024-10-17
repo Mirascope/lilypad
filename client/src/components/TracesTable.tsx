@@ -155,9 +155,9 @@ export function DataTableDemo({ data }: { data: SpanPublic[] }) {
               {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
-                    const { project_id, version, id } = row.original;
+                    const { project_id, version_id, id } = row.original;
                     navigate({
-                      to: `/projects/${project_id}/versions/${version}`,
+                      to: `/projects/${project_id}/versions/${version_id}`,
                       search: {
                         spanId: id,
                       },

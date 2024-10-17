@@ -10,6 +10,23 @@
  */
 
 /**
+ * AnthropicCallArgsCreate
+ * Anthropic call args model.
+ */
+export interface AnthropicCallArgsCreate {
+  /** Max Tokens */
+  max_tokens: number;
+  /** Temperature */
+  temperature: number;
+  /** Stop Sequences */
+  stop_sequences?: string[] | null;
+  /** Top K */
+  top_k?: number | null;
+  /** Top P */
+  top_p?: number | null;
+}
+
+/**
  * CallArgsCreate
  * Call args create model.
  */
@@ -20,7 +37,8 @@ export interface CallArgsCreate {
   provider: Provider;
   /** Prompt Template */
   prompt_template: string;
-  call_params?: OpenAICallArgsCreate | null;
+  /** Call Params */
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
 }
 
 /**
@@ -38,7 +56,8 @@ export interface CallArgsPublic {
   prompt_template?: string | null;
   /** Hash */
   hash?: string | null;
-  call_params?: OpenAICallArgsCreate | null;
+  /** Call Params */
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
 }
 
 /**
@@ -46,8 +65,6 @@ export interface CallArgsPublic {
  * Fn params public model
  */
 export interface FnParamsPublic {
-  /** Llm Function Id */
-  llm_function_id: number | null;
   /** Provider name enum */
   provider: Provider;
   /** Hash */
@@ -56,9 +73,12 @@ export interface FnParamsPublic {
   model: string;
   /** Prompt Template */
   prompt_template: string;
-  call_params?: OpenAICallArgsCreate | null;
   /** Id */
   id: number;
+  /** Llm Function Id */
+  llm_function_id: number;
+  /** Call Params */
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
 }
 
 /**
@@ -66,8 +86,6 @@ export interface FnParamsPublic {
  * Provider call params table
  */
 export interface FnParamsTable {
-  /** Llm Function Id */
-  llm_function_id: number | null;
   /** Provider name enum */
   provider: Provider;
   /** Hash */
@@ -76,10 +94,12 @@ export interface FnParamsTable {
   model: string;
   /** Prompt Template */
   prompt_template: string;
-  /** Call Params */
-  call_params?: object | null;
   /** Id */
   id?: number | null;
+  /** Llm Function Id */
+  llm_function_id: number | null;
+  /** Call Params */
+  call_params?: object | null;
 }
 
 /** HTTPValidationError */
@@ -89,12 +109,10 @@ export interface HTTPValidationError {
 }
 
 /**
- * LLMFunctionBasePublic
- * LLM function base public model
+ * LLMFunctionCreate
+ * LLM function create model.
  */
-export interface LLMFunctionBasePublic {
-  /** Project Id */
-  project_id?: number;
+export interface LLMFunctionCreate {
   /** Function Name */
   function_name: string;
   /** Version Hash */
@@ -102,7 +120,22 @@ export interface LLMFunctionBasePublic {
   /** Code */
   code: string;
   /** Arg Types */
-  arg_types?: string | null;
+  arg_types?: Record<string, string> | null;
+}
+
+/**
+ * LLMFunctionPublic
+ * LLM function base public model
+ */
+export interface LLMFunctionPublic {
+  /** Function Name */
+  function_name: string;
+  /** Version Hash */
+  version_hash: string;
+  /** Code */
+  code: string;
+  /** Arg Types */
+  arg_types?: Record<string, string> | null;
   /** Id */
   id: number;
   /** Fn Params */
@@ -110,27 +143,10 @@ export interface LLMFunctionBasePublic {
 }
 
 /**
- * LLMFunctionCreate
- * LLM function create model.
- */
-export interface LLMFunctionCreate {
-  /** Function Name */
-  function_name: string;
-  /** Code */
-  code: string;
-  /** Version Hash */
-  version_hash: string;
-  /** Arg Types */
-  arg_types?: string | null;
-}
-
-/**
  * LLMFunctionTable
  * LLM function table
  */
 export interface LLMFunctionTable {
-  /** Project Id */
-  project_id?: number;
   /** Function Name */
   function_name: string;
   /** Version Hash */
@@ -138,13 +154,15 @@ export interface LLMFunctionTable {
   /** Code */
   code: string;
   /** Arg Types */
-  arg_types?: string | null;
+  arg_types?: Record<string, string> | null;
   /** Id */
   id?: number | null;
+  /** Project Id */
+  project_id?: number;
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-15T18:15:46.957058Z"
+   * @default "2024-10-17T00:35:19.978811Z"
    */
   created_at?: string;
 }
@@ -249,18 +267,16 @@ export enum Scope {
 export interface SpanPublic {
   /** Project Id */
   project_id?: number | null;
-  /** Llm Function Id */
-  llm_function_id?: number | null;
+  /** Version Id */
+  version_id?: number | null;
   /** Instrumentation Scope name of the span */
   scope: Scope;
   /** Version */
   version?: number | null;
-  /** Data */
-  data: string;
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-15T18:15:46.961053Z"
+   * @default "2024-10-17T00:35:19.982273Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -272,6 +288,8 @@ export interface SpanPublic {
   llm_function?: LLMFunctionTable | null;
   /** Child Spans */
   child_spans: SpanPublic[];
+  /** Data */
+  data: object;
 }
 
 /** ValidationError */
@@ -312,5 +330,5 @@ export interface VersionPublic {
   id: number;
   fn_params?: FnParamsPublic | null;
   /** LLM function base public model */
-  llm_fn: LLMFunctionBasePublic;
+  llm_fn: LLMFunctionPublic;
 }
