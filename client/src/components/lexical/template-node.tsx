@@ -4,6 +4,7 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
+  LexicalEditor,
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
@@ -11,23 +12,22 @@ import {
   TextNode,
 } from "lexical";
 
-// Define the type for the serialized template node
 export type SerializedTemplateNode = Spread<
   {
     value: string;
-    moreDetails?: object;
+    isError: boolean;
   },
   SerializedTextNode
 >;
 
-// Function to convert a DOM element to a template node
 function $convertTemplateElement(
   domNode: HTMLElement
 ): DOMConversionOutput | null {
   const textContent = domNode.textContent;
+  const isError = domNode.getAttribute("data-error") === "true";
 
   if (textContent !== null) {
-    const node = $createTemplateNode(textContent);
+    const node = $createTemplateNode(textContent, undefined, isError);
     return {
       node,
     };
@@ -38,28 +38,25 @@ function $convertTemplateElement(
 
 export class TemplateNode extends TextNode {
   __value: string;
-  __moreDetails?: object;
+  __isError: boolean;
 
-  // Return the type of the node
   static getType(): string {
     return "template-node";
   }
 
-  // Clone the node
   static clone(node: TemplateNode): TemplateNode {
     return new TemplateNode(
       node.__value,
-      node.__moreDetails,
+      node.__isError,
       node.__text,
       node.__key
     );
   }
 
-  // Import the serialized node
   static importJSON(serializedNode: SerializedTemplateNode): TemplateNode {
     const node = $createTemplateNode(
       serializedNode.value,
-      serializedNode.moreDetails
+      serializedNode.isError
     );
     node.setTextContent(serializedNode.text);
     node.setFormat(serializedNode.format);
@@ -71,44 +68,44 @@ export class TemplateNode extends TextNode {
 
   constructor(
     value: string,
-    moreDetails?: object,
+    isError: boolean = false,
     text?: string,
     key?: NodeKey
   ) {
     super(text ?? value, key);
     this.__value = value;
-    this.__moreDetails = moreDetails;
+    this.__isError = isError;
   }
 
-  // Export the node to a serialized format
   exportJSON(): SerializedTemplateNode {
     return {
       ...super.exportJSON(),
       value: this.__value,
-      moreDetails: this.__moreDetails,
+      isError: this.__isError,
       type: "template-node",
       version: 1,
     };
   }
 
-  // Create the DOM representation of the node
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.textContent = this.__value;
     dom.setAttribute("data-lexical-template", "true");
-    dom.className = "text-purple-500 font-normal ";
+    dom.setAttribute("data-error", this.__isError.toString());
+    dom.className = this.__isError
+      ? "text-red-500 font-normal"
+      : "text-purple-500 font-normal";
     return dom;
   }
 
-  // Export the DOM representation of the node
   exportDOM(): DOMExportOutput {
     const element = document.createElement("span");
     element.setAttribute("data-lexical-template", "true");
+    element.setAttribute("data-error", this.__isError.toString());
     element.textContent = this.__text;
     return { element };
   }
 
-  // Import the DOM conversion map for the node
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
@@ -123,6 +120,9 @@ export class TemplateNode extends TextNode {
     };
   }
 
+  getValue(): string {
+    return this.__value;
+  }
   isTextEntity(): true {
     return true;
   }
@@ -134,21 +134,37 @@ export class TemplateNode extends TextNode {
   canInsertTextAfter(): boolean {
     return false;
   }
+
+  isError(): boolean {
+    return this.__isError;
+  }
 }
 
-// Helper function to create a new template node
 export function $createTemplateNode(
   value: string,
-  moreDetails?: object
+  isError: boolean = false
 ): TemplateNode {
-  const templateNode = new TemplateNode(value, moreDetails);
+  const templateNode = new TemplateNode(value, isError);
   templateNode.setMode("segmented").toggleDirectionless();
   return $applyNodeReplacement(templateNode);
 }
 
-// Helper function to check if a node is a template node
 export function $isTemplateNode(
   node: LexicalNode | null | undefined
 ): node is TemplateNode {
   return node instanceof TemplateNode;
+}
+
+// New function to find error template nodes
+export function $findErrorTemplateNodes(editor: LexicalEditor): TemplateNode[] {
+  const errorNodes: TemplateNode[] = [];
+  editor.getEditorState().read(() => {
+    const nodes = editor.getEditorState()._nodeMap;
+    for (const [, node] of nodes) {
+      if ($isTemplateNode(node) && node.isError()) {
+        errorNodes.push(node);
+      }
+    }
+  });
+  return errorNodes;
 }

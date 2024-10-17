@@ -1,22 +1,33 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReactNode } from "react";
 
 interface Args {
   [key: string]: string;
 }
-export const ArgsCards = ({ args }: { args: Args }) => {
+
+interface ArgsCardsProps {
+  args: Args;
+  customContent?: (key: string, value: string) => ReactNode;
+}
+
+export const ArgsCards = ({ args, customContent }: ArgsCardsProps) => {
   return (
-    <Card className="w-auto">
+    <Card className='w-auto'>
       <CardHeader>
         <CardTitle>{"Function Arguments"}</CardTitle>
       </CardHeader>
-      <CardContent className="flex gap-2">
+      <CardContent className='flex gap-2'>
         {Object.keys(args).length > 0 ? (
           Object.entries(args).map(([key, value]) => (
             <Card key={key}>
               <CardHeader>
                 <CardTitle>{key}</CardTitle>
               </CardHeader>
-              <CardContent>{`${value}`}</CardContent>
+              {customContent ? (
+                customContent(key, value)
+              ) : (
+                <CardContent>{`${value}`}</CardContent>
+              )}
             </Card>
           ))
         ) : (

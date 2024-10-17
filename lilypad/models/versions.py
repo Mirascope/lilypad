@@ -1,6 +1,6 @@
-"""Version Models."""
+"""Version models"""
 
-from lilypad.models import FnParamsPublic, LLMFunctionBasePublic
+from lilypad.models import FnParamsPublic, LLMFunctionPublic
 from lilypad.server.models.versions import VersionBase
 
 
@@ -9,4 +9,4 @@ class VersionPublic(VersionBase):
 
     id: int
     fn_params: FnParamsPublic | None = None
-    llm_fn: LLMFunctionBasePublic
+    llm_fn: LLMFunctionPublic

@@ -19,6 +19,13 @@ const exampleTheme: EditorThemeClasses = {
       listitem: "editor-nested-listitem",
     },
     ol: "editor-list-ol",
+    olDepth: [
+      "editor-ol1",
+      "editor-ol2",
+      "editor-ol3",
+      "editor-ol4",
+      "editor-ol5",
+    ],
     ul: "editor-list-ul",
     listitem: "editor-listitem",
   },

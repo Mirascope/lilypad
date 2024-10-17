@@ -19,7 +19,7 @@ interface GroupedItems {
 }
 
 export const LlmPanel = ({ span }: { span: SpanPublic }) => {
-  const data = JSON.parse(span.data);
+  const data = span.data;
   const attributes = data.attributes;
   const groupedItems: GroupedItems = {};
   // Process each item in the data
@@ -54,7 +54,7 @@ export const LlmPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{item.role}</CardTitle>
         </CardHeader>
         <CardContent
-          className='flex'
+          className='flex flex-col'
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         ></CardContent>
       </Card>

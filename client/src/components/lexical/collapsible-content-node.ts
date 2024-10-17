@@ -6,6 +6,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   SerializedElementNode,
 } from "lexical";
 import { IS_CHROME } from "@lexical/utils";
@@ -26,6 +27,10 @@ export function $convertCollapsibleContentElement(
 }
 
 export class CollapsibleContentNode extends ElementNode {
+  constructor(key?: NodeKey) {
+    super(key);
+  }
+
   static getType(): string {
     return "collapsible-content";
   }

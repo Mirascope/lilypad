@@ -1,5 +1,5 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { TextNode } from "lexical";
+import { LexicalEditor, TextNode } from "lexical";
 import { useEffect } from "react";
 import { $createTemplateNode, TemplateNode } from "./template-node";
 
@@ -10,23 +10,20 @@ function $findAndTransformTemplate(
   const text = node.getTextContent();
   const regex = /\{(.*?)\}/g;
   let match;
-
   while ((match = regex.exec(text)) !== null) {
     const matchedContent = match[1]; // Content inside the braces
     const startOffset = match.index;
     const endOffset = startOffset + match[0].length; // Include braces in length
-    if (inputs.includes(matchedContent)) {
-      let targetNode;
-      if (startOffset === 0) {
-        [targetNode] = node.splitText(endOffset);
-      } else {
-        [, targetNode] = node.splitText(startOffset, endOffset);
-      }
-
-      const templateNode = $createTemplateNode(match[0]);
-      targetNode.replace(templateNode);
-      return templateNode;
+    let targetNode;
+    if (startOffset === 0) {
+      [targetNode] = node.splitText(endOffset);
+    } else {
+      [, targetNode] = node.splitText(startOffset, endOffset);
     }
+    const isError = !inputs.includes(matchedContent);
+    const templateNode = $createTemplateNode(match[0], isError);
+    targetNode.replace(templateNode);
+    return templateNode;
   }
   return null;
 }
@@ -42,7 +39,7 @@ function $textNodeTransform(node: TextNode, inputs: string[]): void {
   }
 }
 
-function useTemplates(editor, inputs: string[]): void {
+function useTemplates(editor: LexicalEditor, inputs: string[]): void {
   useEffect(() => {
     if (!editor.hasNodes([TemplateNode])) {
       throw new Error(
@@ -62,6 +59,13 @@ export const TemplatePlugin = ({
   inputs: string[];
 }): JSX.Element | null => {
   const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    if (!editor.hasNodes([TemplateNode])) {
+      throw new Error(
+        "TemplateAutoReplacePlugin: TemplateNode not registered on editor"
+      );
+    }
+  }, [editor]);
   useTemplates(editor, inputs);
   return null;
 };

@@ -12,15 +12,17 @@ hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
-  const data = JSON.parse(span.data);
-  console.log(data);
-  const rawHtml: string = marked.parse(data.attributes["lilypad.output"], {
-    async: false,
-  });
-  const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+  const data = span.data;
+  const rawOutputHtml: string = marked.parse(
+    data.attributes["lilypad.output"],
+    {
+      async: false,
+    }
+  );
+  const sanitizedOutputHtml = DOMPurify.sanitize(rawOutputHtml);
   return (
-    <div className="flex flex-col gap-4">
-      <Typography variant="h3">{data.name}</Typography>
+    <div className='flex flex-col gap-4'>
+      <Typography variant='h3'>{data.name}</Typography>
       <Card>
         <CardHeader>
           <CardTitle>{"Code"}</CardTitle>
@@ -35,7 +37,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardHeader>
             <CardTitle>{"Prompt Template"}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className='whitespace-pre-wrap'>
             {data.attributes["lilypad.prompt_template"]}
           </CardContent>
         </Card>
@@ -45,16 +47,16 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Output"}</CardTitle>
         </CardHeader>
         <CardContent
-          className="flex"
-          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-        ></CardContent>
+          className='flex flex-col'
+          dangerouslySetInnerHTML={{ __html: sanitizedOutputHtml }}
+        />
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="overflow-auto">{JSON.stringify(data, null, 2)}</pre>
+          <pre className='overflow-auto'>{JSON.stringify(data, null, 2)}</pre>
         </CardContent>
       </Card>
     </div>

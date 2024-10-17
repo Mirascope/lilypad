@@ -73,5 +73,28 @@ export default {
       }),
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+    function ({ addBase, theme }) {
+      addBase({
+        ol: {
+          listStyleType: "decimal",
+          paddingLeft: "1.5em",
+          marginTop: "1em",
+          marginBottom: "1em",
+        },
+        ul: {
+          listStyleType: "initial",
+          paddingLeft: "1.5em",
+          marginTop: "1em",
+          marginBottom: "1em",
+        },
+        li: {
+          marginTop: "0.5em",
+          marginBottom: "0.5em",
+        },
+      });
+    },
+  ],
 };

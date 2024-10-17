@@ -65,6 +65,7 @@ def poll_active_version(
                 and active_version.fn_params
                 and fn_params_hash == active_version.fn_params.hash
             ) or active_version.llm_function_hash != hash:
+                time.sleep(1)
                 continue
         except client.NotFoundError:
             time.sleep(1)
@@ -185,7 +186,9 @@ def traced_synced_llm_function_constructor(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
                 return {
-                    "call_params": json.loads(fn_params.call_params)
+                    "call_params": fn_params.call_params.model_dump(
+                        exclude_defaults=True
+                    )
                     if fn_params.call_params
                     else {}
                 }
@@ -253,7 +256,9 @@ def traced_synced_llm_function_constructor(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
                 return {
-                    "call_params": json.loads(fn_params.call_params)
+                    "call_params": fn_params.call_params.model_dump(
+                        exclude_defaults=True
+                    )
                     if fn_params.call_params
                     else {}
                 }

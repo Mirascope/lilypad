@@ -11,8 +11,7 @@ from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
 from lilypad.models import (
-    CallArgsPublic,
-    LLMFunctionBasePublic,
+    LLMFunctionPublic,
     ProjectPublic,
     SpanPublic,
     VersionPublic,
@@ -176,12 +175,12 @@ class LilypadClient:
 
     def get_llm_function_by_hash(
         self, version_hash: str, **kwargs: Any
-    ) -> LLMFunctionBasePublic:
+    ) -> LLMFunctionPublic:
         """Creates span traces."""
         return self._request(
             "GET",
             f"/projects/{self.project_id}/llm-fns/{version_hash}",
-            response_model=LLMFunctionBasePublic,
+            response_model=LLMFunctionPublic,
             **kwargs,
         )
 
@@ -229,7 +228,7 @@ class LilypadClient:
         version_hash: str,
         arg_types: dict[str, str],
         **kwargs: Any,  # noqa: ANN401
-    ) -> LLMFunctionBasePublic:
+    ) -> LLMFunctionPublic:
         """Creates span traces.
 
         Args:
@@ -246,26 +245,13 @@ class LilypadClient:
         return self._request(
             "POST",
             f"/projects/{self.project_id}/llm-fns/",
-            response_model=LLMFunctionBasePublic,
+            response_model=LLMFunctionPublic,
             json={
                 "function_name": function_name,
                 "code": code,
                 "version_hash": version_hash,
-                "arg_types": json.dumps(arg_types),
+                "arg_types": arg_types,
             },
-            **kwargs,
-        )
-
-    def get_provider_call_params_by_llm_function_hash(
-        self,
-        version_hash: str,
-        **kwargs: Any,  # noqa: ANN401
-    ) -> CallArgsPublic:
-        """Creates span traces."""
-        return self._request(
-            "GET",
-            f"/projects/{self.project_id}/llm-fns/{version_hash}/fn-params",
-            response_model=CallArgsPublic,
             **kwargs,
         )
 

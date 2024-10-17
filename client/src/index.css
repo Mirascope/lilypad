@@ -88,7 +88,7 @@
 .editor-paragraph {
   position: relative;
   display: block;
-  margin: 1em 0;
+  margin: 0.25em 0;
 }
 
 .editor-quote {
@@ -284,83 +284,56 @@
   list-style-position: inside;
 }
 
-.editor-listItem {
-  margin: 0 32px;
+.editor-listitem {
+  margin: 0 16px;
 }
 
-.editor-listItemChecked,
-.editor-listItemUnchecked {
-  position: relative;
-  margin-left: 8px;
-  margin-right: 8px;
-  padding-left: 24px;
-  padding-right: 24px;
-  list-style-type: none;
-  outline: none;
-}
-
-.editor-listItemChecked {
-  text-decoration: line-through;
-}
-
-.editor-listItemUnchecked::before,
-.editor-listItemChecked::before {
-  content: "";
-  width: 16px;
-  height: 16px;
-  top: 2px;
-  left: 0;
-  cursor: pointer;
-  display: block;
-  background-size: cover;
-  position: absolute;
-}
-
-.editor-listItemUnchecked[dir="rtl"]::before,
-.editor-listItemChecked[dir="rtl"]::before {
-  left: auto;
-  right: 0;
-}
-
-.editor-listItemUnchecked:focus::before,
-.editor-listItemChecked:focus::before {
-  box-shadow: 0 0 0 2px #a6cdfe;
-  border-radius: 2px;
-}
-
-.editor-listItemUnchecked::before {
-  border: 1px solid #999;
-  border-radius: 2px;
-}
-
-.editor-listItemChecked::before {
-  border: 1px solid rgb(61, 135, 245);
-  border-radius: 2px;
-  background-color: #3d87f5;
-  background-repeat: no-repeat;
-}
-
-.editor-listItemChecked::after {
-  content: "";
-  cursor: pointer;
-  border-color: #fff;
-  border-style: solid;
-  position: absolute;
-  display: block;
-  top: 6px;
-  width: 3px;
-  left: 7px;
-  right: 7px;
-  height: 6px;
-  transform: rotate(45deg);
-  border-width: 0 2px 2px 0;
-}
-
-.editor-nestedListItem {
+.editor-nested-listitem {
   list-style-type: none;
 }
 
-.editor-nestedListItem::before,
-.editor-nestedListItem::after {
+.editor-nested-listitem::before,
+.editor-nested-listitem::after {
   display: none;
+}
+
+.editor-ol1 {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+  list-style-position: inside;
+}
+.editor-ol2 {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+  list-style-type: upper-alpha;
+  list-style-position: inside;
+}
+.editor-ol3 {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+  list-style-type: lower-alpha;
+  list-style-position: inside;
+}
+.editor-ol4 {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+  list-style-type: upper-roman;
+  list-style-position: inside;
+}
+.editor-ol5 {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+  list-style-type: lower-roman;
+  list-style-position: inside;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }

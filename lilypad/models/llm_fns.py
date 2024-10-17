@@ -3,7 +3,13 @@
 from lilypad.server.models import FnParamsTable, LLMFunctionBase
 
 
-class LLMFunctionBasePublic(LLMFunctionBase):
+class LLMFunctionCreate(LLMFunctionBase):
+    """LLM function create model."""
+
+    ...
+
+
+class LLMFunctionPublic(LLMFunctionBase):
     """LLM function base public model"""
 
     id: int
