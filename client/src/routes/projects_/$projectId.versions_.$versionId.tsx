@@ -30,6 +30,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { getErrorMessage } from "@/lib/utils";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 const versionQuery = (projectId: string, versionId: string) => ({
   queryKey: ["project", projectId, "version", versionId],
@@ -103,16 +105,25 @@ const PlaygroundContainer = () => {
       if (variables.shouldRunVibes) {
         const isValid = await trigger();
         if (isValid) {
-          vibeMutation.mutate();
+          vibeMutation.mutate({
+            projectId,
+            versionId: data.data.id.toString(),
+          });
         }
       }
     },
   });
   const vibeMutation = useMutation({
-    mutationFn: async () =>
+    mutationFn: async ({
+      projectId,
+      versionId,
+    }: {
+      projectId: string;
+      versionId: string;
+    }) =>
       (
         await api.post(
-          `projects/${projectId}/versions/${version.id}/vibe`,
+          `projects/${projectId}/versions/${versionId}/vibe`,
           getValues()
         )
       ).data,
@@ -151,6 +162,7 @@ const PlaygroundContainer = () => {
     reset(argValues);
   }, [spanData, reset]);
   const onSubmit: SubmitHandler<CallArgsCreate> = (data, event) => {
+    event?.preventDefault();
     const nativeEvent = event?.nativeEvent as SubmitEvent;
     const actionType = (nativeEvent.submitter as HTMLButtonElement).name;
     const shouldRunVibes = actionType === "vibe-button";
@@ -236,6 +248,13 @@ const PlaygroundContainer = () => {
       </div>
     );
   }
+  const renderOutputHtml = (output: string) => {
+    const rawOutputHtml: string = marked.parse(output, {
+      async: false,
+    });
+    const sanitizedOutputHtml = DOMPurify.sanitize(rawOutputHtml);
+    return sanitizedOutputHtml;
+  };
   return (
     <div className='p-2'>
       <Typography variant='h2'>{"Playground"}</Typography>
@@ -264,11 +283,16 @@ const PlaygroundContainer = () => {
         }}
       />
       {vibeMutation.isSuccess && (
-        <Card>
+        <Card className='mt-2'>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent className='flex'>{vibeMutation.data}</CardContent>
+          <CardContent
+            className='flex flex-col'
+            dangerouslySetInnerHTML={{
+              __html: renderOutputHtml(vibeMutation.data),
+            }}
+          />
         </Card>
       )}
     </div>

@@ -68,7 +68,7 @@ class JSONSpanExporter(SpanExporter):
                 "name": None,
                 "version": None,
                 "schema_url": None,
-                "attributes": None,
+                "attributes": {},
             }
         )
         return {
@@ -80,7 +80,7 @@ class JSONSpanExporter(SpanExporter):
             "name": span.name,
             "start_time": span.start_time,
             "end_time": span.end_time,
-            "attributes": dict(span.attributes.items()) if span.attributes else None,
+            "attributes": dict(span.attributes.items()) if span.attributes else {},
             "status": span.status.status_code.name,
             "events": [
                 {

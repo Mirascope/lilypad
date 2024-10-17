@@ -1,6 +1,6 @@
 """Main FastAPI application module for Lilypad."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -200,21 +200,23 @@ async def get_llm_function_id_by_hash(
 
 def create_dynamic_function(
     name: str, args_dict: dict[str, str], return_annotation: type
-) -> str:
+) -> Callable[..., Any]:
     """Create a dynamic function with the given name, arguments, and return type."""
     arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in args_dict.items()]
     arg_string = ", ".join(arg_list)
 
     func_def = f"def {name}({arg_string}) -> {return_annotation.__name__}: ..."
 
-    namespace: dict[str, str] = {}
+    namespace: dict[str, Any] = {}
     exec(func_def, namespace)
 
     return namespace[name]
 
 
+# TODO: Getting RuntimeError: asyncio.run() cannot be called from a running event loop
+# when running Anthropic calls, but not OpenAI
 @api.post("/projects/{project_id}/versions/{version_id}/vibe")
-async def vibe_check(
+def vibe_check(
     project_id: int,
     version_id: int,
     arg_values: dict[str, Any],
@@ -248,12 +250,13 @@ async def vibe_check(
     )
 
     if not version.fn_params:
-        return trace_decorator(fn)(**arg_values)
+        return trace_decorator(fn)(**arg_values)  # pyright: ignore [reportReturnType]
 
     fn_params = FnParamsPublic.model_validate(version.fn_params)
+
     return traced_synced_llm_function_constructor(fn_params, trace_decorator)(fn)(
         **arg_values
-    )
+    )  # pyright: ignore [reportReturnType]
 
 
 @api.get(
@@ -507,6 +510,7 @@ async def traces(
             scope = Scope.LILYPAD
         else:
             scope = Scope.LLM
+
         span_table = SpanTable(
             id=lilypad_trace["span_id"],
             version=lilypad_trace.get("attributes", {}).get("lilypad.version", None),
@@ -536,6 +540,7 @@ def set_display_name_and_convert(
     span: SpanTable,
 ) -> SpanPublic:
     """Set the display name based on the scope."""
+    # TODO: Handle error cases where spans dont have attributes
     if span.scope == Scope.LILYPAD:
         display_name = (
             span.version_table.llm_fn.function_name
