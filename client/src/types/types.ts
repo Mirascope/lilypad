@@ -240,6 +240,7 @@ export interface ProjectTable {
 export enum Provider {
   OPENAI = "openai",
   ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
 }
 
 /**

@@ -75,7 +75,8 @@ export const EditorForm = forwardRef(
           ...latestVersion?.fn_params,
           call_params:
             latestVersion && latestVersion.fn_params
-              ? latestVersion.fn_params.provider === Provider.OPENAI
+              ? latestVersion.fn_params.provider === Provider.OPENAI ||
+                latestVersion.fn_params.provider === Provider.OPENROUTER
                 ? openaiCallParamsDefault
                 : latestVersion.fn_params.provider === Provider.ANTHROPIC
                   ? anthropicCallParamsDefault
@@ -103,6 +104,11 @@ export const EditorForm = forwardRef(
           model: "claude-3-5-sonnet-20240620",
           call_params: anthropicCallParamsDefault,
         });
+      } else if (provider === Provider.OPENROUTER) {
+        reset({
+          model: "openai/chatgpt-4o-latest",
+          call_params: openaiCallParamsDefault,
+        });
       }
     }, [provider, reset]);
     const modelOptions = {
@@ -119,6 +125,20 @@ export const EditorForm = forwardRef(
         { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
         { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
         { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+      ],
+      [Provider.OPENROUTER]: [
+        { value: "openai/chatgpt-4o-latest", label: "GPT-4o" },
+        { value: "openai/gpt-4o-mini", label: "GPT-4o-mini" },
+        { value: "openai/o1-preview", label: "o1-preview" },
+        { value: "openai/o1-mini", label: "o1-mini" },
+        { value: "openai/gpt-4-turbo", label: "GPT-4 Turbo" },
+        {
+          value: "anthropic/claude-3.5-sonnet",
+          label: "Claude 3.5 Sonnet",
+        },
+        { value: "anthropic/claude-3-opus", label: "Claude 3 Opus" },
+        { value: "anthropic/claude-3-sonnet", label: "Claude 3 Sonnet" },
+        { value: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" },
       ],
     };
 

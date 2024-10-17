@@ -135,6 +135,33 @@ def get_llm_function_version(
     )
 
 
+def _construct_call_decorator(fn: Callable, fn_params: FnParamsPublic) -> partial[Any]:
+    provider, client = fn_params.provider.value, None
+    if fn_params.provider.value == "openrouter":
+        provider = "openai"
+        if inspect.iscoroutinefunction(fn):
+            from openai import AsyncOpenAI
+
+            client = AsyncOpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+            )
+        else:
+            from openai import OpenAI
+
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+            )
+
+    return partial(
+        import_module(f"mirascope.core.{provider}").call,
+        model=fn_params.model,
+        json_mode=False,
+        client=client,
+    )
+
+
 def traced_synced_llm_function_constructor(
     fn_params: FnParamsPublic, trace_decorator: Callable | None
 ) -> Callable[
@@ -144,15 +171,11 @@ def traced_synced_llm_function_constructor(
     """Returns a method for converting a function signature into a traced/synced fn."""
     if not trace_decorator:
         trace_decorator = lambda x: x  # noqa: E731
-    call_decorator = partial(
-        import_module(f"mirascope.core.{fn_params.provider.value}").call,
-        model=fn_params.model,
-        json_mode=False,
-    )
 
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+        call_decorator = _construct_call_decorator(fn, fn_params)
         return_type = get_type_hints(fn).get("return", type(None))
         if inspect.iscoroutinefunction(fn):
 
