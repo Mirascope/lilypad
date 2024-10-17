@@ -392,9 +392,9 @@ async def create_version_and_fn_params(
     if existing_version:
         previous_active_version = session.exec(
             select(VersionTable).where(
-                VersionTable.function_name == llm_fn.function_name
-                and VersionTable.is_active
-                and existing_version.id != VersionTable.id
+                VersionTable.function_name == llm_fn.function_name,
+                VersionTable.is_active == True,  # noqa: E712
+                VersionTable.id != existing_version.id,
             )
         ).first()
         if previous_active_version:
