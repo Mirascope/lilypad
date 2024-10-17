@@ -1,6 +1,5 @@
 """Main FastAPI application module for Lilypad."""
 
-import json
 from collections.abc import Sequence
 from typing import Annotated, Any
 
