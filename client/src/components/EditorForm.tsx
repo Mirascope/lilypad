@@ -71,18 +71,24 @@ export const EditorForm = forwardRef(
     };
     const { control, handleSubmit, getValues, reset } = useForm<CallArgsCreate>(
       {
-        defaultValues: {
-          ...latestVersion?.fn_params,
-          call_params:
-            latestVersion && latestVersion.fn_params
-              ? latestVersion.fn_params.provider === Provider.OPENAI ||
-                latestVersion.fn_params.provider === Provider.OPENROUTER
-                ? openaiCallParamsDefault
-                : latestVersion.fn_params.provider === Provider.ANTHROPIC
-                  ? anthropicCallParamsDefault
-                  : {}
-              : {},
-        },
+        defaultValues: latestVersion
+          ? {
+              ...latestVersion?.fn_params,
+              call_params:
+                latestVersion && latestVersion.fn_params
+                  ? latestVersion.fn_params.provider === Provider.OPENAI ||
+                    latestVersion.fn_params.provider === Provider.OPENROUTER
+                    ? openaiCallParamsDefault
+                    : latestVersion.fn_params.provider === Provider.ANTHROPIC
+                      ? anthropicCallParamsDefault
+                      : {}
+                  : {},
+            }
+          : {
+              provider: Provider.OPENAI,
+              model: "gpt-4o",
+              call_params: openaiCallParamsDefault,
+            },
       }
     );
     const provider = useWatch({

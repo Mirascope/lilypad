@@ -65,6 +65,7 @@ def poll_active_version(
                 and active_version.fn_params
                 and fn_params_hash == active_version.fn_params.hash
             ) or active_version.llm_function_hash != hash:
+                time.sleep(1)
                 continue
         except client.NotFoundError:
             time.sleep(1)
