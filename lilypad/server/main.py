@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
@@ -293,7 +293,7 @@ async def create_non_synced_version(
     project_id: int,
     non_synced_version_create: NonSyncedVersionCreate,
     session: Annotated[Session, Depends(get_session)],
-) -> VersionPublic:
+) -> VersionTable:
     """Creates a new version for a non-synced LLM function."""
     llm_fn = session.exec(
         select(LLMFunctionTable).where(
@@ -303,17 +303,35 @@ async def create_non_synced_version(
     ).first()
     if not llm_fn:
         raise HTTPException(status_code=404, detail="LLM function not found")
-    versions = session.exec(
-        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
-    ).all()
-    for version in versions:
-        if version.is_active:
-            version.is_active = False
-            session.add(version)
+
+    existing_version = session.exec(
+        select(VersionTable).where(
+            VersionTable.project_id == project_id,
+            VersionTable.fn_params_hash.is_(None),  # type: ignore
+            VersionTable.llm_function_hash == llm_fn.version_hash,
+        )
+    ).first()
+    if existing_version:
+        previous_active_version = session.exec(
+            select(VersionTable).where(
+                VersionTable.function_name == llm_fn.function_name,
+                VersionTable.is_active == True,  # noqa: E712
+                VersionTable.id != existing_version.id,
+            )
+        ).first()
+        if previous_active_version:
+            previous_active_version.is_active = False
+            session.add(previous_active_version)
+        existing_version.is_active = True
+        session.add(existing_version)
+        session.commit()
+        return existing_version
     session.flush()
+
+    number_of_versions = session.exec(select(func.count(col(VersionTable.id)))).one()
     new_version = VersionTable(
         project_id=project_id,
-        version=len(versions) + 1,
+        version=number_of_versions + 1,
         function_name=llm_fn.function_name,
         is_active=True,
         fn_params_id=None,
@@ -324,11 +342,7 @@ async def create_non_synced_version(
     session.add(new_version)
     session.commit()
     session.refresh(new_version)
-    return VersionPublic(
-        **new_version.model_dump(),
-        fn_params=None,
-        llm_fn=LLMFunctionPublic.model_validate(llm_fn),
-    )
+    return new_version
 
 
 @api.get(
@@ -409,17 +423,12 @@ async def create_version_and_fn_params(
     session.add(fn_params)
     session.flush()
     session.refresh(fn_params)
-    versions = session.exec(
-        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
-    ).all()
-    for version in versions:
-        if version.is_active:
-            version.is_active = False
-            session.add(version)
+
+    number_of_versions = session.exec(select(func.count(col(VersionTable.id)))).one()
     session.flush()
     new_version = VersionTable(
         project_id=project_id,
-        version=len(versions) + 1,
+        version=number_of_versions + 1,
         function_name=llm_fn.function_name,
         is_active=True,
         fn_params_id=fn_params.id,

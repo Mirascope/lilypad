@@ -117,9 +117,8 @@ def get_llm_function_version(
         active_version = lilypad_client.get_active_version_by_function_name(fn.__name__)
     except client.NotFoundError:
         active_version = None
-
     if not synced and (not active_version or active_version.llm_function_hash != hash):
-        lilypad_client.create_non_synced_version(llm_fn_version.id, fn.__name__)
+        return lilypad_client.create_non_synced_version(llm_fn_version.id, fn.__name__)
     elif synced and (
         os.getenv("LILYPAD_EDITOR_OPEN") == "True"
         or not llm_fn_version.fn_params

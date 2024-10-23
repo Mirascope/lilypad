@@ -240,7 +240,7 @@ export function DataTableDemo({ data }: { data: SpanPublic[] }) {
         id={"traces-table-container"}
         className='p-2 flex flex-col gap-2'
       >
-        <div className='flex items-center rounded-md overflow-auto'>
+        <div className='flex items-center rounded-md'>
           <Input
             placeholder='Filter name...'
             value={
@@ -281,7 +281,7 @@ export function DataTableDemo({ data }: { data: SpanPublic[] }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className='rounded-md border'>
+        <div className='rounded-md border h-[calc(100vh-100px)] overflow-auto'>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

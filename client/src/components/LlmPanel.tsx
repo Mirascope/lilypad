@@ -18,6 +18,165 @@ interface GroupedItems {
   [key: string]: ConversationItem;
 }
 
+const convertStringtoHtml = (content: string): string => {
+  const rawHtml: string = marked.parse(content, {
+    async: false,
+  });
+  return DOMPurify.sanitize(rawHtml);
+};
+
+const renderMessageCard = ({
+  item,
+  sanitizedHtml,
+  index,
+}: {
+  item: any;
+  sanitizedHtml: string;
+  index: number;
+}) => {
+  return (
+    <Card key={`${item.index}-${index}`}>
+      <CardHeader>
+        <CardTitle>{item.role}</CardTitle>
+      </CardHeader>
+      <CardContent
+        className='flex flex-col overflow-auto'
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      ></CardContent>
+    </Card>
+  );
+};
+const convertItemsToOpenAICard = (items: ConversationItem) => {
+  const cards = [];
+  const messages = Object.values(items);
+  messages.forEach((item) => {
+    try {
+      const parsedContent = JSON.parse(item.content);
+      if (Array.isArray(parsedContent)) {
+        parsedContent.forEach((content, index) => {
+          if (content.type === "text") {
+            const sanitizedHtml = convertStringtoHtml(content.text);
+            cards.push(
+              renderMessageCard({
+                item,
+                sanitizedHtml,
+                index,
+              })
+            );
+          } else if (content.type === "image_url") {
+            cards.push(
+              renderMessageCard({
+                item,
+                sanitizedHtml: `<img src="${content.image_url.url}" alt="image" />`,
+                index,
+              })
+            );
+          }
+        });
+      } else {
+        const sanitizedHtml = convertStringtoHtml(item.content);
+        cards.push(
+          renderMessageCard({
+            item,
+            sanitizedHtml,
+          })
+        );
+      }
+    } catch (e) {
+      const sanitizedHtml = convertStringtoHtml(item.content);
+      cards.push(
+        renderMessageCard({
+          item,
+          sanitizedHtml,
+        })
+      );
+    }
+  });
+  return cards;
+};
+
+const convertItemsToGeminiCard = (items: ConversationItem) => {
+  const cards = [];
+  const messages = Object.values(items);
+  for (const item of messages) {
+    if (!item.content && !item.user) continue;
+    if (item.user) item.role = "user";
+    else if (item.content) item.role = "assistant";
+
+    let content = item.user || item.content;
+    const sanitizedHtml = convertStringtoHtml(content);
+    cards.push(
+      renderMessageCard({
+        item,
+        sanitizedHtml,
+      })
+    );
+  }
+  return cards;
+};
+const convertItemsToAnthropicCard = (items: ConversationItem) => {
+  const cards = [];
+  const messages = Object.values(items);
+  messages.forEach((item) => {
+    try {
+      const parsedContent = JSON.parse(item.content);
+      if (Array.isArray(parsedContent)) {
+        parsedContent.forEach((content, index) => {
+          if (content.type === "text") {
+            const sanitizedHtml = convertStringtoHtml(content.text);
+            cards.push(
+              renderMessageCard({
+                item,
+                sanitizedHtml,
+                index,
+              })
+            );
+          } else if (content.type === "image_url") {
+            cards.push(
+              renderMessageCard({
+                item,
+                sanitizedHtml: `<img src="${content.image_url.url}" alt="image" />`,
+                index,
+              })
+            );
+          }
+        });
+      } else {
+        const sanitizedHtml = convertStringtoHtml(item.content);
+        if (item.finish_reason) {
+          item.role = "assistant";
+        }
+        cards.push(
+          renderMessageCard({
+            item,
+            sanitizedHtml,
+          })
+        );
+      }
+    } catch (e) {
+      const sanitizedHtml = convertStringtoHtml(item.content);
+      if (item.finish_reason) {
+        item.role = "assistant";
+      }
+      cards.push(
+        renderMessageCard({
+          item,
+          sanitizedHtml,
+        })
+      );
+    }
+  });
+  return cards;
+};
+const convertItemsToCard = (items: ConversationItem, provider: string) => {
+  if (provider === "OpenAI") {
+    return convertItemsToOpenAICard(items);
+  } else if (provider === "Gemini") {
+    return convertItemsToGeminiCard(items);
+  } else if (provider === "Anthropic") {
+    return convertItemsToAnthropicCard(items);
+  }
+};
 export const LlmPanel = ({ span }: { span: SpanPublic }) => {
   const data = span.data;
   const attributes = data.attributes;
@@ -43,23 +202,10 @@ export const LlmPanel = ({ span }: { span: SpanPublic }) => {
       }
     }
   });
-  const messages = Object.values(groupedItems).map((item) => {
-    const rawHtml: string = marked.parse(item.content, {
-      async: false,
-    });
-    const sanitizedHtml = DOMPurify.sanitize(rawHtml);
-    return (
-      <Card key={item.index}>
-        <CardHeader>
-          <CardTitle>{item.role}</CardTitle>
-        </CardHeader>
-        <CardContent
-          className='flex flex-col'
-          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-        ></CardContent>
-      </Card>
-    );
-  });
+  const messages = convertItemsToCard(
+    groupedItems,
+    attributes["gen_ai.system"]
+  );
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{data.name}</Typography>

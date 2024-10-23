@@ -37,3 +37,13 @@ def configure() -> None:
         from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 
         AnthropicInstrumentor().instrument()
+
+    if (
+        importlib.util.find_spec("opentelemetry.instrumentation.google_generativeai")
+        is not None
+    ):
+        from opentelemetry.instrumentation.google_generativeai import (
+            GoogleGenerativeAiInstrumentor,
+        )
+
+        GoogleGenerativeAiInstrumentor().instrument()
