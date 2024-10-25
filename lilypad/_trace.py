@@ -14,6 +14,7 @@ from typing import (
 
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
+from pydantic import BaseModel
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -67,6 +68,9 @@ def trace(
                     f"{fn.__name__}"
                 ) as span:
                     output = await fn(*args, **kwargs)
+                    results = str(output)
+                    if isinstance(output, BaseModel):
+                        results = str(output.model_dump())
                     span.set_attributes(
                         {
                             "lilypad.project_id": project_id if project_id else 0,
@@ -77,7 +81,7 @@ def trace(
                             "lilypad.arg_values": json.dumps(arg_values),
                             "lilypad.lexical_closure": lexical_closure,
                             "lilypad.prompt_template": prompt_template,
-                            "lilypad.output": str(output),
+                            "lilypad.output": results,
                             "lilypad.is_async": True,
                         }
                     )
@@ -93,6 +97,9 @@ def trace(
                     f"{fn.__name__}"
                 ) as span:
                     output = fn(*args, **kwargs)
+                    results = str(output)
+                    if isinstance(output, BaseModel):
+                        results = str(output.model_dump())
                     attributes: dict[str, AttributeValue] = {
                         "lilypad.project_id": project_id if project_id else 0,
                         "lilypad.function_name": fn.__name__,
@@ -102,7 +109,7 @@ def trace(
                         "lilypad.arg_values": json.dumps(arg_values),
                         "lilypad.lexical_closure": lexical_closure,
                         "lilypad.prompt_template": prompt_template,
-                        "lilypad.output": str(output),
+                        "lilypad.output": results,
                         "lilypad.is_async": False,
                     }
                     span.set_attributes(attributes)

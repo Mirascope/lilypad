@@ -36,6 +36,8 @@ class VersionTable(VersionBase, table=True):
     __tablename__ = VERSION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    spans: list["SpanTable"] = Relationship(back_populates="version_table")
+    spans: list["SpanTable"] = Relationship(
+        back_populates="version_table", cascade_delete=True
+    )
     llm_fn: "LLMFunctionTable" = Relationship(back_populates="version")
     fn_params: "FnParamsTable" = Relationship(back_populates="version")

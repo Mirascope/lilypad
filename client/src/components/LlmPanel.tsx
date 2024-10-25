@@ -7,15 +7,13 @@ import { SpanPublic } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Typography } from "@/components/ui/typography";
 import DOMPurify from "dompurify";
+import { ReactNode } from "react";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
 interface ConversationItem {
   index: number;
   [key: string]: any;
-}
-interface GroupedItems {
-  [key: string]: ConversationItem;
 }
 
 const convertStringtoHtml = (content: string): string => {
@@ -28,21 +26,33 @@ const convertStringtoHtml = (content: string): string => {
 const renderMessageCard = ({
   item,
   sanitizedHtml,
+  content,
   index,
 }: {
   item: any;
-  sanitizedHtml: string;
+  sanitizedHtml?: string;
+  content?: ReactNode;
   index: number;
 }) => {
+  let cardContent = null;
+  if (sanitizedHtml) {
+    cardContent = (
+      <CardContent
+        className='flex flex-col overflow-auto'
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      />
+    );
+  } else if (content) {
+    cardContent = (
+      <CardContent className='flex flex-col'>{content}</CardContent>
+    );
+  }
   return (
     <Card key={`${item.index}-${index}`}>
       <CardHeader>
         <CardTitle>{item.role}</CardTitle>
       </CardHeader>
-      <CardContent
-        className='flex flex-col overflow-auto'
-        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-      ></CardContent>
+      {cardContent}
     </Card>
   );
 };
@@ -83,13 +93,34 @@ const convertItemsToOpenAICard = (items: ConversationItem) => {
         );
       }
     } catch (e) {
-      const sanitizedHtml = convertStringtoHtml(item.content);
-      cards.push(
-        renderMessageCard({
-          item,
-          sanitizedHtml,
-        })
-      );
+      if (item.finish_reason === "tool_calls") {
+        item.role = "assistant";
+        const toolCalls = item.tool_calls;
+        const content = toolCalls.map((toolCall) => {
+          return (
+            <div key={toolCall.id}>
+              <h4>{toolCall.name}</h4>
+              <pre className='overflow-auto'>
+                {JSON.stringify(toolCall.arguments, null, 2)}
+              </pre>
+            </div>
+          );
+        });
+        cards.push(
+          renderMessageCard({
+            item,
+            content,
+          })
+        );
+      } else {
+        const sanitizedHtml = convertStringtoHtml(item.content);
+        cards.push(
+          renderMessageCard({
+            item,
+            sanitizedHtml,
+          })
+        );
+      }
     }
   });
   return cards;
@@ -177,33 +208,74 @@ const convertItemsToCard = (items: ConversationItem, provider: string) => {
     return convertItemsToAnthropicCard(items);
   }
 };
+const groupKeys = (attributes) => {
+  const groupedItems = {};
+  let messageIndex = 0;
+
+  Object.entries(attributes).forEach(([key, value]) => {
+    // Only process gen_ai related keys
+    if (!key.startsWith("gen_ai.")) return;
+
+    // Remove the "gen_ai" prefix for easier processing
+    const keyWithoutPrefix = key.substring("gen_ai.".length);
+    const keyParts = keyWithoutPrefix.split(".");
+
+    // Get the base category (prompt or completion) and its index
+    const itemCategory = keyParts[0];
+    const itemIndex = keyParts[1];
+
+    if (itemCategory !== "prompt" && itemCategory !== "completion") return;
+
+    // Create the group key
+    const groupKey = `${itemCategory}.${itemIndex}`;
+
+    // Initialize group if it doesn't exist
+    if (!groupedItems[groupKey]) {
+      groupedItems[groupKey] = {
+        index: messageIndex++,
+      };
+    }
+
+    // Handle tool_calls specially
+    if (keyParts[2] === "tool_calls") {
+      const toolCallIndex = keyParts[3];
+      const toolCallField = keyParts[4];
+
+      // Initialize tool_calls array if it doesn't exist
+      if (!groupedItems[groupKey].tool_calls) {
+        groupedItems[groupKey].tool_calls = [];
+      }
+
+      // Initialize specific tool call object if it doesn't exist
+      if (!groupedItems[groupKey].tool_calls[toolCallIndex]) {
+        groupedItems[groupKey].tool_calls[toolCallIndex] = {};
+      }
+
+      // Parse JSON arguments if present
+      if (toolCallField === "arguments" && typeof value === "string") {
+        try {
+          groupedItems[groupKey].tool_calls[toolCallIndex][toolCallField] =
+            JSON.parse(value);
+        } catch (e) {
+          groupedItems[groupKey].tool_calls[toolCallIndex][toolCallField] =
+            value;
+        }
+      } else {
+        groupedItems[groupKey].tool_calls[toolCallIndex][toolCallField] = value;
+      }
+    } else {
+      // Handle regular fields
+      groupedItems[groupKey][keyParts[2]] = value;
+    }
+  });
+
+  return groupedItems;
+};
 export const LlmPanel = ({ span }: { span: SpanPublic }) => {
   const data = span.data;
   const attributes = data.attributes;
-  const groupedItems: GroupedItems = {};
-  // Process each item in the data
-  let messageIndex = 0;
-  Object.entries(data.attributes).forEach(([key, value]) => {
-    const parts = key.split(".");
-    if (parts.length === 4) {
-      const [itemType, itemCategory, index, field] = parts;
-      const numericIndex = parseInt(index, 10);
-      if (
-        itemType === "gen_ai" &&
-        (itemCategory === "completion" || itemCategory === "prompt")
-      ) {
-        if (!groupedItems[`${itemCategory}.${numericIndex}`]) {
-          groupedItems[`${itemCategory}.${numericIndex}`] = {
-            index: messageIndex,
-          };
-          messageIndex++;
-        }
-        groupedItems[`${itemCategory}.${numericIndex}`][field] = value;
-      }
-    }
-  });
   const messages = convertItemsToCard(
-    groupedItems,
+    groupKeys(attributes),
     attributes["gen_ai.system"]
   );
   return (
@@ -212,16 +284,19 @@ export const LlmPanel = ({ span }: { span: SpanPublic }) => {
       <div className='flex gap-1'>
         <Badge>{attributes["gen_ai.system"]}</Badge>
         <Badge>{attributes["gen_ai.response.model"]}</Badge>
-        <Badge className='text-xs font-medium m-0'>
-          <span>{attributes["gen_ai.usage.prompt_tokens"]}</span>
-          <span className='mx-1'>&#8594;</span>
-          <span>{attributes["gen_ai.usage.completion_tokens"]}</span>
-          <span className='mx-1'>=</span>
-          <span>
-            {attributes["gen_ai.usage.prompt_tokens"] +
-              attributes["gen_ai.usage.completion_tokens"]}
-          </span>
-        </Badge>
+        {attributes["gen_ai.usage.prompt_tokens"] &&
+          attributes["gen_ai.usage.completion_tokens"] && (
+            <Badge className='text-xs font-medium m-0'>
+              <span>{attributes["gen_ai.usage.prompt_tokens"]}</span>
+              <span className='mx-1'>&#8594;</span>
+              <span>{attributes["gen_ai.usage.completion_tokens"]}</span>
+              <span className='mx-1'>=</span>
+              <span>
+                {attributes["gen_ai.usage.prompt_tokens"] +
+                  attributes["gen_ai.usage.completion_tokens"]}
+              </span>
+            </Badge>
+          )}
         <Badge>
           {((data.end_time - data.start_time) / 1_000_000_000).toFixed(3)}s
         </Badge>

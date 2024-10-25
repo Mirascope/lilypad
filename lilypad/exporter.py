@@ -85,7 +85,9 @@ class JSONSpanExporter(SpanExporter):
             "events": [
                 {
                     "name": event.name,
-                    "attributes": event.attributes,
+                    "attributes": dict(event.attributes.items())
+                    if event.attributes
+                    else {},
                     "timestamp": event.timestamp,
                 }
                 for event in span.events

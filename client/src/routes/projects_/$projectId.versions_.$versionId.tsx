@@ -1,15 +1,14 @@
 import {
   createFileRoute,
-  useLoaderData,
-  useNavigate,
   useParams,
   useSearch,
+  useNavigate,
 } from "@tanstack/react-router";
 
 import { useEffect, useRef, useState } from "react";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api";
 import { CallArgsCreate, SpanPublic, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
@@ -32,12 +31,7 @@ import { SkeletonCard } from "@/components/SkeletonCard";
 import { getErrorMessage } from "@/lib/utils";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-
-const versionQuery = (projectId: string, versionId: string) => ({
-  queryKey: ["project", projectId, "version", versionId],
-  queryFn: async () =>
-    (await api.get(`projects/${projectId}/versions/${versionId}`)).data,
-});
+import { CodeSnippet } from "@/routes/-codeSnippet";
 
 type PlaygroundCallArgsCreate = CallArgsCreate & {
   shouldRunVibes?: boolean;
@@ -47,40 +41,39 @@ type PlaygroundSearchParams = {
   spanId?: string;
 };
 
-export const loader =
-  (queryClient: QueryClient) =>
-  async ({
-    params: { projectId, versionId },
-  }: {
-    params: { projectId: string; versionId: string };
-  }) => {
-    const query = versionQuery(projectId, versionId);
-    return (
-      queryClient.getQueryData(query.queryKey) ??
-      (await queryClient.fetchQuery(query))
-    );
-  };
-const queryClient = new QueryClient();
 export const Route = createFileRoute(
   "/projects/$projectId/versions/$versionId"
 )({
-  loader: loader(queryClient),
-  pendingComponent: () => <div>Loading...</div>,
-  errorComponent: ({ error }) => <div>{error.message}</div>,
   validateSearch: (search: Record<string, unknown>): PlaygroundSearchParams => {
     return search.spanId ? { spanId: search.spanId as string } : {};
   },
-  component: () => <PlaygroundContainer />,
+  component: () => {
+    const { projectId, versionId } = useParams({ from: Route.id });
+    const {
+      data: version,
+      isLoading,
+      error,
+    } = useQuery<VersionPublic>({
+      queryKey: ["project", projectId, "version", versionId],
+      queryFn: async () =>
+        (
+          await api.get<null, AxiosResponse<VersionPublic>>(
+            `projects/${projectId}/versions/${versionId}`
+          )
+        ).data,
+    });
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>{error.message}</div>;
+    if (!version) return <div>Version not found</div>;
+    return <PlaygroundContainer version={version} />;
+  },
 });
 
-const PlaygroundContainer = () => {
-  const version = useLoaderData({
-    from: Route.id,
-  }) as VersionPublic;
-  const navigate = useNavigate();
+const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
   const { projectId } = useParams({ from: Route.id });
   const { spanId } = useSearch({ from: Route.id });
-
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isLoading, data: spanData } = useQuery<SpanPublic>({
     queryKey: ["span", spanId],
     queryFn: async () =>
@@ -127,6 +120,24 @@ const PlaygroundContainer = () => {
           getValues()
         )
       ).data,
+  });
+  const setActiveMutation = useMutation({
+    mutationFn: async () =>
+      (
+        await api.patch<undefined, AxiosResponse<VersionPublic>>(
+          `projects/${projectId}/versions/${version.id}/active`
+        )
+      ).data,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "project",
+          data.project_id?.toString(),
+          "version",
+          data.id.toString(),
+        ],
+      });
+    },
   });
 
   let argTypes = version.llm_fn.arg_types || {};
@@ -256,9 +267,18 @@ const PlaygroundContainer = () => {
     return sanitizedOutputHtml;
   };
   return (
-    <div className='p-2'>
+    <div className='p-4 flex flex-col gap-2'>
       <Typography variant='h2'>{"Playground"}</Typography>
-      <Typography variant='h3'>{version.llm_fn.function_name}</Typography>
+      <div className='flex items-center gap-2'>
+        <Typography variant='h3'>{version.llm_fn.function_name}</Typography>
+        <Button
+          disabled={version.is_active || setActiveMutation.isPending}
+          onClick={() => setActiveMutation.mutate()}
+        >
+          {version.is_active ? "Active" : "Set active"}
+        </Button>
+      </div>
+      <CodeSnippet code={version.llm_fn.code} />
       {version.llm_fn.arg_types && (
         <div className='flex'>
           {isLoading ? (

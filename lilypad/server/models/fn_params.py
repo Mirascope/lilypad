@@ -43,4 +43,6 @@ class FnParamsTable(FnParamsBase, table=True):
     llm_function_id: int | None = Field(foreign_key=f"{LLM_FN_TABLE_NAME}.id")
     call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
     llm_fn: "LLMFunctionTable" = Relationship(back_populates="fn_params")
-    version: "VersionTable" = Relationship(back_populates="fn_params")
+    version: "VersionTable" = Relationship(
+        back_populates="fn_params", cascade_delete=True
+    )

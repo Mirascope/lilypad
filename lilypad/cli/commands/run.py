@@ -18,9 +18,9 @@ def run_command(
         autocompletion=lily_directory_files,
         parser=parse_prompt_file_name,
     ),
-    edit: bool | None = Option(
-        default=False, help="Edit the prompt file in the default editor"
-    ),
+    # edit: bool | None = Option(
+    #     default=False, help="Edit the prompt file in the default editor"
+    # ),
 ) -> None:
     """Run a prompt with lilypad opentelemetry tracing
 
@@ -33,8 +33,8 @@ def run_command(
         prompt_file_name = f"{prompt_file_name}.py"
 
     configure()
-    if edit:
-        os.environ["LILYPAD_EDITOR_OPEN"] = "True"
+    # if edit:
+    #     os.environ["LILYPAD_EDITOR_OPEN"] = "True"
     runpy.run_path(str(lily_file_path / prompt_file_name), run_name="__main__")
     config = load_config()
     port = config.get("port", 8000)
