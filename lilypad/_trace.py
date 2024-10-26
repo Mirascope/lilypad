@@ -85,7 +85,7 @@ def trace(
                             "lilypad.is_async": True,
                         }
                     )
-                return output
+                return output  # pyright: ignore [reportReturnType]
 
             return inner_async
 
