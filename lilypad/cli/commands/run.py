@@ -1,10 +1,9 @@
 """The `run` command, which runs a prompt with lilypad opentelemetry tracing."""
 
-import os
 import runpy
 
 from rich import print
-from typer import Argument, Option
+from typer import Argument
 
 from lilypad._utils import load_config
 from lilypad.configure import configure

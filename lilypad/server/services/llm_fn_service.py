@@ -1,6 +1,6 @@
 """LLMFunctionService class"""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from fastapi import HTTPException, status
 from sqlmodel import select
