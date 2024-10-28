@@ -5,14 +5,17 @@ import json
 import os
 import time
 import webbrowser
-from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
+from collections.abc import AsyncIterable, Callable, Coroutine, Generator, Iterable
+from contextlib import _GeneratorContextManager, contextmanager
 from functools import partial, wraps
 from importlib import import_module
 from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from mirascope.core import base as mb
+from opentelemetry.trace import get_tracer
 from opentelemetry.trace.span import Span
+from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from lilypad.models import FnParamsPublic, VersionPublic
@@ -315,6 +318,39 @@ def traced_synced_llm_function_constructor(
             return inner
 
     return decorator
+
+
+def get_custom_context_manager(
+    version: VersionPublic,
+    arg_types: dict[str, str],
+    arg_values: dict[str, Any],
+    is_async: bool,
+) -> Callable[..., _GeneratorContextManager[Span]]:
+    @contextmanager
+    def custom_context_manager(
+        fn: Callable,
+    ) -> Generator[Span, Any, None]:
+        tracer = get_tracer("lilypad")
+        with tracer.start_as_current_span(f"{fn.__name__}") as span:
+            attributes: dict[str, AttributeValue] = {
+                "lilypad.project_id": lilypad_client.project_id
+                if lilypad_client.project_id
+                else 0,
+                "lilypad.function_name": fn.__name__,
+                "lilypad.version": version.version if version.version else "",
+                "lilypad.version_id": version.id,
+                "lilypad.arg_types": json.dumps(arg_types),
+                "lilypad.arg_values": json.dumps(arg_values),
+                "lilypad.lexical_closure": version.llm_fn.code,
+                "lilypad.prompt_template": version.fn_params.prompt_template
+                if version.fn_params
+                else "",
+                "lilypad.is_async": is_async,
+            }
+            span.set_attributes(attributes)
+            yield span
+
+    return custom_context_manager
 
 
 def handle_call_response(
