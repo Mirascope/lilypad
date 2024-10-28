@@ -5,13 +5,17 @@ import json
 import os
 import time
 import webbrowser
-from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
+from collections.abc import AsyncIterable, Callable, Coroutine, Generator, Iterable
+from contextlib import _GeneratorContextManager, contextmanager
 from functools import partial, wraps
 from importlib import import_module
 from pathlib import Path
 from typing import Any, ParamSpec, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from mirascope.core import base as mb
+from opentelemetry.trace import get_tracer
+from opentelemetry.trace.span import Span
+from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from lilypad.models import FnParamsPublic, VersionPublic
@@ -50,15 +54,11 @@ def stringify_type(t: Any) -> str:  # noqa: ANN401
         return str(t)
 
 
-def poll_active_version(
-    hash: str, function_name: str, fn_params_hash: str | None = None
-) -> VersionPublic:
+def poll_active_version(hash: str, fn_params_hash: str | None = None) -> VersionPublic:
     """Polls the LLM API for the active version."""
     while True:
         try:
-            active_version = lilypad_client.get_active_version_by_function_name(
-                function_name
-            )
+            active_version = lilypad_client.get_active_version_by_function_hash(hash)
             if (
                 os.getenv("LILYPAD_EDITOR_OPEN") == "True"
                 and fn_params_hash
@@ -103,37 +103,41 @@ def get_llm_function_version(
     """Returns the active version for the given function."""
     hash, code = compute_function_hash(fn)
 
-    try:
-        llm_fn_version = lilypad_client.get_llm_function_by_hash(hash)
-    except client.NotFoundError:
-        llm_fn_version = lilypad_client.post_llm_function(
-            function_name=fn.__name__,
-            code=code,
-            version_hash=hash,
-            arg_types=arg_types,
+    if not synced:
+        try:
+            return lilypad_client.get_non_synced_version(hash)
+        except client.NotFoundError:
+            llm_fn_version = lilypad_client.post_llm_function(
+                function_name=fn.__name__,
+                code=code,
+                version_hash=hash,
+                arg_types=arg_types,
+            )
+            return lilypad_client.create_non_synced_version(llm_fn_version.id, hash)
+    else:
+        try:
+            llm_fn_version = lilypad_client.get_llm_function_by_hash(hash)
+        except client.NotFoundError:
+            llm_fn_version = lilypad_client.post_llm_function(
+                function_name=fn.__name__,
+                code=code,
+                version_hash=hash,
+                arg_types=arg_types,
+            )
+        try:
+            active_version = lilypad_client.get_active_version_by_function_hash(hash)
+        except client.NotFoundError:
+            active_version = None
+
+        if synced and not active_version:
+            webbrowser.open(lilypad_client.get_editor_url(llm_fn_version.id))
+
+        return poll_active_version(
+            hash,
+            active_version.fn_params.hash
+            if active_version and active_version.fn_params
+            else None,
         )
-
-    try:
-        active_version = lilypad_client.get_active_version_by_function_name(fn.__name__)
-    except client.NotFoundError:
-        active_version = None
-
-    if not synced and (not active_version or active_version.llm_function_hash != hash):
-        lilypad_client.create_non_synced_version(llm_fn_version.id, fn.__name__)
-    elif synced and (
-        os.getenv("LILYPAD_EDITOR_OPEN") == "True"
-        or not llm_fn_version.fn_params
-        or (active_version and active_version.llm_function_hash != hash)
-    ):
-        webbrowser.open(lilypad_client.get_editor_url(llm_fn_version.id))
-
-    return poll_active_version(
-        hash,
-        fn.__name__,
-        active_version.fn_params.hash
-        if active_version and active_version.fn_params
-        else None,
-    )
 
 
 def _construct_call_decorator(fn: Callable, fn_params: FnParamsPublic) -> partial[Any]:
@@ -314,3 +318,129 @@ def traced_synced_llm_function_constructor(
             return inner
 
     return decorator
+
+
+def get_custom_context_manager(
+    version: VersionPublic,
+    arg_types: dict[str, str],
+    arg_values: dict[str, Any],
+    is_async: bool,
+) -> Callable[..., _GeneratorContextManager[Span]]:
+    @contextmanager
+    def custom_context_manager(
+        fn: Callable,
+    ) -> Generator[Span, Any, None]:
+        tracer = get_tracer("lilypad")
+        with tracer.start_as_current_span(f"{fn.__name__}") as span:
+            attributes: dict[str, AttributeValue] = {
+                "lilypad.project_id": lilypad_client.project_id
+                if lilypad_client.project_id
+                else 0,
+                "lilypad.function_name": fn.__name__,
+                "lilypad.version": version.version if version.version else "",
+                "lilypad.version_id": version.id,
+                "lilypad.arg_types": json.dumps(arg_types),
+                "lilypad.arg_values": json.dumps(arg_values),
+                "lilypad.lexical_closure": version.llm_fn.code,
+                "lilypad.prompt_template": version.fn_params.prompt_template
+                if version.fn_params
+                else "",
+                "lilypad.is_async": is_async,
+            }
+            span.set_attributes(attributes)
+            yield span
+
+    return custom_context_manager
+
+
+def handle_call_response(
+    result: mb.BaseCallResponse, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    span.set_attribute("lilypad.output", json.dumps(result.message_param))
+
+
+def handle_stream(stream: mb.BaseStream, fn: Callable, span: Span | None) -> None:
+    if span is None:
+        return
+    span.set_attribute(
+        "lilypad.output",
+        json.dumps(
+            cast(mb.BaseCallResponse, stream.construct_call_response()).message_param
+        ),
+    )
+
+
+def handle_response_model(
+    result: BaseModel | mb.BaseType, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    if isinstance(result, BaseModel):
+        completion = result.model_dump_json()
+    else:
+        if not isinstance(result, str | int | float | bool):
+            result = str(result)
+        completion = result
+    span.set_attribute("lilypad.output", completion)
+
+
+def handle_structured_stream(
+    result: mb.BaseStructuredStream, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    if isinstance(result.constructed_response_model, BaseModel):
+        completion = result.constructed_response_model.model_dump_json()
+    else:
+        completion = result.constructed_response_model
+    span.set_attribute("lilypad.output", completion)
+
+
+async def handle_call_response_async(
+    result: mb.BaseCallResponse, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+
+    span.set_attribute("output", json.dumps(result.message_param))
+
+
+async def handle_stream_async(
+    stream: mb.BaseStream, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    span.set_attribute(
+        "lilypad.output",
+        json.dumps(
+            cast(mb.BaseCallResponse, stream.construct_call_response()).message_param
+        ),
+    )
+
+
+async def handle_response_model_async(
+    result: BaseModel | mb.BaseType, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    if isinstance(result, BaseModel):
+        completion = result.model_dump_json()
+    else:
+        if not isinstance(result, str | int | float | bool):
+            result = str(result)
+        completion = result
+    span.set_attribute("lilypad.output", completion)
+
+
+async def handle_structured_stream_async(
+    result: mb.BaseStructuredStream, fn: Callable, span: Span | None
+) -> None:
+    if span is None:
+        return
+    if isinstance(result.constructed_response_model, BaseModel):
+        completion = result.constructed_response_model.model_dump_json()
+    else:
+        completion = result.constructed_response_model
+    span.set_attribute("lilypad.output", completion)

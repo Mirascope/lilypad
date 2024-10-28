@@ -10,3 +10,9 @@ class VersionPublic(VersionBase):
     id: int
     fn_params: FnParamsPublic | None = None
     llm_fn: LLMFunctionPublic
+
+
+class VersionCreate(VersionBase):
+    """Version create model"""
+
+    ...

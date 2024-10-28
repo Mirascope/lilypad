@@ -12,11 +12,22 @@ from typing import (
     overload,
 )
 
+from mirascope.integrations import middleware_factory
+
 from lilypad._trace import trace
 from lilypad.server import client
 
 from ._utils import (
+    get_custom_context_manager,
     get_llm_function_version,
+    handle_call_response,
+    handle_call_response_async,
+    handle_response_model,
+    handle_response_model_async,
+    handle_stream,
+    handle_stream_async,
+    handle_structured_stream,
+    handle_structured_stream_async,
     inspect_arguments,
     load_config,
     traced_synced_llm_function_constructor,
@@ -70,27 +81,44 @@ def llm_fn(synced: bool = False) -> LLMFn:
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 version = get_llm_function_version(fn, arg_types, synced)
-                trace_decorator = trace(
-                    project_id=lilypad_client.project_id,
-                    version_id=version.id,
-                    arg_types=arg_types,
-                    arg_values=arg_values,
-                    lexical_closure=version.llm_fn.code,
-                    prompt_template=version.fn_params.prompt_template
-                    if version.fn_params
-                    else "",
-                    version=version.version,
-                )
+                is_mirascope_call = hasattr(fn, "__mirascope_call__")
 
-                if not synced:
-                    return cast(_R, await trace_decorator(fn)(*args, **kwargs))
+                if not synced and not is_mirascope_call:
+                    decorator = trace(
+                        project_id=lilypad_client.project_id,
+                        version_id=version.id,
+                        arg_types=arg_types,
+                        arg_values=arg_values,
+                        lexical_closure=version.llm_fn.code,
+                        prompt_template=version.fn_params.prompt_template
+                        if version.fn_params
+                        else "",
+                        version=version.version,
+                    )
+                    return cast(_R, await decorator(fn)(*args, **kwargs))
+
+                decorator = middleware_factory(
+                    custom_context_manager=get_custom_context_manager(
+                        version, arg_types, arg_values, True
+                    ),
+                    handle_call_response=handle_call_response,
+                    handle_call_response_async=handle_call_response_async,
+                    handle_stream=handle_stream,
+                    handle_stream_async=handle_stream_async,
+                    handle_response_model=handle_response_model,
+                    handle_response_model_async=handle_response_model_async,
+                    handle_structured_stream=handle_structured_stream,
+                    handle_structured_stream_async=handle_structured_stream_async,
+                )
+                if not synced and is_mirascope_call:
+                    return cast(_R, await decorator(fn)(*args, **kwargs))
 
                 if not version.fn_params:
                     raise ValueError(f"Synced function {fn.__name__} has no params.")
 
                 return await traced_synced_llm_function_constructor(
-                    version.fn_params, trace_decorator
-                )(fn)(*args, **kwargs)
+                    version.fn_params, decorator
+                )(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             return inner_async
 
@@ -100,26 +128,43 @@ def llm_fn(synced: bool = False) -> LLMFn:
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 version = get_llm_function_version(fn, arg_types, synced)
-                trace_decorator = trace(
-                    project_id=lilypad_client.project_id,
-                    version_id=version.id,
-                    arg_types=arg_types,
-                    arg_values=arg_values,
-                    lexical_closure=version.llm_fn.code,
-                    prompt_template=version.fn_params.prompt_template
-                    if version.fn_params
-                    else "",
-                    version=version.version,
-                )
+                is_mirascope_call = hasattr(fn, "__mirascope_call__")
 
-                if not synced:
-                    return cast(_R, trace_decorator(fn)(*args, **kwargs))
+                if not synced and not is_mirascope_call:
+                    decorator = trace(
+                        project_id=lilypad_client.project_id,
+                        version_id=version.id,
+                        arg_types=arg_types,
+                        arg_values=arg_values,
+                        lexical_closure=version.llm_fn.code,
+                        prompt_template=version.fn_params.prompt_template
+                        if version.fn_params
+                        else "",
+                        version=version.version,
+                    )
+                    return cast(_R, decorator(fn)(*args, **kwargs))
+
+                decorator = middleware_factory(
+                    custom_context_manager=get_custom_context_manager(
+                        version, arg_types, arg_values, False
+                    ),
+                    handle_call_response=handle_call_response,
+                    handle_call_response_async=handle_call_response_async,
+                    handle_stream=handle_stream,
+                    handle_stream_async=handle_stream_async,
+                    handle_response_model=handle_response_model,
+                    handle_response_model_async=handle_response_model_async,
+                    handle_structured_stream=handle_structured_stream,
+                    handle_structured_stream_async=handle_structured_stream_async,
+                )
+                if not synced and is_mirascope_call:
+                    return cast(_R, decorator(fn)(*args, **kwargs))
 
                 if not version.fn_params:
                     raise ValueError(f"Synced function {fn.__name__} has no params.")
 
                 return traced_synced_llm_function_constructor(
-                    version.fn_params, trace_decorator
+                    version.fn_params, decorator
                 )(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             return inner

@@ -10,8 +10,8 @@ from .fn_params import (
 )
 from .llm_fns import LLMFunctionCreate, LLMFunctionPublic
 from .projects import ProjectCreate, ProjectPublic
-from .spans import SpanPublic
-from .versions import VersionPublic
+from .spans import SpanCreate, SpanPublic
+from .versions import VersionCreate, VersionPublic
 
 __all__ = [
     "AnthropicCallArgsCreate",
@@ -24,6 +24,8 @@ __all__ = [
     "ProjectCreate",
     "ProjectPublic",
     "ResponseFormat",
+    "SpanCreate",
     "SpanPublic",
+    "VersionCreate",
     "VersionPublic",
 ]

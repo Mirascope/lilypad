@@ -174,35 +174,46 @@ class LilypadClient:
         )
 
     def get_llm_function_by_hash(
-        self, version_hash: str, **kwargs: Any
+        self, llm_function_hash: str, **kwargs: Any
     ) -> LLMFunctionPublic:
         """Creates span traces."""
         return self._request(
             "GET",
-            f"/projects/{self.project_id}/llm-fns/{version_hash}",
+            f"/projects/{self.project_id}/llm-fns/{llm_function_hash}",
             response_model=LLMFunctionPublic,
             **kwargs,
         )
 
     def create_non_synced_version(
-        self, function_id: int, function_name: str, **kwargs: Any
+        self, function_id: int, llm_function_hash: str, **kwargs: Any
     ) -> VersionPublic:
         """Creates a new version for a non-synced LLM function."""
         return self._request(
             "POST",
-            f"/projects/{self.project_id}/versions/{function_name}",
+            f"/projects/{self.project_id}/versions/{llm_function_hash}",
             response_model=VersionPublic,
             json={"llm_function_id": function_id},
             **kwargs,
         )
 
-    def get_active_version_by_function_name(
-        self, function_name: str, **kwargs: Any
+    def get_non_synced_version(
+        self, llm_function_hash: str, **kwargs: Any
+    ) -> VersionPublic:
+        """Get the non synced version."""
+        return self._request(
+            "GET",
+            f"/projects/{self.project_id}/versions/{llm_function_hash}",
+            response_model=VersionPublic,
+            **kwargs,
+        )
+
+    def get_active_version_by_function_hash(
+        self, function_hash: str, **kwargs: Any
     ) -> VersionPublic:
         """Get the active version."""
         return self._request(
             "GET",
-            f"/projects/{self.project_id}/versions/{function_name}/active",
+            f"/projects/{self.project_id}/versions/{function_hash}/active",
             response_model=VersionPublic,
             **kwargs,
         )

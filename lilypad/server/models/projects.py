@@ -29,4 +29,6 @@ class ProjectTable(ProjectBase, table=True):
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
         nullable=False,
     )
-    llm_fns: list["LLMFunctionTable"] = Relationship(back_populates="project")
+    llm_fns: list["LLMFunctionTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )

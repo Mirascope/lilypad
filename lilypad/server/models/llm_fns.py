@@ -40,6 +40,8 @@ class LLMFunctionTable(LLMFunctionBase, table=True):
         default=datetime.datetime.now(datetime.timezone.utc), nullable=False
     )
 
-    fn_params: list["FnParamsTable"] = Relationship(back_populates="llm_fn")
+    fn_params: list["FnParamsTable"] = Relationship(
+        back_populates="llm_fn", cascade_delete=True
+    )
+    version: "VersionTable" = Relationship(back_populates="llm_fn", cascade_delete=True)
     project: "ProjectTable" = Relationship(back_populates="llm_fns")
-    version: "VersionTable" = Relationship(back_populates="llm_fn")

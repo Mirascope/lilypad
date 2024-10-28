@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "mirascope>=1.2.0",
+    "mirascope>=1.6.1",
     "sqlmodel>=0.0.22",
     "psycopg2-binary>=2.9.9",
     "fastapi[standard]>=0.114.0",
@@ -52,6 +52,11 @@ openai = ["openai>=1.43.0", "opentelemetry-instrumentation-openai>=0.31.2"]
 anthropic = [
     "anthropic>=0.36.0",
     "opentelemetry-instrumentation-anthropic>=0.32.2",
+]
+gemini = [
+    "google-generativeai>=0.4.0,<1",
+    "pillow>=10.4.0,<11",
+    "opentelemetry-instrumentation-google-generativeai>=0.33.2",
 ]
 
 [tool.uv]

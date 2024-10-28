@@ -29,10 +29,12 @@ class Scope(str, Enum):
 class SpanBase(BaseSQLModel):
     """Span base model"""
 
+    id: str = Field(primary_key=True)
     project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     version_id: int | None = Field(default=None, foreign_key=f"{VERSION_TABLE_NAME}.id")
     scope: Scope = Field(nullable=False)
     version: int | None = Field(default=None)
+    data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     created_at: datetime.datetime = Field(
         default=datetime.datetime.now(datetime.timezone.utc), nullable=False
     )
@@ -46,11 +48,11 @@ class SpanTable(SpanBase, table=True):
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
 
-    id: str = Field(primary_key=True)
-    data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     version_table: "VersionTable" = Relationship(back_populates="spans")
 
-    child_spans: list["SpanTable"] = Relationship(back_populates="parent_span")
+    child_spans: list["SpanTable"] = Relationship(
+        back_populates="parent_span", cascade_delete=True
+    )
 
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",

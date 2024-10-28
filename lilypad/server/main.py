@@ -19,17 +19,20 @@ from lilypad import configure
 from lilypad._trace import trace
 from lilypad._utils import load_config, traced_synced_llm_function_constructor
 from lilypad.models import (
+    AnthropicCallArgsCreate,
     CallArgsCreate,
     CallArgsPublic,
     FnParamsPublic,
     LLMFunctionCreate,
     LLMFunctionPublic,
+    OpenAICallArgsCreate,
     ProjectCreate,
     ProjectPublic,
+    SpanCreate,
     SpanPublic,
+    VersionCreate,
     VersionPublic,
 )
-from lilypad.models.fn_params import AnthropicCallArgsCreate, OpenAICallArgsCreate
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     FnParamsTable,
@@ -41,6 +44,8 @@ from lilypad.server.models import (
     VersionTable,
 )
 from lilypad.server.utils import calculate_fn_params_hash
+
+from .services import LLMFunctionService, ProjectService, SpanService, VersionService
 
 
 class SPAStaticFiles(StaticFiles):
@@ -95,54 +100,37 @@ api = FastAPI()
 
 @api.get("/projects", response_model=Sequence[ProjectTable])
 async def get_projects(
-    session: Annotated[Session, Depends(get_session)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> Sequence[ProjectTable]:
     """Get all projects."""
-    projects = session.exec(select(ProjectTable)).all()
-    return projects
+    return project_service.find_all_records()
 
 
 @api.get("/projects/{project_id}", response_model=ProjectTable)
 async def get_project(
     project_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> ProjectTable:
-    """Get all projects."""
-    project = session.exec(
-        select(ProjectTable).where(ProjectTable.id == project_id)
-    ).first()
-
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
+    """Get a project."""
+    return project_service.find_record_by_id(project_id)
 
 
 @api.post("/projects/", response_model=ProjectPublic)
 async def create_project(
     project_create: ProjectCreate,
-    session: Annotated[Session, Depends(get_session)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> ProjectTable:
     """Create a project"""
-    project = ProjectTable.model_validate(project_create)
-    session.add(project)
-    session.commit()
-    session.flush()
-    return project
+    return project_service.create_record(project_create)
 
 
-@api.get(
-    "/projects/{project_id}/llm-fns",
-    response_model=Sequence[LLMFunctionTable],
-)
-async def get_code_by_function_name(
-    function_name: str,
-    session: Annotated[Session, Depends(get_session)],
-) -> Sequence[LLMFunctionTable]:
-    """Get prompt version id by hash."""
-    llm_functions = session.exec(
-        select(LLMFunctionTable).where(LLMFunctionTable.function_name == function_name)
-    ).all()
-    return llm_functions
+@api.delete("/projects/{project_id}")
+async def delete_project(
+    project_id: int,
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
+) -> None:
+    """Create a project"""
+    return project_service.delete_record_by_id(project_id)
 
 
 @api.post(
@@ -152,50 +140,31 @@ async def get_code_by_function_name(
 async def create_llm_functions(
     project_id: int,
     llm_function_create: LLMFunctionCreate,
-    session: Annotated[Session, Depends(get_session)],
+    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
 ) -> LLMFunctionTable:
     """Get prompt version id by hash."""
-    llm_function = LLMFunctionTable.model_validate(
-        {
-            **llm_function_create.model_dump(),
-            "project_id": project_id,
-        }
-    )
-    session.add(llm_function)
-    session.commit()
-    session.refresh(llm_function)
-    return llm_function
+    return llm_fn_service.create_record(llm_function_create, project_id=project_id)
 
 
 @api.get("/projects/{project_id}/llm-fns/{id:int}", response_model=LLMFunctionPublic)
 async def get_llm_function_by_id(
     id: int,
-    session: Annotated[Session, Depends(get_session)],
+    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
 ) -> LLMFunctionTable | None:
-    """Get llm function by hash."""
-    llm_function = session.exec(
-        select(LLMFunctionTable).where(LLMFunctionTable.id == id)
-    ).first()
-    if not llm_function:
-        raise HTTPException(status_code=404, detail="LLM function not found")
-    return llm_function if llm_function else None
+    """Get llm function by id."""
+    return llm_fn_service.find_record_by_id(id)
 
 
 @api.get(
     "/projects/{project_id}/llm-fns/{version_hash:str}",
     response_model=LLMFunctionPublic,
 )
-async def get_llm_function_id_by_hash(
+async def get_llm_function_by_hash(
     version_hash: str,
-    session: Annotated[Session, Depends(get_session)],
-) -> LLMFunctionTable | None:
+    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
+) -> LLMFunctionTable:
     """Get llm function by hash."""
-    llm_function = session.exec(
-        select(LLMFunctionTable).where(LLMFunctionTable.version_hash == version_hash)
-    ).first()
-    if not llm_function:
-        raise HTTPException(status_code=404, detail="LLM function not found")
-    return llm_function if llm_function else None
+    return llm_fn_service.find_record_by_hash(version_hash)
 
 
 def create_dynamic_function(
@@ -220,19 +189,16 @@ def vibe_check(
     project_id: int,
     version_id: int,
     arg_values: dict[str, Any],
-    session: Annotated[Session, Depends(get_session)],
+    version_service: Annotated[VersionService, Depends(VersionService)],
 ) -> str:
     """Check if the vibes are good."""
-    version_table = session.exec(
-        select(VersionTable).where(
-            VersionTable.project_id == project_id, VersionTable.id == version_id
-        )
-    ).first()
-    if not version_table:
-        raise HTTPException(status_code=404, detail="Version not found")
+    version_table = version_service.find_record_by_id(version_id)
     version = VersionPublic.model_validate(version_table)
     args_dict = version.llm_fn.arg_types or {}
     configure()
+    # TODO: Check synced or not synced
+
+    # For non-synced, non mirascope functions
     trace_decorator = trace(
         project_id=project_id,
         version_id=version.id,
@@ -263,20 +229,11 @@ def vibe_check(
     "/projects/{project_id}/versions/{version_id:int}", response_model=VersionPublic
 )
 def get_version_by_id(
-    project_id: int,
     version_id: int,
-    session: Annotated[Session, Depends(get_session)],
+    version_service: Annotated[VersionService, Depends(VersionService)],
 ) -> VersionTable:
     """Get version by ID."""
-    version = session.exec(
-        select(VersionTable).where(
-            VersionTable.project_id == project_id, VersionTable.id == version_id
-        )
-    ).first()
-    if not version:
-        raise HTTPException(status_code=404, detail="Version not found")
-
-    return version
+    return version_service.find_record_by_id(version_id)
 
 
 class NonSyncedVersionCreate(BaseModel):
@@ -286,72 +243,80 @@ class NonSyncedVersionCreate(BaseModel):
 
 
 @api.post(
-    "/projects/{project_id}/versions/{function_name}",
+    "/projects/{project_id}/versions/{version_hash}",
     response_model=VersionPublic,
 )
 async def create_non_synced_version(
     project_id: int,
+    version_hash: str,
     non_synced_version_create: NonSyncedVersionCreate,
-    session: Annotated[Session, Depends(get_session)],
-) -> VersionPublic:
+    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
+    version_service: Annotated[VersionService, Depends(VersionService)],
+) -> VersionTable:
     """Creates a new version for a non-synced LLM function."""
-    llm_fn = session.exec(
-        select(LLMFunctionTable).where(
-            LLMFunctionTable.project_id == project_id,
-            LLMFunctionTable.id == non_synced_version_create.llm_function_id,
-        )
-    ).first()
-    if not llm_fn:
-        raise HTTPException(status_code=404, detail="LLM function not found")
-    versions = session.exec(
-        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
-    ).all()
-    for version in versions:
-        if version.is_active:
-            version.is_active = False
-            session.add(version)
-    session.flush()
-    new_version = VersionTable(
+    existing_version = version_service.find_non_synced_version_by_hash(
+        project_id, version_hash
+    )
+    if existing_version:
+        return existing_version
+
+    llm_fn = llm_fn_service.find_record_by_id(non_synced_version_create.llm_function_id)
+    number_of_versions = version_service.get_latest_version_count(
+        project_id, llm_fn.function_name
+    )
+    new_version = VersionCreate(
         project_id=project_id,
-        version=len(versions) + 1,
+        version=number_of_versions + 1,
         function_name=llm_fn.function_name,
-        is_active=True,
         fn_params_id=None,
         llm_function_id=non_synced_version_create.llm_function_id,
         fn_params_hash=None,
         llm_function_hash=llm_fn.version_hash,
     )
-    session.add(new_version)
-    session.commit()
-    session.refresh(new_version)
-    return VersionPublic(
-        **new_version.model_dump(),
-        fn_params=None,
-        llm_fn=LLMFunctionPublic.model_validate(llm_fn),
-    )
+    return version_service.create_record(new_version)
 
 
 @api.get(
-    "/projects/{project_id}/versions/{function_name}/active",
+    "/projects/{project_id}/versions/{version_hash}",
+    response_model=VersionPublic,
+)
+async def get_non_synced_version(
+    project_id: int,
+    version_hash: str,
+    version_service: Annotated[VersionService, Depends(VersionService)],
+) -> VersionTable:
+    """Get non-synced version of the function."""
+    version = version_service.find_non_synced_version_by_hash(project_id, version_hash)
+    if not version:
+        raise HTTPException(status_code=404, detail="Non-synced version not found")
+    return version
+
+
+@api.get(
+    "/projects/{project_id}/versions/{function_hash}/active",
     response_model=VersionPublic,
 )
 async def get_active_version(
     project_id: int,
-    function_name: str,
-    session: Annotated[Session, Depends(get_session)],
+    function_hash: str,
+    version_service: Annotated[VersionService, Depends(VersionService)],
 ) -> VersionTable:
-    """Get active version of the function."""
-    version = session.exec(
-        select(VersionTable).where(
-            VersionTable.project_id == project_id,
-            VersionTable.is_active,
-            VersionTable.function_name == function_name,
-        )
-    ).first()
-    if not version or not version.id:
-        raise HTTPException(status_code=404, detail="Active version not found")
+    """Get active version for synced function."""
+    return version_service.find_synced_active_version(project_id, function_hash)
 
-    return version
+
+@api.patch(
+    "/projects/{project_id}/versions/{version_id}/active",
+    response_model=VersionPublic,
+)
+async def set_active_version(
+    project_id: int,
+    version_id: int,
+    version_service: Annotated[VersionService, Depends(VersionService)],
+) -> VersionTable:
+    """Set active version for synced function."""
+    new_active_version = version_service.find_record_by_id(version_id)
+    return version_service.change_active_version(project_id, new_active_version)
 
 
 @api.post(
@@ -362,9 +327,16 @@ async def create_version_and_fn_params(
     project_id: int,
     llm_function_id: int,
     call_args_create: CallArgsCreate,
+    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
+    version_service: Annotated[VersionService, Depends(VersionService)],
     session: Annotated[Session, Depends(get_session)],
 ) -> VersionTable:
-    """Create function call params."""
+    """Create a new version.
+
+    Returns the version if llm function hash and fn params hash already exist.
+    Create a new version if the function parameters do not exist.
+    Sets active if it is the first prompt template.
+    """
     fn_hash = calculate_fn_params_hash(call_args_create)
     fn_params = FnParamsTable.model_validate(
         {
@@ -377,60 +349,37 @@ async def create_version_and_fn_params(
         }
     )
 
-    llm_fn = session.exec(
-        select(LLMFunctionTable).where(LLMFunctionTable.id == llm_function_id)
-    ).first()
-    if not llm_fn:
-        raise HTTPException(status_code=404, detail="LLM function not found")
+    llm_fn = llm_fn_service.find_record_by_id(llm_function_id)
     # Check if the function parameters already exist
-    existing_version = session.exec(
-        select(VersionTable).where(
-            VersionTable.fn_params_hash == fn_params.hash,
-            VersionTable.llm_function_hash == llm_fn.version_hash,
-        )
-    ).first()
+    existing_version = version_service.find_synced_verion_by_hashes(
+        llm_fn.version_hash, fn_hash
+    )
     if existing_version:
-        previous_active_version = session.exec(
-            select(VersionTable).where(
-                VersionTable.function_name == llm_fn.function_name,
-                VersionTable.is_active == True,  # noqa: E712
-                VersionTable.id != existing_version.id,
-            )
-        ).first()
-        if previous_active_version:
-            previous_active_version.is_active = False
-            session.add(previous_active_version)
-        existing_version.is_active = True
-        session.add(existing_version)
-        session.commit()
         return existing_version
 
     # Create a new version
     session.add(fn_params)
     session.flush()
     session.refresh(fn_params)
-    versions = session.exec(
-        select(VersionTable).where(VersionTable.function_name == llm_fn.function_name)
-    ).all()
-    for version in versions:
-        if version.is_active:
-            version.is_active = False
-            session.add(version)
-    session.flush()
-    new_version = VersionTable(
+
+    # Version to show to the user
+    number_of_versions = version_service.get_latest_version_count(
+        project_id, llm_fn.function_name
+    )
+    is_active = version_service.is_first_prompt_template(
+        project_id, llm_fn.version_hash
+    )
+    new_version = VersionCreate(
         project_id=project_id,
-        version=len(versions) + 1,
+        version=number_of_versions + 1,
         function_name=llm_fn.function_name,
-        is_active=True,
+        is_active=is_active,
         fn_params_id=fn_params.id,
         llm_function_id=llm_function_id,
         fn_params_hash=fn_params.hash,
         llm_function_hash=fn_params.llm_fn.version_hash,
     )
-    session.add(new_version)
-
-    session.commit()
-    return new_version
+    return version_service.create_record(new_version)
 
 
 @api.get(
@@ -438,28 +387,24 @@ async def create_version_and_fn_params(
     response_model=CallArgsPublic,
 )
 async def get_call_args_from_llm_function_by_id(
-    id: int,
-    session: Annotated[Session, Depends(get_session)],
+    id: int, llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)]
 ) -> CallArgsPublic:
     """Get prompt version id by hash.
 
     For the ID route, we return the latest version of the function parameters.
     """
-    llm_function = session.exec(
-        select(LLMFunctionTable).where(LLMFunctionTable.id == id)
-    ).first()
-    if not llm_function:
+    try:
+        llm_function = llm_fn_service.find_record_by_id(id)
+    except HTTPException:
         return CallArgsPublic(
             id=None,
             model="gpt-4o",
             provider=Provider.OPENAI,
         )
-    elif not llm_function.fn_params:
-        all_llm_functions = session.exec(
-            select(LLMFunctionTable).where(
-                LLMFunctionTable.function_name == llm_function.function_name
-            )
-        ).all()
+    if not llm_function.fn_params:
+        all_llm_functions = llm_fn_service.find_records_by_name(
+            llm_function.project_id, llm_function.function_name
+        )
         if len(all_llm_functions) == 1:
             return CallArgsPublic(
                 id=None,
@@ -500,33 +445,44 @@ async def get_call_args_from_llm_function_by_id(
 
 @api.post("/v1/traces")
 async def traces(
-    request: Request, session: Annotated[Session, Depends(get_session)]
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> list[SpanPublic]:
     """Create span traces."""
     traces_json: list[dict] = await request.json()
     span_tables: list[SpanTable] = []
+    latest_parent_span_id = None
+    latest_project_id = None
     for lilypad_trace in traces_json:
         if lilypad_trace["instrumentation_scope"]["name"] == "lilypad":
             scope = Scope.LILYPAD
+            latest_parent_span_id = lilypad_trace["span_id"]
+            latest_project_id = lilypad_trace["attributes"]["lilypad.project_id"]
         else:
             scope = Scope.LLM
 
-        span_table = SpanTable(
+        # Handle streaming traces
+        if scope == Scope.LLM and not lilypad_trace.get("parent_span_id"):
+            parent_span_id = latest_parent_span_id
+            project_id = latest_project_id
+        else:
+            parent_span_id = lilypad_trace.get("parent_span_id", None)
+            project_id = lilypad_trace.get("attributes", {}).get(
+                "lilypad.project_id", None
+            )
+        span_create = SpanCreate(
             id=lilypad_trace["span_id"],
             version=lilypad_trace.get("attributes", {}).get("lilypad.version", None),
-            parent_span_id=lilypad_trace.get("parent_span_id", None),
+            parent_span_id=parent_span_id,
             data=lilypad_trace,
             scope=scope,
             version_id=lilypad_trace.get("attributes", {}).get(
                 "lilypad.version_id", None
             ),
-            project_id=lilypad_trace.get("attributes", {}).get(
-                "lilypad.project_id", None
-            ),
+            project_id=project_id,
         )
-        span_tables.append(span_table)
-        session.add(span_table)
-    session.commit()
+        span_service.create_record(span_create)
     parent_traces: list[SpanPublic] = []
     for span_table in span_tables:
         session.refresh(span_table)
@@ -542,11 +498,7 @@ def set_display_name_and_convert(
     """Set the display name based on the scope."""
     # TODO: Handle error cases where spans dont have attributes
     if span.scope == Scope.LILYPAD:
-        display_name = (
-            span.version_table.llm_fn.function_name
-            if span.version_table.llm_fn
-            else None
-        )
+        display_name = span.data["attributes"]["lilypad.function_name"]
     elif span.scope == Scope.LLM:
         data = span.data
         display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
