@@ -2,12 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import markdown from "highlight.js/lib/languages/markdown";
-import { marked } from "marked";
 import { SpanPublic } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Typography } from "@/components/ui/typography";
-import DOMPurify from "dompurify";
-import { ReactNode } from "react";
+import { ReactElement, ReactNode } from "react";
+import { MessageCard, MessageCardProps } from "@/components/MessageCard";
+import ReactMarkdown from "react-markdown";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
@@ -16,80 +16,36 @@ interface ConversationItem {
   [key: string]: any;
 }
 
-const convertStringtoHtml = (content: string): string => {
-  const rawHtml: string = marked.parse(content, {
-    async: false,
-  });
-  return DOMPurify.sanitize(rawHtml);
-};
-
-const renderMessageCard = ({
-  item,
-  sanitizedHtml,
-  content,
-  index,
-}: {
-  item: any;
-  sanitizedHtml?: string;
-  content?: ReactNode;
-  index: number;
-}) => {
-  let cardContent = null;
-  if (sanitizedHtml) {
-    cardContent = (
-      <CardContent
-        className='flex flex-col overflow-auto'
-        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-      />
-    );
-  } else if (content) {
-    cardContent = (
-      <CardContent className='flex flex-col'>{content}</CardContent>
-    );
-  }
-  return (
-    <Card key={`${item.index}-${index}`}>
-      <CardHeader>
-        <CardTitle>{item.role}</CardTitle>
-      </CardHeader>
-      {cardContent}
-    </Card>
-  );
-};
 const convertItemsToOpenAICard = (items: ConversationItem) => {
-  const cards = [];
+  const cards: ReactElement<MessageCardProps>[] = [];
   const messages = Object.values(items);
-  messages.forEach((item) => {
+  messages.forEach((item, mIndex) => {
     try {
       const parsedContent = JSON.parse(item.content);
       if (Array.isArray(parsedContent)) {
+        const cardContent: ReactNode[] = [];
         parsedContent.forEach((content, index) => {
+          const key = `messages-${mIndex}-${index}`;
           if (content.type === "text") {
-            const sanitizedHtml = convertStringtoHtml(content.text);
-            cards.push(
-              renderMessageCard({
-                item,
-                sanitizedHtml,
-                index,
-              })
+            cardContent.push(
+              <ReactMarkdown key={key}>{content.text}</ReactMarkdown>
             );
           } else if (content.type === "image_url") {
-            cards.push(
-              renderMessageCard({
-                item,
-                sanitizedHtml: `<img src="${content.image_url.url}" alt="image" />`,
-                index,
-              })
+            cardContent.push(
+              <img key={key} src={`${content.image_url.url}`} alt='image' />
             );
           }
         });
-      } else {
-        const sanitizedHtml = convertStringtoHtml(item.content);
         cards.push(
-          renderMessageCard({
-            item,
-            sanitizedHtml,
-          })
+          <MessageCard role={item.role} content={cardContent} key={mIndex} />
+        );
+      } else {
+        cards.push(
+          <MessageCard
+            role={item.role}
+            content={<ReactMarkdown>{item.content}</ReactMarkdown>}
+            key={mIndex}
+          />
         );
       }
     } catch (e) {
@@ -107,18 +63,15 @@ const convertItemsToOpenAICard = (items: ConversationItem) => {
           );
         });
         cards.push(
-          renderMessageCard({
-            item,
-            content,
-          })
+          <MessageCard role={item.role} content={content} key={mIndex} />
         );
       } else {
-        const sanitizedHtml = convertStringtoHtml(item.content);
         cards.push(
-          renderMessageCard({
-            item,
-            sanitizedHtml,
-          })
+          <MessageCard
+            role={item.role}
+            content={<ReactMarkdown>{item.content}</ReactMarkdown>}
+            key={mIndex}
+          />
         );
       }
     }
@@ -127,73 +80,76 @@ const convertItemsToOpenAICard = (items: ConversationItem) => {
 };
 
 const convertItemsToGeminiCard = (items: ConversationItem) => {
-  const cards = [];
+  const cards: ReactElement<MessageCardProps>[] = [];
   const messages = Object.values(items);
+  let index = 0;
   for (const item of messages) {
     if (!item.content && !item.user) continue;
     if (item.user) item.role = "user";
     else if (item.content) item.role = "assistant";
 
     let content = item.user || item.content;
-    const sanitizedHtml = convertStringtoHtml(content);
     cards.push(
-      renderMessageCard({
-        item,
-        sanitizedHtml,
-      })
+      <MessageCard
+        role={item.role}
+        content={<ReactMarkdown>{content}</ReactMarkdown>}
+        key={index}
+      />
     );
+    index++;
   }
   return cards;
 };
 const convertItemsToAnthropicCard = (items: ConversationItem) => {
-  const cards = [];
+  const cards: ReactElement<MessageCardProps>[] = [];
   const messages = Object.values(items);
-  messages.forEach((item) => {
+  messages.forEach((item, mIndex) => {
     try {
       const parsedContent = JSON.parse(item.content);
       if (Array.isArray(parsedContent)) {
+        const cardContent: ReactNode[] = [];
         parsedContent.forEach((content, index) => {
           if (content.type === "text") {
-            const sanitizedHtml = convertStringtoHtml(content.text);
-            cards.push(
-              renderMessageCard({
-                item,
-                sanitizedHtml,
-                index,
-              })
+            cardContent.push(
+              <ReactMarkdown key={`${mIndex}-${index}`}>
+                {content.text}
+              </ReactMarkdown>
             );
           } else if (content.type === "image_url") {
-            cards.push(
-              renderMessageCard({
-                item,
-                sanitizedHtml: `<img src="${content.image_url.url}" alt="image" />`,
-                index,
-              })
+            cardContent.push(
+              <img
+                key={`${mIndex}-${index}`}
+                src='${content.image_url.url}'
+                alt='image'
+              />
             );
           }
         });
+        cards.push(
+          <MessageCard role={item.role} content={cardContent} key={mIndex} />
+        );
       } else {
-        const sanitizedHtml = convertStringtoHtml(item.content);
         if (item.finish_reason) {
           item.role = "assistant";
         }
         cards.push(
-          renderMessageCard({
-            item,
-            sanitizedHtml,
-          })
+          <MessageCard
+            role={item.role}
+            content={<ReactMarkdown>{item.content}</ReactMarkdown>}
+            key={mIndex}
+          />
         );
       }
     } catch (e) {
-      const sanitizedHtml = convertStringtoHtml(item.content);
       if (item.finish_reason) {
         item.role = "assistant";
       }
       cards.push(
-        renderMessageCard({
-          item,
-          sanitizedHtml,
-        })
+        <MessageCard
+          role={item.role}
+          content={<ReactMarkdown>{item.content}</ReactMarkdown>}
+          key={mIndex}
+        />
       );
     }
   });

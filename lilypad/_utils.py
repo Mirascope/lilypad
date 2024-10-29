@@ -1,5 +1,6 @@
 """Utilities for the `lilypad` library."""
 
+import base64
 import inspect
 import json
 import os
@@ -325,12 +326,18 @@ def get_custom_context_manager(
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
+    prompt_template: str | None = None,
 ) -> Callable[..., _GeneratorContextManager[Span]]:
     @contextmanager
     def custom_context_manager(
         fn: Callable,
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
+        lilypad_prompt_template = (
+            version.fn_params.prompt_template if version.fn_params else prompt_template
+        )
+        if not lilypad_prompt_template:
+            raise ValueError("Missing prompt template.")
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_id": lilypad_client.project_id
@@ -342,9 +349,7 @@ def get_custom_context_manager(
                 "lilypad.arg_types": json.dumps(arg_types),
                 "lilypad.arg_values": json.dumps(arg_values),
                 "lilypad.lexical_closure": version.llm_fn.code,
-                "lilypad.prompt_template": version.fn_params.prompt_template
-                if version.fn_params
-                else "",
+                "lilypad.prompt_template": lilypad_prompt_template,
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
@@ -353,23 +358,85 @@ def get_custom_context_manager(
     return custom_context_manager
 
 
+def serialize_proto_data(data: list[dict]) -> str:
+    """Serializes a list of dictionaries containing protocol buffer-like data.
+    Handles binary data by base64 encoding it.
+
+    Args:
+        data: List of dictionaries containing mixed data types
+
+    Returns:
+        str: JSON-serialized string of the data
+    """
+
+    def encode_part(part: str | dict) -> str | dict:
+        if isinstance(part, dict):
+            if "mime_type" in part and "data" in part:
+                # Handle binary data by base64 encoding it
+                return {
+                    "mime_type": part["mime_type"],
+                    "data": base64.b64encode(part["data"]).decode("utf-8"),
+                }
+            return part
+        return part
+
+    serializable_data = []
+    for item in data:
+        serialized_item = item.copy()
+        if "parts" in item:
+            serialized_item["parts"] = [encode_part(part) for part in item["parts"]]
+        serializable_data.append(serialized_item)
+
+    return json.dumps(serializable_data)
+
+
+def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> None:
+    try:
+        output = json.dumps(response.message_param)
+    except TypeError:
+        output = str(response.message_param)
+    try:
+        messages = json.dumps(response.messages)
+    except TypeError:
+        messages = serialize_proto_data(response.messages)  # Gemini
+    attributes: dict[str, AttributeValue] = {
+        "lilypad.output": output,
+        "lilypad.messages": messages,
+    }
+    span.set_attributes(attributes)
+
+
+def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) -> None:
+    if isinstance(result, BaseModel):
+        completion = result.model_dump_json()
+        messages = json.dumps(result._response.messages)  # pyright: ignore [reportAttributeAccessIssue]
+    else:
+        if not isinstance(result, str | int | float | bool):
+            result = str(result)
+        completion = result
+        messages = None
+
+    attributes: dict[str, AttributeValue] = {
+        "lilypad.output": completion,
+    }
+    if messages:
+        attributes["lilypad.messages"] = messages
+    span.set_attributes(attributes)
+
+
 def handle_call_response(
     result: mb.BaseCallResponse, fn: Callable, span: Span | None
 ) -> None:
     if span is None:
         return
-    span.set_attribute("lilypad.output", json.dumps(result.message_param))
+    _set_call_response_attributes(result, span)
 
 
 def handle_stream(stream: mb.BaseStream, fn: Callable, span: Span | None) -> None:
     if span is None:
         return
-    span.set_attribute(
-        "lilypad.output",
-        json.dumps(
-            cast(mb.BaseCallResponse, stream.construct_call_response()).message_param
-        ),
-    )
+    call_response = cast(mb.BaseCallResponse, stream.construct_call_response())
+    _set_call_response_attributes(call_response, span)
 
 
 def handle_response_model(
@@ -377,13 +444,8 @@ def handle_response_model(
 ) -> None:
     if span is None:
         return
-    if isinstance(result, BaseModel):
-        completion = result.model_dump_json()
-    else:
-        if not isinstance(result, str | int | float | bool):
-            result = str(result)
-        completion = result
-    span.set_attribute("lilypad.output", completion)
+
+    _set_response_model_attributes(result, span)
 
 
 def handle_structured_stream(
@@ -391,11 +453,8 @@ def handle_structured_stream(
 ) -> None:
     if span is None:
         return
-    if isinstance(result.constructed_response_model, BaseModel):
-        completion = result.constructed_response_model.model_dump_json()
-    else:
-        completion = result.constructed_response_model
-    span.set_attribute("lilypad.output", completion)
+
+    _set_response_model_attributes(result.constructed_response_model, span)
 
 
 async def handle_call_response_async(
@@ -404,7 +463,7 @@ async def handle_call_response_async(
     if span is None:
         return
 
-    span.set_attribute("output", json.dumps(result.message_param))
+    _set_call_response_attributes(result, span)
 
 
 async def handle_stream_async(
@@ -412,12 +471,8 @@ async def handle_stream_async(
 ) -> None:
     if span is None:
         return
-    span.set_attribute(
-        "lilypad.output",
-        json.dumps(
-            cast(mb.BaseCallResponse, stream.construct_call_response()).message_param
-        ),
-    )
+    call_response = cast(mb.BaseCallResponse, stream.construct_call_response())
+    _set_call_response_attributes(call_response, span)
 
 
 async def handle_response_model_async(
@@ -425,13 +480,7 @@ async def handle_response_model_async(
 ) -> None:
     if span is None:
         return
-    if isinstance(result, BaseModel):
-        completion = result.model_dump_json()
-    else:
-        if not isinstance(result, str | int | float | bool):
-            result = str(result)
-        completion = result
-    span.set_attribute("lilypad.output", completion)
+    _set_response_model_attributes(result, span)
 
 
 async def handle_structured_stream_async(
@@ -439,8 +488,4 @@ async def handle_structured_stream_async(
 ) -> None:
     if span is None:
         return
-    if isinstance(result.constructed_response_model, BaseModel):
-        completion = result.constructed_response_model.model_dump_json()
-    else:
-        completion = result.constructed_response_model
-    span.set_attribute("lilypad.output", completion)
+    _set_response_model_attributes(result.constructed_response_model, span)

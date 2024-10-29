@@ -99,7 +99,11 @@ def llm_fn(synced: bool = False) -> LLMFn:
 
                 decorator = middleware_factory(
                     custom_context_manager=get_custom_context_manager(
-                        version, arg_types, arg_values, True
+                        version,
+                        arg_types,
+                        arg_values,
+                        True,
+                        fn._prompt_template,  # pyright: ignore [reportFunctionMemberAccess]
                     ),
                     handle_call_response=handle_call_response,
                     handle_call_response_async=handle_call_response_async,
@@ -129,7 +133,6 @@ def llm_fn(synced: bool = False) -> LLMFn:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 version = get_llm_function_version(fn, arg_types, synced)
                 is_mirascope_call = hasattr(fn, "__mirascope_call__")
-
                 if not synced and not is_mirascope_call:
                     decorator = trace(
                         project_id=lilypad_client.project_id,
@@ -143,10 +146,13 @@ def llm_fn(synced: bool = False) -> LLMFn:
                         version=version.version,
                     )
                     return cast(_R, decorator(fn)(*args, **kwargs))
-
                 decorator = middleware_factory(
                     custom_context_manager=get_custom_context_manager(
-                        version, arg_types, arg_values, False
+                        version,
+                        arg_types,
+                        arg_values,
+                        False,
+                        fn._prompt_template,  # pyright: ignore [reportFunctionMemberAccess]
                     ),
                     handle_call_response=handle_call_response,
                     handle_call_response_async=handle_call_response_async,
