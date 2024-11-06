@@ -8,7 +8,13 @@ import {
 } from "@/components/ui/select";
 import { ForwardedRef, forwardRef, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Controller, SubmitHandler, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  SubmitHandler,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import {
   CallArgsCreate,
   LLMFunctionPublic,
@@ -17,11 +23,15 @@ import {
   ResponseFormat,
   AnthropicCallArgsCreate,
   OpenAICallArgsCreate,
+  GeminiCallArgsCreate,
 } from "@/types/types";
 import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import { LexicalEditor } from "lexical";
 import { FormSlider } from "@/components/FormSlider";
+import { FormCombobox } from "@/components/FormCombobox";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 
 interface EditorFormProps {
   latestVersion?: VersionPublic | null;
@@ -31,16 +41,10 @@ interface EditorFormProps {
   formButtons?: React.ReactNode[];
 }
 
-type OptionalKeys<T> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
-}[keyof T];
-
-// TODO: Add optional components for optional parameters
-function getOptionalKeys<T extends object>(obj: T): OptionalKeys<T>[] {
-  return Object.keys(obj).filter((key) => {
-    return obj[key as keyof T] === undefined;
-  }) as OptionalKeys<T>[];
-}
+type CallArgsCreateOptional = Record<string, boolean>;
+export type EditorFormValues = CallArgsCreate & {
+  isOptional?: CallArgsCreateOptional;
+};
 
 export const EditorForm = forwardRef(
   (
@@ -57,8 +61,10 @@ export const EditorForm = forwardRef(
     const anthropicCallParamsDefault: AnthropicCallArgsCreate = {
       max_tokens: 1024,
       temperature: 1.0,
+      stop_sequences: undefined,
+      top_k: undefined,
+      top_p: undefined,
     };
-    // const optionalAnthropicParams = getOptionalKeys(anthropicCallParamsDefault);
     const openaiCallParamsDefault: OpenAICallArgsCreate = {
       response_format: {
         type: "text",
@@ -69,31 +75,47 @@ export const EditorForm = forwardRef(
       frequency_penalty: 0,
       presence_penalty: 0,
     };
-    const { control, handleSubmit, getValues, reset } = useForm<CallArgsCreate>(
-      {
-        defaultValues: latestVersion
-          ? {
-              ...latestVersion?.fn_params,
-              call_params:
-                latestVersion && latestVersion.fn_params
-                  ? latestVersion.fn_params.provider === Provider.OPENAI ||
-                    latestVersion.fn_params.provider === Provider.OPENROUTER
-                    ? openaiCallParamsDefault
-                    : latestVersion.fn_params.provider === Provider.ANTHROPIC
-                      ? anthropicCallParamsDefault
+    const geminiCallParamsDefault: GeminiCallArgsCreate = {
+      response_mime_type: "text/plain",
+      max_output_tokens: undefined,
+      temperature: undefined,
+      top_p: undefined,
+      top_k: undefined,
+      frequency_penalty: undefined,
+      presence_penalty: undefined,
+      response_schema: undefined,
+    };
+    const methods = useForm<EditorFormValues>({
+      defaultValues: latestVersion
+        ? {
+            ...latestVersion?.fn_params,
+            call_params:
+              latestVersion && latestVersion.fn_params
+                ? latestVersion.fn_params.provider === Provider.OPENAI ||
+                  latestVersion.fn_params.provider === Provider.OPENROUTER
+                  ? openaiCallParamsDefault
+                  : latestVersion.fn_params.provider === Provider.ANTHROPIC
+                    ? anthropicCallParamsDefault
+                    : latestVersion.fn_params.provider === Provider.GEMINI
+                      ? geminiCallParamsDefault
                       : {}
-                  : {},
-            }
-          : {
-              provider: Provider.OPENAI,
-              model: "gpt-4o",
-              call_params: openaiCallParamsDefault,
-            },
-      }
-    );
+                : {},
+            isOptional: {},
+          }
+        : {
+            provider: Provider.OPENAI,
+            model: "gpt-4o",
+            call_params: openaiCallParamsDefault,
+          },
+    });
+    const { control, handleSubmit, getValues, reset } = methods;
     const provider = useWatch({
       control,
       name: "provider",
+    });
+    const isOptionalStopSequences = useWatch({
+      control,
+      name: "isOptional.stop_sequences",
     });
     useEffect(() => {
       if (isInitialRender.current) {
@@ -118,6 +140,12 @@ export const EditorForm = forwardRef(
           model: "openai/chatgpt-4o-latest",
           call_params: openaiCallParamsDefault,
         });
+      } else if (provider === Provider.GEMINI) {
+        reset({
+          provider: Provider.GEMINI,
+          model: "gemini-1.5-flash",
+          call_params: geminiCallParamsDefault,
+        });
       }
     }, [provider, reset]);
     const modelOptions = {
@@ -130,6 +158,7 @@ export const EditorForm = forwardRef(
         { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
       ],
       [Provider.ANTHROPIC]: [
+        { value: "claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet (New)" },
         { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet" },
         { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
         { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
@@ -149,6 +178,15 @@ export const EditorForm = forwardRef(
         { value: "anthropic/claude-3-sonnet", label: "Claude 3 Sonnet" },
         { value: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" },
       ],
+      [Provider.GEMINI]: [
+        {
+          value: "gemini-1.5-flash",
+          label: "Gemini 1.5 Flash",
+        },
+        { value: "gemini-1.5-flash-8b", label: "Gemini 1.5 Flash-8b" },
+        { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+        { value: "gemini-1.0-pro", label: "Gemini 1.0 Pro" },
+      ],
     };
 
     const options = modelOptions[provider] || [];
@@ -158,15 +196,19 @@ export const EditorForm = forwardRef(
       : [];
 
     const renderMaxTokens = () => {
+      let field = "max_tokens";
+      if (provider === Provider.GEMINI) {
+        field = "max_output_tokens";
+      }
       return (
         <FormSlider<CallArgsCreate>
-          key='editor-max-tokens'
+          key={`editor-${field}`}
           {...{
             control,
-            name: "call_params.max_tokens",
+            name: `call_params.${field}`,
             label: "Max Tokens",
             sliderProps: {
-              name: "max-tokens",
+              name: field,
               min: 1,
               max: 4095,
               step: 1,
@@ -227,17 +269,19 @@ export const EditorForm = forwardRef(
         />
       );
     };
+
     const renderTopP = (optional?: boolean) => {
+      const field = "top_p";
       return (
         <FormSlider<CallArgsCreate>
-          key='editor-top-p'
+          key={`editor-${field}`}
           {...{
             control,
-            name: "call_params.top_p",
+            name: `call_params.${field}`,
             label: "Top P",
-            optional,
+            ...(optional && { switchName: `isOptional.${field}`, optional }),
             sliderProps: {
-              name: "top-p",
+              name: field,
               min: 0,
               max: 1,
               step: 0.01,
@@ -246,6 +290,66 @@ export const EditorForm = forwardRef(
             inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
           }}
         />
+      );
+    };
+    const renderTopK = (optional?: boolean) => {
+      const field = "top_k";
+      return (
+        <FormSlider<CallArgsCreate>
+          key={`editor-${field}`}
+          {...{
+            control,
+            name: `call_params.${field}`,
+            label: "Top K",
+            ...(optional && { switchName: `isOptional.${field}`, optional }),
+            sliderProps: {
+              name: field,
+              min: 0,
+              max: 40,
+              step: 1,
+            },
+            showInput: true,
+            inputProps: { step: 0.01, className: "w-[100px] h-[1.5rem]" },
+          }}
+        />
+      );
+    };
+    const renderStopSequences = (optional?: boolean) => {
+      return (
+        <div key='editor-stop-sequences' className='form-group'>
+          <Label htmlFor='stop-sequences' className='flex items-center gap-2'>
+            Stop Sequences
+            {optional && (
+              <>
+                <Controller
+                  name={"isOptional.stop_sequences"}
+                  control={control}
+                  render={({ field }) => (
+                    <>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <p className='text-xs'>
+                        {field.value ? "Active" : "Not set"}
+                      </p>
+                    </>
+                  )}
+                />
+              </>
+            )}
+          </Label>
+          <FormCombobox<CallArgsCreate>
+            items={(getValues("call_params.stop_sequences") || []).map(
+              (str) => ({ value: str, label: str })
+            )}
+            control={control}
+            name='call_params.stop_sequences'
+            popoverText='Add stop sequences...'
+            helperText='Enter a stop sequence'
+            disabled={!isOptionalStopSequences}
+          />
+        </div>
       );
     };
     const renderFrequencyPenalty = () => {
@@ -288,6 +392,20 @@ export const EditorForm = forwardRef(
         />
       );
     };
+    const renderResponseMimeType = () => {
+      return (
+        <div key='editor-response-mime-type' className='form-group'>
+          <Label htmlFor='response-mime-type'>Response Mime Type</Label>
+          <Controller
+            name='call_params.response_mime_type'
+            control={control}
+            render={({ field }) => (
+              <Input {...field} placeholder='Enter value' />
+            )}
+          />
+        </div>
+      );
+    };
     const openaiParams = [
       renderMaxTokens(),
       renderResponseFormat(),
@@ -296,51 +414,71 @@ export const EditorForm = forwardRef(
       renderFrequencyPenalty(),
       renderPresencePenalty(),
     ];
-    const anthropicParams = [renderMaxTokens(), renderTemperature()];
+    const anthropicParams = [
+      renderMaxTokens(),
+      renderTemperature(),
+      renderStopSequences(true),
+      renderTopP(true),
+      renderTopK(true),
+    ];
+    const geminiParams = [
+      renderMaxTokens(),
+      renderTemperature(),
+      renderTopP(),
+      renderTopK(),
+      renderResponseMimeType(),
+      renderFrequencyPenalty(),
+      renderPresencePenalty(),
+    ];
     return (
       <div className='flex flex-col gap-2'>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className='flex gap-2'>
-            <div className='lexical form-group'>
-              <Label htmlFor='prompt-template'>Prompt Template</Label>
-              <Editor
-                inputs={inputs}
-                ref={ref}
-                promptTemplate={
-                  (latestVersion &&
-                    latestVersion.fn_params &&
-                    latestVersion.fn_params.prompt_template) ||
-                  ""
-                }
-              />
-              {editorErrors.length > 0 &&
-                editorErrors.map((error, i) => (
-                  <div key={i} className='text-red-500 text-sm mt-1'>
-                    {error}
-                  </div>
-                ))}
-            </div>
-            <div className='w-full max-w-sm flex flex-col gap-3'>
-              <div className='form-group'>
-                <Label htmlFor='provider'>Provider</Label>
-                <Controller
-                  name='provider'
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a provider' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='openai'>OpenAI</SelectItem>
-                        <SelectItem value='anthropic'>Anthropic</SelectItem>
-                        <SelectItem value='openrouter'>OpenRouter</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+        <FormProvider {...methods}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className='flex gap-2'>
+              <div className='lexical form-group'>
+                <Label htmlFor='prompt-template'>Prompt Template</Label>
+                <Editor
+                  inputs={inputs}
+                  ref={ref}
+                  promptTemplate={
+                    (latestVersion &&
+                      latestVersion.fn_params &&
+                      latestVersion.fn_params.prompt_template) ||
+                    ""
+                  }
                 />
+                {editorErrors.length > 0 &&
+                  editorErrors.map((error, i) => (
+                    <div key={i} className='text-red-500 text-sm mt-1'>
+                      {error}
+                    </div>
+                  ))}
               </div>
-              {/* <div className='flex items-center space-x-2'>
+              <div className='w-full max-w-sm flex flex-col gap-3'>
+                <div className='form-group'>
+                  <Label htmlFor='provider'>Provider</Label>
+                  <Controller
+                    name='provider'
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className='w-full'>
+                          <SelectValue placeholder='Select a provider' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='openai'>OpenAI</SelectItem>
+                          <SelectItem value='anthropic'>Anthropic</SelectItem>
+                          <SelectItem value='gemini'>Gemini</SelectItem>
+                          <SelectItem value='openrouter'>OpenRouter</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+                {/* <div className='flex items-center space-x-2'>
                     <Controller
                       name='json_mode'
                       control={control}
@@ -353,29 +491,33 @@ export const EditorForm = forwardRef(
                     />
                     <Label htmlFor='diff-view'>JSON Mode</Label>
                   </div> */}
-              <div className='form-group'>
-                <ModelCombobox<CallArgsCreate, "model">
-                  control={control}
-                  name='model'
-                  label='Choose a Model'
-                  options={options}
-                  defaultValue={getValues("model")}
-                />
+                <div className='form-group'>
+                  <ModelCombobox<CallArgsCreate, "model">
+                    control={control}
+                    name='model'
+                    label='Choose a Model'
+                    options={options}
+                    defaultValue={getValues("model")}
+                  />
+                </div>
+                {provider === Provider.OPENAI ||
+                provider === Provider.OPENROUTER
+                  ? openaiParams
+                  : provider === Provider.ANTHROPIC
+                    ? anthropicParams
+                    : provider === Provider.GEMINI
+                      ? geminiParams
+                      : null}
               </div>
-              {provider === Provider.OPENAI || provider === Provider.OPENROUTER
-                ? openaiParams
-                : provider === Provider.ANTHROPIC
-                  ? anthropicParams
-                  : null}
             </div>
-          </div>
-          <div className='button-group'>
-            <Button type='submit' name='create-version'>
-              Create version
-            </Button>
-            {formButtons && formButtons.map((button) => button)}
-          </div>
-        </form>
+            <div className='button-group'>
+              <Button type='submit' name='create-version'>
+                Create version
+              </Button>
+              {formButtons && formButtons.map((button) => button)}
+            </div>
+          </form>
+        </FormProvider>
       </div>
     );
   }

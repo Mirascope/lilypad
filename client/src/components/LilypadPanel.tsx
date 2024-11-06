@@ -2,24 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import markdown from "highlight.js/lib/languages/markdown";
-import { marked } from "marked";
 import { SpanPublic } from "@/types/types";
 import { CodeSnippet } from "@/routes/-codeSnippet";
 import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
-import DOMPurify from "dompurify";
+import ReactMarkdown from "react-markdown";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   const data = span.data;
-  const rawOutputHtml: string = marked.parse(
-    data.attributes["lilypad.output"],
-    {
-      async: false,
-    }
-  );
-  const sanitizedOutputHtml = DOMPurify.sanitize(rawOutputHtml);
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{data.name}</Typography>
@@ -42,15 +34,16 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           </CardContent>
         </Card>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle>{"Output"}</CardTitle>
-        </CardHeader>
-        <CardContent
-          className='flex flex-col'
-          dangerouslySetInnerHTML={{ __html: sanitizedOutputHtml }}
-        />
-      </Card>
+      {data.attributes["lilypad.output"] && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{"Output"}</CardTitle>
+          </CardHeader>
+          <CardContent className='flex flex-col'>
+            <ReactMarkdown>{data.attributes["lilypad.output"]}</ReactMarkdown>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>{"Data"}</CardTitle>

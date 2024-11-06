@@ -75,6 +75,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
 }
 
 .ltr {

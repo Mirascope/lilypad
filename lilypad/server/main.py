@@ -1,7 +1,8 @@
 """Main FastAPI application module for Lilypad."""
 
-from collections.abc import Callable, Sequence
-from typing import Annotated, Any
+import json
+from collections.abc import Sequence
+from typing import Annotated, Any, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -15,37 +16,20 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
-from lilypad import configure
-from lilypad._trace import trace
-from lilypad._utils import load_config, traced_synced_llm_function_constructor
+from lilypad._utils import load_config
 from lilypad.models import (
-    AnthropicCallArgsCreate,
-    CallArgsCreate,
-    CallArgsPublic,
-    FnParamsPublic,
-    LLMFunctionCreate,
-    LLMFunctionPublic,
-    OpenAICallArgsCreate,
-    ProjectCreate,
-    ProjectPublic,
     SpanCreate,
     SpanPublic,
-    VersionCreate,
-    VersionPublic,
 )
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
-    FnParamsTable,
-    LLMFunctionTable,
-    ProjectTable,
     Provider,
     Scope,
     SpanTable,
-    VersionTable,
 )
-from lilypad.server.utils import calculate_fn_params_hash
 
-from .services import LLMFunctionService, ProjectService, SpanService, VersionService
+from .api import llm_fn_router, project_router, version_router
+from .services import SpanService
 
 
 class SPAStaticFiles(StaticFiles):
@@ -96,351 +80,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 api = FastAPI()
-
-
-@api.get("/projects", response_model=Sequence[ProjectTable])
-async def get_projects(
-    project_service: Annotated[ProjectService, Depends(ProjectService)],
-) -> Sequence[ProjectTable]:
-    """Get all projects."""
-    return project_service.find_all_records()
-
-
-@api.get("/projects/{project_id}", response_model=ProjectTable)
-async def get_project(
-    project_id: int,
-    project_service: Annotated[ProjectService, Depends(ProjectService)],
-) -> ProjectTable:
-    """Get a project."""
-    return project_service.find_record_by_id(project_id)
-
-
-@api.post("/projects/", response_model=ProjectPublic)
-async def create_project(
-    project_create: ProjectCreate,
-    project_service: Annotated[ProjectService, Depends(ProjectService)],
-) -> ProjectTable:
-    """Create a project"""
-    return project_service.create_record(project_create)
-
-
-@api.delete("/projects/{project_id}")
-async def delete_project(
-    project_id: int,
-    project_service: Annotated[ProjectService, Depends(ProjectService)],
-) -> None:
-    """Create a project"""
-    return project_service.delete_record_by_id(project_id)
-
-
-@api.post(
-    "/projects/{project_id}/llm-fns/",
-    response_model=LLMFunctionPublic,
-)
-async def create_llm_functions(
-    project_id: int,
-    llm_function_create: LLMFunctionCreate,
-    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
-) -> LLMFunctionTable:
-    """Get prompt version id by hash."""
-    return llm_fn_service.create_record(llm_function_create, project_id=project_id)
-
-
-@api.get("/projects/{project_id}/llm-fns/{id:int}", response_model=LLMFunctionPublic)
-async def get_llm_function_by_id(
-    id: int,
-    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
-) -> LLMFunctionTable | None:
-    """Get llm function by id."""
-    return llm_fn_service.find_record_by_id(id)
-
-
-@api.get(
-    "/projects/{project_id}/llm-fns/{version_hash:str}",
-    response_model=LLMFunctionPublic,
-)
-async def get_llm_function_by_hash(
-    version_hash: str,
-    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
-) -> LLMFunctionTable:
-    """Get llm function by hash."""
-    return llm_fn_service.find_record_by_hash(version_hash)
-
-
-def create_dynamic_function(
-    name: str, args_dict: dict[str, str], return_annotation: type
-) -> Callable[..., Any]:
-    """Create a dynamic function with the given name, arguments, and return type."""
-    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in args_dict.items()]
-    arg_string = ", ".join(arg_list)
-
-    func_def = f"def {name}({arg_string}) -> {return_annotation.__name__}: ..."
-
-    namespace: dict[str, Any] = {}
-    exec(func_def, namespace)
-
-    return namespace[name]
-
-
-# TODO: Getting RuntimeError: asyncio.run() cannot be called from a running event loop
-# when running Anthropic calls, but not OpenAI
-@api.post("/projects/{project_id}/versions/{version_id}/vibe")
-def vibe_check(
-    project_id: int,
-    version_id: int,
-    arg_values: dict[str, Any],
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> str:
-    """Check if the vibes are good."""
-    version_table = version_service.find_record_by_id(version_id)
-    version = VersionPublic.model_validate(version_table)
-    args_dict = version.llm_fn.arg_types or {}
-    configure()
-    # TODO: Check synced or not synced
-
-    # For non-synced, non mirascope functions
-    trace_decorator = trace(
-        project_id=project_id,
-        version_id=version.id,
-        arg_types=args_dict,
-        arg_values=arg_values,
-        lexical_closure=version.llm_fn.code,
-        prompt_template=version.fn_params.prompt_template if version.fn_params else "",
-        version=version.version,
-    )
-
-    fn = create_dynamic_function(
-        name=version.llm_fn.function_name,
-        args_dict=args_dict,
-        return_annotation=str,
-    )
-
-    if not version.fn_params:
-        return trace_decorator(fn)(**arg_values)  # pyright: ignore [reportReturnType]
-
-    fn_params = FnParamsPublic.model_validate(version.fn_params)
-
-    return traced_synced_llm_function_constructor(fn_params, trace_decorator)(fn)(
-        **arg_values
-    )  # pyright: ignore [reportReturnType]
-
-
-@api.get(
-    "/projects/{project_id}/versions/{version_id:int}", response_model=VersionPublic
-)
-def get_version_by_id(
-    version_id: int,
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> VersionTable:
-    """Get version by ID."""
-    return version_service.find_record_by_id(version_id)
-
-
-class NonSyncedVersionCreate(BaseModel):
-    """Non-synced LLM function version create model."""
-
-    llm_function_id: int
-
-
-@api.post(
-    "/projects/{project_id}/versions/{version_hash}",
-    response_model=VersionPublic,
-)
-async def create_non_synced_version(
-    project_id: int,
-    version_hash: str,
-    non_synced_version_create: NonSyncedVersionCreate,
-    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> VersionTable:
-    """Creates a new version for a non-synced LLM function."""
-    existing_version = version_service.find_non_synced_version_by_hash(
-        project_id, version_hash
-    )
-    if existing_version:
-        return existing_version
-
-    llm_fn = llm_fn_service.find_record_by_id(non_synced_version_create.llm_function_id)
-    number_of_versions = version_service.get_latest_version_count(
-        project_id, llm_fn.function_name
-    )
-    new_version = VersionCreate(
-        project_id=project_id,
-        version=number_of_versions + 1,
-        function_name=llm_fn.function_name,
-        fn_params_id=None,
-        llm_function_id=non_synced_version_create.llm_function_id,
-        fn_params_hash=None,
-        llm_function_hash=llm_fn.version_hash,
-    )
-    return version_service.create_record(new_version)
-
-
-@api.get(
-    "/projects/{project_id}/versions/{version_hash}",
-    response_model=VersionPublic,
-)
-async def get_non_synced_version(
-    project_id: int,
-    version_hash: str,
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> VersionTable:
-    """Get non-synced version of the function."""
-    version = version_service.find_non_synced_version_by_hash(project_id, version_hash)
-    if not version:
-        raise HTTPException(status_code=404, detail="Non-synced version not found")
-    return version
-
-
-@api.get(
-    "/projects/{project_id}/versions/{function_hash}/active",
-    response_model=VersionPublic,
-)
-async def get_active_version(
-    project_id: int,
-    function_hash: str,
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> VersionTable:
-    """Get active version for synced function."""
-    return version_service.find_synced_active_version(project_id, function_hash)
-
-
-@api.patch(
-    "/projects/{project_id}/versions/{version_id}/active",
-    response_model=VersionPublic,
-)
-async def set_active_version(
-    project_id: int,
-    version_id: int,
-    version_service: Annotated[VersionService, Depends(VersionService)],
-) -> VersionTable:
-    """Set active version for synced function."""
-    new_active_version = version_service.find_record_by_id(version_id)
-    return version_service.change_active_version(project_id, new_active_version)
-
-
-@api.post(
-    "/projects/{project_id}/llm-fns/{llm_function_id}/fn-params",
-    response_model=VersionPublic,
-)
-async def create_version_and_fn_params(
-    project_id: int,
-    llm_function_id: int,
-    call_args_create: CallArgsCreate,
-    llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)],
-    version_service: Annotated[VersionService, Depends(VersionService)],
-    session: Annotated[Session, Depends(get_session)],
-) -> VersionTable:
-    """Create a new version.
-
-    Returns the version if llm function hash and fn params hash already exist.
-    Create a new version if the function parameters do not exist.
-    Sets active if it is the first prompt template.
-    """
-    fn_hash = calculate_fn_params_hash(call_args_create)
-    fn_params = FnParamsTable.model_validate(
-        {
-            **call_args_create.model_dump(exclude={"call_params"}),
-            "call_params": call_args_create.call_params.model_dump()
-            if call_args_create.call_params
-            else {},
-            "llm_function_id": llm_function_id,
-            "hash": fn_hash,
-        }
-    )
-
-    llm_fn = llm_fn_service.find_record_by_id(llm_function_id)
-    # Check if the function parameters already exist
-    existing_version = version_service.find_synced_verion_by_hashes(
-        llm_fn.version_hash, fn_hash
-    )
-    if existing_version:
-        return existing_version
-
-    # Create a new version
-    session.add(fn_params)
-    session.flush()
-    session.refresh(fn_params)
-
-    # Version to show to the user
-    number_of_versions = version_service.get_latest_version_count(
-        project_id, llm_fn.function_name
-    )
-    is_active = version_service.is_first_prompt_template(
-        project_id, llm_fn.version_hash
-    )
-    new_version = VersionCreate(
-        project_id=project_id,
-        version=number_of_versions + 1,
-        function_name=llm_fn.function_name,
-        is_active=is_active,
-        fn_params_id=fn_params.id,
-        llm_function_id=llm_function_id,
-        fn_params_hash=fn_params.hash,
-        llm_function_hash=fn_params.llm_fn.version_hash,
-    )
-    return version_service.create_record(new_version)
-
-
-@api.get(
-    "/projects/{project_id}/llm-fns/{id:int}/fn-params",
-    response_model=CallArgsPublic,
-)
-async def get_call_args_from_llm_function_by_id(
-    id: int, llm_fn_service: Annotated[LLMFunctionService, Depends(LLMFunctionService)]
-) -> CallArgsPublic:
-    """Get prompt version id by hash.
-
-    For the ID route, we return the latest version of the function parameters.
-    """
-    try:
-        llm_function = llm_fn_service.find_record_by_id(id)
-    except HTTPException:
-        return CallArgsPublic(
-            id=None,
-            model="gpt-4o",
-            provider=Provider.OPENAI,
-        )
-    if not llm_function.fn_params:
-        all_llm_functions = llm_fn_service.find_records_by_name(
-            llm_function.project_id, llm_function.function_name
-        )
-        if len(all_llm_functions) == 1:
-            return CallArgsPublic(
-                id=None,
-                model="gpt-4o",
-                provider=Provider.OPENAI,
-            )
-        else:
-            second_llm_function = all_llm_functions[-2]
-            if not second_llm_function or not second_llm_function.fn_params:
-                return CallArgsPublic(
-                    id=None,
-                    model="gpt-4o",
-                    provider=Provider.OPENAI,
-                )
-            else:
-                latest_fn_params = second_llm_function.fn_params[-1]
-    else:
-        latest_fn_params = llm_function.fn_params[-1]
-
-    if latest_fn_params.provider == Provider.OPENAI:
-        call_params = OpenAICallArgsCreate.model_validate(latest_fn_params.call_params)
-    elif latest_fn_params.provider == Provider.ANTHROPIC:
-        call_params = AnthropicCallArgsCreate.model_validate(
-            latest_fn_params.call_params
-        )
-    else:
-        call_params = None
-
-    return CallArgsPublic(
-        id=latest_fn_params.id,
-        model=latest_fn_params.model,
-        provider=latest_fn_params.provider,
-        hash=latest_fn_params.hash,
-        prompt_template=latest_fn_params.prompt_template,
-        call_params=call_params,
-    )
 
 
 @api.post("/v1/traces")
@@ -515,20 +154,299 @@ def set_display_name_and_convert(
     return span_public
 
 
-@api.get("/projects/{project_id}/spans/{span_id}", response_model=SpanPublic)
+class TextPart(BaseModel):
+    """Text part model."""
+
+    type: Literal["text"]
+    text: str
+
+
+class ImagePart(BaseModel):
+    """Image part model."""
+
+    type: Literal["image"]
+    media_type: str
+    image: str
+
+
+class AudioPart(BaseModel):
+    """Image part model."""
+
+    type: Literal["audio"]
+    media_type: str
+    audio: str
+
+
+class ToolPart(BaseModel):
+    """Tool part model."""
+
+    type: Literal["tool_call"]
+    name: str
+    arguments: dict[str, Any]
+
+
+class MessageParam(BaseModel):
+    """Message param model."""
+
+    content: Sequence[TextPart | ImagePart | AudioPart | ToolPart]
+    role: str
+
+
+class SpanMoreDetails(BaseModel):
+    """Span more details model."""
+
+    display_name: str
+    model: str
+    provider: str
+    prompt_tokens: float | None = None
+    completion_tokens: float | None = None
+    duration_ms: float
+    code: str | None = None
+    function_arguments: dict[str, Any] | None = None
+    output: str | None = None
+    messages: list[MessageParam]
+    data: dict[str, Any]
+
+
+def group_span_keys(attributes: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Groups gen_ai related attributes into a structured format.
+
+    Args:
+        attributes (Dict[str, Any]): Dictionary containing gen_ai prefixed key-value pairs
+
+    Returns:
+        Dict[str, Dict[str, Any]]: Grouped and processed attributes
+
+    Example:
+        attributes = {
+            "gen_ai.prompt.0.content": "Hello",
+            "gen_ai.completion.0.content": "Hi there",
+            "gen_ai.completion.0.tool_calls.0.name": "search"
+        }
+    """
+    grouped_items = {}
+    message_index = 0
+
+    for key, value in attributes.items():
+        # Only process gen_ai related keys
+        if not key.startswith("gen_ai."):
+            continue
+
+        # Remove the "gen_ai" prefix for easier processing
+        key_without_prefix = key[len("gen_ai.") :]
+        key_parts = key_without_prefix.split(".")
+        # Get the base category (prompt or completion) and its index
+        if len(key_parts) < 3:  # We need at least category, index, and field
+            continue
+        item_category = key_parts[0]
+        item_index = key_parts[1]
+
+        if item_category not in ["prompt", "completion"]:
+            continue
+
+        # Create the group key
+        group_key = f"{item_category}.{item_index}"
+
+        # Initialize group if it doesn't exist
+        if group_key not in grouped_items:
+            grouped_items[group_key] = {"index": message_index}
+            message_index += 1
+
+        # Handle tool_calls specially
+        if len(key_parts) > 2 and key_parts[2] == "tool_calls":
+            tool_call_index = int(key_parts[3])
+            tool_call_field = key_parts[4]
+
+            # Initialize tool_calls list if it doesn't exist
+            if "tool_calls" not in grouped_items[group_key]:
+                grouped_items[group_key]["tool_calls"] = []
+
+            # Extend tool_calls list if needed
+            while len(grouped_items[group_key]["tool_calls"]) <= tool_call_index:
+                grouped_items[group_key]["tool_calls"].append({})
+
+            # Parse JSON arguments if present
+            if tool_call_field == "arguments" and isinstance(value, str):
+                try:
+                    grouped_items[group_key]["tool_calls"][tool_call_index][
+                        tool_call_field
+                    ] = json.loads(value)
+                except json.JSONDecodeError:
+                    grouped_items[group_key]["tool_calls"][tool_call_index][
+                        tool_call_field
+                    ] = value
+            else:
+                grouped_items[group_key]["tool_calls"][tool_call_index][
+                    tool_call_field
+                ] = value
+        else:
+            # Handle regular fields
+            grouped_items[group_key][key_parts[2]] = value
+
+    return grouped_items
+
+
+def convert_gemini_messages(
+    messages: dict[str, Any],
+) -> list[MessageParam]:
+    """Convert Gemini messages."""
+    structured_messages: list[MessageParam] = []
+    for key, value in messages.items():
+        if key.startswith("prompt"):
+            content = []
+            for part in json.loads(value["user"]):
+                if isinstance(part, str):
+                    content.append(TextPart(type="text", text=part))
+                elif isinstance(part, dict):
+                    if part.get("mime_type", "").startswith("image"):
+                        content.append(
+                            ImagePart(
+                                type="image",
+                                media_type=part["mime_type"],
+                                image=part["data"],
+                            )
+                        )
+                    elif part.get("mime_type", "").startswith("audio"):
+                        content.append(
+                            AudioPart(
+                                type="audio",
+                                media_type=part["mime_type"],
+                                audio=part["data"],
+                            )
+                        )
+            structured_messages.append(
+                MessageParam(
+                    content=content,
+                    role="user",
+                )
+            )
+        elif key.startswith("completion"):
+            structured_messages.append(
+                MessageParam(
+                    content=[TextPart(type="text", text=value["content"])],
+                    role="assistant",
+                )
+            )
+    return structured_messages
+
+
+def convert_anthropic_messages(
+    messages: dict[str, Any],
+) -> list[MessageParam]:
+    """Convert Anthropic messages."""
+    structured_messages: list[MessageParam] = []
+    for key, value in messages.items():
+        if key.startswith("prompt"):
+            content = []
+            try:
+                for part in json.loads(value["content"]):
+                    if isinstance(part, str):
+                        content.append(TextPart(type="text", text=part))
+                    elif isinstance(part, dict):
+                        if part.get("type", "") == "image":
+                            content.append(
+                                ImagePart(
+                                    type="image",
+                                    media_type=part["source"]["media_type"],
+                                    image=part["source"]["data"],
+                                )
+                            )
+                        else:
+                            content.append(TextPart(type="text", text=part["text"]))
+            except json.JSONDecodeError:
+                content.append(TextPart(type="text", text=value["content"]))
+
+            structured_messages.append(
+                MessageParam(
+                    content=content,
+                    role="user",
+                )
+            )
+        elif key.startswith("completion"):
+            content = []
+            part = value.get("content", None)
+            if isinstance(part, str):
+                content.append(TextPart(type="text", text=part))
+            elif isinstance(part, dict):
+                content.append(TextPart(type="text", text=part["text"]))
+            if tool_calls := value.get("tool_calls", []):
+                for tool_call in tool_calls:
+                    content.append(
+                        ToolPart(
+                            type="tool_call",
+                            name=tool_call["name"],
+                            arguments=tool_call.get("arguments", {}),
+                        )
+                    )
+            if len(content) > 0:
+                structured_messages.append(
+                    MessageParam(
+                        content=content,
+                        role="assistant",
+                    )
+                )
+    return structured_messages
+
+
+def convert_span_to_more_details(span: SpanTable) -> SpanMoreDetails:
+    """Convert span to more details."""
+    data = span.data
+    messages = []
+    if span.scope == Scope.LLM:
+        raw_messages = group_span_keys(data["attributes"])
+        display_name = data["name"]
+        code = None
+        function_arguments = None
+        output = None
+        provider = data["attributes"]["gen_ai.system"].lower()
+        if provider == Provider.GEMINI:
+            messages = convert_gemini_messages(raw_messages)
+        elif provider == Provider.OPENROUTER or provider == Provider.OPENAI:
+            # TODO: Handle OpenAI messages
+            messages = []
+        elif provider == Provider.ANTHROPIC:
+            messages = convert_anthropic_messages(raw_messages)
+    else:
+        code = span.version_table.llm_fn.code
+        function_arguments = json.loads(data["attributes"]["lilypad.arg_values"])
+        output = data["attributes"]["lilypad.output"]
+        display_name = data["attributes"]["lilypad.function_name"]
+        messages = data["attributes"]["lilypad.messages"]
+    attributes: dict = data["attributes"]
+    return SpanMoreDetails(
+        display_name=display_name,
+        model=attributes.get("gen_ai.request.model", "unknown"),
+        provider=attributes.get("gen_ai.system", "unknown"),
+        prompt_tokens=attributes.get("gen_ai.usage.prompt_tokens"),
+        completion_tokens=attributes.get("gen_ai.usage.completion_tokens"),
+        duration_ms=data["end_time"] - data["start_time"],
+        code=code,
+        function_arguments=function_arguments,
+        output=output,
+        messages=messages,
+        data=data,
+    )
+
+
+@api.get("/spans/{span_id}", response_model=SpanMoreDetails)
 async def get_span(
-    project_id: int,
+    span_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> SpanMoreDetails:
+    """Get span by id."""
+    span = session.exec(select(SpanTable).where(SpanTable.id == span_id)).first()
+    if not span:
+        raise HTTPException(status_code=404, detail="Span not found")
+    return convert_span_to_more_details(span)
+
+
+@api.get("/projects/{project_id}/spans/{span_id}", response_model=SpanPublic)
+async def get_span_by_project_id(
     span_id: str,
     session: Annotated[Session, Depends(get_session)],
 ) -> SpanPublic:
     """Get span by id."""
-    span = session.exec(
-        select(SpanTable).where(
-            SpanTable.project_id == project_id,
-            SpanTable.id == span_id,
-            SpanTable.parent_span_id.is_(None),  # type: ignore
-        )
-    ).first()
+    span = session.exec(select(SpanTable).where(SpanTable.id == span_id)).first()
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
     return set_display_name_and_convert(span)
@@ -558,6 +476,9 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+api.include_router(project_router)
+api.include_router(version_router)
+api.include_router(llm_fn_router)
 app.mount("/api", api)
 app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
 app.mount(

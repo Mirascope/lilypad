@@ -26,6 +26,9 @@ def configure() -> None:
     processor = BatchSpanProcessor(otlp_exporter)
     provider.add_span_processor(processor)
 
+    # console_exporter = ConsoleSpanExporter()
+    # console_processor = SimpleSpanProcessor(console_exporter)
+    # provider.add_span_processor(console_processor)
     trace.set_tracer_provider(provider)
 
     if importlib.util.find_spec("opentelemetry.instrumentation.openai") is not None:
@@ -33,17 +36,7 @@ def configure() -> None:
 
         OpenAIInstrumentor().instrument()
 
-    if importlib.util.find_spec("opentelemetry.instrumentation.anthropic") is not None:
-        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+    from ._opentelemetry import AnthropicInstrumentor, GoogleGenerativeAiInstrumentor
 
-        AnthropicInstrumentor().instrument()
-
-    if (
-        importlib.util.find_spec("opentelemetry.instrumentation.google_generativeai")
-        is not None
-    ):
-        from opentelemetry.instrumentation.google_generativeai import (
-            GoogleGenerativeAiInstrumentor,
-        )
-
-        GoogleGenerativeAiInstrumentor().instrument()
+    AnthropicInstrumentor().instrument()
+    GoogleGenerativeAiInstrumentor().instrument()

@@ -337,7 +337,7 @@ export function DataTableDemo({ data }: { data: SpanPublic[] }) {
               {selectedRow.scope === Scope.LILYPAD ? (
                 <LilypadPanel span={selectedRow} />
               ) : (
-                <LlmPanel span={selectedRow} />
+                <LlmPanel spanId={selectedRow.id} />
               )}
             </div>
           </ResizablePanel>

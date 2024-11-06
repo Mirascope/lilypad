@@ -1,51 +1,72 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Control, Controller, FieldPath, FieldValues } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  Path,
+  FieldValues,
+  useWatch,
+} from "react-hook-form";
 import { SliderProps } from "@radix-ui/react-slider";
 import { Input, InputProps } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
 
-interface FormSliderProps<T extends FieldValues> {
+type FormSliderProps<T extends FieldValues> = {
   control: Control<T>;
-  name: FieldPath<T>;
+  name: Path<T>;
   label: string;
   optional?: boolean;
-  sliderProps: SliderProps;
+  switchName?: Path<T>;
+  sliderProps: Omit<SliderProps, "value" | "onChange">;
   showInput?: boolean;
-  inputProps?: InputProps;
-}
+  inputProps?: Omit<InputProps, "value" | "onChange">;
+};
+
 export const FormSlider = <T extends FieldValues>({
   control,
   name,
+  switchName,
   label,
   optional,
   showInput,
   sliderProps,
   inputProps,
 }: FormSliderProps<T>) => {
-  const [disabled, setDisabled] = useState<boolean>(false);
+  const switchValue = useWatch({
+    control,
+    name: switchName || name,
+    disabled: !switchName,
+  });
+  const disabled = optional && switchName ? !switchValue : false;
   return (
     <Controller
       name={name}
       control={control}
       render={({ field }) => (
-        <div className='form-group flex flex-col gap-1.5'>
+        <div className='form-group'>
           <div className='flex justify-between items-center'>
             <Label
               htmlFor={sliderProps.name || ""}
               className='flex items-center gap-2'
             >
               {label}
-              {optional && (
+              {optional && switchName && (
                 <>
-                  <Switch
-                    checked={disabled}
-                    onCheckedChange={() =>
-                      setDisabled((prevDisabled) => !prevDisabled)
-                    }
+                  <Controller
+                    name={switchName}
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <p className='text-xs'>
+                          {field.value ? "Active" : "Not set"}
+                        </p>
+                      </>
+                    )}
                   />
-                  <p className='text-xs'>{"Use Default"}</p>
                 </>
               )}
             </Label>

@@ -13,7 +13,7 @@ import api from "@/api";
 import { CallArgsCreate, SpanPublic, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
-import { EditorForm } from "@/components/EditorForm";
+import { EditorForm, EditorFormValues } from "@/components/EditorForm";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { ArgsCards } from "@/components/ArgsCards";
@@ -29,9 +29,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { getErrorMessage } from "@/lib/utils";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
 import { CodeSnippet } from "@/routes/-codeSnippet";
+import ReactMarkdown from "react-markdown";
 
 type PlaygroundCallArgsCreate = CallArgsCreate & {
   shouldRunVibes?: boolean;
@@ -172,7 +171,10 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
     }
     reset(argValues);
   }, [spanData, reset]);
-  const onSubmit: SubmitHandler<CallArgsCreate> = (data, event) => {
+  const onSubmit: SubmitHandler<CallArgsCreate> = (
+    data: EditorFormValues,
+    event
+  ) => {
     event?.preventDefault();
     const nativeEvent = event?.nativeEvent as SubmitEvent;
     const actionType = (nativeEvent.submitter as HTMLButtonElement).name;
@@ -192,6 +194,13 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.prompt_template = markdown;
+      const disabledOptionalKeys = Object.keys(data.isOptional || {}).filter(
+        (value) => !data.isOptional?.[value]
+      );
+      for (const key of disabledOptionalKeys) {
+        delete data?.call_params?.[key];
+      }
+      delete data.isOptional;
       mutation.mutate({
         ...data,
         shouldRunVibes,
@@ -259,13 +268,6 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
       </div>
     );
   }
-  const renderOutputHtml = (output: string) => {
-    const rawOutputHtml: string = marked.parse(output, {
-      async: false,
-    });
-    const sanitizedOutputHtml = DOMPurify.sanitize(rawOutputHtml);
-    return sanitizedOutputHtml;
-  };
   return (
     <div className='p-4 flex flex-col gap-2'>
       <Typography variant='h2'>{"Playground"}</Typography>
@@ -307,12 +309,9 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent
-            className='flex flex-col'
-            dangerouslySetInnerHTML={{
-              __html: renderOutputHtml(vibeMutation.data),
-            }}
-          />
+          <CardContent className='flex flex-col'>
+            <ReactMarkdown>{vibeMutation.data}</ReactMarkdown>
+          </CardContent>
         </Card>
       )}
     </div>

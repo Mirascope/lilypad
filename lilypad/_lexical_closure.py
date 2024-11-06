@@ -63,7 +63,7 @@ def collect_closure_sources(
             if inspect.isclass(dep_obj):
                 try:
                     class_source = inspect.getsource(dep_obj)
-                except OSError:
+                except (OSError, TypeError):
                     class_source = repr(dep_obj)
                 visited[dep_name] = class_source.strip()
 
