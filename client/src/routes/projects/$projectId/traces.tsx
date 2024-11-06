@@ -10,7 +10,7 @@ import {
 import api from "@/api";
 import { Typography } from "@/components/ui/typography";
 
-export const Route = createFileRoute("/projects/$projectId")({
+export const Route = createFileRoute("/projects/$projectId/traces")({
   loader: async ({ params: { projectId } }) =>
     (await api.get<ProjectTable>(`/projects/${projectId}`)).data,
   pendingComponent: () => <div>Loading...</div>,

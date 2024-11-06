@@ -96,14 +96,12 @@ def llm_fn(synced: bool = False) -> LLMFn:
                         version=version.version,
                     )
                     return cast(_R, await decorator(fn)(*args, **kwargs))
-
+                prompt_template = (
+                    fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
+                )
                 decorator = middleware_factory(
                     custom_context_manager=get_custom_context_manager(
-                        version,
-                        arg_types,
-                        arg_values,
-                        True,
-                        fn._prompt_template,  # pyright: ignore [reportFunctionMemberAccess]
+                        version, arg_types, arg_values, True, prompt_template
                     ),
                     handle_call_response=handle_call_response,
                     handle_call_response_async=handle_call_response_async,
@@ -146,13 +144,12 @@ def llm_fn(synced: bool = False) -> LLMFn:
                         version=version.version,
                     )
                     return cast(_R, decorator(fn)(*args, **kwargs))
+                prompt_template = (
+                    fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
+                )
                 decorator = middleware_factory(
                     custom_context_manager=get_custom_context_manager(
-                        version,
-                        arg_types,
-                        arg_values,
-                        False,
-                        fn._prompt_template,  # pyright: ignore [reportFunctionMemberAccess]
+                        version, arg_types, arg_values, False, prompt_template
                     ),
                     handle_call_response=handle_call_response,
                     handle_call_response_async=handle_call_response_async,

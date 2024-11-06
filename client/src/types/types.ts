@@ -27,6 +27,19 @@ export interface AnthropicCallArgsCreate {
 }
 
 /**
+ * AudioPart
+ * Image part model.
+ */
+export interface AudioPart {
+  /** Type */
+  type: "audio";
+  /** Media Type */
+  media_type: string;
+  /** Audio */
+  audio: string;
+}
+
+/**
  * CallArgsCreate
  * Call args create model.
  */
@@ -38,7 +51,7 @@ export interface CallArgsCreate {
   /** Prompt Template */
   prompt_template: string;
   /** Call Params */
-  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | null;
 }
 
 /**
@@ -57,7 +70,7 @@ export interface CallArgsPublic {
   /** Hash */
   hash?: string | null;
   /** Call Params */
-  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | null;
 }
 
 /**
@@ -78,7 +91,7 @@ export interface FnParamsPublic {
   /** Llm Function Id */
   llm_function_id: number;
   /** Call Params */
-  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | null;
+  call_params?: OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | null;
 }
 
 /**
@@ -102,10 +115,49 @@ export interface FnParamsTable {
   call_params?: object | null;
 }
 
+/**
+ * GeminiCallArgsCreate
+ * Gemini GenerationConfig call args model.
+ * https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+ */
+export interface GeminiCallArgsCreate {
+  /** Response Mime Type */
+  response_mime_type: string;
+  /** Max Output Tokens */
+  max_output_tokens?: number | null;
+  /** Temperature */
+  temperature?: number | null;
+  /** Top K */
+  top_k?: number | null;
+  /** Top P */
+  top_p?: number | null;
+  /** Frequency Penalty */
+  frequency_penalty?: number | null;
+  /** Presence Penalty */
+  presence_penalty?: number | null;
+  /** Response Schema */
+  response_schema?: object | null;
+  /** Stop Sequences */
+  stop_sequences?: string[] | null;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
   detail?: ValidationError[];
+}
+
+/**
+ * ImagePart
+ * Image part model.
+ */
+export interface ImagePart {
+  /** Type */
+  type: "image";
+  /** Media Type */
+  media_type: string;
+  /** Image */
+  image: string;
 }
 
 /**
@@ -162,9 +214,20 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-17T00:35:19.978811Z"
+   * @default "2024-11-05T22:47:22.985492Z"
    */
   created_at?: string;
+}
+
+/**
+ * MessageParam
+ * Message param model.
+ */
+export interface MessageParam {
+  /** Content */
+  content: (TextPart | ImagePart | AudioPart | ToolPart)[];
+  /** Role */
+  role: string;
 }
 
 /**
@@ -215,22 +278,11 @@ export interface ProjectPublic {
   name: string;
   /** Id */
   id: number;
-}
-
-/**
- * ProjectTable
- * Project model
- */
-export interface ProjectTable {
-  /** Name */
-  name: string;
-  /** Id */
-  id?: number | null;
   /**
-   * Created At
-   * @format date-time
+   * Llm Fns
+   * @default []
    */
-  created_at?: string;
+  llm_fns?: LLMFunctionPublic[];
 }
 
 /**
@@ -241,6 +293,7 @@ export enum Provider {
   OPENAI = "openai",
   ANTHROPIC = "anthropic",
   OPENROUTER = "openrouter",
+  GEMINI = "gemini",
 }
 
 /**
@@ -262,10 +315,41 @@ export enum Scope {
 }
 
 /**
+ * SpanMoreDetails
+ * Span more details model.
+ */
+export interface SpanMoreDetails {
+  /** Display Name */
+  display_name: string;
+  /** Model */
+  model: string;
+  /** Provider */
+  provider: string;
+  /** Prompt Tokens */
+  prompt_tokens?: number | null;
+  /** Completion Tokens */
+  completion_tokens?: number | null;
+  /** Duration Ms */
+  duration_ms: number;
+  /** Code */
+  code?: string | null;
+  /** Function Arguments */
+  function_arguments?: object | null;
+  /** Output */
+  output?: string | null;
+  /** Messages */
+  messages: MessageParam[];
+  /** Data */
+  data: object;
+}
+
+/**
  * SpanPublic
  * Call public model with prompt version.
  */
 export interface SpanPublic {
+  /** Id */
+  id: string;
   /** Project Id */
   project_id?: number | null;
   /** Version Id */
@@ -274,23 +358,45 @@ export interface SpanPublic {
   scope: Scope;
   /** Version */
   version?: number | null;
+  /** Data */
+  data?: object;
   /**
    * Created At
    * @format date-time
-   * @default "2024-10-17T00:35:19.982273Z"
+   * @default "2024-11-05T22:47:22.989780Z"
    */
   created_at?: string;
   /** Parent Span Id */
   parent_span_id?: string | null;
-  /** Id */
-  id: string;
   /** Display Name */
   display_name?: string | null;
   llm_function?: LLMFunctionTable | null;
   /** Child Spans */
   child_spans: SpanPublic[];
-  /** Data */
-  data: object;
+}
+
+/**
+ * TextPart
+ * Text part model.
+ */
+export interface TextPart {
+  /** Type */
+  type: "text";
+  /** Text */
+  text: string;
+}
+
+/**
+ * ToolPart
+ * Tool part model.
+ */
+export interface ToolPart {
+  /** Type */
+  type: "tool_call";
+  /** Name */
+  name: string;
+  /** Arguments */
+  arguments: object;
 }
 
 /** ValidationError */

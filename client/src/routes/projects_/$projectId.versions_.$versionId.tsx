@@ -13,7 +13,7 @@ import api from "@/api";
 import { CallArgsCreate, SpanPublic, VersionPublic } from "@/types/types";
 import { LexicalEditor } from "lexical";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
-import { EditorForm } from "@/components/EditorForm";
+import { EditorForm, EditorFormValues } from "@/components/EditorForm";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { ArgsCards } from "@/components/ArgsCards";
@@ -171,7 +171,10 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
     }
     reset(argValues);
   }, [spanData, reset]);
-  const onSubmit: SubmitHandler<CallArgsCreate> = (data, event) => {
+  const onSubmit: SubmitHandler<CallArgsCreate> = (
+    data: EditorFormValues,
+    event
+  ) => {
     event?.preventDefault();
     const nativeEvent = event?.nativeEvent as SubmitEvent;
     const actionType = (nativeEvent.submitter as HTMLButtonElement).name;
@@ -191,6 +194,13 @@ const PlaygroundContainer = ({ version }: { version: VersionPublic }) => {
     editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.prompt_template = markdown;
+      const disabledOptionalKeys = Object.keys(data.isOptional || {}).filter(
+        (value) => !data.isOptional?.[value]
+      );
+      for (const key of disabledOptionalKeys) {
+        delete data?.call_params?.[key];
+      }
+      delete data.isOptional;
       mutation.mutate({
         ...data,
         shouldRunVibes,

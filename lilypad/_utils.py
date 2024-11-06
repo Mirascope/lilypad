@@ -6,13 +6,30 @@ import json
 import os
 import time
 import webbrowser
-from collections.abc import AsyncIterable, Callable, Coroutine, Generator, Iterable
+from collections.abc import (
+    AsyncIterable,
+    Callable,
+    Coroutine,
+    Generator,
+    Iterable,
+)
 from contextlib import _GeneratorContextManager, contextmanager
 from functools import partial, wraps
 from importlib import import_module
+from io import BytesIO
 from pathlib import Path
-from typing import Any, ParamSpec, TypeVar, cast, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    ParamSpec,
+    TypeVar,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
+import PIL
+import PIL.WebPImagePlugin
 from mirascope.core import base as mb
 from opentelemetry.trace import get_tracer
 from opentelemetry.trace.span import Span
@@ -21,6 +38,7 @@ from pydantic import BaseModel
 
 from lilypad.models import FnParamsPublic, VersionPublic
 from lilypad.server import client
+from lilypad.server.models.fn_params import Provider
 
 from ._lexical_closure import compute_function_hash
 from .messages import Message
@@ -190,6 +208,16 @@ def traced_synced_llm_function_constructor(
             async def prompt_template_async(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
+                if fn_params.provider == Provider.GEMINI:
+                    return {
+                        "call_params": {
+                            "generation_config": fn_params.call_params.model_dump(
+                                exclude_defaults=True
+                            )
+                        }
+                        if fn_params.call_params
+                        else {}
+                    }
                 return {
                     "call_params": fn_params.call_params.model_dump(
                         exclude_defaults=True
@@ -260,6 +288,16 @@ def traced_synced_llm_function_constructor(
             def prompt_template(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> mb.BaseDynamicConfig:
+                if fn_params.provider == Provider.GEMINI:
+                    return {
+                        "call_params": {
+                            "generation_config": fn_params.call_params.model_dump(
+                                exclude_defaults=True
+                            )
+                        }
+                        if fn_params.call_params
+                        else {}
+                    }
                 return {
                     "call_params": fn_params.call_params.model_dump(
                         exclude_defaults=True
@@ -336,8 +374,6 @@ def get_custom_context_manager(
         lilypad_prompt_template = (
             version.fn_params.prompt_template if version.fn_params else prompt_template
         )
-        if not lilypad_prompt_template:
-            raise ValueError("Missing prompt template.")
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_id": lilypad_client.project_id
@@ -358,6 +394,28 @@ def get_custom_context_manager(
     return custom_context_manager
 
 
+def encode_gemini_part(
+    part: str | dict | PIL.WebPImagePlugin.WebPImageFile,
+) -> str | dict:
+    if isinstance(part, dict):
+        if "mime_type" in part and "data" in part:
+            # Handle binary data by base64 encoding it
+            return {
+                "mime_type": part["mime_type"],
+                "data": base64.b64encode(part["data"]).decode("utf-8"),
+            }
+        return part
+    elif isinstance(part, PIL.WebPImagePlugin.WebPImageFile):
+        buffered = BytesIO()
+        part.save(buffered, format="WEBP")  # Use "WEBP" to maintain the original format
+        img_bytes = buffered.getvalue()
+        return {
+            "mime_type": "image/webp",
+            "data": base64.b64encode(img_bytes).decode("utf-8"),
+        }
+    return part
+
+
 def serialize_proto_data(data: list[dict]) -> str:
     """Serializes a list of dictionaries containing protocol buffer-like data.
     Handles binary data by base64 encoding it.
@@ -368,23 +426,13 @@ def serialize_proto_data(data: list[dict]) -> str:
     Returns:
         str: JSON-serialized string of the data
     """
-
-    def encode_part(part: str | dict) -> str | dict:
-        if isinstance(part, dict):
-            if "mime_type" in part and "data" in part:
-                # Handle binary data by base64 encoding it
-                return {
-                    "mime_type": part["mime_type"],
-                    "data": base64.b64encode(part["data"]).decode("utf-8"),
-                }
-            return part
-        return part
-
     serializable_data = []
     for item in data:
         serialized_item = item.copy()
         if "parts" in item:
-            serialized_item["parts"] = [encode_part(part) for part in item["parts"]]
+            serialized_item["parts"] = [
+                encode_gemini_part(part) for part in item["parts"]
+            ]
         serializable_data.append(serialized_item)
 
     return json.dumps(serializable_data)

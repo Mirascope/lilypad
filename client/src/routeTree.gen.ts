@@ -15,7 +15,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProjectsIndexImport } from './routes/projects/index'
-import { Route as ProjectsProjectIdImport } from './routes/projects/$projectId'
+import { Route as ProjectsLlmfnsIndexImport } from './routes/projects_/llm_fns/index'
+import { Route as ProjectsProjectIdIndexImport } from './routes/projects/$projectId/index'
+import { Route as ProjectsProjectIdTracesImport } from './routes/projects/$projectId/traces'
 import { Route as ProjectsProjectIdVersionsVersionIdImport } from './routes/projects_/$projectId.versions_.$versionId'
 import { Route as ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport } from './routes/projects_/$projectId.llm-fns_.$llmFunctionId.fn-params'
 
@@ -40,8 +42,18 @@ const ProjectsIndexRoute = ProjectsIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
-  path: '/projects/$projectId',
+const ProjectsLlmfnsIndexRoute = ProjectsLlmfnsIndexImport.update({
+  path: '/projects/llm_fns/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexImport.update({
+  path: '/projects/$projectId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProjectsProjectIdTracesRoute = ProjectsProjectIdTracesImport.update({
+  path: '/projects/$projectId/traces',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -75,18 +87,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiffLazyImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId': {
-      id: '/projects/$projectId'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof ProjectsProjectIdImport
-      parentRoute: typeof rootRoute
-    }
     '/projects/': {
       id: '/projects/'
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/$projectId/traces': {
+      id: '/projects/$projectId/traces'
+      path: '/projects/$projectId/traces'
+      fullPath: '/projects/$projectId/traces'
+      preLoaderRoute: typeof ProjectsProjectIdTracesImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/$projectId/': {
+      id: '/projects/$projectId/'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/projects/llm_fns/': {
+      id: '/projects/llm_fns/'
+      path: '/projects/llm_fns'
+      fullPath: '/projects/llm_fns'
+      preLoaderRoute: typeof ProjectsLlmfnsIndexImport
       parentRoute: typeof rootRoute
     }
     '/projects/$projectId/versions/$versionId': {
@@ -111,8 +137,10 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
+  '/projects/llm_fns': typeof ProjectsLlmfnsIndexRoute
   '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
@@ -120,8 +148,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
+  '/projects/llm_fns': typeof ProjectsLlmfnsIndexRoute
   '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
@@ -130,8 +160,10 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
+  '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
+  '/projects/llm_fns/': typeof ProjectsLlmfnsIndexRoute
   '/projects/$projectId/versions/$versionId': typeof ProjectsProjectIdVersionsVersionIdRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
@@ -141,24 +173,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/diff'
-    | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId'
+    | '/projects/llm_fns'
     | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/diff'
-    | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId'
+    | '/projects/llm_fns'
     | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   id:
     | '__root__'
     | '/'
     | '/diff'
-    | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/traces'
+    | '/projects/$projectId/'
+    | '/projects/llm_fns/'
     | '/projects/$projectId/versions/$versionId'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
   fileRoutesById: FileRoutesById
@@ -167,8 +205,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DiffLazyRoute: typeof DiffLazyRoute
-  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  ProjectsProjectIdTracesRoute: typeof ProjectsProjectIdTracesRoute
+  ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
+  ProjectsLlmfnsIndexRoute: typeof ProjectsLlmfnsIndexRoute
   ProjectsProjectIdVersionsVersionIdRoute: typeof ProjectsProjectIdVersionsVersionIdRoute
   ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute: typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
 }
@@ -176,8 +216,10 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DiffLazyRoute: DiffLazyRoute,
-  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  ProjectsProjectIdTracesRoute: ProjectsProjectIdTracesRoute,
+  ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
+  ProjectsLlmfnsIndexRoute: ProjectsLlmfnsIndexRoute,
   ProjectsProjectIdVersionsVersionIdRoute:
     ProjectsProjectIdVersionsVersionIdRoute,
   ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute:
@@ -198,8 +240,10 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/diff",
-        "/projects/$projectId",
         "/projects/",
+        "/projects/$projectId/traces",
+        "/projects/$projectId/",
+        "/projects/llm_fns/",
         "/projects/$projectId/versions/$versionId",
         "/projects/$projectId/llm-fns/$llmFunctionId/fn-params"
       ]
@@ -210,11 +254,17 @@ export const routeTree = rootRoute
     "/diff": {
       "filePath": "diff.lazy.tsx"
     },
-    "/projects/$projectId": {
-      "filePath": "projects/$projectId.tsx"
-    },
     "/projects/": {
       "filePath": "projects/index.tsx"
+    },
+    "/projects/$projectId/traces": {
+      "filePath": "projects/$projectId/traces.tsx"
+    },
+    "/projects/$projectId/": {
+      "filePath": "projects/$projectId/index.tsx"
+    },
+    "/projects/llm_fns/": {
+      "filePath": "projects_/llm_fns/index.tsx"
     },
     "/projects/$projectId/versions/$versionId": {
       "filePath": "projects_/$projectId.versions_.$versionId.tsx"

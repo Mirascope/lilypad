@@ -1,5 +1,7 @@
 """VersionService class"""
 
+from collections.abc import Sequence
+
 from fastapi import HTTPException, status
 from sqlmodel import col, func, select
 
@@ -14,6 +16,17 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
 
     table: type[VersionTable] = VersionTable
     create_model: type[VersionCreate] = VersionCreate
+
+    def find_versions_by_function_name(
+        self, project_id: int, function_name: str
+    ) -> Sequence[VersionTable]:
+        """Find versions by function name"""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.project_id == project_id,
+                self.table.function_name == function_name,
+            )
+        ).all()
 
     def find_non_synced_version_by_hash(
         self, project_id: int, function_hash: str

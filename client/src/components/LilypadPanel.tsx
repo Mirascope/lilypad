@@ -6,59 +6,10 @@ import { SpanPublic } from "@/types/types";
 import { CodeSnippet } from "@/routes/-codeSnippet";
 import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
-import { stringToBytes } from "@/utils/strings";
-import { MessageCard } from "@/components/MessageCard";
-import { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
-const renderLilypadMessageCard = (serializedMessages: string) => {
-  try {
-    const messages = JSON.parse(serializedMessages);
-    return messages.map((message: any, index: number) => {
-      const contents: ReactNode[] = [];
-      let contentIndex = 0;
-      if (message.content) {
-        for (const content of message.content) {
-          const key = `messages-${index}-${contentIndex}`;
-          if (content.type === "text") {
-            contents.push(
-              <ReactMarkdown key={key}>{content.text}</ReactMarkdown>
-            );
-          } else if (content.type === "image_url") {
-            contents.push(
-              <img key={key} src={`${content.image_url.url}`} alt='image' />
-            );
-          }
-          contentIndex++;
-        }
-      } else if (message.parts) {
-        for (const part of message.parts) {
-          const key = `messages-${index}-${contentIndex}`;
-          if (typeof part === "string") {
-            contents.push(<ReactMarkdown key={key}>{part}</ReactMarkdown>);
-          } else if (part.mime_type.startsWith("audio")) {
-            const data = stringToBytes(part.data);
-            const blob = new Blob([data], { type: part.mime_type });
-            const url = URL.createObjectURL(blob);
-            contents.push(<audio key={key} src={url} controls />);
-          }
-          contentIndex++;
-        }
-      }
-      return (
-        <MessageCard
-          role={message.role}
-          content={contents}
-          key={`messages-${index}`}
-        />
-      );
-    });
-  } catch (e) {
-    return null;
-  }
-};
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   const data = span.data;
   return (
@@ -80,16 +31,6 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           </CardHeader>
           <CardContent className='whitespace-pre-wrap'>
             {data.attributes["lilypad.prompt_template"]}
-          </CardContent>
-        </Card>
-      )}
-      {data.attributes["lilypad.messages"] && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Messages"}</CardTitle>
-          </CardHeader>
-          <CardContent className='flex flex-col gap-4'>
-            {renderLilypadMessageCard(data.attributes["lilypad.messages"])}
           </CardContent>
         </Card>
       )}

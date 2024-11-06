@@ -1,6 +1,6 @@
 """Provider call params models"""
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -11,6 +11,22 @@ class ResponseFormat(BaseModel):
     """Response format model."""
 
     type: Literal["text", "json_object", "json_schema"]
+
+
+class GeminiCallArgsCreate(BaseModel):
+    """Gemini GenerationConfig call args model.
+    https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+    """
+
+    response_mime_type: str
+    max_output_tokens: int | None = None  # Depends on model
+    temperature: float | None = None  # Depends on model
+    top_k: int | None = None
+    top_p: float | None = None
+    frequency_penalty: float | None = None
+    presence_penalty: float | None = None
+    response_schema: dict[str, Any] | None = None
+    stop_sequences: list[str] | None = None
 
 
 class OpenAICallArgsCreate(BaseModel):
@@ -43,7 +59,9 @@ class CallArgsPublic(BaseModel):
     provider: Provider
     prompt_template: str | None = None
     hash: str | None = None
-    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None
+    call_params: (
+        OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | None
+    ) = None
 
 
 class CallArgsCreate(BaseModel):
@@ -52,7 +70,9 @@ class CallArgsCreate(BaseModel):
     model: str
     provider: Provider
     prompt_template: str
-    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None
+    call_params: (
+        OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | None
+    ) = None
 
 
 class FnParamsPublic(FnParamsBase):
@@ -60,4 +80,6 @@ class FnParamsPublic(FnParamsBase):
 
     id: int
     llm_function_id: int
-    call_params: OpenAICallArgsCreate | AnthropicCallArgsCreate | None = None
+    call_params: (
+        OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | None
+    ) = None
