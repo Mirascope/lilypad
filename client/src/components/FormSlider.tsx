@@ -5,11 +5,18 @@ import {
   Controller,
   Path,
   FieldValues,
-  useWatch,
+  useFormContext,
 } from "react-hook-form";
 import { SliderProps } from "@radix-ui/react-slider";
 import { Input, InputProps } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 type FormSliderProps<T extends FieldValues> = {
   control: Control<T>;
@@ -32,19 +39,14 @@ export const FormSlider = <T extends FieldValues>({
   sliderProps,
   inputProps,
 }: FormSliderProps<T>) => {
-  const switchValue = useWatch({
-    control,
-    name: switchName || name,
-    disabled: !switchName,
-  });
-  const disabled = optional && switchName ? !switchValue : false;
+  const { watch } = useFormContext<T>();
   return (
-    <Controller
+    <FormField
       name={name}
       control={control}
       render={({ field }) => (
-        <div className='form-group'>
-          <div className='flex justify-between items-center'>
+        <FormItem>
+          <FormLabel className='flex justify-between items-center'>
             <Label
               htmlFor={sliderProps.name || ""}
               className='flex items-center gap-2'
@@ -75,17 +77,20 @@ export const FormSlider = <T extends FieldValues>({
                 {...field}
                 {...inputProps}
                 type='number'
-                disabled={disabled}
+                disabled={switchName && !watch(switchName)}
               />
             )}
-          </div>
-          <Slider
-            {...sliderProps}
-            value={[field.value]}
-            onValueChange={field.onChange}
-            disabled={disabled}
-          />
-        </div>
+          </FormLabel>
+          <FormControl>
+            <Slider
+              {...sliderProps}
+              value={[field.value]}
+              onValueChange={field.onChange}
+              disabled={switchName && !watch(switchName)}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
       )}
     />
   );
