@@ -1,9 +1,9 @@
-"""The lillypad package."""
+"""The `lillypad` package."""
 
 from . import server as server
-from ._trace import trace
 from .configure import configure
-from .llm_fn import llm_fn
 from .messages import Message
+from .prompts import prompt
+from .traces import trace
 
-__all__ = ["server", "Message", "llm_fn", "configure", "_trace"]
+__all__ = ["configure", "Message", "prompt", "server", "trace"]
