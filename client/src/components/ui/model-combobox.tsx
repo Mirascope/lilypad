@@ -22,6 +22,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 type Option = {
   value: string;
@@ -47,9 +54,9 @@ export const ModelCombobox = <
   defaultValue,
 }: ModelComboboxProps<T, TName>) => {
   return (
-    <Controller
-      name={name}
+    <FormField
       control={control}
+      name={name}
       defaultValue={defaultValue}
       render={({ field }) => {
         const [open, setOpen] = useState(false);
@@ -68,81 +75,85 @@ export const ModelCombobox = <
         };
 
         return (
-          <div className='w-full'>
-            <Label>{label}</Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type='button'
-                  className='w-full flex justify-between items-center px-3 py-2 border rounded-md'
-                  onClick={() => setOpen(!open)}
-                >
-                  {field.value
-                    ? options.find((opt) => opt.value === field.value)?.label ||
-                      field.value
-                    : "Select an option"}
-                  <ChevronsUpDown className='h-4 w-4' />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className='w-full p-0'>
-                <Command>
-                  <CommandInput
-                    placeholder='Type or select an option...'
-                    value={inputValue}
-                    onValueChange={(value) => {
-                      setInputValue(value);
-                    }}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup>
-                      {options
-                        .filter((option) =>
-                          option.label
-                            .toLowerCase()
-                            .includes(inputValue.toLowerCase())
-                        )
-                        .map((option) => (
-                          <CommandItem
-                            key={option.value}
-                            onSelect={() => handleSelect(option.value)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value === option.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {option.label}
-                          </CommandItem>
-                        ))}
-                      {inputValue &&
-                        !options.some(
-                          (opt) =>
-                            opt.label.toLowerCase() === inputValue.toLowerCase()
-                        ) && (
-                          <CommandItem
-                            onSelect={() => handleSelect(inputValue)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value === inputValue
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            Add "{inputValue}"
-                          </CommandItem>
-                        )}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <FormControl>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type='button'
+                    className='w-full flex justify-between items-center px-3 py-2 border rounded-md'
+                    onClick={() => setOpen(!open)}
+                  >
+                    {field.value
+                      ? options.find((opt) => opt.value === field.value)
+                          ?.label || field.value
+                      : "Select an option"}
+                    <ChevronsUpDown className='h-4 w-4' />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className='w-full p-0'>
+                  <Command>
+                    <CommandInput
+                      placeholder='Type or select an option...'
+                      value={inputValue}
+                      onValueChange={(value) => {
+                        setInputValue(value);
+                      }}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No results found.</CommandEmpty>
+                      <CommandGroup>
+                        {options
+                          .filter((option) =>
+                            option.label
+                              .toLowerCase()
+                              .includes(inputValue.toLowerCase())
+                          )
+                          .map((option) => (
+                            <CommandItem
+                              key={option.value}
+                              onSelect={() => handleSelect(option.value)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  field.value === option.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {option.label}
+                            </CommandItem>
+                          ))}
+                        {inputValue &&
+                          !options.some(
+                            (opt) =>
+                              opt.label.toLowerCase() ===
+                              inputValue.toLowerCase()
+                          ) && (
+                            <CommandItem
+                              onSelect={() => handleSelect(inputValue)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  field.value === inputValue
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              Add "{inputValue}"
+                            </CommandItem>
+                          )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         );
       }}
     />

@@ -3,7 +3,7 @@ import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import markdown from "highlight.js/lib/languages/markdown";
 import { SpanPublic } from "@/types/types";
-import { CodeSnippet } from "@/routes/-codeSnippet";
+import { CodeSnippet } from "@/components/CodeSnippet";
 import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
 import ReactMarkdown from "react-markdown";

@@ -214,7 +214,7 @@ export interface LLMFunctionTable {
   /**
    * Created At
    * @format date-time
-   * @default "2024-11-05T22:47:22.985492Z"
+   * @default "2024-11-09T02:06:38.010491Z"
    */
   created_at?: string;
 }
@@ -363,7 +363,7 @@ export interface SpanPublic {
   /**
    * Created At
    * @format date-time
-   * @default "2024-11-05T22:47:22.989780Z"
+   * @default "2024-11-09T02:06:38.014038Z"
    */
   created_at?: string;
   /** Parent Span Id */
@@ -438,4 +438,6 @@ export interface VersionPublic {
   fn_params?: FnParamsPublic | null;
   /** LLM function base public model */
   llm_fn: LLMFunctionPublic;
+  /** Spans */
+  spans: SpanPublic[];
 }
