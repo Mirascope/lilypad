@@ -1,7 +1,7 @@
-import { ProjectTable, SpanPublic } from "@/types/types";
+import { ProjectPublic, SpanPublic } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
 
-import { DataTableDemo } from "@/components/TracesTable";
+import { TracesTable } from "@/components/TracesTable";
 import {
   createFileRoute,
   useLoaderData,
@@ -12,7 +12,7 @@ import { Typography } from "@/components/ui/typography";
 
 export const Route = createFileRoute("/projects/$projectId/traces")({
   loader: async ({ params: { projectId } }) =>
-    (await api.get<ProjectTable>(`/projects/${projectId}`)).data,
+    (await api.get<ProjectPublic>(`/projects/${projectId}`)).data,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ({ error }) => <div>{error.message}</div>,
   component: () => <Trace />,
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/projects/$projectId/traces")({
 
 export const Trace = () => {
   const { projectId } = useParams({ from: Route.id });
-  const project = useLoaderData({ from: Route.id }) as ProjectTable;
+  const project = useLoaderData({ from: Route.id }) as ProjectPublic;
   const { isPending, error, data } = useQuery<SpanPublic[]>({
     queryKey: ["traces"],
     queryFn: async () => (await api.get(`/projects/${projectId}/traces`)).data,
@@ -31,7 +31,7 @@ export const Trace = () => {
   return (
     <div className='h-screen p-2'>
       <Typography variant='h2'>{project.name}</Typography>
-      <DataTableDemo data={data} />
+      <TracesTable data={data} />
     </div>
   );
 };
