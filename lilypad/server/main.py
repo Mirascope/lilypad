@@ -82,12 +82,11 @@ app.add_middleware(
 api = FastAPI()
 
 
-@api.post("/v1/traces")
+@api.post("/v1/traces", response_model=Sequence[SpanPublic])
 async def traces(
     request: Request,
-    session: Annotated[Session, Depends(get_session)],
     span_service: Annotated[SpanService, Depends(SpanService)],
-) -> list[SpanPublic]:
+) -> Sequence[SpanTable]:
     """Create span traces."""
     traces_json: list[dict] = await request.json()
     span_tables: list[SpanTable] = []
@@ -121,37 +120,8 @@ async def traces(
             ),
             project_id=project_id,
         )
-        span_service.create_record(span_create)
-    parent_traces: list[SpanPublic] = []
-    for span_table in span_tables:
-        session.refresh(span_table)
-        if not span_table.parent_span_id:
-            parent_traces.append(set_display_name_and_convert(span_table))
-
-    return parent_traces
-
-
-def set_display_name_and_convert(
-    span: SpanTable,
-) -> SpanPublic:
-    """Set the display name based on the scope."""
-    # TODO: Handle error cases where spans dont have attributes
-    if span.scope == Scope.LILYPAD:
-        display_name = span.data["attributes"]["lilypad.function_name"]
-    elif span.scope == Scope.LLM:
-        data = span.data
-        display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
-    else:
-        display_name = "Unknown"
-
-    span_public = SpanPublic.model_validate(span)
-    span_public.display_name = display_name
-
-    span_public.child_spans = [
-        set_display_name_and_convert(child_span) for child_span in span.child_spans
-    ]
-
-    return span_public
+        span_tables.append(span_service.create_record(span_create))
+    return span_tables
 
 
 class TextPart(BaseModel):
@@ -444,19 +414,19 @@ async def get_span(
 async def get_span_by_project_id(
     span_id: str,
     session: Annotated[Session, Depends(get_session)],
-) -> SpanPublic:
+) -> SpanTable:
     """Get span by id."""
     span = session.exec(select(SpanTable).where(SpanTable.id == span_id)).first()
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
-    return set_display_name_and_convert(span)
+    return span
 
 
 @api.get("/projects/{project_id}/traces", response_model=Sequence[SpanPublic])
 async def get_traces(
     project_id: int,
     session: Annotated[Session, Depends(get_session)],
-) -> Sequence[SpanPublic]:
+) -> Sequence[SpanTable]:
     """Get all traces"""
     traces = session.exec(
         select(SpanTable).where(
@@ -464,10 +434,7 @@ async def get_traces(
             SpanTable.parent_span_id.is_(None),  # type: ignore
         )
     ).all()
-    traces_public: list[SpanPublic] = []
-    for lilypad_trace in traces:
-        traces_public.append(set_display_name_and_convert(lilypad_trace))
-    return traces_public
+    return traces
 
 
 @api.get("/health")

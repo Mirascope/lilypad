@@ -1,18 +1,17 @@
-import api from "@/api";
-import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
-import { ProjectTable } from "@/types/types";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { CodeSnippet } from "@/routes/-codeSnippet";
-
+import { CodeSnippet } from "@/components/CodeSnippet";
+import { projectsQueryOptions } from "@/utils/projects";
 export const Route = createFileRoute("/projects/")({
-  loader: async () => (await api.get<ProjectTable[]>("/projects")).data,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(projectsQueryOptions());
+  },
   component: () => <Projects />,
-  pendingComponent: () => <div>Loading...</div>,
-  errorComponent: ({ error }) => <div>{error.message}</div>,
 });
 
 const Projects = () => {
-  const projects = useLoaderData({ from: "/projects/" }) as ProjectTable[];
+  const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   return (
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
@@ -20,7 +19,7 @@ const Projects = () => {
         <p className='text-lg'>Select a project to view its traces.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
-            <Link key={project.id} to={`/projects/${project.id}`}>
+            <Link key={project.id} to={`/projects/${project.id}/llmFns`}>
               <Card
                 key={project.id}
                 className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'
