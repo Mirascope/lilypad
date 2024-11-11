@@ -79,8 +79,8 @@ dev-dependencies = [
 [tool.uv.sources]
 
 
-[project.scripts]
-lilypad = "lilypad.cli.main:app"
+# [project.scripts]
+# lilypad = "lilypad.cli.main:app"
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]
@@ -179,5 +179,5 @@ packages = ["lilypad"]
 [tool.hatch.build.targets.sdist]
 include = ["/lilypad"]
 
-[tool.hatch.build.force-include]
-"lilypad/server/static" = "lilypad/server/static"
+# [tool.hatch.build.force-include]
+# "lilypad/server/static" = "lilypad/server/static"

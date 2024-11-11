@@ -55,4 +55,26 @@ Lilypad uses [Semantic Versioning](https://semver.org/)
 
 ## License
 
-This project is currently licensed under the terms of the [MIT License](https://github.com/Mirascope/mirascope/blob/main/LICENSE); however, we expect certain future features to be licensed separately, which we will make extremely clear and evident.
+This project uses a dual-license model:
+
+### Open-Source License (MIT)
+
+Except for the contents and code contained in any `/ee` directory, which is covered by a commercial license (see below), all code in this repository is licensed under the terms of the [MIT License](https://github.com/Mirascope/lilypad/blob/main/LICENSE).
+
+### Enterprise Edition License
+
+The contents of any `/ee` directory are licensed under the Enterprise Edition License. This code is only available to users with a valid enterprise license. See [`lilypad/ee/LICENSE`](https://github.com/Mirascope/lilypad/blob/main/lilypad/ee/LICENSE) for the full terms.
+
+__Enterprise Features:__
+
+The following features require an enterprise license:
+
+- Vibe Synthesis
+
+__Obtaining An Enterprise License:__
+
+To purchase an enterprise license, please contact william@mirascope.io
+
+__License Validation:__
+
+Enterprise features require a valid license key for activation. Self-hosted installations will validate licenses against using offline activation.
