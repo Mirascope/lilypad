@@ -162,6 +162,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pyright]
+exclude = ["examples"]
 venvPath = "."
 venv = ".venv"
 
@@ -181,5 +182,5 @@ packages = ["lilypad"]
 [tool.hatch.build.targets.sdist]
 include = ["/lilypad"]
 
-# [tool.hatch.build.force-include]
-# "lilypad/server/static" = "lilypad/server/static"
+[tool.hatch.build.force-include]
+"lilypad/server/static" = "lilypad/server/static"
