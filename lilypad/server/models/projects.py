@@ -1,34 +1,52 @@
-"""Project model"""
+"""Projects table and models."""
 
-import datetime
 from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
-from lilypad.server.models import BaseSQLModel
-
+from .base_sql_model import BaseSQLModel
+from .functions import FunctionPublic
+from .prompts import PromptPublic
 from .table_names import PROJECT_TABLE_NAME
+from .versions import VersionPublic
 
 if TYPE_CHECKING:
-    from lilypad.server.models import LLMFunctionTable
+    from .functions import FunctionTable
+    from .prompts import PromptTable
+    from .versions import VersionTable
 
 
-class ProjectBase(BaseSQLModel):
-    """Project model"""
+class _ProjectBase(BaseSQLModel):
+    """Base Project Model."""
 
     name: str = Field(nullable=False, unique=True)
 
 
-class ProjectTable(ProjectBase, table=True):
-    """Project model"""
+class ProjectCreate(_ProjectBase):
+    """Project Create Model."""
+
+
+class ProjectPublic(_ProjectBase):
+    """Project Public Model."""
+
+    id: int
+    functions: list[FunctionPublic] = []
+    prompts: list[PromptPublic] = []
+    versions: list[VersionPublic] = []
+
+
+class ProjectTable(_ProjectBase, table=True):
+    """Project Table Model."""
 
     __tablename__ = PROJECT_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    created_at: datetime.datetime = Field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
-        nullable=False,
+    functions: list["FunctionTable"] = Relationship(
+        back_populates="project", cascade_delete=True
     )
-    llm_fns: list["LLMFunctionTable"] = Relationship(
+    prompts: list["PromptTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+    versions: list["VersionTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )

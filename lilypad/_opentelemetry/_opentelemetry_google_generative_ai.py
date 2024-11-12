@@ -60,7 +60,7 @@ def _set_input_attributes(span, args, kwargs, llm_model):
             json_part = [encode_gemini_part(part) for part in content.get("parts", [])]
             _set_span_attribute(
                 span,
-                f"{SpanAttributes.LLM_PROMPTS}.{i}.{content.get("role")}",
+                f"{SpanAttributes.LLM_PROMPTS}.{i}.{content.get('role')}",
                 json.dumps(json_part),
             )
 
@@ -195,9 +195,9 @@ def _wrap(
 
     llm_model = "unknown"
     if hasattr(instance, "_model_id"):
-        llm_model = instance._model_id
+        llm_model = instance._model_id  # pyright: ignore
     if hasattr(instance, "_model_name"):
-        llm_model = instance._model_name.replace("publishers/google/models/", "")
+        llm_model = instance._model_name.replace("publishers/google/models/", "")  # pyright: ignore
     name = to_wrap["span_name"]
     span = tracer.start_span(
         name,
@@ -240,9 +240,9 @@ async def _awrap(
 
     llm_model = "unknown"
     if hasattr(instance, "_model_id"):
-        llm_model = instance._model_id
+        llm_model = instance._model_id  # pyright: ignore
     if hasattr(instance, "_model_name"):
-        llm_model = instance._model_name.replace("publishers/google/models/", "")
+        llm_model = instance._model_name.replace("publishers/google/models/", "")  # pyright: ignore
 
     name = to_wrap["span_name"]
     span = tracer.start_span(
@@ -280,11 +280,11 @@ class GoogleGenerativeAiInstrumentor(BaseInstrumentor):
         for wrapped_method in WRAPPED_METHODS:
             wrap_function_wrapper(
                 wrapped_method["package"],
-                f"{wrapped_method["object"]}.{wrapped_method["method"]}",
+                f"{wrapped_method['object']}.{wrapped_method['method']}",
                 (
-                    _awrap(tracer, wrapped_method)
+                    _awrap(tracer, wrapped_method)  # pyright: ignore
                     if wrapped_method["method"] == "generate_content_async"
-                    else _wrap(tracer, wrapped_method)
+                    else _wrap(tracer, wrapped_method)  # pyright: ignore
                 ),
             )
 

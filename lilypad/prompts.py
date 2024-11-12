@@ -5,21 +5,20 @@ from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
-from lilypad.server import client
-
 from ._utils import (
     create_mirascope_call,
     create_mirascope_middleware,
     inspect_arguments,
     load_config,
 )
+from .server.client import LilypadClient
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 config = load_config()
 
-lilypad_client = client.LilypadClient(
+lilypad_client = LilypadClient(
     base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
 )
 
@@ -74,11 +73,11 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_version(fn, arg_types)
+                version = lilypad_client.get_prompt_active_version(fn, arg_types)
                 decorator = create_mirascope_middleware(
                     version, arg_types, arg_values, True, prompt_template
                 )
-                call = create_mirascope_call(fn, version.prompt_params, decorator)
+                call = create_mirascope_call(fn, version.prompt, decorator)
                 return await call(*args, **kwargs)
 
             return inner_async
@@ -87,11 +86,11 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_version(fn, arg_types)
+                version = lilypad_client.get_prompt_active_version(fn, arg_types)
                 decorator = create_mirascope_middleware(
                     version, arg_types, arg_values, False, prompt_template
                 )
-                call = create_mirascope_call(fn, version.prompt_params, decorator)
+                call = create_mirascope_call(fn, version.prompt, decorator)
                 return call(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             return inner

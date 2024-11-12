@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.6"
+version = "0.0.7"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -41,8 +41,8 @@ dependencies = [
 ]
 
 [project.urls]
-# Homepage = "https://mirascope.com/lilypad"
-Documentation = "https://lilypad.mirascope.com/docs"
+Homepage = "https://www.lilypad.so"
+Documentation = "https://www.lilypad.so/docs"
 Repository = "https://github.com/Mirascope/lilypad"
 Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
@@ -63,7 +63,7 @@ gemini = [
 dev-dependencies = [
     "ruff>=0.6.1",
     "pytest>=8.3.2",
-    "pyright>=1.1.377",
+    "pyright>=1.1.388",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
@@ -79,8 +79,8 @@ dev-dependencies = [
 [tool.uv.sources]
 
 
-# [project.scripts]
-# lilypad = "lilypad.cli.main:app"
+[project.scripts]
+lilypad = "lilypad.cli.main:app"
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]
@@ -117,6 +117,8 @@ target-version = "py310"
 "tests/*.py" = ["S101", "ANN"]
 "examples/*.py" = ["T201", "ANN"]
 "docs/*.py" = ["ANN401"]
+# REMOVE ONCE OTEL IS CLEANED UP
+"lilypad/_opentelemetry/*.py" = ["ANN"]
 
 [tool.ruff.lint]
 select = [
@@ -160,11 +162,12 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pyright]
+exclude = ["examples"]
 venvPath = "."
 venv = ".venv"
 
 [tool.codespell]
-skip = [".git", "*.lock"]
+skip = [".git", "*.lock", "./client/pnpm-lock.yaml"]
 
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod"]
@@ -179,5 +182,5 @@ packages = ["lilypad"]
 [tool.hatch.build.targets.sdist]
 include = ["/lilypad"]
 
-# [tool.hatch.build.force-include]
-# "lilypad/server/static" = "lilypad/server/static"
+[tool.hatch.build.force-include]
+"lilypad/server/static" = "lilypad/server/static"

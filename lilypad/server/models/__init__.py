@@ -1,28 +1,41 @@
-"""This module initializes the models package."""
+"""The module for the `lilypad` database tables and models."""
 
 from .base_sql_model import BaseSQLModel
-from .fn_params import (
-    FnParamsBase,
-    FnParamsTable,
+from .functions import FunctionCreate, FunctionPublic, FunctionTable
+from .projects import ProjectCreate, ProjectPublic, ProjectTable
+from .prompts import (
+    AnthropicCallArgsCreate,
+    OpenAICallArgsCreate,
+    PromptCreate,
+    PromptPublic,
+    PromptTable,
     Provider,
+    ResponseFormat,
 )
-from .llm_fns import LLMFunctionBase, LLMFunctionTable
-from .projects import ProjectBase, ProjectTable
-from .spans import Scope, SpanBase, SpanTable
-from .versions import VersionBase, VersionTable
+from .spans import Scope, SpanCreate, SpanPublic, SpanTable
+from .versions import ActiveVersionPublic, VersionCreate, VersionPublic, VersionTable
 
 __all__ = [
+    "ActiveVersionPublic",
+    "AnthropicCallArgsCreate",
     "BaseSQLModel",
-    "LLMFunctionBase",
-    "LLMFunctionTable",
-    "ProjectBase",
+    "FunctionCreate",
+    "FunctionPublic",
+    "FunctionTable",
+    "OpenAICallArgsCreate",
+    "ProjectCreate",
+    "ProjectPublic",
     "ProjectTable",
+    "PromptCreate",
+    "PromptPublic",
+    "PromptTable",
     "Provider",
-    "FnParamsBase",
-    "FnParamsTable",
-    "SpanBase",
-    "SpanTable",
+    "ResponseFormat",
     "Scope",
-    "VersionBase",
+    "SpanCreate",
+    "SpanPublic",
+    "SpanTable",
+    "VersionCreate",
+    "VersionPublic",
     "VersionTable",
 ]

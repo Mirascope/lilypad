@@ -20,6 +20,7 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
+from ..server.models import PromptPublic, Provider
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -48,11 +49,9 @@ def inspect_arguments(
     return arg_types, arg_values
 
 
-def _construct_call_decorator(
-    fn: Callable, prompt_params: PromptParamsPublic
-) -> partial[Any]:
-    provider, client = prompt_params.provider.value, None
-    if prompt_params.provider.value == "openrouter":
+def _construct_call_decorator(fn: Callable, prompt: PromptPublic) -> partial[Any]:
+    provider, client = prompt.provider.value, None
+    if prompt.provider.value == "openrouter":
         provider = "openai"
         if inspect.iscoroutinefunction(fn):
             from openai import AsyncOpenAI
@@ -71,7 +70,7 @@ def _construct_call_decorator(
 
     return partial(
         import_module(f"mirascope.core.{provider}").call,
-        model=prompt_params.model,
+        model=prompt.model,
         json_mode=False,
         client=client,
     )
@@ -80,7 +79,7 @@ def _construct_call_decorator(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
-    prompt_params: PromptParamsPublic,
+    prompt: PromptPublic,
     trace_decorator: Callable | None,
 ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
 
@@ -88,44 +87,42 @@ def create_mirascope_call(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, _R],
-    prompt_params: PromptParamsPublic,
+    prompt: PromptPublic,
     trace_decorator: Callable | None,
 ) -> Callable[_P, _R]: ...
 
 
 def create_mirascope_call(
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    prompt_params: PromptParamsPublic,
+    prompt: PromptPublic,
     trace_decorator: Callable | None,
 ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
     """Returns the constructed Mirascope call function."""
     if not trace_decorator:
         trace_decorator = lambda x: x  # noqa: E731
 
-    call_decorator = _construct_call_decorator(fn, prompt_params)
+    call_decorator = _construct_call_decorator(fn, prompt)
     return_type = get_type_hints(fn).get("return", type(None))
     if inspect.iscoroutinefunction(fn):
 
-        @mb.prompt_template(prompt_params.prompt_template)
+        @mb.prompt_template(prompt.template)
         @wraps(fn)
         async def prompt_template_async(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            if prompt_params.provider == Provider.GEMINI:
+            if prompt.provider == Provider.GEMINI:
                 return {
                     "call_params": {
-                        "generation_config": prompt_params.call_params.model_dump(
+                        "generation_config": prompt.call_params.model_dump(
                             exclude_defaults=True
                         )
                     }
-                    if prompt_params.call_params
+                    if prompt.call_params
                     else {}
                 }
             return {
-                "call_params": prompt_params.call_params.model_dump(
-                    exclude_defaults=True
-                )
-                if prompt_params.call_params
+                "call_params": prompt.call_params.model_dump(exclude_defaults=True)
+                if prompt.call_params
                 else {}
             }
 
@@ -178,26 +175,24 @@ def create_mirascope_call(
         return inner_async
     else:
 
-        @mb.prompt_template(prompt_params.prompt_template)
+        @mb.prompt_template(prompt.template)
         @wraps(fn)
         def prompt_template(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            if prompt_params.provider == Provider.GEMINI:
+            if prompt.provider == Provider.GEMINI:
                 return {
                     "call_params": {
-                        "generation_config": prompt_params.call_params.model_dump(
+                        "generation_config": prompt.call_params.model_dump(
                             exclude_defaults=True
                         )
                     }
-                    if prompt_params.call_params
+                    if prompt.call_params
                     else {}
                 }
             return {
-                "call_params": prompt_params.call_params.model_dump(
-                    exclude_defaults=True
-                )
-                if prompt_params.call_params
+                "call_params": prompt.call_params.model_dump(exclude_defaults=True)
+                if prompt.call_params
                 else {}
             }
 

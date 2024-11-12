@@ -1,15 +1,15 @@
 """Main CLI entrypoint for Lilypad."""
 
+import importlib.metadata
+
+from rich import print
 from typer import Typer
 
-from .commands import (
-    create_command,
-    run_command,
-    start_command,
-)
+from .commands import local_command
 
 app = Typer()
 
-app.command(name="start", help="Initialize Lilypad")(start_command)
-app.command(name="create", help="Create a Lilypad function stub")(create_command)
-app.command(name="run", help="Run a Lilypad prompt")(run_command)
+app.command(name="version", help="Show the Lilypad version.")(
+    lambda: print(importlib.metadata.version("python-lilypad"))
+)
+app.command(name="local", help="Run Lilypad Locally")(local_command)

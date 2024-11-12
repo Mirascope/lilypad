@@ -1,4 +1,4 @@
-"""The `start` command to initialize Lilypad."""
+"""The `local` command to run `lilypad` locally."""
 
 import contextlib
 import json
@@ -13,30 +13,13 @@ from types import FrameType
 
 import typer
 from rich import print
-from typer import Option
 
-from lilypad._utils import load_config
-from lilypad.server import client
-
+from ..._utils import load_config
+from ...server.client import LilypadClient
 from ...server.db.setup import create_tables
 
 
-def check_if_pad_exists() -> bool:
-    """Check if the SQLite database exists."""
-    return os.path.exists("pad.db")
-
-
-def check_if_lilypad_exists() -> bool:
-    """Check if the project name exists."""
-    return os.path.exists(".lilypad")
-
-
-def check_if_lily_exists() -> bool:
-    """Check if the project name exists."""
-    return os.path.exists("lily")
-
-
-def start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
+def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
     """Starts the FastAPI server using subprocess.Popen.
 
     Args:
@@ -59,7 +42,7 @@ def start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
     return process
 
 
-def wait_for_server(lilypad_client: client.LilypadClient) -> bool:
+def _wait_for_server(lilypad_client: LilypadClient) -> bool:
     """Waits until the server is up and running.
 
     Args:
@@ -81,7 +64,7 @@ def wait_for_server(lilypad_client: client.LilypadClient) -> bool:
         time.sleep(1)  # Wait before retrying
 
 
-def terminate_process(process: subprocess.Popen) -> None:
+def _terminate_process(process: subprocess.Popen) -> None:
     """Terminates the subprocess gracefully.
 
     Args:
@@ -101,63 +84,47 @@ def terminate_process(process: subprocess.Popen) -> None:
         print("Server process already terminated.")
 
 
-def update_port(filename: str, new_port: str) -> None:
-    """Update the port in the config file."""
-    if not os.path.exists(filename):
-        return
-    with open(filename) as f:
-        data = json.load(f)
-
-    data["port"] = new_port
-
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-def start_command(
-    port: str | None = Option(default=None, help="Port to run the FastAPI server on."),
+def local_command(
+    port: str | None = typer.Option(
+        default=None, help="Port to run the FastAPI server on."
+    ),
 ) -> None:
-    """Initialize Lilypad.
+    """Run `lilypad` locally.
 
-    - Create prompts directory if it doesn't exist
     - Create the SQLite database if it doesn't exist
     - Start the FastAPI server
     """
-    is_new_project = False
+    existing_project = True
     project_name = "DEFAULT"
-    if not check_if_lilypad_exists():
-        is_new_project = True
+    if not os.path.exists(".lilypad"):
+        existing_project = False
         project_name = typer.prompt("What's your project name?")
-    destination_dir = Path.cwd()
-
-    if not check_if_pad_exists():
+    if not os.path.exists("pad.db"):
         create_tables()
-
-    if not check_if_lily_exists():
-        os.mkdir("lily")
-        lily_init = destination_dir / "lily" / "__init__.py"
-        lily_init.touch()
-
     if not port:
         config = load_config()
         new_port: str = config.get("port", "8000")
     else:
         new_port = port
-
-    update_port(".lilypad/config.json", new_port)
-    lilypad_client = client.LilypadClient(
+    if existing_project:
+        with open(".lilypad/config.json") as f:
+            data = json.load(f)
+        data["port"] = new_port
+        with open(".lilypad/config.json", "w") as f:
+            json.dump(data, f, indent=4)
+    lilypad_client = LilypadClient(
         base_url=f"http://localhost:{new_port}/api", timeout=10
     )
-    process = start_lilypad(destination_dir, new_port)
+    process = _start_lilypad(Path.cwd(), new_port)
 
     def signal_handler(sig: int, frame: FrameType | None) -> None:
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    if is_new_project:
+    if not existing_project:
         try:
-            if wait_for_server(lilypad_client):
+            if _wait_for_server(lilypad_client):
                 project = lilypad_client.post_project(project_name)
                 os.mkdir(".lilypad")
                 with open(".lilypad/config.json", "w") as f:
@@ -169,7 +136,7 @@ def start_command(
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:
             print("Shutting down...")
-            terminate_process(process)
+            _terminate_process(process)
 
     with contextlib.suppress(KeyboardInterrupt):
         process.wait()

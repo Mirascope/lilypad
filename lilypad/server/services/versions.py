@@ -1,18 +1,16 @@
-"""VersionService class"""
+"""The `VersionService` class for versions."""
 
 from collections.abc import Sequence
 
 from fastapi import HTTPException, status
 from sqlmodel import col, func, select
 
-from lilypad.models import VersionCreate
-from lilypad.server.models import VersionTable
-
-from . import BaseService
+from ..models import VersionCreate, VersionTable
+from .base import BaseService
 
 
 class VersionService(BaseService[VersionTable, VersionCreate]):
-    """VersionService class"""
+    """The service class for versions."""
 
     table: type[VersionTable] = VersionTable
     create_model: type[VersionCreate] = VersionCreate
@@ -28,28 +26,39 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
             )
         ).all()
 
-    def find_non_synced_version_by_hash(
-        self, project_id: int, function_hash: str
+    def find_function_version_by_hash(
+        self, project_id: int, hash: str
     ) -> VersionTable | None:
-        """Find existing record"""
-        existing_version = self.session.exec(
+        """Find function version by hash"""
+        return self.session.exec(
             select(self.table).where(
                 self.table.project_id == project_id,
-                self.table.fn_params_hash.is_(None),  # type: ignore
-                self.table.llm_function_hash == function_hash,
+                self.table.prompt_hash.is_(None),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                self.table.function_hash == hash,
             )
         ).first()
-        return existing_version
 
-    def find_synced_active_version(
+    def find_prompt_version_by_hash(
+        self, project_id: int, function_hash: str, prompt_hash: str
+    ) -> VersionTable | None:
+        """Find prompt version by hash"""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.project_id == project_id,
+                self.table.function_hash == function_hash,
+                self.table.prompt_hash == prompt_hash,
+            )
+        ).first()
+
+    def find_prompt_active_version(
         self, project_id: int, function_hash: str
     ) -> VersionTable:
-        """Find the active version for synced function"""
+        """Find the active version for a prompt"""
         version = self.session.exec(
             select(VersionTable).where(
                 VersionTable.project_id == project_id,
                 VersionTable.is_active,
-                VersionTable.llm_function_hash == function_hash,
+                VersionTable.function_hash == function_hash,
             )
         ).first()
 
@@ -63,8 +72,8 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         self, project_id: int, new_active_version: VersionTable
     ) -> VersionTable:
         """Change the active version"""
-        active_version = self.find_synced_active_version(
-            project_id, new_active_version.llm_function_hash
+        active_version = self.find_prompt_active_version(
+            project_id, new_active_version.function_hash
         )
         if active_version.id == new_active_version.id:
             return active_version
@@ -75,33 +84,11 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         self.session.flush()
         return new_active_version
 
-    def find_synced_verion_by_hashes(
-        self, llm_fn_hash: str, fn_params_hash: str
-    ) -> VersionTable | None:
-        """Find existing record by hashes"""
-        existing_version = self.session.exec(
-            select(VersionTable).where(
-                VersionTable.llm_function_hash == llm_fn_hash,
-                VersionTable.fn_params_hash == fn_params_hash,
-            )
-        ).first()
-        return existing_version
-
-    def get_latest_version_count(self, project_id: int, function_name: str) -> int:
-        """Get the latest version count"""
+    def get_function_version_count(self, project_id: int, function_name: str) -> int:
+        """Get the count of function versions"""
         return self.session.exec(
             select(func.count(col(VersionTable.id))).where(
                 VersionTable.project_id == project_id,
                 VersionTable.function_name == function_name,
             )
         ).one()
-
-    def is_first_prompt_template(self, project_id: int, function_hash: str) -> bool:
-        """Get the latest version count"""
-        number_of_prompt_templates_for_llm_function = self.session.exec(
-            select(func.count(col(VersionTable.id))).where(
-                VersionTable.project_id == project_id,
-                VersionTable.llm_function_hash == function_hash,
-            )
-        ).one()
-        return not number_of_prompt_templates_for_llm_function > 0

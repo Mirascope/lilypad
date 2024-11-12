@@ -13,10 +13,9 @@ from opentelemetry.sdk.trace.export import (
 )
 from rich import print
 
-from lilypad.models import SpanPublic
-from lilypad.server.client import LilypadClient
-
 from ._utils import load_config
+from .server.client import LilypadClient
+from .server.models import SpanPublic
 
 
 class _JSONSpanExporter(SpanExporter):

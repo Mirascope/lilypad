@@ -33,7 +33,6 @@ from ._utils import (
     _set_span_attribute,
     dont_throw,
     run_async,
-    should_send_prompts,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,7 +107,7 @@ WRAPPED_AMETHODS: list[Method] = [
 
 
 @dont_throw
-def error_metrics_attributes(exception):
+def error_metrics_attributes(exception: Exception) -> dict[str, Any]:
     return {
         SpanAttributes.LLM_SYSTEM: "anthropic",
         "error.type": exception.__class__.__name__,
@@ -116,7 +115,7 @@ def error_metrics_attributes(exception):
 
 
 @dont_throw
-def shared_metrics_attributes(response):
+def shared_metrics_attributes(response: dict | object) -> dict[str, Any]:
     if not isinstance(response, dict):
         response = response.__dict__
 
@@ -199,7 +198,7 @@ def _create_metrics(meter: Meter):
 
 
 def is_streaming_response(response):
-    return isinstance(response, Stream) or isinstance(response, AsyncStream)
+    return isinstance(response, Stream | AsyncStream)
 
 
 async def _dump_content(message_index, content, span):
@@ -208,7 +207,7 @@ async def _dump_content(message_index, content, span):
     elif isinstance(content, list):
         # If the content is a list of text blocks, concatenate them.
         # This is more commonly used in prompt caching.
-        if all([item.get("type") == "text" for item in content]):
+        if all(item.get("type") == "text" for item in content):
             return "".join([item.get("text") for item in content])
 
         return json.dumps(content)
@@ -353,7 +352,7 @@ async def _aset_token_usage(
                 )
             elif response.get("content"):
                 completion_tokens = await anthropic.count_tokens(
-                    response.get("content")[0].text
+                    response.get("content")[0].text  # pyright: ignore
                 )
 
     if token_histogram and type(completion_tokens) is int and completion_tokens >= 0:
@@ -369,7 +368,7 @@ async def _aset_token_usage(
 
     choices = 0
     if type(response.get("content")) is list:
-        choices = len(response.get("content"))
+        choices = len(response.get("content"))  # pyright: ignore
     elif response.get("completion"):
         choices = 1
 
@@ -379,7 +378,7 @@ async def _aset_token_usage(
             attributes={
                 **metric_attributes,
                 SpanAttributes.LLM_RESPONSE_STOP_REASON: response.get("stop_reason"),
-            },
+            },  # pyright: ignore
         )
 
     _set_span_attribute(span, SpanAttributes.LLM_USAGE_PROMPT_TOKENS, input_tokens)
@@ -389,11 +388,13 @@ async def _aset_token_usage(
     _set_span_attribute(span, SpanAttributes.LLM_USAGE_TOTAL_TOKENS, total_tokens)
 
     _set_span_attribute(
-        span, SpanAttributes.LLM_USAGE_CACHE_READ_INPUT_TOKENS, cache_read_tokens
+        span,
+        SpanAttributes.LLM_USAGE_CACHE_READ_INPUT_TOKENS,  # pyright: ignore
+        cache_read_tokens,
     )
     _set_span_attribute(
         span,
-        SpanAttributes.LLM_USAGE_CACHE_CREATION_INPUT_TOKENS,
+        SpanAttributes.LLM_USAGE_CACHE_CREATION_INPUT_TOKENS,  # pyright: ignore
         cache_creation_tokens,
     )
 
@@ -449,7 +450,7 @@ def _set_token_usage(
                 completion_tokens = anthropic.count_tokens(response.get("completion"))
             elif response.get("content"):
                 completion_tokens = anthropic.count_tokens(
-                    response.get("content")[0].text
+                    response.get("content")[0].text  # pyright: ignore
                 )
 
     if token_histogram and type(completion_tokens) is int and completion_tokens >= 0:
@@ -465,7 +466,7 @@ def _set_token_usage(
 
     choices = 0
     if type(response.get("content")) is list:
-        choices = len(response.get("content"))
+        choices = len(response.get("content"))  # pyright: ignore
     elif response.get("completion"):
         choices = 1
 
@@ -475,7 +476,7 @@ def _set_token_usage(
             attributes={
                 **metric_attributes,
                 SpanAttributes.LLM_RESPONSE_STOP_REASON: response.get("stop_reason"),
-            },
+            },  # pyright: ignore
         )
 
     _set_span_attribute(span, SpanAttributes.LLM_USAGE_PROMPT_TOKENS, input_tokens)
@@ -485,11 +486,13 @@ def _set_token_usage(
     _set_span_attribute(span, SpanAttributes.LLM_USAGE_TOTAL_TOKENS, total_tokens)
 
     _set_span_attribute(
-        span, SpanAttributes.LLM_USAGE_CACHE_READ_INPUT_TOKENS, cache_read_tokens
+        span,
+        SpanAttributes.LLM_USAGE_CACHE_READ_INPUT_TOKENS,  # pyright: ignore
+        cache_read_tokens,
     )
     _set_span_attribute(
         span,
-        SpanAttributes.LLM_USAGE_CACHE_CREATION_INPUT_TOKENS,
+        SpanAttributes.LLM_USAGE_CACHE_CREATION_INPUT_TOKENS,  # pyright: ignore
         cache_creation_tokens,
     )
 
@@ -501,8 +504,8 @@ def _set_response_attributes(span, response):
     _set_span_attribute(span, SpanAttributes.LLM_RESPONSE_MODEL, response.get("model"))
 
     if response.get("usage"):
-        prompt_tokens = response.get("usage").input_tokens
-        completion_tokens = response.get("usage").output_tokens
+        prompt_tokens = response.get("usage").input_tokens  # pyright: ignore
+        completion_tokens = response.get("usage").output_tokens  # pyright: ignore
         _set_span_attribute(span, SpanAttributes.LLM_USAGE_PROMPT_TOKENS, prompt_tokens)
         _set_span_attribute(
             span, SpanAttributes.LLM_USAGE_COMPLETION_TOKENS, completion_tokens
@@ -804,7 +807,7 @@ class AnthropicInstrumentor(BaseInstrumentor):
                         duration_histogram,
                         exception_counter,
                         wrapped_method,
-                    ),
+                    ),  # pyright: ignore
                 )
 
         for wrapped_method in WRAPPED_AMETHODS:
@@ -824,7 +827,7 @@ class AnthropicInstrumentor(BaseInstrumentor):
                         duration_histogram,
                         exception_counter,
                         wrapped_method,
-                    ),
+                    ),  # pyright: ignore
                 )
 
     def _uninstrument(self, **kwargs):

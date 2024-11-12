@@ -1,8 +1,6 @@
-"""Lilypad Client"""
+"""The `lilypad` API client."""
 
-import json
-import os
-from pathlib import Path
+from collections.abc import Callable
 from typing import Any, Literal, TypeVar, get_origin, overload
 
 import requests
@@ -10,14 +8,10 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
-from lilypad.models import (
-    LLMFunctionPublic,
-    ProjectPublic,
-    SpanPublic,
-    VersionPublic,
-)
+from .._utils import compute_closure, load_config
+from .models import ActiveVersionPublic, ProjectPublic, SpanPublic, VersionPublic
 
-T = TypeVar("T", bound=BaseModel)
+_R = TypeVar("_R", bound=BaseModel)
 
 
 class NotFoundError(Exception):
@@ -53,10 +47,8 @@ class LilypadClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = requests.Session()
-        project_dir = os.getenv("LILYPAD_PROJECT_DIR", Path.cwd())
         try:
-            with open(f"{project_dir}/.lilypad/config.json") as f:
-                config = json.load(f)
+            config = load_config()
             self.project_id = (
                 int(config["project_id"]) if config.get("project_id", None) else None
             )
@@ -74,18 +66,18 @@ class LilypadClient:
         self,
         method: str,
         endpoint: str,
-        response_model: type[T],
+        response_model: type[_R],
         **kwargs: Any,
-    ) -> T: ...
+    ) -> _R: ...
 
     @overload
     def _request(
         self,
         method: str,
         endpoint: str,
-        response_model: type[list[T]],
+        response_model: type[list[_R]],
         **kwargs: Any,
-    ) -> list[T]: ...
+    ) -> list[_R]: ...
 
     @overload
     def _request(
@@ -100,9 +92,9 @@ class LilypadClient:
         self,
         method: str,
         endpoint: str,
-        response_model: type[list[T]] | type[T] | None = None,
+        response_model: type[list[_R]] | type[_R] | None = None,
         **kwargs: Any,
-    ) -> T | list[T] | dict[str, Any]:
+    ) -> _R | list[_R] | dict[str, Any]:
         """Internal method to make HTTP requests and parse responses.
 
         Args:
@@ -152,6 +144,20 @@ class LilypadClient:
             print(f"Error parsing response into {response_model}: {e}")
             raise
 
+    def get_health(self) -> dict[str, Any]:
+        """Get the health status of the server."""
+        return self._request("GET", "/health", response_model=None)
+
+    def post_project(self, project_name: str, **kwargs: Any) -> ProjectPublic:
+        """Creates a new project."""
+        return self._request(
+            "POST",
+            "/v0/projects/",
+            response_model=ProjectPublic,
+            json={"name": project_name},
+            **kwargs,
+        )
+
     def post_traces(
         self, params: dict[str, Any] | None = None, **kwargs: Any
     ) -> list[SpanPublic]:
@@ -167,110 +173,59 @@ class LilypadClient:
         """
         return self._request(
             "POST",
-            "/v1/traces",
+            "/v0/traces",
             response_model=list[SpanPublic],
             params=params,
             **kwargs,
         )
 
-    def get_llm_function_by_hash(
-        self, llm_function_hash: str, **kwargs: Any
-    ) -> LLMFunctionPublic:
-        """Creates span traces."""
-        return self._request(
-            "GET",
-            f"/projects/{self.project_id}/llm-fns/{llm_function_hash}",
-            response_model=LLMFunctionPublic,
-            **kwargs,
-        )
-
-    def create_non_synced_version(
-        self, function_id: int, llm_function_hash: str, **kwargs: Any
+    def get_or_create_function_version(
+        self, fn: Callable[..., Any], arg_types: dict[str, str]
     ) -> VersionPublic:
-        """Creates a new version for a non-synced LLM function."""
-        return self._request(
-            "POST",
-            f"/projects/{self.project_id}/versions/{llm_function_hash}",
-            response_model=VersionPublic,
-            json={"llm_function_id": function_id},
-            **kwargs,
-        )
-
-    def get_non_synced_version(
-        self, llm_function_hash: str, **kwargs: Any
-    ) -> VersionPublic:
-        """Get the non synced version."""
-        return self._request(
-            "GET",
-            f"/projects/{self.project_id}/versions/{llm_function_hash}",
-            response_model=VersionPublic,
-            **kwargs,
-        )
-
-    def get_active_version_by_function_hash(
-        self, function_hash: str, **kwargs: Any
-    ) -> VersionPublic:
-        """Get the active version."""
-        return self._request(
-            "GET",
-            f"/projects/{self.project_id}/versions/{function_hash}/active",
-            response_model=VersionPublic,
-            **kwargs,
-        )
-
-    def get_health(self) -> dict[str, Any]:
-        """Get the health status of the server."""
-        return self._request("GET", "/health", response_model=None)
-
-    def post_project(self, project_name: str, **kwargs: Any) -> ProjectPublic:
-        """Creates span traces."""
-        return self._request(
-            "POST",
-            "/projects/",
-            response_model=ProjectPublic,
-            json={"name": project_name},
-            **kwargs,
-        )
-
-    def post_llm_function(
-        self,
-        function_name: str,
-        code: str,
-        version_hash: str,
-        arg_types: dict[str, str],
-        **kwargs: Any,  # noqa: ANN401
-    ) -> LLMFunctionPublic:
-        """Creates span traces.
+        """Get the active version for a function or create it if non-existent.
 
         Args:
-            function_name (str): The name of the function.
-            code (str): The code of the function.
-            version_hash (str): The hash of the function.
-            arg_types (str): The argument types of the function.
-            **kwargs: Additional keyword arguments for the request.
+            fn (Callable): The function to get the version for.
+            arg_types (dict): Dictionary of argument names and types.
 
         Returns:
-            List of SpanPublic objects with no parents. Child spans are nested
-                within the parent span.
+            VersionPublic: The active version for the function.
         """
-        return self._request(
-            "POST",
-            f"/projects/{self.project_id}/llm-fns/",
-            response_model=LLMFunctionPublic,
-            json={
-                "function_name": function_name,
-                "code": code,
-                "version_hash": version_hash,
-                "arg_types": arg_types,
-            },
-            **kwargs,
-        )
+        code, hash = compute_closure(fn)
+        try:
+            return self._request(
+                "GET",
+                f"/v0/projects/{self.project_id}/versions/{hash}",
+                response_model=VersionPublic,
+            )
+        except NotFoundError:
+            return self._request(
+                "POST",
+                f"/v0/projects/{self.project_id}/versions/{hash}",
+                response_model=VersionPublic,
+                json={
+                    "name": fn.__name__,
+                    "hash": hash,
+                    "code": code,
+                    "arg_types": arg_types,
+                },
+            )
 
-    def get_editor_url(self, llm_function_id: int) -> str:
-        """Get the URL for the editor."""
-        root_url = self.base_url
-        if self.base_url.endswith("/api"):
-            root_url = self.base_url[:-4]
-        return (
-            f"{root_url}/projects/{self.project_id}/llm-fns/{llm_function_id}/fn-params"
+    def get_prompt_active_version(
+        self, fn: Callable[..., Any], arg_types: dict[str, str]
+    ) -> ActiveVersionPublic:
+        """Get the active version for a function with a prompt.
+
+        Args:
+            fn (Callable): The function to get the version for.
+            arg_types (dict): Dictionary of argument names and types.
+
+        Returns:
+            VersionPublic: The active version for the function.
+        """
+        _, hash = compute_closure(fn)
+        return self._request(
+            "GET",
+            f"/v0/projects/{self.project_id}/versions/{hash}/active",
+            response_model=ActiveVersionPublic,
         )

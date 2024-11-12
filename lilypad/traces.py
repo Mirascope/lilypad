@@ -10,16 +10,15 @@ from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from lilypad.server import client
-
 from ._utils import create_mirascope_middleware, inspect_arguments, load_config
+from .server.client import LilypadClient
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 config = load_config()
 
-lilypad_client = client.LilypadClient(
+lilypad_client = LilypadClient(
     base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
 )
 
@@ -49,7 +48,7 @@ def _trace(
     lexical_closure: str,
     prompt_template: str = "",
     project_id: int | None = None,
-    version: int | None = None,
+    version_num: int | None = None,
 ) -> TraceDecorator:
     @overload
     def decorator(
@@ -73,20 +72,19 @@ def _trace(
                     results = str(output)
                     if isinstance(output, BaseModel):
                         results = str(output.model_dump())
-                    span.set_attributes(
-                        {
-                            "lilypad.project_id": project_id if project_id else 0,
-                            "lilypad.function_name": fn.__name__,
-                            "lilypad.version": version if version else "",
-                            "lilypad.version_id": version_id,
-                            "lilypad.arg_types": json.dumps(arg_types),
-                            "lilypad.arg_values": json.dumps(arg_values),
-                            "lilypad.lexical_closure": lexical_closure,
-                            "lilypad.prompt_template": prompt_template,
-                            "lilypad.output": results,
-                            "lilypad.is_async": True,
-                        }
-                    )
+                    attributes = {
+                        "lilypad.project_id": project_id if project_id else 0,
+                        "lilypad.function_name": fn.__name__,
+                        "lilypad.version_num": version_num if version_num else -1,
+                        "lilypad.version_id": version_id,
+                        "lilypad.arg_types": json.dumps(arg_types),
+                        "lilypad.arg_values": json.dumps(arg_values),
+                        "lilypad.lexical_closure": lexical_closure,
+                        "lilypad.prompt_template": prompt_template,
+                        "lilypad.output": results,
+                        "lilypad.is_async": True,
+                    }
+                    span.set_attributes(attributes)
                 return output  # pyright: ignore [reportReturnType]
 
             return inner_async
@@ -105,7 +103,7 @@ def _trace(
                     attributes: dict[str, AttributeValue] = {
                         "lilypad.project_id": project_id if project_id else 0,
                         "lilypad.function_name": fn.__name__,
-                        "lilypad.version": version if version else "",
+                        "lilypad.version_num": version_num if version_num else -1,
                         "lilypad.version_id": version_id,
                         "lilypad.arg_types": json.dumps(arg_types),
                         "lilypad.arg_values": json.dumps(arg_values),
@@ -152,13 +150,13 @@ def trace() -> TraceDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_traced_function_version(fn, arg_types)
+                version = lilypad_client.get_or_create_function_version(fn, arg_types)
                 if not is_mirascope_call:
                     decorator = _trace(
                         version_id=version.id,
                         arg_types=arg_types,
                         arg_values=arg_values,
-                        lexical_closure=version.llm_fn.code,
+                        lexical_closure=version.function.code,
                         prompt_template="",
                     )
                     return await decorator(fn)(*args, **kwargs)
@@ -174,13 +172,13 @@ def trace() -> TraceDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_traced_function_version(fn, arg_types)
+                version = lilypad_client.get_or_create_function_version(fn, arg_types)
                 if not is_mirascope_call:
                     decorator = _trace(
                         version_id=version.id,
                         arg_types=arg_types,
                         arg_values=arg_values,
-                        lexical_closure=version.llm_fn.code,
+                        lexical_closure=version.function.code,
                         prompt_template="",
                     )
                     return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]

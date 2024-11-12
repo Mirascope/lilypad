@@ -16,8 +16,8 @@ from opentelemetry.trace.span import Span
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from lilypad.server import client
-
+from ..server.client import LilypadClient
+from ..server.models import ActiveVersionPublic, VersionPublic
 from .config import load_config
 
 _P = ParamSpec("_P")
@@ -25,13 +25,13 @@ _R = TypeVar("_R")
 
 config = load_config()
 
-lilypad_client = client.LilypadClient(
+lilypad_client = LilypadClient(
     base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
 )
 
 
 def _get_custom_context_manager(
-    version: PromptVersionPublic,
+    version: VersionPublic | ActiveVersionPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
@@ -42,21 +42,22 @@ def _get_custom_context_manager(
         fn: Callable,
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
-        lilypad_prompt_template = (
-            version.fn_params.prompt_template if version.fn_params else prompt_template
-        )
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_id": lilypad_client.project_id
                 if lilypad_client.project_id
                 else 0,
                 "lilypad.function_name": fn.__name__,
-                "lilypad.version": version.version if version.version else "",
+                "lilypad.version_num": version.version_num
+                if version.version_num
+                else -1,
                 "lilypad.version_id": version.id,
                 "lilypad.arg_types": json.dumps(arg_types),
                 "lilypad.arg_values": json.dumps(arg_values),
-                "lilypad.lexical_closure": version.llm_fn.code,
-                "lilypad.prompt_template": lilypad_prompt_template,
+                "lilypad.lexical_closure": version.function.code,
+                "lilypad.prompt_template": version.prompt.template
+                if version.prompt
+                else prompt_template or "",
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
@@ -65,7 +66,7 @@ def _get_custom_context_manager(
     return custom_context_manager
 
 
-def _encode_gemini_part(
+def encode_gemini_part(
     part: str | dict | PIL.WebPImagePlugin.WebPImageFile,
 ) -> str | dict:
     if isinstance(part, dict):
@@ -93,7 +94,7 @@ def _serialize_proto_data(data: list[dict]) -> str:
         serialized_item = item.copy()
         if "parts" in item:
             serialized_item["parts"] = [
-                _encode_gemini_part(part) for part in item["parts"]
+                encode_gemini_part(part) for part in item["parts"]
             ]
         serializable_data.append(serialized_item)
 
@@ -202,7 +203,7 @@ async def _handle_structured_stream_async(
 
 
 def create_mirascope_middleware(
-    version: PromptVersionPublic,
+    version: VersionPublic | ActiveVersionPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,

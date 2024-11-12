@@ -1,5 +1,5 @@
-"""The lilypad `commands` package."""
+"""Commands for the `lilypad` CLI."""
 
-from .create import create_command
-from .run import run_command
-from .start import start_command
+from .local import local_command
+
+__all__ = []
