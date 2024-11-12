@@ -1,13 +1,20 @@
-"""Base SQLModel class for all SQLModel classes to inherit from"""
+"""Base SQLModel class from which all `lilypad` SQLModel classes inherit."""
+
+import datetime
 
 from pydantic import ConfigDict
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 
 
 class BaseSQLModel(SQLModel):
     """Base SQLModel class"""
 
-    model_config = ConfigDict(  # pyright:ignore[reportAssignmentType]
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=False,
+    )
+
+    model_config = ConfigDict(  # pyright: ignore [reportAssignmentType]
         populate_by_name=True,
         from_attributes=True,
         validate_assignment=True,

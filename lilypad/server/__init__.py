@@ -1,1 +1,1 @@
-"""The lilypad app module."""
+"""The `lilypad` server module."""

@@ -20,6 +20,6 @@ def tool() -> Callable[[Callable[_P, Any]], type[BaseTool]]:
         # since the final string output is part of the prompt, that should be written
         # in the editor with access to the original arguments and the output of the
         # function as template variables.
-        return BaseTool.type_from_fn(fn)
+        return BaseTool[Any].type_from_fn(fn)
 
     return decorator

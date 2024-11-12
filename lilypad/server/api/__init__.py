@@ -1,5 +1,5 @@
-from .llm_fns_api import llm_fn_router
-from .project_api import project_router
-from .version_api import version_router
+"""The `/api` app for the main FastAPI server."""
 
-__all__ = ["llm_fn_router", "project_router", "version_router"]
+from .v0 import api as v0_api
+
+__all__ = ["v0_api"]

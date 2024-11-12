@@ -6,6 +6,7 @@ import inspect
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 from types import ModuleType
 from typing import Any
 
@@ -332,7 +333,7 @@ class _DependencyCollector:
         name_to_source: dict[str, str] = {}
         for _, source in self._collected_code.items():
             tree = ast.parse(source)
-            if isinstance(tree.body[0], (ast.FunctionDef, ast.ClassDef)):
+            if isinstance(tree.body[0], ast.FunctionDef | ast.ClassDef):
                 name_to_source[tree.body[0].name] = source
 
         ordered_classes = self._get_ordered_classes()
@@ -473,6 +474,7 @@ class _DependencyVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+@lru_cache(maxsize=128)
 def compute_closure(fn: Callable[..., Any]) -> tuple[str, str]:
     """Compute the closure of a function including all its dependencies.
 

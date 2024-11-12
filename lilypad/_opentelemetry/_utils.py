@@ -3,7 +3,7 @@ import logging
 import threading
 import traceback
 from collections.abc import Callable
-from enum import StrEnum
+from enum import Enum
 from typing import Any, ParamSpec, TypedDict, TypeVar
 
 from opentelemetry import context
@@ -12,7 +12,7 @@ from opentelemetry.trace import Tracer
 SUPPRESS_LANGUAGE_MODEL_INSTRUMENTATION_KEY = "suppress_language_model_instrumentation"
 
 
-class SpanAttributes(StrEnum):
+class SpanAttributes(str, Enum):
     LLM_SYSTEM = "gen_ai.system"
     LLM_REQUEST_MODEL = "gen_ai.request.model"
     LLM_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens"
@@ -40,7 +40,7 @@ class SpanAttributes(StrEnum):
     LLM_CONTENT_COMPLETION_CHUNK = "llm.content.completion.chunk"
 
 
-class LLMRequestTypeValues(StrEnum):
+class LLMRequestTypeValues(str, Enum):
     COMPLETION = "completion"
     CHAT = "chat"
     RERANK = "rerank"
@@ -60,7 +60,7 @@ def dont_throw(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as e:
+        except Exception:
             logger.debug(
                 "OpenLLMetry failed to trace in %s, error: %s",
                 func.__name__,
@@ -101,11 +101,11 @@ def _with_tracer_wrapper(func: Callable[P, R]) -> Callable[P, R]:
             args,
             kwargs,
         ) -> R:
-            return func(tracer, to_wrap, wrapped, instance, args, kwargs)
+            return func(tracer, to_wrap, wrapped, instance, args, kwargs)  # pyright: ignore
 
-        return wrapper
+        return wrapper  # pyright: ignore
 
-    return _with_tracer
+    return _with_tracer  # pyright: ignore
 
 
 def run_async(method):
