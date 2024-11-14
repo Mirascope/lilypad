@@ -50,7 +50,7 @@ def test_base_sql_model():
     """Test BaseSQLModel initialization."""
 
     class TestModel(BaseSQLModel, table=True):
-        __tablename__ = "testmodel"
+        __tablename__ = "testmodel"   # pyright: ignore [reportAssignmentType]
         id: int | None = Field(default=None, primary_key=True)
         name: str
 
@@ -239,7 +239,7 @@ def test_relationships(session):
 
     # Create function linked to project
     function = FunctionTable(
-        name="test_func", hash="abc123", code="def test(): pass", project_id=project.id
+        name="test_func", hash="abc123", code="def test(): pass", project_id=project.id  # pyright: ignore [reportArgumentType]
     )
     session.add(function)
     session.commit()
@@ -261,7 +261,7 @@ def test_relationships(session):
         template="Test template",
         provider=Provider.OPENAI,
         model="gpt-4",
-        project_id=project.id,
+        project_id=project.id,  # pyright: ignore [reportArgumentType]
     )
     session.add(prompt)
     session.commit()
