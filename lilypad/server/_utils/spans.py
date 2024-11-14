@@ -98,7 +98,7 @@ def convert_gemini_messages(
 def convert_openai_messages(
     messages: list[dict[str, Any]],
 ) -> list[MessageParam]:
-    """Convert Anthropic messages."""
+    """Convert OpenAI OpenTelemetry messages to BaseModel."""
     structured_messages: list[MessageParam] = []
     assistant_message = MessageParam(
         content=[],
@@ -155,7 +155,7 @@ def convert_openai_messages(
 def convert_anthropic_messages(
     messages: list[dict[str, Any]],
 ) -> list[MessageParam]:
-    """Convert Anthropic messages."""
+    """Convert Anthropic OpenTelemetry messages to BaseModel."""
     structured_messages: list[MessageParam] = []
     assistant_message = MessageParam(
         content=[],

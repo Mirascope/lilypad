@@ -12,8 +12,10 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
     table: type[PromptTable] = PromptTable
     create_model: type[PromptCreate] = PromptCreate
 
-    def find_prompt_by_params(self, prompt_create: PromptCreate) -> PromptTable | None:
-        """Find prompt by params"""
+    def find_prompt_by_call_params(
+        self, prompt_create: PromptCreate
+    ) -> PromptTable | None:
+        """Find prompt by call params"""
         call_params = (
             prompt_create.call_params.model_dump()
             if prompt_create.call_params

@@ -32,6 +32,7 @@ class ResponseFormat(BaseModel):
 
 class GeminiCallParams(BaseModel):
     """Gemini GenerationConfig call args model.
+
     https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
     """
 
@@ -48,6 +49,7 @@ class GeminiCallParams(BaseModel):
 
 class OpenAICallParams(BaseModel):
     """OpenAI call args model.
+
     https://platform.openai.com/docs/api-reference/chat/create
     """
 

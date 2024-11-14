@@ -1,4 +1,4 @@
-from ._spans import (
+from .spans import (
     MessageParam,
     convert_anthropic_messages,
     convert_gemini_messages,

@@ -54,8 +54,9 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         self, project_id: int, function_hash: str, prompt_hash: str
     ) -> Sequence[VersionTable]:
         """Find prompt versions by hash
+
         We can have multiple versions if the prompt_hash is the same, but call params
-        are different
+        are different.
         """
         return self.session.exec(
             select(self.table).where(

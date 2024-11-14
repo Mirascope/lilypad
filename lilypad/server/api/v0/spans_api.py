@@ -8,7 +8,7 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from lilypad.server._utils._spans import convert_openai_messages
+from lilypad.server._utils.spans import convert_openai_messages
 
 from ..._utils import (
     MessageParam,

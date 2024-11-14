@@ -114,8 +114,6 @@ target-version = "py310"
 "tests/*.py" = ["S101", "ANN"]
 "examples/*.py" = ["T201", "ANN"]
 "docs/*.py" = ["ANN401"]
-# REMOVE ONCE OTEL IS CLEANED UP
-"lilypad/_opentelemetry/*.py" = ["ANN"]
 
 [tool.ruff.lint]
 select = [

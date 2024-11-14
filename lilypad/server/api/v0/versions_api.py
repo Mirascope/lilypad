@@ -111,14 +111,16 @@ async def create_new_version(
             if function_create.hash
             else None
         )
+
     if not function:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No function found"
         )
-    prompt = prompt_service.find_prompt_by_params(prompt_create)
+
+    prompt = prompt_service.find_prompt_by_call_params(prompt_create)
+    function_public = FunctionPublic.model_validate(function)
 
     if function and prompt:
-        function_public = FunctionPublic.model_validate(function)
         prompt_public = PromptPublic.model_validate(prompt)
         version = version_service.find_prompt_version_by_id(
             project_id, function_public.id, prompt_public.id
@@ -126,7 +128,6 @@ async def create_new_version(
         if version:
             return version
 
-    function_public = FunctionPublic.model_validate(function)
     if not prompt:
         prompt_create = prompt_create.model_copy(
             update={
@@ -137,6 +138,7 @@ async def create_new_version(
             }
         )
         prompt = prompt_service.create_record(prompt_create)
+
     prompt_public = PromptPublic.model_validate(prompt)
     num_versions = version_service.get_function_version_count(project_id, function.name)
     new_version = VersionCreate(
