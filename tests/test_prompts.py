@@ -34,7 +34,7 @@ def mock_version() -> VersionPublic:
             name="recommend_book",
             hash="test_hash",
             code="test_code",
-            arg_types={"genre": "str"}
+            arg_types={"genre": "str"},
         ),
         prompt=PromptPublic(
             id=1,
@@ -50,8 +50,8 @@ def mock_version() -> VersionPublic:
                 presence_penalty=0.0,
                 response_format=ResponseFormat(type="text"),
                 stop=None,
-            )
-        )
+            ),
+        ),
     )
 
 
@@ -66,15 +66,21 @@ def mock_prompt_client(mock_version):
 @pytest.fixture
 def mock_create_mirascope_call():
     with patch("lilypad.prompts.create_mirascope_call") as mock:
+
         def side_effect(fn, prompt, trace_decorator):
             if inspect.iscoroutinefunction(fn):
+
                 async def mock_fn(*args, **kwargs):
                     return "Mocked book recommendation"
+
                 return mock_fn
             else:
+
                 def mock_fn(*args, **kwargs):
                     return "Mocked book recommendation"
+
                 return mock_fn
+
         mock.side_effect = side_effect
         yield mock
 
@@ -94,6 +100,7 @@ def test_recommend_book_sync(mock_prompt_client, mock_create_mirascope_call):
 @pytest.mark.asyncio
 async def test_recommend_book_async(mock_prompt_client, mock_create_mirascope_call):
     """Test asynchronous book recommendation function"""
+
     @prompt()
     async def recommend_book(genre: str) -> str:
         return f"Recommend a {genre} book"
@@ -102,7 +109,6 @@ async def test_recommend_book_async(mock_prompt_client, mock_create_mirascope_ca
     assert isinstance(response, str)
     mock_prompt_client.get_prompt_active_version.assert_called_once()
     mock_create_mirascope_call.assert_called()
-
 
 
 def test_recommend_book_with_middleware(mock_prompt_client, mock_create_mirascope_call):
@@ -114,6 +120,7 @@ def test_recommend_book_with_middleware(mock_prompt_client, mock_create_mirascop
             tracking.append({"genre": args[0] if args else kwargs.get("genre")})
             result = fn(*args, **kwargs)
             return str(result)
+
         return wrapper
 
     @track_recommendations
@@ -129,9 +136,11 @@ def test_recommend_book_with_middleware(mock_prompt_client, mock_create_mirascop
     mock_prompt_client.get_prompt_active_version.assert_called_once()
     mock_create_mirascope_call.assert_called()
 
+
 @pytest.mark.slow
 def test_recommend_book_performance(mock_prompt_client, mock_create_mirascope_call):
     """Test performance of book recommendation function"""
+
     @prompt()
     def recommend_book(genre: str) -> str:
         return f"Recommend a {genre} book"

@@ -1,4 +1,3 @@
-
 import pytest
 from mirascope.core import BaseTool
 
@@ -14,6 +13,7 @@ def sample_basic_function(text: str) -> str:
     """
     return f"Processed: {text}"
 
+
 def sample_function_with_multiple_args(title: str, author: str, year: int) -> str:
     """Format book information.
 
@@ -24,6 +24,7 @@ def sample_function_with_multiple_args(title: str, author: str, year: int) -> st
     """
     return f"{title} by {author} ({year})"
 
+
 async def sample_async_function(text: str) -> str:
     """Process the input text asynchronously.
 
@@ -31,6 +32,7 @@ async def sample_async_function(text: str) -> str:
         text: The text to process
     """
     return f"Async processed: {text}"
+
 
 # Tests
 def test_basic_tool_decoration():
@@ -41,12 +43,16 @@ def test_basic_tool_decoration():
     assert issubclass(decorated, BaseTool)
 
     # Check that the docstring was preserved
-    assert decorated.__doc__ == """Process the input text.\n\nArgs:\n    text: The text to process"""
+    assert (
+        decorated.__doc__
+        == """Process the input text.\n\nArgs:\n    text: The text to process"""
+    )
 
     # Create an instance and test it
     instance = decorated(text="hello")
     assert instance.text == "hello"
     assert instance.call() == "Processed: hello"
+
 
 def test_tool_with_multiple_arguments():
     """Test tool decoration of a function with multiple arguments"""
@@ -66,6 +72,7 @@ def test_tool_with_multiple_arguments():
     instance = decorated(title="The Book", author="John Doe", year=2024)
     assert instance.call() == "The Book by John Doe (2024)"
 
+
 @pytest.mark.asyncio
 async def test_async_function_decoration():
     """Test that async functions can be decorated"""
@@ -80,6 +87,7 @@ async def test_async_function_decoration():
     assert instance.text == "test"
     assert await instance.call() == "Async processed: test"
 
+
 def test_tool_validation():
     """Test that decorated tools properly validate their inputs"""
     decorated = tool()(sample_function_with_multiple_args)
@@ -92,28 +100,29 @@ def test_tool_validation():
     with pytest.raises(ValueError, match="1 validation error"):
         decorated(title="Book", author="John", year="invalid")  # year should be int
 
+
 def test_tool_args_property():
     """Test that the decorated tool provides access to its arguments"""
     decorated = tool()(sample_function_with_multiple_args)
     instance = decorated(title="Book", author="John", year=2024)
 
     args = instance.args
-    assert args == {
-        "title": "Book",
-        "author": "John",
-        "year": 2024
-    }
+    assert args == {"title": "Book", "author": "John", "year": 2024}
+
 
 def test_tool_without_docstring():
     """Test decoration of a function without a docstring"""
+
     def no_doc_function(text: str) -> str:
         return f"Result: {text}"
 
     decorated = tool()(no_doc_function)
     assert "Must include required parameters" in decorated._description()
 
+
 def test_tool_inheritance_preservation():
     """Test that tool decoration preserves base class methods"""
+
     class CustomBaseTool(BaseTool):
         def custom_method(self) -> str:
             return "custom"
@@ -130,8 +139,10 @@ def test_tool_inheritance_preservation():
     assert instance.call() == "test"
     assert instance.custom_method() == "custom"
 
+
 def test_tool_with_default_values():
     """Test tool decoration with function having default values"""
+
     def func_with_defaults(text: str, repeat: int = 1) -> str:
         """Function with default value.
 
@@ -151,8 +162,10 @@ def test_tool_with_default_values():
     instance2 = decorated(text="hello", repeat=2)
     assert instance2.call() == "hellohello"
 
+
 def test_tool_type_annotations():
     """Test that type annotations are correctly preserved"""
+
     def typed_function(text: str, count: int, flag: bool = False) -> str:
         """Function with various types"""
         return text
@@ -163,6 +176,7 @@ def test_tool_type_annotations():
     assert decorated.model_fields["text"].annotation == str
     assert decorated.model_fields["count"].annotation == int
     assert decorated.model_fields["flag"].annotation == bool
+
 
 def test_tool_multiple_decorations():
     """Test that multiple decorations don't cause issues"""

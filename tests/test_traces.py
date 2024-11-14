@@ -14,6 +14,7 @@ from lilypad.server.models import (
 class TestResponse(BaseModel):
     message: str
 
+
 class TestModel:
     def __init__(self, value: str):
         self.value = value
@@ -23,6 +24,7 @@ class TestModel:
 
     def __str__(self):
         return str(self.model_dump())
+
 
 # Mock fixtures
 @pytest.fixture
@@ -35,7 +37,7 @@ def mock_lilypad_client():
             hash="test_hash",
             code="test code",
             arg_types={"param": "str"},
-            project_id=1
+            project_id=1,
         )
 
         # Create version with required fields
@@ -56,6 +58,7 @@ def mock_lilypad_client():
         mock.project_id = 1
         yield mock
 
+
 @pytest.fixture
 def mock_get_tracer():
     with patch("lilypad.traces.get_tracer") as mock_tracer:
@@ -72,8 +75,10 @@ def mock_get_tracer():
 
         yield mock_tracer
 
+
 def test_trace_sync_with_model_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of a synchronous function with custom model return"""
+
     @trace()
     def test_function() -> TestModel:
         return TestModel("test value")
@@ -91,6 +96,7 @@ def test_trace_sync_with_model_return(mock_lilypad_client, mock_get_tracer):
 
 def test_trace_sync_with_pydantic_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of a synchronous function with Pydantic model return"""
+
     @trace()
     def test_function() -> TestResponse:
         return TestResponse(message="hello")
@@ -105,9 +111,11 @@ def test_trace_sync_with_pydantic_return(mock_lilypad_client, mock_get_tracer):
     attrs = mock_span.set_attributes.call_args[0][0]
     assert attrs["lilypad.output"] == str({"message": "hello"})
 
+
 @pytest.mark.asyncio
 async def test_trace_async_function(mock_lilypad_client, mock_get_tracer):
     """Test tracing of an asynchronous function with string return"""
+
     @trace()
     async def test_function(param: str) -> str:
         return f"Hello {param}"
@@ -124,9 +132,11 @@ async def test_trace_async_function(mock_lilypad_client, mock_get_tracer):
     assert attrs["lilypad.output"] == "Hello World"
     assert attrs["lilypad.is_async"]
 
+
 @pytest.mark.asyncio
 async def test_trace_async_with_model_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of an asynchronous function with custom model return"""
+
     @trace()
     async def test_function() -> TestModel:
         return TestModel("test value")
@@ -141,9 +151,11 @@ async def test_trace_async_with_model_return(mock_lilypad_client, mock_get_trace
     attrs = mock_span.set_attributes.call_args[0][0]
     assert attrs["lilypad.output"] == "{'value': 'test value'}"
 
+
 @pytest.mark.asyncio
 async def test_trace_async_with_pydantic_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of an asynchronous function with Pydantic model return"""
+
     @trace()
     async def test_function() -> TestResponse:
         return TestResponse(message="hello")
@@ -158,8 +170,10 @@ async def test_trace_async_with_pydantic_return(mock_lilypad_client, mock_get_tr
     attrs = mock_span.set_attributes.call_args[0][0]
     assert attrs["lilypad.output"] == str({"message": "hello"})
 
+
 def test_trace_handles_errors(mock_lilypad_client, mock_get_tracer):
     """Test proper error handling in traced functions"""
+
     @trace()
     def test_function():
         raise ValueError("Test error")
@@ -167,9 +181,11 @@ def test_trace_handles_errors(mock_lilypad_client, mock_get_tracer):
     with pytest.raises(ValueError, match="Test error"):
         test_function()
 
+
 @pytest.mark.asyncio
 async def test_trace_handles_async_errors(mock_lilypad_client, mock_get_tracer):
     """Test proper error handling in async traced functions"""
+
     @trace()
     async def test_function():
         raise ValueError("Test error")
@@ -177,8 +193,10 @@ async def test_trace_handles_async_errors(mock_lilypad_client, mock_get_tracer):
     with pytest.raises(ValueError, match="Test error"):
         await test_function()
 
+
 def test_version_tracking(mock_lilypad_client):
     """Test that function versioning works correctly"""
+
     @trace()
     def test_function(param: str) -> str:
         return f"Hello {param}"
