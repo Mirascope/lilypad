@@ -137,7 +137,6 @@ def test_recommend_book_with_middleware(mock_prompt_client, mock_create_mirascop
     mock_create_mirascope_call.assert_called()
 
 
-@pytest.mark.slow
 def test_recommend_book_performance(mock_prompt_client, mock_create_mirascope_call):
     """Test performance of book recommendation function"""
 
