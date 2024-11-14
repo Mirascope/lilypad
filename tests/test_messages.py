@@ -38,7 +38,7 @@ class MockResponse(
     """Mock response for testing"""
 
     @property
-    def content(self) -> str:
+    def content(self) -> str:  # pyright: ignore [reportReturnType]
         """Returns the content of the response."""
         pass
 
@@ -105,13 +105,13 @@ class MockResponse(
         for tool_call in tool_calls:
             for tool_type in self.tool_types:
                 if tool_call.function.name == tool_type._name():
-                    extracted_tools.append(tool_type.from_tool_call(tool_call))
+                    extracted_tools.append(tool_type.from_tool_call(tool_call))  # pyright: ignore [reportAttributeAccessIssue]
                     break
 
         return extracted_tools
 
     @property
-    def tool(self) -> _BaseToolT | None:
+    def tool(self) -> _BaseToolT | None:  # pyright: ignore [reportInvalidTypeVarUse]
         """Returns the tool that was used to generate the response."""
         pass
 
@@ -129,10 +129,10 @@ class MockResponse(
             The list of constructed `ChatCompletionToolMessageParam` parameters.
         """
         return [
-            ChatCompletionToolMessageParam(
+            ChatCompletionToolMessageParam(  # pyright: ignore [reportCallIssue]
                 role="tool",
                 content=output,
-                tool_call_id=tool.tool_call.id,
+                tool_call_id=tool.tool_call.id,  # pyright: ignore [reportAttributeAccessIssue]
                 name=tool._name(),  # pyright: ignore [reportCallIssue]
             )
             for tool, output in tools_and_outputs
@@ -240,14 +240,14 @@ def mock_openai_response(mock_chat_completion) -> OpenAICallResponse:
 
 def test_message_initialization(mock_openai_response):
     """Test Message class initialization"""
-    message = Message(mock_openai_response)
+    message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
     assert message.content == "test content"
     assert message._response == mock_openai_response
 
 
 def test_message_attribute_delegation(mock_openai_response):
     """Test attribute delegation to wrapped response"""
-    message = Message(mock_openai_response)
+    message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
     assert message.content == mock_openai_response.content
     assert message.model == mock_openai_response.model
     assert message.id == mock_openai_response.id
@@ -255,7 +255,7 @@ def test_message_attribute_delegation(mock_openai_response):
 
 def test_message_special_attributes(mock_openai_response):
     """Test access to special attributes"""
-    message = Message(mock_openai_response)
+    message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
     assert isinstance(message.model_fields, dict)
     assert isinstance(message.__dict__, dict)
     assert isinstance(message.__class__, type)
@@ -263,7 +263,7 @@ def test_message_special_attributes(mock_openai_response):
 
 def test_message_no_tools(mock_openai_response):
     """Test call_tools with no tools"""
-    message = Message(mock_openai_response)
+    message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
     result = message.call_tools()
     assert isinstance(result, list)
     assert len(result) == 0
@@ -304,7 +304,7 @@ def test_message_sync_tools(mock_chat_completion):
         end_time=0.0,
     )
 
-    message = Message[FormatBook, FormatAuthor](response)
+    message = Message[FormatBook, FormatAuthor](response)  # pyright: ignore [reportAbstractUsage]
     result = message.call_tools()
     assert isinstance(result, list)
     assert len(result) == 2
@@ -367,8 +367,8 @@ async def test_message_async_tools(mock_chat_completion):
         end_time=0.0,
     )
 
-    message = Message[AsyncFormatBook, AsyncFormatAuthor](response)
-    results = await message.call_tools()
+    message = Message[AsyncFormatBook, AsyncFormatAuthor](response)  # pyright: ignore [reportAbstractUsage]
+    results = await message.call_tools()  # pyright: ignore [reportAbstractUsage, reportGeneralTypeIssues]
 
     assert isinstance(results, list)
     assert len(results) == 2
@@ -413,6 +413,6 @@ async def test_message_tool_error_handling(mock_chat_completion):
         end_time=0.0,
     )
 
-    message = Message[AsyncErrorTool](response)
+    message = Message[AsyncErrorTool](response)  # pyright: ignore [reportAbstractUsage]
     with pytest.raises(ValueError, match="Async tool error"):
-        await message.call_tools()
+        await message.call_tools()  # pyright: ignore [reportGeneralTypeIssues]

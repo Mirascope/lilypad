@@ -51,8 +51,8 @@ def test_basic_tool_decoration():
     )
 
     # Create an instance and test it
-    instance = decorated(text="hello")
-    assert instance.text == "hello"
+    instance = decorated(text="hello")  # pyright: ignore [reportCallIssue]
+    assert instance.text == "hello"  # pyright: ignore [reportAttributeAccessIssue]
     assert instance.call() == "Processed: hello"
 
 
@@ -71,7 +71,7 @@ def test_tool_with_multiple_arguments():
     assert decorated.model_fields["year"].annotation is int
 
     # Test instance creation and calling
-    instance = decorated(title="The Book", author="John Doe", year=2024)
+    instance = decorated(title="The Book", author="John Doe", year=2024)  # pyright: ignore [reportCallIssue]
     assert instance.call() == "The Book by John Doe (2024)"
 
 
@@ -85,8 +85,8 @@ async def test_async_function_decoration():
     assert "text" in decorated.model_fields
 
     # Create instance
-    instance = decorated(text="test")
-    assert instance.text == "test"
+    instance = decorated(text="test")  # pyright: ignore [reportCallIssue]
+    assert instance.text == "test"  # pyright: ignore [reportAttributeAccessIssue]
     assert await instance.call() == "Async processed: test"
 
 
@@ -96,17 +96,17 @@ def test_tool_validation():
 
     # Test missing required argument
     with pytest.raises(ValueError, match="1 validation error"):
-        decorated(title="Book", year=2024)  # Missing author
+        decorated(title="Book", year=2024)  # pyright: ignore [reportCallIssue]
 
     # Test invalid type
     with pytest.raises(ValueError, match="1 validation error"):
-        decorated(title="Book", author="John", year="invalid")  # year should be int
+        decorated(title="Book", author="John", year="invalid")  # pyright: ignore [reportCallIssue]
 
 
 def test_tool_args_property():
     """Test that the decorated tool provides access to its arguments"""
     decorated = tool()(sample_function_with_multiple_args)
-    instance = decorated(title="Book", author="John", year=2024)
+    instance = decorated(title="Book", author="John", year=2024)  # pyright: ignore [reportCallIssue]
 
     args = instance.args
     assert args == {"title": "Book", "author": "John", "year": 2024}
@@ -135,7 +135,7 @@ def test_tool_inheritance_preservation():
 
     # Create tool using CustomBaseTool as base
     decorated = CustomBaseTool.type_from_fn(test_func)
-    instance = decorated(text="test")
+    instance = decorated(text="test")  # pyright: ignore [reportCallIssue, reportAbstractUsage]
 
     # Verify both the new functionality and inherited method work
     assert instance.call() == "test"
@@ -157,11 +157,11 @@ def test_tool_with_default_values():
     decorated = tool()(func_with_defaults)
 
     # Test with only required argument
-    instance1 = decorated(text="hello")
+    instance1 = decorated(text="hello")  # pyright: ignore [reportCallIssue]
     assert instance1.call() == "hello"
 
     # Test with all arguments
-    instance2 = decorated(text="hello", repeat=2)
+    instance2 = decorated(text="hello", repeat=2)  # pyright: ignore [reportCallIssue]
     assert instance2.call() == "hellohello"
 
 
@@ -186,8 +186,8 @@ def test_tool_multiple_decorations():
     decorated2 = tool()(sample_basic_function)
 
     # Verify both decorations work independently
-    instance1 = decorated1(text="test1")
-    instance2 = decorated2(text="test2")
+    instance1 = decorated1(text="test1")  # pyright: ignore [reportCallIssue]
+    instance2 = decorated2(text="test2")  # pyright: ignore [reportCallIssue]
 
     assert instance1.call() == "Processed: test1"
     assert instance2.call() == "Processed: test2"

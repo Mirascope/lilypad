@@ -73,10 +73,10 @@ def mock_create_mirascope_call():
         def side_effect(fn, prompt, trace_decorator):
             if inspect.iscoroutinefunction(fn):
 
-                async def mock_fn(*args, **kwargs):
+                async def mock_async_fn(*args, **kwargs):
                     return "Mocked book recommendation"
 
-                return mock_fn
+                return mock_async_fn
             else:
 
                 def mock_fn(*args, **kwargs):

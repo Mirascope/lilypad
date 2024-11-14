@@ -45,7 +45,7 @@ def mock_lilypad_client():
             hash="test_hash",
             code="test code",
             arg_types={"param": "str"},
-            project_id=1,
+            project_id=1,  # pyright: ignore [reportCallIssue]
         )
 
         # Create version with required fields
@@ -188,7 +188,7 @@ def test_trace_handles_errors(mock_lilypad_client, mock_get_tracer):
         raise ValueError("Test error")
 
     with pytest.raises(ValueError, match="Test error"):
-        test_function()
+        test_function()  # pyright: ignore [reportUnusedCoroutine]
 
 
 @pytest.mark.asyncio
