@@ -1,15 +1,224 @@
 """Tests for lilypad._utils.functions module."""
 
-from typing import Any, Iterable, AsyncIterable
-from unittest.mock import Mock, patch, AsyncMock
+import os
+from abc import ABC
+from collections.abc import AsyncIterable, Iterable
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from pydantic import BaseModel
+from jiter import jiter  # pyright: ignore [reportAttributeAccessIssue]
+from mirascope.core import base as mb
+from mirascope.core.base.call_response import _BaseToolT
+from mirascope.core.base.tool import BaseTool
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionMessage,
+    ChatCompletionMessageToolCall,
+    ChatCompletionToolMessageParam,
+)
+from openai.types.chat.chat_completion import Choice
+from pydantic import BaseModel, computed_field
+from pydantic.json_schema import SkipJsonSchema
 
-from mirascope.core.base import BaseCallResponse
 from lilypad import Message
 from lilypad._utils.functions import create_mirascope_call, inspect_arguments
 from lilypad.server.models import Provider
+
+
+class MockResponse(
+    mb.BaseCallResponse[
+        Any,
+        mb.BaseTool[Any],
+        Any,
+        mb.BaseDynamicConfig[Any, Any],
+        Any,
+        mb.BaseCallParams,
+        Any,
+    ]
+):
+    """Mock response for testing"""
+
+    @property
+    def content(self) -> str:  # pyright: ignore [reportReturnType]
+        """Returns the content of the response."""
+        pass
+
+    @property
+    def finish_reasons(self) -> list[str] | None:
+        """Returns the finish reasons of the response."""
+        pass
+
+    @property
+    def model(self) -> str | None:
+        """Returns the name of the response model."""
+        pass
+
+    @property
+    def id(self) -> str | None:
+        """Returns the id of the response."""
+        pass
+
+    @property
+    def usage(self) -> Any:
+        """Returns the usage of the chat completion."""
+        pass
+
+    @property
+    def input_tokens(self) -> int | float | None:
+        """Returns the number of input tokens."""
+        pass
+
+    @property
+    def output_tokens(self) -> int | float | None:
+        """Returns the number of output tokens."""
+        pass
+
+    @property
+    def cost(self) -> float | None:
+        """Returns the cost of the response in dollars."""
+        pass
+
+    @property
+    def message_param(self) -> Any:
+        """Returns the assistants's response as a message parameter."""
+        pass
+
+    @computed_field
+    @property
+    def tools(self) -> list[BaseTool[Any]] | None:
+        """Returns any available tool calls as their `OpenAITool` definition.
+
+        Raises:
+            ValidationError: if a tool call doesn't match the tool's schema.
+            ValueError: if the model refused to response, in which case the error
+                message will be the refusal.
+        """
+        if hasattr(self.response.choices[0].message, "refusal") and (
+            refusal := self.response.choices[0].message.refusal
+        ):
+            raise ValueError(refusal)
+
+        tool_calls = self.response.choices[0].message.tool_calls
+        if not self.tool_types or not tool_calls:
+            return None
+
+        extracted_tools = []
+        for tool_call in tool_calls:
+            for tool_type in self.tool_types:
+                if tool_call.function.name == tool_type._name():
+                    extracted_tools.append(tool_type.from_tool_call(tool_call))  # pyright: ignore [reportAttributeAccessIssue]
+                    break
+
+        return extracted_tools
+
+    @property
+    def tool(self) -> _BaseToolT | None:  # pyright: ignore [reportInvalidTypeVarUse]
+        """Returns the tool that was used to generate the response."""
+        pass
+
+    @classmethod
+    def tool_message_params(
+        cls, tools_and_outputs: list[tuple[BaseTool[Any], str]]
+    ) -> list[ChatCompletionToolMessageParam]:
+        """Returns the tool message parameters for tool call results.
+
+        Args:
+            tools_and_outputs: The list of tools and their outputs from which the tool
+                message parameters should be constructed.
+
+        Returns:
+            The list of constructed `ChatCompletionToolMessageParam` parameters.
+        """
+        return [
+            ChatCompletionToolMessageParam(  # pyright: ignore [reportCallIssue]
+                role="tool",
+                content=output,
+                tool_call_id=tool.tool_call.id,  # pyright: ignore [reportAttributeAccessIssue]
+                name=tool._name(),  # pyright: ignore [reportCallIssue]
+            )
+            for tool, output in tools_and_outputs
+        ]
+
+    ...
+
+
+@pytest.fixture
+def mock_chat_completion() -> ChatCompletion:
+    """Create a mock ChatCompletion"""
+    return ChatCompletion(
+        id="test-id",
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                message=ChatCompletionMessage(
+                    content="test content",
+                    role="assistant",
+                ),
+            )
+        ],
+        created=0,
+        model="gpt-4",
+        object="chat.completion",
+        system_fingerprint="test-fingerprint",
+    )
+
+
+class MockBaseTool(BaseTool[Any], ABC):
+    """Mock base tool for testing"""
+
+    tool_call: SkipJsonSchema[ChatCompletionMessageToolCall]
+
+    @classmethod
+    def from_tool_call(cls, tool_call: ChatCompletionMessageToolCall) -> BaseTool[Any]:
+        """Constructs an `OpenAITool` instance from a `tool_call`.
+
+        Args:
+            tool_call: The OpenAI tool call from which to construct this tool instance.
+        """
+        model_json = jiter.from_json(tool_call.function.arguments.encode())
+        model_json["tool_call"] = tool_call.model_dump()
+        return cls.model_validate(model_json)
+
+
+class FormatBook(MockBaseTool):
+    """Mock tool that formats the book"""
+
+    title: str
+    author: str
+
+    def call(self) -> str:
+        """Return the formatted book"""
+        return f"{self.title} by {self.author}"
+
+
+class FormatAuthor(MockBaseTool):
+    """Mock tool that formats the author"""
+
+    author: str
+
+    def call(self) -> str:
+        """Return the author"""
+        return f"Author is {self.author}"
+
+
+class MockAsyncTool(BaseTool[Any]):
+    """Mock async tool for testing"""
+
+    value: str
+
+    async def call(self) -> str:
+        """Return the value"""
+        return self.value
+
+
+class ErrorTool(BaseTool[Any]):
+    """Mock tool that raises an error"""
+
+    async def call(self) -> str:
+        """Raise an error"""
+        raise ValueError("Tool error")
 
 
 def test_inspect_arguments_basic():
@@ -37,7 +246,7 @@ def test_inspect_arguments_kwargs():
 
     def test_func(**kwargs: dict[str, Any]): ...
 
-    arg_types, arg_values = inspect_arguments(test_func, test=123)
+    arg_types, arg_values = inspect_arguments(test_func, test=123)    # pyright: ignore [reportArgumentType]
     assert arg_types == {"kwargs": "dict[str, Any]"}
     assert arg_values == {"kwargs": {"test": 123}}
 
@@ -63,35 +272,45 @@ def test_inspect_arguments_no_annotations():
 
 
 class TestResponseModel(BaseModel):
+    """Mock response model for testing"""
+
     message: str
 
 
 class CustomMessage(Message):
-    pass
+    """Custom message class for testing"""
 
 
-async def async_test_fn(text: str) -> TestResponseModel: ...
+async def async_test_fn(text: str) -> TestResponseModel:   # pyright: ignore [reportReturnType]
+    """Mock async_test_fn function for testing."""
 
 
-def sync_test_fn(text: str) -> TestResponseModel: ...
+def sync_test_fn(text: str) -> TestResponseModel:   # pyright: ignore [reportReturnType]
+    """Mock sync_test_fn function for testing."""
 
 
-async def async_stream_test_fn(text: str) -> AsyncIterable[str]: ...
+async def async_stream_test_fn(text: str) -> AsyncIterable[str]:    # pyright: ignore [reportReturnType]
+    """Mock async_stream_test_fn function for testing."""
 
 
-def sync_stream_test_fn(text: str) -> Iterable[str]: ...
+def sync_stream_test_fn(text: str) -> Iterable[str]:    # pyright: ignore [reportReturnType]
+    """Mock sync_stream_test_fn function for testing."""
 
 
-async def async_message_test_fn(text: str) -> Message[CustomMessage]: ...
+async def async_message_test_fn(text: str) -> Message[CustomMessage]:   # pyright: ignore [reportReturnType]
+    """Mock sync_stream_test_fn function for testing."""
 
 
-def sync_message_test_fn(text: str) -> Message[CustomMessage]: ...
+def sync_message_test_fn(text: str) -> Message[CustomMessage]:   # pyright: ignore [reportReturnType]
+    """Mock sync_stream_test_fn function for testing."""
 
 
-async def async_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]: ...
+async def async_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+    """Mock sync_stream_test_fn function for testing."""
 
 
-def sync_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]: ...
+def sync_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+    """Mock function for testing."""
 
 
 @pytest.fixture
@@ -140,58 +359,6 @@ async def test_create_mirascope_call_async_str(mock_prompt):
         assert await result("test") == "test"
 
 
-class MockBaseCallResponse(BaseCallResponse):
-    """Mock for BaseCallResponse."""
-
-    @property
-    def content(self) -> str:
-        return "test content"
-
-    @property
-    def finish_reasons(self) -> list[str] | None:
-        return None
-
-    @property
-    def model(self) -> str | None:
-        return None
-
-    @property
-    def id(self) -> str | None:
-        return None
-
-    @property
-    def usage(self) -> Any:
-        return None
-
-    @property
-    def input_tokens(self) -> int | float | None:
-        return None
-
-    @property
-    def output_tokens(self) -> int | float | None:
-        return None
-
-    @property
-    def cost(self) -> float | None:
-        return None
-
-    @property
-    def message_param(self) -> Any:
-        return None
-
-    @property
-    def tools(self) -> list[Any] | None:
-        return None
-
-    @property
-    def tool(self) -> Any | None:
-        return None
-
-    @classmethod
-    def tool_message_params(cls, tools_and_outputs: list[tuple[Any, Any]]) -> list[Any]:
-        return []
-
-
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_stream(mock_prompt):
     """Test async function with streaming."""
@@ -210,7 +377,7 @@ async def test_create_mirascope_call_async_stream(mock_prompt):
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_message(mock_prompt):
     """Test async function returning Message."""
-    mock_response = MockBaseCallResponse(
+    mock_response = MockResponse(
         metadata={},
         response=TestResponseModel(message="test"),
         tool_types=None,
@@ -275,7 +442,7 @@ def test_create_mirascope_call_sync_stream(mock_prompt):
 
 def test_create_mirascope_call_sync_message(mock_prompt):
     """Test sync function returning Message."""
-    mock_response = MockBaseCallResponse(
+    mock_response = MockResponse(
         metadata={},
         response=Mock(),
         tool_types=None,
@@ -353,18 +520,13 @@ def test_inspect_arguments_mixed():
     def test_func(x: int, *args: str, **kwargs: float): ...
 
     arg_types, arg_values = inspect_arguments(
-        test_func,
-        1,
-        "a",
-        "b",
-        test1=1.0,
-        test2=2.0
+        test_func, 1, "a", "b", test1=1.0, test2=2.0
     )
     assert arg_types == {"x": "int", "args": "str", "kwargs": "float"}
     assert arg_values == {
         "x": 1,
         "args": ("a", "b"),
-        "kwargs": {"test1": 1.0, "test2": 2.0}
+        "kwargs": {"test1": 1.0, "test2": 2.0},
     }
 
 
@@ -378,34 +540,37 @@ def create_mock_prompt():
     mock_prompt.call_params = None
     return mock_prompt
 
+
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_base_type():
     """Test async function returning base type (str, int, etc)."""
+
     async def fn(text: str) -> int: ...
 
-    mock_provider_call = AsyncMock(return_value='42')
+    mock_provider_call = AsyncMock(return_value="42")
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     mock_prompt = create_mock_prompt()
 
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module):
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, None)
         output = await result("test")
         assert output == "42"
+
 
 def test_create_mirascope_call_sync_base_type():
     """Test sync function returning base type (str, int, etc)."""
 
     def fn(text: str) -> int: ...
 
-    mock_provider_call = Mock(return_value='42')
+    mock_provider_call = Mock(return_value="42")
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     mock_prompt = create_mock_prompt()
 
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module):
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, None)
         output = result("test")
         assert output == "42"
@@ -422,7 +587,7 @@ def test_create_mirascope_call_with_trace_decorator():
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     mock_prompt = create_mock_prompt()
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module):
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, lambda x: x)
         output = result("test")
         assert output == "42"
@@ -441,7 +606,7 @@ async def test_create_mirascope_call_async_with_trace_decorator():
 
     mock_prompt = create_mock_prompt()
 
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module):
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, lambda x: x)
         output = await result("test")
         assert output == "42"
@@ -462,7 +627,7 @@ def test_create_mirascope_call_model_with_response():
 
     mock_prompt = create_mock_prompt()
 
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module):
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, None)
         output = result("test")
         assert isinstance(output, ResponseModel)
@@ -486,9 +651,139 @@ def test_create_mirascope_call_with_openrouter():
 
     mock_prompt = create_mock_prompt()
 
-    with patch('lilypad._utils.functions.import_module', return_value=mock_module) as mock_import:
+    with patch(
+        "lilypad._utils.functions.import_module", return_value=mock_module
+    ) as mock_import:
         result = create_mirascope_call(fn, mock_prompt, lambda x: x)
         output = result("test")
         assert output == "test"
         mock_import.assert_called_with("mirascope.core.openai")
 
+
+@pytest.mark.asyncio
+async def test_create_mirascope_call_async_openrouter():
+    """Test async function with OpenRouter provider."""
+
+    async def fn(text: str) -> str: ...
+
+    mock_prompt = Mock()
+    mock_prompt.provider = Mock(value="openrouter")
+    mock_prompt.template = "test template"
+    mock_prompt.model = "test_model"
+    mock_prompt.call_params = None
+
+    mock_response = Mock(content="test")
+    mock_provider_call = AsyncMock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
+
+    with (
+        patch("openai.AsyncOpenAI") as mock_async_openai,
+        patch("lilypad._utils.functions.import_module", return_value=mock_module),
+        patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
+    ):
+        result = create_mirascope_call(fn, mock_prompt, None)
+        output = await result("test")
+        assert output == "test"
+        mock_async_openai.assert_called_once_with(
+            base_url="https://openrouter.ai/api/v1", api_key="test_key"
+        )
+
+
+def test_create_mirascope_call_sync_openrouter():
+    """Test sync function with OpenRouter provider."""
+
+    def fn(text: str) -> str: ...
+
+    mock_prompt = Mock()
+    mock_prompt.provider = Mock(value="openrouter")
+    mock_prompt.template = "test template"
+    mock_prompt.model = "test_model"
+    mock_prompt.call_params = None
+
+    mock_response = Mock(content="test")
+    mock_provider_call = Mock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
+
+    with (
+        patch("openai.OpenAI") as mock_openai,
+        patch("lilypad._utils.functions.import_module", return_value=mock_module),
+        patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
+    ):
+        result = create_mirascope_call(fn, mock_prompt, None)
+        output = result("test")
+        assert output == "test"
+        mock_openai.assert_called_once_with(
+            base_url="https://openrouter.ai/api/v1", api_key="test_key"
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_mirascope_call_async_iterable_str():
+    """Test async function returning AsyncIterable[str]."""
+
+    async def fn(text: str) -> AsyncIterable[str]: ...
+
+    mock_chunk = Mock(content="chunk")
+    mock_response = AsyncMock()
+    mock_response.__aiter__ = AsyncMock(return_value=[(mock_chunk, None)])
+    mock_provider_call = Mock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=mock_provider_call)
+
+    mock_prompt = create_mock_prompt()
+
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
+        result = create_mirascope_call(fn, mock_prompt, None)
+        async for content in await result("test"):
+            assert content == "chunk"
+
+
+def test_create_mirascope_call_sync_iterable_str():
+    """Test sync function returning Iterable[str]."""
+
+    def fn(text: str) -> Iterable[str]: ...
+
+    mock_chunk = Mock(content="chunk")
+    mock_provider_call = Mock(return_value=[(mock_chunk, None)])
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
+
+    mock_prompt = create_mock_prompt()
+
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
+        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        for content in result("test"):
+            assert content == "chunk"
+
+
+@pytest.mark.asyncio
+async def test_create_mirascope_call_message_with_tool_args(mock_chat_completion):
+    """Test function returning Message with tool arguments."""
+
+    async def fn(text: str) -> Message[FormatBook, FormatAuthor]: ...
+
+    mock_response = MockResponse(
+        metadata={},
+        response=mock_chat_completion,
+        tool_types=[FormatBook, FormatAuthor],
+        prompt_template=None,
+        fn_args={},
+        dynamic_config=None,
+        messages=[],
+        call_params={},
+        call_kwargs={},
+        start_time=0,
+        end_time=0,
+    )
+    mock_provider_call = AsyncMock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
+
+    mock_prompt = create_mock_prompt()
+
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
+        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        response = await result("test")
+        assert isinstance(response, Message)
