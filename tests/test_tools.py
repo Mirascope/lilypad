@@ -1,3 +1,5 @@
+"""Tests for the tool decorator and related functionality."""
+
 import pytest
 from mirascope.core import BaseTool
 
@@ -64,9 +66,9 @@ def test_tool_with_multiple_arguments():
     assert "year" in decorated.model_fields
 
     # Verify field types
-    assert decorated.model_fields["title"].annotation == str
-    assert decorated.model_fields["author"].annotation == str
-    assert decorated.model_fields["year"].annotation == int
+    assert decorated.model_fields["title"].annotation is str
+    assert decorated.model_fields["author"].annotation is str
+    assert decorated.model_fields["year"].annotation is int
 
     # Test instance creation and calling
     instance = decorated(title="The Book", author="John Doe", year=2024)
@@ -173,9 +175,9 @@ def test_tool_type_annotations():
     decorated = tool()(typed_function)
 
     # Check field types
-    assert decorated.model_fields["text"].annotation == str
-    assert decorated.model_fields["count"].annotation == int
-    assert decorated.model_fields["flag"].annotation == bool
+    assert decorated.model_fields["text"].annotation is str
+    assert decorated.model_fields["count"].annotation is int
+    assert decorated.model_fields["flag"].annotation is bool
 
 
 def test_tool_multiple_decorations():

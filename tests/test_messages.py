@@ -1,3 +1,5 @@
+"""Tests for the Message class"""
+
 from abc import ABC
 from typing import Any
 
@@ -33,40 +35,51 @@ class MockResponse(
         Any,
     ]
 ):
+    """Mock response for testing"""
+
     @property
     def content(self) -> str:
+        """Returns the content of the response."""
         pass
 
     @property
     def finish_reasons(self) -> list[str] | None:
+        """Returns the finish reasons of the response."""
         pass
 
     @property
     def model(self) -> str | None:
+        """Returns the name of the response model."""
         pass
 
     @property
     def id(self) -> str | None:
+        """Returns the id of the response."""
         pass
 
     @property
     def usage(self) -> Any:
+        """Returns the usage of the chat completion."""
         pass
 
     @property
     def input_tokens(self) -> int | float | None:
+        """Returns the number of input tokens."""
         pass
 
     @property
     def output_tokens(self) -> int | float | None:
+        """Returns the number of output tokens."""
         pass
 
     @property
     def cost(self) -> float | None:
+        """Returns the cost of the response in dollars."""
         pass
 
     @property
     def message_param(self) -> Any:
+        """Returns the assistants's response as a message parameter."""
         pass
 
     @computed_field
@@ -99,6 +112,7 @@ class MockResponse(
 
     @property
     def tool(self) -> _BaseToolT | None:
+        """Returns the tool that was used to generate the response."""
         pass
 
     @classmethod
@@ -128,6 +142,8 @@ class MockResponse(
 
 
 class MockBaseTool(BaseTool[Any], ABC):
+    """Mock base tool for testing"""
+
     tool_call: SkipJsonSchema[ChatCompletionMessageToolCall]
 
     @classmethod
@@ -143,17 +159,23 @@ class MockBaseTool(BaseTool[Any], ABC):
 
 
 class FormatBook(MockBaseTool):
+    """Mock tool that formats the book"""
+
     title: str
     author: str
 
     def call(self) -> str:
+        """Return the formatted book"""
         return f"{self.title} by {self.author}"
 
 
 class FormatAuthor(MockBaseTool):
+    """Mock tool that formats the author"""
+
     author: str
 
     def call(self) -> str:
+        """Return the author"""
         return f"Author is {self.author}"
 
 
@@ -163,11 +185,15 @@ class MockAsyncTool(BaseTool[Any]):
     value: str
 
     async def call(self) -> str:
+        """Return the value"""
         return self.value
 
 
 class ErrorTool(BaseTool[Any]):
+    """Mock tool that raises an error"""
+
     async def call(self) -> str:
+        """Raise an error"""
         raise ValueError("Tool error")
 
 

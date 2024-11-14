@@ -1,3 +1,5 @@
+"""Tests for the prompt decorator and related functionality"""
+
 import inspect
 from collections.abc import Callable
 from typing import Any
@@ -65,6 +67,7 @@ def mock_prompt_client(mock_version):
 
 @pytest.fixture
 def mock_create_mirascope_call():
+    """Fixture that mocks the create_mirascope_call function"""
     with patch("lilypad.prompts.create_mirascope_call") as mock:
 
         def side_effect(fn, prompt, trace_decorator):
@@ -86,6 +89,8 @@ def mock_create_mirascope_call():
 
 
 def test_recommend_book_sync(mock_prompt_client, mock_create_mirascope_call):
+    """Test synchronous book recommendation function"""
+
     @prompt()
     def recommend_book(genre: str) -> str:
         return f"Recommend a {genre} book"

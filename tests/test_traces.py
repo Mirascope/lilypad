@@ -1,3 +1,5 @@
+"""Tests traces decorators."""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,14 +14,19 @@ from lilypad.server.models import (
 
 # Test models
 class TestResponse(BaseModel):
+    """Test model for custom return type"""
+
     message: str
 
 
 class TestModel:
+    """Test model for custom return type"""
+
     def __init__(self, value: str):
         self.value = value
 
     def model_dump(self):
+        """Dump the model to a dictionary"""
         return {"value": self.value}
 
     def __str__(self):
@@ -29,6 +36,7 @@ class TestModel:
 # Mock fixtures
 @pytest.fixture
 def mock_lilypad_client():
+    """Fixture that mocks the LilypadClient"""
     with patch("lilypad.traces.lilypad_client") as mock:
         # Create function model
         function = FunctionPublic(
@@ -61,6 +69,7 @@ def mock_lilypad_client():
 
 @pytest.fixture
 def mock_get_tracer():
+    """Fixture that mocks the get_tracer function"""
     with patch("lilypad.traces.get_tracer") as mock_tracer:
         # Configure the mock span
         mock_span = MagicMock()
