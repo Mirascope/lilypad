@@ -9,11 +9,19 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import api from "@/api";
-import { CallArgsCreate, VersionPublic } from "@/types/types";
+import {
+  AnthropicCallParams,
+  FunctionCreate,
+  GeminiCallParams,
+  OpenAICallParams,
+  PromptCreate,
+  Provider,
+  VersionPublic,
+} from "@/types/types";
 import { LexicalEditor } from "lexical";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { EditorForm } from "@/components/EditorForm";
-import { EditorFormValues } from "@/utils/editor-form-utils";
+import { EditorFormValues, formValuesToApi } from "@/utils/editor-form-utils";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { ArgsCards } from "@/components/ArgsCards";
@@ -30,18 +38,10 @@ import { Input } from "@/components/ui/input";
 import { getErrorMessage } from "@/lib/utils";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import ReactMarkdown from "react-markdown";
-import { createVersion } from "@/utils/versions";
+import { useCreateVersion } from "@/utils/versions";
 import { spanQueryOptions } from "@/utils/spans";
 import { IconDialog } from "@/components/IconDialog";
 import { Code } from "lucide-react";
-
-type PlaygroundCallArgsCreate = CallArgsCreate & {
-  shouldRunVibes?: boolean;
-};
-
-type PlaygroundSearchParams = {
-  spanId?: string;
-};
 
 export const Playground = ({
   version,
@@ -57,28 +57,7 @@ export const Playground = ({
   const { data: spanData } = useSuspenseQuery(
     spanQueryOptions(projectId, spanId)
   );
-  const mutation = useMutation({
-    mutationFn: ({
-      shouldRunVibes,
-      ...callArgsCreate
-    }: PlaygroundCallArgsCreate) =>
-      createVersion(projectId, version.llm_fn.id, callArgsCreate),
-    onSuccess: async (data, variables) => {
-      navigate({
-        to: `/projects/${projectId}/versions/${data.data.id.toString()}`,
-        replace: true,
-      });
-      if (variables.shouldRunVibes) {
-        const isValid = await trigger();
-        if (isValid) {
-          vibeMutation.mutate({
-            projectId,
-            versionId: data.data.id.toString(),
-          });
-        }
-      }
-    },
-  });
+  const createVersionMutation = useCreateVersion();
   const vibeMutation = useMutation({
     mutationFn: async ({
       projectId,
@@ -89,7 +68,7 @@ export const Playground = ({
     }) =>
       (
         await api.post(
-          `projects/${projectId}/versions/${versionId}/vibe`,
+          `projects/${projectId}/versions/${versionId}/run`,
           getValues()
         )
       ).data,
@@ -112,7 +91,7 @@ export const Playground = ({
       });
     },
   });
-  let argTypes = version.llm_fn.arg_types || {};
+  let argTypes = version.function.arg_types || {};
   argTypes = Object.keys(argTypes).reduce(
     (acc, key) => {
       acc[key as keyof string] = "";
@@ -164,14 +143,68 @@ export const Playground = ({
       return;
     }
     const editorState = editorRef.current.getEditorState();
-    editorState.read(() => {
+    editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      data.prompt_template = markdown;
-      // TODO: Update data with new callParams
-      //   mutation.mutate({
-      //     ...data,
-      //     shouldRunVibes,
-      //   });
+      data.template = markdown;
+      const functionCreate: FunctionCreate = {
+        id: version.function.id,
+        name: version.function_name,
+        arg_types: version.function.arg_types,
+        hash: version.function.hash,
+        code: version.function.code,
+      };
+      let callParams:
+        | OpenAICallParams
+        | AnthropicCallParams
+        | GeminiCallParams
+        | null = null;
+      if (
+        data.provider == Provider.OPENAI ||
+        data.provider == Provider.OPENROUTER
+      ) {
+        callParams = data.openaiCallParams as OpenAICallParams;
+        if (
+          data.provider == Provider.OPENAI ||
+          data.provider == Provider.OPENROUTER
+        ) {
+          callParams as OpenAICallParams;
+        }
+      } else if (data.provider == Provider.ANTHROPIC) {
+        callParams = data.anthropicCallParams as AnthropicCallParams;
+      } else if (data.provider == Provider.GEMINI) {
+        callParams = data.geminiCallParams as GeminiCallParams;
+      }
+      callParams = formValuesToApi(callParams);
+      const promptCreate: PromptCreate = {
+        template: data.template,
+        provider: data.provider,
+        model: data.model,
+        call_params: callParams,
+      };
+      try {
+        const newVersion = await createVersionMutation.mutateAsync({
+          projectId,
+          versionCreate: {
+            function_create: functionCreate,
+            prompt_create: promptCreate,
+          },
+        });
+        navigate({
+          to: `/projects/${projectId}/functions/${newVersion.function_name}/versions/${newVersion.id}`,
+          replace: true,
+        });
+        if (shouldRunVibes) {
+          const isValid = await trigger();
+          if (isValid) {
+            vibeMutation.mutate({
+              projectId,
+              versionId: newVersion.id.toString(),
+            });
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
     });
   };
   const playgroundButton = (
@@ -219,7 +252,7 @@ export const Playground = ({
       </>
     );
   };
-  if (version && !version.fn_params) {
+  if (version && !version.prompt) {
     return (
       <div className='flex flex-col justify-center items-center'>
         {"Playground is unavailable for non-synced calls"}
@@ -239,7 +272,7 @@ export const Playground = ({
     <div className='p-4 flex flex-col gap-2'>
       <div className='flex justify-between'>
         <div className='flex items-center gap-2'>
-          <Typography variant='h3'>{version.llm_fn.function_name}</Typography>
+          <Typography variant='h3'>{version.function.name}</Typography>
           <Button
             disabled={version.is_active || setActiveMutation.isPending}
             onClick={() => setActiveMutation.mutate()}
@@ -252,25 +285,25 @@ export const Playground = ({
           title='Copy Code'
           description='Copy this codeblock into your application.'
         >
-          <CodeSnippet code={version.llm_fn.code} />
+          <CodeSnippet code={version.function.code} />
         </IconDialog>
       </div>
-      {version.llm_fn.arg_types && (
+      {version.function.arg_types && (
         <div className='flex'>
           <ArgsCards
-            args={version.llm_fn.arg_types}
+            args={version.function.arg_types}
             customContent={renderEditableArgs}
           />
         </div>
       )}
       <EditorForm
         {...{
-          llmFunction: version.llm_fn,
+          llmFunction: version.function,
           latestVersion: version,
           editorErrors,
           onSubmit,
           ref: editorRef,
-          isSynced: !version || Boolean(version && version.fn_params),
+          isSynced: !version || Boolean(version && version.prompt),
           formButtons: [playgroundButton],
         }}
       />

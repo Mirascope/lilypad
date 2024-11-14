@@ -1,5 +1,7 @@
 """The `PromptService` class for prompts."""
 
+from sqlmodel import select
+
 from ..models import PromptCreate, PromptTable
 from .base import BaseService
 
@@ -9,3 +11,19 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
 
     table: type[PromptTable] = PromptTable
     create_model: type[PromptCreate] = PromptCreate
+
+    def find_prompt_by_params(self, prompt_create: PromptCreate) -> PromptTable | None:
+        """Find prompt by params"""
+        call_params = (
+            prompt_create.call_params.model_dump()
+            if prompt_create.call_params
+            else None
+        )
+        return self.session.exec(
+            select(self.table).where(
+                self.table.hash == prompt_create.hash,
+                self.table.call_params == call_params,
+                self.table.model == prompt_create.model,
+                self.table.provider == prompt_create.provider,
+            )
+        ).first()

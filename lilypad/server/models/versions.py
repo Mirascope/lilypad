@@ -30,6 +30,7 @@ class _VersionBase(BaseSQLModel):
     function_id: int | None = Field(
         default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.id"
     )
+    prompt_id: int | None = Field(default=None, foreign_key=f"{PROMPT_TABLE_NAME}.id")
     function_name: str = Field(nullable=False, index=True)
     function_hash: str = Field(nullable=False, index=True)
     prompt_hash: str | None = Field(default=None, index=True)
@@ -66,7 +67,6 @@ class VersionTable(_VersionBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     project: "ProjectTable" = Relationship(back_populates="versions")
     function: "FunctionTable" = Relationship(back_populates="versions")
-    prompt_id: int | None = Field(default=None, foreign_key=f"{PROMPT_TABLE_NAME}.id")
     prompt: Optional["PromptTable"] = Relationship(back_populates="version")
     spans: list["SpanTable"] = Relationship(
         back_populates="version", cascade_delete=True

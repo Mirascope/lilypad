@@ -26,6 +26,18 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
             )
         ).all()
 
+    def find_prompt_version_by_id(
+        self, project_id: int, function_id: int, prompt_id: int
+    ) -> VersionTable | None:
+        """Find function version by hash"""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.project_id == project_id,
+                self.table.function_id == function_id,
+                self.table.prompt_id == prompt_id,
+            )
+        ).first()
+
     def find_function_version_by_hash(
         self, project_id: int, hash: str
     ) -> VersionTable | None:
@@ -38,17 +50,20 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
             )
         ).first()
 
-    def find_prompt_version_by_hash(
+    def find_prompt_versions_by_hash(
         self, project_id: int, function_hash: str, prompt_hash: str
-    ) -> VersionTable | None:
-        """Find prompt version by hash"""
+    ) -> Sequence[VersionTable]:
+        """Find prompt versions by hash
+        We can have multiple versions if the prompt_hash is the same, but call params
+        are different
+        """
         return self.session.exec(
             select(self.table).where(
                 self.table.project_id == project_id,
                 self.table.function_hash == function_hash,
                 self.table.prompt_hash == prompt_hash,
             )
-        ).first()
+        ).all()
 
     def find_prompt_active_version(
         self, project_id: int, function_hash: str

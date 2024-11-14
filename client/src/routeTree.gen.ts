@@ -18,9 +18,9 @@ import { Route as ProjectsIndexImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdImport } from './routes/projects.$projectId'
 import { Route as ProjectsLlmfnsIndexImport } from './routes/projects_/llm_fns/index'
 import { Route as ProjectsProjectIdTracesImport } from './routes/projects.$projectId.traces'
-import { Route as ProjectsProjectIdLlmFnsIndexImport } from './routes/projects.$projectId.llmFns.index'
+import { Route as ProjectsProjectIdFunctionsIndexImport } from './routes/projects.$projectId.functions.index'
 import { Route as ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport } from './routes/projects_/$projectId.llm-fns_.$llmFunctionId.fn-params'
-import { Route as ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdImport } from './routes/projects.$projectId.llmFns.$functionName.versions.$versionId'
+import { Route as ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport } from './routes/projects.$projectId.functions.$functionName.versions.$versionId'
 
 // Create Virtual Routes
 
@@ -58,9 +58,9 @@ const ProjectsProjectIdTracesRoute = ProjectsProjectIdTracesImport.update({
   getParentRoute: () => ProjectsProjectIdRoute,
 } as any)
 
-const ProjectsProjectIdLlmFnsIndexRoute =
-  ProjectsProjectIdLlmFnsIndexImport.update({
-    path: '/llmFns/',
+const ProjectsProjectIdFunctionsIndexRoute =
+  ProjectsProjectIdFunctionsIndexImport.update({
+    path: '/functions/',
     getParentRoute: () => ProjectsProjectIdRoute,
   } as any)
 
@@ -70,9 +70,9 @@ const ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute =
     getParentRoute: () => rootRoute,
   } as any)
 
-const ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute =
-  ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdImport.update({
-    path: '/llmFns/$functionName/versions/$versionId',
+const ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute =
+  ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport.update({
+    path: '/functions/$functionName/versions/$versionId',
     getParentRoute: () => ProjectsProjectIdRoute,
   } as any)
 
@@ -122,11 +122,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsLlmfnsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId/llmFns/': {
-      id: '/projects/$projectId/llmFns/'
-      path: '/llmFns'
-      fullPath: '/projects/$projectId/llmFns'
-      preLoaderRoute: typeof ProjectsProjectIdLlmFnsIndexImport
+    '/projects/$projectId/functions/': {
+      id: '/projects/$projectId/functions/'
+      path: '/functions'
+      fullPath: '/projects/$projectId/functions'
+      preLoaderRoute: typeof ProjectsProjectIdFunctionsIndexImport
       parentRoute: typeof ProjectsProjectIdImport
     }
     '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': {
@@ -136,11 +136,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId/llmFns/$functionName/versions/$versionId': {
-      id: '/projects/$projectId/llmFns/$functionName/versions/$versionId'
-      path: '/llmFns/$functionName/versions/$versionId'
-      fullPath: '/projects/$projectId/llmFns/$functionName/versions/$versionId'
-      preLoaderRoute: typeof ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdImport
+    '/projects/$projectId/functions/$functionName/versions/$versionId': {
+      id: '/projects/$projectId/functions/$functionName/versions/$versionId'
+      path: '/functions/$functionName/versions/$versionId'
+      fullPath: '/projects/$projectId/functions/$functionName/versions/$versionId'
+      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport
       parentRoute: typeof ProjectsProjectIdImport
     }
   }
@@ -150,15 +150,15 @@ declare module '@tanstack/react-router' {
 
 interface ProjectsProjectIdRouteChildren {
   ProjectsProjectIdTracesRoute: typeof ProjectsProjectIdTracesRoute
-  ProjectsProjectIdLlmFnsIndexRoute: typeof ProjectsProjectIdLlmFnsIndexRoute
-  ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute: typeof ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute
+  ProjectsProjectIdFunctionsIndexRoute: typeof ProjectsProjectIdFunctionsIndexRoute
+  ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute: typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
 }
 
 const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
   ProjectsProjectIdTracesRoute: ProjectsProjectIdTracesRoute,
-  ProjectsProjectIdLlmFnsIndexRoute: ProjectsProjectIdLlmFnsIndexRoute,
-  ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute:
-    ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute,
+  ProjectsProjectIdFunctionsIndexRoute: ProjectsProjectIdFunctionsIndexRoute,
+  ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute:
+    ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute,
 }
 
 const ProjectsProjectIdRouteWithChildren =
@@ -171,9 +171,9 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
   '/projects/llm_fns': typeof ProjectsLlmfnsIndexRoute
-  '/projects/$projectId/llmFns': typeof ProjectsProjectIdLlmFnsIndexRoute
+  '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
-  '/projects/$projectId/llmFns/$functionName/versions/$versionId': typeof ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -183,9 +183,9 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
   '/projects/llm_fns': typeof ProjectsLlmfnsIndexRoute
-  '/projects/$projectId/llmFns': typeof ProjectsProjectIdLlmFnsIndexRoute
+  '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
-  '/projects/$projectId/llmFns/$functionName/versions/$versionId': typeof ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
 }
 
 export interface FileRoutesById {
@@ -196,9 +196,9 @@ export interface FileRoutesById {
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
   '/projects/llm_fns/': typeof ProjectsLlmfnsIndexRoute
-  '/projects/$projectId/llmFns/': typeof ProjectsProjectIdLlmFnsIndexRoute
+  '/projects/$projectId/functions/': typeof ProjectsProjectIdFunctionsIndexRoute
   '/projects/$projectId/llm-fns/$llmFunctionId/fn-params': typeof ProjectsProjectIdLlmFnsLlmFunctionIdFnParamsRoute
-  '/projects/$projectId/llmFns/$functionName/versions/$versionId': typeof ProjectsProjectIdLlmFnsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
 }
 
 export interface FileRouteTypes {
@@ -210,9 +210,9 @@ export interface FileRouteTypes {
     | '/projects'
     | '/projects/$projectId/traces'
     | '/projects/llm_fns'
-    | '/projects/$projectId/llmFns'
+    | '/projects/$projectId/functions'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
-    | '/projects/$projectId/llmFns/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/versions/$versionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,9 +221,9 @@ export interface FileRouteTypes {
     | '/projects'
     | '/projects/$projectId/traces'
     | '/projects/llm_fns'
-    | '/projects/$projectId/llmFns'
+    | '/projects/$projectId/functions'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
-    | '/projects/$projectId/llmFns/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/versions/$versionId'
   id:
     | '__root__'
     | '/'
@@ -232,9 +232,9 @@ export interface FileRouteTypes {
     | '/projects/'
     | '/projects/$projectId/traces'
     | '/projects/llm_fns/'
-    | '/projects/$projectId/llmFns/'
+    | '/projects/$projectId/functions/'
     | '/projects/$projectId/llm-fns/$llmFunctionId/fn-params'
-    | '/projects/$projectId/llmFns/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/versions/$versionId'
   fileRoutesById: FileRoutesById
 }
 
@@ -287,8 +287,8 @@ export const routeTree = rootRoute
       "filePath": "projects.$projectId.tsx",
       "children": [
         "/projects/$projectId/traces",
-        "/projects/$projectId/llmFns/",
-        "/projects/$projectId/llmFns/$functionName/versions/$versionId"
+        "/projects/$projectId/functions/",
+        "/projects/$projectId/functions/$functionName/versions/$versionId"
       ]
     },
     "/projects/": {
@@ -301,15 +301,15 @@ export const routeTree = rootRoute
     "/projects/llm_fns/": {
       "filePath": "projects_/llm_fns/index.tsx"
     },
-    "/projects/$projectId/llmFns/": {
-      "filePath": "projects.$projectId.llmFns.index.tsx",
+    "/projects/$projectId/functions/": {
+      "filePath": "projects.$projectId.functions.index.tsx",
       "parent": "/projects/$projectId"
     },
     "/projects/$projectId/llm-fns/$llmFunctionId/fn-params": {
       "filePath": "projects_/$projectId.llm-fns_.$llmFunctionId.fn-params.tsx"
     },
-    "/projects/$projectId/llmFns/$functionName/versions/$versionId": {
-      "filePath": "projects.$projectId.llmFns.$functionName.versions.$versionId.tsx",
+    "/projects/$projectId/functions/$functionName/versions/$versionId": {
+      "filePath": "projects.$projectId.functions.$functionName.versions.$versionId.tsx",
       "parent": "/projects/$projectId"
     }
   }

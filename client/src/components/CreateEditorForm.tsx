@@ -1,14 +1,14 @@
 import { Editor } from "@/components/Editor";
 
-import { ForwardedRef, forwardRef, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SubmitHandler, useFieldArray } from "react-hook-form";
-import { CallArgsCreate } from "@/types/types";
 import { Label } from "@/components/ui/label";
 import { LexicalEditor } from "lexical";
 import {
   BaseEditorFormFields,
   EditorFormValues,
+  formValuesToApi,
   useBaseEditorForm,
 } from "@/utils/editor-form-utils";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,15 @@ import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useNavigate } from "@tanstack/react-router";
+import { useCreateVersion } from "@/utils/versions";
+import {
+  FunctionCreate,
+  PromptCreate,
+  Provider,
+  OpenAICallParams,
+  AnthropicCallParams,
+  GeminiCallParams,
+} from "@/types/types";
 
 interface CreateEditorFormProps {
   projectId: number;
@@ -45,15 +54,17 @@ type CreateEditorFormValues = EditorFormValues & {
 };
 export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
   const navigate = useNavigate();
+  const createVersionMutation = useCreateVersion();
   const methods = useBaseEditorForm<CreateEditorFormValues>({});
   const { fields, append, remove } = useFieldArray<CreateEditorFormValues>({
     control: methods.control,
     name: "inputs",
   });
+  const inputs: Record<string, string>[] = methods.watch("inputs") || [];
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
   const onSubmit: SubmitHandler<CreateEditorFormValues> = (
-    data: EditorFormValues,
+    data: CreateEditorFormValues,
     event
   ) => {
     event?.preventDefault();
@@ -69,13 +80,58 @@ export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
       return;
     }
     const editorState = editorRef.current.getEditorState();
-    editorState.read(() => {
+    editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      data.prompt_template = markdown;
-      // TODO: Mutate and navigate
-      navigate({
-        to: `/projects/${projectId}/llmFns/recommend_book/versions/1`,
-      });
+      data.template = markdown;
+      const functionCreate: FunctionCreate = {
+        name: data.promptName,
+        arg_types: inputs.reduce(
+          (acc, input) => {
+            acc[input.key] = "str";
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
+        hash: null,
+        code: null,
+      };
+      let callParams:
+        | OpenAICallParams
+        | AnthropicCallParams
+        | GeminiCallParams
+        | null = null;
+      if (
+        data.provider == Provider.OPENAI ||
+        data.provider == Provider.OPENROUTER
+      ) {
+        callParams = data.openaiCallParams as OpenAICallParams;
+      } else if (data.provider == Provider.ANTHROPIC) {
+        callParams = data.anthropicCallParams as AnthropicCallParams;
+      } else if (data.provider == Provider.GEMINI) {
+        callParams = data.geminiCallParams as GeminiCallParams;
+      }
+      callParams = formValuesToApi(callParams);
+      const promptCreate: PromptCreate = {
+        template: data.template,
+        provider: data.provider,
+        model: data.model,
+        call_params: callParams,
+      };
+
+      try {
+        const newVersion = await createVersionMutation.mutateAsync({
+          projectId,
+          versionCreate: {
+            function_create: functionCreate,
+            prompt_create: promptCreate,
+          },
+        });
+        navigate({
+          to: `/projects/${projectId}/functions/${newVersion.function_name}/versions/${newVersion.id}`,
+        });
+      } catch (error) {
+        console.error(error);
+      }
     });
   };
   return (
@@ -103,7 +159,11 @@ export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
           <div className='flex gap-4'>
             <div className='lexical form-group space-y-2'>
               <Label htmlFor='prompt-template'>Prompt Template</Label>
-              <Editor inputs={[]} ref={editorRef} promptTemplate={""} />
+              <Editor
+                inputs={inputs.map((input) => input.key)}
+                ref={editorRef}
+                promptTemplate={""}
+              />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
                   <div key={i} className='text-red-500 text-sm mt-1'>

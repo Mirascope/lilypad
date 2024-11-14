@@ -3,7 +3,7 @@ import { Editor } from "@/components/Editor";
 import { ForwardedRef, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FormProvider, SubmitHandler } from "react-hook-form";
-import { LLMFunctionPublic, VersionPublic } from "@/types/types";
+import { FunctionPublic, VersionPublic } from "@/types/types";
 import { Label } from "@/components/ui/label";
 import { LexicalEditor } from "lexical";
 import {
@@ -14,7 +14,7 @@ import {
 
 interface EditorFormProps {
   latestVersion?: VersionPublic | null;
-  llmFunction?: LLMFunctionPublic;
+  llmFunction?: FunctionPublic;
   onSubmit: SubmitHandler<EditorFormValues>;
   editorErrors: string[];
   formButtons?: React.ReactNode[];
@@ -47,8 +47,8 @@ export const EditorForm = forwardRef(
                   ref={ref}
                   promptTemplate={
                     (latestVersion &&
-                      latestVersion.fn_params &&
-                      latestVersion.fn_params.prompt_template) ||
+                      latestVersion.prompt &&
+                      latestVersion.prompt.template) ||
                     ""
                   }
                 />

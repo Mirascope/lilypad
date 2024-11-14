@@ -17,36 +17,50 @@ import {
 } from "@/components/ui/tooltip";
 import { VersionPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
-import { versionsByFunctionNameQueryOptions } from "@/utils/versions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useEffect } from "react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormState,
+  useWatch,
+} from "react-hook-form";
 
 type LLMFunctionForm = {
   functionName: string;
-  version: VersionPublic;
+  version: VersionPublic | null;
 };
 
 type LLMFunctionProps = {
   projectId: number;
-  defaultVersion?: VersionPublic;
+  versions: VersionPublic[];
   defaultFunctionName?: string;
+  versionId?: number;
 };
 
 export const LLMFunction = ({
   projectId,
-  defaultVersion,
+  versions,
   defaultFunctionName,
+  versionId,
 }: LLMFunctionProps) => {
   const navigate = useNavigate();
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectId));
+  console.log(versions);
+  const defaultVersion = versionId
+    ? versions.find((v) => v.id == versionId)
+    : null;
   const method = useForm<LLMFunctionForm>({
     defaultValues: {
       functionName: defaultFunctionName,
       version: defaultVersion,
     },
+  });
+  const { dirtyFields } = useFormState({
+    control: method.control,
   });
   const functionName = useWatch({
     control: method.control,
@@ -56,19 +70,15 @@ export const LLMFunction = ({
     control: method.control,
     name: "version",
   });
-
   useEffect(() => {
-    method.resetField("version", undefined);
-  }, [functionName]);
-
-  const { data: versions } = useSuspenseQuery(
-    versionsByFunctionNameQueryOptions(Number(projectId), functionName)
-  );
+    if (dirtyFields.functionName) {
+      method.resetField("version", undefined);
+    }
+  }, [functionName, dirtyFields]);
 
   const uniqueFunctionNames = Array.from(
-    new Set(project?.llm_fns?.map((fn) => fn.function_name) ?? [])
+    new Set(project?.functions?.map((fn) => fn.name) ?? [])
   );
-
   if (functionName && !versions) return <div>No versions found</div>;
   return (
     <div className='w-full'>
@@ -79,7 +89,7 @@ export const LLMFunction = ({
               <Button
                 size='icon'
                 onClick={() =>
-                  navigate({ to: `/projects/${projectId}/llmFns` })
+                  navigate({ to: `/projects/${projectId}/functions` })
                 }
               >
                 <Plus />

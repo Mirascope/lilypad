@@ -30,7 +30,7 @@ class ResponseFormat(BaseModel):
     type: Literal["text", "json_object", "json_schema"]
 
 
-class GeminiCallArgsCreate(BaseModel):
+class GeminiCallParams(BaseModel):
     """Gemini GenerationConfig call args model.
     https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
     """
@@ -46,19 +46,21 @@ class GeminiCallArgsCreate(BaseModel):
     stop_sequences: list[str] | None = None
 
 
-class OpenAICallArgsCreate(BaseModel):
-    """OpenAI call args model."""
+class OpenAICallParams(BaseModel):
+    """OpenAI call args model.
+    https://platform.openai.com/docs/api-reference/chat/create
+    """
 
     max_tokens: int
     temperature: float
     top_p: float
-    frequency_penalty: float
-    presence_penalty: float
+    frequency_penalty: float | None = None
+    presence_penalty: float | None = None
     response_format: ResponseFormat
     stop: str | list[str] | None = None
 
 
-class AnthropicCallArgsCreate(BaseModel):
+class AnthropicCallParams(BaseModel):
     """Anthropic call args model."""
 
     max_tokens: int
@@ -71,7 +73,8 @@ class AnthropicCallArgsCreate(BaseModel):
 class _PromptBase(BaseSQLModel):
     """Base Prompt Model."""
 
-    hash: str
+    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    hash: str | None = Field(default=None, index=True, unique=True)
     template: str
     provider: Provider
     model: str
@@ -81,17 +84,13 @@ class PromptPublic(_PromptBase):
     """Prompt public model."""
 
     id: int
-    call_params: (
-        OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | None
-    ) = None
+    call_params: OpenAICallParams | AnthropicCallParams | GeminiCallParams | None = None
 
 
 class PromptCreate(_PromptBase):
     """Prompt create model."""
 
-    call_params: (
-        OpenAICallArgsCreate | AnthropicCallArgsCreate | GeminiCallArgsCreate | None
-    ) = None
+    call_params: OpenAICallParams | AnthropicCallParams | GeminiCallParams | None = None
 
 
 class PromptTable(_PromptBase, table=True):
@@ -101,6 +100,5 @@ class PromptTable(_PromptBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
-    project_id: int = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
     project: "ProjectTable" = Relationship(back_populates="prompts")
     version: "VersionTable" = Relationship(back_populates="prompt", cascade_delete=True)
