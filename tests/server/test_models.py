@@ -29,7 +29,7 @@ from lilypad.server.models import (
 
 
 @pytest.fixture
-def engine():
+def fixture_engine():
     """Create an in-memory database engine for testing."""
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -39,9 +39,9 @@ def engine():
 
 
 @pytest.fixture
-def session(engine):
+def session(fixture_engine):
     """Create a new database session for testing."""
-    with Session(engine) as session:
+    with Session(fixture_engine) as session:
         yield session
         session.rollback()
 
