@@ -71,7 +71,8 @@ class SpanPublic(_SpanBase):
         elif span.scope == Scope.LLM:
             data = span.data
             display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
-        else:
+        else: # pragma: no cover
+            # This should never happen. Because the scope is an Enum, it should always be one of the two values. And, SQLModel should enforce this.
             display_name = "Unknown"
         child_spans = [
             cls._convert_span_table_to_public(child_span)
