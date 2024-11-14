@@ -170,7 +170,7 @@ venv = ".venv"
 skip = [".git", "*.lock", "./client/pnpm-lock.yaml"]
 
 [tool.coverage.report]
-exclude_also = ["@overload", "@abstractmethod"]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
 
 [build-system]
 requires = ["hatchling"]
