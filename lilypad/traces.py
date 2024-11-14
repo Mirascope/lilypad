@@ -47,7 +47,6 @@ def _trace(
     arg_values: dict[str, Any],
     lexical_closure: str,
     prompt_template: str = "",
-    project_id: int | None = None,
     version_num: int | None = None,
 ) -> TraceDecorator:
     @overload
@@ -72,8 +71,10 @@ def _trace(
                     results = str(output)
                     if isinstance(output, BaseModel):
                         results = str(output.model_dump())
-                    attributes = {
-                        "lilypad.project_id": project_id if project_id else 0,
+                    attributes: dict[str, AttributeValue] = {
+                        "lilypad.project_id": lilypad_client.project_id
+                        if lilypad_client.project_id
+                        else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version_num": version_num if version_num else -1,
                         "lilypad.version_id": version_id,
@@ -101,7 +102,9 @@ def _trace(
                     if isinstance(output, BaseModel):
                         results = str(output.model_dump())
                     attributes: dict[str, AttributeValue] = {
-                        "lilypad.project_id": project_id if project_id else 0,
+                        "lilypad.project_id": lilypad_client.project_id
+                        if lilypad_client.project_id
+                        else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version_num": version_num if version_num else -1,
                         "lilypad.version_id": version_id,
