@@ -4,6 +4,7 @@ import ast
 import hashlib
 import inspect
 import sys
+import textwrap
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
@@ -184,7 +185,9 @@ class _DependencyCollector:
                 return
 
             # Get function source and create AST
-            source = inspect.getsource(func)
+            raw_source = inspect.getsource(func)
+            source = textwrap.dedent(raw_source)
+
             tree = ast.parse(source)
             visitor = _DependencyVisitor()
             visitor.visit(tree)
