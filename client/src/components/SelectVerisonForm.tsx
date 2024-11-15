@@ -16,11 +16,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Plus } from "lucide-react";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useEffect } from "react";
 import { VersionPublic } from "@/types/types";
-
+import { IconDialog } from "@/components/IconDialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 type FunctionFormValues = {
+  newFunctionName: string;
   functionName: string;
   version: VersionPublic | null;
 };
@@ -36,6 +52,7 @@ export const SelectVersionForm = () => {
   const navigate = useNavigate();
   const method = useForm<FunctionFormValues>({
     defaultValues: {
+      newFunctionName: defaultFunctionName,
       functionName: defaultFunctionName,
       version: null,
     },
@@ -45,8 +62,12 @@ export const SelectVersionForm = () => {
     name: "functionName",
   });
 
+  const newFunctionName = useWatch({
+    control: method.control,
+    name: "newFunctionName",
+  });
   useEffect(() => {
-    const subscription = method.watch((value, { name, type }) => {
+    const subscription = method.watch((value, { name }) => {
       if (name === "functionName") {
         method.setValue("version", null);
         navigate({
@@ -54,7 +75,7 @@ export const SelectVersionForm = () => {
         });
       } else if (name === "version" && value.version) {
         navigate({
-          to: `/projects/${projectId}/functions/${functionName}/versions/${value.version.id}`,
+          to: `/projects/${projectId}/functions/${value.version.function_name}/versions/${value.version.id}`,
         });
       }
     });
@@ -68,29 +89,50 @@ export const SelectVersionForm = () => {
   const { data: uniqueFunctionNames } = useSuspenseQuery(
     uniqueFunctionNamesQueryOptions(Number(projectId))
   );
+  const uniqueFunctionNamesWithNew = [...uniqueFunctionNames];
+  if (newFunctionName && !uniqueFunctionNames.includes(newFunctionName)) {
+    uniqueFunctionNamesWithNew.push(newFunctionName);
+  }
   useEffect(() => {
     const version = versions?.find((v) => v.id === Number(versionId));
     if (!version) return;
     method.setValue("version", version);
   }, [versions, versionId]);
+  const handleCancelClick = () => {
+    method.setValue("newFunctionName", "");
+  };
+  const handleSaveClick = () => {
+    method.setValue("functionName", newFunctionName);
+  };
+  console.log(versions);
+  const buttons = [
+    <Button onClick={handleSaveClick}>Save</Button>,
+    <Button onClick={handleCancelClick}>Cancel</Button>,
+  ];
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      method.setValue("newFunctionName", "");
+    }
+  };
   return (
-    <FormProvider {...method}>
+    <Form {...method}>
       <div className='flex gap-2'>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size='icon'
-              onClick={() =>
-                navigate({ to: `/projects/${projectId}/functions` })
-              }
-            >
-              <Plus />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className='bg-slate-500'>
-            <p>Create a new function</p>
-          </TooltipContent>
-        </Tooltip>
+        <IconDialog
+          onOpenChange={handleOpenChange}
+          icon={<Plus />}
+          title='Add a new function'
+          description='Start by naming your function'
+          buttonProps={{ variant: "default" }}
+          tooltipContent='Create a new function'
+          tooltipProps={{
+            className: "bg-slate-500",
+            side: "top",
+            sideOffset: 10,
+          }}
+          dialogButtons={buttons}
+        >
+          <NewFunctionDialog />
+        </IconDialog>
         <Controller
           control={method.control}
           name='functionName'
@@ -100,7 +142,7 @@ export const SelectVersionForm = () => {
                 <SelectValue placeholder='Select a function' />
               </SelectTrigger>
               <SelectContent>
-                {uniqueFunctionNames.map((name) => (
+                {uniqueFunctionNamesWithNew.map((name) => (
                   <SelectItem key={name} value={name}>
                     {name}
                   </SelectItem>
@@ -109,29 +151,63 @@ export const SelectVersionForm = () => {
             </Select>
           )}
         />
-        <Controller
-          control={method.control}
-          name='version'
-          render={({ field }) => (
-            <Select
-              value={JSON.stringify(field.value)}
-              onValueChange={(value) => field.onChange(JSON.parse(value))}
-              disabled={!functionName || !versions}
-            >
-              <SelectTrigger className='w-[100px]'>
-                <SelectValue placeholder='version' />
-              </SelectTrigger>
-              <SelectContent>
-                {versions?.map((version, i) => (
-                  <SelectItem key={version.id} value={JSON.stringify(version)}>
-                    v{i + 1}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        {versions && versions.length > 0 ? (
+          <Controller
+            control={method.control}
+            name='version'
+            render={({ field }) => (
+              <Select
+                value={JSON.stringify(field.value)}
+                onValueChange={(value) => field.onChange(JSON.parse(value))}
+                disabled={!functionName || !versions}
+              >
+                <SelectTrigger className='w-[100px]'>
+                  <SelectValue placeholder='version' />
+                </SelectTrigger>
+                <SelectContent>
+                  {versions.map((version, i) => (
+                    <SelectItem
+                      key={version.id}
+                      value={JSON.stringify(version)}
+                    >
+                      v{i + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        ) : null}
       </div>
-    </FormProvider>
+    </Form>
+  );
+};
+
+const NewFunctionDialog = () => {
+  const methods = useFormContext<FunctionFormValues>();
+  return (
+    <>
+      <FormField
+        control={methods.control}
+        name='newFunctionName'
+        rules={{
+          required: "Function Name is required",
+        }}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Function Name</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder='Enter function name'
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
   );
 };

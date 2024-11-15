@@ -466,6 +466,7 @@ const getDefaultValues = <T extends EditorFormValues>(
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
+      model: "gpt-4o",
       openaiCallParams: openaiCallParamsDefault,
       geminiCallParams: geminiCallParamsDefault,
       anthropicCallParams: anthropicCallParamsDefault,

@@ -71,7 +71,7 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: "Scope",
     },
     {
-      accessorKey: "version",
+      accessorKey: "version_num",
       header: "Version",
     },
     // {
@@ -125,9 +125,11 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
               {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
-                    const { project_id, version_id, id } = row.original;
+                    const { project_id, version_id, id, data } = row.original;
+                    const name = data?.name;
+                    if (!name) return;
                     navigate({
-                      to: `/projects/${project_id}/versions/${version_id}`,
+                      to: `/projects/${project_id}/functions/${name}/versions/${version_id}`,
                       search: {
                         spanId: id,
                       },

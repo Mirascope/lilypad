@@ -1,6 +1,7 @@
 """The `/spans` API router."""
 
 import json
+from collections.abc import Sequence
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,15 +9,15 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from lilypad.server._utils.spans import convert_openai_messages
-
 from ..._utils import (
     MessageParam,
     convert_anthropic_messages,
     convert_gemini_messages,
+    convert_openai_messages,
 )
 from ...db import get_session
 from ...models import Provider, Scope, SpanPublic, SpanTable
+from ...services import SpanService
 
 spans_router = APIRouter()
 
@@ -91,16 +92,26 @@ async def get_span(
     return SpanMoreDetails.from_span(span)
 
 
+@spans_router.get(
+    "/projects/{project_id}/versions/{version_id}/spans",
+    response_model=Sequence[SpanPublic],
+)
+async def get_span_by_version_id(
+    project_id: int,
+    version_id: int,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> Sequence[SpanTable]:
+    """Get span by id."""
+    return span_service.find_records_by_version_id(project_id, version_id)
+
+
 @spans_router.get("/projects/{project_id}/spans/{span_id}", response_model=SpanPublic)
-async def get_span_by_project_id(
+async def get_span_by_id(
     span_id: str,
-    session: Annotated[Session, Depends(get_session)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> SpanTable:
     """Get span by id."""
-    span = session.exec(select(SpanTable).where(SpanTable.id == span_id)).first()
-    if not span:
-        raise HTTPException(status_code=404, detail="Span not found")
-    return span
+    return span_service.find_record_by_id(span_id)
 
 
 __all__ = ["spans_router"]

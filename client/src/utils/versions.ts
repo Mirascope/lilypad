@@ -18,7 +18,8 @@ export const fetchVersionsByFunctionName = async (
   ).data;
 };
 
-export const fetchVersion = async (projectId: number, versionId: number) => {
+export const fetchVersion = async (projectId: number, versionId?: number) => {
+  if (!versionId) return null;
   return (
     await api.get<VersionPublic>(`/projects/${projectId}/versions/${versionId}`)
   ).data;
@@ -47,6 +48,19 @@ export const patchVersion = async (
   ).data;
 };
 
+export const runVersion = async (
+  projectId: number,
+  versionId: number,
+  values: Record<string, string>
+): Promise<string> => {
+  return (
+    await api.post<Record<string, string>, AxiosResponse<string>>(
+      `projects/${projectId}/versions/${versionId}/run`,
+      values
+    )
+  ).data;
+};
+
 export const versionsByFunctionNameQueryOptions = (
   projectId: number,
   functionName: string
@@ -57,10 +71,15 @@ export const versionsByFunctionNameQueryOptions = (
     enabled: !!functionName,
   });
 
-export const versionQueryOptions = (projectId: number, versionId: number) =>
+export const versionQueryOptions = (
+  projectId: number,
+  versionId?: number,
+  options = {}
+) =>
   queryOptions({
     queryKey: ["projects", projectId, "versions", versionId],
     queryFn: () => fetchVersion(projectId, versionId),
+    ...options,
   });
 
 export const usePatchActiveVersion = () => {
@@ -104,5 +123,19 @@ export const useCreateVersion = () => {
         ],
       });
     },
+  });
+};
+
+export const useRunMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      versionId,
+      values,
+    }: {
+      projectId: number;
+      versionId: number;
+      values: Record<string, string>;
+    }) => await runVersion(projectId, versionId, values),
   });
 };

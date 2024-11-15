@@ -95,28 +95,19 @@ async def create_new_version(
     """Create a new function version with a prompt."""
     function_create = function_and_prompt_version_create.function_create
     prompt_create = function_and_prompt_version_create.prompt_create
-    function_hash = function_create.hash
     prompt_template_hash = hashlib.sha256(
         prompt_create.template.encode("utf-8")
     ).hexdigest()
-    if not function_create.id:
-        code = construct_function(function_create.arg_types or {}, function_create.name)
-        function_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
-        function_create = function_create.model_copy(
-            update={"project_id": project_id, "hash": function_hash, "code": code}
-        )
+    code = construct_function(function_create.arg_types or {}, function_create.name)
+    function_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
+    function_create = function_create.model_copy(
+        update={"project_id": project_id, "hash": function_hash, "code": code}
+    )
+    try:
+        function = function_service.find_record_by_hash(function_hash)
+    except HTTPException:
         function = function_service.create_record(function_create)
-    else:
-        function = (
-            function_service.find_record_by_hash(function_hash)
-            if function_hash
-            else None
-        )
 
-    if not function:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No function found"
-        )
     prompt_create = prompt_create.model_copy(
         update={"project_id": project_id, "hash": prompt_template_hash}
     )
@@ -214,12 +205,12 @@ def run_version(
     )
     function = version.function
     arg_types = function.arg_types or {}
-
-    func_def = construct_function(arg_types, function.name)
-    namespace: dict[str, Any] = {"lilypad": lilypad}
+    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
+    func_def = f"def {function.name}({', '.join(arg_list)}) -> str: ..."
+    namespace: dict[str, Any] = {}
     exec(func_def, namespace)
     fn: Callable[..., str] = namespace[function.name]
-
+    lilypad.configure()
     if not version.prompt:
         return trace()(fn)(**arg_values)
 
