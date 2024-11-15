@@ -246,7 +246,7 @@ def test_inspect_arguments_kwargs():
 
     def test_func(**kwargs: dict[str, Any]): ...
 
-    arg_types, arg_values = inspect_arguments(test_func, test=123)    # pyright: ignore [reportArgumentType]
+    arg_types, arg_values = inspect_arguments(test_func, test=123)  # pyright: ignore [reportArgumentType]
     assert arg_types == {"kwargs": "dict[str, Any]"}
     assert arg_values == {"kwargs": {"test": 123}}
 
@@ -276,30 +276,32 @@ class TestResponseModel(BaseModel):
 
     message: str
 
+
 class CustomMessage(Message):
     """Custom message class for testing"""
 
-async def async_test_fn(text: str) -> TestResponseModel:   # pyright: ignore [reportReturnType]
+
+async def async_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
     """Mock async_test_fn function for testing."""
 
 
-def sync_test_fn(text: str) -> TestResponseModel:   # pyright: ignore [reportReturnType]
+def sync_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
     """Mock sync_test_fn function for testing."""
 
 
-async def async_stream_test_fn(text: str) -> AsyncIterable[str]:    # pyright: ignore [reportReturnType]
+async def async_stream_test_fn(text: str) -> AsyncIterable[str]:  # pyright: ignore [reportReturnType]
     """Mock async_stream_test_fn function for testing."""
 
 
-def sync_stream_test_fn(text: str) -> Iterable[str]:    # pyright: ignore [reportReturnType]
+def sync_stream_test_fn(text: str) -> Iterable[str]:  # pyright: ignore [reportReturnType]
     """Mock sync_stream_test_fn function for testing."""
 
 
-async def async_message_test_fn(text: str) -> Message[FormatBook]:   # pyright: ignore [reportReturnType]
+async def async_message_test_fn(text: str) -> Message[FormatBook]:  # pyright: ignore [reportReturnType]
     """Mock sync_stream_test_fn function for testing."""
 
 
-def sync_message_test_fn(text: str) -> Message[FormatBook]:   # pyright: ignore [reportReturnType]
+def sync_message_test_fn(text: str) -> Message[FormatBook]:  # pyright: ignore [reportReturnType]
     """Mock sync_stream_test_fn function for testing."""
 
 
@@ -361,10 +363,12 @@ async def test_create_mirascope_call_async_str(mock_prompt):
 async def test_create_mirascope_call_async_stream(mock_prompt):
     """Test async function with streaming."""
     mock_chunk = Mock(content="chunk")
+
     async def mock_provider_call(*args, **kwargs):
         async def inner_mock_chunk():
             for chunk in [(mock_chunk, None)]:
                 yield chunk
+
         return inner_mock_chunk()
 
     mock_module = Mock()
@@ -432,10 +436,11 @@ def test_create_mirascope_call_sync_str(mock_prompt):
 def test_create_mirascope_call_sync_stream(mock_prompt):
     """Test sync function with streaming."""
     mock_chunk = Mock(content="chunk")
+
     def mock_provider_call(*args, **kwargs):
         def inner_mock_chunk():
-            for chunk in [(mock_chunk, None)]:
-                yield chunk
+            yield from [(mock_chunk, None)]
+
         return inner_mock_chunk()
 
     mock_module = Mock()
@@ -733,11 +738,14 @@ async def test_create_mirascope_call_async_iterable_str():
     async def fn(text: str) -> AsyncIterable[str]: ...
 
     mock_chunk = Mock(content="chunk")
+
     async def mock_provider_call(*args, **kwargs):
         async def inner_mock_chunk():
             for chunk in [(mock_chunk, None)]:
                 yield chunk
+
         return inner_mock_chunk()
+
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
@@ -755,11 +763,13 @@ def test_create_mirascope_call_sync_iterable_str():
     def fn(text: str) -> Iterable[str]: ...
 
     mock_chunk = Mock(content="chunk")
+
     def mock_provider_call(*args, **kwargs):
         def inner_mock_chunk():
-            for chunk in [(mock_chunk, None)]:
-                yield chunk
+            yield from [(mock_chunk, None)]
+
         return inner_mock_chunk()
+
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
@@ -801,11 +811,14 @@ async def test_create_mirascope_call_message_with_tool_args(mock_chat_completion
         response = await result("test")
         assert isinstance(response, Message)
 
+
 @pytest.mark.asyncio
-async def test_create_mirascope_call_custom_message_with_tool_args(mock_chat_completion):
+async def test_create_mirascope_call_custom_message_with_tool_args(
+    mock_chat_completion,
+):
     """Test function returning Message with tool arguments."""
 
-    async def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...
+    async def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...  # pyright: ignore [reportInvalidTypeArguments]
 
     mock_response = MockResponse(
         metadata={},
@@ -835,7 +848,7 @@ async def test_create_mirascope_call_custom_message_with_tool_args(mock_chat_com
 def test_create_mirascope_sync_call_custom_message_with_tool_args(mock_chat_completion):
     """Test function returning Message with tool arguments."""
 
-    def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...
+    def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...  # pyright: ignore [reportInvalidTypeArguments]
 
     mock_response = MockResponse(
         metadata={},
@@ -935,7 +948,6 @@ def test_create_mirascope_call_sync_gemini_no_call_params():
         assert response == "test"
 
 
-
 # Test for sync Message with tools but no response model
 def test_create_mirascope_call_sync_message_with_tools_no_response_model():
     """Test sync function returning Message with tools but no response model."""
@@ -965,7 +977,6 @@ def test_create_mirascope_call_sync_message_with_tools_no_response_model():
         end_time=0,
     )
 
-
     mock_provider_call = Mock(return_value=mock_response)
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
@@ -975,17 +986,22 @@ def test_create_mirascope_call_sync_message_with_tools_no_response_model():
         response = result("test")
         assert isinstance(response, Message)
 
-@pytest.mark.parametrize("is_async,provider", [
-    (False, Provider.GEMINI),
-    (True, Provider.GEMINI),
-    (False, Provider.OPENAI),
-    (True, Provider.OPENAI),
-])
+
+@pytest.mark.parametrize(
+    "is_async,provider",
+    [
+        (False, Provider.GEMINI),
+        (True, Provider.GEMINI),
+        (False, Provider.OPENAI),
+        (True, Provider.OPENAI),
+    ],
+)
 @pytest.mark.asyncio
 async def test_create_mirascope_call_with_call_params(is_async, provider):
     """Test sync/async function with provider and call params."""
     if is_async:
-        async def fn(text: str) -> str:
+
+        async def fn(text: str) -> str:  # pyright: ignore [reportRedeclaration]
             ...
 
         # Setup mock response
@@ -997,12 +1013,14 @@ async def test_create_mirascope_call_with_call_params(is_async, provider):
             async def wrapper(*args, **kwargs):
                 await func(*args, **kwargs)
                 return mock_response
+
             return wrapper
+
         mock_call = Mock()
         mock_call.return_value = mock_decorator
     else:
-        def fn(text: str) -> str:
-            ...
+
+        def fn(text: str) -> str: ...
 
         # Setup mock response
         mock_response = Mock()
@@ -1014,7 +1032,9 @@ async def test_create_mirascope_call_with_call_params(is_async, provider):
             def wrapper(*args, **kwargs):
                 func(*args, **kwargs)
                 return mock_response
+
             return wrapper
+
         mock_call = Mock(return_value=mock_decorator)
 
     # Setup mock module
@@ -1029,25 +1049,26 @@ async def test_create_mirascope_call_with_call_params(is_async, provider):
     mock_prompt.call_params = Mock()
     mock_prompt.call_params.model_dump = Mock(return_value={"test": "config"})
 
-    fn._prompt_template = "test template"
-    fn.__mirascope_prompt_template__ = True
+    fn._prompt_template = "test template"  # pyright: ignore [reportFunctionMemberAccess]
+    fn.__mirascope_prompt_template__ = True  # pyright: ignore [reportFunctionMemberAccess]
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, None)
         if is_async:
-            response = await result("test")
+            response = await result("test")  # pyright: ignore [reportGeneralTypeIssues]
         else:
             response = result("test")
 
         assert response == "test"
         # Verify call chain setup
         mock_call.assert_called_once_with(
-            model="test_model",
-            json_mode=False,
-            client=None
+            model="test_model", json_mode=False, client=None
         )
         # Verify that model_dump was called
-        mock_prompt.call_params.model_dump.assert_called_once_with(exclude_defaults=True)
+        mock_prompt.call_params.model_dump.assert_called_once_with(
+            exclude_defaults=True
+        )
+
 
 # Test inspect_arguments with complex type annotations
 def test_inspect_arguments_with_complex_types():
@@ -1055,11 +1076,11 @@ def test_inspect_arguments_with_complex_types():
     from typing import Optional, Union
 
     def fn(
-            x: list[dict[str, Any]], # noqa: UP007
-            y: Optional[int], # noqa: UP007
-            z: Union[str, int, None], # noqa: UP007
-            *args: list[str], # noqa: UP007
-            **kwargs: dict[str, float]  # noqa: UP007
+        x: list[dict[str, Any]],  # noqa: UP007
+        y: Optional[int],  # noqa: UP007
+        z: Union[str, int, None],  # noqa: UP007
+        *args: list[str],  # noqa: UP007
+        **kwargs: dict[str, float],  # noqa: UP007
     ): ...
 
     x_val = [{"a": 1}]
@@ -1068,29 +1089,32 @@ def test_inspect_arguments_with_complex_types():
     args_val = (["test"],)
     kwargs_val = {"test": 1.0}
 
-    arg_types, arg_values = inspect_arguments(fn, x_val, y_val, z_val, *args_val, **kwargs_val)
+    arg_types, arg_values = inspect_arguments(
+        fn, x_val, y_val, z_val, *args_val, **kwargs_val
+    )  # pyright: ignore [reportArgumentType]
 
     assert arg_types == {
         "x": "list[dict[str, Any]]",
         "y": "Optional[int]",
         "z": "Union[str, int, None]",
         "args": "list[str]",
-        "kwargs": "dict[str, float]"
+        "kwargs": "dict[str, float]",
     }
     assert arg_values == {
         "x": x_val,
         "y": y_val,
         "z": z_val,
         "args": args_val,
-        "kwargs": kwargs_val
+        "kwargs": kwargs_val,
     }
+
 
 def test_inspect_arguments_with_new_union_syntax():
     """Test inspecting function with complex type annotations."""
 
     def fn(
-            y: int | None,
-            z: str | int | None,
+        y: int | None,
+        z: str | int | None,
     ): ...
 
     y_val = None
@@ -1098,10 +1122,7 @@ def test_inspect_arguments_with_new_union_syntax():
 
     arg_types, arg_values = inspect_arguments(fn, y_val, z_val)
 
-    assert arg_types == {
-        'y': 'int | None',
-        'z': 'str | int | None'
-    }
+    assert arg_types == {"y": "int | None", "z": "str | int | None"}
 
     assert arg_values == {
         "y": y_val,
