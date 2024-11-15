@@ -5,6 +5,12 @@ from abc import ABC
 from collections.abc import AsyncIterable, Iterable
 from typing import Any, Callable
 from unittest.mock import AsyncMock, Mock, patch
+import pytest
+from unittest.mock import AsyncMock, Mock, patch
+
+from lilypad._utils.functions import create_mirascope_call
+from lilypad.server.models import Provider
+
 
 import pytest
 from jiter import jiter  # pyright: ignore [reportAttributeAccessIssue]
@@ -276,10 +282,8 @@ class TestResponseModel(BaseModel):
 
     message: str
 
-
 class CustomMessage(Message):
     """Custom message class for testing"""
-
 
 async def async_test_fn(text: str) -> TestResponseModel:   # pyright: ignore [reportReturnType]
     """Mock async_test_fn function for testing."""
@@ -297,11 +301,11 @@ def sync_stream_test_fn(text: str) -> Iterable[str]:    # pyright: ignore [repor
     """Mock sync_stream_test_fn function for testing."""
 
 
-async def async_message_test_fn(text: str) -> Message[CustomMessage]:   # pyright: ignore [reportReturnType]
+async def async_message_test_fn(text: str) -> Message[FormatBook]:   # pyright: ignore [reportReturnType]
     """Mock sync_stream_test_fn function for testing."""
 
 
-def sync_message_test_fn(text: str) -> Message[CustomMessage]:   # pyright: ignore [reportReturnType]
+def sync_message_test_fn(text: str) -> Message[FormatBook]:   # pyright: ignore [reportReturnType]
     """Mock sync_stream_test_fn function for testing."""
 
 
@@ -362,9 +366,13 @@ async def test_create_mirascope_call_async_str(mock_prompt):
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_stream(mock_prompt):
     """Test async function with streaming."""
-    mock_provider_call = AsyncMock()
     mock_chunk = Mock(content="chunk")
-    mock_provider_call.__aiter__ = [(mock_chunk, None)]
+    async def mock_provider_call(*args, **kwargs):
+        async def inner_mock_chunk():
+            for chunk in [(mock_chunk, None)]:
+                yield chunk
+        return inner_mock_chunk()
+
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
@@ -430,7 +438,12 @@ def test_create_mirascope_call_sync_str(mock_prompt):
 def test_create_mirascope_call_sync_stream(mock_prompt):
     """Test sync function with streaming."""
     mock_chunk = Mock(content="chunk")
-    mock_provider_call = Mock(return_value=[(mock_chunk, None)])
+    def mock_provider_call(*args, **kwargs):
+        def inner_mock_chunk():
+            for chunk in [(mock_chunk, None)]:
+                yield chunk
+        return inner_mock_chunk()
+
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
@@ -726,11 +739,13 @@ async def test_create_mirascope_call_async_iterable_str():
     async def fn(text: str) -> AsyncIterable[str]: ...
 
     mock_chunk = Mock(content="chunk")
-    mock_response = AsyncMock()
-    mock_response.__aiter__ = AsyncMock(return_value=[(mock_chunk, None)])
-    mock_provider_call = Mock(return_value=mock_response)
+    async def mock_provider_call(*args, **kwargs):
+        async def inner_mock_chunk():
+            for chunk in [(mock_chunk, None)]:
+                yield chunk
+        return inner_mock_chunk()
     mock_module = Mock()
-    mock_module.call = Mock(return_value=mock_provider_call)
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     mock_prompt = create_mock_prompt()
 
@@ -746,7 +761,11 @@ def test_create_mirascope_call_sync_iterable_str():
     def fn(text: str) -> Iterable[str]: ...
 
     mock_chunk = Mock(content="chunk")
-    mock_provider_call = Mock(return_value=[(mock_chunk, None)])
+    def mock_provider_call(*args, **kwargs):
+        def inner_mock_chunk():
+            for chunk in [(mock_chunk, None)]:
+                yield chunk
+        return inner_mock_chunk()
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
@@ -788,14 +807,65 @@ async def test_create_mirascope_call_message_with_tool_args(mock_chat_completion
         response = await result("test")
         assert isinstance(response, Message)
 
+@pytest.mark.asyncio
+async def test_create_mirascope_call_custom_message_with_tool_args(mock_chat_completion):
+    """Test function returning Message with tool arguments."""
 
-"""Additional test cases for lilypad._utils.functions module."""
+    async def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...
 
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
+    mock_response = MockResponse(
+        metadata={},
+        response=mock_chat_completion,
+        tool_types=[FormatBook, FormatAuthor],
+        prompt_template=None,
+        fn_args={},
+        dynamic_config=None,
+        messages=[],
+        call_params={},
+        call_kwargs={},
+        start_time=0,
+        end_time=0,
+    )
+    mock_provider_call = AsyncMock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
-from lilypad._utils.functions import create_mirascope_call
-from lilypad.server.models import Provider
+    mock_prompt = create_mock_prompt()
+
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
+        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        response = await result("test")
+        assert isinstance(response, Message)
+
+
+def test_create_mirascope_sync_call_custom_message_with_tool_args(mock_chat_completion):
+    """Test function returning Message with tool arguments."""
+
+    def fn(text: str) -> CustomMessage[FormatBook, FormatAuthor]: ...
+
+    mock_response = MockResponse(
+        metadata={},
+        response=mock_chat_completion,
+        tool_types=[FormatBook, FormatAuthor],
+        prompt_template=None,
+        fn_args={},
+        dynamic_config=None,
+        messages=[],
+        call_params={},
+        call_kwargs={},
+        start_time=0,
+        end_time=0,
+    )
+    mock_provider_call = Mock(return_value=mock_response)
+    mock_module = Mock()
+    mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
+
+    mock_prompt = create_mock_prompt()
+
+    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
+        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        response = result("test")
+        assert isinstance(response, Message)
 
 
 # Test for async invalid return type
@@ -832,7 +902,7 @@ async def test_create_mirascope_call_async_gemini_no_call_params():
     async def fn(text: str) -> str: ...
 
     mock_prompt = Mock()
-    mock_prompt.provider = Provider.GEMINI
+    mock_prompt.provider = Provider.OPENAI
     mock_prompt.template = "test template"
     mock_prompt.model = "test_model"
     mock_prompt.call_params = None
@@ -876,7 +946,7 @@ def test_create_mirascope_call_sync_gemini_no_call_params():
 def test_create_mirascope_call_sync_message_with_tools_no_response_model():
     """Test sync function returning Message with tools but no response model."""
 
-    def fn(text: str) -> Message[CustomMessage]: ...
+    def fn(text: str) -> Message: ...
 
     # Setup base mocks
     mock_prompt = Mock()
@@ -911,11 +981,15 @@ def test_create_mirascope_call_sync_message_with_tools_no_response_model():
         response = result("test")
         assert isinstance(response, Message)
 
-
-@pytest.mark.parametrize("is_async", [ False, True])
+@pytest.mark.parametrize("is_async,provider", [
+    (False, Provider.GEMINI),
+    (True, Provider.GEMINI),
+    (False, Provider.OPENAI),
+    (True, Provider.OPENAI),
+])
 @pytest.mark.asyncio
-async def test_create_mirascope_call_gemini_with_call_params(is_async):
-    """Test sync/async function with Gemini provider and call params."""
+async def test_create_mirascope_call_with_call_params(is_async, provider):
+    """Test sync/async function with provider and call params."""
     if is_async:
         async def fn(text: str) -> str:
             ...
@@ -955,7 +1029,7 @@ async def test_create_mirascope_call_gemini_with_call_params(is_async):
 
     # Set up prompt mock
     mock_prompt = Mock()
-    mock_prompt.provider = Provider.GEMINI
+    mock_prompt.provider = provider
     mock_prompt.template = "test template"
     mock_prompt.model = "test_model"
     mock_prompt.call_params = Mock()

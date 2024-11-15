@@ -150,7 +150,8 @@ def create_mirascope_call(
             if return_type is str:
                 traced_call = trace_decorator(call_decorator()(prompt_template_async))
                 return (await traced_call(*args, **kwargs)).content
-            elif get_origin(return_type) is AsyncIterable and get_args(return_type) == (
+            origin_return_type = get_origin(return_type)
+            if origin_return_type is AsyncIterable and get_args(return_type) == (
                 str,
             ):
                 traced_call = trace_decorator(
@@ -162,7 +163,7 @@ def create_mirascope_call(
                         yield chunk.content
 
                 return cast(_R, iterable())
-            elif get_origin(return_type) is Message:
+            elif origin_return_type is Message:
                 traced_call = trace_decorator(
                     call_decorator(tools=list(get_args(return_type)))(
                         prompt_template_async
@@ -170,7 +171,7 @@ def create_mirascope_call(
                 )
                 return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage] # pyright: ignore [reportAbstractUsage]
             elif (
-                get_origin(return_type) is Iterable
+                    origin_return_type is Iterable
                 and len(iter_args := get_args(return_type)) == 1
                 and issubclass((response_model := iter_args[0]), BaseModel)
             ):
@@ -180,7 +181,7 @@ def create_mirascope_call(
                     )
                 )
                 return cast(_R, await traced_call(*args, **kwargs))
-            elif inspect.isclass(return_type) and issubclass(return_type, Message):
+            elif inspect.isclass(origin_return_type) and issubclass(origin_return_type, Message):
                 traced_call = trace_decorator(call_decorator()(prompt_template_async))
                 return cast(_R, Message(await traced_call(*args, **kwargs)))
             elif mb._utils.is_base_type(return_type) or issubclass(
@@ -222,7 +223,8 @@ def create_mirascope_call(
             if return_type is str:
                 traced_call = trace_decorator(call_decorator()(prompt_template))
                 return traced_call(*args, **kwargs).content
-            elif get_origin(return_type) is Iterable and get_args(return_type) == (
+            origin_return_type = get_origin(return_type)
+            if origin_return_type is Iterable and get_args(return_type) == (
                 str,
             ):
                 traced_call = trace_decorator(
@@ -234,13 +236,13 @@ def create_mirascope_call(
                         yield chunk.content
 
                 return cast(_R, iterable())
-            elif get_origin(return_type) is Message:
+            elif origin_return_type is Message:
                 traced_call = trace_decorator(
                     call_decorator(tools=list(get_args(return_type)))(prompt_template)
                 )
                 return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
             elif (
-                get_origin(return_type) is Iterable
+                origin_return_type is Iterable
                 and len(iter_args := get_args(return_type)) == 1
                 and issubclass((response_model := iter_args[0]), BaseModel)
             ):
@@ -250,7 +252,8 @@ def create_mirascope_call(
                     )
                 )
                 return cast(_R, traced_call(*args, **kwargs))
-            elif inspect.isclass(return_type) and issubclass(return_type, Message):
+            elif (inspect.isclass(origin_return_type) and issubclass(origin_return_type, Message) or
+            inspect.isclass(return_type) and issubclass(return_type, Message)):
                 traced_call = trace_decorator(call_decorator()(prompt_template))
                 return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
             elif mb._utils.is_base_type(return_type) or issubclass(
