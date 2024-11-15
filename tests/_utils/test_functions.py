@@ -1090,8 +1090,8 @@ def test_inspect_arguments_with_complex_types():
     kwargs_val = {"test": 1.0}
 
     arg_types, arg_values = inspect_arguments(
-        fn, x_val, y_val, z_val, *args_val, **kwargs_val
-    )  # pyright: ignore [reportArgumentType]
+        fn, x_val, y_val, z_val, *args_val, **kwargs_val  # pyright: ignore [reportArgumentType]
+    )
 
     assert arg_types == {
         "x": "list[dict[str, Any]]",
