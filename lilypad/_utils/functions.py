@@ -5,10 +5,12 @@ import os
 from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
 from functools import partial, wraps
 from importlib import import_module
+from types import NoneType
 from typing import (
     Any,
     ParamSpec,
     TypeVar,
+    Union,
     cast,
     get_args,
     get_origin,
@@ -25,12 +27,23 @@ from ..server.models import PromptPublic, Provider
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
+MAP_STANDARD_TYPES = {
+    "List": "list",
+    "Dict": "dict",
+    "Set": "set",
+    "Tuple": "tuple",
+    "NoneType": "None"
+}
 
-def _get_type_str(type_: type) -> str:
+def _get_type_str(type_: type) -> str | None:
     """Returns the string representation of the type."""
     type_str = type_.__name__ if hasattr(type_, "__name__") else str(type_)
+    if type_str in MAP_STANDARD_TYPES:
+        type_str = MAP_STANDARD_TYPES[type_str]
+
+    is_optional = get_origin(type_) is Union and type_.__name__ == "Optional"
     if arg_types := get_args(type_):
-        return f"{type_str}[{', '.join([_get_type_str(arg) for arg in arg_types])}]"
+        return f"{type_str}[{', '.join([_get_type_str(arg) for arg in arg_types if not (is_optional and arg is NoneType)])}]"
     return type_str
 
 
@@ -155,10 +168,7 @@ def create_mirascope_call(
                         prompt_template_async
                     )
                 )
-                return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
-            elif inspect.isclass(return_type) and issubclass(return_type, Message):
-                traced_call = trace_decorator(call_decorator()(prompt_template_async))
-                return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
+                return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage] # pyright: ignore [reportAbstractUsage]
             elif (
                 get_origin(return_type) is Iterable
                 and len(iter_args := get_args(return_type)) == 1
@@ -170,6 +180,9 @@ def create_mirascope_call(
                     )
                 )
                 return cast(_R, await traced_call(*args, **kwargs))
+            elif inspect.isclass(return_type) and issubclass(return_type, Message):
+                traced_call = trace_decorator(call_decorator()(prompt_template_async))
+                return cast(_R, Message(await traced_call(*args, **kwargs)))
             elif mb._utils.is_base_type(return_type) or issubclass(
                 return_type, BaseModel
             ):
@@ -226,9 +239,6 @@ def create_mirascope_call(
                     call_decorator(tools=list(get_args(return_type)))(prompt_template)
                 )
                 return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
-            elif inspect.isclass(return_type) and issubclass(return_type, Message):
-                traced_call = trace_decorator(call_decorator()(prompt_template))
-                return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
             elif (
                 get_origin(return_type) is Iterable
                 and len(iter_args := get_args(return_type)) == 1
@@ -240,6 +250,9 @@ def create_mirascope_call(
                     )
                 )
                 return cast(_R, traced_call(*args, **kwargs))
+            elif inspect.isclass(return_type) and issubclass(return_type, Message):
+                traced_call = trace_decorator(call_decorator()(prompt_template))
+                return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
             elif mb._utils.is_base_type(return_type) or issubclass(
                 return_type, BaseModel
             ):
