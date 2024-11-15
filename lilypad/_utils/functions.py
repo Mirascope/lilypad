@@ -43,6 +43,9 @@ def _get_type_str(type_: type) -> str | None:
 
     is_optional = get_origin(type_) is Union and type_.__name__ == "Optional"
     if arg_types := get_args(type_):
+        if ' | ' in type_str:
+            # New style union type
+            return ' | '.join([_get_type_str(arg) for arg in arg_types if not (is_optional and arg is NoneType)])
         return f"{type_str}[{', '.join([_get_type_str(arg) for arg in arg_types if not (is_optional and arg is NoneType)])}]"
     return type_str
 

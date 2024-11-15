@@ -2,15 +2,9 @@
 
 import os
 from abc import ABC
-from collections.abc import AsyncIterable, Iterable
-from typing import Any, Callable
+from collections.abc import AsyncIterable, Callable, Iterable
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
-
-from lilypad._utils.functions import create_mirascope_call
-from lilypad.server.models import Provider
-
 
 import pytest
 from jiter import jiter  # pyright: ignore [reportAttributeAccessIssue]
@@ -1058,14 +1052,14 @@ async def test_create_mirascope_call_with_call_params(is_async, provider):
 # Test inspect_arguments with complex type annotations
 def test_inspect_arguments_with_complex_types():
     """Test inspecting function with complex type annotations."""
-    from typing import List, Dict, Optional, Union
+    from typing import Optional, Union
 
     def fn(
-            x: List[Dict[str, Any]],
-            y: Optional[int],
-            z: Union[str, int, None],
-            *args: List[str],
-            **kwargs: Dict[str, float]
+            x: list[dict[str, Any]], # noqa: UP007
+            y: Optional[int], # noqa: UP007
+            z: Union[str, int, None], # noqa: UP007
+            *args: list[str], # noqa: UP007
+            **kwargs: dict[str, float]  # noqa: UP007
     ): ...
 
     x_val = [{"a": 1}]
@@ -1089,4 +1083,27 @@ def test_inspect_arguments_with_complex_types():
         "z": z_val,
         "args": args_val,
         "kwargs": kwargs_val
+    }
+
+def test_inspect_arguments_with_new_union_syntax():
+    """Test inspecting function with complex type annotations."""
+
+    def fn(
+            y: int | None,
+            z: str | int | None,
+    ): ...
+
+    y_val = None
+    z_val = "test"
+
+    arg_types, arg_values = inspect_arguments(fn, y_val, z_val)
+
+    assert arg_types == {
+        'y': 'int | None',
+        'z': 'str | int | None'
+    }
+
+    assert arg_values == {
+        "y": y_val,
+        "z": z_val,
     }
