@@ -120,7 +120,13 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> 
 def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) -> None:
     if isinstance(result, BaseModel):
         completion = result.model_dump_json()
-        messages = json.dumps(result._response.messages)  # pyright: ignore [reportAttributeAccessIssue]
+        # Safely handle the case where result._response might be None
+        if (_response := getattr(result, "_response", None)) and (
+            _response_messages := getattr(_response, "messages", None)
+        ):
+            messages = json.dumps(_response_messages)
+        else:
+            messages = None
     else:
         if not isinstance(result, str | int | float | bool):
             result = str(result)

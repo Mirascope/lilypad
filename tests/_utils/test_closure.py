@@ -1,11 +1,15 @@
 """Tests for the `_utils.closure` module."""
 
+import hashlib
 import inspect
+import sys
+from types import ModuleType
+from unittest.mock import patch
 
 from mirascope.core import openai, prompt_template
 from pydantic import BaseModel
 
-from lilypad._utils.closure import compute_closure
+from lilypad._utils.closure import _CodeLocation, _DependencyCollector, compute_closure
 
 
 def _fn():
@@ -228,3 +232,245 @@ def test_multiple_decorators_with_dependencies():
         return {"computed_fields": {"series": _get_available_series()}}
     """)
     assert compute_closure(_recommend_book_series_from_available)[0] == expected + "\n"
+
+
+def test_get_code_location_exception():
+    """Test that _get_code_location handles exceptions properly."""
+
+    def func():
+        pass
+
+    # Mock inspect.getsourcelines to raise an OSError
+    with patch("inspect.getsourcelines", side_effect=OSError):
+        closure, closure_hash = compute_closure(func)
+        expected = ""  # Since we cannot get the source code, closure should be empty
+        assert closure == expected
+
+
+def test_collect_class_definition_exception():
+    """Test that exceptions in _collect_class_definition are handled."""
+
+    class TestClass:
+        pass
+
+    def func():
+        obj = TestClass()  # noqa: F841
+
+    # Mock inspect.getsource to raise an OSError
+    with patch("inspect.getsource", side_effect=OSError):
+        closure, closure_hash = compute_closure(func)
+        expected = ""  # Since we cannot get the source code, closure should be empty
+        assert closure == expected
+
+
+def test_collect_function_and_deps_exception():
+    """Test that exceptions in _collect_function_and_deps are handled."""
+
+    def func():
+        pass
+
+    # Mock inspect.getsource to raise an OSError
+    with patch("inspect.getsource", side_effect=OSError):
+        closure, closure_hash = compute_closure(func)
+        # Since the function source cannot be retrieved, closure should be empty
+        assert closure == ""
+        expected_hash = hashlib.sha256(closure.encode("utf-8")).hexdigest()
+        assert closure_hash == expected_hash
+
+
+def test_function_in_third_party_module():
+    """Test that functions from third-party modules are skipped."""
+    import os  # os is part of the standard library but serves as an example
+
+    def func():
+        return os.path.join("a", "b")
+
+    closure, closure_hash = compute_closure(func)
+    expected = inspect.cleandoc("""
+    def func():
+        return os.path.join("a", "b")
+    """)
+    assert closure == expected + "\n"
+
+
+def test_function_with_global_variable():
+    """Test that global variables are included in the closure."""
+    global global_var
+    global_var = "global value"
+
+    def func():
+        return global_var
+
+    closure, closure_hash = compute_closure(func)
+    expected = inspect.cleandoc("""
+    global_var = "global value"
+
+
+    def func():
+        return global_var
+    """)
+    assert closure == expected + "\n"
+
+
+def test_codelocation_eq():
+    """Test that __eq__"""
+    loc1 = _CodeLocation("module_path", 1)
+    loc2 = _CodeLocation("module_path", 2)
+    assert loc1.__eq__(loc1)
+    assert not loc1.__eq__(loc2)
+    assert loc1.__eq__("not a _CodeLocation") == NotImplemented
+
+
+def test_format_code_exception():
+    """Test that _format_code returns original code when black.format_str raises an exception."""
+    collector = _DependencyCollector()
+    code = "def foo():\n    pass"
+    with patch("black.format_str", side_effect=Exception):
+        formatted_code = collector._format_code(code)
+        assert formatted_code == code
+
+
+def test_is_third_party_module_none():
+    """Test that _is_third_party_module returns True when module_path is None."""
+    collector = _DependencyCollector()
+    assert collector._is_third_party_module(None) is True
+
+
+def test_find_function_in_parent_module():
+    """Test that _find_function_in_module can find functions in parent modules."""
+    collector = _DependencyCollector()
+
+    # Mock modules
+    parent_module = ModuleType("parent_module")
+    child_module = ModuleType("parent_module.child_module")
+    sys.modules["parent_module"] = parent_module
+    sys.modules["parent_module.child_module"] = child_module
+
+    def parent_function():
+        pass
+
+    parent_module.parent_function = parent_function  # pyright: ignore [reportAttributeAccessIssue]
+
+    # Test
+    result = collector._find_function_in_module("parent_function", child_module)
+    assert result == parent_function
+
+
+def test_collect_class_definition_class_not_found():
+    """Test that _collect_class_definition does nothing when class is not found."""
+    collector = _DependencyCollector()
+    module = ModuleType("test_module")
+    class_name = "NonExistentClass"
+    collector._collect_class_definition(class_name, module)
+    # No exception should be raised
+
+
+def test_collect_class_definition_ast_parse_exception():
+    """Test that _collect_class_definition handles ast.parse exceptions."""
+    collector = _DependencyCollector()
+    module = ModuleType("test_module")
+    class_name = "TestClass"
+
+    with patch("ast.parse", side_effect=SyntaxError):
+        collector._collect_class_definition(class_name, module)
+    # No exception should be raised
+
+
+def test_collect_function_and_deps_getsource_exception():
+    """Test that _collect_function_and_deps handles getsource exceptions."""
+    collector = _DependencyCollector()
+
+    def test_func():
+        pass
+
+    with patch("inspect.getsource", side_effect=OSError):
+        collector._collect_function_and_deps(test_func)
+    # No exception should be raised
+
+
+def test_collect_function_and_deps_function_not_found():
+    """Test that _collect_function_and_deps handles functions not found in modules."""
+    collector = _DependencyCollector()
+
+    def test_func():
+        missing_func()  # pyright: ignore [reportUndefinedVariable] #  noqa: F821
+
+    collector._collect_function_and_deps(test_func)
+    # No exception should be raised
+
+
+def test_get_ordered_functions_no_main():
+    """Test that _get_ordered_functions returns empty list when main function is None."""
+    collector = _DependencyCollector()
+    collector._main_function_name = None
+    result = collector._get_ordered_functions()
+    assert result == []
+
+
+def test_get_code_location_getsourcelines_exception():
+    """Test that _get_code_location handles getsourcelines exceptions."""
+    collector = _DependencyCollector()
+
+    def test_func():
+        pass
+
+    with patch("inspect.getsourcelines", side_effect=OSError):
+        location = collector._get_code_location(test_func)
+        assert location.line_number == -1
+
+
+def test_get_code_location_module_file_none():
+    """Test that _get_code_location handles module.__file__ being None."""
+    collector = _DependencyCollector()
+
+    def test_func():
+        pass
+
+    module = inspect.getmodule(test_func)
+    with patch.object(module, "__file__", None):
+        location = collector._get_code_location(test_func)
+        assert location.module_path == ""
+
+
+def test_is_user_defined_import():
+    """Test the _is_user_defined_import method."""
+    collector = _DependencyCollector()
+    assert collector._is_user_defined_import("from typing import List") is True
+    assert collector._is_user_defined_import("import openai") is False
+    assert collector._is_user_defined_import("import custom_module") is True
+
+
+def test_collect_decorator_calls_with_attribute():
+    """Test _collect_decorator_calls with attribute nodes."""
+
+    def decorator(func):
+        return func
+
+    class Decorators:
+        @staticmethod
+        def deco():
+            return decorator
+
+    @Decorators.deco()
+    def func():
+        pass
+
+    collector = _DependencyCollector()
+    collector.collect(func)
+    # No exception should be raised
+
+
+def test_visit_call_with_attribute():
+    """Test visit_Call handles attribute function calls."""
+
+    class SomeClass:
+        def method(self):
+            pass
+
+    def func():
+        obj = SomeClass()
+        obj.method()
+
+    closure, _ = compute_closure(func)
+    assert "SomeClass" in closure
+    assert "def func()" in closure
