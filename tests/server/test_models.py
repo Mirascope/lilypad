@@ -1,6 +1,8 @@
 """Test cases for server models."""
+from typing import Generator
 
 import pytest
+from sqlalchemy import Engine
 from sqlmodel import Field, Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
@@ -29,7 +31,7 @@ from lilypad.server.models import (
 
 
 @pytest.fixture
-def fixture_engine():
+def engine() -> Engine:
     """Create an in-memory database engine for testing."""
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -39,14 +41,14 @@ def fixture_engine():
 
 
 @pytest.fixture
-def session(fixture_engine):
+def session(engine) -> Generator[Session, None, None]:
     """Create a new database session for testing."""
-    with Session(fixture_engine) as session:
+    with Session(engine) as session:
         yield session
         session.rollback()
 
 
-def test_base_sql_model():
+def test_base_sql_model() -> None:
     """Test BaseSQLModel initialization."""
 
     class TestModel(BaseSQLModel, table=True):
@@ -59,7 +61,7 @@ def test_base_sql_model():
     assert model.created_at is not None
 
 
-def test_function_models():
+def test_function_models() -> None:
     """Test Function model variants."""
     # Test FunctionCreate
     func_data = {
@@ -81,7 +83,7 @@ def test_function_models():
     assert func_public.name == "test_func"
 
 
-def test_project_models(session):
+def test_project_models(session) -> None:
     """Test Project model variants and relationships."""
     # Test ProjectCreate
     proj_create = ProjectCreate(name="test_project")
@@ -107,7 +109,7 @@ def test_project_models(session):
     assert proj_public.name == "test_project"
 
 
-def test_prompt_models():
+def test_prompt_models() -> None:
     """Test Prompt model variants."""
     prompt_data = {
         "hash": "def123",
@@ -131,7 +133,7 @@ def test_prompt_models():
     assert resp_format.type == "json_object"
 
 
-def test_span_models():
+def test_span_models() -> None:
     """Test Span model variants."""
     # Test SpanCreate
     span_create = SpanCreate(
@@ -182,7 +184,7 @@ def test_span_models():
     assert llm_span_public.display_name == "test_system with 'test_model'"
 
 
-def test_version_models():
+def test_version_models() -> None:
     """Test Version model variants."""
     version_data = {
         "version_num": 1,
@@ -230,7 +232,7 @@ def test_version_models():
     assert active_version.prompt.provider == Provider.OPENAI
 
 
-def test_relationships(session):
+def test_relationships(session) -> None:
     """Test model relationships and cascading deletes."""
     # Create test project
     project = ProjectTable(name="test_project")
@@ -282,7 +284,7 @@ def test_relationships(session):
     assert session.get(PromptTable, prompt.id) is None
 
 
-def test_provider_enum():
+def test_provider_enum() -> None:
     """Test Provider enum values."""
     assert Provider.OPENAI.value == "openai"
     assert Provider.ANTHROPIC.value == "anthropic"
@@ -290,7 +292,7 @@ def test_provider_enum():
     assert Provider.GEMINI.value == "gemini"
 
 
-def test_scope_enum():
+def test_scope_enum() -> None:
     """Test Scope enum values."""
     assert Scope.LILYPAD.value == "lilypad"
     assert Scope.LLM.value == "llm"
