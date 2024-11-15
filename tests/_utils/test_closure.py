@@ -1,15 +1,22 @@
 """Tests for the `_utils.closure` module."""
 
+import ast
 import hashlib
 import inspect
 import sys
 from types import ModuleType
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+import pytest
 from mirascope.core import openai, prompt_template
 from pydantic import BaseModel
 
-from lilypad._utils.closure import _CodeLocation, _DependencyCollector, compute_closure
+from lilypad._utils.closure import (
+    _CodeLocation,
+    _DependencyCollector,
+    _DependencyVisitor,
+    compute_closure,
+)
 
 
 def _fn():
@@ -474,3 +481,119 @@ def test_visit_call_with_attribute():
     closure, _ = compute_closure(func)
     assert "SomeClass" in closure
     assert "def func()" in closure
+
+
+def test_get_code_location_no_module():
+    """Test that _get_code_location handles functions with no module."""
+
+    def test_func():
+        pass
+
+    with patch("inspect.getmodule", return_value=None):
+        collector = _DependencyCollector()
+        with pytest.raises(ValueError):
+            collector._get_code_location(test_func)
+
+
+def test_collect_class_definition_no_source():
+    """Test handling class definition with no source."""
+    collector = _DependencyCollector()
+    module = Mock()
+
+    class TestClass:
+        pass
+
+    module.TestClass = TestClass
+    with (
+        patch("inspect.isclass", return_value=True),
+        patch("inspect.getsource", side_effect=TypeError),
+    ):
+        collector._collect_class_definition("TestClass", module)
+        # Should not raise exception
+
+
+def test_is_serializable_value():
+    """Test all cases of _is_serializable_value."""
+    collector = _DependencyCollector()
+    assert collector._is_serializable_value(42)
+    assert collector._is_serializable_value(3.14)
+    assert collector._is_serializable_value("string")
+    assert collector._is_serializable_value(True)
+    assert collector._is_serializable_value(None)
+    assert not collector._is_serializable_value(lambda x: x)
+    assert not collector._is_serializable_value(object())
+
+
+def test_collect_with_type_aliases():
+    """Test handling of type aliases in annotations."""
+    from typing import TypeAlias
+
+    MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
+
+    def func(param: MyType) -> MyType:
+        return param.upper()
+
+    closure, _ = compute_closure(func)
+    assert "MyType" in closure
+    assert "def func" in closure
+
+
+def test_format_code_invalid():
+    """Test handling of invalid code formatting."""
+    collector = _DependencyCollector()
+    invalid_code = "def func() invalid python"
+
+    with patch("black.format_str", side_effect=Exception):
+        formatted = collector._format_code(invalid_code)
+        assert formatted == invalid_code
+
+
+def test_collect_class_with_non_function_attribute():
+    """Test handling of non-function class attributes."""
+
+    class TestClass:
+        class_var = "test"
+
+        def method(self):
+            return self.class_var
+
+    collector = _DependencyCollector()
+    source = inspect.getsource(TestClass)
+    location = collector._get_code_location(TestClass)
+    collector._collected_code[location] = source
+    assert "class_var = " in collector._collected_code[location]
+
+
+def test_dependency_visitor_extracted_annotations():
+    """Test _extract_annotation_references handles all annotation types."""
+    visitor = _DependencyVisitor()
+
+    # Test Name node
+    name_node = ast.Name(id="TestType", ctx=ast.Load())
+    visitor._extract_annotation_references(name_node)
+    assert "TestType" in visitor.classes
+
+    # Test Attribute node with context
+    module_name = ast.Name(id="module", ctx=ast.Load())
+    attr_node = ast.Attribute(value=module_name, attr="Type", ctx=ast.Load())
+    visitor._extract_annotation_references(attr_node)
+    assert "module" in visitor.classes
+
+
+def test_function_with_error_in_source():
+    """Test handling of functions with errors in source code."""
+
+    def test_func():
+        pass
+
+    collector = _DependencyCollector()
+
+    # Create a fake source location that will be skipped
+    location = _CodeLocation("test.py", 1)
+    collector._visited.add(location)
+
+    # This should not raise any exceptions
+    with patch(
+        "inspect.getsource", return_value="def test_func(): \n    return 'test'"
+    ):
+        collector._collect_function_and_deps(test_func)
