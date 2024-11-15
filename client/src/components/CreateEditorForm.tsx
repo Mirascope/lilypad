@@ -250,6 +250,16 @@ export const CreateEditorForm = ({
       </div>
     );
   }
+  const code = `import lilypad
+
+
+${version?.function.code || ""}
+
+if __name__ == "__main__":
+    lilypad.configure()
+    output = ${version?.function.name}(${inputs.map((item) => `"${item.value}"`).join(", ")})
+    print(output)
+  `;
   return (
     <div className='m-auto w-[1200px] p-4'>
       <Form {...methods}>
@@ -280,7 +290,7 @@ export const CreateEditorForm = ({
                   title='Copy Code'
                   description='Copy this codeblock into your application.'
                 >
-                  <CodeSnippet code={version.function.code} />
+                  <CodeSnippet code={code} />
                 </IconDialog>
               )}
               <Button type='submit' name='run' loading={runMutation.isPending}>
