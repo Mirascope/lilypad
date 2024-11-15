@@ -3,11 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import api from "@/api";
 import {
   AnthropicCallParams,
@@ -25,7 +21,6 @@ import { EditorFormValues, formValuesToApi } from "@/utils/editor-form-utils";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { ArgsCards } from "@/components/ArgsCards";
-import { AxiosResponse } from "axios";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import {
   Card,
@@ -38,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { getErrorMessage } from "@/lib/utils";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import ReactMarkdown from "react-markdown";
-import { useCreateVersion } from "@/utils/versions";
+import { useCreateVersion, usePatchActiveVersion } from "@/utils/versions";
 import { spanQueryOptions } from "@/utils/spans";
 import { IconDialog } from "@/components/IconDialog";
 import { Code } from "lucide-react";
@@ -53,11 +48,11 @@ export const Playground = ({
   spanId?: string;
 }) => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: spanData } = useSuspenseQuery(
     spanQueryOptions(projectId, spanId)
   );
   const createVersionMutation = useCreateVersion();
+  const patchActiveVersionMutation = usePatchActiveVersion();
   const vibeMutation = useMutation({
     mutationFn: async ({
       projectId,
@@ -72,24 +67,6 @@ export const Playground = ({
           getValues()
         )
       ).data,
-  });
-  const setActiveMutation = useMutation({
-    mutationFn: async () =>
-      (
-        await api.patch<undefined, AxiosResponse<VersionPublic>>(
-          `projects/${projectId}/versions/${version.id}/active`
-        )
-      ).data,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project",
-          data.project_id?.toString(),
-          "version",
-          data.id.toString(),
-        ],
-      });
-    },
   });
   let argTypes = version.function.arg_types || {};
   argTypes = Object.keys(argTypes).reduce(
@@ -163,12 +140,6 @@ export const Playground = ({
         data.provider == Provider.OPENROUTER
       ) {
         callParams = data.openaiCallParams as OpenAICallParams;
-        if (
-          data.provider == Provider.OPENAI ||
-          data.provider == Provider.OPENROUTER
-        ) {
-          callParams as OpenAICallParams;
-        }
       } else if (data.provider == Provider.ANTHROPIC) {
         callParams = data.anthropicCallParams as AnthropicCallParams;
       } else if (data.provider == Provider.GEMINI) {
@@ -181,13 +152,14 @@ export const Playground = ({
         model: data.model,
         call_params: callParams,
       };
+      const versionCreate = {
+        function_create: functionCreate,
+        prompt_create: promptCreate,
+      };
       try {
         const newVersion = await createVersionMutation.mutateAsync({
           projectId,
-          versionCreate: {
-            function_create: functionCreate,
-            prompt_create: promptCreate,
-          },
+          versionCreate,
         });
         navigate({
           to: `/projects/${projectId}/functions/${newVersion.function_name}/versions/${newVersion.id}`,
@@ -274,8 +246,13 @@ export const Playground = ({
         <div className='flex items-center gap-2'>
           <Typography variant='h3'>{version.function.name}</Typography>
           <Button
-            disabled={version.is_active || setActiveMutation.isPending}
-            onClick={() => setActiveMutation.mutate()}
+            disabled={version.is_active || patchActiveVersionMutation.isPending}
+            onClick={() =>
+              patchActiveVersionMutation.mutate({
+                projectId,
+                versionId: version.id,
+              })
+            }
           >
             {version.is_active ? "Active" : "Set active"}
           </Button>

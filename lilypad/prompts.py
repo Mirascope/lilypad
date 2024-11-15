@@ -73,7 +73,7 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn, arg_types)
+                version = lilypad_client.get_prompt_active_version(fn)
                 decorator = create_mirascope_middleware(
                     version, arg_types, arg_values, True, prompt_template
                 )
@@ -86,7 +86,7 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn, arg_types)
+                version = lilypad_client.get_prompt_active_version(fn)
                 decorator = create_mirascope_middleware(
                     version, arg_types, arg_values, False, prompt_template
                 )

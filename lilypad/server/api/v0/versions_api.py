@@ -7,9 +7,11 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from ...._configure import configure
+import lilypad
+
 from ...._utils import create_mirascope_call, create_mirascope_middleware
 from ....traces import trace
+from ..._utils import construct_function
 from ...models import (
     ActiveVersionPublic,
     FunctionCreate,
@@ -49,7 +51,7 @@ async def get_version_by_function_name(
 
 
 @versions_router.get(
-    "/projects/{project_id}/versions/{function_hash}/active",
+    "/projects/{project_id}/functions/{function_hash}/versions/active",
     response_model=ActiveVersionPublic,
 )
 async def get_active_version(
@@ -93,22 +95,21 @@ async def create_new_version(
     """Create a new function version with a prompt."""
     function_create = function_and_prompt_version_create.function_create
     prompt_create = function_and_prompt_version_create.prompt_create
-    hash = function_create.hash
+    function_hash = function_create.hash
+    prompt_template_hash = hashlib.sha256(
+        prompt_create.template.encode("utf-8")
+    ).hexdigest()
     if not function_create.id:
-        arg_list = [
-            f"{arg_name}: {arg_type}"
-            for arg_name, arg_type in (function_create.arg_types or {}).items()
-        ]
-        func_def = f"def {function_create.name}({', '.join(arg_list)}) -> str: ..."
-        hash = hashlib.sha256(func_def.encode("utf-8")).hexdigest()
+        code = construct_function(function_create.arg_types or {}, function_create.name)
+        function_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
         function_create = function_create.model_copy(
-            update={"project_id": project_id, "hash": hash, "code": func_def}
+            update={"project_id": project_id, "hash": function_hash, "code": code}
         )
         function = function_service.create_record(function_create)
     else:
         function = (
-            function_service.find_record_by_hash(function_create.hash)
-            if function_create.hash
+            function_service.find_record_by_hash(function_hash)
+            if function_hash
             else None
         )
 
@@ -116,7 +117,9 @@ async def create_new_version(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No function found"
         )
-
+    prompt_create = prompt_create.model_copy(
+        update={"project_id": project_id, "hash": prompt_template_hash}
+    )
     prompt = prompt_service.find_prompt_by_call_params(prompt_create)
     function_public = FunctionPublic.model_validate(function)
 
@@ -129,14 +132,6 @@ async def create_new_version(
             return version
 
     if not prompt:
-        prompt_create = prompt_create.model_copy(
-            update={
-                "project_id": project_id,
-                "hash": hashlib.sha256(
-                    prompt_create.template.encode("utf-8")
-                ).hexdigest(),
-            }
-        )
         prompt = prompt_service.create_record(prompt_create)
 
     prompt_public = PromptPublic.model_validate(prompt)
@@ -149,6 +144,7 @@ async def create_new_version(
         function_hash=function_public.hash,
         prompt_hash=prompt_public.hash,
         prompt_id=prompt_public.id,
+        is_active=num_versions == 0,
     )
     return version_service.create_record(new_version)
 
@@ -218,11 +214,9 @@ def run_version(
     )
     function = version.function
     arg_types = function.arg_types or {}
-    configure()
 
-    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
-    func_def = f"def {function.name}({', '.join(arg_list)}) -> str: ..."
-    namespace: dict[str, Any] = {}
+    func_def = construct_function(arg_types, function.name)
+    namespace: dict[str, Any] = {"lilypad": lilypad}
     exec(func_def, namespace)
     fn: Callable[..., str] = namespace[function.name]
 

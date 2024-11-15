@@ -55,7 +55,12 @@ type CreateEditorFormValues = EditorFormValues & {
 export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
   const navigate = useNavigate();
   const createVersionMutation = useCreateVersion();
-  const methods = useBaseEditorForm<CreateEditorFormValues>({});
+  const methods = useBaseEditorForm<CreateEditorFormValues>({
+    additionalDefaults: {
+      promptName: "",
+      inputs: [],
+    },
+  });
   const { fields, append, remove } = useFieldArray<CreateEditorFormValues>({
     control: methods.control,
     name: "inputs",
@@ -83,6 +88,7 @@ export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
     editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.template = markdown;
+      methods.trigger();
       const functionCreate: FunctionCreate = {
         name: data.promptName,
         arg_types: inputs.reduce(
@@ -146,11 +152,19 @@ export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
           <FormField
             control={methods.control}
             name='promptName'
+            rules={{
+              required: "Prompt Function Name is required",
+            }}
             render={({ field }) => (
-              <FormItem>
+              <FormItem className='w-[655px]'>
                 <FormLabel>Prompt Function Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder='Enter prompt name' />
+                  <Input
+                    {...field}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder='Enter function name'
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -172,6 +186,7 @@ export const CreateEditorForm = ({ projectId }: CreateEditorFormProps) => {
                 ))}
             </div>
             <div className='flex flex-col gap-2'>
+              {/* @ts-ignore */}
               <BaseEditorFormFields methods={methods} />
               <div className='space-y-2'>
                 <FormLabel className='text-base'>{"Inputs"}</FormLabel>

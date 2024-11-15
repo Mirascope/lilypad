@@ -76,7 +76,7 @@ class _PromptBase(BaseSQLModel):
     """Base Prompt Model."""
 
     project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    hash: str | None = Field(default=None, index=True, unique=True)
+    hash: str | None = Field(default=None, index=True)
     template: str
     provider: Provider
     model: str

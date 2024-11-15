@@ -85,7 +85,7 @@ export const FormSlider = <T extends FieldValues>({
             <Slider
               {...sliderProps}
               value={[field.value]}
-              onValueChange={field.onChange}
+              onValueChange={(values: number[]) => field.onChange(values[0])}
               disabled={switchName && !watch(switchName)}
             />
           </FormControl>

@@ -36,6 +36,17 @@ export const createVersion = async (
   ).data;
 };
 
+export const patchVersion = async (
+  projectId: number,
+  versionId: number
+): Promise<VersionPublic> => {
+  return (
+    await api.patch<undefined, AxiosResponse<VersionPublic>>(
+      `projects/${projectId}/versions/${versionId}/active`
+    )
+  ).data;
+};
+
 export const versionsByFunctionNameQueryOptions = (
   projectId: number,
   functionName: string
@@ -52,6 +63,25 @@ export const versionQueryOptions = (projectId: number, versionId: number) =>
     queryFn: () => fetchVersion(projectId, versionId),
   });
 
+export const usePatchActiveVersion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      versionId,
+    }: {
+      projectId: number;
+      versionId: number;
+    }) => await patchVersion(projectId, versionId),
+    onSuccess: (newVersion, { projectId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "versions", newVersion.id],
+      });
+    },
+  });
+};
+
 export const useCreateVersion = () => {
   const queryClient = useQueryClient();
 
@@ -63,9 +93,15 @@ export const useCreateVersion = () => {
       projectId: number;
       versionCreate: FunctionAndPromptVersionCreate;
     }) => await createVersion(projectId, versionCreate),
-    onSuccess: (_, { projectId }) => {
+    onSuccess: (newVersion, { projectId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "versions"],
+        queryKey: [
+          "projects",
+          projectId,
+          "functions",
+          newVersion.function.name,
+          "versions",
+        ],
       });
     },
   });

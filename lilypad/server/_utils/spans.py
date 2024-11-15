@@ -55,27 +55,30 @@ def convert_gemini_messages(
             and (content := attributes.get("content"))
         ):
             user_content = []
-            for part in json.loads(content):
-                if isinstance(part, str):
-                    user_content.append(_TextPart(type="text", text=part))
-                elif isinstance(part, dict):
-                    if part.get("mime_type", "").startswith("image"):
-                        user_content.append(
-                            _ImagePart(
-                                type="image",
-                                media_type=part["mime_type"],
-                                image=part["data"],
-                                detail=None,
+            try:
+                for part in json.loads(content):
+                    if isinstance(part, str):
+                        user_content.append(_TextPart(type="text", text=part))
+                    elif isinstance(part, dict):
+                        if part.get("mime_type", "").startswith("image"):
+                            user_content.append(
+                                _ImagePart(
+                                    type="image",
+                                    media_type=part["mime_type"],
+                                    image=part["data"],
+                                    detail=None,
+                                )
                             )
-                        )
-                    elif part.get("mime_type", "").startswith("audio"):
-                        user_content.append(
-                            _AudioPart(
-                                type="audio",
-                                media_type=part["mime_type"],
-                                audio=part["data"],
+                        elif part.get("mime_type", "").startswith("audio"):
+                            user_content.append(
+                                _AudioPart(
+                                    type="audio",
+                                    media_type=part["mime_type"],
+                                    audio=part["data"],
+                                )
                             )
-                        )
+            except json.JSONDecodeError:
+                user_content.append(_TextPart(type="text", text=content))
             structured_messages.append(
                 MessageParam(
                     content=user_content,
@@ -113,26 +116,31 @@ def convert_openai_messages(
             and (content := attributes.get("content"))
         ):
             user_content = []
-            for part in json.loads(content):
-                if isinstance(part, str):
-                    user_content.append(_TextPart(type="text", text=part))
-                elif isinstance(part, dict):
-                    if part.get("type", "") == "image_url":
-                        img_url = part["image_url"]["url"]
-                        # Strip data:image/ and ;base64 from the image_url
-                        media = img_url.split("data:image/")[1].split(";")
-                        media_type = media[0]
-                        img = media[1].split(",")[1]
-                        user_content.append(
-                            _ImagePart(
-                                type="image",
-                                media_type=f"image/{media_type}",
-                                image=img,
-                                detail=part["image_url"]["detail"],
+            try:
+                for part in json.loads(content):
+                    if isinstance(part, str):
+                        user_content.append(_TextPart(type="text", text=part))
+                    elif isinstance(part, dict):
+                        if part.get("type", "") == "image_url":
+                            img_url = part["image_url"]["url"]
+                            # Strip data:image/ and ;base64 from the image_url
+                            media = img_url.split("data:image/")[1].split(";")
+                            media_type = media[0]
+                            img = media[1].split(",")[1]
+                            user_content.append(
+                                _ImagePart(
+                                    type="image",
+                                    media_type=f"image/{media_type}",
+                                    image=img,
+                                    detail=part["image_url"]["detail"],
+                                )
                             )
-                        )
-                    else:
-                        user_content.append(_TextPart(type="text", text=part["text"]))
+                        else:
+                            user_content.append(
+                                _TextPart(type="text", text=part["text"])
+                            )
+            except json.JSONDecodeError:
+                user_content.append(_TextPart(type="text", text=content))
 
             structured_messages.append(
                 MessageParam(
@@ -146,7 +154,10 @@ def convert_openai_messages(
             if len(assistant_message.content) <= index:
                 assistant_message.content.append(_TextPart(type="text", text=""))
             attribute_message = json.loads(attributes.get("message", "{}"))
-            content = json.loads(attribute_message.get("content", "{}"))
+            try:
+                content = json.loads(attribute_message.get("content", "{}"))
+            except json.JSONDecodeError:
+                content = attribute_message.get("content", "")
             assistant_message.content[index].text += content
     structured_messages.append(assistant_message)
     return structured_messages
@@ -169,21 +180,26 @@ def convert_anthropic_messages(
             and (content := attributes.get("content"))
         ):
             user_content = []
-            for part in json.loads(content):
-                if isinstance(part, str):
-                    user_content.append(_TextPart(type="text", text=part))
-                elif isinstance(part, dict):
-                    if part.get("type", "") == "image":
-                        user_content.append(
-                            _ImagePart(
-                                type="image",
-                                media_type=part["source"]["media_type"],
-                                image=part["source"]["data"],
-                                detail=None,
+            try:
+                for part in json.loads(content):
+                    if isinstance(part, str):
+                        user_content.append(_TextPart(type="text", text=part))
+                    elif isinstance(part, dict):
+                        if part.get("type", "") == "image":
+                            user_content.append(
+                                _ImagePart(
+                                    type="image",
+                                    media_type=part["source"]["media_type"],
+                                    image=part["source"]["data"],
+                                    detail=None,
+                                )
                             )
-                        )
-                    else:
-                        user_content.append(_TextPart(type="text", text=part["text"]))
+                        else:
+                            user_content.append(
+                                _TextPart(type="text", text=part["text"])
+                            )
+            except json.JSONDecodeError:
+                user_content.append(_TextPart(type="text", text=content))
 
             structured_messages.append(
                 MessageParam(
@@ -193,12 +209,16 @@ def convert_anthropic_messages(
             )
         elif name == "gen_ai.choice":
             attributes = message.get("attributes", {})
-            index = attributes["index"]
-            if len(assistant_message.content) <= index:
+            index = attributes.get("index")
+            if index is not None and len(assistant_message.content) <= index:
                 assistant_message.content.append(_TextPart(type="text", text=""))
-            attribute_message = json.loads(attributes.get("message", "{}"))
-            content = attribute_message.get("content", "{}")
-            for c in content:
-                assistant_message.content[index].text += c
+                attribute_message = json.loads(attributes.get("message", "{}"))
+                content = attribute_message.get("content", "{}")
+                for c in content:
+                    assistant_message.content[index].text += c
+            else:
+                attribute_message = json.loads(attributes.get("message", "{}"))
+                content = attribute_message.get("content", "{}")
+                assistant_message.content = [_TextPart(type="text", text=content)]
     structured_messages.append(assistant_message)
     return structured_messages

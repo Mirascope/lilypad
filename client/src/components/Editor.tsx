@@ -33,11 +33,21 @@ export const Editor = forwardRef(
     { inputs, promptTemplate }: { inputs: string[]; promptTemplate: string },
     ref: ForwardedRef<LexicalEditor>
   ) => {
+    const loadContent = () => {
+      // 'empty' editor
+      const value =
+        '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+
+      return value;
+    };
+    const editorState = promptTemplate
+      ? () =>
+          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS)
+      : loadContent();
     const config = useMemo(
       () => ({
         namespace: "editor",
-        editorState: () =>
-          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS),
+        editorState,
         theme: exampleTheme,
         nodes: [
           HeadingNode,
@@ -60,10 +70,10 @@ export const Editor = forwardRef(
           console.error(error);
         },
       }),
-      []
+      [promptTemplate]
     );
     return (
-      <LexicalComposer initialConfig={config}>
+      <LexicalComposer key={promptTemplate} initialConfig={config}>
         <div className={`flex flex-col border shadow rounded-lg prose`}>
           <ToolbarPlugin />
 
@@ -76,7 +86,7 @@ export const Editor = forwardRef(
                 />
               }
               placeholder={
-                <p className='text-muted-foreground absolute top-0 px-8 py-4 w-full pointer-events-none'>
+                <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
                   Enter some text...
                 </p>
               }

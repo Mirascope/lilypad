@@ -435,17 +435,25 @@ export const renderStopSequences = (
 
 export const useBaseEditorForm = <T extends EditorFormValues>({
   latestVersion,
+  additionalDefaults = {},
 }: {
   latestVersion?: VersionPublic | null;
+  additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
-    defaultValues: getDefaultValues<T>(latestVersion),
+    defaultValues: {
+      ...getDefaultValues<T>(latestVersion),
+      ...additionalDefaults,
+    },
   });
 
   const { reset } = methods;
 
   useEffect(() => {
-    const newValues = getDefaultValues<T>(latestVersion);
+    const newValues = {
+      ...getDefaultValues<T>(latestVersion),
+      ...additionalDefaults,
+    };
     reset(newValues);
   }, [latestVersion, reset]);
 

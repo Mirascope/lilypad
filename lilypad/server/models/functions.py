@@ -17,7 +17,7 @@ class _FunctionBase(BaseSQLModel):
     """Base Function Model."""
 
     project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    name: str = Field(nullable=False, index=True)
+    name: str = Field(nullable=False, index=True, min_length=1)
     arg_types: dict[str, str] | None = Field(
         sa_column=Column(JSON), default_factory=dict
     )
