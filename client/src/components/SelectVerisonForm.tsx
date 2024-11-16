@@ -104,7 +104,6 @@ export const SelectVersionForm = () => {
   const handleSaveClick = () => {
     method.setValue("functionName", newFunctionName);
   };
-  console.log(versions);
   const buttons = [
     <Button onClick={handleSaveClick}>Save</Button>,
     <Button onClick={handleCancelClick}>Cancel</Button>,
