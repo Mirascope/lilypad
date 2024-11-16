@@ -41,12 +41,8 @@ type FunctionFormValues = {
   version: VersionPublic | null;
 };
 
-export const SelectVersionForm = () => {
-  const {
-    projectId,
-    functionName: defaultFunctionName,
-    versionId,
-  } = useParams({
+export const SelectVersionForm = ({ versionId }: { versionId?: number }) => {
+  const { projectId, functionName: defaultFunctionName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();

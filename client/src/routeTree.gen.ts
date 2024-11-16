@@ -18,9 +18,7 @@ import { Route as ProjectsIndexImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdImport } from './routes/projects.$projectId'
 import { Route as ProjectsProjectIdTracesImport } from './routes/projects.$projectId.traces'
 import { Route as ProjectsProjectIdFunctionsIndexImport } from './routes/projects.$projectId.functions.index'
-import { Route as ProjectsProjectIdFunctionsFunctionNameImport } from './routes/projects.$projectId.functions.$functionName'
-import { Route as ProjectsProjectIdFunctionsFunctionNameIndexImport } from './routes/projects.$projectId.functions.$functionName.index'
-import { Route as ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport } from './routes/projects.$projectId.functions.$functionName.versions.$versionId'
+import { Route as ProjectsProjectIdFunctionsFunctionNameSplatImport } from './routes/projects.$projectId.functions.$functionName.$'
 
 // Create Virtual Routes
 
@@ -59,22 +57,10 @@ const ProjectsProjectIdFunctionsIndexRoute =
     getParentRoute: () => ProjectsProjectIdRoute,
   } as any)
 
-const ProjectsProjectIdFunctionsFunctionNameRoute =
-  ProjectsProjectIdFunctionsFunctionNameImport.update({
-    path: '/functions/$functionName',
+const ProjectsProjectIdFunctionsFunctionNameSplatRoute =
+  ProjectsProjectIdFunctionsFunctionNameSplatImport.update({
+    path: '/functions/$functionName/$',
     getParentRoute: () => ProjectsProjectIdRoute,
-  } as any)
-
-const ProjectsProjectIdFunctionsFunctionNameIndexRoute =
-  ProjectsProjectIdFunctionsFunctionNameIndexImport.update({
-    path: '/',
-    getParentRoute: () => ProjectsProjectIdFunctionsFunctionNameRoute,
-  } as any)
-
-const ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute =
-  ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport.update({
-    path: '/versions/$versionId',
-    getParentRoute: () => ProjectsProjectIdFunctionsFunctionNameRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -116,13 +102,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdTracesImport
       parentRoute: typeof ProjectsProjectIdImport
     }
-    '/projects/$projectId/functions/$functionName': {
-      id: '/projects/$projectId/functions/$functionName'
-      path: '/functions/$functionName'
-      fullPath: '/projects/$projectId/functions/$functionName'
-      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameImport
-      parentRoute: typeof ProjectsProjectIdImport
-    }
     '/projects/$projectId/functions/': {
       id: '/projects/$projectId/functions/'
       path: '/functions'
@@ -130,54 +109,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdFunctionsIndexImport
       parentRoute: typeof ProjectsProjectIdImport
     }
-    '/projects/$projectId/functions/$functionName/': {
-      id: '/projects/$projectId/functions/$functionName/'
-      path: '/'
-      fullPath: '/projects/$projectId/functions/$functionName/'
-      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameIndexImport
-      parentRoute: typeof ProjectsProjectIdFunctionsFunctionNameImport
-    }
-    '/projects/$projectId/functions/$functionName/versions/$versionId': {
-      id: '/projects/$projectId/functions/$functionName/versions/$versionId'
-      path: '/versions/$versionId'
-      fullPath: '/projects/$projectId/functions/$functionName/versions/$versionId'
-      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdImport
-      parentRoute: typeof ProjectsProjectIdFunctionsFunctionNameImport
+    '/projects/$projectId/functions/$functionName/$': {
+      id: '/projects/$projectId/functions/$functionName/$'
+      path: '/functions/$functionName/$'
+      fullPath: '/projects/$projectId/functions/$functionName/$'
+      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameSplatImport
+      parentRoute: typeof ProjectsProjectIdImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface ProjectsProjectIdFunctionsFunctionNameRouteChildren {
-  ProjectsProjectIdFunctionsFunctionNameIndexRoute: typeof ProjectsProjectIdFunctionsFunctionNameIndexRoute
-  ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute: typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
-}
-
-const ProjectsProjectIdFunctionsFunctionNameRouteChildren: ProjectsProjectIdFunctionsFunctionNameRouteChildren =
-  {
-    ProjectsProjectIdFunctionsFunctionNameIndexRoute:
-      ProjectsProjectIdFunctionsFunctionNameIndexRoute,
-    ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute:
-      ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute,
-  }
-
-const ProjectsProjectIdFunctionsFunctionNameRouteWithChildren =
-  ProjectsProjectIdFunctionsFunctionNameRoute._addFileChildren(
-    ProjectsProjectIdFunctionsFunctionNameRouteChildren,
-  )
-
 interface ProjectsProjectIdRouteChildren {
   ProjectsProjectIdTracesRoute: typeof ProjectsProjectIdTracesRoute
-  ProjectsProjectIdFunctionsFunctionNameRoute: typeof ProjectsProjectIdFunctionsFunctionNameRouteWithChildren
   ProjectsProjectIdFunctionsIndexRoute: typeof ProjectsProjectIdFunctionsIndexRoute
+  ProjectsProjectIdFunctionsFunctionNameSplatRoute: typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
 }
 
 const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
   ProjectsProjectIdTracesRoute: ProjectsProjectIdTracesRoute,
-  ProjectsProjectIdFunctionsFunctionNameRoute:
-    ProjectsProjectIdFunctionsFunctionNameRouteWithChildren,
   ProjectsProjectIdFunctionsIndexRoute: ProjectsProjectIdFunctionsIndexRoute,
+  ProjectsProjectIdFunctionsFunctionNameSplatRoute:
+    ProjectsProjectIdFunctionsFunctionNameSplatRoute,
 }
 
 const ProjectsProjectIdRouteWithChildren =
@@ -189,10 +143,8 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
-  '/projects/$projectId/functions/$functionName': typeof ProjectsProjectIdFunctionsFunctionNameRouteWithChildren
   '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName/': typeof ProjectsProjectIdFunctionsFunctionNameIndexRoute
-  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRoutesByTo {
@@ -202,8 +154,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
   '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName': typeof ProjectsProjectIdFunctionsFunctionNameIndexRoute
-  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRoutesById {
@@ -213,10 +164,8 @@ export interface FileRoutesById {
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
   '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
-  '/projects/$projectId/functions/$functionName': typeof ProjectsProjectIdFunctionsFunctionNameRouteWithChildren
   '/projects/$projectId/functions/': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName/': typeof ProjectsProjectIdFunctionsFunctionNameIndexRoute
-  '/projects/$projectId/functions/$functionName/versions/$versionId': typeof ProjectsProjectIdFunctionsFunctionNameVersionsVersionIdRoute
+  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRouteTypes {
@@ -227,10 +176,8 @@ export interface FileRouteTypes {
     | '/projects/$projectId'
     | '/projects'
     | '/projects/$projectId/traces'
-    | '/projects/$projectId/functions/$functionName'
     | '/projects/$projectId/functions'
-    | '/projects/$projectId/functions/$functionName/'
-    | '/projects/$projectId/functions/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -239,8 +186,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/projects/$projectId/traces'
     | '/projects/$projectId/functions'
-    | '/projects/$projectId/functions/$functionName'
-    | '/projects/$projectId/functions/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/$'
   id:
     | '__root__'
     | '/'
@@ -248,10 +194,8 @@ export interface FileRouteTypes {
     | '/projects/$projectId'
     | '/projects/'
     | '/projects/$projectId/traces'
-    | '/projects/$projectId/functions/$functionName'
     | '/projects/$projectId/functions/'
-    | '/projects/$projectId/functions/$functionName/'
-    | '/projects/$projectId/functions/$functionName/versions/$versionId'
+    | '/projects/$projectId/functions/$functionName/$'
   fileRoutesById: FileRoutesById
 }
 
@@ -297,8 +241,8 @@ export const routeTree = rootRoute
       "filePath": "projects.$projectId.tsx",
       "children": [
         "/projects/$projectId/traces",
-        "/projects/$projectId/functions/$functionName",
-        "/projects/$projectId/functions/"
+        "/projects/$projectId/functions/",
+        "/projects/$projectId/functions/$functionName/$"
       ]
     },
     "/projects/": {
@@ -308,25 +252,13 @@ export const routeTree = rootRoute
       "filePath": "projects.$projectId.traces.tsx",
       "parent": "/projects/$projectId"
     },
-    "/projects/$projectId/functions/$functionName": {
-      "filePath": "projects.$projectId.functions.$functionName.tsx",
-      "parent": "/projects/$projectId",
-      "children": [
-        "/projects/$projectId/functions/$functionName/",
-        "/projects/$projectId/functions/$functionName/versions/$versionId"
-      ]
-    },
     "/projects/$projectId/functions/": {
       "filePath": "projects.$projectId.functions.index.tsx",
       "parent": "/projects/$projectId"
     },
-    "/projects/$projectId/functions/$functionName/": {
-      "filePath": "projects.$projectId.functions.$functionName.index.tsx",
-      "parent": "/projects/$projectId/functions/$functionName"
-    },
-    "/projects/$projectId/functions/$functionName/versions/$versionId": {
-      "filePath": "projects.$projectId.functions.$functionName.versions.$versionId.tsx",
-      "parent": "/projects/$projectId/functions/$functionName"
+    "/projects/$projectId/functions/$functionName/$": {
+      "filePath": "projects.$projectId.functions.$functionName.$.tsx",
+      "parent": "/projects/$projectId"
     }
   }
 }

@@ -304,7 +304,7 @@ if __name__ == "__main__":
                 </IconDialog>
               )}
               <Button type='submit' name='run' loading={runMutation.isPending}>
-                {version ? "Run" : "Create"}
+                Run
               </Button>
             </div>
           </div>
