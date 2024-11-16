@@ -23,7 +23,9 @@ export const LLMFunction = ({ projectId, version }: LLMFunctionProps) => {
     {
       label: "Traces",
       value: "traces",
-      component: version && <FunctionSpans />,
+      component: version && (
+        <FunctionSpans projectId={projectId} versionId={version.id} />
+      ),
     },
   ];
   const tabWidth = 80 * tabs.length;
