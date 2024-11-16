@@ -161,6 +161,7 @@ def trace() -> TraceDecorator:
                         arg_values=arg_values,
                         lexical_closure=version.function.code,
                         prompt_template="",
+                        version_num=version.version_num,
                     )
                     return await decorator(fn)(*args, **kwargs)
                 decorator = create_mirascope_middleware(
@@ -183,6 +184,7 @@ def trace() -> TraceDecorator:
                         arg_values=arg_values,
                         lexical_closure=version.function.code,
                         prompt_template="",
+                        version_num=version.version_num,
                     )
                     return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 decorator = create_mirascope_middleware(

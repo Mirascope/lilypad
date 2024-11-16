@@ -173,22 +173,22 @@ export const CreateEditorForm = ({
   const renderBottomPanel = () => {
     return (
       <>
-        <div className='space-y-2'>
-          <FormLabel className='text-base'>{"Inputs"}</FormLabel>
-          <div className='flex gap-4 flex-wrap pb-4'>
+        <div className="space-y-2">
+          <FormLabel className="text-base">{"Inputs"}</FormLabel>
+          <div className="flex gap-4 flex-wrap pb-4">
             {fields.map((field, index) => (
-              <Card key={field.id} className='w-64 flex-shrink-0 relative'>
+              <Card key={field.id} className="w-64 flex-shrink-0 relative">
                 <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => remove(index)}
-                  className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
+                  className="h-6 w-6 absolute top-2 right-2 hover:bg-gray-100"
                 >
-                  <X className='h-4 w-4' />
+                  <X className="h-4 w-4" />
                 </Button>
-                <CardContent className='pt-6 space-y-4'>
-                  <div className='w-full'>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="w-full">
                     <FormField
                       control={methods.control}
                       name={`inputs.${index}.key`}
@@ -196,25 +196,25 @@ export const CreateEditorForm = ({
                         <FormItem>
                           <FormLabel>Args</FormLabel>
                           <FormControl>
-                            <Input placeholder='Args' {...field} />
+                            <Input placeholder="Args" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  <div className='w-full'>
+                  <div className="w-full">
                     <FormField
                       control={methods.control}
                       name={`inputs.${index}.value`}
                       rules={{ required: "Value is required" }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Type</FormLabel>
+                          <FormLabel>Value</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder='Enter value'
+                              placeholder="Enter value"
                               value={field.value}
                               onChange={field.onChange}
                             />
@@ -232,9 +232,9 @@ export const CreateEditorForm = ({
         </div>
         {runMutation.isSuccess && (
           <div>
-            <FormLabel className='text-base'>{"Outputs"}</FormLabel>
-            <Card className='mt-2'>
-              <CardContent className='flex flex-col p-6'>
+            <FormLabel className="text-base">{"Outputs"}</FormLabel>
+            <Card className="mt-2">
+              <CardContent className="flex flex-col p-6">
                 <ReactMarkdown>{runMutation.data}</ReactMarkdown>
               </CardContent>
             </Card>
@@ -245,7 +245,7 @@ export const CreateEditorForm = ({
   };
   if (version && !version.prompt) {
     return (
-      <div className='flex flex-col justify-center items-center h-screen'>
+      <div className="flex flex-col justify-center items-center h-screen">
         {"Playground is unavailable for non-synced calls"}
       </div>
     );
@@ -261,12 +261,12 @@ if __name__ == "__main__":
     print(output)
   `;
   return (
-    <div className='m-auto w-[1200px] p-4'>
+    <div className="m-auto w-[1200px] p-4">
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <div className='flex justify-between'>
-            <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{functionName}</Typography>
+          <div className="flex justify-between">
+            <div className="flex items-center gap-2">
+              <Typography variant="h3">{functionName}</Typography>
               {version && (
                 <Button
                   disabled={
@@ -283,24 +283,24 @@ if __name__ == "__main__":
                 </Button>
               )}
             </div>
-            <div className='flex items-center gap-2'>
+            <div className="flex items-center gap-2">
               {version && (
                 <IconDialog
-                  text='Code'
-                  title='Copy Code'
-                  description='Copy this codeblock into your application.'
+                  text="Code"
+                  title="Copy Code"
+                  description="Copy this codeblock into your application."
                 >
                   <CodeSnippet code={code} />
                 </IconDialog>
               )}
-              <Button type='submit' name='run' loading={runMutation.isPending}>
+              <Button type="submit" name="run" loading={runMutation.isPending}>
                 {version ? "Run" : "Create"}
               </Button>
             </div>
           </div>
-          <div className='flex gap-4'>
-            <div className='lexical form-group space-y-2 w-[600px]'>
-              <Label htmlFor='prompt-template'>Prompt Template</Label>
+          <div className="flex gap-4">
+            <div className="lexical form-group space-y-2 w-[600px]">
+              <Label htmlFor="prompt-template">Prompt Template</Label>
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 ref={editorRef}
@@ -310,7 +310,7 @@ if __name__ == "__main__":
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
-                  <div key={i} className='text-red-500 text-sm mt-1'>
+                  <div key={i} className="text-red-500 text-sm mt-1">
                     {error}
                   </div>
                 ))}
