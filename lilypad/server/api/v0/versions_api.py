@@ -213,7 +213,6 @@ def run_version(
     lilypad.configure()
     if not version.prompt:
         return trace()(fn)(**arg_values)
-
     prompt = PromptPublic.model_validate(version.prompt)
     decorator = create_mirascope_middleware(
         version, arg_types, arg_values, False, prompt.template

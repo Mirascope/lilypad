@@ -120,7 +120,6 @@ def configure() -> None:
     otlp_exporter = _JSONSpanExporter(
         base_url=f"http://127.0.0.1:{port}/api",
     )
-
     provider = TracerProvider()
     processor = BatchSpanProcessor(otlp_exporter)
     provider.add_span_processor(processor)
