@@ -67,24 +67,6 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
             )
         ).all()
 
-    def find_prompt_active_version_by_function_name(
-        self, project_id: int, function_name: str
-    ) -> VersionTable:
-        """Find the active version for a prompt"""
-        version = self.session.exec(
-            select(VersionTable).where(
-                VersionTable.project_id == project_id,
-                VersionTable.is_active,
-                VersionTable.function_name == function_name,
-            )
-        ).first()
-
-        if not version:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Active version not found"
-            )
-        return version
-
     def find_prompt_active_version(
         self, project_id: int, function_hash: str
     ) -> VersionTable:
@@ -108,7 +90,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
     ) -> VersionTable:
         """Change the active version"""
         with suppress(HTTPException):
-            active_version = self.find_prompt_active_version_by_function_name(
+            active_version = self.find_prompt_active_version(
                 project_id, new_active_version.function_name
             )
             if active_version.id == new_active_version.id:
