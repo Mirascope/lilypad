@@ -68,14 +68,14 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         ).all()
 
     def find_prompt_active_version(
-        self, project_id: int, function_hash: str
+        self, project_id: int, function_name: str
     ) -> VersionTable:
         """Find the active version for a prompt"""
         version = self.session.exec(
             select(VersionTable).where(
                 VersionTable.project_id == project_id,
                 VersionTable.is_active,
-                VersionTable.function_hash == function_hash,
+                VersionTable.function_name == function_name,
             )
         ).first()
 
@@ -91,7 +91,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """Change the active version"""
         with suppress(HTTPException):
             active_version = self.find_prompt_active_version(
-                project_id, new_active_version.function_hash
+                project_id, new_active_version.function_name
             )
             if active_version.id == new_active_version.id:
                 return active_version
