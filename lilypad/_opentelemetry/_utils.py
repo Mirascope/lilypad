@@ -1,122 +1,233 @@
-import asyncio
-import logging
-import threading
-import traceback
-from collections.abc import Callable
-from enum import Enum
-from typing import Any, ParamSpec, TypedDict, TypeVar
+"""Utility classes and functions for Lilypad OpenTelemetry instrumentation."""
+# Copyright The OpenTelemetry Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Modifications copyright (C) 2024 Mirascope
 
-from opentelemetry import context
-from opentelemetry.trace import Tracer
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Any, Generic, Protocol, TypeVar
+from urllib.parse import urlparse
 
-SUPPRESS_LANGUAGE_MODEL_INSTRUMENTATION_KEY = "suppress_language_model_instrumentation"
+from httpx import URL
+from opentelemetry.semconv._incubating.attributes import (
+    server_attributes,
+)
+from opentelemetry.semconv.attributes import error_attributes
+from opentelemetry.trace import Status, StatusCode
 
-
-class SpanAttributes(str, Enum):
-    LLM_SYSTEM = "gen_ai.system"
-    LLM_REQUEST_MODEL = "gen_ai.request.model"
-    LLM_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens"
-    LLM_REQUEST_TEMPERATURE = "gen_ai.request.temperature"
-    LLM_REQUEST_TOP_P = "gen_ai.request.top_p"
-    LLM_PROMPTS = "gen_ai.prompt"
-    LLM_COMPLETIONS = "gen_ai.completion"
-    LLM_RESPONSE_MODEL = "gen_ai.response.model"
-    LLM_USAGE_COMPLETION_TOKENS = "gen_ai.usage.completion_tokens"
-    LLM_USAGE_PROMPT_TOKENS = "gen_ai.usage.prompt_tokens"
-    LLM_REQUEST_TYPE = "llm.request.type"
-    LLM_USAGE_TOTAL_TOKENS = "llm.usage.total_tokens"
-    LLM_USAGE_TOKEN_TYPE = "llm.usage.token_type"
-    LLM_USER = "llm.user"
-    LLM_HEADERS = "llm.headers"
-    LLM_TOP_K = "llm.top_k"
-    LLM_IS_STREAMING = "llm.is_streaming"
-    LLM_FREQUENCY_PENALTY = "llm.frequency_penalty"
-    LLM_PRESENCE_PENALTY = "llm.presence_penalty"
-    LLM_CHAT_STOP_SEQUENCES = "llm.chat.stop_sequences"
-    LLM_REQUEST_FUNCTIONS = "llm.request.functions"
-    LLM_REQUEST_REPETITION_PENALTY = "llm.request.repetition_penalty"
-    LLM_RESPONSE_FINISH_REASON = "llm.response.finish_reason"
-    LLM_RESPONSE_STOP_REASON = "llm.response.stop_reason"
-    LLM_CONTENT_COMPLETION_CHUNK = "llm.content.completion.chunk"
+T = TypeVar("T")
+ChunkType = TypeVar("ChunkType", contravariant=True)
 
 
-class LLMRequestTypeValues(str, Enum):
-    COMPLETION = "completion"
-    CHAT = "chat"
-    RERANK = "rerank"
-    EMBEDDING = "embedding"
-    UNKNOWN = "unknown"
+class StreamProtocol(Protocol):
+    def __iter__(self) -> Iterator: ...
+
+    def __next__(self) -> Any: ...
+
+    def close(self) -> None: ...
 
 
-def dont_throw(func):
-    """A decorator that wraps the passed in function and logs exceptions instead of throwing them.
+class AsyncStreamProtocol(Protocol):
+    def __aiter__(self) -> AsyncIterator: ...
 
-    @param func: The function to wrap
-    @return: The wrapper function
-    """
-    # Obtain a logger specific to the function's module
-    logger = logging.getLogger(func.__module__)
+    async def __anext__(self) -> Any: ...
 
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception:
-            logger.debug(
-                "OpenLLMetry failed to trace in %s, error: %s",
-                func.__name__,
-                traceback.format_exc(),
+    async def aclose(self) -> None: ...
+
+
+class ChoiceBuffer:
+    def __init__(self, index: int) -> None:
+        self.index = index
+        self.finish_reason = None
+        self.text_content = []
+        self.tool_calls_buffers = []
+
+    def append_text_content(self, content: str) -> None:
+        self.text_content.append(content)
+
+    def append_tool_call(self, tool_call: Any) -> None:
+        idx = tool_call.index
+        # make sure we have enough tool call buffers
+        for _ in range(len(self.tool_calls_buffers), idx + 1):
+            self.tool_calls_buffers.append(None)
+
+        if not self.tool_calls_buffers[idx]:
+            self.tool_calls_buffers[idx] = ToolCallBuffer(
+                self.index, tool_call.id, tool_call.function.name
             )
-
-    return wrapper
-
-
-def _set_span_attribute(span, name, value):
-    if value is not None and value != "":
-        span.set_attribute(name, value)
-    return
+        self.tool_calls_buffers[idx].append_arguments(tool_call.function.arguments)
 
 
-def should_send_prompts():
-    return context.get_value("override_enable_content_tracing")
+class ChunkHandler(Protocol[ChunkType]):
+    def extract_metadata(self, chunk: ChunkType, metadata: Any) -> None:
+        """Extract metadata from chunk and update StreamMetadata"""
+        pass
+
+    def process_chunk(self, chunk: ChunkType, buffers: list[ChoiceBuffer]) -> None:
+        """Process chunk and update choice buffers"""
+        pass
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
+class BaseStreamWrapper(ABC, Generic[T]):
+    def __init__(
+        self,
+        span: Any,
+        stream: T,
+        metadata: Any,
+        chunk_handler: ChunkHandler,
+        cleanup_handler: Callable[[Any, Any, list[ChoiceBuffer]], None] | None = None,
+    ) -> None:
+        self.span = span
+        self.stream = stream
+        self.chunk_handler = chunk_handler
+        self.cleanup_handler = cleanup_handler
+        self.metadata = metadata
+        self.choice_buffers: list[ChoiceBuffer] = []
+        self._span_started = False
+        self.setup()
+
+    def setup(self) -> None:
+        if not self._span_started:
+            self._span_started = True
+
+    def process_chunk(self, chunk: Any) -> None:
+        # Extract metadata from chunk
+        self.chunk_handler.extract_metadata(chunk, self.metadata)
+
+        # Process chunk content
+        self.chunk_handler.process_chunk(chunk, self.choice_buffers)
+
+    def cleanup(self) -> None:
+        if self._span_started:
+            if self.cleanup_handler:
+                self.cleanup_handler(self.span, self.metadata, self.choice_buffers)
+            self.span.end()
+            self._span_started = False
+
+    @abstractmethod
+    async def close(self) -> None:
+        pass
 
 
-class Method(TypedDict):
-    package: str
-    object: str
-    method: str
-    span_name: str
+class StreamWrapper(BaseStreamWrapper[StreamProtocol]):
+    def __enter__(self) -> "StreamWrapper":
+        self.setup()
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        try:
+            if exc_type is not None:
+                self.span.set_status(Status(StatusCode.ERROR, str(exc_val)))
+                self.span.set_attribute(
+                    error_attributes.ERROR_TYPE, exc_type.__qualname__
+                )
+        finally:
+            self.cleanup()
+        return False
+
+    async def close(self) -> None:
+        self.stream.close()
+        self.cleanup()
+
+    def __iter__(self) -> "StreamWrapper":
+        return self
+
+    def __next__(self) -> Any:
+        try:
+            chunk = next(self.stream)
+            self.process_chunk(chunk)
+            return chunk
+        except StopIteration:
+            self.cleanup()
+            raise
+        except Exception as error:
+            self.span.set_status(Status(StatusCode.ERROR, str(error)))
+            self.span.set_attribute(
+                error_attributes.ERROR_TYPE, type(error).__qualname__
+            )
+            self.cleanup()
+            raise
 
 
-def _with_tracer_wrapper(func: Callable[P, R]) -> Callable[P, R]:
-    """Helper for providing tracer for wrapper functions."""
+class AsyncStreamWrapper(BaseStreamWrapper[AsyncStreamProtocol]):
+    async def __aenter__(self) -> "AsyncStreamWrapper":
+        self.setup()
+        return self
 
-    def _with_tracer(tracer: Tracer, to_wrap: Method) -> Callable[P, R]:
-        def wrapper(
-            wrapped: Callable[P, R],
-            instance: Any | None,
-            args,
-            kwargs,
-        ) -> R:
-            return func(tracer, to_wrap, wrapped, instance, args, kwargs)  # pyright: ignore
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        try:
+            if exc_type is not None:
+                self.span.set_status(Status(StatusCode.ERROR, str(exc_val)))
+                self.span.set_attribute(
+                    error_attributes.ERROR_TYPE, exc_type.__qualname__
+                )
+        finally:
+            self.cleanup()
+        return False
 
-        return wrapper  # pyright: ignore
+    async def close(self) -> None:
+        await self.stream.aclose()
+        self.cleanup()
 
-    return _with_tracer  # pyright: ignore
+    def __aiter__(self) -> "AsyncStreamWrapper":
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            chunk = await self.stream.__anext__()
+            self.process_chunk(chunk)
+            return chunk
+        except StopAsyncIteration:
+            self.cleanup()
+            raise
+        except Exception as error:
+            self.span.set_status(Status(StatusCode.ERROR, str(error)))
+            self.span.set_attribute(
+                error_attributes.ERROR_TYPE, type(error).__qualname__
+            )
+            self.cleanup()
+            raise
 
 
-def run_async(method):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
+class ToolCallBuffer:
+    def __init__(self, index: int, tool_call_id: str, function_name: str) -> None:
+        self.index = index
+        self.function_name = function_name
+        self.tool_call_id = tool_call_id
+        self.arguments: list[dict] = []
 
-    if loop and loop.is_running():
-        thread = threading.Thread(target=lambda: asyncio.run(method))
-        thread.start()
-        thread.join()
-    else:
-        asyncio.run(method)
+    def append_arguments(self, arguments: dict) -> None:
+        self.arguments.append(arguments)
+
+
+def set_server_address_and_port(
+    client_instance: Any, attributes: dict[str, Any]
+) -> None:
+    base_client = getattr(client_instance, "_client", None)
+    base_url = getattr(base_client, "base_url", None)
+    if not base_url:
+        return
+
+    port = -1
+    if isinstance(base_url, URL):
+        attributes[server_attributes.SERVER_ADDRESS] = base_url.host
+        port = base_url.port
+    elif isinstance(base_url, str):
+        url = urlparse(base_url)
+        attributes[server_attributes.SERVER_ADDRESS] = url.hostname
+        port = url.port
+
+    if port and port != 443 and port > 0:
+        attributes[server_attributes.SERVER_PORT] = port

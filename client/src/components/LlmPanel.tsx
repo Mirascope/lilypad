@@ -84,13 +84,13 @@ export const LlmPanel = ({ spanId }: { spanId: string }) => {
       <div className='flex gap-1'>
         <Badge>{span.provider}</Badge>
         <Badge>{span.model}</Badge>
-        {span.prompt_tokens && span.completion_tokens && (
+        {span.input_tokens && span.output_tokens && (
           <Badge className='text-xs font-medium m-0'>
-            <span>{span.prompt_tokens}</span>
+            <span>{span.input_tokens}</span>
             <span className='mx-1'>&#8594;</span>
-            <span>{span.completion_tokens}</span>
+            <span>{span.output_tokens}</span>
             <span className='mx-1'>=</span>
-            <span>{span.prompt_tokens + span.completion_tokens}</span>
+            <span>{span.input_tokens + span.output_tokens}</span>
           </Badge>
         )}
         <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>

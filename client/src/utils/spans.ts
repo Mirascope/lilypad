@@ -17,3 +17,24 @@ export const spanQueryOptions = (projectId: number, spanId?: string) =>
     enabled: Boolean(spanId),
     retry: false,
   });
+
+export const fetchSpansByVersionId = async (
+  projectId: number,
+  versionId: number
+) => {
+  return (
+    await api.get<SpanPublic[]>(
+      `/projects/${projectId}/versions/${versionId}/spans`
+    )
+  ).data;
+};
+
+export const versionIdSpansQueryOptions = (
+  projectId: number,
+  versionId: number
+) =>
+  queryOptions({
+    queryKey: ["projects", projectId, "versions", versionId, "spans"],
+    queryFn: () => fetchSpansByVersionId(projectId, versionId),
+    refetchInterval: 1000,
+  });

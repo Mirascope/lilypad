@@ -16,9 +16,8 @@ if TYPE_CHECKING:
 class _FunctionBase(BaseSQLModel):
     """Base Function Model."""
 
-    name: str = Field(nullable=False, index=True)
-    hash: str = Field(nullable=False, index=True)
-    code: str
+    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    name: str = Field(nullable=False, index=True, min_length=1)
     arg_types: dict[str, str] | None = Field(
         sa_column=Column(JSON), default_factory=dict
     )
@@ -27,13 +26,17 @@ class _FunctionBase(BaseSQLModel):
 class FunctionCreate(_FunctionBase):
     """Function create model."""
 
-    project_id: int
+    id: int | None = None
+    hash: str | None = None
+    code: str | None = None
 
 
 class FunctionPublic(_FunctionBase):
     """Function public model."""
 
     id: int
+    hash: str
+    code: str
 
 
 class FunctionTable(_FunctionBase, table=True):
@@ -42,7 +45,8 @@ class FunctionTable(_FunctionBase, table=True):
     __tablename__ = FUNCTION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True, nullable=False)
-    project_id: int = Field(foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    hash: str = Field(nullable=False, index=True, unique=True)
+    code: str = Field(nullable=False)
     project: "ProjectTable" = Relationship(back_populates="functions")
     versions: list["VersionTable"] = Relationship(
         back_populates="function", cascade_delete=True

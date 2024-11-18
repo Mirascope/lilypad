@@ -1,6 +1,10 @@
 import api from "@/api";
-import { CallArgsCreate, VersionPublic } from "@/types/types";
-import { queryOptions } from "@tanstack/react-query";
+import { FunctionAndPromptVersionCreate, VersionPublic } from "@/types/types";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 
 export const fetchVersionsByFunctionName = async (
@@ -9,12 +13,13 @@ export const fetchVersionsByFunctionName = async (
 ) => {
   return (
     await api.get<VersionPublic[]>(
-      `/projects/${projectId}/llm-fns/${functionName}/versions`
+      `/projects/${projectId}/functions/${functionName}/versions`
     )
   ).data;
 };
 
-export const fetchVersion = async (projectId: number, versionId: number) => {
+export const fetchVersion = async (projectId: number, versionId?: number) => {
+  if (!versionId) return null;
   return (
     await api.get<VersionPublic>(`/projects/${projectId}/versions/${versionId}`)
   ).data;
@@ -22,13 +27,38 @@ export const fetchVersion = async (projectId: number, versionId: number) => {
 
 export const createVersion = async (
   projectId: number,
-  llmFnId: number,
-  callArgsCreate: CallArgsCreate
-) => {
-  return await api.post<CallArgsCreate, AxiosResponse<VersionPublic>>(
-    `projects/${projectId}/llm-fns/${llmFnId}/fn-params`,
-    callArgsCreate
-  );
+  versionCreate: FunctionAndPromptVersionCreate
+): Promise<VersionPublic> => {
+  return (
+    await api.post<
+      FunctionAndPromptVersionCreate,
+      AxiosResponse<VersionPublic>
+    >(`projects/${projectId}/versions`, versionCreate)
+  ).data;
+};
+
+export const patchVersion = async (
+  projectId: number,
+  versionId: number
+): Promise<VersionPublic> => {
+  return (
+    await api.patch<undefined, AxiosResponse<VersionPublic>>(
+      `projects/${projectId}/versions/${versionId}/active`
+    )
+  ).data;
+};
+
+export const runVersion = async (
+  projectId: number,
+  versionId: number,
+  values: Record<string, string>
+): Promise<string> => {
+  return (
+    await api.post<Record<string, string>, AxiosResponse<string>>(
+      `projects/${projectId}/versions/${versionId}/run`,
+      values
+    )
+  ).data;
 };
 
 export const versionsByFunctionNameQueryOptions = (
@@ -36,13 +66,76 @@ export const versionsByFunctionNameQueryOptions = (
   functionName: string
 ) =>
   queryOptions({
-    queryKey: ["projects", projectId, "llm-fns", functionName, "versions"],
+    queryKey: ["projects", projectId, "functions", functionName, "versions"],
     queryFn: () => fetchVersionsByFunctionName(projectId, functionName),
     enabled: !!functionName,
   });
 
-export const versionQueryOptions = (projectId: number, versionId: number) =>
+export const versionQueryOptions = (
+  projectId: number,
+  versionId?: number,
+  options = {}
+) =>
   queryOptions({
     queryKey: ["projects", projectId, "versions", versionId],
     queryFn: () => fetchVersion(projectId, versionId),
+    ...options,
   });
+
+export const usePatchActiveVersion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      versionId,
+    }: {
+      projectId: number;
+      versionId: number;
+    }) => await patchVersion(projectId, versionId),
+    onSuccess: (newVersion, { projectId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "versions", newVersion.id],
+      });
+    },
+  });
+};
+
+export const useCreateVersion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      versionCreate,
+    }: {
+      projectId: number;
+      versionCreate: FunctionAndPromptVersionCreate;
+    }) => await createVersion(projectId, versionCreate),
+    onSuccess: (newVersion, { projectId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "projects",
+          projectId,
+          "functions",
+          newVersion.function.name,
+          "versions",
+        ],
+      });
+    },
+  });
+};
+
+export const useRunMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      versionId,
+      values,
+    }: {
+      projectId: number;
+      versionId: number;
+      values: Record<string, string>;
+    }) => await runVersion(projectId, versionId, values),
+  });
+};

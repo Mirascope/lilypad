@@ -4,8 +4,9 @@ from .base_sql_model import BaseSQLModel
 from .functions import FunctionCreate, FunctionPublic, FunctionTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
 from .prompts import (
-    AnthropicCallArgsCreate,
-    OpenAICallArgsCreate,
+    AnthropicCallParams,
+    GeminiCallParams,
+    OpenAICallParams,
     PromptCreate,
     PromptPublic,
     PromptTable,
@@ -17,12 +18,13 @@ from .versions import ActiveVersionPublic, VersionCreate, VersionPublic, Version
 
 __all__ = [
     "ActiveVersionPublic",
-    "AnthropicCallArgsCreate",
+    "AnthropicCallParams",
     "BaseSQLModel",
     "FunctionCreate",
     "FunctionPublic",
     "FunctionTable",
-    "OpenAICallArgsCreate",
+    "GeminiCallParams",
+    "OpenAICallParams",
     "ProjectCreate",
     "ProjectPublic",
     "ProjectTable",

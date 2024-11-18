@@ -27,9 +27,9 @@ from lilypad.messages import Message
 class MockResponse(
     mb.BaseCallResponse[
         Any,
-        mb.BaseTool[Any],
+        mb.BaseTool,
         Any,
-        mb.BaseDynamicConfig[Any, Any],
+        mb.BaseDynamicConfig[Any, Any, Any],
         Any,
         mb.BaseCallParams,
         Any,
@@ -84,7 +84,7 @@ class MockResponse(
 
     @computed_field
     @property
-    def tools(self) -> list[BaseTool[Any]] | None:
+    def tools(self) -> list[BaseTool] | None:
         """Returns any available tool calls as their `OpenAITool` definition.
 
         Raises:
@@ -117,7 +117,7 @@ class MockResponse(
 
     @classmethod
     def tool_message_params(
-        cls, tools_and_outputs: list[tuple[BaseTool[Any], str]]
+        cls, tools_and_outputs: list[tuple[BaseTool, str]]
     ) -> list[ChatCompletionToolMessageParam]:
         """Returns the tool message parameters for tool call results.
 
@@ -141,13 +141,13 @@ class MockResponse(
     ...
 
 
-class MockBaseTool(BaseTool[Any], ABC):
+class MockBaseTool(BaseTool, ABC):
     """Mock base tool for testing"""
 
     tool_call: SkipJsonSchema[ChatCompletionMessageToolCall]
 
     @classmethod
-    def from_tool_call(cls, tool_call: ChatCompletionMessageToolCall) -> BaseTool[Any]:
+    def from_tool_call(cls, tool_call: ChatCompletionMessageToolCall) -> BaseTool:
         """Constructs an `OpenAITool` instance from a `tool_call`.
 
         Args:
@@ -179,7 +179,7 @@ class FormatAuthor(MockBaseTool):
         return f"Author is {self.author}"
 
 
-class MockAsyncTool(BaseTool[Any]):
+class MockAsyncTool(BaseTool):
     """Mock async tool for testing"""
 
     value: str
@@ -189,7 +189,7 @@ class MockAsyncTool(BaseTool[Any]):
         return self.value
 
 
-class ErrorTool(BaseTool[Any]):
+class ErrorTool(BaseTool):
     """Mock tool that raises an error"""
 
     async def call(self) -> str:

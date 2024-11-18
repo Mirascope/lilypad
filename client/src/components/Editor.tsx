@@ -4,7 +4,7 @@ import { ListItemNode, ListNode } from "@lexical/list";
 import { $convertFromMarkdownString, TRANSFORMERS } from "@lexical/markdown";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import exampleTheme from "@/utils/lexical-theme";
-import { CustomDataSuggestionPlugin } from "@/components/lexical/custom-data-plugin";
+import { TemplateSuggestionPlugin } from "@/components/lexical/template-suggestion-plugin";
 import { TemplateNode } from "@/components/lexical/template-node";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -23,7 +23,7 @@ import { CollapsibleContentNode } from "@/components/lexical/collapsible-content
 import { CollapsibleTitleNode } from "@/components/lexical/collapsible-title-node";
 import CollapsiblePlugin from "@/components/lexical/collapsible-plugin";
 import { UneditableParagraphNode } from "@/components/lexical/uneditable-paragraph-node";
-import { ForwardedRef, forwardRef, useMemo } from "react";
+import { ForwardedRef, forwardRef, MutableRefObject, useMemo } from "react";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { TemplatePlugin } from "@/components/lexical/template-plugin";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
@@ -33,11 +33,21 @@ export const Editor = forwardRef(
     { inputs, promptTemplate }: { inputs: string[]; promptTemplate: string },
     ref: ForwardedRef<LexicalEditor>
   ) => {
+    const loadContent = () => {
+      // 'empty' editor
+      const value =
+        '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+
+      return value;
+    };
+    const editorState = promptTemplate
+      ? () =>
+          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS)
+      : loadContent();
     const config = useMemo(
       () => ({
         namespace: "editor",
-        editorState: () =>
-          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS),
+        editorState,
         theme: exampleTheme,
         nodes: [
           HeadingNode,
@@ -60,10 +70,10 @@ export const Editor = forwardRef(
           console.error(error);
         },
       }),
-      []
+      [promptTemplate]
     );
     return (
-      <LexicalComposer initialConfig={config}>
+      <LexicalComposer key={promptTemplate} initialConfig={config}>
         <div className={`flex flex-col border shadow rounded-lg prose`}>
           <ToolbarPlugin />
 
@@ -76,7 +86,7 @@ export const Editor = forwardRef(
                 />
               }
               placeholder={
-                <p className='text-muted-foreground absolute top-0 px-8 py-4 w-full pointer-events-none'>
+                <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
                   Enter some text...
                 </p>
               }
@@ -84,11 +94,17 @@ export const Editor = forwardRef(
             />
             <HistoryPlugin />
           </div>
-          <EditorRefPlugin editorRef={ref} />
+          <EditorRefPlugin
+            editorRef={
+              ref as
+                | ((instance: LexicalEditor | null) => void)
+                | MutableRefObject<LexicalEditor | null | undefined>
+            }
+          />
           <ListPlugin />
           <LinkPlugin />
           {inputs && <TemplatePlugin inputs={inputs} />}
-          {inputs && <CustomDataSuggestionPlugin inputs={inputs} />}
+          {inputs && <TemplateSuggestionPlugin inputs={inputs} />}
           <CodeHighlightPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <CollapsiblePlugin />
