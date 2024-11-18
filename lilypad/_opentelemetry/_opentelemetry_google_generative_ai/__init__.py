@@ -1,4 +1,5 @@
 from collections.abc import Collection
+from typing import Any
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
@@ -13,7 +14,7 @@ class GoogleGenerativeAIInstrumentor(BaseInstrumentor):
     def instrumentation_dependencies(self) -> Collection[str]:
         return ("google-generativeai>=0.4.0,<1",)
 
-    def _instrument(self, **kwargs):
+    def _instrument(self, **kwargs: Any) -> None:
         """Enable OpenAI instrumentation."""
         tracer_provider = kwargs.get("tracer_provider")
         tracer = get_tracer(
@@ -33,7 +34,7 @@ class GoogleGenerativeAIInstrumentor(BaseInstrumentor):
             wrapper=generate_content_async(tracer),
         )
 
-    def _uninstrument(self, **kwargs):
+    def _uninstrument(self, **kwargs: Any) -> None:
         import google.generativeai
 
         unwrap(

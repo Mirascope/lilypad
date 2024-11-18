@@ -71,7 +71,7 @@ class OpenAIChunkHandler:
 
 def default_openai_cleanup(
     span: Span, metadata: OpenAIMetadata, buffers: list[ChoiceBuffer]
-):
+) -> None:
     """Default OpenAI cleanup handler"""
     attributes: dict[str, AttributeValue] = {}
     if response_model := metadata.get("response_model"):
@@ -116,7 +116,7 @@ def default_openai_cleanup(
         span.add_event("gen_ai.choice", attributes=event_attributes)
 
 
-def get_tool_calls(message):
+def get_tool_calls(message: Any) -> list[dict[str, Any]] | None:
     tool_calls = message.tool_calls
     if tool_calls is None:
         return None
@@ -142,7 +142,7 @@ def get_tool_calls(message):
     return calls
 
 
-def set_message_event(span: Span, message: dict):
+def set_message_event(span: Span, message: dict) -> None:
     attributes = {
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.OPENAI.value
     }
@@ -162,7 +162,7 @@ def set_message_event(span: Span, message: dict):
     )
 
 
-def get_choice_event(choice):
+def get_choice_event(choice: Any) -> dict[str, AttributeValue]:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.OPENAI.value
     }
@@ -182,7 +182,7 @@ def get_choice_event(choice):
     return attributes
 
 
-def set_response_attributes(span: Span, response):
+def set_response_attributes(span: Span, response: Any) -> None:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: response.model
     }

@@ -28,36 +28,36 @@ from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import Status, StatusCode
 
 T = TypeVar("T")
-ChunkType = TypeVar("ChunkType")
+ChunkType = TypeVar("ChunkType", contravariant=True)
 
 
 class StreamProtocol(Protocol):
     def __iter__(self) -> Iterator: ...
 
-    def __next__(self): ...
+    def __next__(self) -> Any: ...
 
-    def close(self): ...
+    def close(self) -> None: ...
 
 
 class AsyncStreamProtocol(Protocol):
     def __aiter__(self) -> AsyncIterator: ...
 
-    async def __anext__(self): ...
+    async def __anext__(self) -> Any: ...
 
-    async def aclose(self): ...
+    async def aclose(self) -> None: ...
 
 
 class ChoiceBuffer:
-    def __init__(self, index):
+    def __init__(self, index: int) -> None:
         self.index = index
         self.finish_reason = None
         self.text_content = []
         self.tool_calls_buffers = []
 
-    def append_text_content(self, content):
+    def append_text_content(self, content: str) -> None:
         self.text_content.append(content)
 
-    def append_tool_call(self, tool_call):
+    def append_tool_call(self, tool_call: Any) -> None:
         idx = tool_call.index
         # make sure we have enough tool call buffers
         for _ in range(len(self.tool_calls_buffers), idx + 1):
@@ -88,7 +88,7 @@ class BaseStreamWrapper(ABC, Generic[T]):
         metadata: Any,
         chunk_handler: ChunkHandler,
         cleanup_handler: Callable[[Any, Any, list[ChoiceBuffer]], None] | None = None,
-    ):
+    ) -> None:
         self.span = span
         self.stream = stream
         self.chunk_handler = chunk_handler
@@ -98,18 +98,18 @@ class BaseStreamWrapper(ABC, Generic[T]):
         self._span_started = False
         self.setup()
 
-    def setup(self):
+    def setup(self) -> None:
         if not self._span_started:
             self._span_started = True
 
-    def process_chunk(self, chunk: Any):
+    def process_chunk(self, chunk: Any) -> None:
         # Extract metadata from chunk
         self.chunk_handler.extract_metadata(chunk, self.metadata)
 
         # Process chunk content
         self.chunk_handler.process_chunk(chunk, self.choice_buffers)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         if self._span_started:
             if self.cleanup_handler:
                 self.cleanup_handler(self.span, self.metadata, self.choice_buffers)
@@ -117,16 +117,16 @@ class BaseStreamWrapper(ABC, Generic[T]):
             self._span_started = False
 
     @abstractmethod
-    async def close(self):
+    async def close(self) -> None:
         pass
 
 
 class StreamWrapper(BaseStreamWrapper[StreamProtocol]):
-    def __enter__(self):
+    def __enter__(self) -> "StreamWrapper":
         self.setup()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         try:
             if exc_type is not None:
                 self.span.set_status(Status(StatusCode.ERROR, str(exc_val)))
@@ -137,14 +137,14 @@ class StreamWrapper(BaseStreamWrapper[StreamProtocol]):
             self.cleanup()
         return False
 
-    async def close(self):
+    async def close(self) -> None:
         self.stream.close()
         self.cleanup()
 
-    def __iter__(self):
+    def __iter__(self) -> "StreamWrapper":
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         try:
             chunk = next(self.stream)
             self.process_chunk(chunk)
@@ -162,11 +162,11 @@ class StreamWrapper(BaseStreamWrapper[StreamProtocol]):
 
 
 class AsyncStreamWrapper(BaseStreamWrapper[AsyncStreamProtocol]):
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncStreamWrapper":
         self.setup()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         try:
             if exc_type is not None:
                 self.span.set_status(Status(StatusCode.ERROR, str(exc_val)))
@@ -177,14 +177,14 @@ class AsyncStreamWrapper(BaseStreamWrapper[AsyncStreamProtocol]):
             self.cleanup()
         return False
 
-    async def close(self):
+    async def close(self) -> None:
         await self.stream.aclose()
         self.cleanup()
 
-    def __aiter__(self):
+    def __aiter__(self) -> "AsyncStreamWrapper":
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> Any:
         try:
             chunk = await self.stream.__anext__()
             self.process_chunk(chunk)
@@ -202,17 +202,19 @@ class AsyncStreamWrapper(BaseStreamWrapper[AsyncStreamProtocol]):
 
 
 class ToolCallBuffer:
-    def __init__(self, index, tool_call_id, function_name):
+    def __init__(self, index: int, tool_call_id: str, function_name: str) -> None:
         self.index = index
         self.function_name = function_name
         self.tool_call_id = tool_call_id
-        self.arguments = []
+        self.arguments: list[dict] = []
 
-    def append_arguments(self, arguments):
+    def append_arguments(self, arguments: dict) -> None:
         self.arguments.append(arguments)
 
 
-def set_server_address_and_port(client_instance, attributes):
+def set_server_address_and_port(
+    client_instance: Any, attributes: dict[str, Any]
+) -> None:
     base_client = getattr(client_instance, "_client", None)
     base_url = getattr(base_client, "base_url", None)
     if not base_url:

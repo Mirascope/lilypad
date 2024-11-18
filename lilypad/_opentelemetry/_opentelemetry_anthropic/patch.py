@@ -1,3 +1,6 @@
+from collections.abc import Awaitable, Callable
+from typing import Any, ParamSpec
+
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
@@ -15,9 +18,18 @@ from lilypad._opentelemetry._utils import (
     StreamWrapper,
 )
 
+P = ParamSpec("P")
 
-def chat_completions_create(tracer: Tracer):
-    def traced_method(wrapped, instance, args, kwargs):
+
+def chat_completions_create(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
+    def traced_method(
+        wrapped: Callable[P, Any],
+        instance: Any,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
         span_attributes = {**get_llm_request_attributes(kwargs, instance)}
 
         span_name = f"{span_attributes[gen_ai_attributes.GEN_AI_OPERATION_NAME]} {span_attributes[gen_ai_attributes.GEN_AI_REQUEST_MODEL]}"
@@ -58,8 +70,15 @@ def chat_completions_create(tracer: Tracer):
     return traced_method
 
 
-def chat_completions_create_async(tracer: Tracer):
-    async def traced_method(wrapped, instance, args, kwargs):
+def chat_completions_create_async(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+    async def traced_method(
+        wrapped: Callable[P, Any],
+        instance: Any,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
         span_attributes = {**get_llm_request_attributes(kwargs, instance)}
 
         span_name = f"{span_attributes[gen_ai_attributes.GEN_AI_OPERATION_NAME]} {span_attributes[gen_ai_attributes.GEN_AI_REQUEST_MODEL]}"

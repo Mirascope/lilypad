@@ -15,6 +15,7 @@
 # Modifications copyright (C) 2024 Mirascope
 
 from collections.abc import Collection
+from typing import Any
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
@@ -29,7 +30,7 @@ class OpenAIInstrumentor(BaseInstrumentor):
     def instrumentation_dependencies(self) -> Collection[str]:
         return ("openai>=1.6.0,<2",)
 
-    def _instrument(self, **kwargs):
+    def _instrument(self, **kwargs: Any) -> None:
         """Enable OpenAI instrumentation."""
         tracer_provider = kwargs.get("tracer_provider")
         tracer = get_tracer(
@@ -49,8 +50,8 @@ class OpenAIInstrumentor(BaseInstrumentor):
             wrapper=chat_completions_create_async(tracer),
         )
 
-    def _uninstrument(self, **kwargs):
+    def _uninstrument(self, **kwargs: Any) -> None:
         import openai
 
-        unwrap(openai.resources.chat.completions.Completions, "create")
-        unwrap(openai.resources.chat.completions.AsyncCompletions, "create")
+        unwrap(openai.resources.chat.completions.Completions, "create")  # pyright: ignore[reportAttributeAccessIssue]
+        unwrap(openai.resources.chat.completions.AsyncCompletions, "create")  # pyright: ignore[reportAttributeAccessIssue]

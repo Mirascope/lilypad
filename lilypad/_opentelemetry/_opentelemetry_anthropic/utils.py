@@ -58,7 +58,7 @@ class AnthropicChunkHandler:
 
 def default_anthropic_cleanup(
     span: Span, metadata: AnthropicMetadata, buffers: list[ChoiceBuffer]
-):
+) -> None:
     """Default Anthropic cleanup handler."""
     attributes: dict[str, AttributeValue] = {}
     if model := metadata.get("model"):
@@ -102,10 +102,10 @@ def default_anthropic_cleanup(
 
 
 def get_llm_request_attributes(
-    kwargs,
-    client_instance,
-    operation_name=gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
-):
+    kwargs: dict[str, Any],
+    client_instance: Any,
+    operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+) -> dict[str, AttributeValue]:
     attributes = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value,
@@ -131,7 +131,7 @@ def get_llm_request_attributes(
     return {k: v for k, v in attributes.items() if v is not None}
 
 
-def get_tool_call(content):
+def get_tool_call(content: Any) -> dict[str, Any] | None:
     if content.type != "tool_use":
         return None
     tool_call_dict = {}
@@ -150,7 +150,7 @@ def get_tool_call(content):
     return tool_call_dict
 
 
-def get_tool_calls(messages):
+def get_tool_calls(messages: list[Any]) -> list[dict[str, Any]]:
     calls = []
     for message in messages:
         if tool_call := get_tool_call(message):
@@ -158,7 +158,7 @@ def get_tool_calls(messages):
     return calls
 
 
-def set_message_event(span: Span, message):
+def set_message_event(span: Span, message: Any) -> None:
     attributes = {
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value
     }
@@ -176,7 +176,7 @@ def set_message_event(span: Span, message):
     )
 
 
-def get_message_event(message):
+def get_message_event(message: Any) -> dict[str, AttributeValue]:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value
     }
@@ -191,7 +191,7 @@ def get_message_event(message):
     return attributes
 
 
-def set_response_attributes(span: Span, response):
+def set_response_attributes(span: Span, response: Any) -> None:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: response.model
     }

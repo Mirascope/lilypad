@@ -1,4 +1,5 @@
 from collections.abc import Collection
+from typing import Any
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
@@ -13,7 +14,7 @@ class AnthropicInstrumentor(BaseInstrumentor):
     def instrumentation_dependencies(self) -> Collection[str]:
         return ("anthropic>=0.29.0,<1.0",)
 
-    def _instrument(self, **kwargs):
+    def _instrument(self, **kwargs: Any) -> None:
         """Enable Anthropic instrumentation."""
         tracer_provider = kwargs.get("tracer_provider")
         tracer = get_tracer(
@@ -33,8 +34,8 @@ class AnthropicInstrumentor(BaseInstrumentor):
             wrapper=chat_completions_create_async(tracer),
         )
 
-    def _uninstrument(self, **kwargs):
+    def _uninstrument(self, **kwargs: Any) -> None:
         import anthropic
 
-        unwrap(anthropic.resources.messages.Messages, "create")
-        unwrap(anthropic.resources.messages.AsyncMessages, "create")
+        unwrap(anthropic.resources.messages.Messages, "create")  # pyright: ignore[reportAttributeAccessIssue]
+        unwrap(anthropic.resources.messages.AsyncMessages, "create")  # pyright: ignore[reportAttributeAccessIssue]

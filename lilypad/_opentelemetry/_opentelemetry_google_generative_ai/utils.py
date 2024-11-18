@@ -47,7 +47,7 @@ class GeminiChunkHandler:
 
 def default_gemini_cleanup(
     span: Span, metadata: GeminiMetadata, buffers: list[ChoiceBuffer]
-):
+) -> None:
     """Default Gemini cleanup handler"""
     attributes: dict[str, AttributeValue] = {}
     if response_model := metadata.get("response_model"):
@@ -73,10 +73,10 @@ def default_gemini_cleanup(
 
 
 def get_llm_request_attributes(
-    kwargs,
-    client_instance,
-    operation_name=gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
-):
+    kwargs: dict[str, Any],
+    client_instance: Any,
+    operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+) -> dict[str, AttributeValue]:
     attributes = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
         gen_ai_attributes.GEN_AI_SYSTEM: "gemini",
@@ -102,7 +102,7 @@ def get_llm_request_attributes(
     return {k: v for k, v in attributes.items() if v is not None}
 
 
-def get_tool_calls(parts):
+def get_tool_calls(parts: list[Any]) -> list[dict[str, Any]]:
     calls = []
     for part in parts:
         tool_call = part.function_call
@@ -121,7 +121,7 @@ def get_tool_calls(parts):
     return calls
 
 
-def set_content_event(span: Span, content):
+def set_content_event(span: Span, content: Any) -> None:
     attributes: dict[str, AttributeValue] = {gen_ai_attributes.GEN_AI_SYSTEM: "gemini"}
     role = content.get("role", "")
     parts = content.get("parts")
@@ -160,7 +160,7 @@ def set_content_event(span: Span, content):
     )
 
 
-def get_candidate_event(candidate):
+def get_candidate_event(candidate: Any) -> dict[str, AttributeValue]:
     attributes: dict[str, AttributeValue] = {gen_ai_attributes.GEN_AI_SYSTEM: "gemini"}
     if content := candidate.content:
         message_dict = {
@@ -178,7 +178,7 @@ def get_candidate_event(candidate):
     return attributes
 
 
-def set_response_attributes(span: Span, response, client_instance):
+def set_response_attributes(span: Span, response: Any, client_instance: Any) -> None:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: get_gemini_model_name(client_instance)
     }
@@ -205,16 +205,16 @@ def set_response_attributes(span: Span, response, client_instance):
     span.set_attributes(attributes)
 
 
-def get_gemini_model_name(client_instance):
+def get_gemini_model_name(client_instance: Any) -> str:
     llm_model = "unknown"
     if hasattr(client_instance, "_model_id"):
-        llm_model = client_instance._model_id  # pyright: ignore
+        llm_model = client_instance._model_id
     if hasattr(client_instance, "_model_name"):
         llm_model = client_instance._model_name
     return llm_model
 
 
-def set_stream(span, stream, client_instance):
+def set_stream(span: Span, stream: Any, client_instance: Any) -> None:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: get_gemini_model_name(client_instance)
     }
@@ -246,7 +246,7 @@ def set_stream(span, stream, client_instance):
     span.set_attributes(attributes)
 
 
-async def set_stream_async(span, stream, client_instance):
+async def set_stream_async(span: Span, stream: Any, client_instance: Any) -> None:
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: get_gemini_model_name(client_instance)
     }
