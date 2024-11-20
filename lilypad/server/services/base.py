@@ -7,8 +7,9 @@ from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseSQLModel
+from ..models import BaseSQLModel, User
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -62,5 +63,7 @@ class BaseService(Generic[_TableT, _CreateT]):
     def __init__(
         self,
         session: Annotated[Session, Depends(get_session)],
+        user: Annotated[User, Depends(get_current_user)],
     ) -> None:
         self.session = session
+        self.user = user

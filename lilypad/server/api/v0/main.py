@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 
+from .auth_api import auth_router
 from .functions_api import functions_router
 from .projects_api import projects_router
 from .prompts_api import prompts_router
@@ -10,6 +11,7 @@ from .traces_api import traces_router
 from .versions_api import versions_router
 
 api = FastAPI()
+api.include_router(auth_router)
 api.include_router(functions_router)
 api.include_router(projects_router)
 api.include_router(prompts_router)

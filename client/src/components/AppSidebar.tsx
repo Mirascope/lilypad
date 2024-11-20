@@ -8,6 +8,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,10 +16,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { projectsQueryOptions } from "@/utils/projects";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const RecursiveMenuContent = ({ item, depth = 0 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -73,6 +83,10 @@ const RecursiveMenuContent = ({ item, depth = 0 }) => {
 };
 
 export const AppSidebar = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const projectList = projects.map((project) => ({
     title: project.name,
@@ -98,7 +112,13 @@ export const AppSidebar = () => {
       children: projectList,
     },
   ];
-
+  const handleLogout = () => {
+    auth.logout().then(() => {
+      router.invalidate().finally(() => {
+        navigate({ to: "/auth/login", search: { redirect: undefined } });
+      });
+    });
+  };
   return (
     <Sidebar collapsible='icon' className='lilypad-sidebar'>
       <SidebarContent>
@@ -116,6 +136,16 @@ export const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <DropdownMenu>
+          <DropdownMenuTrigger>{user?.first_name}</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>
+              <Button onClick={handleLogout}>Logout</Button>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 };

@@ -1,5 +1,6 @@
 """The module for the `lilypad` database tables and models."""
 
+from .auth import User, UserSession
 from .base_sql_model import BaseSQLModel
 from .functions import FunctionCreate, FunctionPublic, FunctionTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
@@ -37,6 +38,8 @@ __all__ = [
     "SpanCreate",
     "SpanPublic",
     "SpanTable",
+    "User",
+    "UserSession",
     "VersionCreate",
     "VersionPublic",
     "VersionTable",

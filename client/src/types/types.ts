@@ -88,7 +88,10 @@ export interface FunctionCreate {
   created_at?: string;
   /** Project Id */
   project_id?: number | null;
-  /** Name */
+  /**
+   * Name
+   * @minLength 1
+   */
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
@@ -112,7 +115,10 @@ export interface FunctionPublic {
   created_at?: string;
   /** Project Id */
   project_id?: number | null;
-  /** Name */
+  /**
+   * Name
+   * @minLength 1
+   */
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
@@ -127,6 +133,7 @@ export interface FunctionPublic {
 /**
  * GeminiCallParams
  * Gemini GenerationConfig call args model.
+ *
  * https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
  */
 export interface GeminiCallParams {
@@ -156,6 +163,18 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
+/** LoginResponse */
+export interface LoginResponse {
+  /** Authorization Url */
+  authorization_url: string;
+}
+
+/** LoginType */
+export enum LoginType {
+  GIT_HUB_O_AUTH = "GitHubOAuth",
+  GOOGLE_O_AUTH = "GoogleOAuth",
+}
+
 /**
  * MessageParam
  * Message param model agnostic to providers.
@@ -170,6 +189,8 @@ export interface MessageParam {
 /**
  * OpenAICallParams
  * OpenAI call args model.
+ *
+ * https://platform.openai.com/docs/api-reference/chat/create
  */
 export interface OpenAICallParams {
   /** Max Tokens */
@@ -370,6 +391,23 @@ export interface SpanPublic {
   version?: VersionPublic | null;
   /** Child Spans */
   child_spans: SpanPublic[];
+}
+
+/**
+ * UserSession
+ * User session model
+ */
+export interface UserSession {
+  /** First Name */
+  first_name?: string | null;
+  /** Raw Profile */
+  raw_profile: object;
+  /** Session Id */
+  session_id: string;
+  /** Expires At */
+  expires_at: string;
+  /** Access Token */
+  access_token?: string | null;
 }
 
 /** ValidationError */

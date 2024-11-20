@@ -3,10 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { projectsQueryOptions } from "@/utils/projects";
-export const Route = createFileRoute("/projects/")({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(projectsQueryOptions());
-  },
+export const Route = createFileRoute("/_auth/projects/")({
   component: () => <Projects />,
 });
 

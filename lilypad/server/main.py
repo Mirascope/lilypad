@@ -1,5 +1,7 @@
 """The main FastAPI app for `lilypad`."""
 
+import secrets
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -7,10 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
 from .._utils import load_config
+from ._utils import COOKIE_NAME, SESSION_EXPIRE_MINUTES
 from .api import v0_api
 
 config = load_config()
@@ -32,6 +36,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=secrets.token_urlsafe(32),  # Replace with your secret key
+    session_cookie=COOKIE_NAME,
+    max_age=SESSION_EXPIRE_MINUTES * 60,
+    same_site="lax",
+    https_only=True,
+)
+
 app.mount("/api/v0", v0_api)
 
 

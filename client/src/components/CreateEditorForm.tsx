@@ -244,7 +244,6 @@ export const CreateEditorForm = ({
     );
   };
   if (version && !version.prompt) {
-    console.log(version.function.code);
     return (
       <Card className='w-[600px] m-auto'>
         <CardHeader>
