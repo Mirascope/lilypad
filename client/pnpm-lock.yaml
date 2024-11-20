@@ -98,9 +98,6 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.20.5
         version: 8.20.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@workos-inc/authkit-react':
-        specifier: ^0.7.0
-        version: 0.7.0(react@18.3.1)
       axios:
         specifier: ^1.7.7
         version: 1.7.7
@@ -1769,14 +1766,6 @@ packages:
     resolution: {integrity: sha512-vgWOY0i1EROUK0Ctg1hwhtC3SdcDjZcdit4Ups4aPkDcB1jYhmo+RMYWY87cmXMhvtD5uf8lV89j2w16vkdSVg==}
     peerDependencies:
       vite: ^4 || ^5
-
-  '@workos-inc/authkit-js@0.7.0':
-    resolution: {integrity: sha512-eBZV5BuKqHzuJfL5C9Dn+WfJ1U7rTWitrsGQQqslASJ8WLxc2Q98qjTRAulqD8vjsK/0Z5GousAvT1tokrWmlg==}
-
-  '@workos-inc/authkit-react@0.7.0':
-    resolution: {integrity: sha512-wtAL4GNUI0imGl8Sb8dW21e8xQU8akzDZuK4/nTclXc6xmuVcSt2HtGLY2opjdUkqexN/e3Po0FLKn3XtIdwSw==}
-    peerDependencies:
-      react: '>=17'
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -4734,13 +4723,6 @@ snapshots:
       vite: 5.4.8(@types/node@22.7.5)
     transitivePeerDependencies:
       - '@swc/helpers'
-
-  '@workos-inc/authkit-js@0.7.0': {}
-
-  '@workos-inc/authkit-react@0.7.0(react@18.3.1)':
-    dependencies:
-      '@workos-inc/authkit-js': 0.7.0
-      react: 18.3.1
 
   acorn-jsx@5.3.2(acorn@8.12.1):
     dependencies:
