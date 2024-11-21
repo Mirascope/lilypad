@@ -1,5 +1,6 @@
 """Test cases for server models."""
-from typing import Generator
+
+from collections.abc import Generator
 
 import pytest
 from sqlalchemy import Engine
@@ -52,7 +53,7 @@ def test_base_sql_model() -> None:
     """Test BaseSQLModel initialization."""
 
     class TestModel(BaseSQLModel, table=True):
-        __tablename__ = "testmodel"   # pyright: ignore [reportAssignmentType]
+        __tablename__ = "testmodel"  # pyright: ignore [reportAssignmentType]
         id: int | None = Field(default=None, primary_key=True)
         name: str
 
@@ -241,7 +242,10 @@ def test_relationships(session) -> None:
 
     # Create function linked to project
     function = FunctionTable(
-        name="test_func", hash="abc123", code="def test(): pass", project_id=project.id  # pyright: ignore [reportArgumentType]
+        name="test_func",
+        hash="abc123",
+        code="def test(): pass",
+        project_id=project.id,  # pyright: ignore [reportArgumentType]
     )
     session.add(function)
     session.commit()
