@@ -23,12 +23,6 @@ from .config import load_config
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-config = load_config()
-
-lilypad_client = LilypadClient(
-    base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
-)
-
 
 def _get_custom_context_manager(
     version: VersionPublic | ActiveVersionPublic,
@@ -42,6 +36,12 @@ def _get_custom_context_manager(
         fn: Callable,
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
+        config = load_config()
+
+        lilypad_client = LilypadClient(
+            base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
+        )
+
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_id": lilypad_client.project_id

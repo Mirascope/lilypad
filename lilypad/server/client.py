@@ -211,9 +211,7 @@ class LilypadClient:
                 },
             )
 
-    def get_prompt_active_version(
-        self, fn: Callable[..., Any], arg_types: dict[str, str]
-    ) -> ActiveVersionPublic:
+    def get_prompt_active_version(self, fn: Callable[..., Any]) -> ActiveVersionPublic:
         """Get the active version for a function with a prompt.
 
         Args:
@@ -226,6 +224,6 @@ class LilypadClient:
         _, hash = compute_closure(fn)
         return self._request(
             "GET",
-            f"/v0/projects/{self.project_id}/versions/{hash}/active",
+            f"/v0/projects/{self.project_id}/functions/{hash}/versions/active",
             response_model=ActiveVersionPublic,
         )

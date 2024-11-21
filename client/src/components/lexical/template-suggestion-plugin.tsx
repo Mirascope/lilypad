@@ -49,7 +49,7 @@ const useBasicTypeaheadTriggerMatch = (
   );
 };
 
-type CustomData = {
+type Template = {
   key: string;
   metadata: {
     id: string;
@@ -108,29 +108,28 @@ export function SuggestionItem({
   );
 }
 
-export const CustomDataSuggestionPlugin = ({
+export const TemplateSuggestionPlugin = ({
   inputs,
 }: {
   inputs: string[];
 }): JSX.Element | null => {
-  const customData: CustomData[] = inputs.map((input: string) => ({
+  const template: Template[] = inputs.map((input: string) => ({
     key: `{${input}}`,
     metadata: { id: "1", value: input },
   }));
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [showCustomDataSuggestions, setShowCustomDataSuggestions] =
-    useState(true);
+  const [showTemplateSuggestions, setShowTemplateSuggestions] = useState(true);
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch("{", {
     minLength: 0,
   });
 
-  const checkForCustomDataTriggerMatch = useCallback(
+  const checkForTemplateTriggerMatch = useCallback(
     (text: string) => {
       const match = checkForTriggerMatch(text, editor);
       if (match !== null) {
-        setShowCustomDataSuggestions(true);
+        setShowTemplateSuggestions(true);
       }
       return match;
     },
@@ -156,7 +155,7 @@ export const CustomDataSuggestionPlugin = ({
   );
 
   const createFilteredOptions = (
-    options: CustomData[],
+    options: Template[],
     queryString: string | RegExp | null
   ) => {
     if (queryString === null) {
@@ -169,10 +168,10 @@ export const CustomDataSuggestionPlugin = ({
 
   const options: CustomTypeaheadOption[] = useMemo(
     () =>
-      createFilteredOptions(customData, queryString).map(
+      createFilteredOptions(template, queryString).map(
         (data) => new CustomTypeaheadOption(data.key, data.metadata)
       ),
-    [customData, queryString]
+    [template, queryString]
   );
 
   const renderSuggestionsMenu = (
@@ -180,7 +179,7 @@ export const CustomDataSuggestionPlugin = ({
     { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }: any
   ) => {
     if (
-      !showCustomDataSuggestions ||
+      !showTemplateSuggestions ||
       anchorElementRef.current == null ||
       options.length === 0
     ) {
@@ -216,7 +215,7 @@ export const CustomDataSuggestionPlugin = ({
     <LexicalTypeaheadMenuPlugin<CustomTypeaheadOption>
       onQueryChange={setQueryString}
       onSelectOption={onSelectOption}
-      triggerFn={checkForCustomDataTriggerMatch}
+      triggerFn={checkForTemplateTriggerMatch}
       options={options}
       anchorClassName='z-[10000]'
       menuRenderFn={renderSuggestionsMenu}

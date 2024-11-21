@@ -1,19 +1,12 @@
-from ._opentelemetry_anthropic import AnthropicInstrumentor
-from ._opentelemetry_google_generative_ai import GoogleGenerativeAiInstrumentor
-from ._utils import (
-    SUPPRESS_LANGUAGE_MODEL_INSTRUMENTATION_KEY,
-    LLMRequestTypeValues,
-    SpanAttributes,
-    _set_span_attribute,
-    dont_throw,
-)
+from contextlib import suppress
+
+with suppress(ImportError):
+    from ._opentelemetry_anthropic import AnthropicInstrumentor
+    from ._opentelemetry_google_generative_ai import GoogleGenerativeAIInstrumentor
+    from ._opentelemetry_openai import OpenAIInstrumentor
 
 __all__ = [
     "AnthropicInstrumentor",
-    "dont_throw",
-    "_set_span_attribute",
-    "GoogleGenerativeAiInstrumentor",
-    "SUPPRESS_LANGUAGE_MODEL_INSTRUMENTATION_KEY",
-    "LLMRequestTypeValues",
-    "SpanAttributes",
+    "GoogleGenerativeAIInstrumentor",
+    "OpenAIInstrumentor",
 ]

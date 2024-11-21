@@ -33,6 +33,20 @@ class _CodeLocation:
         return hash((self.module_path, self.line_number))
 
 
+def format_code(code: str) -> str:
+    """Format code using ruff."""
+    try:
+        mode = black.Mode(
+            line_length=88,
+            string_normalization=True,
+            is_pyi=False,
+        )
+        return black.format_str(code, mode=mode)
+    except Exception:
+        # If formatting fails, return the original code
+        return code
+
+
 class _DependencyCollector:
     """Collects all dependencies for a function."""
 
@@ -48,19 +62,6 @@ class _DependencyCollector:
         self._dependency_graph: dict[str, set[str]] = {}
         self._class_dependency_graph: dict[str, set[str]] = {}
         self._main_function_name: str | None = None
-
-    def _format_code(self, code: str) -> str:
-        """Format code using ruff."""
-        try:
-            mode = black.Mode(
-                line_length=88,
-                string_normalization=True,
-                is_pyi=False,
-            )
-            return black.format_str(code, mode=mode)
-        except Exception:
-            # If formatting fails, return the original code
-            return code
 
     def _get_package_paths(self) -> set[str]:
         """Get paths where third-party packages are installed."""
@@ -351,7 +352,7 @@ class _DependencyCollector:
                 parts.append(name_to_source[func_name])
                 parts.append("")
 
-        return self._format_code("\n".join(parts).strip())
+        return format_code("\n".join(parts).strip())
 
 
 class _DependencyVisitor(ast.NodeVisitor):

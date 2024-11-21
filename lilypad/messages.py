@@ -29,9 +29,9 @@ class _DelegateAbstractMethods(ModelMetaclass):
 class Message(
     mb.BaseCallResponse[
         Any,
-        mb.BaseTool[Any],
+        mb.BaseTool,
         Any,
-        mb.BaseDynamicConfig[Any, Any],
+        mb.BaseDynamicConfig[Any, Any, Any],
         Any,
         mb.BaseCallParams,
         Any,

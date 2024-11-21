@@ -10,7 +10,7 @@ import pytest
 from lilypad.prompts import prompt
 from lilypad.server.models import (
     FunctionPublic,
-    OpenAICallArgsCreate,
+    OpenAICallParams,
     PromptPublic,
     Provider,
     ResponseFormat,
@@ -44,7 +44,7 @@ def mock_version() -> VersionPublic:
             template="Recommend a {genre} book.",
             provider=Provider.OPENAI,
             model="gpt-4",
-            call_params=OpenAICallArgsCreate(
+            call_params=OpenAICallParams(
                 max_tokens=300,
                 temperature=0.7,
                 top_p=1.0,

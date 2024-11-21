@@ -13,13 +13,13 @@ from lilypad.server.models import (
 
 
 # Test models
-class TestResponse(BaseModel):
+class Response(BaseModel):
     """Test model for custom return type"""
 
     message: str
 
 
-class TestModel:
+class Model:
     """Test model for custom return type"""
 
     def __init__(self, value: str):
@@ -89,12 +89,12 @@ def test_trace_sync_with_model_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of a synchronous function with custom model return"""
 
     @trace()
-    def test_function() -> TestModel:
-        return TestModel("test value")
+    def test_function() -> Model:
+        return Model("test value")
 
     result = test_function()
 
-    assert isinstance(result, TestModel)
+    assert isinstance(result, Model)
     assert result.value == "test value"
     mock_get_tracer.return_value.start_as_current_span.assert_called_once()
     mock_span = mock_get_tracer.return_value.start_as_current_span.return_value.__enter__.return_value
@@ -107,12 +107,12 @@ def test_trace_sync_with_pydantic_return(mock_lilypad_client, mock_get_tracer):
     """Test tracing of a synchronous function with Pydantic model return"""
 
     @trace()
-    def test_function() -> TestResponse:
-        return TestResponse(message="hello")
+    def test_function() -> Response:
+        return Response(message="hello")
 
     result = test_function()
 
-    assert isinstance(result, TestResponse)
+    assert isinstance(result, Response)
     assert result.message == "hello"
     mock_get_tracer.return_value.start_as_current_span.assert_called_once()
     mock_span = mock_get_tracer.return_value.start_as_current_span.return_value.__enter__.return_value
@@ -147,12 +147,12 @@ async def test_trace_async_with_model_return(mock_lilypad_client, mock_get_trace
     """Test tracing of an asynchronous function with custom model return"""
 
     @trace()
-    async def test_function() -> TestModel:
-        return TestModel("test value")
+    async def test_function() -> Model:
+        return Model("test value")
 
     result = await test_function()
 
-    assert isinstance(result, TestModel)
+    assert isinstance(result, Model)
     assert result.value == "test value"
     mock_get_tracer.return_value.start_as_current_span.assert_called_once()
     mock_span = mock_get_tracer.return_value.start_as_current_span.return_value.__enter__.return_value
@@ -166,12 +166,12 @@ async def test_trace_async_with_pydantic_return(mock_lilypad_client, mock_get_tr
     """Test tracing of an asynchronous function with Pydantic model return"""
 
     @trace()
-    async def test_function() -> TestResponse:
-        return TestResponse(message="hello")
+    async def test_function() -> Response:
+        return Response(message="hello")
 
     result = await test_function()
 
-    assert isinstance(result, TestResponse)
+    assert isinstance(result, Response)
     assert result.message == "hello"
     mock_get_tracer.return_value.start_as_current_span.assert_called_once()
     mock_span = mock_get_tracer.return_value.start_as_current_span.return_value.__enter__.return_value
