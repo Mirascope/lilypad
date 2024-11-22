@@ -43,6 +43,7 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.6.1",
+    "cryptography>=43.0.3",
 ]
 
 [project.urls]
@@ -61,7 +62,7 @@ gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 dev-dependencies = [
     "ruff>=0.6.1",
     "pytest>=8.3.2",
-    "pyright>=1.1.388",
+    "pyright>=1.1.389",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
@@ -166,7 +167,7 @@ venv = ".venv"
 skip = [".git", "*.lock", "./client/pnpm-lock.yaml"]
 
 [tool.coverage.report]
-exclude_also = ["@overload", "@abstractmethod"]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
 
 [build-system]
 requires = ["hatchling"]
