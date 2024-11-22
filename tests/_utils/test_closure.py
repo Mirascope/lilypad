@@ -538,7 +538,7 @@ def test_get_code_location_module_file_none():
 def test_is_user_defined_import():
     """Test the _is_user_defined_import method."""
     collector = _DependencyCollector()
-    assert collector._is_user_defined_import("from typing import List") is True
+    assert collector._is_user_defined_import("from typing import List") is False
     assert collector._is_user_defined_import("import openai") is False
     assert collector._is_user_defined_import("import custom_module") is True
 

@@ -50,6 +50,38 @@ def format_code(code: str) -> str:
 class _DependencyCollector:
     """Collects all dependencies for a function."""
 
+    STANDARD_MODULES = {
+        "typing",
+        "collections",
+        "os",
+        "sys",
+        "math",
+        "datetime",
+        "random",
+        "json",
+        "re",
+        "time",
+        "itertools",
+        "functools",
+        "abc",
+        "copy",
+        "enum",
+        "io",
+        "pathlib",
+        "pickle",
+        "statistics",
+        "uuid",
+        "warnings",
+        "weakref",
+        "contextlib",
+        "dataclasses",
+        "inspect",
+        "types",
+    }
+
+    # Third-party modules that should be excluded
+    THIRD_PARTY_MODULES = {"openai", "mirascope"}
+
     def __init__(self) -> None:
         self._collected_code: dict[_CodeLocation, str] = {}
         self._collected_imports: set[str] = set()
@@ -323,10 +355,24 @@ class _DependencyCollector:
 
     def _is_user_defined_import(self, import_stmt: str) -> bool:
         """Check if an import is for user-defined code."""
-        if import_stmt.startswith("from typing import"):
-            return True
+        # Extract the module name from the import statement
+        if import_stmt.startswith("from "):
+            module = import_stmt.split()[1]
+        else:
+            module = import_stmt.split()[1]
 
-        return not any(name in import_stmt for name in ["openai", "mirascope"])
+        # Check against standard library modules
+        if any(
+            module == std_module or module.startswith(f"{std_module}.")
+            for std_module in self.STANDARD_MODULES
+        ):
+            return False
+
+        # Check against third-party modules
+        return not any(
+            module == tp_module or module.startswith(f"{tp_module}.")
+            for tp_module in self.THIRD_PARTY_MODULES
+        )
 
     def _is_serializable_value(self, value: Any) -> bool:
         """Check if a value can be serializable."""
