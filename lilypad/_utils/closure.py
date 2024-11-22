@@ -367,8 +367,9 @@ class _DependencyVisitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         module = node.module or ""
+        prefix = "." * node.level if node.level > 0 else ""
         for name in node.names:
-            import_stmt = f"from {module} import {name.name}"
+            import_stmt = f"from {prefix}{module} import {name.name}"
             if name.asname:
                 import_stmt += f" as {name.asname}"
             self.imports.add(import_stmt)

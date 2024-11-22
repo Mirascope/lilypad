@@ -25,7 +25,6 @@ from lilypad._utils.middleware import (
     _set_call_response_attributes,
     _set_response_model_attributes,
     create_mirascope_middleware,
-    lilypad_client,
 )
 
 
@@ -442,7 +441,7 @@ def test_get_custom_context_manager():
         with context_manager_factory(fn) as cm_span:
             assert cm_span == span
             expected_attributes = {
-                "lilypad.project_id": lilypad_client.project_id or 0,
+                "lilypad.project_id": 0,
                 "lilypad.function_name": fn.__name__,
                 "lilypad.version_num": version.version_num or -1,
                 "lilypad.version_id": version.id,
