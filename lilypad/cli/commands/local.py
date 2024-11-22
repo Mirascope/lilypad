@@ -33,6 +33,7 @@ def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
 
     # Sets the LILYPAD_PROJECT_DIR so Lilypad knows where to look for the database
     env["LILYPAD_PROJECT_DIR"] = str(project_dir)
+    env["LILYPAD_LOCAL"] = "true"
     files_dir = files("lilypad").joinpath("server")
     process = subprocess.Popen(
         ["fastapi", "dev", "--port", str(port)],
@@ -125,15 +126,18 @@ def local_command(
     if not existing_project:
         try:
             if _wait_for_server(lilypad_client):
-                project = lilypad_client.post_project(project_name)
                 os.mkdir(".lilypad")
+                project = lilypad_client.post_project(project_name)
                 with open(".lilypad/config.json", "w") as f:
-                    data = {
-                        "project_name": project_name,
-                        "project_id": project.id,
-                        "port": new_port,
-                    }
-                    json.dump(data, f, indent=4)
+                    json.dump(
+                        {
+                            "project_id": project.id,
+                            "port": new_port,
+                            "project_name": project_name,
+                        },
+                        f,
+                        indent=4,
+                    )
         except KeyboardInterrupt:
             print("Shutting down...")
             _terminate_process(process)

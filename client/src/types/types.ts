@@ -167,9 +167,14 @@ export interface HTTPValidationError {
 export interface LoginResponse {
   /** Authorization Url */
   authorization_url: string;
+  /** Device Code */
+  device_code: string | null;
 }
 
-/** LoginType */
+/**
+ * LoginType
+ * Login type enum
+ */
 export enum LoginType {
   GIT_HUB_O_AUTH = "GitHubOAuth",
   GOOGLE_O_AUTH = "GoogleOAuth",
@@ -207,6 +212,44 @@ export interface OpenAICallParams {
   response_format: ResponseFormat;
   /** Stop */
   stop?: string | string[] | null;
+}
+
+/** Organization */
+export interface Organization {
+  /** Id */
+  id: string;
+  /** Object */
+  object: "organization";
+  /** Name */
+  name: string;
+  /** Domains */
+  domains: OrganizationDomain[];
+  /** Created At */
+  created_at: string;
+  /** Updated At */
+  updated_at: string;
+  /** Allow Profiles Outside Organization */
+  allow_profiles_outside_organization: boolean;
+  /** Lookup Key */
+  lookup_key?: string | null;
+}
+
+/** OrganizationDomain */
+export interface OrganizationDomain {
+  /** Id */
+  id: string;
+  /** Organization Id */
+  organization_id: string;
+  /** Object */
+  object: "organization_domain";
+  /** Domain */
+  domain: string;
+  /** State */
+  state?: "failed" | "pending" | "legacy_verified" | "verified" | null;
+  /** Verification Strategy */
+  verification_strategy?: "manual" | "dns" | null;
+  /** Verification Token */
+  verification_token?: string | null;
 }
 
 /**
@@ -408,6 +451,12 @@ export interface UserSession {
   expires_at: string;
   /** Access Token */
   access_token?: string | null;
+  /** Organization Id */
+  organization_id?: string | null;
+  /** Organizations */
+  organizations?: Organization[] | null;
+  /** Id */
+  id?: string | null;
 }
 
 /** ValidationError */

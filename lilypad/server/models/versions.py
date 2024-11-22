@@ -65,6 +65,7 @@ class VersionTable(_VersionBase, table=True):
     __tablename__ = VERSION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
+    organization_id: str | None = Field(default=None, index=True)
     project: "ProjectTable" = Relationship(back_populates="versions")
     function: "FunctionTable" = Relationship(back_populates="versions")
     prompt: Optional["PromptTable"] = Relationship(back_populates="version")

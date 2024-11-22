@@ -21,7 +21,9 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         """Find record by id"""
         record_tables = self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id, self.table.name == name
+                self.table.organization_id == self.user.organization_id,
+                self.table.project_id == project_id,
+                self.table.name == name,
             )
         ).all()
         return record_tables
@@ -32,7 +34,10 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         """Find record by id"""
         record_tables = self.session.exec(
             select(self.table.name)
-            .where(self.table.project_id == project_id)
+            .where(
+                self.table.organization_id == self.user.organization_id,
+                self.table.project_id == project_id,
+            )
             .distinct()
         ).all()
         return record_tables
@@ -40,7 +45,10 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
     def find_record_by_hash(self, hash: str) -> FunctionTable:
         """Find record by hash"""
         record_table = self.session.exec(
-            select(self.table).where(self.table.hash == hash)
+            select(self.table).where(
+                self.table.organization_id == self.user.organization_id,
+                self.table.hash == hash,
+            )
         ).first()
         if not record_table:
             raise HTTPException(

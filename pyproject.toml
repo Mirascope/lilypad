@@ -42,6 +42,7 @@ dependencies = [
     "workos>=5.7.0",
     "itsdangerous>=2.2.0",
     "python-jose[cryptography]>=3.3.0",
+    "pydantic-settings>=2.6.1",
 ]
 
 [project.urls]

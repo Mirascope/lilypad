@@ -22,6 +22,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """Find versions by function name"""
         return self.session.exec(
             select(self.table).where(
+                self.table.organization_id == self.user.organization_id,
                 self.table.project_id == project_id,
                 self.table.function_name == function_name,
             )
@@ -33,6 +34,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """Find function version by hash"""
         return self.session.exec(
             select(self.table).where(
+                self.table.organization_id == self.user.organization_id,
                 self.table.project_id == project_id,
                 self.table.function_id == function_id,
                 self.table.prompt_id == prompt_id,
@@ -45,6 +47,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """Find function version by hash"""
         return self.session.exec(
             select(self.table).where(
+                self.table.organization_id == self.user.organization_id,
                 self.table.project_id == project_id,
                 self.table.prompt_hash.is_(None),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                 self.table.function_hash == hash,
@@ -61,6 +64,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """
         return self.session.exec(
             select(self.table).where(
+                self.table.organization_id == self.user.organization_id,
                 self.table.project_id == project_id,
                 self.table.function_hash == function_hash,
                 self.table.prompt_hash == prompt_hash,
@@ -73,9 +77,10 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """Find the active version for a prompt"""
         version = self.session.exec(
             select(VersionTable).where(
-                VersionTable.project_id == project_id,
-                VersionTable.is_active,
-                VersionTable.function_hash == function_hash,
+                self.table.organization_id == self.user.organization_id,
+                self.table.project_id == project_id,
+                self.table.is_active,
+                self.table.function_hash == function_hash,
             )
         ).first()
 
@@ -106,8 +111,9 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
     def get_function_version_count(self, project_id: int, function_name: str) -> int:
         """Get the count of function versions"""
         return self.session.exec(
-            select(func.count(col(VersionTable.id))).where(
-                VersionTable.project_id == project_id,
-                VersionTable.function_name == function_name,
+            select(func.count(col(self.table.id))).where(
+                self.table.organization_id == self.user.organization_id,
+                self.table.project_id == project_id,
+                self.table.function_name == function_name,
             )
         ).one()

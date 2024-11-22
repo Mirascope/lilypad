@@ -1,6 +1,17 @@
 """Auth models."""
 
+from collections.abc import Sequence
+from enum import StrEnum
+
 from pydantic import BaseModel
+from workos.organizations import Organization
+
+
+class LoginType(StrEnum):
+    """Login type enum"""
+
+    GITHUB_OAUTH = "GitHubOAuth"
+    GOOGLE_OAUTH = "GoogleOAuth"
 
 
 class UserBase(BaseModel):
@@ -11,6 +22,8 @@ class UserBase(BaseModel):
     session_id: str
     expires_at: str
     access_token: str | None = None
+    organization_id: str | None = None
+    organizations: Sequence[Organization] | None = None
 
 
 class UserSession(UserBase):

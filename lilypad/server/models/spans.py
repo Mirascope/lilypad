@@ -88,7 +88,7 @@ class SpanTable(_SpanBase, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
-
+    organization_id: str | None = Field(default=None, index=True)
     version: "VersionTable" = Relationship(back_populates="spans")
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True

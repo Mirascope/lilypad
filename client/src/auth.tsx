@@ -10,7 +10,7 @@ import {
 
 export interface AuthContext {
   isAuthenticated: boolean;
-  login: (loginType: LoginType) => Promise<void>;
+  login: (loginType: LoginType, deviceCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   user: UserSession | null;
   setSession: (user: UserSession | null) => void;
@@ -29,6 +29,13 @@ const saveToStorage = (session: UserSession | null) => {
 };
 
 const loadFromStorage = (): UserSession | null => {
+  if (process.env.NODE_ENV === "development")
+    return {
+      first_name: "Local User",
+      raw_profile: {},
+      session_id: "local",
+      expires_at: "",
+    };
   const stored = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!stored) return null;
 
@@ -61,10 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToStorage(null);
   }, []);
 
-  const login = useCallback(async (loginType: LoginType) => {
-    const result = await loginMutation.mutateAsync({ loginType });
-    window.location.assign(result.authorization_url);
-  }, []);
+  const login = useCallback(
+    async (loginType: LoginType, deviceCode?: string) => {
+      const result = await loginMutation.mutateAsync({ loginType, deviceCode });
+      window.location.assign(result.authorization_url);
+    },
+    []
+  );
   return (
     <AuthContext.Provider
       value={{ isAuthenticated, user, login, logout, setSession }}

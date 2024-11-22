@@ -20,6 +20,8 @@ class SpanService(BaseService[SpanTable, SpanCreate]):
         """Find spans by version id"""
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id, self.table.version_id == version_id
+                self.table.organization_id == self.user.organization_id,
+                self.table.project_id == project_id,
+                self.table.version_id == version_id,
             )
         ).all()

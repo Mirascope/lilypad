@@ -39,8 +39,8 @@ class ProjectTable(_ProjectBase, table=True):
     """Project Table Model."""
 
     __tablename__ = PROJECT_TABLE_NAME  # type: ignore
-
     id: int | None = Field(default=None, primary_key=True)
+    organization_id: str | None = Field(default=None, index=True)
     functions: list["FunctionTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )

@@ -25,6 +25,7 @@ class BaseService(Generic[_TableT, _CreateT]):
         """Find record by id"""
         record_table = self.session.exec(
             select(self.table).where(
+                self.table.organization_id == self.user.organization_id,  # pyright: ignore[reportAttributeAccessIssue]
                 self.table.id == id,  # pyright: ignore[reportAttributeAccessIssue]
             )
         ).first()
@@ -37,7 +38,11 @@ class BaseService(Generic[_TableT, _CreateT]):
 
     def find_all_records(self) -> Sequence[_TableT]:
         """Find all records"""
-        return self.session.exec(select(self.table)).all()
+        return self.session.exec(
+            select(self.table).where(
+                self.table.organization_id == self.user.organization_id,  # pyright: ignore[reportAttributeAccessIssue]
+            )
+        ).all()
 
     def delete_record_by_id(self, id: int | str) -> None:
         """Delete record by uuid"""
@@ -47,7 +52,13 @@ class BaseService(Generic[_TableT, _CreateT]):
 
     def create_record(self, data: _CreateT, **kwargs: Any) -> _TableT:
         """Create a new record"""
-        record_table = self.table.model_validate({**data.model_dump(), **kwargs})
+        record_table = self.table.model_validate(
+            {
+                **data.model_dump(),
+                "organization_id": self.user.organization_id,
+                **kwargs,
+            }
+        )
         self.session.add(record_table)
         self.session.flush()
         return record_table

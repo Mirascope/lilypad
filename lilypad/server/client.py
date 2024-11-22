@@ -34,6 +34,7 @@ class LilypadClient:
         base_url: str,
         timeout: int = 10,
         headers: dict[str, str] | None = None,
+        token: str | None = None,
         **session_kwargs: Any,
     ) -> None:
         """Initialize the API client.
@@ -42,6 +43,7 @@ class LilypadClient:
             base_url (str): The base URL for the API endpoints.
             timeout (int, optional): Default timeout for requests in seconds. Defaults to 10.
             headers (dict, optional): Default headers to include in all requests. Defaults to None.
+            token (str, optional): Default authentication token to include in all requests. Defaults to None.
             **session_kwargs: Additional keyword arguments for the session.
         """
         self.base_url = base_url.rstrip("/")
@@ -58,8 +60,28 @@ class LilypadClient:
         if headers:
             self.session.headers.update(headers)
 
+        self._token = None
+        if token:
+            self.token = token
+
         for key, value in session_kwargs.items():
             setattr(self.session, key, value)
+
+    @property
+    def token(self) -> str | None:
+        """Get the current authentication token."""
+        return self._token
+
+    @token.setter
+    def token(self, value: str | None) -> None:
+        """Set the authentication token and update headers.
+
+        Args:
+            value (str | None): The authentication token or None to remove authentication.
+        """
+        self._token = value
+        if value:
+            self.session.headers["Authorization"] = f"Bearer {value}"
 
     @overload
     def _request(

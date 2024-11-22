@@ -1,7 +1,8 @@
 """The module for the `lilypad` database tables and models."""
 
-from .auth import User, UserSession
+from .auth import LoginType, User, UserSession
 from .base_sql_model import BaseSQLModel
+from .device_codes import DeviceCodeTable
 from .functions import FunctionCreate, FunctionPublic, FunctionTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
 from .prompts import (
@@ -21,10 +22,12 @@ __all__ = [
     "ActiveVersionPublic",
     "AnthropicCallParams",
     "BaseSQLModel",
+    "DeviceCodeTable",
     "FunctionCreate",
     "FunctionPublic",
     "FunctionTable",
     "GeminiCallParams",
+    "LoginType",
     "OpenAICallParams",
     "ProjectCreate",
     "ProjectPublic",
