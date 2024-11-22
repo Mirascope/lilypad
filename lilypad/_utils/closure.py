@@ -34,7 +34,7 @@ class _CodeLocation:
 
 
 def format_code(code: str) -> str:
-    """Format code using ruff."""
+    """Format code using black."""
     try:
         mode = black.Mode(
             line_length=88,
@@ -63,6 +63,11 @@ class _DependencyCollector:
         self._class_dependency_graph: dict[str, set[str]] = {}
         self._main_function_name: str | None = None
 
+        self.module_type_aliases: dict[str, ast.expr] = {}
+        self.module_assignments: dict[str, ast.Assign | ast.AnnAssign] = {}
+        self.module_functions: dict[str, ast.FunctionDef] = {}
+        self.module_classes: dict[str, ast.ClassDef] = {}
+
     def _get_package_paths(self) -> set[str]:
         """Get paths where third-party packages are installed."""
         return {
@@ -74,10 +79,29 @@ class _DependencyCollector:
     def collect(self, func: Callable[..., Any]) -> str:
         """Collect all dependencies for a function and return the combined source."""
         self._main_function_name = func.__name__
+
+        # Get the module where the function is defined
         module = inspect.getmodule(func)
         if module:
             # Cache the module for later lookups
             self._module_cache[module.__name__] = module
+
+            # Parse the entire module to collect module-level definitions
+            try:
+                module_source = inspect.getsource(module)
+                module_tree = ast.parse(module_source)
+                module_visitor = _ModuleDependencyVisitor()
+                module_visitor.visit(module_tree)
+
+                # Store module-level definitions
+                self.module_type_aliases = module_visitor.type_aliases
+                self.module_assignments = module_visitor.assignments
+                self.module_functions = module_visitor.functions
+                self.module_classes = module_visitor.classes
+            except (OSError, TypeError):
+                # If we cannot get the source of the module, skip module-level definitions
+                pass
+
         self._collect_function_and_deps(func)
         return self._format_output()
 
@@ -87,34 +111,45 @@ class _DependencyCollector:
         visitor = _DependencyVisitor()
         visitor.visit(tree)
 
-        # If it's a function, update function dependencies
+        # Update function dependencies to include both functions and classes
         if isinstance(tree.body[0], ast.FunctionDef):
-            self._dependency_graph[function_name] = set(visitor.functions)
+            self._dependency_graph[function_name] = set(
+                visitor.functions | visitor.classes
+            )
         # If it's a class, update class dependencies
         elif isinstance(tree.body[0], ast.ClassDef):
             self._class_dependency_graph[function_name] = set(visitor.classes)
 
-    def _get_ordered_classes(self) -> list[str]:
-        """Get classes ordered by their dependencies."""
-        # Start with classes that have no dependencies
+    def _get_ordered_functions(self) -> list[str]:
+        """Get functions and classes ordered by their dependencies."""
+        if not self._main_function_name:
+            return []
+
+        # Combine functions and classes into a single dependency graph
+        combined_graph = {**self._dependency_graph, **self._class_dependency_graph}
+
         ordered: list[str] = []
         visited: set[str] = set()
+        temp_mark: set[str] = set()
 
-        def visit(class_name: str) -> None:
-            if class_name in visited:
+        def visit(name: str) -> None:
+            if name in visited:
                 return
-            visited.add(class_name)
+            if name in temp_mark:
+                # Detected a cycle
+                return
+            temp_mark.add(name)
             # First visit all dependencies
-            for dep in self._class_dependency_graph.get(class_name, set()):
-                if dep in self._class_dependency_graph:
+            for dep in combined_graph.get(name, set()):
+                if dep in combined_graph:
                     visit(dep)
-            ordered.append(class_name)
+            temp_mark.remove(name)
+            visited.add(name)
+            ordered.append(name)
 
-        # Visit all classes to ensure complete ordering
-        for class_name in self._class_dependency_graph:
-            visit(class_name)
-
-        return ordered[::-1]  # Reverse to match function ordering style
+        # Start with the main function to ensure we get all dependencies
+        visit(self._main_function_name)
+        return ordered  # Do not reverse the list
 
     def _is_third_party_module(self, module_path: str | None) -> bool:
         """Check if a module is from a third-party package."""
@@ -153,15 +188,16 @@ class _DependencyCollector:
                     source = inspect.getsource(cls)
                     location = self._get_code_location(cls)
                     if location not in self._visited:
-                        self._collected_code[location] = source
-                        self._build_dependency_graph(source, class_name)
-                        self._visited.add(location)
-                        self._visited_classes.add(class_name)
-
                         # Parse class source to find any dependencies
                         tree = ast.parse(source)
                         visitor = _DependencyVisitor()
                         visitor.visit(tree)
+
+                        # Collect class source code unconditionally (since it's a dependency)
+                        self._collected_code[location] = source
+                        self._build_dependency_graph(source, class_name)
+                        self._visited.add(location)
+                        self._visited_classes.add(class_name)
 
                         # Process any functions or classes used within this class
                         for name in visitor.functions | visitor.classes:
@@ -192,6 +228,20 @@ class _DependencyCollector:
             tree = ast.parse(source)
             visitor = _DependencyVisitor()
             visitor.visit(tree)
+
+            # Combine module-level and function-level type aliases
+            combined_type_aliases = {**self.module_type_aliases, **visitor.type_aliases}
+            combined_assignments = {**self.module_assignments}
+
+            # Resolve type aliases in the AST
+            resolver = TypeAliasResolver(combined_type_aliases, combined_assignments)
+            transformed_tree = resolver.visit(tree)
+
+            # Fix missing line numbers and column offsets
+            ast.fix_missing_locations(transformed_tree)
+
+            # Generate code from the transformed AST
+            source = ast.unparse(transformed_tree)
 
             # Store the function's source code
             location = self._get_code_location(func)
@@ -251,45 +301,14 @@ class _DependencyCollector:
                     value = func.__globals__[name]
                     if not (
                         inspect.isfunction(value) or inspect.isclass(value)
-                    ) and self._is_serializable_value(value):
+                    ):
+                        # Keep variable references intact
                         self._collected_variables[name] = self._serialize_value(
                             name, value
                         )
 
         except (OSError, TypeError):
             pass
-
-    def _get_ordered_functions(self) -> list[str]:
-        """Get functions ordered by their dependencies."""
-        if not self._main_function_name:
-            return []
-
-        # Create a mapping of function to its dependents
-        dependents: dict[str, set[str]] = {
-            name: set() for name in self._dependency_graph
-        }
-        for func, deps in self._dependency_graph.items():
-            for dep in deps:
-                if dep in dependents:
-                    dependents[dep].add(func)
-
-        # Start with functions that have no dependents
-        ordered: list[str] = []
-        visited: set[str] = set()
-
-        def visit(func_name: str) -> None:
-            if func_name in visited:
-                return
-            visited.add(func_name)
-            # First visit all dependencies
-            for dep in self._dependency_graph.get(func_name, set()):
-                if dep in self._dependency_graph:  # Only visit user-defined functions
-                    visit(dep)
-            ordered.append(func_name)
-
-        # Start with the main function to ensure we get all dependencies
-        visit(self._main_function_name)
-        return ordered
 
     def _get_code_location(self, func: Callable[..., Any]) -> _CodeLocation:
         """Get the location of a function's source code."""
@@ -313,7 +332,7 @@ class _DependencyCollector:
 
     def _is_serializable_value(self, value: Any) -> bool:
         """Check if a value can be serializable."""
-        return isinstance(value, int | float | str | bool | type(None))
+        return isinstance(value, (int, float, str, bool, type(None)))
 
     def _serialize_value(self, name: str, value: Any) -> str:
         """Serialize a value to a string."""
@@ -337,19 +356,14 @@ class _DependencyCollector:
         name_to_source: dict[str, str] = {}
         for _, source in self._collected_code.items():
             tree = ast.parse(source)
-            if isinstance(tree.body[0], ast.FunctionDef | ast.ClassDef):
+            if isinstance(tree.body[0], (ast.FunctionDef, ast.ClassDef)):
                 name_to_source[tree.body[0].name] = source
 
-        ordered_classes = self._get_ordered_classes()
-        for class_name in ordered_classes:
-            if class_name in name_to_source:
-                parts.append(name_to_source[class_name])
-                parts.append("")
-
-        ordered_functions = self._get_ordered_functions()
-        for func_name in ordered_functions:
-            if func_name in name_to_source:
-                parts.append(name_to_source[func_name])
+        # Include only the functions and classes that are dependencies
+        ordered_items = self._get_ordered_functions()
+        for name in ordered_items:
+            if name in name_to_source:
+                parts.append(name_to_source[name])
                 parts.append("")
 
         return format_code("\n".join(parts).strip())
@@ -363,6 +377,7 @@ class _DependencyVisitor(ast.NodeVisitor):
         self.variables: set[str] = set()
         self.functions: set[str] = set()
         self.classes: set[str] = set()
+        self.type_aliases: dict[str, ast.expr] = {}
         self._current_func: str | None = None
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -389,9 +404,32 @@ class _DependencyVisitor(ast.NodeVisitor):
             self.variables.add(node.id)
         self.generic_visit(node)
 
+    def visit_Assign(self, node: ast.Assign) -> None:
+        # Detect type aliases in Assign
+        if (
+            len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute))
+        ):
+            alias_name = node.targets[0].id
+            self.type_aliases[alias_name] = node.value
+        self.generic_visit(node)
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        """Visit type annotations in assignments."""
-        self._extract_annotation_references(node.annotation)
+        # Detect type aliases in AnnAssign (annotated assignments)
+        if (
+            isinstance(node.target, ast.Name)
+            and isinstance(node.annotation, ast.Name)
+            and node.value
+        ):
+            alias_name = node.target.id
+            self.type_aliases[alias_name] = node.value
+        else:
+            # Extract variables and type annotations
+            if node.value:
+                self.visit(node.value)
+            if node.annotation:
+                self._extract_annotation_references(node.annotation)
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -477,6 +515,96 @@ class _DependencyVisitor(ast.NodeVisitor):
                 self.variables.add(keyword.value.id)
 
         self.generic_visit(node)
+
+
+class _ModuleDependencyVisitor(ast.NodeVisitor):
+    """AST visitor to collect module-level definitions."""
+
+    def __init__(self) -> None:
+        self.type_aliases: dict[str, ast.expr] = {}
+        self.assignments: dict[str, ast.Assign | ast.AnnAssign] = {}
+        self.functions: dict[str, ast.FunctionDef] = {}
+        self.classes: dict[str, ast.ClassDef] = {}
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        if (
+            len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
+            name = node.targets[0].id
+            self.assignments[name] = node
+            # Detect type aliases in Assign
+            if isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute)):
+                self.type_aliases[name] = node.value
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if isinstance(node.target, ast.Name):
+            name = node.target.id
+            self.assignments[name] = node
+            # Detect type aliases in AnnAssign
+            if node.value and isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute)):
+                self.type_aliases[name] = node.value
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self.functions[node.name] = node
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.classes[node.name] = node
+        self.generic_visit(node)
+
+
+class TypeAliasResolver(ast.NodeTransformer):
+    """AST transformer to resolve type aliases."""
+
+    def __init__(
+        self,
+        type_aliases: dict[str, ast.expr],
+        module_assignments: dict[str, ast.Assign | ast.AnnAssign],
+    ) -> None:
+        self.type_aliases = type_aliases
+        self.module_assignments = module_assignments
+
+    def visit_Name(self, node: ast.Name) -> ast.AST:
+        if isinstance(node.ctx, ast.Load) and node.id in self.type_aliases:
+            # Replace the type alias with the actual type
+            return self.visit(self.type_aliases[node.id])
+        return node
+
+    # Do not transform assignment targets
+    def visit_Assign(self, node: ast.Assign) -> ast.AST:
+        node.value = self.visit(node.value)
+        return node
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
+        if node.annotation:
+            node.annotation = self.visit(node.annotation)
+        if node.value:
+            node.value = self.visit(node.value)
+        return node
+
+    def visit_Subscript(self, node: ast.Subscript) -> ast.AST:
+        # Recursively resolve type aliases in subscripted types
+        node.value = self.visit(node.value)
+        node.slice = self.visit(node.slice)
+        return node
+
+    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+        node.value = self.visit(node.value)
+        return node
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
+        # Resolve return type annotation
+        if node.returns:
+            node.returns = self.visit(node.returns)
+        # Resolve argument type annotations
+        for arg in node.args.args:
+            if arg.annotation:
+                arg.annotation = self.visit(arg.annotation)
+        self.generic_visit(node)
+        return node
 
 
 @lru_cache(maxsize=128)

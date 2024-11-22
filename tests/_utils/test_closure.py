@@ -6,7 +6,6 @@ import inspect
 import sys
 import textwrap
 from types import ModuleType
-from typing import Callable, Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -110,12 +109,14 @@ def test_nested_functions():
 
     expected = inspect.cleandoc("""
     def outer():
+    
         def inner():
             return "inner"
 
         return inner()
     """)
-    assert compute_closure(outer)[0] == expected + "\n"
+    closure, _ = compute_closure(outer)
+    assert closure == expected + "\n"
 
 
 def test_no_source():
@@ -243,13 +244,13 @@ def test_class_in_function(tmp_path):
         import test_module
 
         expected = inspect.cleandoc("""
+        class InnerClass(BaseModel):
+            inner: str
+
+
         class OuterClass(BaseModel):
             outer: str
             inner: InnerClass
-
-
-        class InnerClass(BaseModel):
-            inner: str
 
 
         def fn_with_class():
@@ -258,6 +259,7 @@ def test_class_in_function(tmp_path):
         """)
 
         assert compute_closure(test_module.fn_with_class)[0] == expected + "\n"
+
     finally:
         sys.path.pop(0)
         if "test_module" in sys.modules:
@@ -620,14 +622,75 @@ def test_collect_with_type_aliases():
     """Test handling of type aliases in annotations."""
     from typing import TypeAlias
 
-    MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
+    MyType: TypeAlias = str
 
     def func(param: MyType) -> MyType:
         return param.upper()
 
     closure, _ = compute_closure(func)
-    assert "MyType" in closure
-    assert "def func" in closure
+    print(closure)  # For debugging
+
+    expected_func_def = "def func(param: str) -> str:"
+
+    # Type alias definition should NOT be included in the closure
+    assert "MyType: TypeAlias = str" not in closure
+
+    # Function definition should have type alias replaced with the original type
+    assert expected_func_def in closure
+
+
+
+def test_compute_closure_with_type_alias_change():
+    """Test that changing a type alias affects the closure and hash."""
+    from typing import TypeAlias
+
+    def outer():
+        MyType: TypeAlias = str
+
+        def func(param: MyType) -> MyType:
+            return param.upper()
+
+        return func
+
+    func1 = outer()
+    closure1, hash1 = compute_closure(func1)
+
+    def outer():
+        MyType: TypeAlias = int
+
+        def func(param: MyType) -> MyType:
+            return param + 1
+
+        return func
+
+    func2 = outer()
+    closure2, hash2 = compute_closure(func2)
+
+    assert closure1 != closure2
+    assert hash1 != hash2
+
+
+def test_compute_closure_with_same_type_alias():
+    """Test that keeping the same type alias results in the same closure and hash."""
+    from typing import TypeAlias
+
+    def outer():
+        MyType: TypeAlias = str
+
+        def func(param: MyType) -> MyType:
+            return param.upper()
+
+        return func
+
+    func1 = outer()
+    closure1, hash1 = compute_closure(func1)
+
+    func2 = outer()
+    closure2, hash2 = compute_closure(func2)
+
+    assert closure1 == closure2
+    assert hash1 == hash2
+
 
 
 def test_collect_class_with_non_function_attribute():
@@ -1372,3 +1435,5 @@ def test_function_dependency_cycle(tmp_path):
         sys.path.pop(0)
         if "test_module" in sys.modules:
             del sys.modules["test_module"]
+
+
