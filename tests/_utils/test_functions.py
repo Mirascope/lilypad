@@ -427,14 +427,18 @@ def test_create_mirascope_call_with_openrouter():
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
-    with patch(
-        "lilypad._utils.functions.import_module", return_value=mock_module
-    ) as mock_import:
+
+    with (
+        patch("openai.OpenAI") as mock_openai,
+        patch("lilypad._utils.functions.import_module", return_value=mock_module),
+        patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
+    ):
         result = create_mirascope_call(fn, mock_prompt, lambda x: x)
         output = result("test")
         assert output == "test"
-        mock_import.assert_called_with("mirascope.core.openai")
-
+        mock_openai.assert_called_once_with(
+            base_url="https://openrouter.ai/api/v1", api_key="test_key"
+        )
 
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_openrouter():
