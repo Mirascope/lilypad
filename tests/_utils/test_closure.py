@@ -10,7 +10,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from mirascope.core import openai, prompt_template
-from pydantic import BaseModel
 
 from lilypad._utils.closure import (
     _CodeLocation,
@@ -20,182 +19,248 @@ from lilypad._utils.closure import (
 )
 
 
-def _fn():
-    return "test"
-
-
 def test_simple_function_no_deps():
     """Tests a simple function with no dependencies."""
+
+    def fn():
+        return "test"
+
     expected = inspect.cleandoc("""
-    def _fn():
+    def fn():
         return "test"
     """)
-    assert compute_closure(_fn)[0] == expected + "\n"
-
-
-def _helper2():
-    return _helper3()
-
-
-def _helper3():
-    return "helper3"
-
-
-def _helper1():
-    return _helper2()
+    assert compute_closure(fn)[0] == expected + "\n"
 
 
 def test_function_ordering():
     """Tests that function dependencies are ordered correctly in the closure."""
     expected = inspect.cleandoc("""
-    def _helper3():
+    def helper3():
         return "helper3"
 
 
-    def _helper2():
-        return _helper3()
+    def helper2():
+        return helper3()
 
 
-    def _helper1():
-        return _helper2()
+    def helper1():
+        return helper2()
     """)
-    assert compute_closure(_helper1)[0] == expected + "\n"
 
+    def helper2():
+        return helper3()
 
-@openai.call("gpt-4o-mini")
-def _recommend_book(genre: str) -> str:
-    return f"Recommend a {genre} book"
+    def helper3():
+        return "helper3"
+
+    def helper1():
+        return helper2()
+
+    # Mock module with all required attributes
+    module = Mock(spec=["__name__", "__file__"])
+    module.__name__ = "test_module"
+    module.__file__ = "test_module.py"  # Add file attribute
+    module.helper1 = helper1
+    module.helper2 = helper2
+    module.helper3 = helper3
+
+    with patch("inspect.getmodule", return_value=module):
+        assert compute_closure(helper1)[0] == expected + "\n"
 
 
 def test_decorated_function():
     """Tests that a decorated function's closure is computed correctly."""
+
+    @openai.call("gpt-4o-mini")
+    def recommend_book(genre: str) -> str:
+        return f"Recommend a {genre} book"
+
     expected = inspect.cleandoc("""
     @openai.call("gpt-4o-mini")
-    def _recommend_book(genre: str) -> str:
+    def recommend_book(genre: str) -> str:
         return f"Recommend a {genre} book"
     """)
-    assert compute_closure(_recommend_book)[0] == expected + "\n"
-
-
-@openai.call("gpt-4o-mini")
-@prompt_template("Recommend a {genre} author")
-def _recommend_author(genre: str): ...
+    assert compute_closure(recommend_book)[0] == expected + "\n"
 
 
 def test_multiple_decorators():
     """Tests that multiple decorators are handled correctly."""
+
+    @openai.call("gpt-4o-mini")
+    @prompt_template("Recommend a {genre} author")
+    def recommend_author(genre: str): ...
+
     expected = inspect.cleandoc("""
     @openai.call("gpt-4o-mini")
     @prompt_template("Recommend a {genre} author")
-    def _recommend_author(genre: str): ...
+    def recommend_author(genre: str): ...
     """)
-    assert compute_closure(_recommend_author)[0] == expected + "\n"
-
-
-def _outer():
-    def inner():
-        return "inner"
-
-    return inner()
+    assert compute_closure(recommend_author)[0] == expected + "\n"
 
 
 def test_nested_functions():
     """Tests that nested functions are handled correctly."""
+
+    def outer():
+        def inner():
+            return "inner"
+
+        return inner()
+
     expected = inspect.cleandoc("""
-    def _outer():
+    def outer():
         def inner():
             return "inner"
 
         return inner()
     """)
-    assert compute_closure(_outer)[0] == expected + "\n"
-
-
-def _no_source():
-    pass
+    assert compute_closure(outer)[0] == expected + "\n"
 
 
 def test_no_source():
     """Tests that functions with no source code are handled correctly."""
+
+    def no_source():
+        pass
+
     expected = inspect.cleandoc("""
-    def _no_source():
+    def no_source():
         pass
     """)
-    assert compute_closure(_no_source)[0] == expected + "\n"
+    assert compute_closure(no_source)[0] == expected + "\n"
 
 
-class _Book(BaseModel):
-    title: str
-    author: str
-
-
-def _return_book() -> _Book: ...
-
-
-def test_class_return_type():
+def test_class_return_type(tmp_path):
     """Tests that a class is included in the closure of a function."""
-    expected = inspect.cleandoc("""
-    class _Book(BaseModel):
-        title: str
-        author: str
+    # Create a temporary module file
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        from pydantic import BaseModel
 
-    
-    def _return_book() -> _Book: ...
+        class Book(BaseModel):
+            title: str
+            author: str
+
+        def return_book() -> Book:
+            ...
     """)
-    assert compute_closure(_return_book)[0] == expected + "\n"
+    )
+
+    # Import the temporary module
+    import sys
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import test_module
+
+        expected = inspect.cleandoc("""
+        class Book(BaseModel):
+            title: str
+            author: str
 
 
-@openai.call("gpt-4o-mini", response_model=_Book)
-def _recommend_book_class(genre: str) -> str:
-    return f"Recommend a {genre} book"
+        def return_book() -> Book: ...
+        """)
+
+        assert compute_closure(test_module.return_book)[0] == expected + "\n"
+    finally:
+        # Clean up
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
 
 
-def test_class_argument_in_decorator():
+def test_class_argument_in_decorator(tmp_path):
     """Tests that a class argument in a decorator is included in the closure."""
-    expected = inspect.cleandoc("""
-    class _Book(BaseModel):
-        title: str
-        author: str
-    
-    
-    @openai.call("gpt-4o-mini", response_model=_Book)
-    def _recommend_book_class(genre: str) -> str:
-        return f"Recommend a {genre} book"
+    # Create a temporary module file
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        from pydantic import BaseModel
+        from mirascope.core import openai
+
+        class Book(BaseModel):
+            title: str
+            author: str
+
+        @openai.call("gpt-4o-mini", response_model=Book)
+        def recommend_book_class(genre: str) -> str:
+            return f"Recommend a {genre} book"
     """)
-    assert compute_closure(_recommend_book_class)[0] == expected + "\n"
+    )
+
+    # Import the temporary module
+    import sys
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import test_module
+
+        expected = inspect.cleandoc("""
+        class Book(BaseModel):
+            title: str
+            author: str
 
 
-class _InnerClass(BaseModel):
-    inner: str
+        @openai.call("gpt-4o-mini", response_model=Book)
+        def recommend_book_class(genre: str) -> str:
+            return f"Recommend a {genre} book"
+        """)
+
+        assert compute_closure(test_module.recommend_book_class)[0] == expected + "\n"
+    finally:
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
 
 
-class _OuterClass(BaseModel):
-    outer: str
-    inner: _InnerClass
-
-
-def _fn_with_class():
-    inner = _InnerClass(inner="inner")
-    _ = _OuterClass(outer="outer", inner=inner)
-
-
-def test_class_in_function():
+def test_class_in_function(tmp_path):
     """Tests that a class defined in a function is included in the closure."""
-    expected = inspect.cleandoc("""
-    class _OuterClass(BaseModel):
-        outer: str
-        inner: _InnerClass
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        from pydantic import BaseModel
 
-    
-    class _InnerClass(BaseModel):
-        inner: str
-    
-    
-    def _fn_with_class():
-        inner = _InnerClass(inner="inner")
-        _ = _OuterClass(outer="outer", inner=inner)
+        class InnerClass(BaseModel):
+            inner: str
+
+        class OuterClass(BaseModel):
+            outer: str
+            inner: InnerClass
+
+        def fn_with_class():
+            inner = InnerClass(inner="inner")
+            _ = OuterClass(outer="outer", inner=inner)
     """)
-    assert compute_closure(_fn_with_class)[0] == expected + "\n"
+    )
+
+    import sys
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import test_module
+
+        expected = inspect.cleandoc("""
+        class OuterClass(BaseModel):
+            outer: str
+            inner: InnerClass
+
+
+        class InnerClass(BaseModel):
+            inner: str
+
+
+        def fn_with_class():
+            inner = InnerClass(inner="inner")
+            _ = OuterClass(outer="outer", inner=inner)
+        """)
+
+        assert compute_closure(test_module.fn_with_class)[0] == expected + "\n"
+    finally:
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
 
 
 # DOES NOT WORK YET. SAD :(
@@ -217,29 +282,48 @@ def test_class_in_function():
 #     assert compute_closure(recommend_book_series) == expected + "\n"
 
 
-def _get_available_series() -> list[str]:
-    return ["The Kingkiller Chronicle"]
-
-
-@openai.call("gpt-4o-mini")
-@prompt_template("Recommend a {genre} book series from this list: {series}")
-def _recommend_book_series_from_available(genre: str) -> openai.OpenAIDynamicConfig:
-    return {"computed_fields": {"series": _get_available_series()}}
-
-
-def test_multiple_decorators_with_dependencies():
+def test_multiple_decorators_with_dependencies(tmp_path):
     """Tests that multiple decorators with dependencies are handled correctly."""
-    expected = inspect.cleandoc("""
-    def _get_available_series() -> list[str]:
-        return ["The Kingkiller Chronicle"]
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        from mirascope.core import openai, prompt_template
 
+        def get_available_series() -> list[str]:
+            return ["The Kingkiller Chronicle"]
 
-    @openai.call("gpt-4o-mini")
-    @prompt_template("Recommend a {genre} book series from this list: {series}")
-    def _recommend_book_series_from_available(genre: str) -> openai.OpenAIDynamicConfig:
-        return {"computed_fields": {"series": _get_available_series()}}
+        @openai.call("gpt-4o-mini")
+        @prompt_template("Recommend a {genre} book series from this list: {series}")
+        def recommend_book_series_from_available(genre: str) -> openai.OpenAIDynamicConfig:
+            return {"computed_fields": {"series": get_available_series()}}
     """)
-    assert compute_closure(_recommend_book_series_from_available)[0] == expected + "\n"
+    )
+
+    import sys
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import test_module
+
+        expected = inspect.cleandoc("""
+        def get_available_series() -> list[str]:
+            return ["The Kingkiller Chronicle"]
+
+
+        @openai.call("gpt-4o-mini")
+        @prompt_template("Recommend a {genre} book series from this list: {series}")
+        def recommend_book_series_from_available(genre: str) -> openai.OpenAIDynamicConfig:
+            return {"computed_fields": {"series": get_available_series()}}
+        """)
+
+        assert (
+            compute_closure(test_module.recommend_book_series_from_available)[0]
+            == expected + "\n"
+        )
+    finally:
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
 
 
 def test_get_code_location_exception():
@@ -1023,25 +1107,6 @@ def test_cached_module_function_third_party():
         assert not collector._collected_code
 
 
-def test_function_ordering_visited_early_return():
-    """Test early return in function ordering visitor when already visited."""
-    collector = _DependencyCollector()
-    collector._main_function_name = "main_func"
-    collector._dependency_graph = {
-        "main_func": {"helper_func"},
-        "helper_func": {"main_func"},  # Circular dependency
-    }
-
-    # Call _get_ordered_functions to trigger the visit function
-    ordered = collector._get_ordered_functions()
-
-    # Due to circular dependency and early return on visited,
-    # both functions should appear exactly once
-    assert len(ordered) == len(set(ordered))  # No duplicates
-    assert "main_func" in ordered
-    assert "helper_func" in ordered
-
-
 def test_visited_functions_early_return():
     """Test early return when function is already in visited functions."""
 
@@ -1214,3 +1279,95 @@ def test_cached_module_loop_break():
             # Verify both functions were processed
             assert "main_func" in collector._visited_functions
             assert "helper_func" in collector._visited_functions
+
+
+def test_global_function_collection(tmp_path):
+    """Test collection of functions defined in global scope."""
+    # Create a temporary module file
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        def helper_global():
+            return "global helper"
+
+        def main_func():
+            return helper_global()
+        """)
+    )
+
+    # Import the temporary module
+    sys.path.insert(0, str(tmp_path))
+    try:
+        import test_module
+
+        collector = _DependencyCollector()
+        collector._collect_function_and_deps(test_module.main_func)
+
+        # Verify both functions were collected
+        assert "main_func" in collector._visited_functions
+        assert "helper_global" in collector._visited_functions
+
+        # Verify the source code was collected
+        assert any(
+            "helper_global" in code for code in collector._collected_code.values()
+        )
+        assert any("main_func" in code for code in collector._collected_code.values())
+
+    finally:
+        # Clean up
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
+
+
+def test_function_dependency_cycle(tmp_path):
+    """Test collection of functions with cyclic dependencies."""
+    # Create a temporary module file with cyclic dependencies
+    module_path = tmp_path / "test_module.py"
+    module_path.write_text(
+        textwrap.dedent("""
+        def first():
+            # first depends on second and third
+            second()
+            third()
+            return "first"
+
+        def second():
+            # second depends on third
+            third()
+            return "second"
+
+        def third():
+            # third is at the bottom of dependency chain
+            return "third"
+        """)
+    )
+
+    # Import the temporary module
+    sys.path.insert(0, str(tmp_path))
+    try:
+        collector = _DependencyCollector()
+
+        # Add some pre-existing dependencies to force revisiting
+        collector._dependency_graph = {
+            "first": {"second", "third"},
+            "second": {"third"},
+            "third": set(),
+        }
+        collector._main_function_name = "first"
+
+        # This should cause 'third' to be visited multiple times
+        # but only included once in the output
+        ordered_functions = collector._get_ordered_functions()
+
+        # Verify order and uniqueness
+        assert ordered_functions == ["third", "second", "first"]
+
+        # Verify that each function appears exactly once
+        assert len(ordered_functions) == len(set(ordered_functions))
+
+    finally:
+        # Clean up
+        sys.path.pop(0)
+        if "test_module" in sys.modules:
+            del sys.modules["test_module"]
