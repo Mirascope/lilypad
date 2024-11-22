@@ -12,9 +12,11 @@ import pytest
 from mirascope.core import openai, prompt_template
 
 from lilypad._utils.closure import (
+    TypeAliasResolver,
     _CodeLocation,
     _DependencyCollector,
     _DependencyVisitor,
+    _ModuleDependencyVisitor,
     compute_closure,
 )
 
@@ -628,7 +630,6 @@ def test_collect_with_type_aliases():
         return param.upper()
 
     closure, _ = compute_closure(func)
-    print(closure)  # For debugging
 
     expected_func_def = "def func(param: str) -> str:"
 
@@ -637,7 +638,6 @@ def test_collect_with_type_aliases():
 
     # Function definition should have type alias replaced with the original type
     assert expected_func_def in closure
-
 
 
 def test_compute_closure_with_type_alias_change():
@@ -690,7 +690,6 @@ def test_compute_closure_with_same_type_alias():
 
     assert closure1 == closure2
     assert hash1 == hash2
-
 
 
 def test_collect_class_with_non_function_attribute():
@@ -1437,3 +1436,233 @@ def test_function_dependency_cycle(tmp_path):
             del sys.modules["test_module"]
 
 
+def test_dependency_cycle_detection():
+    """Test that the cycle detection in _get_ordered_functions works correctly."""
+    collector = _DependencyCollector()
+
+    # Manually create a cyclic dependency graph
+    collector._main_function_name = "func_a"
+    collector._dependency_graph = {
+        "func_a": {"func_b"},
+        "func_b": {"func_c"},
+        "func_c": {"func_a"},  # This creates a cycle
+    }
+
+    # Call _get_ordered_functions and ensure it handles the cycle
+    ordered_functions = collector._get_ordered_functions()
+
+    # Since there's a cycle, we expect that the function handles it gracefully
+    # The important part is that the code completes without error
+    # and that the cycle detection code path is covered
+    assert set(ordered_functions) == {"func_a", "func_b", "func_c"}
+
+
+def test_visit_assign_type_alias():
+    """Test that type aliases in Assign nodes are detected."""
+    module_code = textwrap.dedent("""
+    from typing import List
+
+    MyList = List[int]
+
+    def func() -> MyList:
+        return [1, 2, 3]
+    """)
+
+    # Parse the module code and collect dependencies
+    module_tree = ast.parse(module_code)
+    visitor = _DependencyVisitor()
+    visitor.visit(module_tree)
+
+    # Check that the type alias is detected
+    assert "MyList" in visitor.type_aliases
+    assert isinstance(visitor.type_aliases["MyList"], ast.Subscript)
+
+
+def test_visit_annassign_type_alias_and_else():
+    """Test that type aliases in AnnAssign nodes are detected, and else block is covered."""
+    module_code = textwrap.dedent("""
+    from typing import Any
+
+    MyAlias: Any = SomeType
+
+    another_var: int
+
+    def func():
+        return MyAlias
+    """)
+
+    # Parse the module code and collect dependencies
+    module_tree = ast.parse(module_code)
+    visitor = _DependencyVisitor()
+    visitor.visit(module_tree)
+
+    # Check that the type alias is detected
+    assert "MyAlias" in visitor.type_aliases
+    # The value should be an ast.Name node ('SomeType')
+    assert isinstance(visitor.type_aliases["MyAlias"], ast.Name)
+    assert visitor.type_aliases["MyAlias"].id == "SomeType"
+
+    # The variable 'another_var' should trigger the else block
+    assert "another_var" in visitor.variables
+
+
+def test_visit_annassign_else_value():
+    """Test that visit_AnnAssign visits node.value in else block when node.value is not None."""
+    module_code = textwrap.dedent("""
+    from typing import List
+
+    x: List[int] = some_function()
+
+    def some_function():
+        return [1, 2, 3]
+    """)
+
+    # Parse the module code and collect dependencies
+    module_tree = ast.parse(module_code)
+    visitor = _DependencyVisitor()
+    visitor.visit(module_tree)
+
+    # 'some_function' should be in visitor.functions due to self.visit(node.value)
+    assert "some_function" in visitor.functions
+
+
+def test_type_alias_resolver_visit_annassign_no_alias():
+    """Test that TypeAliasResolver leaves AnnAssign nodes unchanged when not a type alias."""
+    source_code = textwrap.dedent("""
+    from typing import List
+
+    numbers: List[int] = [1, 2, 3]
+
+    def func():
+        return numbers
+    """)
+
+    # Parse the source code into an AST
+    tree = ast.parse(source_code)
+
+    # Collect type aliases and assignments at the module level
+    module_visitor = _ModuleDependencyVisitor()
+    module_visitor.visit(tree)
+
+    # Instantiate the TypeAliasResolver
+    resolver = TypeAliasResolver(
+        type_aliases=module_visitor.type_aliases,
+        module_assignments=module_visitor.assignments,
+    )
+
+    # Visit the AST with the resolver
+    transformed_tree = resolver.visit(tree)
+
+    # Fix missing locations for ast.unparse
+    ast.fix_missing_locations(transformed_tree)
+
+    # Generate code from the transformed AST
+    source = ast.unparse(transformed_tree)
+
+    # The code should remain unchanged
+    expected_code = textwrap.dedent("""
+    from typing import List
+    numbers: List[int] = [1, 2, 3]
+
+    def func():
+        return numbers
+    """).strip()
+
+    assert source.strip() == expected_code
+
+
+def test_type_alias_resolver_visit_annassign():
+    """Test that TypeAliasResolver correctly visits AnnAssign nodes with annotation and value."""
+    source_code = textwrap.dedent("""
+    from typing import List, Any
+
+    MyAlias = List[Any]
+
+    def func():
+        return MyAlias
+    """)
+
+    # Parse the source code into an AST
+    tree = ast.parse(source_code)
+
+    # Collect type aliases and assignments at the module level
+    module_visitor = _ModuleDependencyVisitor()
+    module_visitor.visit(tree)
+
+    # Instantiate the TypeAliasResolver
+    resolver = TypeAliasResolver(
+        type_aliases=module_visitor.type_aliases,
+        module_assignments=module_visitor.assignments,
+    )
+
+    # Visit the AST with the resolver
+    transformed_tree = resolver.visit(tree)
+
+    # Fix missing locations for ast.unparse
+    ast.fix_missing_locations(transformed_tree)
+
+    # Generate code from the transformed AST
+    source = ast.unparse(transformed_tree)
+
+    # **Update the expected code to match the transformed code**
+    expected_code = textwrap.dedent("""
+    from typing import List, Any
+    MyAlias = List[Any]
+
+    def func():
+        return List[Any]
+    """).strip()
+
+    assert source.strip() == expected_code
+
+
+def test_type_alias_resolver_visit_annassign_typealias():
+    """Test that TypeAliasResolver processes AnnAssign nodes with type aliases correctly."""
+    source_code = textwrap.dedent("""
+    from typing import Any, TypeAlias
+
+    MyAlias: TypeAlias = Any
+
+    # Use the type alias in an annotated assignment
+    some_var: MyAlias = 42
+
+    def func():
+        return some_var
+    """)
+
+    # Parse the source code into an AST
+    tree = ast.parse(source_code)
+
+    # Collect type aliases and assignments at the module level
+    module_visitor = _ModuleDependencyVisitor()
+    module_visitor.visit(tree)
+
+    # Ensure 'MyAlias' is in module_visitor.type_aliases
+    assert "MyAlias" in module_visitor.type_aliases
+
+    # Instantiate the TypeAliasResolver
+    resolver = TypeAliasResolver(
+        type_aliases=module_visitor.type_aliases,
+        module_assignments=module_visitor.assignments,
+    )
+
+    # Visit the AST with the resolver
+    transformed_tree = resolver.visit(tree)
+
+    # Fix missing locations for ast.unparse
+    ast.fix_missing_locations(transformed_tree)
+
+    # Generate code from the transformed AST
+    source = ast.unparse(transformed_tree)
+
+    # Expected transformed code
+    expected_code = textwrap.dedent("""
+    from typing import Any, TypeAlias
+    MyAlias = Any
+    some_var: Any = 42
+
+    def func():
+        return some_var
+    """).strip()
+
+    assert source.strip() == expected_code

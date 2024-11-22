@@ -299,9 +299,7 @@ class _DependencyCollector:
             for name in visitor.variables:
                 if name in func.__globals__:
                     value = func.__globals__[name]
-                    if not (
-                        inspect.isfunction(value) or inspect.isclass(value)
-                    ):
+                    if not (inspect.isfunction(value) or inspect.isclass(value)):
                         # Keep variable references intact
                         self._collected_variables[name] = self._serialize_value(
                             name, value
@@ -332,7 +330,7 @@ class _DependencyCollector:
 
     def _is_serializable_value(self, value: Any) -> bool:
         """Check if a value can be serializable."""
-        return isinstance(value, (int, float, str, bool, type(None)))
+        return isinstance(value, int | float | str | bool | type(None))
 
     def _serialize_value(self, name: str, value: Any) -> str:
         """Serialize a value to a string."""
@@ -356,7 +354,7 @@ class _DependencyCollector:
         name_to_source: dict[str, str] = {}
         for _, source in self._collected_code.items():
             tree = ast.parse(source)
-            if isinstance(tree.body[0], (ast.FunctionDef, ast.ClassDef)):
+            if isinstance(tree.body[0], ast.FunctionDef | ast.ClassDef):
                 name_to_source[tree.body[0].name] = source
 
         # Include only the functions and classes that are dependencies
@@ -409,14 +407,19 @@ class _DependencyVisitor(ast.NodeVisitor):
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
-            and isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute))
+            and isinstance(node.value, ast.Name | ast.Subscript | ast.Attribute)
         ):
             alias_name = node.targets[0].id
             self.type_aliases[alias_name] = node.value
+        else:
+            # Add variable names to self.variables
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    self.variables.add(target.id)
+            self.generic_visit(node)
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        # Detect type aliases in AnnAssign (annotated assignments)
         if (
             isinstance(node.target, ast.Name)
             and isinstance(node.annotation, ast.Name)
@@ -425,11 +428,12 @@ class _DependencyVisitor(ast.NodeVisitor):
             alias_name = node.target.id
             self.type_aliases[alias_name] = node.value
         else:
-            # Extract variables and type annotations
             if node.value:
                 self.visit(node.value)
             if node.annotation:
                 self._extract_annotation_references(node.annotation)
+            if isinstance(node.target, ast.Name):
+                self.variables.add(node.target.id)
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -527,24 +531,22 @@ class _ModuleDependencyVisitor(ast.NodeVisitor):
         self.classes: dict[str, ast.ClassDef] = {}
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        if (
-            len(node.targets) == 1
-            and isinstance(node.targets[0], ast.Name)
-        ):
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             name = node.targets[0].id
             self.assignments[name] = node
             # Detect type aliases in Assign
-            if isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute)):
+            if isinstance(node.value, ast.Name | ast.Subscript | ast.Attribute):
                 self.type_aliases[name] = node.value
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if isinstance(node.target, ast.Name):
-            name = node.target.id
-            self.assignments[name] = node
-            # Detect type aliases in AnnAssign
-            if node.value and isinstance(node.value, (ast.Name, ast.Subscript, ast.Attribute)):
-                self.type_aliases[name] = node.value
+        if (
+            isinstance(node.target, ast.Name)
+            and isinstance(node.annotation, ast.Name | ast.Subscript | ast.Attribute)
+            and isinstance(node.value, ast.Name | ast.Subscript | ast.Attribute)
+        ):
+            alias_name = node.target.id
+            self.type_aliases[alias_name] = node.value
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -579,11 +581,20 @@ class TypeAliasResolver(ast.NodeTransformer):
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
-        if node.annotation:
-            node.annotation = self.visit(node.annotation)
-        if node.value:
-            node.value = self.visit(node.value)
-        return node
+        if isinstance(node.target, ast.Name) and node.target.id in self.type_aliases:
+            # Replace the AnnAssign node with an Assign node without annotation
+            new_node = ast.Assign(  # pyright: ignore [reportCallIssue]
+                targets=[node.target],
+                value=self.visit(node.value) if node.value else None,  # pyright: ignore [reportArgumentType]
+                type_comment=None,
+            )
+            return ast.copy_location(new_node, node)
+        else:
+            if node.annotation:
+                node.annotation = self.visit(node.annotation)
+            if node.value:
+                node.value = self.visit(node.value)
+            return node
 
     def visit_Subscript(self, node: ast.Subscript) -> ast.AST:
         # Recursively resolve type aliases in subscripted types
@@ -605,6 +616,8 @@ class TypeAliasResolver(ast.NodeTransformer):
                 arg.annotation = self.visit(arg.annotation)
         self.generic_visit(node)
         return node
+
+    # Add other visit methods if necessary
 
 
 @lru_cache(maxsize=128)
