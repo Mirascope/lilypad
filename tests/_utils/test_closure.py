@@ -644,7 +644,7 @@ def test_compute_closure_with_type_alias_change():
     """Test that changing a type alias affects the closure and hash."""
     from typing import TypeAlias
 
-    def outer(): # pyright: ignore [reportRedeclaration]
+    def outer():  # pyright: ignore [reportRedeclaration]
         MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
 
         def func(param: MyType) -> MyType:
