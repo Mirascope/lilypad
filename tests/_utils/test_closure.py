@@ -334,12 +334,14 @@ def test_codelocation_eq():
 def test_format_code_exception():
     """Test that _format_code returns original code when black.format_str raises an exception."""
     collector = _DependencyCollector()
+
     def foo():
         pass
+
     collector.collect(foo)
     with patch("black.format_str", side_effect=Exception):
         formatted_code = collector._format_output()
-        assert formatted_code == 'def foo():\n    pass'
+        assert formatted_code == "def foo():\n    pass"
 
 
 def test_is_third_party_module_none():
@@ -528,6 +530,7 @@ def test_is_serializable_value():
     assert not collector._is_serializable_value(lambda x: x)
     assert not collector._is_serializable_value(object())
 
+
 def test_collect_with_type_aliases():
     """Test handling of type aliases in annotations."""
     from typing import TypeAlias
@@ -598,42 +601,32 @@ def test_import_statements():
     visitor = _DependencyVisitor()
 
     # Test simple import
-    import_node = ast.Import(
-        names=[ast.alias(name="os", asname=None)]
-    )
+    import_node = ast.Import(names=[ast.alias(name="os", asname=None)])
     visitor.visit_Import(import_node)
     assert "import os" in visitor.imports
 
     # Test import with alias
-    import_node = ast.Import(
-        names=[ast.alias(name="os.path", asname="path")]
-    )
+    import_node = ast.Import(names=[ast.alias(name="os.path", asname="path")])
     visitor.visit_Import(import_node)
     assert "import os.path as path" in visitor.imports
 
     # Test from import
     from_node = ast.ImportFrom(
-        module="typing",
-        names=[ast.alias(name="List", asname=None)],
-        level=0
+        module="typing", names=[ast.alias(name="List", asname=None)], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List" in visitor.imports
 
     # Test from import with alias
     from_node = ast.ImportFrom(
-        module="typing",
-        names=[ast.alias(name="List", asname="TypeList")],
-        level=0
+        module="typing", names=[ast.alias(name="List", asname="TypeList")], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List as TypeList" in visitor.imports
 
     # Test from import without module (relative import)
     from_node = ast.ImportFrom(
-        module=None,
-        names=[ast.alias(name="helper", asname=None)],
-        level=1
+        module=None, names=[ast.alias(name="helper", asname=None)], level=1
     )
     visitor.visit_ImportFrom(from_node)
     assert "from . import helper" in visitor.imports
@@ -649,9 +642,9 @@ def test_multiple_imports_from_same_module():
         names=[
             ast.alias(name="List", asname=None),
             ast.alias(name="Dict", asname="Dictionary"),
-            ast.alias(name="Optional", asname=None)
+            ast.alias(name="Optional", asname=None),
         ],
-        level=0
+        level=0,
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List" in visitor.imports
@@ -663,7 +656,7 @@ def test_multiple_imports_from_same_module():
         names=[
             ast.alias(name="os", asname=None),
             ast.alias(name="sys", asname="system"),
-            ast.alias(name="json", asname=None)
+            ast.alias(name="json", asname=None),
         ]
     )
     visitor.visit_Import(import_node)
@@ -678,27 +671,21 @@ def test_relative_imports():
 
     # Test single dot relative import
     from_node = ast.ImportFrom(
-        module="utils",
-        names=[ast.alias(name="helper", asname=None)],
-        level=1
+        module="utils", names=[ast.alias(name="helper", asname=None)], level=1
     )
     visitor.visit_ImportFrom(from_node)
     assert "from .utils import helper" in visitor.imports
 
     # Test double dot relative import
     from_node = ast.ImportFrom(
-        module="utils",
-        names=[ast.alias(name="helper", asname=None)],
-        level=2
+        module="utils", names=[ast.alias(name="helper", asname=None)], level=2
     )
     visitor.visit_ImportFrom(from_node)
     assert "from ..utils import helper" in visitor.imports
 
     # Test relative import without module name
     from_node = ast.ImportFrom(
-        module=None,
-        names=[ast.alias(name="helper", asname=None)],
-        level=3
+        module=None, names=[ast.alias(name="helper", asname=None)], level=3
     )
     visitor.visit_ImportFrom(from_node)
     assert "from ... import helper" in visitor.imports
@@ -708,8 +695,8 @@ def test_import_in_function_dependencies():
     """Test that imports are correctly collected from function dependencies."""
 
     def func_with_imports():
-        from typing import List
         import os as operating_system
+
         return [operating_system.path.join("a", "b")]
 
     closure, _ = compute_closure(func_with_imports)
@@ -723,16 +710,12 @@ def test_basic_imports():
     visitor = _DependencyVisitor()
 
     # Test simple import
-    import_node = ast.Import(
-        names=[ast.alias(name="os", asname=None)]
-    )
+    import_node = ast.Import(names=[ast.alias(name="os", asname=None)])
     visitor.visit_Import(import_node)
     assert "import os" in visitor.imports
 
     # Test import with alias
-    import_node = ast.Import(
-        names=[ast.alias(name="os.path", asname="path")]
-    )
+    import_node = ast.Import(names=[ast.alias(name="os.path", asname="path")])
     visitor.visit_Import(import_node)
     assert "import os.path as path" in visitor.imports
 
@@ -743,18 +726,14 @@ def test_from_imports():
 
     # Test simple from import
     from_node = ast.ImportFrom(
-        module="typing",
-        names=[ast.alias(name="List", asname=None)],
-        level=0
+        module="typing", names=[ast.alias(name="List", asname=None)], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List" in visitor.imports
 
     # Test from import with alias
     from_node = ast.ImportFrom(
-        module="typing",
-        names=[ast.alias(name="List", asname="TypeList")],
-        level=0
+        module="typing", names=[ast.alias(name="List", asname="TypeList")], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List as TypeList" in visitor.imports
@@ -770,9 +749,9 @@ def test_multiple_imports():
         names=[
             ast.alias(name="List", asname=None),
             ast.alias(name="Dict", asname="Dictionary"),
-            ast.alias(name="Optional", asname=None)
+            ast.alias(name="Optional", asname=None),
         ],
-        level=0
+        level=0,
     )
     visitor.visit_ImportFrom(from_node)
     assert "from typing import List" in visitor.imports
@@ -784,8 +763,9 @@ def test_import_in_function():
     """Test that imports are correctly collected from function dependencies."""
 
     def func_with_imports():
-        from typing import List  # noqa: F401
         import os as operating_system  # noqa: F401
+        from typing import List  # noqa: F401, UP035
+
         return ["test"]
 
     closure, _ = compute_closure(func_with_imports)
@@ -799,18 +779,14 @@ def test_import_handling_edge_cases():
 
     # Test import with empty module name
     from_node = ast.ImportFrom(
-        module="",
-        names=[ast.alias(name="helper", asname=None)],
-        level=0
+        module="", names=[ast.alias(name="helper", asname=None)], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from  import helper" in visitor.imports
 
     # Test import with None module name
     from_node = ast.ImportFrom(
-        module=None,
-        names=[ast.alias(name="helper", asname=None)],
-        level=0
+        module=None, names=[ast.alias(name="helper", asname=None)], level=0
     )
     visitor.visit_ImportFrom(from_node)
     assert "from  import helper" in visitor.imports
@@ -831,9 +807,13 @@ def test_class_with_inner_function():
     module.TestClassWithFunction = TestClassWithFunction
 
     collector = _DependencyCollector()
-    with patch("inspect.isclass", return_value=True), \
-            patch("inspect.getsource",
-                  return_value="class TestClassWithFunction:\n    def method(self):\n        return helper_function()\n"):
+    with (
+        patch("inspect.isclass", return_value=True),
+        patch(
+            "inspect.getsource",
+            return_value="class TestClassWithFunction:\n    def method(self):\n        return helper_function()\n",
+        ),
+    ):
         collector._collect_class_definition("TestClassWithFunction", module)
         assert "helper_function" in collector._visited_functions
 
@@ -858,8 +838,10 @@ def test_third_party_module_function():
         pass
 
     collector = _DependencyCollector()
-    with patch("inspect.getmodule") as mock_getmodule, \
-            patch("inspect.getsource", side_effect=OSError):  # Simulate failure to get source
+    with (
+        patch("inspect.getmodule") as mock_getmodule,
+        patch("inspect.getsource", side_effect=OSError),
+    ):  # Simulate failure to get source
         mock_module = Mock()
         mock_module.__file__ = "/usr/lib/python3.10/site-packages/some_package.py"
         mock_getmodule.return_value = mock_module
@@ -867,6 +849,7 @@ def test_third_party_module_function():
         collector._collect_function_and_deps(test_func)
         # Should return early without adding to collected_code
         assert not collector._collected_code
+
 
 def test_cached_module_function_lookup():
     """Test finding function in cached modules."""
@@ -906,7 +889,7 @@ def test_visit_already_visited_function():
         visited.add(func_name)
         ordered.append(func_name)
 
-    with patch.object(collector, '_get_ordered_functions'):
+    with patch.object(collector, "_get_ordered_functions"):
         collector._get_ordered_functions()
         assert len(ordered) <= len(collector._dependency_graph)
 
@@ -919,10 +902,9 @@ def test_complex_decorator_calls():
     func_call = ast.Call(
         func=ast.Name(id="decorator", ctx=ast.Load()),
         args=[ast.Name(id="ArgClass", ctx=ast.Load())],
-        keywords=[ast.keyword(
-            arg="kwarg",
-            value=ast.Name(id="KwargClass", ctx=ast.Load())
-        )]
+        keywords=[
+            ast.keyword(arg="kwarg", value=ast.Name(id="KwargClass", ctx=ast.Load()))
+        ],
     )
     visitor._collect_decorator_calls(func_call)
     assert "decorator" in visitor.functions
@@ -934,10 +916,10 @@ def test_complex_decorator_calls():
         func=ast.Attribute(
             value=ast.Name(id="module", ctx=ast.Load()),
             attr="decorator",
-            ctx=ast.Load()
+            ctx=ast.Load(),
         ),
         args=[],
-        keywords=[]
+        keywords=[],
     )
     visitor._collect_decorator_calls(attr_call)
     assert "module" in visitor.variables
@@ -957,11 +939,9 @@ def test_complex_function_calls():
         func=ast.Name(id="outer_func", ctx=ast.Load()),
         args=[
             ast.Call(
-                func=ast.Name(id="inner_func", ctx=ast.Load()),
-                args=[],
-                keywords=[]
+                func=ast.Name(id="inner_func", ctx=ast.Load()), args=[], keywords=[]
             ),
-            ast.Name(id="ArgClass", ctx=ast.Load())
+            ast.Name(id="ArgClass", ctx=ast.Load()),
         ],
         keywords=[
             ast.keyword(
@@ -969,14 +949,11 @@ def test_complex_function_calls():
                 value=ast.Call(
                     func=ast.Name(id="factory_func", ctx=ast.Load()),
                     args=[],
-                    keywords=[]
-                )
+                    keywords=[],
+                ),
             ),
-            ast.keyword(
-                arg="kwarg2",
-                value=ast.Name(id="KwargClass", ctx=ast.Load())
-            )
-        ]
+            ast.keyword(arg="kwarg2", value=ast.Name(id="KwargClass", ctx=ast.Load())),
+        ],
     )
 
     visitor.visit_Call(call_node)
@@ -1034,8 +1011,10 @@ def test_cached_module_function_third_party():
 
     collector._module_cache["test_module"] = cache_module
 
-    with patch("inspect.getmodule") as mock_getmodule, \
-            patch("inspect.getsource") as mock_getsource:
+    with (
+        patch("inspect.getmodule") as mock_getmodule,
+        patch("inspect.getsource") as mock_getsource,
+    ):
         # Return mock_module first for the main function, then None for subsequent calls
         mock_getmodule.side_effect = [mock_module]
         # Should never reach getsource due to early return
@@ -1044,13 +1023,14 @@ def test_cached_module_function_third_party():
         collector._collect_function_and_deps(calling_func)
         assert not collector._collected_code
 
+
 def test_function_ordering_visited_early_return():
     """Test early return in function ordering visitor when already visited."""
     collector = _DependencyCollector()
     collector._main_function_name = "main_func"
     collector._dependency_graph = {
         "main_func": {"helper_func"},
-        "helper_func": {"main_func"}  # Circular dependency
+        "helper_func": {"main_func"},  # Circular dependency
     }
 
     # Call _get_ordered_functions to trigger the visit function
@@ -1080,7 +1060,6 @@ def test_visited_functions_early_return():
 
 def test_collect_function_early_returns():
     """Test early returns in _collect_function_and_deps."""
-
     mock_sys_paths = [
         "/usr/lib/python3.10/site-packages",
         "/usr/local/lib/python3/site-packages",
@@ -1089,13 +1068,15 @@ def test_collect_function_early_returns():
     def test_func():
         pass
 
-    with patch.object(sys, 'path', mock_sys_paths):
+    with patch.object(sys, "path", mock_sys_paths):
         collector = _DependencyCollector()
 
         # Case 1: Already visited function
         collector._visited_functions.add(test_func.__name__)
         collector._collect_function_and_deps(test_func)
-        assert len(collector._collected_code) == 0, "Should return early for visited function"
+        assert (
+            len(collector._collected_code) == 0
+        ), "Should return early for visited function"
 
         # Case 2: Third party module function
         collector._visited_functions.clear()
@@ -1103,8 +1084,10 @@ def test_collect_function_early_returns():
         mock_module = Mock()
         mock_module.__file__ = "/usr/lib/python3.10/site-packages/third_party.py"
 
-        with patch("inspect.getmodule", return_value=mock_module), \
-                patch("inspect.getsource") as mock_getsource:
+        with (
+            patch("inspect.getmodule", return_value=mock_module),
+            patch("inspect.getsource") as mock_getsource,
+        ):
             collector._collect_function_and_deps(test_func)
 
             # Should return early without calling getsource
@@ -1115,7 +1098,6 @@ def test_collect_function_early_returns():
 
 def test_collect_regular_function():
     """Test normal case without early returns."""
-
     mock_sys_paths = [
         "/usr/lib/python3.10/site-packages",
         "/usr/local/lib/python3/site-packages",
@@ -1124,15 +1106,20 @@ def test_collect_regular_function():
     def test_func():
         pass
 
-    with patch.object(sys, 'path', mock_sys_paths):
+    with patch.object(sys, "path", mock_sys_paths):
         collector = _DependencyCollector()
 
         mock_module = Mock()
         mock_module.__file__ = "/home/user/project/local.py"  # Not a third party path
 
-        with patch("inspect.getmodule", return_value=mock_module), \
-                patch("inspect.getsource", return_value="def test_func():\n    pass\n"), \
-                patch("inspect.getsourcelines", return_value=(["def test_func():\n", "    pass\n"], 1)):
+        with (
+            patch("inspect.getmodule", return_value=mock_module),
+            patch("inspect.getsource", return_value="def test_func():\n    pass\n"),
+            patch(
+                "inspect.getsourcelines",
+                return_value=(["def test_func():\n", "    pass\n"], 1),
+            ),
+        ):
             collector._collect_function_and_deps(test_func)
 
             # Should proceed with collection
@@ -1142,7 +1129,6 @@ def test_collect_regular_function():
 
 def test_cached_module_loop_break():
     """Test that the loop breaks after finding a non-third-party function in cached modules."""
-
     mock_sys_paths = [
         "/usr/lib/python3.8/site-packages",
     ]
@@ -1153,21 +1139,21 @@ def test_cached_module_loop_break():
     def helper_func():
         return "test"
 
-    with patch.object(sys, 'path', mock_sys_paths):
+    with patch.object(sys, "path", mock_sys_paths):
         collector = _DependencyCollector()
 
         # Setup main module
-        main_module = Mock(spec=['__file__', '__name__'])
+        main_module = Mock(spec=["__file__", "__name__"])
         main_module.__file__ = "/home/user/project/main.py"
         main_module.__name__ = "main_module"
 
         # Setup multiple cached modules
-        cache_module1 = Mock(spec=['__file__', '__name__', 'helper_func'])
+        cache_module1 = Mock(spec=["__file__", "__name__", "helper_func"])
         cache_module1.__file__ = "/home/user/project1/local.py"  # Not third party
         cache_module1.__name__ = "cache_module1"
         cache_module1.helper_func = helper_func
 
-        cache_module2 = Mock(spec=['__file__', '__name__', 'helper_func'])
+        cache_module2 = Mock(spec=["__file__", "__name__", "helper_func"])
         cache_module2.__file__ = "/home/user/project2/local.py"  # Not third party
         cache_module2.__name__ = "cache_module2"
         cache_module2.helper_func = helper_func
@@ -1191,15 +1177,19 @@ def test_cached_module_loop_break():
                 return helper_func
             return original_find_function(name, module)
 
-        with patch.object(collector, '_find_function_in_module', side_effect=mock_find_function), \
-                patch("inspect.getmodule") as mock_getmodule, \
-                patch("inspect.getsource") as mock_getsource, \
-                patch("inspect.getsourcelines") as mock_getsourcelines, \
-                patch("ast.parse") as mock_parse:
+        with (
+            patch.object(
+                collector, "_find_function_in_module", side_effect=mock_find_function
+            ),
+            patch("inspect.getmodule") as mock_getmodule,
+            patch("inspect.getsource") as mock_getsource,
+            patch("inspect.getsourcelines") as mock_getsourcelines,
+            patch("ast.parse") as mock_parse,
+        ):
             mock_getmodule.side_effect = lambda f: {
                 main_func: main_module,  # Return main_module for main_func
-                helper_func: cache_module1  # Return cache_module1 for helper_func
-            }.get(f, None)
+                helper_func: cache_module1,  # Return cache_module1 for helper_func
+            }.get(f)
 
             # Setup source code returns
             mock_getsource.return_value = main_source
@@ -1207,15 +1197,13 @@ def test_cached_module_loop_break():
 
             # Setup AST to include helper_func in visitor.functions
             call_node = ast.Call(
-                func=ast.Name(id='helper_func', ctx=ast.Load()),
-                args=[],
-                keywords=[]
+                func=ast.Name(id="helper_func", ctx=ast.Load()), args=[], keywords=[]
             )
             func_node = ast.FunctionDef(
-                name='main_func',
+                name="main_func",
                 args=ast.arguments([], [], None, [], [], None, []),
                 body=[ast.Expr(call_node)],
-                decorator_list=[]
+                decorator_list=[],
             )
             mock_parse.return_value = ast.Module(body=[func_node], type_ignores=[])
 
