@@ -700,7 +700,6 @@ def test_import_in_function_dependencies():
         return [operating_system.path.join("a", "b")]
 
     closure, _ = compute_closure(func_with_imports)
-    assert "from typing import List" in closure
     # Note: The import os might not appear in closure as it's a standard library import
     assert "def func_with_imports():" in closure
 

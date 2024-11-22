@@ -189,8 +189,11 @@ def create_mirascope_call(
                     )
                 )
                 return cast(_R, await traced_call(*args, **kwargs))
-            elif inspect.isclass(origin_return_type) and issubclass(
-                origin_return_type, Message
+            elif (
+                    inspect.isclass(origin_return_type)
+                    and issubclass(origin_return_type, Message)
+                    or inspect.isclass(return_type)
+                    and issubclass(return_type, Message)
             ):
                 traced_call = trace_decorator(call_decorator()(prompt_template_async))
                 return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
