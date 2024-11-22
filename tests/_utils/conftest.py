@@ -195,3 +195,22 @@ def format_author(mock_base_tool):
             return f"Author is {self.author}"
 
     return FormatAuthor
+
+
+@pytest.fixture
+def create_mock_prompt():
+    """Create a helper function for generating mock prompts."""
+
+    def _create_mock_prompt():
+        """Helper function to create a consistent mock prompt."""
+        from unittest.mock import Mock
+
+        mock_prompt = Mock()
+        mock_prompt.provider = Mock()
+        mock_prompt.provider.value = "openai"
+        mock_prompt.template = "test template"
+        mock_prompt.model = "test_model"
+        mock_prompt.call_params = None
+        return mock_prompt
+
+    return _create_mock_prompt
