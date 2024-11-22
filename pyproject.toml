@@ -31,13 +31,15 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "mirascope>=1.6.1",
+    "mirascope>=1.9.2",
     "sqlmodel>=0.0.22",
     "psycopg2-binary>=2.9.9",
     "fastapi[standard]>=0.114.0",
     "opentelemetry-api>=1.27.0",
     "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-instrumentation>=0.49b1",
     "typer>=0.12.5",
+    "cryptography>=43.0.3",
 ]
 
 [project.urls]
@@ -48,22 +50,15 @@ Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
 
 [project.optional-dependencies]
-openai = ["openai>=1.43.0", "opentelemetry-instrumentation-openai>=0.31.2"]
-anthropic = [
-    "anthropic>=0.36.0",
-    "opentelemetry-instrumentation-anthropic>=0.32.2",
-]
-gemini = [
-    "google-generativeai>=0.4.0,<1",
-    "pillow>=10.4.0,<11",
-    "opentelemetry-instrumentation-google-generativeai>=0.33.2",
-]
+openai = ["openai>=1.43.0"]
+anthropic = ["anthropic>=0.36.0"]
+gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 
 [tool.uv]
 dev-dependencies = [
     "ruff>=0.6.1",
     "pytest>=8.3.2",
-    "pyright>=1.1.388",
+    "pyright>=1.1.389",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
@@ -117,8 +112,6 @@ target-version = "py310"
 "tests/*.py" = ["S101", "ANN"]
 "examples/*.py" = ["T201", "ANN"]
 "docs/*.py" = ["ANN401"]
-# REMOVE ONCE OTEL IS CLEANED UP
-"lilypad/_opentelemetry/*.py" = ["ANN"]
 
 [tool.ruff.lint]
 select = [
@@ -170,7 +163,7 @@ venv = ".venv"
 skip = [".git", "*.lock", "./client/pnpm-lock.yaml"]
 
 [tool.coverage.report]
-exclude_also = ["@overload", "@abstractmethod"]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
 
 [build-system]
 requires = ["hatchling"]

@@ -20,10 +20,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  CallArgsCreate,
-  AnthropicCallArgsCreate,
-  OpenAICallArgsCreate,
-  GeminiCallArgsCreate,
+  PromptCreate,
+  AnthropicCallParams,
+  OpenAICallParams,
+  GeminiCallParams,
   Provider,
   ResponseFormat,
   VersionPublic,
@@ -35,7 +35,6 @@ import {
   Path,
   UseFormReturn,
   useForm,
-  useWatch,
   DefaultValues,
 } from "react-hook-form";
 export type OptionalField<T> = {
@@ -54,10 +53,10 @@ export type WithOptionalFields<T> = {
       : T[K];
 };
 
-export type EditorFormValues = CallArgsCreate & {
-  openaiCallParams: WithOptionalFields<OpenAICallArgsCreate>;
-  anthropicCallParams: WithOptionalFields<AnthropicCallArgsCreate>;
-  geminiCallParams: WithOptionalFields<GeminiCallArgsCreate>;
+export type EditorFormValues = PromptCreate & {
+  openaiCallParams: WithOptionalFields<OpenAICallParams>;
+  anthropicCallParams: WithOptionalFields<AnthropicCallParams>;
+  geminiCallParams: WithOptionalFields<GeminiCallParams>;
 };
 
 function getDefaultValueForType(value: unknown): unknown {
@@ -212,7 +211,7 @@ export function createFormSlider<T extends object>(
   };
 }
 
-export const anthropicCallParamsDefault: WithOptionalFields<AnthropicCallArgsCreate> =
+export const anthropicCallParamsDefault: WithOptionalFields<AnthropicCallParams> =
   {
     max_tokens: 1024,
     temperature: 1.0,
@@ -229,49 +228,53 @@ export const anthropicCallParamsDefault: WithOptionalFields<AnthropicCallArgsCre
       value: 0,
     },
   };
-export const openaiCallParamsDefault: WithOptionalFields<OpenAICallArgsCreate> =
-  {
-    response_format: {
-      type: "text",
-    },
-    temperature: 1,
-    max_tokens: 2048,
-    top_p: 1,
-    frequency_penalty: 0,
-    presence_penalty: 0,
-  };
-export const geminiCallParamsDefault: WithOptionalFields<GeminiCallArgsCreate> =
-  {
-    response_mime_type: "text/plain",
-    max_output_tokens: {
-      enabled: false,
-      value: 1024,
-    },
-    temperature: {
-      enabled: false,
-      value: 0,
-    },
-    top_p: {
-      enabled: false,
-      value: 0,
-    },
-    top_k: {
-      enabled: false,
-      value: 0,
-    },
-    frequency_penalty: {
-      enabled: false,
-      value: 0,
-    },
-    presence_penalty: {
-      enabled: false,
-      value: 0,
-    },
-    response_schema: {
-      enabled: false,
-      value: {},
-    },
-  };
+export const openaiCallParamsDefault: WithOptionalFields<OpenAICallParams> = {
+  response_format: {
+    type: "text",
+  },
+  temperature: 1,
+  max_tokens: 2048,
+  top_p: 1,
+  frequency_penalty: {
+    enabled: false,
+    value: 0,
+  },
+  presence_penalty: {
+    enabled: false,
+    value: 0,
+  },
+};
+export const geminiCallParamsDefault: WithOptionalFields<GeminiCallParams> = {
+  response_mime_type: "text/plain",
+  max_output_tokens: {
+    enabled: false,
+    value: 1024,
+  },
+  temperature: {
+    enabled: false,
+    value: 0,
+  },
+  top_p: {
+    enabled: false,
+    value: 0,
+  },
+  top_k: {
+    enabled: false,
+    value: 0,
+  },
+  frequency_penalty: {
+    enabled: false,
+    value: 0,
+  },
+  presence_penalty: {
+    enabled: false,
+    value: 0,
+  },
+  response_schema: {
+    enabled: false,
+    value: {},
+  },
+};
 
 const modelOptions = {
   [Provider.OPENAI]: [
@@ -432,17 +435,25 @@ export const renderStopSequences = (
 
 export const useBaseEditorForm = <T extends EditorFormValues>({
   latestVersion,
+  additionalDefaults = {},
 }: {
   latestVersion?: VersionPublic | null;
+  additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
-    defaultValues: getDefaultValues<T>(latestVersion),
+    defaultValues: {
+      ...getDefaultValues<T>(latestVersion),
+      ...additionalDefaults,
+    },
   });
 
   const { reset } = methods;
 
   useEffect(() => {
-    const newValues = getDefaultValues<T>(latestVersion);
+    const newValues = {
+      ...getDefaultValues<T>(latestVersion),
+      ...additionalDefaults,
+    };
     reset(newValues);
   }, [latestVersion, reset]);
 
@@ -455,6 +466,7 @@ const getDefaultValues = <T extends EditorFormValues>(
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
+      model: "gpt-4o",
       openaiCallParams: openaiCallParamsDefault,
       geminiCallParams: geminiCallParamsDefault,
       anthropicCallParams: anthropicCallParamsDefault,
@@ -462,25 +474,21 @@ const getDefaultValues = <T extends EditorFormValues>(
   }
 
   return {
-    ...latestVersion.fn_params,
+    ...latestVersion.prompt,
     openaiCallParams:
-      latestVersion.fn_params?.provider === Provider.OPENAI ||
-      latestVersion.fn_params?.provider === Provider.OPENROUTER
-        ? apiToFormValues(
-            latestVersion.fn_params.call_params as OpenAICallArgsCreate
-          )
+      latestVersion.prompt?.provider === Provider.OPENAI ||
+      latestVersion.prompt?.provider === Provider.OPENROUTER
+        ? apiToFormValues(latestVersion.prompt.call_params as OpenAICallParams)
         : openaiCallParamsDefault,
     anthropicCallParams:
-      latestVersion.fn_params?.provider === Provider.ANTHROPIC
+      latestVersion.prompt?.provider === Provider.ANTHROPIC
         ? apiToFormValues(
-            latestVersion.fn_params.call_params as AnthropicCallArgsCreate
+            latestVersion.prompt.call_params as AnthropicCallParams
           )
         : anthropicCallParamsDefault,
     geminiCallParams:
-      latestVersion.fn_params?.provider === Provider.GEMINI
-        ? apiToFormValues(
-            latestVersion.fn_params.call_params as GeminiCallArgsCreate
-          )
+      latestVersion.prompt?.provider === Provider.GEMINI
+        ? apiToFormValues(latestVersion.prompt.call_params as GeminiCallParams)
         : geminiCallParamsDefault,
   } as DefaultValues<T>;
 };
@@ -610,4 +618,22 @@ export const BaseEditorFormFields = ({
             : null}
     </div>
   );
+};
+
+export const formValuesToApi = (obj) => {
+  // For each property that has an 'enabled' field
+  for (const key of Object.keys(obj)) {
+    const param = obj[key];
+    if (param && typeof param === "object" && "enabled" in param) {
+      if (param.enabled) {
+        // If enabled is true, replace the object with its value
+        (obj as any)[key] = param.value;
+      } else {
+        // If enabled is false, delete the property
+        delete (obj as any)[key];
+      }
+    }
+  }
+
+  return obj;
 };

@@ -19,7 +19,7 @@ const Projects = () => {
         <p className='text-lg'>Select a project to view its traces.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
-            <Link key={project.id} to={`/projects/${project.id}/llmFns`}>
+            <Link key={project.id} to={`/projects/${project.id}/functions`}>
               <Card
                 key={project.id}
                 className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'

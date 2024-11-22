@@ -67,9 +67,7 @@ The contents of any `/ee` directory are licensed under the Enterprise Edition Li
 
 __Enterprise Features:__
 
-The following features require an enterprise license:
-
-- Vibe Synthesis
+Stay tuned...
 
 __Obtaining An Enterprise License:__
 

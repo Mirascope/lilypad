@@ -26,6 +26,17 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         ).all()
         return record_tables
 
+    def find_unique_function_names_by_project_id(
+        self, project_id: int
+    ) -> Sequence[str]:
+        """Find record by id"""
+        record_tables = self.session.exec(
+            select(self.table.name)
+            .where(self.table.project_id == project_id)
+            .distinct()
+        ).all()
+        return record_tables
+
     def find_record_by_hash(self, hash: str) -> FunctionTable:
         """Find record by hash"""
         record_table = self.session.exec(

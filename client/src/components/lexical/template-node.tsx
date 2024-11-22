@@ -27,7 +27,7 @@ function $convertTemplateElement(
   const isError = domNode.getAttribute("data-error") === "true";
 
   if (textContent !== null) {
-    const node = $createTemplateNode(textContent, undefined, isError);
+    const node = $createTemplateNode(textContent, isError);
     return {
       node,
     };
@@ -102,7 +102,7 @@ export class TemplateNode extends TextNode {
     const element = document.createElement("span");
     element.setAttribute("data-lexical-template", "true");
     element.setAttribute("data-error", this.__isError.toString());
-    element.textContent = this.__text;
+    element.textContent = this.__value; // Changed from this.__text to this.__value
     return { element };
   }
 
@@ -123,6 +123,7 @@ export class TemplateNode extends TextNode {
   getValue(): string {
     return this.__value;
   }
+
   isTextEntity(): true {
     return true;
   }
@@ -145,8 +146,9 @@ export function $createTemplateNode(
   isError: boolean = false
 ): TemplateNode {
   const templateNode = new TemplateNode(value, isError);
-  templateNode.setMode("segmented").toggleDirectionless();
-  return $applyNodeReplacement(templateNode);
+  return $applyNodeReplacement(
+    templateNode.setMode("normal").toggleDirectionless()
+  );
 }
 
 export function $isTemplateNode(
@@ -155,7 +157,6 @@ export function $isTemplateNode(
   return node instanceof TemplateNode;
 }
 
-// New function to find error template nodes
 export function $findErrorTemplateNodes(editor: LexicalEditor): TemplateNode[] {
   const errorNodes: TemplateNode[] = [];
   editor.getEditorState().read(() => {

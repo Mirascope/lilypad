@@ -68,11 +68,9 @@ class SpanPublic(_SpanBase):
         # TODO: Handle error cases where spans dont have attributes
         if span.scope == Scope.LILYPAD:
             display_name = span.data["attributes"]["lilypad.function_name"]
-        elif span.scope == Scope.LLM:
+        else:  # Must be Scope.LLM because Scope is an Enum
             data = span.data
             display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
-        else:
-            display_name = "Unknown"
         child_spans = [
             cls._convert_span_table_to_public(child_span)
             for child_span in span.child_spans

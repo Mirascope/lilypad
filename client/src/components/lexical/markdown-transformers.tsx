@@ -6,18 +6,10 @@ import type {
 import {
   $createParagraphNode,
   $createTextNode,
-  $isTextNode,
-  ElementNode,
   type LexicalNode,
 } from "lexical";
 
-import {
-  $convertToMarkdownString,
-  ELEMENT_TRANSFORMERS,
-  TEXT_FORMAT_TRANSFORMERS,
-  TEXT_MATCH_TRANSFORMERS,
-  TRANSFORMERS,
-} from "@lexical/markdown";
+import { TRANSFORMERS } from "@lexical/markdown";
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
@@ -28,10 +20,7 @@ import {
   $isCollapsibleContainerNode,
   CollapsibleContainerNode,
 } from "./collapsible-container-node";
-import {
-  $createUneditableParagraphNode,
-  UneditableParagraphNode,
-} from "./uneditable-paragraph-node";
+import { $createUneditableParagraphNode } from "./uneditable-paragraph-node";
 import {
   $createCollapsibleTitleNode,
   $isCollapsibleTitleNode,
@@ -40,7 +29,6 @@ import {
 import {
   $createCollapsibleContentNode,
   $isCollapsibleContentNode,
-  CollapsibleContentNode,
 } from "./collapsible-content-node";
 import { $createCodeNode, $isCodeNode, CodeNode } from "@lexical/code";
 
@@ -135,9 +123,9 @@ export const COLLAPSIBLE_TRANSFORMER: MultilineElementTransformer = {
   // Replace function to convert markdown code blocks back to Lexical nodes
   replace: (
     rootNode,
-    children,
+    _children,
     startMatch,
-    endMatch,
+    _endMatch,
     linesInBetween,
     isImport
   ) => {
