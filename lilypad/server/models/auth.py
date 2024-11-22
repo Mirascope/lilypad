@@ -1,13 +1,13 @@
 """Auth models."""
 
 from collections.abc import Sequence
-from enum import StrEnum
+from enum import Enum
 
 from pydantic import BaseModel
 from workos.organizations import Organization
 
 
-class LoginType(StrEnum):
+class LoginType(str, Enum):
     """Login type enum"""
 
     GITHUB_OAUTH = "GitHubOAuth"
