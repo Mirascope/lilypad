@@ -1,6 +1,6 @@
 import { UserSession } from "@/types/types";
+import { AUTH_STORAGE_KEY } from "@/utils/constants";
 import axios from "axios";
-const AUTH_STORAGE_KEY = "auth-session";
 let baseURL = "/api/v0";
 if (import.meta.env.MODE === "development") {
   baseURL = "http://localhost:8000/api/v0";

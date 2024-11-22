@@ -7,7 +7,7 @@ import {
   useContext,
   useState,
 } from "react";
-
+import { AUTH_STORAGE_KEY } from "@/utils/constants";
 export interface AuthContext {
   isAuthenticated: boolean;
   login: (loginType: LoginType, deviceCode?: string) => Promise<void>;
@@ -17,8 +17,6 @@ export interface AuthContext {
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
-
-const AUTH_STORAGE_KEY = "auth-session";
 
 const saveToStorage = (session: UserSession | null) => {
   if (session) {
