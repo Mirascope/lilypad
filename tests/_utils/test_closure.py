@@ -156,7 +156,7 @@ def test_class_return_type(tmp_path):
 
     sys.path.insert(0, str(tmp_path))
     try:
-        import test_module
+        import test_module  # pyright: ignore [reportMissingImports]
 
         expected = inspect.cleandoc("""
         class Book(BaseModel):
@@ -199,7 +199,7 @@ def test_class_argument_in_decorator(tmp_path):
 
     sys.path.insert(0, str(tmp_path))
     try:
-        import test_module
+        import test_module  # pyright: ignore [reportMissingImports]
 
         expected = inspect.cleandoc("""
         class Book(BaseModel):
@@ -243,7 +243,7 @@ def test_class_in_function(tmp_path):
 
     sys.path.insert(0, str(tmp_path))
     try:
-        import test_module
+        import test_module  # pyright: ignore [reportMissingImports]
 
         expected = inspect.cleandoc("""
         class InnerClass(BaseModel):
@@ -308,7 +308,7 @@ def test_multiple_decorators_with_dependencies(tmp_path):
 
     sys.path.insert(0, str(tmp_path))
     try:
-        import test_module
+        import test_module  # pyright: ignore [reportMissingImports]
 
         expected = inspect.cleandoc("""
         def get_available_series() -> list[str]:
@@ -624,7 +624,7 @@ def test_collect_with_type_aliases():
     """Test handling of type aliases in annotations."""
     from typing import TypeAlias
 
-    MyType: TypeAlias = str
+    MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
 
     def func(param: MyType) -> MyType:
         return param.upper()
@@ -644,8 +644,8 @@ def test_compute_closure_with_type_alias_change():
     """Test that changing a type alias affects the closure and hash."""
     from typing import TypeAlias
 
-    def outer():
-        MyType: TypeAlias = str
+    def outer(): # pyright: ignore [reportRedeclaration]
+        MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
 
         def func(param: MyType) -> MyType:
             return param.upper()
@@ -656,7 +656,7 @@ def test_compute_closure_with_type_alias_change():
     closure1, hash1 = compute_closure(func1)
 
     def outer():
-        MyType: TypeAlias = int
+        MyType: TypeAlias = int  # pyright: ignore [reportGeneralTypeIssues]
 
         def func(param: MyType) -> MyType:
             return param + 1
@@ -675,7 +675,7 @@ def test_compute_closure_with_same_type_alias():
     from typing import TypeAlias
 
     def outer():
-        MyType: TypeAlias = str
+        MyType: TypeAlias = str  # pyright: ignore [reportGeneralTypeIssues]
 
         def func(param: MyType) -> MyType:
             return param.upper()
@@ -1361,7 +1361,7 @@ def test_global_function_collection(tmp_path):
     # Import the temporary module
     sys.path.insert(0, str(tmp_path))
     try:
-        import test_module
+        import test_module  # pyright: ignore [reportMissingImports]
 
         collector = _DependencyCollector()
         collector._collect_function_and_deps(test_module.main_func)
