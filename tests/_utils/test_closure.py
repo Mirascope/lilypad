@@ -6,6 +6,7 @@ import inspect
 import sys
 import textwrap
 from types import ModuleType
+from typing import Callable, Any
 from unittest.mock import Mock, patch
 
 import pytest
