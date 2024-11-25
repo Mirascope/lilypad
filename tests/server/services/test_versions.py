@@ -1,3 +1,4 @@
+"""Tests for version service"""
 
 import pytest
 from fastapi import HTTPException
@@ -21,18 +22,17 @@ def test_project(db_session: Session) -> ProjectTable:
     db_session.commit()
     return project
 
+
 @pytest.fixture
 def test_function(db_session: Session, test_project: ProjectTable) -> FunctionTable:
     """Create test function"""
     function = FunctionTable(
-        name="test_func",
-        project_id=test_project.id,
-        hash="test_hash",
-        code="test_code"
+        name="test_func", project_id=test_project.id, hash="test_hash", code="test_code"
     )
     db_session.add(function)
     db_session.commit()
     return function
+
 
 @pytest.fixture
 def test_prompt(db_session: Session, test_project: ProjectTable) -> PromptTable:
@@ -47,17 +47,16 @@ def test_prompt(db_session: Session, test_project: ProjectTable) -> PromptTable:
             "max_tokens": 100,
             "temperature": 0.7,
             "top_p": 1,
-            "response_format": {"type": "text"}
-        }
+            "response_format": {"type": "text"},
+        },
     )
     db_session.add(prompt)
     db_session.commit()
     return prompt
 
+
 def test_find_versions_by_function_name(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test finding versions by function name"""
     service = VersionService(db_session)
@@ -69,7 +68,7 @@ def test_find_versions_by_function_name(
             function_id=test_function.id,
             function_name=test_function.name,
             function_hash=test_function.hash,
-            is_active=i == 1
+            is_active=i == 1,
         )
         for i in range(3)
     ]
@@ -77,17 +76,17 @@ def test_find_versions_by_function_name(
     db_session.commit()
 
     found_versions = service.find_versions_by_function_name(
-        test_project.id,
-        test_function.name
+        test_project.id, test_function.name
     )
     assert len(found_versions) == 3
     assert all(v.function_name == test_function.name for v in found_versions)
 
+
 def test_find_prompt_version_by_id(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable,
-        test_prompt: PromptTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_prompt: PromptTable,
 ):
     """Test finding prompt version by ID"""
     service = VersionService(db_session)
@@ -99,23 +98,20 @@ def test_find_prompt_version_by_id(
         function_name=test_function.name,
         function_hash=test_function.hash,
         prompt_hash=test_prompt.hash,
-        is_active=True
+        is_active=True,
     )
     db_session.add(version)
     db_session.commit()
 
     found_version = service.find_prompt_version_by_id(
-        test_project.id,
-        test_function.id,
-        test_prompt.id
+        test_project.id, test_function.id, test_prompt.id
     )
     assert found_version is not None
     assert found_version.prompt_id == test_prompt.id
 
+
 def test_find_function_version_by_hash(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test finding function version by hash"""
     service = VersionService(db_session)
@@ -125,22 +121,20 @@ def test_find_function_version_by_hash(
         function_id=test_function.id,
         function_name=test_function.name,
         function_hash=test_function.hash,
-        is_active=True
+        is_active=True,
     )
     db_session.add(version)
     db_session.commit()
 
     found_version = service.find_function_version_by_hash(
-        test_project.id,
-        test_function.hash
+        test_project.id, test_function.hash
     )
     assert found_version is not None
     assert found_version.function_hash == test_function.hash
 
+
 def test_find_prompt_active_version(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test finding active version for a prompt"""
     service = VersionService(db_session)
@@ -150,21 +144,20 @@ def test_find_prompt_active_version(
         function_id=test_function.id,
         function_name=test_function.name,
         function_hash=test_function.hash,
-        is_active=True
+        is_active=True,
     )
     db_session.add(version)
     db_session.commit()
 
     active_version = service.find_prompt_active_version(
-        test_project.id,
-        test_function.hash
+        test_project.id, test_function.hash
     )
     assert active_version.is_active is True
     assert active_version.function_hash == test_function.hash
 
+
 def test_find_prompt_active_version_not_found(
-        db_session: Session,
-        test_project: ProjectTable
+    db_session: Session, test_project: ProjectTable
 ):
     """Test finding non-existent active version"""
     service = VersionService(db_session)
@@ -173,9 +166,7 @@ def test_find_prompt_active_version_not_found(
 
 
 def test_change_active_version(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test changing active version between two versions of the same function"""
     service = VersionService(db_session)
@@ -187,7 +178,7 @@ def test_change_active_version(
         function_id=test_function.id,
         function_name="test_func",
         function_hash="test_hash",
-        is_active=True
+        is_active=True,
     )
 
     # Create second version - initially inactive
@@ -197,7 +188,7 @@ def test_change_active_version(
         function_id=test_function.id,
         function_name="test_func",
         function_hash="test_hash",
-        is_active=False
+        is_active=False,
     )
 
     db_session.add(version1)
@@ -213,13 +204,14 @@ def test_change_active_version(
 
     # Verify state changes
     assert new_active.is_active is True
-    assert updated_version1.is_active is False  # Previous active version should be inactive
+    assert (
+        updated_version1.is_active is False
+    )  # Previous active version should be inactive
     assert updated_version2.is_active is True  # New version should be active
 
+
 def test_change_active_version_no_previous_active(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test activating a version when no active version exists"""
     service = VersionService(db_session)
@@ -231,7 +223,7 @@ def test_change_active_version_no_previous_active(
         function_id=test_function.id,
         function_name="test_func",
         function_hash="test_hash",
-        is_active=False
+        is_active=False,
     )
 
     db_session.add(version)
@@ -245,10 +237,10 @@ def test_change_active_version_no_previous_active(
 
     assert new_active.is_active is True
     assert updated_version.is_active is True
+
+
 def test_get_function_version_count(
-        db_session: Session,
-        test_project: ProjectTable,
-        test_function: FunctionTable
+    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
 ):
     """Test getting function version count"""
     service = VersionService(db_session)
@@ -259,15 +251,12 @@ def test_get_function_version_count(
             function_id=test_function.id,
             function_name=test_function.name,
             function_hash=test_function.hash,
-            is_active=i == 0
+            is_active=i == 0,
         )
         for i in range(3)
     ]
     db_session.add_all(versions)
     db_session.commit()
 
-    count = service.get_function_version_count(
-        test_project.id,
-        test_function.name
-    )
+    count = service.get_function_version_count(test_project.id, test_function.name)
     assert count == 3

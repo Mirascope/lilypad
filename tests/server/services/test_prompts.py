@@ -1,4 +1,5 @@
-# test_prompts_service.py
+"""Tests for prompt service"""
+
 import pytest
 from sqlmodel import Session
 
@@ -21,6 +22,7 @@ def test_project(db_session: Session) -> ProjectTable:
     db_session.commit()
     return project
 
+
 def test_create_prompt(db_session: Session, test_project: ProjectTable):
     """Test creating a prompt"""
     service = PromptService(db_session)
@@ -34,8 +36,8 @@ def test_create_prompt(db_session: Session, test_project: ProjectTable):
             max_tokens=100,
             temperature=0.7,
             top_p=1,
-            response_format=ResponseFormat(type="text")
-        )
+            response_format=ResponseFormat(type="text"),
+        ),
     )
 
     prompt = service.create_record(prompt_create)
@@ -54,7 +56,7 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
         max_tokens=100,
         temperature=0.7,
         top_p=1,
-        response_format=ResponseFormat(type="text")
+        response_format=ResponseFormat(type="text"),
     ).model_dump()
 
     prompt = PromptTable(
@@ -63,7 +65,7 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
         template="test template",
         provider=Provider.OPENAI,
         model="gpt-4",
-        call_params=call_params
+        call_params=call_params,
     )
     db_session.add(prompt)
     db_session.commit()
@@ -78,8 +80,8 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
             max_tokens=100,
             temperature=0.7,
             top_p=1,
-            response_format=ResponseFormat(type="text")
-        )
+            response_format=ResponseFormat(type="text"),
+        ),
     )
 
     found_prompt = service.find_prompt_by_call_params(prompt_create)
@@ -87,9 +89,9 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
     assert found_prompt.hash == "test_hash"
     assert found_prompt.call_params == call_params
 
+
 def test_find_prompt_by_call_params_not_found(
-        db_session: Session,
-        test_project: ProjectTable
+    db_session: Session, test_project: ProjectTable
 ):
     """Test finding non-existent prompt by call params"""
     service = PromptService(db_session)
@@ -103,8 +105,8 @@ def test_find_prompt_by_call_params_not_found(
             max_tokens=100,
             temperature=0.7,
             top_p=1,
-            response_format=ResponseFormat(type="text")
-        )
+            response_format=ResponseFormat(type="text"),
+        ),
     )
 
     found_prompt = service.find_prompt_by_call_params(prompt_create)

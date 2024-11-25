@@ -1,3 +1,4 @@
+"""FastAPI test application for testing the API endpoints."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +28,7 @@ def create_test_app() -> FastAPI:
         return {"status": "ok"}
 
     return app
+
 
 # Create a single instance of the test app
 test_app = create_test_app()

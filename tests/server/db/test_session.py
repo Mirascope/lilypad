@@ -1,3 +1,5 @@
+"""Tests for database session management"""
+
 import pytest
 from sqlmodel import Session, SQLModel, select
 
@@ -11,6 +13,7 @@ def setup_database():
     SQLModel.metadata.create_all(engine)
     yield
     SQLModel.metadata.drop_all(engine)
+
 
 def test_get_session():
     """Test getting a database session"""
@@ -26,6 +29,7 @@ def test_get_session():
     stmt = select(ProjectTable)
     result = session.exec(stmt).first()
     assert result.name == "Test Project"
+
 
 def test_session_rollback():
     """Test session rollback on error"""

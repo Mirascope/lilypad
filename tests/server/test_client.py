@@ -1,3 +1,5 @@
+"""Test cases for the LilypadClient class"""
+
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +13,7 @@ def client():
     """Test client fixture"""
     return LilypadClient(base_url="http://test", timeout=1)
 
+
 @pytest.fixture
 def mock_project_response():
     """Mock project response"""
@@ -20,25 +23,29 @@ def mock_project_response():
         "created_at": "2024-01-01T00:00:00",
         "functions": [],
         "prompts": [],
-        "versions": []
+        "versions": [],
     }
+
 
 @pytest.fixture
 def mock_spans_response():
     """Mock spans response"""
-    return [{
-        "id": "span-1",
-        "project_id": 1,
-        "version_id": 1,
-        "version_num": 1,
-        "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad" to match Enum
-        "data": {},
-        "parent_span_id": None,
-        "created_at": "2024-01-01T00:00:00",
-        "display_name": "test_function",
-        "version": None,
-        "child_spans": []
-    }]
+    return [
+        {
+            "id": "span-1",
+            "project_id": 1,
+            "version_id": 1,
+            "version_num": 1,
+            "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad" to match Enum
+            "data": {},
+            "parent_span_id": None,
+            "created_at": "2024-01-01T00:00:00",
+            "display_name": "test_function",
+            "version": None,
+            "child_spans": [],
+        }
+    ]
+
 
 def test_client_initialization():
     """Test client initialization"""
@@ -46,9 +53,12 @@ def test_client_initialization():
     assert client.base_url == "http://test"
     assert client.timeout == 1
 
-@pytest.mark.parametrize("method,args,mock_response", [
-    ("get_health", [], {"status": "ok"}),
-    (
+
+@pytest.mark.parametrize(
+    "method,args,mock_response",
+    [
+        ("get_health", [], {"status": "ok"}),
+        (
             "post_project",
             ["Test Project"],
             {
@@ -57,27 +67,30 @@ def test_client_initialization():
                 "created_at": "2024-01-01T00:00:00",
                 "functions": [],
                 "prompts": [],
-                "versions": []
-            }
-    ),
-    (
+                "versions": [],
+            },
+        ),
+        (
             "post_traces",
             [],
-            [{
-                "id": "span-1",
-                "project_id": 1,
-                "version_id": 1,
-                "version_num": 1,
-                "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
-                "data": {},
-                "parent_span_id": None,
-                "created_at": "2024-01-01T00:00:00",
-                "display_name": "test_function",
-                "version": None,
-                "child_spans": []
-            }]
-    ),
-])
+            [
+                {
+                    "id": "span-1",
+                    "project_id": 1,
+                    "version_id": 1,
+                    "version_num": 1,
+                    "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
+                    "data": {},
+                    "parent_span_id": None,
+                    "created_at": "2024-01-01T00:00:00",
+                    "display_name": "test_function",
+                    "version": None,
+                    "child_spans": [],
+                }
+            ],
+        ),
+    ],
+)
 def test_request_methods(client, method, args, mock_response):
     """Test request methods"""
     with patch("requests.Session.request") as mock_request:
@@ -97,6 +110,7 @@ def test_request_methods(client, method, args, mock_response):
             # 追加: scopeの値が正しいEnumであることを確認
             assert result[0].scope == Scope.LILYPAD
 
+
 def test_request_timeout(client):
     """Test request timeout handling"""
     with patch("requests.Session.request") as mock_request:
@@ -104,6 +118,7 @@ def test_request_timeout(client):
 
         with pytest.raises(TimeoutError):
             client._request("GET", "/test")
+
 
 def test_request_not_found(client):
     """Test 404 handling"""
@@ -113,6 +128,7 @@ def test_request_not_found(client):
 
         with pytest.raises(NotFoundError):
             client._request("GET", "/test")
+
 
 def test_request_connection_error(client):
     """Test connection error handling"""

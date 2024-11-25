@@ -85,9 +85,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         return version
 
     def change_active_version(
-            self,
-            project_id: int,
-            new_active_version: VersionTable
+        self, project_id: int, new_active_version: VersionTable
     ) -> VersionTable:
         """Change the active version for a function, deactivating any currently active versions.
 
@@ -102,7 +100,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         stmt = select(VersionTable).where(
             VersionTable.project_id == project_id,
             VersionTable.function_name == new_active_version.function_name,
-            VersionTable.is_active
+            VersionTable.is_active,
         )
         current_active_versions = self.session.exec(stmt).all()
 

@@ -12,17 +12,15 @@ def test_convert_openai_messages():
     messages = [
         {
             "name": "gen_ai.user.message",
-            "attributes": {
-                "content": '["Hello, how are you?"]'
-            }
+            "attributes": {"content": '["Hello, how are you?"]'},
         },
         {
             "name": "gen_ai.choice",
             "attributes": {
                 "index": 0,
-                "message": '{"role": "assistant", "content": "I am doing well, thank you!"}'
-            }
-        }
+                "message": '{"role": "assistant", "content": "I am doing well, thank you!"}',
+            },
+        },
     ]
 
     result = convert_openai_messages(messages)
@@ -32,22 +30,18 @@ def test_convert_openai_messages():
     assert result[1].role == "assistant"
     assert result[1].content[0].text == "I am doing well, thank you!"
 
+
 def test_convert_gemini_messages():
     """Test converting Gemini messages"""
     messages = [
-        {
-            "name": "gen_ai.user.message",
-            "attributes": {
-                "content": '["Test message"]'
-            }
-        },
+        {"name": "gen_ai.user.message", "attributes": {"content": '["Test message"]'}},
         {
             "name": "gen_ai.choice",
             "attributes": {
                 "index": 0,
-                "message": '{"role": "assistant", "content": ["Response"]}'
-            }
-        }
+                "message": '{"role": "assistant", "content": ["Response"]}',
+            },
+        },
     ]
 
     result = convert_gemini_messages(messages)
@@ -57,22 +51,18 @@ def test_convert_gemini_messages():
     assert result[1].role == "assistant"
     assert result[1].content[0].text == "Response"
 
+
 def test_convert_anthropic_messages():
     """Test converting Anthropic messages"""
     messages = [
-        {
-            "name": "gen_ai.user.message",
-            "attributes": {
-                "content": '["User input"]'
-            }
-        },
+        {"name": "gen_ai.user.message", "attributes": {"content": '["User input"]'}},
         {
             "name": "gen_ai.choice",
             "attributes": {
                 "index": 0,
-                "message": '{"role": "assistant", "content": "Assistant response"}'
-            }
-        }
+                "message": '{"role": "assistant", "content": "Assistant response"}',
+            },
+        },
     ]
 
     result = convert_anthropic_messages(messages)
@@ -86,19 +76,14 @@ def test_convert_anthropic_messages():
 def test_invalid_message_content():
     """Test handling invalid message content."""
     messages = [
-        {
-            "name": "gen_ai.user.message",
-            "attributes": {
-                "content": "Invalid JSON"
-            }
-        },
+        {"name": "gen_ai.user.message", "attributes": {"content": "Invalid JSON"}},
         {
             "name": "gen_ai.choice",
             "attributes": {
                 "index": 0,
-                "message": "{\"role\": \"assistant\", \"content\": \"Response\"}"
-            }
-        }
+                "message": '{"role": "assistant", "content": "Response"}',
+            },
+        },
     ]
 
     result = convert_openai_messages(messages)

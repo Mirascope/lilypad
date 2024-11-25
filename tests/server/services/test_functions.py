@@ -26,7 +26,7 @@ def test_find_records_by_name(db_session: Session, test_project: ProjectTable):
             name="test_func",
             project_id=test_project.id,
             hash=f"hash_{i}",
-            code=f"code_{i}"
+            code=f"code_{i}",
         )
         for i in range(3)
     ]
@@ -40,30 +40,24 @@ def test_find_records_by_name(db_session: Session, test_project: ProjectTable):
 
 
 def test_find_unique_function_names_by_project_id(
-        db_session: Session, test_project: ProjectTable
+    db_session: Session, test_project: ProjectTable
 ):
     """Test finding unique function names by project ID."""
     service = FunctionService(db_session)
 
     functions = [
         FunctionTable(
-            name="func_1",
-            project_id=test_project.id,
-            hash="hash_1",
-            code="code_1"
+            name="func_1", project_id=test_project.id, hash="hash_1", code="code_1"
         ),
         FunctionTable(
             name="func_1",  # Duplicate name
             project_id=test_project.id,
             hash="hash_2",
-            code="code_2"
+            code="code_2",
         ),
         FunctionTable(
-            name="func_2",
-            project_id=test_project.id,
-            hash="hash_3",
-            code="code_3"
-        )
+            name="func_2", project_id=test_project.id, hash="hash_3", code="code_3"
+        ),
     ]
 
     db_session.add_all(functions)
@@ -79,10 +73,7 @@ def test_find_record_by_hash(db_session: Session, test_project: ProjectTable):
     service = FunctionService(db_session)
 
     function = FunctionTable(
-        name="test_func",
-        project_id=test_project.id,
-        hash="test_hash",
-        code="test_code"
+        name="test_func", project_id=test_project.id, hash="test_hash", code="test_code"
     )
 
     db_session.add(function)

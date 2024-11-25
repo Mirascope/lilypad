@@ -1,3 +1,4 @@
+"""Tests for the SpanService class"""
 
 import pytest
 from sqlmodel import Session
@@ -14,6 +15,7 @@ def test_project(db_session: Session) -> ProjectTable:
     db_session.commit()
     return project
 
+
 def test_find_records_by_version_id(db_session: Session, test_project: ProjectTable):
     """Test finding spans by version ID"""
     service = SpanService(db_session)
@@ -29,7 +31,7 @@ def test_find_records_by_version_id(db_session: Session, test_project: ProjectTa
                 "attributes": {
                     "lilypad.function_name": "test_func",
                 }
-            }
+            },
         )
         for i in range(3)
     ]

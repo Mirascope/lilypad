@@ -5,10 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 # In-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 
 
 def get_session():
@@ -33,4 +30,3 @@ def db_session():
         yield session
     finally:
         session.close()
-
