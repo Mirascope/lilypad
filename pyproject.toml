@@ -40,6 +40,7 @@ dependencies = [
     "opentelemetry-instrumentation>=0.49b1",
     "typer>=0.12.5",
     "cryptography>=43.0.3",
+    "black>=24.8.0",
 ]
 
 [project.urls]

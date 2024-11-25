@@ -1663,6 +1663,7 @@ name = "python-lilypad"
 version = "0.0.7"
 source = { editable = "." }
 dependencies = [
+    { name = "black" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "mirascope" },
@@ -1706,6 +1707,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.36.0" },
+    { name = "black", specifier = ">=24.8.0" },
     { name = "cryptography", specifier = ">=43.0.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
     { name = "google-generativeai", marker = "extra == 'gemini'", specifier = ">=0.4.0,<1" },
