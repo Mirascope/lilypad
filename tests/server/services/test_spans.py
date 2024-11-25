@@ -40,6 +40,6 @@ def test_find_records_by_version_id(db_session: Session, test_project: ProjectTa
     db_session.commit()
 
     # Test retrieval
-    found_spans = service.find_records_by_version_id(test_project.id, 1)
+    found_spans = service.find_records_by_version_id(test_project.id, 1)  # pyright: ignore [reportArgumentType]
     assert len(found_spans) == 3
     assert all(span.version_id == 1 for span in found_spans)

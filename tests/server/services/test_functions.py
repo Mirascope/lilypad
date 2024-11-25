@@ -34,7 +34,7 @@ def test_find_records_by_name(db_session: Session, test_project: ProjectTable):
     db_session.add_all(functions)
     db_session.commit()
 
-    found_functions = service.find_records_by_name(test_project.id, "test_func")
+    found_functions = service.find_records_by_name(test_project.id, "test_func")  # pyright: ignore [reportArgumentType]
     assert len(found_functions) == 3
     assert all(func.name == "test_func" for func in found_functions)
 
@@ -63,7 +63,7 @@ def test_find_unique_function_names_by_project_id(
     db_session.add_all(functions)
     db_session.commit()
 
-    unique_names = service.find_unique_function_names_by_project_id(test_project.id)
+    unique_names = service.find_unique_function_names_by_project_id(test_project.id)  # pyright: ignore [reportArgumentType]
     assert len(unique_names) == 2
     assert set(unique_names) == {"func_1", "func_2"}
 

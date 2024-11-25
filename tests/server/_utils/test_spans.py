@@ -26,9 +26,9 @@ def test_convert_openai_messages():
     result = convert_openai_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello, how are you?"
+    assert result[0].content[0].text == "Hello, how are you?"  # pyright: ignore [reportAttributeAccessIssue]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "I am doing well, thank you!"
+    assert result[1].content[0].text == "I am doing well, thank you!"  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_convert_gemini_messages():
@@ -47,9 +47,9 @@ def test_convert_gemini_messages():
     result = convert_gemini_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Test message"
+    assert result[0].content[0].text == "Test message"  # pyright: ignore [reportAttributeAccessIssue]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "Response"
+    assert result[1].content[0].text == "Response"  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_convert_anthropic_messages():
@@ -68,9 +68,9 @@ def test_convert_anthropic_messages():
     result = convert_anthropic_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "User input"
+    assert result[0].content[0].text == "User input"  # pyright: ignore [reportAttributeAccessIssue]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "Assistant response"
+    assert result[1].content[0].text == "Assistant response"  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_invalid_message_content():
@@ -87,10 +87,10 @@ def test_invalid_message_content():
     ]
 
     result = convert_openai_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"
+    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
 
     result = convert_anthropic_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"
+    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
 
     result = convert_gemini_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"
+    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]

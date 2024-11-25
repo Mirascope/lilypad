@@ -76,7 +76,8 @@ def test_find_versions_by_function_name(
     db_session.commit()
 
     found_versions = service.find_versions_by_function_name(
-        test_project.id, test_function.name
+        test_project.id,
+        test_function.name,  # pyright: ignore [reportArgumentType]
     )
     assert len(found_versions) == 3
     assert all(v.function_name == test_function.name for v in found_versions)
@@ -104,7 +105,9 @@ def test_find_prompt_version_by_id(
     db_session.commit()
 
     found_version = service.find_prompt_version_by_id(
-        test_project.id, test_function.id, test_prompt.id
+        test_project.id,
+        test_function.id,
+        test_prompt.id,  # pyright: ignore [reportArgumentType]
     )
     assert found_version is not None
     assert found_version.prompt_id == test_prompt.id
@@ -127,7 +130,8 @@ def test_find_function_version_by_hash(
     db_session.commit()
 
     found_version = service.find_function_version_by_hash(
-        test_project.id, test_function.hash
+        test_project.id,
+        test_function.hash,  # pyright: ignore [reportArgumentType]
     )
     assert found_version is not None
     assert found_version.function_hash == test_function.hash
@@ -150,7 +154,8 @@ def test_find_prompt_active_version(
     db_session.commit()
 
     active_version = service.find_prompt_active_version(
-        test_project.id, test_function.hash
+        test_project.id,
+        test_function.hash,  # pyright: ignore [reportArgumentType]
     )
     assert active_version.is_active is True
     assert active_version.function_hash == test_function.hash
@@ -162,7 +167,7 @@ def test_find_prompt_active_version_not_found(
     """Test finding non-existent active version"""
     service = VersionService(db_session)
     with pytest.raises(HTTPException):
-        service.find_prompt_active_version(test_project.id, "nonexistent_hash")
+        service.find_prompt_active_version(test_project.id, "nonexistent_hash")  # pyright: ignore [reportArgumentType]
 
 
 def test_change_active_version(
@@ -196,7 +201,7 @@ def test_change_active_version(
     db_session.commit()
 
     # Change active version to version2
-    new_active = service.change_active_version(test_project.id, version2)
+    new_active = service.change_active_version(test_project.id, version2)  # pyright: ignore [reportArgumentType]
 
     # Get fresh data from database
     updated_version1 = db_session.get(VersionTable, version1.id)
@@ -205,9 +210,9 @@ def test_change_active_version(
     # Verify state changes
     assert new_active.is_active is True
     assert (
-        updated_version1.is_active is False
+        updated_version1.is_active is False  # pyright: ignore [reportOptionalMemberAccess]
     )  # Previous active version should be inactive
-    assert updated_version2.is_active is True  # New version should be active
+    assert updated_version2.is_active is True  # pyright: ignore [reportOptionalMemberAccess]
 
 
 def test_change_active_version_no_previous_active(
@@ -230,13 +235,13 @@ def test_change_active_version_no_previous_active(
     db_session.commit()
 
     # Activate the version
-    new_active = service.change_active_version(test_project.id, version)
+    new_active = service.change_active_version(test_project.id, version)  # pyright: ignore [reportArgumentType]
 
     # Verify it became active
     updated_version = db_session.get(VersionTable, version.id)
 
     assert new_active.is_active is True
-    assert updated_version.is_active is True
+    assert updated_version.is_active is True  # pyright: ignore [reportOptionalMemberAccess]
 
 
 def test_get_function_version_count(
@@ -258,5 +263,5 @@ def test_get_function_version_count(
     db_session.add_all(versions)
     db_session.commit()
 
-    count = service.get_function_version_count(test_project.id, test_function.name)
+    count = service.get_function_version_count(test_project.id, test_function.name)  # pyright: ignore [reportArgumentType]
     assert count == 3

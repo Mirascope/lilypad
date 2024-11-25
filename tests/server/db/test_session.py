@@ -28,7 +28,7 @@ def test_get_session():
     # Verify project was committed
     stmt = select(ProjectTable)
     result = session.exec(stmt).first()
-    assert result.name == "Test Project"
+    assert result.name == "Test Project"  # pyright: ignore [reportOptionalMemberAccess]
 
 
 def test_session_rollback():

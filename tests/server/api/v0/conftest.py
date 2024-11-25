@@ -63,13 +63,13 @@ def get_test_session(
         finally:
             pass  # Session is handled by the session fixture
 
-    return override_get_session
+    return override_get_session  # pyright: ignore [reportReturnType]
 
 
 @pytest.fixture
 def client(
     session: Session, get_test_session: AsyncGenerator[Session, None]
-) -> TestClient:
+) -> TestClient:  # pyright: ignore [reportInvalidTypeForm]
     """Create a test client with database session dependency override.
 
     Args:
@@ -79,10 +79,10 @@ def client(
     Returns:
         TestClient: FastAPI test client
     """
-    api.dependency_overrides[get_session] = get_test_session
+    api.dependency_overrides[get_session] = get_test_session  # pyright: ignore [reportArgumentType]
 
     client = TestClient(api)
     try:
-        yield client
+        yield client  # pyright: ignore [reportReturnType]
     finally:
         api.dependency_overrides.clear()

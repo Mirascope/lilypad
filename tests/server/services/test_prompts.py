@@ -44,7 +44,7 @@ def test_create_prompt(db_session: Session, test_project: ProjectTable):
     assert prompt.template == "test template"
     assert prompt.provider == Provider.OPENAI
     assert prompt.model == "gpt-4"
-    assert prompt.call_params["max_tokens"] == 100
+    assert prompt.call_params["max_tokens"] == 100  # pyright: ignore [reportOptionalSubscript]
 
 
 def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTable):
