@@ -1,6 +1,7 @@
 """Shared test fixtures and mocks."""
 
 from typing import Any, Generic, TypeVar
+from unittest.mock import Mock
 
 import pytest
 from jiter import jiter  # pyright: ignore [reportAttributeAccessIssue]
@@ -14,6 +15,8 @@ from openai.types.chat import (
 from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel, computed_field
 from pydantic.json_schema import SkipJsonSchema
+
+from lilypad.server.models import Provider
 
 # Type variable for generic tool type
 T = TypeVar("T")
@@ -214,3 +217,13 @@ def create_mock_prompt():
         return mock_prompt
 
     return _create_mock_prompt
+
+
+@pytest.fixture
+def mock_gemini_prompt(create_mock_prompt):
+    """Create a mock prompt with Gemini provider settings."""
+    mock_prompt = create_mock_prompt()
+    mock_prompt.provider = Provider.GEMINI
+    mock_prompt.call_params = Mock()
+    mock_prompt.call_params.model_dump.return_value = {"test": "config"}
+    return mock_prompt

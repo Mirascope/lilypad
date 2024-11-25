@@ -33,12 +33,12 @@ class FormatBook(BaseTool):
 
 
 # Mock test functions
-async def async_test_fn(text: str) -> TestResponseModel:
+async def async_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
     """Mock async test function."""
     pass
 
 
-def sync_test_fn(text: str) -> TestResponseModel:
+def sync_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
     """Mock sync test function."""
     pass
 
@@ -83,28 +83,6 @@ def sync_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]:  # py
     pass
 
 
-# Test fixtures
-@pytest.fixture
-def mock_prompt():
-    """Create a mock prompt with default OpenAI provider settings."""
-    prompt = Mock()
-    prompt.provider = Mock()
-    prompt.provider.value = "openai"
-    prompt.template = "test template"
-    prompt.model = "test_model"
-    prompt.call_params = None
-    return prompt
-
-
-@pytest.fixture
-def mock_gemini_prompt(mock_prompt):
-    """Create a mock prompt with Gemini provider settings."""
-    mock_prompt.provider = Provider.GEMINI
-    mock_prompt.call_params = Mock()
-    mock_prompt.call_params.model_dump.return_value = {"test": "config"}
-    return mock_prompt
-
-
 def test_inspect_arguments_basic():
     """Test inspecting a basic function's arguments."""
 
@@ -135,8 +113,104 @@ def test_inspect_arguments_kwargs():
     assert arg_values == {"kwargs": {"test": 123}}
 
 
+def test_inspect_arguments_with_args():
+    """Test inspecting function with *args."""
+
+    def test_func(*args: int): ...
+
+    arg_types, arg_values = inspect_arguments(test_func, 1, 2, 3)
+    assert arg_types == {"args": "int"}
+    assert arg_values == {"args": (1, 2, 3)}
+
+
+def test_inspect_arguments_mixed():
+    """Test inspecting function with mixed parameters."""
+
+    def test_func(x: int, *args: str, **kwargs: float): ...
+
+    arg_types, arg_values = inspect_arguments(
+        test_func, 1, "a", "b", test1=1.0, test2=2.0
+    )
+    assert arg_types == {"x": "int", "args": "str", "kwargs": "float"}
+    assert arg_values == {
+        "x": 1,
+        "args": ("a", "b"),
+        "kwargs": {"test1": 1.0, "test2": 2.0},
+    }
+
+
+def test_get_type_str_non_generic():
+    """Test handling of non-generic types without __name__ attribute."""
+
+    class CustomType:
+        def __str__(self):
+            return "CustomType"
+
+    # Test case for custom type without __name__ attribute
+    custom_type = CustomType()
+    arg_types, arg_values = inspect_arguments(lambda x: None, custom_type)
+    assert arg_types == {"x": "CustomType"}
+
+
+def test_get_type_str_generic_types():
+    """Test handling of various generic types."""
+
+    def test_func(x: list[int], y: dict[str, int], z: set): ...
+
+    # Test various generic types including List, Dict, and Set
+    arg_types, _ = inspect_arguments(test_func, [1, 2, 3], {"a": 1}, {1, 2, 3})
+    assert arg_types == {
+        "x": "list[int]",  # Changed from 'List[int]'
+        "y": "dict[str, int]",  # Changed from 'Dict[str, int]'
+        "z": "set",  # Changed from 'Set'
+    }
+
+
+def test_get_type_str_custom_generic():
+    """Test handling of custom generic types."""
+    from typing import Generic, TypeVar
+
+    T = TypeVar("T")
+
+    class GenericContainer(Generic[T]):
+        def __init__(self, value: T):
+            self.value = value
+
+    def test_func(x: GenericContainer[int]): ...
+
+    container = GenericContainer(42)
+    arg_types, _ = inspect_arguments(test_func, container)
+    assert arg_types == {"x": "GenericContainer[int]"}
+
+
+def test_get_type_str_nested_generics():
+    """Test handling of nested generic types."""
+
+    def test_func(x: list[dict[str, int]]): ...
+
+    # Test nested generic types (List containing Dict)
+    arg_types, _ = inspect_arguments(test_func, [{"a": 1}, {"b": 2}])
+    assert arg_types == {
+        "x": "list[dict[str, int]]"
+    }  # Changed from 'List[Dict[str, int]]'
+
+
+def test_get_type_str_empty_generic():
+    """Test handling of generic types without type parameters."""
+
+    def test_func(x: list, y: dict, z: set): ...
+
+    # Test generic types without specified type parameters
+    arg_types, _ = inspect_arguments(test_func, [], {}, set())
+    assert arg_types == {
+        "x": "list",  # Changed from 'List'
+        "y": "dict",  # Changed from 'Dict'
+        "z": "set",  # Changed from 'Set'
+    }
+
+
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_str(mock_prompt):
+async def test_create_mirascope_call_async_str(create_mock_prompt):
     """Test async function returning str."""
 
     async def fn(text: str) -> str: ...
@@ -146,13 +220,15 @@ async def test_create_mirascope_call_async_str(mock_prompt):
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
+    mock_prompt = create_mock_prompt()
+
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(fn, mock_prompt, None)
         assert await result("test") == "test"
 
 
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_stream_with_model(mock_prompt):
+async def test_create_mirascope_call_async_stream_with_model(create_mock_prompt):
     """Test async function with streaming."""
 
     async def mock_provider_call(*args, **kwargs):
@@ -161,6 +237,8 @@ async def test_create_mirascope_call_async_stream_with_model(mock_prompt):
                 yield chunk
 
         return inner_mock_chunk()
+
+    mock_prompt = create_mock_prompt()
 
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
@@ -172,7 +250,7 @@ async def test_create_mirascope_call_async_stream_with_model(mock_prompt):
 
 
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_stream_with_str(mock_prompt):
+async def test_create_mirascope_call_async_stream_with_str(create_mock_prompt):
     """Test async function with streaming."""
     mock_chunk = Mock(content="chunk")
 
@@ -182,6 +260,8 @@ async def test_create_mirascope_call_async_stream_with_str(mock_prompt):
                 yield chunk
 
         return inner_mock_chunk()
+
+    mock_prompt = create_mock_prompt()
 
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
@@ -195,8 +275,9 @@ async def test_create_mirascope_call_async_stream_with_str(mock_prompt):
 
 
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_message(mock_prompt, mock_response):
+async def test_create_mirascope_call_async_message(create_mock_prompt, mock_response):
     """Test async function returning Message."""
+    mock_prompt = create_mock_prompt()
     MockResponseClass = mock_response
     mock_response_instance = MockResponseClass(
         metadata={},
@@ -239,9 +320,10 @@ async def test_create_mirascope_call_async_message(mock_prompt, mock_response):
 
 @pytest.mark.asyncio
 async def test_create_mirascope_call_message_with_tool_args(
-    mock_prompt, mock_response, format_book, format_author
+    create_mock_prompt, mock_response, format_book, format_author
 ):
     """Test function returning Message with tool arguments."""
+    mock_prompt = create_mock_prompt()
 
     async def fn(text: str) -> Message[Any]: ...
 
@@ -286,11 +368,12 @@ async def test_create_mirascope_call_message_with_tool_args(
         assert isinstance(response, Message)
 
 
-def test_create_mirascope_call_sync_str(mock_prompt):
+def test_create_mirascope_call_sync_str(create_mock_prompt):
     """Test sync function returning str."""
 
     def fn(text: str) -> str: ...
 
+    mock_prompt = create_mock_prompt()
     mock_response = Mock(content="test")
     mock_provider_call = Mock(return_value=mock_response)
     mock_module = Mock()
@@ -301,9 +384,11 @@ def test_create_mirascope_call_sync_str(mock_prompt):
         assert result("test") == "test"
 
 
-def test_create_mirascope_call_sync_stream_with_str(mock_prompt):
+def test_create_mirascope_call_sync_stream_with_str(create_mock_prompt):
     """Test sync function with streaming."""
     mock_chunk = Mock(content="chunk")
+
+    mock_prompt = create_mock_prompt()
 
     def mock_provider_call(*args, **kwargs):
         def inner_mock_chunk():
@@ -322,8 +407,9 @@ def test_create_mirascope_call_sync_stream_with_str(mock_prompt):
             assert content == "chunk"
 
 
-def test_create_mirascope_call_sync_stream(mock_prompt):
+def test_create_mirascope_call_sync_stream(create_mock_prompt):
     """Test sync function with streaming."""
+    mock_prompt = create_mock_prompt()
 
     def mock_provider_call(*args, **kwargs):
         def inner_mock_chunk():
@@ -340,8 +426,9 @@ def test_create_mirascope_call_sync_stream(mock_prompt):
             assert content == "chunk"
 
 
-def test_create_mirascope_call_sync_message(mock_prompt, mock_response):
+def test_create_mirascope_call_sync_message(create_mock_prompt, mock_response):
     """Test sync function returning Message."""
+    mock_prompt = create_mock_prompt()
     MockResponseClass = mock_response
     mock_response_instance = MockResponseClass(
         metadata={},
@@ -383,9 +470,10 @@ def test_create_mirascope_call_sync_message(mock_prompt, mock_response):
 
 
 def test_create_mirascope_call_sync_iterable_model(
-    mock_prompt, mock_response, test_response_model
+    create_mock_prompt, mock_response, test_response_model
 ):
     """Test sync function returning Iterable[Model]."""
+    mock_prompt = create_mock_prompt()
     TestResponseModel = test_response_model
     test_instance = TestResponseModel(message="test")
 
@@ -427,7 +515,6 @@ def test_create_mirascope_call_with_openrouter():
     mock_module = Mock()
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
-
     with (
         patch("openai.OpenAI") as mock_openai,
         patch("lilypad._utils.functions.import_module", return_value=mock_module),
@@ -439,6 +526,7 @@ def test_create_mirascope_call_with_openrouter():
         mock_openai.assert_called_once_with(
             base_url="https://openrouter.ai/api/v1", api_key="test_key"
         )
+
 
 @pytest.mark.asyncio
 async def test_create_mirascope_call_async_openrouter():
@@ -586,7 +674,7 @@ async def test_create_mirascope_call_async_custom_message_class(
 
         pass
 
-    async def fn(text: str) -> CustomMessageType:
+    async def fn(text: str) -> CustomMessageType:  # pyright: ignore [reportReturnType]
         """Test function returning custom message type."""
         pass
 
@@ -642,7 +730,7 @@ def test_create_mirascope_call_sync_custom_message_class(
 
         pass
 
-    def fn(text: str) -> CustomMessageType:
+    def fn(text: str) -> CustomMessageType:  # pyright: ignore [reportReturnType]
         """Test function returning custom message type."""
         pass
 
@@ -771,11 +859,12 @@ async def test_create_mirascope_call_with_call_params(is_async, provider):
         )
 
 
-def test_create_mirascope_call_invalid_return_type(mock_prompt):
+def test_create_mirascope_call_invalid_return_type(create_mock_prompt):
     """Test function with invalid return type."""
 
     def fn(text: str) -> None: ...
 
+    mock_prompt = create_mock_prompt()
     with pytest.raises(ValueError, match="Unsupported return type"):
         mock_provider_call = Mock()
         mock_module = Mock()
@@ -787,11 +876,12 @@ def test_create_mirascope_call_invalid_return_type(mock_prompt):
 
 
 @pytest.mark.asyncio
-async def test_create_mirascope_async_call_invalid_return_type(mock_prompt):
+async def test_create_mirascope_async_call_invalid_return_type(create_mock_prompt):
     """Test function with invalid return type."""
 
     async def fn(text: str) -> None: ...
 
+    mock_prompt = create_mock_prompt()
     with pytest.raises(ValueError, match="Unsupported return type"):
         mock_provider_call = AsyncMock()
         mock_module = Mock()
@@ -816,45 +906,8 @@ def test_create_mirascope_call_gemini(mock_gemini_prompt):
         )
 
 
-def test_inspect_arguments_with_args():
-    """Test inspecting function with *args."""
-
-    def test_func(*args: int): ...
-
-    arg_types, arg_values = inspect_arguments(test_func, 1, 2, 3)
-    assert arg_types == {"args": "int"}
-    assert arg_values == {"args": (1, 2, 3)}
-
-
-def test_inspect_arguments_mixed():
-    """Test inspecting function with mixed parameters."""
-
-    def test_func(x: int, *args: str, **kwargs: float): ...
-
-    arg_types, arg_values = inspect_arguments(
-        test_func, 1, "a", "b", test1=1.0, test2=2.0
-    )
-    assert arg_types == {"x": "int", "args": "str", "kwargs": "float"}
-    assert arg_values == {
-        "x": 1,
-        "args": ("a", "b"),
-        "kwargs": {"test1": 1.0, "test2": 2.0},
-    }
-
-
-def create_mock_prompt():
-    """Helper function to create a consistent mock prompt."""
-    mock_prompt = Mock()
-    mock_prompt.provider = Mock()
-    mock_prompt.provider.value = "openai"
-    mock_prompt.template = "test template"
-    mock_prompt.model = "test_model"
-    mock_prompt.call_params = None
-    return mock_prompt
-
-
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_base_type():
+async def test_create_mirascope_call_async_base_type(create_mock_prompt):
     """Test async function returning base type (str, int, etc)."""
 
     async def fn(text: str) -> int: ...
@@ -871,7 +924,7 @@ async def test_create_mirascope_call_async_base_type():
         assert output == "42"
 
 
-def test_create_mirascope_call_sync_base_type():
+def test_create_mirascope_call_sync_base_type(create_mock_prompt):
     """Test sync function returning base type (str, int, etc)."""
 
     def fn(text: str) -> int: ...
@@ -888,7 +941,7 @@ def test_create_mirascope_call_sync_base_type():
         assert output == "42"
 
 
-def test_create_mirascope_call_with_trace_decorator():
+def test_create_mirascope_call_with_trace_decorator(create_mock_prompt):
     """Test function with trace decorator."""
 
     def fn(text: str) -> str: ...
@@ -906,7 +959,7 @@ def test_create_mirascope_call_with_trace_decorator():
 
 
 @pytest.mark.asyncio
-async def test_create_mirascope_call_async_with_trace_decorator():
+async def test_create_mirascope_call_async_with_trace_decorator(create_mock_prompt):
     """Test async function with trace decorator."""
 
     async def fn(text: str) -> str: ...
