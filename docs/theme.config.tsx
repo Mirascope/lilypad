@@ -16,6 +16,12 @@ const config: DocsThemeConfig = {
   head: (
     <>
       <title>Lilypad</title>
+      <link
+        rel="icon"
+        type="image/svg+xml"
+        sizes="any"
+        href="/static/favicon.svg"
+      />
       <meta name="description" content="The future of prompt engineering" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Lilypad" />

@@ -176,6 +176,7 @@ node_modules
 !docs/lib
 docs/build
 static
+!docs/static
 pad.db
 .lilypad
 lily
