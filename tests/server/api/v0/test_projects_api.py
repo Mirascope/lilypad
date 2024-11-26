@@ -1,32 +1,9 @@
 """Tests for the projects API."""
 
-from collections.abc import Generator
-
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from lilypad.server.models import ProjectTable
-
-
-@pytest.fixture
-def test_project(session: Session) -> Generator[ProjectTable, None, None]:
-    """Create a test project.
-
-    Args:
-        session: Database session
-
-    Yields:
-        ProjectTable: Test project
-    """
-    project = ProjectTable(name="test_project")
-    session.add(project)
-    session.commit()
-    session.refresh(project)
-
-    yield project
-
-    # Cleanup happens automatically via transaction rollback
 
 
 def test_get_empty_projects(client: TestClient):

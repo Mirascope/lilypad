@@ -18,33 +18,6 @@ from lilypad.server.models import (
 
 
 @pytest.fixture
-def test_project(session: Session) -> Generator[ProjectTable, None, None]:
-    """Create a test project."""
-    project = ProjectTable(name="test_project")
-    session.add(project)
-    session.commit()
-    session.refresh(project)
-    yield project
-
-
-@pytest.fixture
-def test_function(
-    session: Session, test_project: ProjectTable
-) -> Generator[FunctionTable, None, None]:
-    """Create a test function."""
-    function = FunctionTable(
-        project_id=test_project.id,
-        name="test_function",
-        hash="test_hash",
-        code="def test(): pass",
-    )
-    session.add(function)
-    session.commit()
-    session.refresh(function)
-    yield function
-
-
-@pytest.fixture
 def test_prompt(
     session: Session, test_project: ProjectTable
 ) -> Generator[PromptTable, None, None]:
@@ -57,6 +30,7 @@ def test_prompt(
     ).model_dump()
 
     prompt = PromptTable(
+        organization_uuid=test_project.organization_uuid,
         project_id=test_project.id,
         template="Test template",
         provider=Provider.OPENAI,
@@ -79,6 +53,7 @@ def test_version(
 ) -> Generator[VersionTable, None, None]:
     """Create a test version with all required relationships."""
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,

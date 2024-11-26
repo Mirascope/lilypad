@@ -1,28 +1,21 @@
 """Tests for the SpanService class"""
 
-import pytest
 from sqlmodel import Session
 
-from lilypad.server.models import ProjectTable, Scope, SpanTable
+from lilypad.server.models import ProjectTable, Scope, SpanTable, UserPublic
 from lilypad.server.services import SpanService
 
 
-@pytest.fixture
-def test_project(db_session: Session) -> ProjectTable:
-    """Create test project"""
-    project = ProjectTable(name="Test Project")
-    db_session.add(project)
-    db_session.commit()
-    return project
-
-
-def test_find_records_by_version_id(db_session: Session, test_project: ProjectTable):
+def test_find_records_by_version_id(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
     """Test finding spans by version ID"""
-    service = SpanService(db_session)
+    service = SpanService(db_session, test_user)
 
     # Create test spans
     spans = [
         SpanTable(
+            organization_uuid=test_project.organization_uuid,
             id=f"span_{i}",
             project_id=test_project.id,
             version_id=1,

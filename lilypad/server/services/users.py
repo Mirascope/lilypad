@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from ..models import UserCreate, UserTable
+from ..models import UserCreate, UserPublic, UserTable
 from .base import BaseService
 
 
@@ -14,7 +14,7 @@ class UserService(BaseService[UserTable, UserCreate]):
 
     def update_user_active_organization_uuid(
         self, organization_uuid: UUID
-    ) -> UserTable:
+    ) -> UserPublic:
         """Update the active organization UUID for a user."""
         self.user.active_organization_uuid = organization_uuid
         self.session.add(self.user)

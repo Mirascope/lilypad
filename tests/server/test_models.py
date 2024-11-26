@@ -1,6 +1,7 @@
 """Test cases for server models."""
 
 from collections.abc import Generator
+from uuid import UUID
 
 import pytest
 from sqlalchemy import Engine
@@ -29,6 +30,8 @@ from lilypad.server.models import (
     VersionPublic,
     VersionTable,
 )
+
+ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
 
 @pytest.fixture
@@ -91,7 +94,7 @@ def test_project_models(session) -> None:
     assert proj_create.name == "test_project"
 
     # Test ProjectTable with relationships
-    proj_table = ProjectTable(name="test_project")
+    proj_table = ProjectTable(name="test_project", organization_uuid=ORGANIZATION_UUID)
     session.add(proj_table)
     session.commit()
     session.refresh(proj_table)
@@ -150,6 +153,7 @@ def test_span_models() -> None:
 
     # Test SpanPublic display name conversion for LILYPAD scope
     lilypad_span = SpanTable(
+        organization_uuid=ORGANIZATION_UUID,
         id="span123",
         project_id=1,
         version_id=1,
@@ -168,6 +172,7 @@ def test_span_models() -> None:
 
     # Test LLM scope display name
     llm_span = SpanTable(
+        organization_uuid=ORGANIZATION_UUID,
         id="span456",
         project_id=1,
         version_id=1,
@@ -236,12 +241,16 @@ def test_version_models() -> None:
 def test_relationships(session) -> None:
     """Test model relationships and cascading deletes."""
     # Create test project
-    project = ProjectTable(name="test_project")
+    project = ProjectTable(
+        name="test_project",
+        organization_uuid=ORGANIZATION_UUID,
+    )
     session.add(project)
     session.commit()
 
     # Create function linked to project
     function = FunctionTable(
+        organization_uuid=ORGANIZATION_UUID,
         name="test_func",
         hash="abc123",
         code="def test(): pass",
@@ -252,6 +261,7 @@ def test_relationships(session) -> None:
 
     # Create version linked to function and project
     version = VersionTable(
+        organization_uuid=ORGANIZATION_UUID,
         version_num=1,
         project_id=project.id,
         function_id=function.id,
@@ -263,6 +273,7 @@ def test_relationships(session) -> None:
 
     # Create prompt linked to project
     prompt = PromptTable(
+        organization_uuid=ORGANIZATION_UUID,
         hash="def123",
         template="Test template",
         provider=Provider.OPENAI,

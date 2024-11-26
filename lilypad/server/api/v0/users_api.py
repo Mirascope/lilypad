@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models import UserPublic, UserTable
+from ...models import UserPublic
 from ...services import UserService
 
 users_router = APIRouter()
@@ -15,7 +15,7 @@ users_router = APIRouter()
 async def update_user_active_organization_id(
     activeOrganizationUuid: UUID,
     user_service: Annotated[UserService, Depends(UserService)],
-) -> UserTable:
+) -> UserPublic:
     """Update users active organization uuid."""
     return user_service.update_user_active_organization_uuid(activeOrganizationUuid)
 
