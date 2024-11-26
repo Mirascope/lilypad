@@ -111,7 +111,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         # Activate the new version
         new_active_version.is_active = True
         self.session.add(new_active_version)
-        self.session.commit()
+        self.session.flush()
 
         # Refresh to get latest state
         self.session.refresh(new_active_version)
