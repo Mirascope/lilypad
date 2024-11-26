@@ -59,7 +59,6 @@ const config: DocsThemeConfig = {
     link: "https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA",
     icon: <SlackLogo width="18" height="18" />,
   },
-  docsRepositoryBase:
-    "https://github.com/Mirascope/lilypad/tree/main/website/docs",
+  docsRepositoryBase: "https://github.com/Mirascope/lilypad/tree/main/docs",
 };
 export default config;

@@ -160,7 +160,7 @@ venvPath = "."
 venv = ".venv"
 
 [tool.codespell]
-skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./website/pnpm-lock.yaml"]
+skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml"]
 
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
