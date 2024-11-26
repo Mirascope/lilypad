@@ -25,12 +25,13 @@ const saveToStorage = (session: UserPublic | null) => {
 };
 
 const loadFromStorage = (): UserPublic | null => {
-  // if (import.meta.env.DEV)
-  //   return {
-  //     first_name: "Local User",
-  //     raw_profile: {},
-  //     expires_at: "",
-  //   };
+  if (import.meta.env.DEV)
+    return {
+      id: -1,
+      first_name: "Local User",
+      email: "local@local.com",
+      user_organizations: [],
+    };
   const stored = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!stored) return null;
 

@@ -31,8 +31,7 @@ export const Route = createFileRoute("/auth/login")({
 
 const LoginComponent = () => {
   const navigate = useNavigate();
-  // const isLocal = import.meta.env.DEV;
-  const isLocal = false;
+  const isLocal = import.meta.env.DEV;
   return (
     <div className='flex items-center justify-center h-screen'>
       <Card className='w-[600px] m-0'>
@@ -44,7 +43,14 @@ const LoginComponent = () => {
         </CardHeader>
         <CardContent className='flex flex-col gap-2'>
           {isLocal ? (
-            <Button onClick={() => navigate({ to: "/projects" })}>
+            <Button
+              onClick={() =>
+                navigate({
+                  to: "/projects",
+                  search: { deviceCode: undefined, redirect: undefined },
+                })
+              }
+            >
               Sign in with Local
             </Button>
           ) : (

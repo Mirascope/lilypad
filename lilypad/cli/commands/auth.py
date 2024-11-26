@@ -66,7 +66,7 @@ async def _delete_device_code(device_code: str, settings: Settings) -> bool:
             return False
 
 
-def show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
+def _show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
     """Show a list of projects and prompt the user to select one."""
     print("\nAvailable projects:")
     for idx, project in enumerate(projects, 1):
@@ -76,7 +76,7 @@ def show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
     return projects[choice - 1]
 
 
-def check_existing_token(settings: Settings) -> bool:
+def _check_existing_token(settings: Settings) -> bool:
     """Check if an existing token exists and prompt the user to switch projects."""
     if os.path.exists(".lilypad/config.json"):
         with open(".lilypad/config.json") as f:
@@ -92,7 +92,7 @@ def check_existing_token(settings: Settings) -> bool:
                 if not projects:
                     typer.echo("Error: Failed to fetch projects.")
                     raise typer.Exit()
-                selected_project = show_project_selection(projects)
+                selected_project = _show_project_selection(projects)
                 typer.echo(f"\nSwitching to project: {selected_project}")
                 return True
     return False
@@ -101,7 +101,7 @@ def check_existing_token(settings: Settings) -> bool:
 def auth_command() -> None:
     """Open browser for authentication and save the received token."""
     settings = get_settings()
-    if check_existing_token(settings):
+    if _check_existing_token(settings):
         return
 
     device_code = _generate_device_code()

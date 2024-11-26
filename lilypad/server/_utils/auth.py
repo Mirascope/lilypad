@@ -13,6 +13,7 @@ from ..db import get_session
 from ..models import (
     OrganizationPublic,
     OrganizationTable,
+    ProjectTable,
     UserOrganizationTable,
     UserPublic,
     UserRole,
@@ -38,6 +39,7 @@ if os.getenv("LILYPAD_LOCAL", "false").lower() == "true":
 
     async def oauth2_scheme(token: str | None = None) -> str:  # pyright: ignore[reportRedeclaration]
         return LOCAL_TOKEN
+
 else:
     oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -47,7 +49,8 @@ async def get_local_user(session: Session) -> UserPublic:
 
     Create a local user and organization if it does not exist.
     """
-    user = session.exec(select(UserTable).where(UserTable.id == 1)).first()
+    local_email = "local@local.com"
+    user = session.exec(select(UserTable).where(UserTable.email == local_email)).first()
     if user:
         return UserPublic.model_validate(user)
 
@@ -58,8 +61,7 @@ async def get_local_user(session: Session) -> UserPublic:
     session.flush()
     org_public = OrganizationPublic.model_validate(org)
     user = UserTable(
-        id=1,
-        email="local@local.com",
+        email=local_email,
         first_name="Local User",
         active_organization_uuid=org.uuid,
     )
@@ -71,6 +73,12 @@ async def get_local_user(session: Session) -> UserPublic:
         user_id=user_public.id, organization_uuid=org_public.uuid, role=UserRole.ADMIN
     )
     session.add(user_org)
+    session.flush()
+    project = ProjectTable(
+        name="Local Project",
+        organization_uuid=org_public.uuid,
+    )
+    session.add(project)
     session.flush()
     return user_public
 

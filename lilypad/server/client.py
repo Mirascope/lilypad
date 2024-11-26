@@ -60,9 +60,7 @@ class LilypadClient:
         if headers:
             self.session.headers.update(headers)
 
-        self._token = None
-        if token:
-            self.token = token
+        self._token = token if token else None
 
         for key, value in session_kwargs.items():
             setattr(self.session, key, value)
