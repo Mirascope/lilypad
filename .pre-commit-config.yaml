@@ -10,10 +10,10 @@ repos:
     rev: "v0.6.1"
     hooks:
       - id: ruff
-        files: "^lilypad|^tests|^examples"
+        files: "^lilypad|^tests"
         args: [--fix, --config=pyproject.toml]
       - id: ruff-format
-        files: "^lilypad|^tests|^examples"
+        files: "^lilypad|^tests"
         args: [--config=pyproject.toml]
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.389
