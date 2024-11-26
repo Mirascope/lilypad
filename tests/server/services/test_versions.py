@@ -76,7 +76,7 @@ def test_find_versions_by_function_name(
     db_session.commit()
 
     found_versions = service.find_versions_by_function_name(
-        test_project.id,
+        test_project.id,  # pyright: ignore [reportArgumentType]
         test_function.name,  # pyright: ignore [reportArgumentType]
     )
     assert len(found_versions) == 3
@@ -105,8 +105,8 @@ def test_find_prompt_version_by_id(
     db_session.commit()
 
     found_version = service.find_prompt_version_by_id(
-        test_project.id,
-        test_function.id,
+        test_project.id,  # pyright: ignore [reportArgumentType]
+        test_function.id,  # pyright: ignore [reportArgumentType]
         test_prompt.id,  # pyright: ignore [reportArgumentType]
     )
     assert found_version is not None
@@ -130,7 +130,7 @@ def test_find_function_version_by_hash(
     db_session.commit()
 
     found_version = service.find_function_version_by_hash(
-        test_project.id,
+        test_project.id,  # pyright: ignore [reportArgumentType]
         test_function.hash,  # pyright: ignore [reportArgumentType]
     )
     assert found_version is not None
@@ -154,7 +154,7 @@ def test_find_prompt_active_version(
     db_session.commit()
 
     active_version = service.find_prompt_active_version(
-        test_project.id,
+        test_project.id,  # pyright: ignore [reportArgumentType]
         test_function.hash,  # pyright: ignore [reportArgumentType]
     )
     assert active_version.is_active is True
