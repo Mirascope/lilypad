@@ -168,6 +168,12 @@ cython_debug/
 .db
 .DS_Store
 
+# Next / Node / TypeScript
+.next
+node_modules
+
+# Lilypad Specific Files
+website/build
 static
 pad.db
 .lilypad
