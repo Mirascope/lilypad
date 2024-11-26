@@ -170,6 +170,7 @@ cython_debug/
 node_modules
 
 # Lilypad Specific Files
+website/build
 static
 pad.db
 .lilypad
