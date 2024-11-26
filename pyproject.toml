@@ -39,6 +39,8 @@ dependencies = [
     "opentelemetry-sdk>=1.27.0",
     "opentelemetry-instrumentation>=0.49b1",
     "typer>=0.12.5",
+    "cryptography>=43.0.3",
+    "black>=24.8.0",
 ]
 
 [project.urls]
@@ -57,7 +59,7 @@ gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 dev-dependencies = [
     "ruff>=0.6.1",
     "pytest>=8.3.2",
-    "pyright>=1.1.388",
+    "pyright>=1.1.389",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
