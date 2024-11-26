@@ -1,7 +1,6 @@
 """The `VersionService` class for versions."""
 
 from collections.abc import Sequence
-from contextlib import suppress
 
 from fastapi import HTTPException, status
 from sqlmodel import col, func, select
@@ -93,19 +92,34 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
     def change_active_version(
         self, project_id: int, new_active_version: VersionTable
     ) -> VersionTable:
-        """Change the active version"""
-        with suppress(HTTPException):
-            active_version = self.find_prompt_active_version(
-                project_id, new_active_version.function_name
-            )
-            if active_version.id == new_active_version.id:
-                return active_version
-            active_version.is_active = False
-            self.session.add(active_version)
+        """Change the active version for a function, deactivating any currently active versions.
+
+        Args:
+            project_id: The project ID
+            new_active_version: The version to make active
+
+        Returns:
+            The newly activated version
+        """
+        # Deactivate all currently active versions for the same function
+        stmt = select(VersionTable).where(
+            VersionTable.project_id == project_id,
+            VersionTable.function_name == new_active_version.function_name,
+            VersionTable.is_active,
+        )
+        current_active_versions = self.session.exec(stmt).all()
+
+        for version in current_active_versions:
+            version.is_active = False
+            self.session.add(version)
+
+        # Activate the new version
         new_active_version.is_active = True
         self.session.add(new_active_version)
         self.session.flush()
 
+        # Refresh to get latest state
+        self.session.refresh(new_active_version)
         return new_active_version
 
     def get_function_version_count(self, project_id: int, function_name: str) -> int:

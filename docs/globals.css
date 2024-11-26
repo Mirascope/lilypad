@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+footer {
+    background-color: hsl(var(--nextra-bg)) !important;
+}
+
+@layer base {
+    :root {
+    /* Main colors */
+    --primary: 123 47% 34%;
+    --primary-foreground: 150 60% 98%;
+
+    /* Secondary colors */
+    --secondary: 0 0% 100%;
+    --secondary-foreground: 120 5% 15%;
+
+    /* Accent colors */
+    --accent: 180 40% 45%;
+    --accent-foreground: 180 40% 98%;
+
+    /* Background colors */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 12%;
+
+    /* Card and surface colors */
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 12%;
+
+    /* Muted elements */
+    --muted: 120 10% 96%;
+    --muted-foreground: 120 5% 45%;
+
+    /* Border colors */
+    --border: 120 5% 88%;
+
+    /* Input elements */
+    --input: 120 5% 88%;
+
+    /* Ring/focus colors */
+    --ring: 123 47% 34%;
+
+    /* State colors */
+    --success: 142 72% 29%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 208 79% 51%;
+
+    /* Destructive actions */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Radius */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Main colors */
+    --primary: 123 47% 42%;
+    --primary-foreground: 150 60% 98%;
+
+    /* Secondary colors */
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 120 10% 98%;
+
+    /* Accent colors */
+    --accent: 180 40% 50%;
+    --accent-foreground: 180 40% 98%;
+
+    /* Background colors */
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+
+    /* Card and surface colors */
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    /* Muted elements */
+    --muted: 120 5% 15%;
+    --muted-foreground: 120 10% 65%;
+
+    /* Border colors */
+    --border: 120 5% 25%;
+
+    /* Input elements */
+    --input: 120 5% 25%;
+
+    /* Ring/focus colors */
+    --ring: 123 47% 42%;
+
+    /* State colors */
+    --success: 142 72% 35%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+    --info: 208 79% 51%;
+
+    /* Destructive actions */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Radius */
+    --radius: 0.5rem;
+  }
+}
