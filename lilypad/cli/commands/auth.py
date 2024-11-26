@@ -16,16 +16,13 @@ from ...server.client import LilypadClient
 from ...server.models import DeviceCodeTable, ProjectPublic
 from ...server.settings import Settings, get_settings
 
-LOGIN_URL = "http://localhost:5173/auth/login"
-API_BASE_URL = "http://localhost:8000/api/v0"  # Your FastAPI server
 
-
-def generate_device_code() -> str:
+def _generate_device_code() -> str:
     """Generate a random code for device authentication."""
     return secrets.token_urlsafe(16)
 
 
-def save_token(device_code: DeviceCodeTable) -> bool:
+def _save_token(device_code: DeviceCodeTable) -> bool:
     """Save the token to a JSON file."""
     if not os.path.exists(".lilypad"):
         os.mkdir(".lilypad")
@@ -41,11 +38,15 @@ def save_token(device_code: DeviceCodeTable) -> bool:
         return True
 
 
-async def poll_auth_status(device_code: str) -> DeviceCodeTable | None:
+async def _poll_auth_status(
+    device_code: str, settings: Settings
+) -> DeviceCodeTable | None:
     """Poll the FastAPI endpoint for session data."""
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{API_BASE_URL}/device-codes/{device_code}")
+            response = await client.get(
+                f"{settings.api_url}/v0/device-codes/{device_code}"
+            )
             if response.status_code == 200:
                 return DeviceCodeTable.model_validate(response.json())
         except httpx.RequestError:
@@ -53,11 +54,13 @@ async def poll_auth_status(device_code: str) -> DeviceCodeTable | None:
     return None
 
 
-async def delete_device_code(device_code: str) -> bool:
+async def _delete_device_code(device_code: str, settings: Settings) -> bool:
     """Delete the device code from the FastAPI server."""
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.delete(f"{API_BASE_URL}/device-codes/{device_code}")
+            response = await client.delete(
+                f"{settings.api_url}/v0/device-codes/{device_code}"
+            )
             return response.status_code == 200
         except httpx.RequestError:
             return False
@@ -101,8 +104,8 @@ def auth_command() -> None:
     if check_existing_token(settings):
         return
 
-    device_code = generate_device_code()
-    login_url = f"{LOGIN_URL}?deviceCode={device_code}"
+    device_code = _generate_device_code()
+    login_url = f"{settings.client_url}/auth/login?deviceCode={device_code}"
     webbrowser.open(login_url)
 
     typer.echo("\nWaiting for authentication to complete...")
@@ -112,10 +115,10 @@ def auth_command() -> None:
 
     while time.time() - start_time < max_wait_time:
         # Poll the FastAPI endpoint
-        session_data = asyncio.run(poll_auth_status(device_code))
+        session_data = asyncio.run(_poll_auth_status(device_code, settings))
         if session_data:
-            did_delete = asyncio.run(delete_device_code(device_code))
-            did_save = save_token(session_data)
+            did_delete = asyncio.run(_delete_device_code(device_code, settings))
+            did_save = _save_token(session_data)
             if not did_delete and not did_save:
                 typer.echo("Authentication failed. Please try again.")
                 return

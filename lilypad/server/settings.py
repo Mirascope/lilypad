@@ -30,9 +30,11 @@ class Settings(BaseSettings):
         configs = {
             "development": {
                 "api_url": "http://localhost:8000/api",
+                "client_url": "http://localhost:5173",
             },
             "production": {
                 "api_url": "",
+                "client_url": "",
             },
         }
         return configs.get(self.environment, configs["development"])
@@ -41,6 +43,11 @@ class Settings(BaseSettings):
     def api_url(self) -> str:
         """Get the API URL"""
         return self.config["api_url"]
+
+    @property
+    def client_url(self) -> str:
+        """Get the client URL"""
+        return self.config["client_url"]
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 
