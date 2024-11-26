@@ -23,7 +23,13 @@ class _JSONSpanExporter(SpanExporter):
 
     def __init__(self, base_url: str) -> None:
         """Initialize the exporter with the custom endpoint URL."""
-        self.client = LilypadClient(base_url, timeout=10)
+        config = load_config()
+
+        self.client = LilypadClient(
+            base_url,
+            timeout=10,
+            token=config.get("token", None),
+        )
 
     def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""

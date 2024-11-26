@@ -1,18 +1,42 @@
 """Base SQLModel class from which all `lilypad` SQLModel classes inherit."""
 
-import datetime
+from collections.abc import Callable
+from datetime import datetime, timedelta, timezone
+from typing import Any
+from uuid import UUID
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_serializer
 from sqlmodel import Field, SQLModel
 
 
 class BaseSQLModel(SQLModel):
     """Base SQLModel class"""
 
-    created_at: datetime.datetime = Field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+    @model_serializer(mode="wrap")
+    def serialize(
+        self, original_serializer: Callable[["BaseSQLModel"], dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Serialize datetime and UUID fields to strings."""
+        for field_name, field_info in self.model_fields.items():
+            if field_info.annotation == datetime or field_info.annotation == UUID:
+                setattr(
+                    self,
+                    field_name,
+                    str(getattr(self, field_name)),
+                )
+
+        result = original_serializer(self)
+
+        for field_name, field_info in self.model_fields.items():
+            if field_info.annotation == timedelta:
+                result[field_name] = getattr(self, field_name).total_seconds()
+
+        return result
 
     model_config = ConfigDict(  # pyright: ignore [reportAssignmentType]
         populate_by_name=True,

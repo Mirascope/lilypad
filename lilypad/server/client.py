@@ -180,6 +180,15 @@ class LilypadClient:
             **kwargs,
         )
 
+    def get_projects(self, **kwargs: Any) -> list[ProjectPublic]:
+        """Creates a new project."""
+        return self._request(
+            "GET",
+            "/v0/projects/",
+            response_model=list[ProjectPublic],
+            **kwargs,
+        )
+
     def post_traces(
         self, params: dict[str, Any] | None = None, **kwargs: Any
     ) -> list[SpanPublic]:

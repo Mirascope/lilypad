@@ -9,11 +9,13 @@ import webbrowser
 
 import httpx
 import typer
+from rich import print
+from rich.prompt import Confirm, IntPrompt
 
-from ...server.models import DeviceCodeTable
+from ...server.client import LilypadClient
+from ...server.models import DeviceCodeTable, ProjectPublic
+from ...server.settings import Settings, get_settings
 
-AUTH_URL = "https://your-auth-endpoint.com/auth"
-REDIRECT_PORT = 5173
 LOGIN_URL = "http://localhost:5173/auth/login"
 API_BASE_URL = "http://localhost:8000/api/v0"  # Your FastAPI server
 
@@ -30,12 +32,13 @@ def save_token(device_code: DeviceCodeTable) -> bool:
     try:
         with open(".lilypad/config.json") as f:
             data = json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        data = {}
+
+    with open(".lilypad/config.json", "w") as f:
         data["token"] = device_code.token
-        with open(".lilypad/config.json", "w") as f:
-            json.dump(data, f, indent=4)
-            return True
-    except Exception:
-        return False
+        json.dump(data, f, indent=4)
+        return True
 
 
 async def poll_auth_status(device_code: str) -> DeviceCodeTable | None:
@@ -60,8 +63,44 @@ async def delete_device_code(device_code: str) -> bool:
             return False
 
 
+def show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
+    """Show a list of projects and prompt the user to select one."""
+    print("\nAvailable projects:")
+    for idx, project in enumerate(projects, 1):
+        print(f"[green]{idx}[/green]. {project.name}")
+
+    choice = IntPrompt.ask("Select project number")
+    return projects[choice - 1]
+
+
+def check_existing_token(settings: Settings) -> bool:
+    """Check if an existing token exists and prompt the user to switch projects."""
+    if os.path.exists(".lilypad/config.json"):
+        with open(".lilypad/config.json") as f:
+            data = json.load(f)
+        if "token" in data:
+            lilypad_client = LilypadClient(
+                base_url=settings.api_url, timeout=10, token=data["token"]
+            )
+            if Confirm.ask(
+                "You're already authenticated. Would you like to switch projects?"
+            ):
+                projects = lilypad_client.get_projects()
+                if not projects:
+                    typer.echo("Error: Failed to fetch projects.")
+                    raise typer.Exit()
+                selected_project = show_project_selection(projects)
+                typer.echo(f"\nSwitching to project: {selected_project}")
+                return True
+    return False
+
+
 def auth_command() -> None:
     """Open browser for authentication and save the received token."""
+    settings = get_settings()
+    if check_existing_token(settings):
+        return
+
     device_code = generate_device_code()
     login_url = f"{LOGIN_URL}?deviceCode={device_code}"
     webbrowser.open(login_url)
@@ -81,7 +120,25 @@ def auth_command() -> None:
                 typer.echo("Authentication failed. Please try again.")
                 return
             typer.echo("\nAuthentication successful!")
-            return
+            break
         time.sleep(poll_interval)
-
-    typer.echo("\nAuthentication timed out. Please try again.")
+    else:
+        typer.echo("Authentication timed out. Please try again.")
+        return
+    with open(".lilypad/config.json") as f:
+        data: dict = json.load(f)
+    if "token" in data:
+        lilypad_client = LilypadClient(
+            base_url=settings.api_url, timeout=10, token=data["token"]
+        )
+        project_name = typer.prompt(
+            "Let's create a new project. What is your project name?"
+        )
+        project_public = lilypad_client.post_project(project_name)
+        with open(".lilypad/config.json", "w") as f:
+            data["project_id"] = project_public.id
+            json.dump(data, f, indent=4)
+        typer.echo(f"\nProject created: {project_name}. You are now ready to trace!")
+        return
+    typer.echo("Error, failed to retrieve token, please reauthenticate.")
+    typer.Exit()

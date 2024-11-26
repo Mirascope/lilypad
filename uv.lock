@@ -1728,7 +1728,6 @@ dependencies = [
     { name = "python-jose", extra = ["cryptography"] },
     { name = "sqlmodel" },
     { name = "typer" },
-    { name = "workos" },
 ]
 
 [package.optional-dependencies]
@@ -1778,7 +1777,6 @@ requires-dist = [
     { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0" },
     { name = "sqlmodel", specifier = ">=0.0.22" },
     { name = "typer", specifier = ">=0.12.5" },
-    { name = "workos", specifier = ">=5.7.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2437,19 +2435,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/a0/9fb50648f69ed341e30096356a815c89c4f9daef24a32e9754dbdc3de8a8/websockets-13.0.1-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:14b9c006cac63772b31abbcd3e3abb6228233eec966bf062e89e7fa7ae0b7333", size = 149778 },
     { url = "https://files.pythonhosted.org/packages/f1/ba/48b5b8343e6f62a8a809ffe987d4d7c911cedcb1b8353f3da615f2609893/websockets-13.0.1-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:b79915a1179a91f6c5f04ece1e592e2e8a6bd245a0e45d12fd56b2b59e559a32", size = 152259 },
     { url = "https://files.pythonhosted.org/packages/fd/bd/d34c4b7918453506d2149208b175368738148ffc4ba256d7fd8708956732/websockets-13.0.1-py3-none-any.whl", hash = "sha256:b80f0c51681c517604152eb6a572f5a9378f877763231fddb883ba2f968e8817", size = 145262 },
-]
-
-[[package]]
-name = "workos"
-version = "5.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx" },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/41/53105f5c8dd1b763a3b384ff925401d42cb20d0777b547736d12f8a1b0e7/workos-5.7.0.tar.gz", hash = "sha256:c8e3f415c603cef2d0a1df3b1da021825b4e77041ce3329934d299ae95d3136f", size = 45718 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/3a/3595793a259a90dec451e23c2b4ed34bbeae3f6b59431299f26865036b0b/workos-5.7.0-py3-none-any.whl", hash = "sha256:17208365cf46dd288251ebe89b6c4a2e2c304a71b553b2c168294cf57ee0c554", size = 77602 },
 ]
 
 [[package]]

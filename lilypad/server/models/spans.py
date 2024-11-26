@@ -2,6 +2,7 @@
 
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
+from uuid import UUID
 
 from pydantic import model_validator
 from sqlalchemy import JSON, Column
@@ -9,6 +10,7 @@ from sqlmodel import Field, Relationship
 
 from .base_sql_model import BaseSQLModel
 from .table_names import (
+    ORGANIZATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     SPAN_TABLE_NAME,
     VERSION_TABLE_NAME,
@@ -86,7 +88,9 @@ class SpanTable(_SpanBase, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
-    organization_id: str | None = Field(default=None, index=True)
+    organization_uuid: UUID = Field(
+        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
+    )
     version: "VersionTable" = Relationship(back_populates="spans")
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True

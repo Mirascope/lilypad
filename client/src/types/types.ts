@@ -66,6 +66,22 @@ export interface AnthropicCallParams {
 }
 
 /**
+ * DeviceCodeTable
+ * Device codes table.
+ */
+export interface DeviceCodeTable {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /** Id */
+  id: string;
+  /** Token */
+  token: string;
+}
+
+/**
  * FunctionAndPromptVersionCreate
  * Function version (with prompt) create model.
  */
@@ -163,23 +179,6 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
-/** LoginResponse */
-export interface LoginResponse {
-  /** Authorization Url */
-  authorization_url: string;
-  /** Device Code */
-  device_code: string | null;
-}
-
-/**
- * LoginType
- * Login type enum
- */
-export enum LoginType {
-  GIT_HUB_O_AUTH = "GitHubOAuth",
-  GOOGLE_O_AUTH = "GoogleOAuth",
-}
-
 /**
  * MessageParam
  * Message param model agnostic to providers.
@@ -214,42 +213,26 @@ export interface OpenAICallParams {
   stop?: string | string[] | null;
 }
 
-/** Organization */
-export interface Organization {
-  /** Id */
-  id: string;
-  /** Object */
-  object: "organization";
-  /** Name */
+/**
+ * OrganizationPublic
+ * Organization public model
+ */
+export interface OrganizationPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * Name
+   * @minLength 1
+   */
   name: string;
-  /** Domains */
-  domains: OrganizationDomain[];
-  /** Created At */
-  created_at: string;
-  /** Updated At */
-  updated_at: string;
-  /** Allow Profiles Outside Organization */
-  allow_profiles_outside_organization: boolean;
-  /** Lookup Key */
-  lookup_key?: string | null;
-}
-
-/** OrganizationDomain */
-export interface OrganizationDomain {
-  /** Id */
-  id: string;
-  /** Organization Id */
-  organization_id: string;
-  /** Object */
-  object: "organization_domain";
-  /** Domain */
-  domain: string;
-  /** State */
-  state?: "failed" | "pending" | "legacy_verified" | "verified" | null;
-  /** Verification Strategy */
-  verification_strategy?: "manual" | "dns" | null;
-  /** Verification Token */
-  verification_token?: string | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
 }
 
 /**
@@ -437,26 +420,69 @@ export interface SpanPublic {
 }
 
 /**
- * UserSession
- * User session model
+ * UserOrganizationPublic
+ * UserOrganization public model
  */
-export interface UserSession {
-  /** First Name */
-  first_name?: string | null;
-  /** Raw Profile */
-  raw_profile: object;
-  /** Session Id */
-  session_id: string;
-  /** Expires At */
-  expires_at: string;
+export interface UserOrganizationPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /** User role enum. */
+  role: UserRole;
+  /** User Id */
+  user_id: number;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** Id */
+  id: number;
+  /** Organization public model */
+  organization: OrganizationPublic;
+}
+
+/**
+ * UserPublic
+ * User public model
+ */
+export interface UserPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * First Name
+   * @minLength 1
+   */
+  first_name: string;
+  /** Last Name */
+  last_name?: string | null;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /** Active Organization Uuid */
+  active_organization_uuid?: string | null;
+  /** Id */
+  id: number;
   /** Access Token */
   access_token?: string | null;
-  /** Organization Id */
-  organization_id?: string | null;
-  /** Organizations */
-  organizations?: Organization[] | null;
-  /** Id */
-  id?: string | null;
+  /** User Organizations */
+  user_organizations: UserOrganizationPublic[];
+}
+
+/**
+ * UserRole
+ * User role enum.
+ */
+export enum UserRole {
+  ADMIN = "admin",
+  MEMBER = "member",
 }
 
 /** ValidationError */

@@ -129,15 +129,12 @@ def local_command(
                 os.mkdir(".lilypad")
                 project = lilypad_client.post_project(project_name)
                 with open(".lilypad/config.json", "w") as f:
-                    json.dump(
-                        {
-                            "project_id": project.id,
-                            "port": new_port,
-                            "project_name": project_name,
-                        },
-                        f,
-                        indent=4,
-                    )
+                    data = {
+                        "project_id": project.id,
+                        "port": new_port,
+                        "project_name": project_name,
+                    }
+                    json.dump(data, f, indent=4)
         except KeyboardInterrupt:
             print("Shutting down...")
             _terminate_process(process)

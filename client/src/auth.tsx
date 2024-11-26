@@ -1,5 +1,3 @@
-import { LoginType, UserSession } from "@/types/types";
-import { useLoginMutation } from "@/utils/auth";
 import {
   createContext,
   ReactNode,
@@ -8,17 +6,17 @@ import {
   useState,
 } from "react";
 import { AUTH_STORAGE_KEY } from "@/utils/constants";
+import { UserPublic } from "@/types/types";
 export interface AuthContext {
   isAuthenticated: boolean;
-  login: (loginType: LoginType, deviceCode?: string) => Promise<void>;
   logout: () => Promise<void>;
-  user: UserSession | null;
-  setSession: (user: UserSession | null) => void;
+  user: UserPublic | null;
+  setSession: (user: UserPublic | null) => void;
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
 
-const saveToStorage = (session: UserSession | null) => {
+const saveToStorage = (session: UserPublic | null) => {
   if (session) {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
   } else {
@@ -26,24 +24,23 @@ const saveToStorage = (session: UserSession | null) => {
   }
 };
 
-const loadFromStorage = (): UserSession | null => {
-  if (process.env.NODE_ENV === "development")
-    return {
-      first_name: "Local User",
-      raw_profile: {},
-      session_id: "local",
-      expires_at: "",
-    };
+const loadFromStorage = (): UserPublic | null => {
+  // if (import.meta.env.DEV)
+  //   return {
+  //     first_name: "Local User",
+  //     raw_profile: {},
+  //     expires_at: "",
+  //   };
   const stored = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!stored) return null;
 
   try {
-    const session = JSON.parse(stored) as UserSession;
-    // Check if session has expired
-    if (Date.now() > new Date(session.expires_at).getTime()) {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      return null;
-    }
+    const session = JSON.parse(stored) as UserPublic;
+    // TODO: Check if token is expired
+    // if (Date.now() > new Date(session.expires_at).getTime()) {
+    //   localStorage.removeItem(AUTH_STORAGE_KEY);
+    //   return null;
+    // }
     return session;
   } catch {
     localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -52,11 +49,10 @@ const loadFromStorage = (): UserSession | null => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserSession | null>(loadFromStorage());
+  const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
   const isAuthenticated = !!user;
-  const loginMutation = useLoginMutation();
 
-  const setSession = useCallback((newSession: UserSession | null) => {
+  const setSession = useCallback((newSession: UserPublic | null) => {
     setUser(newSession);
     saveToStorage(newSession);
   }, []);
@@ -66,17 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToStorage(null);
   }, []);
 
-  const login = useCallback(
-    async (loginType: LoginType, deviceCode?: string) => {
-      const result = await loginMutation.mutateAsync({ loginType, deviceCode });
-      window.location.assign(result.authorization_url);
-    },
-    []
-  );
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, setSession }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, user, logout, setSession }}>
       {children}
     </AuthContext.Provider>
   );

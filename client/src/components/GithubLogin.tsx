@@ -1,14 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ButtonProps } from "@/components/ui/button";
 import { ReactNode } from "react";
-
+import axios from "axios";
 interface GithubButtonProps extends ButtonProps {
   iconSize?: number;
   iconColor?: string;
   children?: ReactNode;
 }
 
-export const GithubButton = ({
+const GithubButton = ({
   iconSize = 24,
   iconColor = "currentColor",
   children,
@@ -32,4 +32,25 @@ export const GithubButton = ({
   );
 };
 
-export default GithubButton;
+export const GithubLogin = () => {
+  const getAuthUrl = () => {
+    const githubAuthUrl = "https://github.com/login/oauth/authorize";
+    const params = new URLSearchParams({
+      client_id: import.meta.env.VITE_GITHUB_CLIENT_ID,
+      redirect_uri: import.meta.env.VITE_GITHUB_REDIRECT_URI,
+      scope: "read:user user:email",
+      response_type: "code",
+    });
+    return `${githubAuthUrl}?${params.toString()}`;
+  };
+
+  return (
+    <GithubButton
+      onClick={() => {
+        window.location.href = getAuthUrl();
+      }}
+    >
+      Login with Github
+    </GithubButton>
+  );
+};

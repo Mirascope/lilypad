@@ -21,7 +21,7 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         """Find record by id"""
         record_tables = self.session.exec(
             select(self.table).where(
-                self.table.organization_id == self.user.organization_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_id == project_id,
                 self.table.name == name,
             )
@@ -35,7 +35,7 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         record_tables = self.session.exec(
             select(self.table.name)
             .where(
-                self.table.organization_id == self.user.organization_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_id == project_id,
             )
             .distinct()
@@ -46,7 +46,7 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         """Find record by hash"""
         record_table = self.session.exec(
             select(self.table).where(
-                self.table.organization_id == self.user.organization_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == hash,
             )
         ).first()

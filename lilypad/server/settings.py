@@ -1,6 +1,7 @@
 """Server settings"""
 
 from functools import lru_cache
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,11 +10,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Server settings"""
 
-    # WorkOS settings
-    workos_api_key: str = Field(default="dummy_key", description="WorkOS API key")
-    workos_client_id: str = Field(
-        default="dummy_client_id", description="WorkOS Client ID"
-    )
+    # GitHub OAuth settings
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    github_redirect_uri: str | None = None
 
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
@@ -23,6 +23,24 @@ class Settings(BaseSettings):
     )
 
     environment: str = Field(default="development")
+
+    @property
+    def config(self) -> dict[str, Any]:
+        """Get the configuration for the current environment"""
+        configs = {
+            "development": {
+                "api_url": "http://localhost:8000/api",
+            },
+            "production": {
+                "api_url": "",
+            },
+        }
+        return configs.get(self.environment, configs["development"])
+
+    @property
+    def api_url(self) -> str:
+        """Get the API URL"""
+        return self.config["api_url"]
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 

@@ -1,12 +1,17 @@
 """Functions table and models."""
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship
 
 from .base_sql_model import BaseSQLModel
-from .table_names import FUNCTION_TABLE_NAME, PROJECT_TABLE_NAME
+from .table_names import (
+    FUNCTION_TABLE_NAME,
+    ORGANIZATION_TABLE_NAME,
+    PROJECT_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
     from .projects import ProjectTable
@@ -45,7 +50,9 @@ class FunctionTable(_FunctionBase, table=True):
     __tablename__ = FUNCTION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True, nullable=False)
-    organization_id: str | None = Field(default=None, index=True)
+    organization_uuid: UUID = Field(
+        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
+    )
     hash: str = Field(nullable=False, index=True, unique=True)
     code: str = Field(nullable=False)
     project: "ProjectTable" = Relationship(back_populates="functions")

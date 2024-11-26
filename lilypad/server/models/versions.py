@@ -1,6 +1,7 @@
 """Versions table and models."""
 
 from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
 from sqlmodel import Field, Relationship
 
@@ -10,6 +11,7 @@ from .prompts import PromptPublic
 from .spans import SpanPublic
 from .table_names import (
     FUNCTION_TABLE_NAME,
+    ORGANIZATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     PROMPT_TABLE_NAME,
     VERSION_TABLE_NAME,
@@ -65,7 +67,9 @@ class VersionTable(_VersionBase, table=True):
     __tablename__ = VERSION_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
-    organization_id: str | None = Field(default=None, index=True)
+    organization_uuid: UUID = Field(
+        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
+    )
     project: "ProjectTable" = Relationship(back_populates="versions")
     function: "FunctionTable" = Relationship(back_populates="versions")
     prompt: Optional["PromptTable"] = Relationship(back_populates="version")

@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 
 from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseSQLModel, User
+from ..models import BaseSQLModel, UserTable
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -25,7 +25,7 @@ class BaseService(Generic[_TableT, _CreateT]):
         """Find record by id"""
         record_table = self.session.exec(
             select(self.table).where(
-                self.table.organization_id == self.user.organization_id,  # pyright: ignore[reportAttributeAccessIssue]
+                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
                 self.table.id == id,  # pyright: ignore[reportAttributeAccessIssue]
             )
         ).first()
@@ -40,7 +40,7 @@ class BaseService(Generic[_TableT, _CreateT]):
         """Find all records"""
         return self.session.exec(
             select(self.table).where(
-                self.table.organization_id == self.user.organization_id,  # pyright: ignore[reportAttributeAccessIssue]
+                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
             )
         ).all()
 
@@ -55,7 +55,7 @@ class BaseService(Generic[_TableT, _CreateT]):
         record_table = self.table.model_validate(
             {
                 **data.model_dump(),
-                "organization_id": self.user.organization_id,
+                "organization_uuid": self.user.active_organization_uuid,
                 **kwargs,
             }
         )
@@ -74,7 +74,7 @@ class BaseService(Generic[_TableT, _CreateT]):
     def __init__(
         self,
         session: Annotated[Session, Depends(get_session)],
-        user: Annotated[User, Depends(get_current_user)],
+        user: Annotated[UserTable, Depends(get_current_user)],
     ) -> None:
         self.session = session
         self.user = user

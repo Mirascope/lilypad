@@ -131,13 +131,17 @@ export const AppSidebar = () => {
     });
   };
   const renderOrganizationsDropdownItems = () => {
-    return user?.organizations?.map((organization) => (
+    return user?.user_organizations.map((user_organization) => (
       <DropdownMenuCheckboxItem
-        key={organization.id}
-        onClick={() => handleOrganizationSwitch(organization.id)}
-        checked={organization.id === user.organization_id}
+        key={user_organization.id}
+        onClick={() =>
+          handleOrganizationSwitch(user_organization.organization.uuid)
+        }
+        checked={
+          user_organization.organization.uuid === user.active_organization_uuid
+        }
       >
-        {organization.name}
+        {user_organization.organization.name}
       </DropdownMenuCheckboxItem>
     ));
   };

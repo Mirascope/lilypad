@@ -19,7 +19,9 @@ _R = TypeVar("_R")
 config = load_config()
 
 lilypad_client = LilypadClient(
-    base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
+    base_url=f"http://localhost:{config.get('port', 8000)}/api",
+    timeout=10,
+    token=config.get("token", None),
 )
 
 
