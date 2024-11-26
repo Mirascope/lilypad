@@ -89,6 +89,7 @@ def client(
     Args:
         session: The database session
         get_test_session: Session dependency override
+        get_test_current_user: Current user dependency override
 
     Returns:
         TestClient: FastAPI test client

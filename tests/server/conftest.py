@@ -1,7 +1,5 @@
 """Test configuration and fixtures."""
 
-from collections.abc import Coroutine
-from typing import Any
 from uuid import UUID
 
 import pytest
@@ -47,6 +45,7 @@ def db_session():
 
 @pytest.fixture
 def test_user() -> UserPublic:
+    """Create a test user and organization."""
     user_id = 1
     organization = OrganizationPublic(uuid=ORGANIZATION_UUID, name="Test Organization")
     user_org = UserOrganizationPublic(
