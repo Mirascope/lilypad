@@ -1,6 +1,5 @@
 import { CommunityButton } from "./CommunityButton";
 import { DocsButton } from "./DocsButton";
-import { NewsletterSignup } from "./NewsletterSignup";
 
 export const Home = () => {
   return (
@@ -21,9 +20,6 @@ export const Home = () => {
           <DocsButton />
           <CommunityButton />
         </div>
-      </section>
-      <section className="py-20 text-center">
-        <NewsletterSignup />
       </section>
     </main>
   );

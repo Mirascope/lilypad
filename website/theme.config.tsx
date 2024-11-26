@@ -1,6 +1,7 @@
 import type { DocsThemeConfig } from "nextra-theme-docs";
 import { LilypadLogo } from "./components/LilypadLogo";
 import { SlackLogo } from "./components/SlackLogo";
+import Script from "next/script";
 
 const config: DocsThemeConfig = {
   logo: <LilypadLogo width="48" height="48" />,
@@ -14,12 +15,26 @@ const config: DocsThemeConfig = {
   },
   head: (
     <>
+      <title>Lilypad</title>
+      <meta name="description" content="The future of prompt engineering" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta property="og:title" content="Lilypad" />
       <meta
         property="og:description"
         content="The future of prompt engineering"
       />
+      <Script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-Y1LHCGR6YM"
+      ></Script>
+      <Script>
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-Y1LHCGR6YM');
+        `}
+      </Script>
     </>
   ),
   footer: {

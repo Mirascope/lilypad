@@ -11,4 +11,10 @@ export default {
       title: 'Docs',
       type: 'page'
     },
+    newsletter: {
+        title: 'Newsletter',
+        type: 'page',
+        href: 'https://newsletter.lilypad.so',
+        newWindow: true
+    }
 }

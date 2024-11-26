@@ -43,6 +43,8 @@ Create your first traced prompt function to answer an important question:
 import lilypad
 from openai import OpenAI
 
+lilypad.configure()
+
 
 @lilypad.trace()
 def answer_question(question: str) -> str:
@@ -59,5 +61,20 @@ print(answer)
 ```
 
 Navigate to the Lilypad UI at `http://localhost:8000` to see the version and trace of your prompt.
+
+Next, try updating your function's prompt:
+
+```python
+@lilypad.trace()
+def answer_question(question: str) -> str:
+    client = OpenAI()
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Answer this question: {question}"}],
+    )
+    return str(completion.choices[0].message.content)
+```
+
+Run the function again and see the new version and trace in the UI.
 
 And that's it. Now every call to the `answer_question` function will be versioned and traced automatically.
