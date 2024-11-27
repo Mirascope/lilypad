@@ -1,7 +1,9 @@
 """The module for the `lilypad` database tables and models."""
 
 from .base_sql_model import BaseSQLModel
+from .device_codes import DeviceCodeTable
 from .functions import FunctionCreate, FunctionPublic, FunctionTable
+from .organizations import OrganizationCreate, OrganizationPublic, OrganizationTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
 from .prompts import (
     AnthropicCallParams,
@@ -14,17 +16,28 @@ from .prompts import (
     ResponseFormat,
 )
 from .spans import Scope, SpanCreate, SpanPublic, SpanTable
+from .user_organizations import (
+    UserOrganizationCreate,
+    UserOrganizationPublic,
+    UserOrganizationTable,
+    UserRole,
+)
+from .users import UserCreate, UserPublic, UserTable
 from .versions import ActiveVersionPublic, VersionCreate, VersionPublic, VersionTable
 
 __all__ = [
     "ActiveVersionPublic",
     "AnthropicCallParams",
     "BaseSQLModel",
+    "DeviceCodeTable",
     "FunctionCreate",
     "FunctionPublic",
     "FunctionTable",
     "GeminiCallParams",
     "OpenAICallParams",
+    "OrganizationCreate",
+    "OrganizationPublic",
+    "OrganizationTable",
     "ProjectCreate",
     "ProjectPublic",
     "ProjectTable",
@@ -37,6 +50,13 @@ __all__ = [
     "SpanCreate",
     "SpanPublic",
     "SpanTable",
+    "UserCreate",
+    "UserPublic",
+    "UserRole",
+    "UserTable",
+    "UserOrganizationCreate",
+    "UserOrganizationPublic",
+    "UserOrganizationTable",
     "VersionCreate",
     "VersionPublic",
     "VersionTable",

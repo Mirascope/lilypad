@@ -1,6 +1,5 @@
 """Tests for prompt service"""
 
-import pytest
 from sqlmodel import Session
 
 from lilypad.server.models import (
@@ -10,22 +9,16 @@ from lilypad.server.models import (
     PromptTable,
     Provider,
     ResponseFormat,
+    UserPublic,
 )
 from lilypad.server.services import PromptService
 
 
-@pytest.fixture
-def test_project(db_session: Session) -> ProjectTable:
-    """Create test project"""
-    project = ProjectTable(name="Test Project")
-    db_session.add(project)
-    db_session.commit()
-    return project
-
-
-def test_create_prompt(db_session: Session, test_project: ProjectTable):
+def test_create_prompt(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
     """Test creating a prompt"""
-    service = PromptService(db_session)
+    service = PromptService(db_session, test_user)
     prompt_create = PromptCreate(
         project_id=test_project.id,
         hash="test_hash",
@@ -47,9 +40,11 @@ def test_create_prompt(db_session: Session, test_project: ProjectTable):
     assert prompt.call_params["max_tokens"] == 100  # pyright: ignore [reportOptionalSubscript]
 
 
-def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTable):
+def test_find_prompt_by_call_params(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
     """Test finding prompt by call params"""
-    service = PromptService(db_session)
+    service = PromptService(db_session, test_user)
 
     # Create OpenAICallParams first and convert to dict
     call_params = OpenAICallParams(
@@ -60,6 +55,7 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
     ).model_dump()
 
     prompt = PromptTable(
+        organization_uuid=test_project.organization_uuid,
         project_id=test_project.id,
         hash="test_hash",
         template="test template",
@@ -91,10 +87,10 @@ def test_find_prompt_by_call_params(db_session: Session, test_project: ProjectTa
 
 
 def test_find_prompt_by_call_params_not_found(
-    db_session: Session, test_project: ProjectTable
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
 ):
     """Test finding non-existent prompt by call params"""
-    service = PromptService(db_session)
+    service = PromptService(db_session, test_user)
     prompt_create = PromptCreate(
         project_id=test_project.id,
         hash="nonexistent_hash",

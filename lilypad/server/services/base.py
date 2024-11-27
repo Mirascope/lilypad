@@ -7,8 +7,9 @@ from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseSQLModel
+from ..models import BaseSQLModel, UserPublic
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -24,6 +25,7 @@ class BaseService(Generic[_TableT, _CreateT]):
         """Find record by id"""
         record_table = self.session.exec(
             select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
                 self.table.id == id,  # pyright: ignore[reportAttributeAccessIssue]
             )
         ).first()
@@ -36,7 +38,11 @@ class BaseService(Generic[_TableT, _CreateT]):
 
     def find_all_records(self) -> Sequence[_TableT]:
         """Find all records"""
-        return self.session.exec(select(self.table)).all()
+        return self.session.exec(
+            select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
+            )
+        ).all()
 
     def delete_record_by_id(self, id: int | str) -> None:
         """Delete record by uuid"""
@@ -46,7 +52,13 @@ class BaseService(Generic[_TableT, _CreateT]):
 
     def create_record(self, data: _CreateT, **kwargs: Any) -> _TableT:
         """Create a new record"""
-        record_table = self.table.model_validate({**data.model_dump(), **kwargs})
+        record_table = self.table.model_validate(
+            {
+                **data.model_dump(),
+                "organization_uuid": self.user.active_organization_uuid,
+                **kwargs,
+            }
+        )
         self.session.add(record_table)
         self.session.flush()
         return record_table
@@ -62,5 +74,7 @@ class BaseService(Generic[_TableT, _CreateT]):
     def __init__(
         self,
         session: Annotated[Session, Depends(get_session)],
+        user: Annotated[UserPublic, Depends(get_current_user)],
     ) -> None:
         self.session = session
+        self.user = user

@@ -66,6 +66,22 @@ export interface AnthropicCallParams {
 }
 
 /**
+ * DeviceCodeTable
+ * Device codes table.
+ */
+export interface DeviceCodeTable {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /** Id */
+  id: string;
+  /** Token */
+  token: string;
+}
+
+/**
  * FunctionAndPromptVersionCreate
  * Function version (with prompt) create model.
  */
@@ -88,7 +104,10 @@ export interface FunctionCreate {
   created_at?: string;
   /** Project Id */
   project_id?: number | null;
-  /** Name */
+  /**
+   * Name
+   * @minLength 1
+   */
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
@@ -112,7 +131,10 @@ export interface FunctionPublic {
   created_at?: string;
   /** Project Id */
   project_id?: number | null;
-  /** Name */
+  /**
+   * Name
+   * @minLength 1
+   */
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
@@ -127,6 +149,7 @@ export interface FunctionPublic {
 /**
  * GeminiCallParams
  * Gemini GenerationConfig call args model.
+ *
  * https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
  */
 export interface GeminiCallParams {
@@ -170,6 +193,8 @@ export interface MessageParam {
 /**
  * OpenAICallParams
  * OpenAI call args model.
+ *
+ * https://platform.openai.com/docs/api-reference/chat/create
  */
 export interface OpenAICallParams {
   /** Max Tokens */
@@ -186,6 +211,28 @@ export interface OpenAICallParams {
   response_format: ResponseFormat;
   /** Stop */
   stop?: string | string[] | null;
+}
+
+/**
+ * OrganizationPublic
+ * Organization public model
+ */
+export interface OrganizationPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
 }
 
 /**
@@ -370,6 +417,72 @@ export interface SpanPublic {
   version?: VersionPublic | null;
   /** Child Spans */
   child_spans: SpanPublic[];
+}
+
+/**
+ * UserOrganizationPublic
+ * UserOrganization public model
+ */
+export interface UserOrganizationPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /** User role enum. */
+  role: UserRole;
+  /** User Id */
+  user_id: number;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** Id */
+  id: number;
+  /** Organization public model */
+  organization: OrganizationPublic;
+}
+
+/**
+ * UserPublic
+ * User public model
+ */
+export interface UserPublic {
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * First Name
+   * @minLength 1
+   */
+  first_name: string;
+  /** Last Name */
+  last_name?: string | null;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /** Active Organization Uuid */
+  active_organization_uuid?: string | null;
+  /** Id */
+  id: number;
+  /** Access Token */
+  access_token?: string | null;
+  /** User Organizations */
+  user_organizations: UserOrganizationPublic[];
+}
+
+/**
+ * UserRole
+ * User role enum.
+ */
+export enum UserRole {
+  ADMIN = "admin",
+  MEMBER = "member",
 }
 
 /** ValidationError */

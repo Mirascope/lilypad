@@ -2,13 +2,14 @@
 
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
+from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship
 
 from .base_sql_model import BaseSQLModel
-from .table_names import PROJECT_TABLE_NAME, PROMPT_TABLE_NAME
+from .table_names import ORGANIZATION_TABLE_NAME, PROJECT_TABLE_NAME, PROMPT_TABLE_NAME
 
 if TYPE_CHECKING:
     from .projects import ProjectTable
@@ -101,6 +102,9 @@ class PromptTable(_PromptBase, table=True):
     __tablename__ = PROMPT_TABLE_NAME  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
+    organization_uuid: UUID = Field(
+        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
+    )
     call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
     project: "ProjectTable" = Relationship(back_populates="prompts")
     version: "VersionTable" = Relationship(back_populates="prompt", cascade_delete=True)

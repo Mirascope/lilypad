@@ -17,48 +17,6 @@ from lilypad.server.models import (
 
 
 @pytest.fixture
-def test_project(session: Session) -> Generator[ProjectTable, None, None]:
-    """Create a test project.
-
-    Args:
-        session: Database session
-
-    Yields:
-        ProjectTable: Test project
-    """
-    project = ProjectTable(name="test_project")
-    session.add(project)
-    session.commit()
-    session.refresh(project)
-    yield project
-
-
-@pytest.fixture
-def test_function(
-    session: Session, test_project: ProjectTable
-) -> Generator[FunctionTable, None, None]:
-    """Create a test function.
-
-    Args:
-        session: Database session
-        test_project: Parent project
-
-    Yields:
-        FunctionTable: Test function
-    """
-    function = FunctionTable(
-        project_id=test_project.id,
-        name="test_function",
-        hash="test_hash",
-        code="def test(): pass",
-    )
-    session.add(function)
-    session.commit()
-    session.refresh(function)
-    yield function
-
-
-@pytest.fixture
 def test_version(
     session: Session, test_project: ProjectTable, test_function: FunctionTable
 ) -> Generator[VersionTable, None, None]:
@@ -73,6 +31,7 @@ def test_version(
         VersionTable: Test version
     """
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -104,6 +63,7 @@ def test_span(
 
     span = SpanTable(
         id="test_span_1",
+        organization_uuid=test_project.organization_uuid,
         project_id=test_project.id,
         version_id=test_version.id,
         version_num=test_version.version_num,

@@ -23,6 +23,7 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
         )
         return self.session.exec(
             select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == prompt_create.hash,
                 self.table.call_params == call_params,
                 self.table.model == prompt_create.model,

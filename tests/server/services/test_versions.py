@@ -9,25 +9,21 @@ from lilypad.server.models import (
     ProjectTable,
     PromptTable,
     Provider,
+    UserPublic,
     VersionTable,
 )
 from lilypad.server.services import VersionService
 
 
 @pytest.fixture
-def test_project(db_session: Session) -> ProjectTable:
-    """Create test project"""
-    project = ProjectTable(name="Test Project")
-    db_session.add(project)
-    db_session.commit()
-    return project
-
-
-@pytest.fixture
 def test_function(db_session: Session, test_project: ProjectTable) -> FunctionTable:
     """Create test function"""
     function = FunctionTable(
-        name="test_func", project_id=test_project.id, hash="test_hash", code="test_code"
+        organization_uuid=test_project.organization_uuid,
+        name="test_func",
+        project_id=test_project.id,
+        hash="test_hash",
+        code="test_code",
     )
     db_session.add(function)
     db_session.commit()
@@ -38,6 +34,7 @@ def test_function(db_session: Session, test_project: ProjectTable) -> FunctionTa
 def test_prompt(db_session: Session, test_project: ProjectTable) -> PromptTable:
     """Create test prompt"""
     prompt = PromptTable(
+        organization_uuid=test_project.organization_uuid,
         project_id=test_project.id,
         hash="test_prompt_hash",
         template="test template",
@@ -56,13 +53,17 @@ def test_prompt(db_session: Session, test_project: ProjectTable) -> PromptTable:
 
 
 def test_find_versions_by_function_name(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test finding versions by function name"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
 
     versions = [
         VersionTable(
+            organization_uuid=test_project.organization_uuid,
             version_num=i,
             project_id=test_project.id,
             function_id=test_function.id,
@@ -88,10 +89,12 @@ def test_find_prompt_version_by_id(
     test_project: ProjectTable,
     test_function: FunctionTable,
     test_prompt: PromptTable,
+    test_user: UserPublic,
 ):
     """Test finding prompt version by ID"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -114,11 +117,15 @@ def test_find_prompt_version_by_id(
 
 
 def test_find_function_version_by_hash(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test finding function version by hash"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -138,11 +145,15 @@ def test_find_function_version_by_hash(
 
 
 def test_find_prompt_active_version(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test finding active version for a prompt"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -162,22 +173,26 @@ def test_find_prompt_active_version(
 
 
 def test_find_prompt_active_version_not_found(
-    db_session: Session, test_project: ProjectTable
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
 ):
     """Test finding non-existent active version"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
     with pytest.raises(HTTPException):
         service.find_prompt_active_version(test_project.id, "nonexistent_hash")  # pyright: ignore [reportArgumentType]
 
 
 def test_change_active_version(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test changing active version between two versions of the same function"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
 
     # Create first version - initially active
     version1 = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=0,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -188,6 +203,7 @@ def test_change_active_version(
 
     # Create second version - initially inactive
     version2 = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -216,13 +232,17 @@ def test_change_active_version(
 
 
 def test_change_active_version_no_previous_active(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test activating a version when no active version exists"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
 
     # Create a version with is_active=False
     version = VersionTable(
+        organization_uuid=test_project.organization_uuid,
         version_num=1,
         project_id=test_project.id,
         function_id=test_function.id,
@@ -245,12 +265,16 @@ def test_change_active_version_no_previous_active(
 
 
 def test_get_function_version_count(
-    db_session: Session, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_user: UserPublic,
 ):
     """Test getting function version count"""
-    service = VersionService(db_session)
+    service = VersionService(db_session, test_user)
     versions = [
         VersionTable(
+            organization_uuid=test_project.organization_uuid,
             version_num=i,
             project_id=test_project.id,
             function_id=test_function.id,

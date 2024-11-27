@@ -1,16 +1,32 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { projectsQueryOptions } from "@/utils/projects";
-export const Route = createFileRoute("/projects/")({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(projectsQueryOptions());
+import { useEffect } from "react";
+import { useDeviceCodeMutation } from "@/utils/auth";
+export const Route = createFileRoute("/_auth/projects/")({
+  validateSearch: (search) => {
+    return {
+      redirect: (search.redirect as string) || undefined,
+      deviceCode: (search.deviceCode as string) || undefined,
+    };
   },
   component: () => <Projects />,
 });
 
 const Projects = () => {
+  const { deviceCode } = Route.useSearch();
+  const navigate = useNavigate();
+  const addDeviceCodeMutation = useDeviceCodeMutation();
+  useEffect(() => {
+    if (!deviceCode) return;
+    addDeviceCodeMutation.mutateAsync({ deviceCode });
+    navigate({
+      to: "/projects",
+      search: { redirect: undefined, deviceCode: undefined },
+    });
+  }, [deviceCode]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   return (
     <div className='p-4 flex flex-col items-center gap-2'>

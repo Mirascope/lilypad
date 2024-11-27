@@ -15,7 +15,6 @@ from .api import v0_api
 
 config = load_config()
 port = config.get("port", 8000)
-
 origins = [
     "http://localhost:5173",
     "http://localhost:8000/*",
@@ -32,6 +31,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.mount("/api/v0", v0_api)
 
 

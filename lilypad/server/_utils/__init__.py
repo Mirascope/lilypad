@@ -1,3 +1,7 @@
+from .auth import (
+    create_jwt_token,
+    get_current_user,
+)
 from .spans import (
     MessageParam,
     convert_anthropic_messages,
@@ -12,4 +16,6 @@ __all__ = [
     "convert_gemini_messages",
     "convert_openai_messages",
     "construct_function",
+    "create_jwt_token",
+    "get_current_user",
 ]
