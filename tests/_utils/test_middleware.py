@@ -4,6 +4,7 @@ import base64
 import json
 from io import BytesIO
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import PIL.Image
 import PIL.WebPImagePlugin
@@ -419,7 +420,7 @@ def test_get_custom_context_manager():
     """Test _get_custom_context_manager function."""
     version = MagicMock()
     version.version_num = 1
-    version.id = "version_id"
+    version.uuid = UUID("123e4567-e89b-12d3-a456-426614174123")
     version.function.code = "function code"
     version.prompt = MagicMock()
     version.prompt.template = "prompt template"
@@ -433,18 +434,18 @@ def test_get_custom_context_manager():
     tracer = MagicMock()
     span = MagicMock()
     tracer.start_as_current_span.return_value.__enter__.return_value = span
-
+    project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
     with patch("lilypad._utils.middleware.get_tracer", return_value=tracer):
         context_manager_factory = _get_custom_context_manager(
-            version, arg_types, arg_values, is_async, prompt_template
+            version, arg_types, arg_values, is_async, prompt_template, project_uuid
         )
         with context_manager_factory(fn) as cm_span:
             assert cm_span == span
             expected_attributes = {
-                "lilypad.project_id": 0,
+                "lilypad.project_uuid": str(project_uuid),
                 "lilypad.function_name": fn.__name__,
                 "lilypad.version_num": version.version_num or -1,
-                "lilypad.version_id": version.id,
+                "lilypad.version_uuid": str(version.uuid),
                 "lilypad.arg_types": json.dumps(arg_types),
                 "lilypad.arg_values": json.dumps(arg_values),
                 "lilypad.lexical_closure": version.function.code,

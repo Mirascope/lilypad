@@ -4,12 +4,12 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlmodel import Field, Relationship
+from pydantic import BaseModel
+from sqlmodel import Field, Relationship, SQLModel
 
-from .base_sql_model import BaseSQLModel
+from .base_organization_sql_model import BaseOrganizationSQLModel
 from .organizations import OrganizationPublic
 from .table_names import (
-    ORGANIZATION_TABLE_NAME,
     USER_ORGANIZATION_TABLE_NAME,
     USER_TABLE_NAME,
 )
@@ -26,36 +26,35 @@ class UserRole(str, Enum):
     MEMBER = "member"
 
 
-class _UserOrganization(BaseSQLModel):
+class _UserOrganizationBase(SQLModel):
     """Base UserOrganization Model."""
 
     role: UserRole = Field(nullable=False)
-    user_id: int = Field(index=True, foreign_key=f"{USER_TABLE_NAME}.id")
-    organization_uuid: UUID = Field(
-        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
-    )
+    user_uuid: UUID = Field(index=True, foreign_key=f"{USER_TABLE_NAME}.uuid")
 
 
-class UserOrganizationTable(_UserOrganization, table=True):
+class UserOrganizationTable(
+    _UserOrganizationBase, BaseOrganizationSQLModel, table=True
+):
     """UserOrganization table."""
 
     __tablename__ = USER_ORGANIZATION_TABLE_NAME  # type: ignore
 
-    id: int | None = Field(default=None, primary_key=True, nullable=False)
     organization: "OrganizationTable" = Relationship(
         back_populates="user_organizations"
     )
     user: "UserTable" = Relationship(back_populates="user_organizations")
 
 
-class UserOrganizationPublic(_UserOrganization):
+class UserOrganizationPublic(_UserOrganizationBase):
     """UserOrganization public model"""
 
-    id: int
+    uuid: UUID
+    organization_uuid: UUID
     organization: OrganizationPublic
 
 
-class UserOrganizationCreate(_UserOrganization):
+class UserOrganizationCreate(BaseModel):
     """UserOrganization create model"""
 
-    ...
+    role: UserRole

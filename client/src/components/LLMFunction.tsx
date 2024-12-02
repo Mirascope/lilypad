@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { VersionPublic } from "@/types/types";
 type LLMFunctionProps = {
-  projectId: number;
+  projectUuid: string;
   version: VersionPublic | null;
 };
 
@@ -13,18 +13,19 @@ type Tab = {
   value: string;
   component?: JSX.Element | null;
 };
-export const LLMFunction = ({ projectId, version }: LLMFunctionProps) => {
+export const LLMFunction = ({ projectUuid, version }: LLMFunctionProps) => {
   const tabs: Tab[] = [
     {
       label: "Prompt",
       value: "prompt",
-      component: (projectId && <CreateEditorForm version={version} />) || null,
+      component:
+        (projectUuid && <CreateEditorForm version={version} />) || null,
     },
     {
       label: "Traces",
       value: "traces",
       component: version && (
-        <FunctionSpans projectId={projectId} versionId={version.id} />
+        <FunctionSpans projectUuid={projectUuid} versionUuid={version.uuid} />
       ),
     },
   ];

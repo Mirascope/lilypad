@@ -13,7 +13,6 @@ from ..db import get_session
 from ..models import (
     OrganizationPublic,
     OrganizationTable,
-    ProjectTable,
     UserOrganizationTable,
     UserPublic,
     UserRole,
@@ -67,18 +66,13 @@ async def get_local_user(session: Session) -> UserPublic:
     )
     session.add(user)
     session.flush()
-
     user_public = UserPublic.model_validate(user)
     user_org = UserOrganizationTable(
-        user_id=user_public.id, organization_uuid=org_public.uuid, role=UserRole.ADMIN
+        user_uuid=user_public.uuid,
+        organization_uuid=org_public.uuid,
+        role=UserRole.ADMIN,
     )
     session.add(user_org)
-    session.flush()
-    project = ProjectTable(
-        name="Local Project",
-        organization_uuid=org_public.uuid,
-    )
-    session.add(project)
     session.flush()
     return user_public
 
@@ -101,8 +95,8 @@ async def get_current_user(
             token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
         )
         # Refresh session data
-        if id := payload.get("id"):
-            user = session.exec(select(UserTable).where(UserTable.id == id)).first()
+        if uuid := payload.get("uuid"):
+            user = session.exec(select(UserTable).where(UserTable.uuid == uuid)).first()
             if user:
                 return UserPublic.model_validate(user)
     except (JWTError, KeyError, ValidationError) as e:

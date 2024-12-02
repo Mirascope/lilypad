@@ -1,5 +1,6 @@
 """The module for the `lilypad` database tables and models."""
 
+from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel
 from .device_codes import DeviceCodeTable
 from .functions import FunctionCreate, FunctionPublic, FunctionTable
@@ -28,6 +29,7 @@ from .versions import ActiveVersionPublic, VersionCreate, VersionPublic, Version
 __all__ = [
     "ActiveVersionPublic",
     "AnthropicCallParams",
+    "BaseOrganizationSQLModel",
     "BaseSQLModel",
     "DeviceCodeTable",
     "FunctionCreate",

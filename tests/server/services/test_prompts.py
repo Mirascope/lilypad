@@ -20,7 +20,7 @@ def test_create_prompt(
     """Test creating a prompt"""
     service = PromptService(db_session, test_user)
     prompt_create = PromptCreate(
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         hash="test_hash",
         template="test template",
         provider=Provider.OPENAI,
@@ -56,7 +56,7 @@ def test_find_prompt_by_call_params(
 
     prompt = PromptTable(
         organization_uuid=test_project.organization_uuid,
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         hash="test_hash",
         template="test template",
         provider=Provider.OPENAI,
@@ -67,7 +67,7 @@ def test_find_prompt_by_call_params(
     db_session.commit()
 
     prompt_create = PromptCreate(
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         hash="test_hash",
         template="test template",
         provider=Provider.OPENAI,
@@ -92,7 +92,7 @@ def test_find_prompt_by_call_params_not_found(
     """Test finding non-existent prompt by call params"""
     service = PromptService(db_session, test_user)
     prompt_create = PromptCreate(
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         hash="nonexistent_hash",
         template="test template",
         provider=Provider.OPENAI,

@@ -1,6 +1,7 @@
 """Tests for the versions API."""
 
 from collections.abc import Generator
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -31,7 +32,7 @@ def test_prompt(
 
     prompt = PromptTable(
         organization_uuid=test_project.organization_uuid,
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         template="Test template",
         provider=Provider.OPENAI,
         model="gpt-4",
@@ -55,9 +56,9 @@ def test_version(
     version = VersionTable(
         organization_uuid=test_project.organization_uuid,
         version_num=1,
-        project_id=test_project.id,
-        function_id=test_function.id,
-        prompt_id=test_prompt.id,
+        project_uuid=test_project.uuid,
+        function_uuid=test_function.uuid,
+        prompt_uuid=test_prompt.uuid,
         function_name=test_function.name,
         function_hash=test_function.hash,
         prompt_hash=test_prompt.hash,
@@ -91,7 +92,7 @@ def test_create_version(client: TestClient, test_project: ProjectTable):
         },
     }
 
-    response = client.post(f"/projects/{test_project.id}/versions", json=data)
+    response = client.post(f"/projects/{test_project.uuid}/versions", json=data)
     assert response.status_code == 200
     created = response.json()
     assert created["function_name"] == "test_function"
@@ -101,9 +102,9 @@ def test_create_version(client: TestClient, test_project: ProjectTable):
 
 
 def test_get_version(client: TestClient, test_version: VersionTable):
-    """Test getting version by ID returns expected version."""
+    """Test getting version by UUID returns expected version."""
     response = client.get(
-        f"/projects/{test_version.project_id}/versions/{test_version.id}"
+        f"/projects/{test_version.project_uuid}/versions/{test_version.uuid}"
     )
     assert response.status_code == 200
     version = response.json()
@@ -115,7 +116,7 @@ def test_get_version(client: TestClient, test_version: VersionTable):
 def test_get_versions_by_function(client: TestClient, test_version: VersionTable):
     """Test getting versions for a function returns expected versions."""
     response = client.get(
-        f"/projects/{test_version.project_id}/functions/{test_version.function_name}/versions"
+        f"/projects/{test_version.project_uuid}/functions/{test_version.function_name}/versions"
     )
     assert response.status_code == 200
     versions = response.json()
@@ -127,5 +128,6 @@ def test_get_versions_by_function(client: TestClient, test_version: VersionTable
 
 def test_get_nonexistent_version(client: TestClient, test_project: ProjectTable):
     """Test getting nonexistent version returns 404."""
-    response = client.get(f"/projects/{test_project.id}/versions/999")
+    version_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
+    response = client.get(f"/projects/{test_project.uuid}/versions/{version_uuid}")
     assert response.status_code == 404

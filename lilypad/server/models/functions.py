@@ -3,13 +3,13 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from pydantic import BaseModel
 from sqlalchemy import JSON, Column
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
-from .base_sql_model import BaseSQLModel
+from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import (
     FUNCTION_TABLE_NAME,
-    ORGANIZATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
 )
 
@@ -18,20 +18,25 @@ if TYPE_CHECKING:
     from .versions import VersionTable
 
 
-class _FunctionBase(BaseSQLModel):
+class _FunctionBase(SQLModel):
     """Base Function Model."""
 
-    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+    )
     name: str = Field(nullable=False, index=True, min_length=1)
     arg_types: dict[str, str] | None = Field(
         sa_column=Column(JSON), default_factory=dict
     )
+    hash: str = Field(nullable=False, index=True, unique=True)
+    code: str = Field(nullable=False)
 
 
-class FunctionCreate(_FunctionBase):
+class FunctionCreate(BaseModel):
     """Function create model."""
 
-    id: int | None = None
+    name: str
+    arg_types: dict[str, str] | None = None
     hash: str | None = None
     code: str | None = None
 
@@ -39,22 +44,14 @@ class FunctionCreate(_FunctionBase):
 class FunctionPublic(_FunctionBase):
     """Function public model."""
 
-    id: int
-    hash: str
-    code: str
+    uuid: UUID
 
 
-class FunctionTable(_FunctionBase, table=True):
+class FunctionTable(_FunctionBase, BaseOrganizationSQLModel, table=True):
     """Function table."""
 
     __tablename__ = FUNCTION_TABLE_NAME  # type: ignore
 
-    id: int | None = Field(default=None, primary_key=True, nullable=False)
-    organization_uuid: UUID = Field(
-        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
-    )
-    hash: str = Field(nullable=False, index=True, unique=True)
-    code: str = Field(nullable=False)
     project: "ProjectTable" = Relationship(back_populates="functions")
     versions: list["VersionTable"] = Relationship(
         back_populates="function", cascade_delete=True
