@@ -47,7 +47,7 @@ const Projects = () => {
         ) : (
           <>
             <div>
-              No projects found. To begin tracing, pleae authenticate first.
+              No projects found. To begin tracing, please authenticate first.
             </div>
             <CodeSnippet code='lilypad auth' />
           </>
