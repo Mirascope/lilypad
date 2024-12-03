@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, get_origin, overload
+from uuid import UUID
 
 import requests
 from pydantic import BaseModel, TypeAdapter
@@ -51,11 +52,13 @@ class LilypadClient:
         self.session = requests.Session()
         try:
             config = load_config()
-            self.project_id = (
-                int(config["project_id"]) if config.get("project_id", None) else None
+            self.project_uuid = (
+                UUID(config["project_uuid"])
+                if config.get("project_uuid", None)
+                else None
             )
         except FileNotFoundError:
-            self.project_id = None
+            self.project_uuid = None
 
         if headers:
             self.session.headers.update(headers)
@@ -224,13 +227,13 @@ class LilypadClient:
         try:
             return self._request(
                 "GET",
-                f"/v0/projects/{self.project_id}/versions/{hash}",
+                f"/v0/projects/{self.project_uuid}/versions/{hash}",
                 response_model=VersionPublic,
             )
         except NotFoundError:
             return self._request(
                 "POST",
-                f"/v0/projects/{self.project_id}/versions/{hash}",
+                f"/v0/projects/{self.project_uuid}/versions/{hash}",
                 response_model=VersionPublic,
                 json={
                     "name": fn.__name__,
@@ -253,6 +256,6 @@ class LilypadClient:
         _, hash = compute_closure(fn)
         return self._request(
             "GET",
-            f"/v0/projects/{self.project_id}/functions/{hash}/versions/active",
+            f"/v0/projects/{self.project_uuid}/functions/{hash}/versions/active",
             response_model=ActiveVersionPublic,
         )

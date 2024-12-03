@@ -2,7 +2,6 @@ import { useAuth } from "@/auth";
 import { callbackCodeQueryOptions } from "@/utils/auth";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import axios from "axios";
 import { useEffect } from "react";
 
 type State = {

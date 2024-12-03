@@ -1,11 +1,13 @@
 import api from "@/api";
 import { queryOptions } from "@tanstack/react-query";
 
-export const fetchUniqueFunctionNames = async (projectId: number) =>
-  (await api.get<string[]>(`/projects/${projectId}/functions/names`)).data;
-
-export const uniqueFunctionNamesQueryOptions = (projectId: number) =>
+export const fetchUniqueFunctionNames = async (projectUuid?: string) => {
+  if (!projectUuid) return [];
+  return (await api.get<string[]>(`/projects/${projectUuid}/functions/names`))
+    .data;
+};
+export const uniqueFunctionNamesQueryOptions = (projectUuid?: string) =>
   queryOptions({
-    queryKey: ["project", projectId, "functions"],
-    queryFn: async () => await fetchUniqueFunctionNames(projectId),
+    queryKey: ["project", projectUuid, "functions"],
+    queryFn: async () => await fetchUniqueFunctionNames(projectUuid),
   });

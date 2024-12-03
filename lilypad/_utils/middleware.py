@@ -6,6 +6,7 @@ from collections.abc import Callable, Generator
 from contextlib import _GeneratorContextManager, contextmanager
 from io import BytesIO
 from typing import Any, ParamSpec, TypeVar, cast
+from uuid import UUID
 
 import PIL
 import PIL.WebPImagePlugin
@@ -30,6 +31,7 @@ def _get_custom_context_manager(
     arg_values: dict[str, Any],
     is_async: bool,
     prompt_template: str | None = None,
+    project_uuid: UUID | None = None,
 ) -> Callable[..., _GeneratorContextManager[Span]]:
     @contextmanager
     def custom_context_manager(
@@ -37,21 +39,20 @@ def _get_custom_context_manager(
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
         config = load_config()
-
         lilypad_client = LilypadClient(
             base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
         )
-
+        new_project_uuid = project_uuid or lilypad_client.project_uuid
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
-                "lilypad.project_id": lilypad_client.project_id
-                if lilypad_client.project_id
-                else 0,
+                "lilypad.project_uuid": str(new_project_uuid)
+                if new_project_uuid
+                else "",
                 "lilypad.function_name": fn.__name__,
                 "lilypad.version_num": version.version_num
                 if version.version_num
                 else -1,
-                "lilypad.version_id": version.id,
+                "lilypad.version_uuid": str(version.uuid),
                 "lilypad.arg_types": json.dumps(arg_types),
                 "lilypad.arg_values": json.dumps(arg_values),
                 "lilypad.lexical_closure": version.function.code,
@@ -214,11 +215,12 @@ def create_mirascope_middleware(
     arg_values: dict[str, Any],
     is_async: bool,
     prompt_template: str | None = None,
+    project_uuid: UUID | None = None,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Creates the middleware decorator for a Lilypad/Mirascope function."""
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
-            version, arg_types, arg_values, is_async, prompt_template
+            version, arg_types, arg_values, is_async, prompt_template, project_uuid
         ),
         handle_call_response=_handle_call_response,
         handle_call_response_async=_handle_call_response_async,

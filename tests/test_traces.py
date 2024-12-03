@@ -1,6 +1,7 @@
 """Tests traces decorators."""
 
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 import pytest
 from pydantic import BaseModel
@@ -39,21 +40,22 @@ def mock_lilypad_client():
     """Fixture that mocks the LilypadClient"""
     with patch("lilypad.traces.lilypad_client") as mock:
         # Create function model
+        project_uuid = uuid4()
         function = FunctionPublic(
-            id=1,
+            uuid=uuid4(),
             name="test_function",
             hash="test_hash",
             code="test code",
             arg_types={"param": "str"},
-            project_id=1,  # pyright: ignore [reportCallIssue]
+            project_uuid=project_uuid,  # pyright: ignore [reportCallIssue]
         )
 
         # Create version with required fields
         version = VersionPublic(
-            id=1,
+            uuid=uuid4(),
             version_num=1,
-            project_id=1,
-            function_id=1,
+            project_uuid=uuid4(),
+            function_uuid=function.uuid,
             function_name="test_function",
             function_hash="test_hash",
             function=function,
@@ -63,7 +65,7 @@ def mock_lilypad_client():
         )
 
         mock.get_or_create_function_version.return_value = version
-        mock.project_id = 1
+        mock.project_uuid = project_uuid
         yield mock
 
 
@@ -130,14 +132,14 @@ async def test_trace_async_function(mock_lilypad_client, mock_get_tracer):
         return f"Hello {param}"
 
     result = await test_function("World")
-
+    version_uuid = mock_lilypad_client.get_or_create_function_version.return_value.uuid
     assert result == "Hello World"
     mock_get_tracer.return_value.start_as_current_span.assert_called_once()
     mock_span = mock_get_tracer.return_value.start_as_current_span.return_value.__enter__.return_value
     mock_span.set_attributes.assert_called_once()
     attrs = mock_span.set_attributes.call_args[0][0]
     assert attrs["lilypad.function_name"] == "test_function"
-    assert attrs["lilypad.version_id"] == 1
+    assert attrs["lilypad.version_uuid"] == str(version_uuid)
     assert attrs["lilypad.output"] == "Hello World"
     assert attrs["lilypad.is_async"]
 

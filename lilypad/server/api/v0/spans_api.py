@@ -3,6 +3,7 @@
 import json
 from collections.abc import Sequence
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
@@ -80,38 +81,40 @@ class SpanMoreDetails(BaseModel):
         )
 
 
-@spans_router.get("/spans/{span_id}", response_model=SpanMoreDetails)
+@spans_router.get("/spans/{span_uuid}", response_model=SpanMoreDetails)
 async def get_span(
-    span_id: str,
+    span_uuid: UUID,
     session: Annotated[Session, Depends(get_session)],
 ) -> SpanMoreDetails:
-    """Get span by id."""
-    span = session.exec(select(SpanTable).where(SpanTable.id == span_id)).first()
+    """Get span by uuid."""
+    span = session.exec(select(SpanTable).where(SpanTable.uuid == span_uuid)).first()
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
     return SpanMoreDetails.from_span(span)
 
 
 @spans_router.get(
-    "/projects/{project_id}/versions/{version_id}/spans",
+    "/projects/{project_uuid}/versions/{version_uuid}/spans",
     response_model=Sequence[SpanPublic],
 )
-async def get_span_by_version_id(
-    project_id: int,
-    version_id: int,
+async def get_span_by_version_uuid(
+    project_uuid: UUID,
+    version_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:
-    """Get span by id."""
-    return span_service.find_records_by_version_id(project_id, version_id)
+    """Get span by uuid."""
+    return span_service.find_records_by_version_uuid(project_uuid, version_uuid)
 
 
-@spans_router.get("/projects/{project_id}/spans/{span_id}", response_model=SpanPublic)
-async def get_span_by_id(
-    span_id: str,
+@spans_router.get(
+    "/projects/{project_uuid}/spans/{span_uuid}", response_model=SpanPublic
+)
+async def get_span_by_uuid(
+    span_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> SpanTable:
-    """Get span by id."""
-    return span_service.find_record_by_id(span_id)
+    """Get span by uuid."""
+    return span_service.find_record_by_uuid(span_uuid)
 
 
 __all__ = ["spans_router"]

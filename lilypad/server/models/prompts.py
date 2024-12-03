@@ -6,10 +6,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
-from .base_sql_model import BaseSQLModel
-from .table_names import ORGANIZATION_TABLE_NAME, PROJECT_TABLE_NAME, PROMPT_TABLE_NAME
+from .base_organization_sql_model import BaseOrganizationSQLModel
+from .table_names import PROJECT_TABLE_NAME, PROMPT_TABLE_NAME
 
 if TYPE_CHECKING:
     from .projects import ProjectTable
@@ -73,10 +73,12 @@ class AnthropicCallParams(BaseModel):
     top_p: float | None = None
 
 
-class _PromptBase(BaseSQLModel):
+class _PromptBase(SQLModel):
     """Base Prompt Model."""
 
-    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+    )
     hash: str | None = Field(default=None, index=True)
     template: str
     provider: Provider
@@ -86,7 +88,7 @@ class _PromptBase(BaseSQLModel):
 class PromptPublic(_PromptBase):
     """Prompt public model."""
 
-    id: int
+    uuid: UUID
     call_params: OpenAICallParams | AnthropicCallParams | GeminiCallParams | None = None
 
 
@@ -96,15 +98,11 @@ class PromptCreate(_PromptBase):
     call_params: OpenAICallParams | AnthropicCallParams | GeminiCallParams | None = None
 
 
-class PromptTable(_PromptBase, table=True):
+class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
     """Prompt table."""
 
     __tablename__ = PROMPT_TABLE_NAME  # type: ignore
 
-    id: int | None = Field(default=None, primary_key=True)
-    organization_uuid: UUID = Field(
-        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
-    )
     call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
     project: "ProjectTable" = Relationship(back_populates="prompts")
     version: "VersionTable" = Relationship(back_populates="prompt", cascade_delete=True)

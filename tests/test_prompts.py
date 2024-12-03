@@ -4,6 +4,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
 
@@ -22,24 +23,24 @@ from lilypad.server.models import (
 def mock_version() -> VersionPublic:
     """Fixture that returns a mock VersionPublic instance"""
     return VersionPublic(
-        id=1,
+        uuid=uuid4(),
         version_num=1,
-        project_id=1,
-        function_id=1,
+        project_uuid=uuid4(),
+        function_uuid=uuid4(),
         function_name="recommend_book",
         function_hash="test_hash",
         prompt_hash="test_prompt_hash",
         is_active=True,
         spans=[],
         function=FunctionPublic(
-            id=1,
+            uuid=uuid4(),
             name="recommend_book",
             hash="test_hash",
             code="test_code",
             arg_types={"genre": "str"},
         ),
         prompt=PromptPublic(
-            id=1,
+            uuid=uuid4(),
             hash="test_hash",
             template="Recommend a {genre} book.",
             provider=Provider.OPENAI,

@@ -130,7 +130,7 @@ def local_command(
                 project = lilypad_client.post_project(project_name)
                 with open(".lilypad/config.json", "w") as f:
                     data = {
-                        "project_id": project.id,
+                        "project_uuid": str(project.uuid),
                         "port": new_port,
                         "project_name": project_name,
                     }

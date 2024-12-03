@@ -1,16 +1,16 @@
 """Spans table and models."""
 
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from pydantic import model_validator
 from sqlalchemy import JSON, Column
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
-from .base_sql_model import BaseSQLModel
+from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import (
-    ORGANIZATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     SPAN_TABLE_NAME,
     VERSION_TABLE_NAME,
@@ -27,30 +27,38 @@ class Scope(str, Enum):
     LLM = "llm"
 
 
-class _SpanBase(BaseSQLModel):
+class _SpanBase(SQLModel):
     """Span base model"""
 
-    id: str = Field(primary_key=True)
-    project_id: int | None = Field(default=None, foreign_key=f"{PROJECT_TABLE_NAME}.id")
-    version_id: int | None = Field(default=None, foreign_key=f"{VERSION_TABLE_NAME}.id")
+    span_id: str = Field(nullable=False, index=True)
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+    )
+    version_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{VERSION_TABLE_NAME}.uuid"
+    )
     version_num: int | None = Field(default=None)
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     parent_span_id: str | None = Field(
-        default=None, foreign_key=f"{SPAN_TABLE_NAME}.id"
+        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid"
     )
 
 
 class SpanCreate(_SpanBase):
     """Span create model"""
 
+    ...
+
 
 class SpanPublic(_SpanBase):
     """Span public model"""
 
+    uuid: UUID
     display_name: str | None = None
     version: Optional["VersionPublic"] = None
     child_spans: list["SpanPublic"]
+    created_at: datetime
 
     @model_validator(mode="before")
     @classmethod
@@ -84,18 +92,15 @@ class SpanPublic(_SpanBase):
         }
 
 
-class SpanTable(_SpanBase, table=True):
+class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
-    organization_uuid: UUID = Field(
-        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
-    )
     version: "VersionTable" = Relationship(back_populates="spans")
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True
     )
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",
-        sa_relationship_kwargs={"remote_side": "SpanTable.id"},
+        sa_relationship_kwargs={"remote_side": "SpanTable.uuid"},
     )

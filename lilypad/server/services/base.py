@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from typing import Annotated, Any, Generic, TypeVar
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
@@ -9,24 +10,24 @@ from sqlmodel import Session, select
 
 from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseSQLModel, UserPublic
+from ..models import BaseOrganizationSQLModel, UserPublic
 
-_TableT = TypeVar("_TableT", bound=BaseSQLModel)
+_TableT = TypeVar("_TableT", bound=BaseOrganizationSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
 
 
 class BaseService(Generic[_TableT, _CreateT]):
-    """Base class for all services."""
+    """Base class for all services that are under an organization."""
 
     table: type[_TableT]
     create_model: type[_CreateT]
 
-    def find_record_by_id(self, id: int | str) -> _TableT:
-        """Find record by id"""
+    def find_record_by_uuid(self, uuid: UUID) -> _TableT:
+        """Find record by uuid"""
         record_table = self.session.exec(
             select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
-                self.table.id == id,  # pyright: ignore[reportAttributeAccessIssue]
+                self.table.uuid == uuid,
+                self.table.organization_uuid == self.user.active_organization_uuid,
             )
         ).first()
         if not record_table:
@@ -40,13 +41,13 @@ class BaseService(Generic[_TableT, _CreateT]):
         """Find all records"""
         return self.session.exec(
             select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,  # pyright: ignore[reportAttributeAccessIssue]
+                self.table.organization_uuid == self.user.active_organization_uuid,
             )
         ).all()
 
-    def delete_record_by_id(self, id: int | str) -> None:
+    def delete_record_by_uuid(self, uuid: UUID) -> None:
         """Delete record by uuid"""
-        record_table = self.find_record_by_id(id)
+        record_table = self.find_record_by_uuid(uuid)
         self.session.delete(record_table)
         return
 
@@ -63,9 +64,9 @@ class BaseService(Generic[_TableT, _CreateT]):
         self.session.flush()
         return record_table
 
-    def update_record_by_id(self, id: int | str, data: dict) -> _TableT:
-        """Updates a record based on the id"""
-        record_table = self.find_record_by_id(id)
+    def update_record_by_uuid(self, uuid: UUID, data: dict) -> _TableT:
+        """Updates a record based on the uuid"""
+        record_table = self.find_record_by_uuid(uuid)
         record_table.sqlmodel_update(data)
         self.session.add(record_table)
         self.session.flush()

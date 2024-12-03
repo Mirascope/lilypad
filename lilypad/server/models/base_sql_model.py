@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, model_serializer
 from sqlmodel import Field, SQLModel
@@ -12,6 +12,11 @@ from sqlmodel import Field, SQLModel
 class BaseSQLModel(SQLModel):
     """Base SQLModel class"""
 
+    uuid: UUID | None = Field(
+        nullable=False,
+        default_factory=uuid4,
+        primary_key=True,
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,

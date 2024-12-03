@@ -1,7 +1,7 @@
 """Test cases for server models."""
 
 from collections.abc import Generator
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import Engine
@@ -73,17 +73,18 @@ def test_function_models() -> None:
         "hash": "abc123",
         "code": "def test(): pass",
         "arg_types": {"arg1": "str"},
-        "project_id": 1,
+        "project_uuid": 1,
     }
     func_create = FunctionCreate(**func_data)
     assert func_create.name == "test_func"
     assert func_create.hash == "abc123"
 
     # Test FunctionPublic
+    uuid = uuid4()
     func_public = FunctionPublic(
-        id=1, **{k: v for k, v in func_data.items() if k != "project_id"}
+        uuid=uuid, **{k: v for k, v in func_data.items() if k != "project_uuid"}
     )
-    assert func_public.id == 1
+    assert func_public.uuid == uuid
     assert func_public.name == "test_func"
 
 
@@ -99,17 +100,18 @@ def test_project_models(session) -> None:
     session.commit()
     session.refresh(proj_table)
 
-    assert proj_table.id is not None
+    assert proj_table.uuid is not None
     assert proj_table.name == "test_project"
     assert proj_table.functions == []
     assert proj_table.prompts == []
     assert proj_table.versions == []
 
     # Test ProjectPublic
+    uuid = uuid4()
     proj_public = ProjectPublic(
-        id=1, name="test_project", functions=[], prompts=[], versions=[]
+        uuid=uuid, name="test_project", functions=[], prompts=[], versions=[]
     )
-    assert proj_public.id == 1
+    assert proj_public.uuid == uuid
     assert proj_public.name == "test_project"
 
 
@@ -128,8 +130,9 @@ def test_prompt_models() -> None:
     assert prompt_create.provider == Provider.OPENAI
 
     # Test PromptPublic
-    prompt_public = PromptPublic(id=1, **prompt_data)
-    assert prompt_public.id == 1
+    uuid = uuid4()
+    prompt_public = PromptPublic(uuid=uuid, **prompt_data)
+    assert prompt_public.uuid == uuid
     assert prompt_public.template == "Test template"
 
     # Test ResponseFormat
@@ -141,22 +144,22 @@ def test_span_models() -> None:
     """Test Span model variants."""
     # Test SpanCreate
     span_create = SpanCreate(
-        id="span123",
-        project_id=1,
-        version_id=1,
+        span_id="span123",
+        project_uuid=uuid4(),
+        version_uuid=uuid4(),
         version_num=1,
         scope=Scope.LILYPAD,
         data={"key": "value"},
     )
-    assert span_create.id == "span123"
+    assert span_create.span_id == "span123"
     assert span_create.scope == Scope.LILYPAD
 
     # Test SpanPublic display name conversion for LILYPAD scope
     lilypad_span = SpanTable(
         organization_uuid=ORGANIZATION_UUID,
-        id="span123",
-        project_id=1,
-        version_id=1,
+        span_id="span123",
+        project_uuid=uuid4(),
+        version_uuid=uuid4(),
         version_num=1,
         scope=Scope.LILYPAD,
         data={
@@ -173,9 +176,9 @@ def test_span_models() -> None:
     # Test LLM scope display name
     llm_span = SpanTable(
         organization_uuid=ORGANIZATION_UUID,
-        id="span456",
-        project_id=1,
-        version_id=1,
+        span_id="span456",
+        project_uuid=uuid4(),
+        version_uuid=uuid4(),
         version_num=1,
         scope=Scope.LLM,
         data={
@@ -194,8 +197,8 @@ def test_version_models() -> None:
     """Test Version model variants."""
     version_data = {
         "version_num": 1,
-        "project_id": 1,
-        "function_id": 1,
+        "project_uuid": uuid4(),
+        "function_uuid": uuid4(),
         "function_name": "test_func",
         "function_hash": "abc123",
     }
@@ -206,27 +209,29 @@ def test_version_models() -> None:
     assert version_create.function_name == "test_func"
 
     # Test VersionPublic
+    uuid = uuid4()
     version_public = VersionPublic(
-        id=1,
+        uuid=uuid,
         **version_data,
         function=FunctionPublic(
-            id=1, name="test_func", hash="abc123", code="def test(): pass"
+            uuid=uuid4(), name="test_func", hash="abc123", code="def test(): pass"
         ),
         prompt=None,
         spans=[],
     )
-    assert version_public.id == 1
+    assert version_public.uuid == uuid
     assert version_public.function.name == "test_func"
 
     # Test ActiveVersionPublic
+    uuid = uuid4()
     active_version = ActiveVersionPublic(
-        id=1,
+        uuid=uuid,
         **version_data,
         function=FunctionPublic(
-            id=1, name="test_func", hash="abc123", code="def test(): pass"
+            uuid=uuid4(), name="test_func", hash="abc123", code="def test(): pass"
         ),
         prompt=PromptPublic(
-            id=1,
+            uuid=uuid4(),
             hash="def123",
             template="Test template",
             provider=Provider.OPENAI,
@@ -234,7 +239,7 @@ def test_version_models() -> None:
         ),
         spans=[],
     )
-    assert active_version.id == 1
+    assert active_version.uuid == uuid
     assert active_version.prompt.provider == Provider.OPENAI
 
 
@@ -254,7 +259,7 @@ def test_relationships(session) -> None:
         name="test_func",
         hash="abc123",
         code="def test(): pass",
-        project_id=project.id,  # pyright: ignore [reportArgumentType]
+        project_uuid=project.uuid,  # pyright: ignore [reportArgumentType]
     )
     session.add(function)
     session.commit()
@@ -263,8 +268,8 @@ def test_relationships(session) -> None:
     version = VersionTable(
         organization_uuid=ORGANIZATION_UUID,
         version_num=1,
-        project_id=project.id,
-        function_id=function.id,
+        project_uuid=project.uuid,
+        function_uuid=function.uuid,
         function_name="test_func",
         function_hash="abc123",
     )
@@ -278,7 +283,7 @@ def test_relationships(session) -> None:
         template="Test template",
         provider=Provider.OPENAI,
         model="gpt-4",
-        project_id=project.id,  # pyright: ignore [reportArgumentType]
+        project_uuid=project.uuid,  # pyright: ignore [reportArgumentType]
     )
     session.add(prompt)
     session.commit()
@@ -294,9 +299,9 @@ def test_relationships(session) -> None:
     session.commit()
 
     # Verify all related records are deleted
-    assert session.get(FunctionTable, function.id) is None
-    assert session.get(VersionTable, version.id) is None
-    assert session.get(PromptTable, prompt.id) is None
+    assert session.get(FunctionTable, function.uuid) is None
+    assert session.get(VersionTable, version.uuid) is None
+    assert session.get(PromptTable, prompt.uuid) is None
 
 
 def test_provider_enum() -> None:

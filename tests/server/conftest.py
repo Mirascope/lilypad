@@ -1,6 +1,6 @@
 """Test configuration and fixtures."""
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
@@ -46,17 +46,17 @@ def db_session():
 @pytest.fixture
 def test_user() -> UserPublic:
     """Create a test user and organization."""
-    user_id = 1
+    user_uuid = uuid4()
     organization = OrganizationPublic(uuid=ORGANIZATION_UUID, name="Test Organization")
     user_org = UserOrganizationPublic(
-        id=1,
-        user_id=user_id,
+        uuid=uuid4(),
+        user_uuid=user_uuid,
         organization_uuid=ORGANIZATION_UUID,
         role=UserRole.ADMIN,
         organization=organization,
     )
     user_public = UserPublic(
-        id=user_id,
+        uuid=user_uuid,
         email="test@test.com",
         first_name="Test User",
         active_organization_uuid=ORGANIZATION_UUID,

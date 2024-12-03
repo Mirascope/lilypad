@@ -45,7 +45,7 @@ interface GenericDataTableProps<T> {
   defaultPanelSize?: number;
 }
 
-export const DataTable = <T extends { id: string }>({
+export const DataTable = <T extends { uuid: string }>({
   data,
   columns,
   filterColumn,
@@ -89,7 +89,7 @@ export const DataTable = <T extends { id: string }>({
       onRowClick(row);
     } else {
       setSelectedRow((prevSelectedRow) =>
-        prevSelectedRow && prevSelectedRow.id === row.id ? null : row
+        prevSelectedRow && prevSelectedRow.uuid === row.uuid ? null : row
       );
     }
   };

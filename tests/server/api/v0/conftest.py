@@ -1,7 +1,7 @@
 """Pytest configuration for FastAPI tests."""
 
 from collections.abc import AsyncGenerator, Generator
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -114,18 +114,18 @@ def test_user(session: Session) -> Generator[UserTable, None, None]:
     Yields:
         UserTable: Test user
     """
-    user_id = 1
+    user_uuid = uuid4()
     organization = OrganizationTable(uuid=ORGANIZATION_UUID, name="Test Organization")
     session.add(organization)
     user = UserTable(
-        id=user_id,
+        uuid=user_uuid,
         email="test@test.com",
         first_name="Test User",
         active_organization_uuid=ORGANIZATION_UUID,
     )
     session.add(user)
     user_org = UserOrganizationTable(
-        user_id=user_id,
+        user_uuid=user_uuid,
         organization_uuid=ORGANIZATION_UUID,
         role=UserRole.ADMIN,
         organization=organization,
@@ -167,7 +167,7 @@ def test_function(
         FunctionTable: Test function
     """
     function = FunctionTable(
-        project_id=test_project.id,
+        project_uuid=test_project.uuid,
         name="test_function",
         hash="test_hash",
         code="def test(): pass",

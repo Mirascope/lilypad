@@ -139,7 +139,7 @@ def auth_command() -> None:
         )
         project_public = lilypad_client.post_project(project_name)
         with open(".lilypad/config.json", "w") as f:
-            data["project_id"] = project_public.id
+            data["project_uuid"] = project_public.uuid
             json.dump(data, f, indent=4)
         typer.echo(f"\nProject created: {project_name}. You are now ready to trace!")
         return

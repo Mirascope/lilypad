@@ -1,6 +1,7 @@
 """Test cases for the LilypadClient class"""
 
 from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
 
@@ -18,7 +19,7 @@ def client():
 def mock_project_response():
     """Mock project response"""
     return {
-        "id": 1,
+        "uuid": uuid4(),
         "name": "Test Project",
         "created_at": "2024-01-01T00:00:00",
         "functions": [],
@@ -32,9 +33,9 @@ def mock_spans_response():
     """Mock spans response"""
     return [
         {
-            "id": "span-1",
-            "project_id": 1,
-            "version_id": 1,
+            "span_id": "span-1",
+            "project_uuid": uuid4(),
+            "version_uuid": uuid4(),
             "version_num": 1,
             "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad" to match Enum
             "data": {},
@@ -62,7 +63,7 @@ def test_client_initialization():
             "post_project",
             ["Test Project"],
             {
-                "id": 1,
+                "uuid": uuid4(),
                 "name": "Test Project",
                 "created_at": "2024-01-01T00:00:00",
                 "functions": [],
@@ -75,9 +76,10 @@ def test_client_initialization():
             [],
             [
                 {
-                    "id": "span-1",
-                    "project_id": 1,
-                    "version_id": 1,
+                    "uuid": uuid4(),
+                    "span_id": "span-1",
+                    "project_uuid": uuid4(),
+                    "version_uuid": uuid4(),
                     "version_num": 1,
                     "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
                     "data": {},

@@ -14,19 +14,14 @@
  * Active version public model
  */
 export interface ActiveVersionPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /** Version Num */
   version_num: number;
-  /** Project Id */
-  project_id?: number | null;
-  /** Function Id */
-  function_id?: number | null;
-  /** Prompt Id */
-  prompt_id?: number | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
   /** Function Name */
   function_name: string;
   /** Function Hash */
@@ -38,8 +33,11 @@ export interface ActiveVersionPublic {
    * @default false
    */
   is_active?: boolean;
-  /** Id */
-  id: number;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Function public model. */
   function: FunctionPublic;
   /** Prompt public model. */
@@ -69,17 +67,7 @@ export interface AnthropicCallParams {
  * DeviceCodeTable
  * Device codes table.
  */
-export interface DeviceCodeTable {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Id */
-  id: string;
-  /** Token */
-  token: string;
-}
+export type DeviceCodeTable = object;
 
 /**
  * FunctionAndPromptVersionCreate
@@ -97,22 +85,10 @@ export interface FunctionAndPromptVersionCreate {
  * Function create model.
  */
 export interface FunctionCreate {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Project Id */
-  project_id?: number | null;
-  /**
-   * Name
-   * @minLength 1
-   */
+  /** Name */
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
-  /** Id */
-  id?: number | null;
   /** Hash */
   hash?: string | null;
   /** Code */
@@ -124,13 +100,8 @@ export interface FunctionCreate {
  * Function public model.
  */
 export interface FunctionPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Project Id */
-  project_id?: number | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
   /**
    * Name
    * @minLength 1
@@ -138,12 +109,15 @@ export interface FunctionPublic {
   name: string;
   /** Arg Types */
   arg_types?: Record<string, string> | null;
-  /** Id */
-  id: number;
   /** Hash */
   hash: string;
   /** Code */
   code: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
 }
 
 /**
@@ -219,11 +193,6 @@ export interface OpenAICallParams {
  */
 export interface OrganizationPublic {
   /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /**
    * Name
    * @minLength 1
    */
@@ -240,11 +209,6 @@ export interface OrganizationPublic {
  * Project Create Model.
  */
 export interface ProjectCreate {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /** Name */
   name: string;
 }
@@ -254,15 +218,13 @@ export interface ProjectCreate {
  * Project Public Model.
  */
 export interface ProjectPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /** Name */
   name: string;
-  /** Id */
-  id: number;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /**
    * Functions
    * @default []
@@ -285,13 +247,6 @@ export interface ProjectPublic {
  * Prompt create model.
  */
 export interface PromptCreate {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Project Id */
-  project_id?: number | null;
   /** Hash */
   hash?: string | null;
   /** Template */
@@ -309,13 +264,8 @@ export interface PromptCreate {
  * Prompt public model.
  */
 export interface PromptPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Project Id */
-  project_id?: number | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
   /** Hash */
   hash?: string | null;
   /** Template */
@@ -324,8 +274,11 @@ export interface PromptPublic {
   provider: Provider;
   /** Model */
   model: string;
-  /** Id */
-  id: number;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Call Params */
   call_params?: OpenAICallParams | AnthropicCallParams | GeminiCallParams | null;
 }
@@ -393,17 +346,12 @@ export interface SpanMoreDetails {
  * Span public model
  */
 export interface SpanPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /** Id */
-  id: string;
-  /** Project Id */
-  project_id?: number | null;
-  /** Version Id */
-  version_id?: number | null;
+  /** Span Id */
+  span_id: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Version Uuid */
+  version_uuid?: string | null;
   /** Version Num */
   version_num?: number | null;
   /** Instrumentation Scope name of the span */
@@ -412,6 +360,11 @@ export interface SpanPublic {
   data?: object;
   /** Parent Span Id */
   parent_span_id?: string | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Display Name */
   display_name?: string | null;
   version?: VersionPublic | null;
@@ -424,22 +377,23 @@ export interface SpanPublic {
  * UserOrganization public model
  */
 export interface UserOrganizationPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /** User role enum. */
   role: UserRole;
-  /** User Id */
-  user_id: number;
+  /**
+   * User Uuid
+   * @format uuid
+   */
+  user_uuid: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /**
    * Organization Uuid
    * @format uuid
    */
   organization_uuid: string;
-  /** Id */
-  id: number;
   /** Organization public model */
   organization: OrganizationPublic;
 }
@@ -449,11 +403,6 @@ export interface UserOrganizationPublic {
  * User public model
  */
 export interface UserPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /**
    * First Name
    * @minLength 1
@@ -468,8 +417,11 @@ export interface UserPublic {
   email: string;
   /** Active Organization Uuid */
   active_organization_uuid?: string | null;
-  /** Id */
-  id: number;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Access Token */
   access_token?: string | null;
   /** User Organizations */
@@ -500,19 +452,14 @@ export interface ValidationError {
  * Version public model
  */
 export interface VersionPublic {
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
   /** Version Num */
   version_num: number;
-  /** Project Id */
-  project_id?: number | null;
-  /** Function Id */
-  function_id?: number | null;
-  /** Prompt Id */
-  prompt_id?: number | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
   /** Function Name */
   function_name: string;
   /** Function Hash */
@@ -524,8 +471,11 @@ export interface VersionPublic {
    * @default false
    */
   is_active?: boolean;
-  /** Id */
-  id: number;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Function public model. */
   function: FunctionPublic;
   prompt: PromptPublic | null;

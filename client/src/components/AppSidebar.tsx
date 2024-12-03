@@ -94,16 +94,16 @@ export const AppSidebar = () => {
   const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectList = projects.map((project) => ({
     title: project.name,
-    url: `/projects/${project.id}/functions`,
+    url: `/projects/${project.uuid}/functions`,
     children: [
       {
         title: "Traces",
-        url: `/projects/${project.id}/traces`,
+        url: `/projects/${project.uuid}/traces`,
         icon: Table,
       },
       {
         title: "New Function",
-        url: `/projects/${project.id}/functions`,
+        url: `/projects/${project.uuid}/functions`,
         icon: Parentheses,
       },
     ],
@@ -116,24 +116,27 @@ export const AppSidebar = () => {
       children: projectList,
     },
   ];
-  const handleOrganizationSwitch = async (organizationId: string) => {
-    if (user?.organization_id == organizationId) return;
+  const handleOrganizationSwitch = async (organizationUuid: string) => {
+    if (user?.active_organization_uuid == organizationUuid) return;
     const newSession = await organizationMutation.mutateAsync({
-      organizationId,
+      organizationUuid,
     });
     auth.setSession(newSession);
   };
   const handleLogout = () => {
     auth.logout().then(() => {
       router.invalidate().finally(() => {
-        navigate({ to: "/auth/login", search: { redirect: undefined } });
+        navigate({
+          to: "/auth/login",
+          search: { redirect: undefined },
+        });
       });
     });
   };
   const renderOrganizationsDropdownItems = () => {
     return user?.user_organizations.map((user_organization) => (
       <DropdownMenuCheckboxItem
-        key={user_organization.id}
+        key={user_organization.uuid}
         onClick={() =>
           handleOrganizationSwitch(user_organization.organization.uuid)
         }

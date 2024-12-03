@@ -3,7 +3,8 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlmodel import Field, Relationship
+from pydantic import BaseModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from .base_sql_model import BaseSQLModel
 from .table_names import USER_TABLE_NAME
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from .user_organizations import UserOrganizationTable
 
 
-class _User(BaseSQLModel):
+class _User(SQLModel):
     """Base Function Model."""
 
     first_name: str = Field(nullable=False, min_length=1)
@@ -22,12 +23,11 @@ class _User(BaseSQLModel):
     active_organization_uuid: UUID | None = Field(default=None)
 
 
-class UserTable(_User, table=True):
+class UserTable(_User, BaseSQLModel, table=True):
     """Function table."""
 
     __tablename__ = USER_TABLE_NAME  # type: ignore
 
-    id: int | None = Field(default=None, primary_key=True, nullable=False)
     user_organizations: list["UserOrganizationTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )
@@ -36,12 +36,15 @@ class UserTable(_User, table=True):
 class UserPublic(_User):
     """User public model"""
 
-    id: int
+    uuid: UUID
     access_token: str | None = None
-    user_organizations: list[UserOrganizationPublic]
+    user_organizations: list[UserOrganizationPublic] | None = None
 
 
-class UserCreate(_User):
+class UserCreate(BaseModel):
     """User create model"""
 
-    ...
+    first_name: str
+    last_name: str | None = None
+    email: str
+    active_organization_uuid: UUID | None = None

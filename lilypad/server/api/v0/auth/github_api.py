@@ -96,7 +96,7 @@ async def github_callback(
             session.flush()
             user_public = UserPublic.model_validate(user)
             user_organization = UserOrganizationTable(
-                user_id=user_public.id,
+                user_uuid=user_public.uuid,
                 organization_uuid=organization_public.uuid,
                 role=UserRole.ADMIN,
             )

@@ -11,5 +11,7 @@ class DeviceCodeTable(BaseSQLModel, table=True):
 
     __tablename__ = DEVICE_CODE_TABLE_NAME  # type: ignore
 
-    id: str = Field(primary_key=True, nullable=False)
+    id: str = Field(
+        primary_key=True, nullable=False, description="Generated device code"
+    )
     token: str = Field(nullable=False)

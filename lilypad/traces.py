@@ -5,6 +5,7 @@ import json
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
+from uuid import UUID
 
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
@@ -44,7 +45,7 @@ class TraceDecorator(Protocol):
 
 
 def _trace(
-    version_id: int,
+    version_uuid: UUID,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     lexical_closure: str,
@@ -74,12 +75,12 @@ def _trace(
                     if isinstance(output, BaseModel):
                         results = str(output.model_dump())
                     attributes: dict[str, AttributeValue] = {
-                        "lilypad.project_id": lilypad_client.project_id
-                        if lilypad_client.project_id
+                        "lilypad.project_uuid": str(lilypad_client.project_uuid)
+                        if lilypad_client.project_uuid
                         else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version_num": version_num if version_num else -1,
-                        "lilypad.version_id": version_id,
+                        "lilypad.version_uuid": str(version_uuid),
                         "lilypad.arg_types": json.dumps(arg_types),
                         "lilypad.arg_values": json.dumps(arg_values),
                         "lilypad.lexical_closure": lexical_closure,
@@ -104,12 +105,12 @@ def _trace(
                     if isinstance(output, BaseModel):
                         results = str(output.model_dump())
                     attributes: dict[str, AttributeValue] = {
-                        "lilypad.project_id": lilypad_client.project_id
-                        if lilypad_client.project_id
+                        "lilypad.project_uuid": str(lilypad_client.project_uuid)
+                        if lilypad_client.project_uuid
                         else 0,
                         "lilypad.function_name": fn.__name__,
                         "lilypad.version_num": version_num if version_num else -1,
-                        "lilypad.version_id": version_id,
+                        "lilypad.version_uuid": str(version_uuid),
                         "lilypad.arg_types": json.dumps(arg_types),
                         "lilypad.arg_values": json.dumps(arg_values),
                         "lilypad.lexical_closure": lexical_closure,
@@ -158,7 +159,7 @@ def trace() -> TraceDecorator:
                 version = lilypad_client.get_or_create_function_version(fn, arg_types)
                 if not is_mirascope_call:
                     decorator = _trace(
-                        version_id=version.id,
+                        version_uuid=version.uuid,
                         arg_types=arg_types,
                         arg_values=arg_values,
                         lexical_closure=version.function.code,
@@ -181,7 +182,7 @@ def trace() -> TraceDecorator:
                 version = lilypad_client.get_or_create_function_version(fn, arg_types)
                 if not is_mirascope_call:
                     decorator = _trace(
-                        version_id=version.id,
+                        version_uuid=version.uuid,
                         arg_types=arg_types,
                         arg_values=arg_values,
                         lexical_closure=version.function.code,
