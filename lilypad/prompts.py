@@ -21,7 +21,6 @@ config = load_config()
 settings = get_settings()
 
 lilypad_client = LilypadClient(
-    base_url=settings.api_url,
     timeout=10,
     token=config.get("token", None),
 )

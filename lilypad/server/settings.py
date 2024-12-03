@@ -13,10 +13,7 @@ class Settings(BaseSettings):
     # Server settings
     environment: str = Field(default="development")
     port: int = Field(default=8000)
-    local_client_url: str = Field(default="http://localhost:8000")
-    local_api_url: str = Field(default="http://localhost:8000/api")
-    prod_client_url: str = Field(default="")
-    prod_api_url: str = Field(default="")
+    remote_base_url: str = Field(default="http://localhost:8000")
 
     # GitHub OAuth settings
     github_client_id: str | None = None
@@ -38,24 +35,24 @@ class Settings(BaseSettings):
         """Get the configuration for the current environment"""
         configs = {
             "development": {
-                "api_url": "http://localhost:8000/api",
-                "client_url": "",
+                "base_url": "http://localhost:8000",
+                "client_url": "http://localhost:5173",
             },
             "local": {
-                "api_url": self.local_api_url,
-                "client_url": self.local_client_url,
+                "base_url": self.remote_base_url,
+                "client_url": self.remote_base_url,
             },
             "production": {
-                "api_url": self.prod_api_url,
-                "client_url": self.prod_client_url,
+                "base_url": self.remote_base_url,
+                "client_url": self.remote_base_url,
             },
         }
         return configs.get(self.environment, configs["development"])
 
     @property
-    def api_url(self) -> str:
+    def base_url(self) -> str:
         """Get the API URL"""
-        return self.config["api_url"]
+        return self.config["base_url"]
 
     @property
     def client_url(self) -> str:

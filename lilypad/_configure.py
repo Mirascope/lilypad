@@ -16,18 +16,16 @@ from rich import print
 from ._utils import load_config
 from .server.client import LilypadClient
 from .server.models import SpanPublic
-from .server.settings import get_settings
 
 
 class _JSONSpanExporter(SpanExporter):
     """A custom span exporter that sends spans to a custom endpoint as JSON."""
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self) -> None:
         """Initialize the exporter with the custom endpoint URL."""
         config = load_config()
 
         self.client = LilypadClient(
-            base_url,
             timeout=10,
             token=config.get("token", None),
         )
@@ -121,10 +119,7 @@ def configure() -> None:
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
         print("TracerProvider already initialized.")  # noqa: T201
         return
-    settings = get_settings()
-    otlp_exporter = _JSONSpanExporter(
-        base_url=settings.api_url,
-    )
+    otlp_exporter = _JSONSpanExporter()
     provider = TracerProvider()
     processor = BatchSpanProcessor(otlp_exporter)
     provider.add_span_processor(processor)

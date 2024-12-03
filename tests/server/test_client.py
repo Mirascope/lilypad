@@ -50,8 +50,8 @@ def mock_spans_response():
 
 def test_client_initialization():
     """Test client initialization"""
-    client = LilypadClient(base_url="http://test", timeout=1)
-    assert client.base_url == "http://test"
+    client = LilypadClient(timeout=1)
+    assert client.base_url == "http://localhost:8000/api"
     assert client.timeout == 1
 
 

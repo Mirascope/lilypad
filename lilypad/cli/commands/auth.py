@@ -45,7 +45,7 @@ async def _poll_auth_status(
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                f"{settings.api_url}/v0/device-codes/{device_code}"
+                f"{settings.base_url}/api/v0/device-codes/{device_code}"
             )
             if response.status_code == 200:
                 return DeviceCodeTable.model_validate(response.json())
@@ -59,7 +59,7 @@ async def _delete_device_code(device_code: str, settings: Settings) -> bool:
     async with httpx.AsyncClient() as client:
         try:
             response = await client.delete(
-                f"{settings.api_url}/v0/device-codes/{device_code}"
+                f"{settings.base_url}/api/v0/device-codes/{device_code}"
             )
             return response.status_code == 200
         except httpx.RequestError:
@@ -82,9 +82,7 @@ def _check_existing_token(settings: Settings) -> bool:
         with open(".lilypad/config.json") as f:
             data = json.load(f)
         if "token" in data:
-            lilypad_client = LilypadClient(
-                base_url=settings.api_url, timeout=10, token=data["token"]
-            )
+            lilypad_client = LilypadClient(timeout=10, token=data["token"])
             if Confirm.ask(
                 "You're already authenticated. Would you like to switch projects?"
             ):
@@ -137,9 +135,7 @@ def auth_command() -> None:
     with open(".lilypad/config.json") as f:
         data: dict = json.load(f)
     if "token" in data:
-        lilypad_client = LilypadClient(
-            base_url=settings.api_url, timeout=10, token=data["token"]
-        )
+        lilypad_client = LilypadClient(timeout=10, token=data["token"])
         project_name = typer.prompt(
             "Let's create a new project. What is your project name?"
         )

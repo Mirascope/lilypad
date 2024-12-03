@@ -112,7 +112,7 @@ def local_command(
         data["port"] = new_port
         with open(".lilypad/config.json", "w") as f:
             json.dump(data, f, indent=4)
-    lilypad_client = LilypadClient(base_url=settings.api_url, timeout=10)
+    lilypad_client = LilypadClient(timeout=10)
     process = _start_lilypad(Path.cwd(), new_port)
 
     def signal_handler(sig: int, frame: FrameType | None) -> None:

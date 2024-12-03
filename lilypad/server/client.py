@@ -10,6 +10,7 @@ from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
 from .._utils import compute_closure, load_config
+from ..server.settings import get_settings
 from .models import ActiveVersionPublic, ProjectPublic, SpanPublic, VersionPublic
 
 _R = TypeVar("_R", bound=BaseModel)
@@ -34,7 +35,6 @@ class LilypadClient:
 
     def __init__(
         self,
-        base_url: str,
         timeout: int = 10,
         headers: dict[str, str] | None = None,
         token: str | None = None,
@@ -49,7 +49,8 @@ class LilypadClient:
             token (str, optional): Default authentication token to include in all requests. Defaults to None.
             **session_kwargs: Additional keyword arguments for the session.
         """
-        self.base_url = base_url.rstrip("/")
+        settings = get_settings()
+        self.base_url = f"{settings.base_url.rstrip('/')}/api"
         self.timeout = timeout
         self.session = requests.Session()
         try:
