@@ -5,6 +5,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.exc import IntegrityError
 
 from ...models import ProjectCreate, ProjectPublic, ProjectTable
 from ...services import ProjectService
@@ -35,7 +36,10 @@ async def create_project(
     project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> ProjectTable:
     """Create a project"""
-    return project_service.create_record(project_create)
+    try:
+        return project_service.create_record(project_create)
+    except IntegrityError:
+        raise ValueError("Project already exists")
 
 
 @projects_router.delete("/projects/{project_uuid}")

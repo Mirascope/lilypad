@@ -7,7 +7,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { uniqueFunctionNamesQueryOptions } from "@/utils/functions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +25,7 @@ export const CreatePrompt = () => {
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();
-  const handleClick = (e) => {
+  const handleClick = (e: FormEvent<HTMLInputElement>) => {
     e.preventDefault();
     navigate({
       to: `/projects/${projectUuid}/functions/${value}`,

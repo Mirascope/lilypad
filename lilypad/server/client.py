@@ -59,11 +59,11 @@ class LilypadClient:
             )
         except FileNotFoundError:
             self.project_uuid = None
-
         if headers:
             self.session.headers.update(headers)
 
-        self._token = token if token else None
+        self._token = None
+        self.token = token
 
         for key, value in session_kwargs.items():
             setattr(self.session, key, value)
@@ -185,7 +185,7 @@ class LilypadClient:
         """Creates a new project."""
         return self._request(
             "GET",
-            "/v0/projects/",
+            "/v0/projects",
             response_model=list[ProjectPublic],
             **kwargs,
         )
@@ -227,13 +227,13 @@ class LilypadClient:
         try:
             return self._request(
                 "GET",
-                f"/v0/projects/{self.project_uuid}/versions/{hash}",
+                f"/v0/projects/{self.project_uuid}/functions/{hash}/versions",
                 response_model=VersionPublic,
             )
         except NotFoundError:
             return self._request(
                 "POST",
-                f"/v0/projects/{self.project_uuid}/versions/{hash}",
+                f"/v0/projects/{self.project_uuid}/functions/{hash}/versions",
                 response_model=VersionPublic,
                 json={
                     "name": fn.__name__,

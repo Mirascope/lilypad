@@ -16,7 +16,6 @@ from rich import print
 
 from ..._utils import load_config
 from ...server.client import LilypadClient
-from ...server.db.setup import create_tables
 
 
 def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
@@ -33,8 +32,19 @@ def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
 
     # Sets the LILYPAD_PROJECT_DIR so Lilypad knows where to look for the database
     env["LILYPAD_PROJECT_DIR"] = str(project_dir)
-    env["LILYPAD_LOCAL"] = "true"
+    env["LILYPAD_ENVIRONMENT"] = "local"
     files_dir = files("lilypad").joinpath("server")
+    if not os.path.exists("pad.db"):
+        subprocess.run(
+            [
+                "python",
+                "db/setup.py",
+            ],
+            cwd=str(files_dir),
+            env=env,
+            check=True,
+        )
+
     process = subprocess.Popen(
         ["fastapi", "dev", "--port", str(port)],
         cwd=str(files_dir),
@@ -100,8 +110,6 @@ def local_command(
     if not os.path.exists(".lilypad"):
         existing_project = False
         project_name = typer.prompt("What's your project name?")
-    if not os.path.exists("pad.db"):
-        create_tables()
     if not port:
         config = load_config()
         new_port: str = config.get("port", "8000")

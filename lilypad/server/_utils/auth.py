@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Annotated
 from uuid import UUID
 
@@ -34,7 +33,8 @@ def create_jwt_token(
     )
 
 
-if os.getenv("LILYPAD_LOCAL", "false").lower() == "true":
+settings = get_settings()
+if settings.environment == "local":
 
     async def oauth2_scheme(token: str | None = None) -> str:  # pyright: ignore[reportRedeclaration]
         return LOCAL_TOKEN

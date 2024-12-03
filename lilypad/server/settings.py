@@ -18,11 +18,13 @@ class Settings(BaseSettings):
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
-    jwt_expiration_minutes: int = Field(
-        default=1440, description="Token expiration in minutes (24 hours)"
-    )
 
     environment: str = Field(default="development")
+    db_host: str | None = None
+    db_name: str | None = None
+    db_user: str | None = None
+    db_password: str | None = None
+    db_port: int | None = None
 
     @property
     def config(self) -> dict[str, Any]:
@@ -30,7 +32,11 @@ class Settings(BaseSettings):
         configs = {
             "development": {
                 "api_url": "http://localhost:8000/api",
-                "client_url": "http://localhost:5173",
+                "client_url": "",
+            },
+            "local": {
+                "api_url": "http://localhost:8000/api",
+                "client_url": "http://localhost:8000",
             },
             "production": {
                 "api_url": "",

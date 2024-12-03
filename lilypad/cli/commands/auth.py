@@ -93,8 +93,14 @@ def _check_existing_token(settings: Settings) -> bool:
                     typer.echo("Error: Failed to fetch projects.")
                     raise typer.Exit()
                 selected_project = _show_project_selection(projects)
-                typer.echo(f"\nSwitching to project: {selected_project}")
+                typer.echo(f"\nSwitching to project: {selected_project.name}")
+                with open(".lilypad/config.json", "w") as f:
+                    data["project_uuid"] = str(selected_project.uuid)
+                    json.dump(data, f, indent=4)
                 return True
+            if not Confirm.ask("Would you like to create a new project?"):
+                print("Bye!")
+                raise typer.Exit()
     return False
 
 
@@ -139,7 +145,7 @@ def auth_command() -> None:
         )
         project_public = lilypad_client.post_project(project_name)
         with open(".lilypad/config.json", "w") as f:
-            data["project_uuid"] = project_public.uuid
+            data["project_uuid"] = str(project_public.uuid)
             json.dump(data, f, indent=4)
         typer.echo(f"\nProject created: {project_name}. You are now ready to trace!")
         return

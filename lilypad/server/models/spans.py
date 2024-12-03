@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from pydantic import model_validator
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
@@ -30,7 +30,7 @@ class Scope(str, Enum):
 class _SpanBase(SQLModel):
     """Span base model"""
 
-    span_id: str = Field(nullable=False, index=True)
+    span_id: str = Field(nullable=False, index=True, unique=True)
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
     )
@@ -41,7 +41,7 @@ class _SpanBase(SQLModel):
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     parent_span_id: str | None = Field(
-        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{SPAN_TABLE_NAME}.span_id"
     )
 
 
@@ -96,11 +96,12 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
+    __table_args__ = (UniqueConstraint("span_id"), Index("ix_spans_span_id", "span_id"))
     version: "VersionTable" = Relationship(back_populates="spans")
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True
     )
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",
-        sa_relationship_kwargs={"remote_side": "SpanTable.uuid"},
+        sa_relationship_kwargs={"remote_side": "SpanTable.span_id"},
     )

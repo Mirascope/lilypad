@@ -116,7 +116,7 @@ def test_get_version(client: TestClient, test_version: VersionTable):
 def test_get_versions_by_function(client: TestClient, test_version: VersionTable):
     """Test getting versions for a function returns expected versions."""
     response = client.get(
-        f"/projects/{test_version.project_uuid}/functions/{test_version.function_name}/versions"
+        f"/projects/{test_version.project_uuid}/functions/name/{test_version.function_name}/versions"
     )
     assert response.status_code == 200
     versions = response.json()
