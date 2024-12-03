@@ -13,14 +13,15 @@ from pydantic import BaseModel
 
 from ._utils import create_mirascope_middleware, inspect_arguments, load_config
 from .server.client import LilypadClient
+from .server.settings import get_settings
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 config = load_config()
-
+settings = get_settings()
 lilypad_client = LilypadClient(
-    base_url=f"http://localhost:{config.get('port', 8000)}/api",
+    base_url=settings.api_url,
     timeout=10,
     token=config.get("token", None),
 )

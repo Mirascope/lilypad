@@ -30,6 +30,8 @@ class APIConnectionError(Exception):
 class LilypadClient:
     """Client for interacting with the Lilypad API."""
 
+    _token: str | None = None
+
     def __init__(
         self,
         base_url: str,
@@ -62,7 +64,6 @@ class LilypadClient:
         if headers:
             self.session.headers.update(headers)
 
-        self._token = None
         self.token = token
 
         for key, value in session_kwargs.items():

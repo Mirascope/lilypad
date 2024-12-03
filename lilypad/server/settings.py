@@ -10,16 +10,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Server settings"""
 
+    # Server settings
+    environment: str = Field(default="development")
+    port: int = Field(default=8000)
+    local_client_url: str = Field(default="http://localhost:8000")
+    local_api_url: str = Field(default="http://localhost:8000/api")
+    prod_client_url: str = Field(default="")
+    prod_api_url: str = Field(default="")
+
     # GitHub OAuth settings
     github_client_id: str | None = None
     github_client_secret: str | None = None
-    github_redirect_uri: str | None = None
 
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
 
-    environment: str = Field(default="development")
+    # Database settings
     db_host: str | None = None
     db_name: str | None = None
     db_user: str | None = None
@@ -35,12 +42,12 @@ class Settings(BaseSettings):
                 "client_url": "",
             },
             "local": {
-                "api_url": "http://localhost:8000/api",
-                "client_url": "http://localhost:8000",
+                "api_url": self.local_api_url,
+                "client_url": self.local_client_url,
             },
             "production": {
-                "api_url": "",
-                "client_url": "",
+                "api_url": self.prod_api_url,
+                "client_url": self.prod_client_url,
             },
         }
         return configs.get(self.environment, configs["development"])

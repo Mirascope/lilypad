@@ -10,17 +10,16 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
-from .._utils import load_config
 from .api import v0_api
+from .settings import get_settings
 
-config = load_config()
-port = config.get("port", 8000)
+settings = get_settings()
 origins = [
     "http://localhost:5173",
     "http://localhost:8000/*",
     "http://127.0.0.1:8000",
-    f"http://localhost/{port}",
-    f"http://127.0.0.1/{port}",
+    f"http://localhost:{settings.port}/*",
+    f"http://127.0.0.1:{settings.port}",
 ]
 
 app = FastAPI()

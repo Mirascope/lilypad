@@ -48,7 +48,7 @@ async def github_callback(
                     "client_id": settings.github_client_id,
                     "client_secret": settings.github_client_secret,
                     "code": code,
-                    "redirect_uri": settings.github_redirect_uri,
+                    "redirect_uri": f"{settings.client_url}/auth/callback",
                 },
                 headers={"Accept": "application/json"},
             )
