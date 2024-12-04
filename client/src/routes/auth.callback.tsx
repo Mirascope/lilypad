@@ -4,12 +4,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-type State = {
-  device_code?: string;
-};
 type SearchParam = {
   code: string;
-  state?: State;
+  state?: string;
 };
 export const Route = createFileRoute("/auth/callback")({
   validateSearch: (search): SearchParam => {
@@ -23,7 +20,7 @@ export const Route = createFileRoute("/auth/callback")({
         },
       });
     }
-    return { code, state: search.state as State };
+    return { code, state: search.state as string };
   },
   component: () => <CallbackPage />,
 });
@@ -32,8 +29,12 @@ const CallbackPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
   const { code, state } = Route.useSearch();
+  let stateJson = {};
+  if (state) {
+    stateJson = JSON.parse(atob(state));
+  }
   const { data: session } = useSuspenseQuery(
-    callbackCodeQueryOptions(code, state?.device_code)
+    callbackCodeQueryOptions(code, stateJson?.deviceCode)
   );
 
   useEffect(() => {

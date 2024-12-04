@@ -6,7 +6,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-export const fetchCallbackCode = async (code: string, deviceCode?: string) => {
+export const fetchCallbackCode = async (code?: string, deviceCode?: string) => {
+  if (!code) {
+    return null;
+  }
   const params = new URLSearchParams({ code });
   if (deviceCode) {
     params.append("deviceCode", deviceCode);
@@ -42,8 +45,9 @@ export const useDeviceCodeMutation = () => {
   });
 };
 
-export const callbackCodeQueryOptions = (code: string, deviceCode?: string) =>
+export const callbackCodeQueryOptions = (code?: string, deviceCode?: string) =>
   queryOptions({
     queryKey: ["user"],
     queryFn: () => fetchCallbackCode(code, deviceCode),
+    enabled: Boolean(code),
   });

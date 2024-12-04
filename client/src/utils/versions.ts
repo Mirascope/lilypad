@@ -12,9 +12,10 @@ export const fetchVersionsByFunctionName = async (
   projectUuid?: string
 ) => {
   if (!projectUuid || !functionName) return [];
+
   return (
     await api.get<VersionPublic[]>(
-      `/projects/${projectUuid}/functions/${functionName}/versions`
+      `/projects/${projectUuid}/functions/name/${functionName}/versions`
     )
   ).data;
 };

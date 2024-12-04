@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 from sqlmodel import Session, SQLModel, select
 
-from lilypad.server.db.session import engine, get_session
+from lilypad.server.db.session import get_engine, get_session
 from lilypad.server.models import ProjectTable
 
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
@@ -14,6 +14,7 @@ ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 @pytest.fixture(autouse=True)
 def setup_database():
     """Create tables before each test"""
+    engine = get_engine()
     SQLModel.metadata.create_all(engine)
     yield
     SQLModel.metadata.drop_all(engine)

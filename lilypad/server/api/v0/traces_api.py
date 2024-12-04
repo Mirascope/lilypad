@@ -41,7 +41,7 @@ async def traces(
     span_tables: list[SpanTable] = []
     latest_parent_span_id = None
     latest_project_uuid = None
-    for lilypad_trace in traces_json:
+    for lilypad_trace in reversed(traces_json):
         if lilypad_trace["instrumentation_scope"]["name"] == "lilypad":
             scope = Scope.LILYPAD
             latest_parent_span_id = lilypad_trace["span_id"]

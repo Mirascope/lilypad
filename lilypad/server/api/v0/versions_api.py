@@ -29,7 +29,8 @@ versions_router = APIRouter()
 
 
 @versions_router.get(
-    "/projects/{project_uuid}/versions/{version_uuid}", response_model=VersionPublic
+    "/projects/{project_uuid}/versions/{version_uuid}",
+    response_model=VersionPublic,
 )
 async def get_version_by_uuid(
     version_uuid: UUID,
@@ -40,7 +41,7 @@ async def get_version_by_uuid(
 
 
 @versions_router.get(
-    "/projects/{project_uuid}/functions/{function_name}/versions",
+    "/projects/{project_uuid}/functions/name/{function_name}/versions",
     response_model=Sequence[VersionPublic],
 )
 async def get_version_by_function_name(
@@ -145,7 +146,8 @@ async def create_new_version(
 
 
 @versions_router.post(
-    "/projects/{project_uuid}/versions/{function_hash}", response_model=VersionPublic
+    "/projects/{project_uuid}/functions/{function_hash}/versions",
+    response_model=VersionPublic,
 )
 async def create_function_version_without_prompt(
     project_uuid: UUID,
@@ -175,11 +177,13 @@ async def create_function_version_without_prompt(
         function_name=function.name,
         function_hash=function_hash,
     )
-    return version_service.create_record(new_version)
+    version = version_service.create_record(new_version)
+    return version
 
 
 @versions_router.get(
-    "/projects/{project_uuid}/versions/{function_hash}", response_model=VersionPublic
+    "/projects/{project_uuid}/functions/{function_hash:str}/versions",
+    response_model=VersionPublic,
 )
 async def get_function_version(
     project_uuid: UUID,

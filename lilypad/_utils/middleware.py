@@ -19,7 +19,6 @@ from pydantic import BaseModel
 
 from ..server.client import LilypadClient
 from ..server.models import ActiveVersionPublic, VersionPublic
-from .config import load_config
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -38,10 +37,7 @@ def _get_custom_context_manager(
         fn: Callable,
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
-        config = load_config()
-        lilypad_client = LilypadClient(
-            base_url=f"http://localhost:{config.get('port', 8000)}/api", timeout=10
-        )
+        lilypad_client = LilypadClient(timeout=10)
         new_project_uuid = project_uuid or lilypad_client.project_uuid
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {

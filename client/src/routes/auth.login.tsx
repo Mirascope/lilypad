@@ -10,9 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { GithubLogin } from "@/components/GithubLogin";
 
+type LoginSearchParam = {
+  redirect?: string;
+  deviceCode?: string;
+};
+
 const fallback = "/projects" as const;
 export const Route = createFileRoute("/auth/login")({
-  validateSearch: (search) => {
+  validateSearch: (search): LoginSearchParam => {
     return {
       redirect: (search.redirect as string) || undefined,
       deviceCode: search.deviceCode as string,
@@ -30,6 +35,7 @@ export const Route = createFileRoute("/auth/login")({
 });
 
 const LoginComponent = () => {
+  const { deviceCode } = Route.useSearch();
   const navigate = useNavigate();
   const isLocal = import.meta.env.DEV;
   return (
@@ -54,7 +60,7 @@ const LoginComponent = () => {
               Sign in with Local
             </Button>
           ) : (
-            <GithubLogin />
+            <GithubLogin deviceCode={deviceCode} />
           )}
         </CardContent>
       </Card>

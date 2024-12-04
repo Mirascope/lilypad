@@ -32,15 +32,23 @@ const GithubButton = ({
   );
 };
 
-export const GithubLogin = () => {
+export const GithubLogin = ({ deviceCode }: { deviceCode?: string }) => {
   const getAuthUrl = () => {
     const githubAuthUrl = "https://github.com/login/oauth/authorize";
+
     const params = new URLSearchParams({
       client_id: import.meta.env.VITE_GITHUB_CLIENT_ID,
-      redirect_uri: import.meta.env.VITE_GITHUB_REDIRECT_URI,
+      redirect_uri: `${import.meta.env.VITE_API_SERVER}/auth/callback`,
       scope: "read:user user:email",
       response_type: "code",
     });
+    if (deviceCode) {
+      const stateObject = {
+        deviceCode,
+      };
+      const state = btoa(JSON.stringify(stateObject));
+      params.append("state", state);
+    }
     return `${githubAuthUrl}?${params.toString()}`;
   };
 

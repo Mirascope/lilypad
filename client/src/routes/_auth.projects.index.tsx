@@ -46,8 +46,10 @@ const Projects = () => {
           ))
         ) : (
           <>
-            <div>No projects found. To create a project run</div>
-            <CodeSnippet code='lilypad start' />
+            <div>
+              No projects found. To begin tracing, please authenticate first.
+            </div>
+            <CodeSnippet code='lilypad auth' />
           </>
         )}
       </div>

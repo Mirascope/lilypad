@@ -34,7 +34,7 @@ jobs:
 
       - name: Build client
         working-directory: ./client
-        run: pnpm run build:notypescript
+        run: pnpm run build:local
 
       - name: Set up uv
         run: curl -LsSf https://astral.sh/uv/0.4.6/install.sh | sh
