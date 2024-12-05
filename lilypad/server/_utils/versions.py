@@ -1,5 +1,7 @@
 import textwrap
 
+from ...closure import _run_ruff
+
 
 def construct_function(
     arg_types: dict[str, str], function_name: str, configure: bool = False
@@ -12,6 +14,5 @@ def construct_function(
 
     @lilypad.prompt()
     def {function_name}({', '.join(arg_list)}) -> str: ...
-    
     """
-    return textwrap.dedent(func_def)
+    return _run_ruff(textwrap.dedent(func_def))
