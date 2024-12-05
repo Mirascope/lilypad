@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['python310', 'uv']
+nixPkgs = ["...", "python310", "uv"]
 
 [phases.install]
 cmds = [
