@@ -38,6 +38,7 @@ const LoginComponent = () => {
   const { deviceCode } = Route.useSearch();
   const navigate = useNavigate();
   const isLocal = import.meta.env.DEV;
+  console.log(import.meta.env);
   return (
     <div className='flex items-center justify-center h-screen'>
       <Card className='w-[600px] m-0'>
