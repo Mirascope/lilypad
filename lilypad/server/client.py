@@ -8,7 +8,8 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
-from .._utils import compute_closure, load_config
+from .._utils import load_config
+from ..closure import Closure
 from .models import ActiveVersionPublic, ProjectPublic, SpanPublic, VersionPublic
 
 _R = TypeVar("_R", bound=BaseModel)
@@ -191,22 +192,22 @@ class LilypadClient:
         Returns:
             VersionPublic: The active version for the function.
         """
-        code, hash = compute_closure(fn)
+        closure = Closure.from_fn(fn)
         try:
             return self._request(
                 "GET",
-                f"/v0/projects/{self.project_id}/versions/{hash}",
+                f"/v0/projects/{self.project_id}/versions/{closure.hash}",
                 response_model=VersionPublic,
             )
         except NotFoundError:
             return self._request(
                 "POST",
-                f"/v0/projects/{self.project_id}/versions/{hash}",
+                f"/v0/projects/{self.project_id}/versions/{closure.hash}",
                 response_model=VersionPublic,
                 json={
                     "name": fn.__name__,
-                    "hash": hash,
-                    "code": code,
+                    "hash": closure.hash,
+                    "code": closure.code,
                     "arg_types": arg_types,
                 },
             )
@@ -221,9 +222,9 @@ class LilypadClient:
         Returns:
             VersionPublic: The active version for the function.
         """
-        _, hash = compute_closure(fn)
+        closure = Closure.from_fn(fn)
         return self._request(
             "GET",
-            f"/v0/projects/{self.project_id}/functions/{hash}/versions/active",
+            f"/v0/projects/{self.project_id}/functions/{closure.hash}/versions/active",
             response_model=ActiveVersionPublic,
         )

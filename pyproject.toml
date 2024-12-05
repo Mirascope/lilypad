@@ -41,6 +41,7 @@ dependencies = [
     "typer>=0.12.5",
     "cryptography>=43.0.3",
     "black>=24.8.0",
+    "ruff>=0.6.3",
 ]
 
 [project.urls]
@@ -57,7 +58,6 @@ gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 
 [tool.uv]
 dev-dependencies = [
-    "ruff>=0.6.1",
     "pytest>=8.3.2",
     "pyright>=1.1.388",
     "pytest-asyncio>=0.23.8",
@@ -111,6 +111,8 @@ target-version = "py310"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
+"tests/closure_test_functions/main.py" = ["D212", "D402"]
+"tests/closure_test_functions/other.py" = ["D101", "D102", "D103"]
 "docs/*.py" = ["ANN401"]
 
 [tool.ruff.lint]

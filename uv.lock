@@ -1671,6 +1671,7 @@ dependencies = [
     { name = "opentelemetry-instrumentation" },
     { name = "opentelemetry-sdk" },
     { name = "psycopg2-binary" },
+    { name = "ruff" },
     { name = "sqlmodel" },
     { name = "typer" },
 ]
@@ -1701,7 +1702,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
-    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -1718,6 +1718,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.27.0" },
     { name = "pillow", marker = "extra == 'gemini'", specifier = ">=10.4.0,<11" },
     { name = "psycopg2-binary", specifier = ">=2.9.9" },
+    { name = "ruff", specifier = ">=0.6.3" },
     { name = "sqlmodel", specifier = ">=0.0.22" },
     { name = "typer", specifier = ">=0.12.5" },
 ]
@@ -1732,11 +1733,10 @@ dev = [
     { name = "mkdocstrings", specifier = ">=0.25.2" },
     { name = "mkdocstrings-python", specifier = ">=1.10.8" },
     { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pyright", specifier = ">=1.1.389" },
+    { name = "pyright", specifier = ">=1.1.388" },
     { name = "pytest", specifier = ">=8.3.2" },
     { name = "pytest-asyncio", specifier = ">=0.23.8" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "ruff", specifier = ">=0.6.1" },
 ]
 
 [[package]]
