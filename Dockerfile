@@ -10,10 +10,10 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
+COPY uv.lock pyproject.toml ./
+
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
-    --mount=type=bind,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv.lock,target=/root/.cache/uv.lock \
-    --mount=type=bind,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/pyproject.toml,target=/root/.cache/pyproject.toml \
     uv sync --frozen --no-install-project --no-dev --all-extras
 
 # Then, add the rest of the project source code and install it
