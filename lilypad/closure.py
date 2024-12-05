@@ -234,7 +234,7 @@ class _QualifiedNameRewriter(ast.NodeTransformer):
         while isinstance(current, ast.Attribute):
             names.append(current.attr)
             current = current.value
-        if isinstance(current, ast.Name) and current.id != "self":
+        if isinstance(current, ast.Name) and current.id not in ["self", "cls"]:
             names.append(current.id)
             if names[0] in self.local_names:
                 return ast.Name(id=names[0], ctx=node.ctx)
