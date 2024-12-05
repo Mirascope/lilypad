@@ -113,8 +113,8 @@ target-version = "py310"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
-"tests/closure_test_functions/main.py" = ["D212", "D402"]
-"tests/closure_test_functions/other.py" = ["D101", "D102", "D103"]
+"tests/closure/closure_test_functions/main.py" = ["D212", "D402"]
+"tests/closure/closure_test_functions/other.py" = ["D101", "D102", "D103"]
 "docs/*.py" = ["ANN401"]
 
 [tool.ruff.lint]

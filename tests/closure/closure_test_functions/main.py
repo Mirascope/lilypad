@@ -9,8 +9,8 @@ from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
 
-import tests.closure_test_functions.other
-import tests.closure_test_functions.other as cloth
+import tests.closure.closure_test_functions.other
+import tests.closure.closure_test_functions.other as cloth
 
 from . import other
 from . import other as oth
@@ -371,7 +371,7 @@ def user_defined_dotted_import_fn() -> str:
     def user_defined_dotted_import_fn() -> str:
         return imported_fn()
     """
-    return tests.closure_test_functions.other.imported_fn()
+    return tests.closure.closure_test_functions.other.imported_fn()
 
 
 def user_defined_aliased_dotted_import_fn() -> str:
