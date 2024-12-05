@@ -11,6 +11,7 @@ COPY . /app
 RUN pnpm install
 RUN pnpm run build:notypescript
 
+RUN ls -la /app/lilypad/server
 
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
