@@ -430,13 +430,13 @@ def _run_ruff(code: str) -> str:
 
     try:
         subprocess.run(
-            ["ruff", "check", "--select=I", "--fix", str(tmp_path)],
+            ["ruff", "check", "--isolated", "--select=I", "--fix", str(tmp_path)],
             check=True,
             capture_output=True,
             text=True,
         )
         subprocess.run(
-            ["ruff", "format", "--line-length=88", str(tmp_path)],
+            ["ruff", "format", "--isolated", "--line-length=88", str(tmp_path)],
             check=True,
             capture_output=True,
             text=True,
