@@ -21,9 +21,14 @@ from .server.models import SpanPublic
 class _JSONSpanExporter(SpanExporter):
     """A custom span exporter that sends spans to a custom endpoint as JSON."""
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self) -> None:
         """Initialize the exporter with the custom endpoint URL."""
-        self.client = LilypadClient(base_url, timeout=10)
+        config = load_config()
+
+        self.client = LilypadClient(
+            timeout=10,
+            token=config.get("token", None),
+        )
 
     def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
@@ -114,12 +119,7 @@ def configure() -> None:
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
         print("TracerProvider already initialized.")  # noqa: T201
         return
-
-    config = load_config()
-    port = config.get("port", 8000)
-    otlp_exporter = _JSONSpanExporter(
-        base_url=f"http://127.0.0.1:{port}/api",
-    )
+    otlp_exporter = _JSONSpanExporter()
     provider = TracerProvider()
     processor = BatchSpanProcessor(otlp_exporter)
     provider.add_span_processor(processor)

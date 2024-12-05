@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, get_origin, overload
+from uuid import UUID
 
 import requests
 from pydantic import BaseModel, TypeAdapter
@@ -10,6 +11,7 @@ from rich import print
 
 from .._utils import load_config
 from ..closure import Closure
+from ..server.settings import get_settings
 from .models import ActiveVersionPublic, ProjectPublic, SpanPublic, VersionPublic
 
 _R = TypeVar("_R", bound=BaseModel)
@@ -30,11 +32,13 @@ class APIConnectionError(Exception):
 class LilypadClient:
     """Client for interacting with the Lilypad API."""
 
+    _token: str | None = None
+
     def __init__(
         self,
-        base_url: str,
         timeout: int = 10,
         headers: dict[str, str] | None = None,
+        token: str | None = None,
         **session_kwargs: Any,
     ) -> None:
         """Initialize the API client.
@@ -43,24 +47,45 @@ class LilypadClient:
             base_url (str): The base URL for the API endpoints.
             timeout (int, optional): Default timeout for requests in seconds. Defaults to 10.
             headers (dict, optional): Default headers to include in all requests. Defaults to None.
+            token (str, optional): Default authentication token to include in all requests. Defaults to None.
             **session_kwargs: Additional keyword arguments for the session.
         """
-        self.base_url = base_url.rstrip("/")
+        settings = get_settings()
+        self.base_url = f"{settings.base_url.rstrip('/')}/api"
         self.timeout = timeout
         self.session = requests.Session()
         try:
             config = load_config()
-            self.project_id = (
-                int(config["project_id"]) if config.get("project_id", None) else None
+            self.project_uuid = (
+                UUID(config["project_uuid"])
+                if config.get("project_uuid", None)
+                else None
             )
         except FileNotFoundError:
-            self.project_id = None
-
+            self.project_uuid = None
         if headers:
             self.session.headers.update(headers)
 
+        self.token = token
+
         for key, value in session_kwargs.items():
             setattr(self.session, key, value)
+
+    @property
+    def token(self) -> str | None:
+        """Get the current authentication token."""
+        return self._token
+
+    @token.setter
+    def token(self, value: str | None) -> None:
+        """Set the authentication token and update headers.
+
+        Args:
+            value (str | None): The authentication token or None to remove authentication.
+        """
+        self._token = value
+        if value:
+            self.session.headers["Authorization"] = f"Bearer {value}"
 
     @overload
     def _request(
@@ -159,6 +184,15 @@ class LilypadClient:
             **kwargs,
         )
 
+    def get_projects(self, **kwargs: Any) -> list[ProjectPublic]:
+        """Creates a new project."""
+        return self._request(
+            "GET",
+            "/v0/projects",
+            response_model=list[ProjectPublic],
+            **kwargs,
+        )
+
     def post_traces(
         self, params: dict[str, Any] | None = None, **kwargs: Any
     ) -> list[SpanPublic]:
@@ -196,13 +230,13 @@ class LilypadClient:
         try:
             return self._request(
                 "GET",
-                f"/v0/projects/{self.project_id}/versions/{closure.hash}",
+                f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions",
                 response_model=VersionPublic,
             )
         except NotFoundError:
             return self._request(
                 "POST",
-                f"/v0/projects/{self.project_id}/versions/{closure.hash}",
+                f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions",
                 response_model=VersionPublic,
                 json={
                     "name": fn.__name__,
@@ -225,6 +259,6 @@ class LilypadClient:
         closure = Closure.from_fn(fn)
         return self._request(
             "GET",
-            f"/v0/projects/{self.project_id}/functions/{closure.hash}/versions/active",
+            f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions/active",
             response_model=ActiveVersionPublic,
         )

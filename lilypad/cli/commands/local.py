@@ -14,12 +14,12 @@ from types import FrameType
 import typer
 from rich import print
 
-from ..._utils import load_config
 from ...server.client import LilypadClient
 from ...server.db.setup import create_tables
+from ...server.settings import get_settings
 
 
-def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
+def _start_lilypad(project_dir: Path, port: int) -> subprocess.Popen:
     """Starts the FastAPI server using subprocess.Popen.
 
     Args:
@@ -33,7 +33,10 @@ def _start_lilypad(project_dir: Path, port: str | int) -> subprocess.Popen:
 
     # Sets the LILYPAD_PROJECT_DIR so Lilypad knows where to look for the database
     env["LILYPAD_PROJECT_DIR"] = str(project_dir)
+    env["LILYPAD_ENVIRONMENT"] = "local"
+    env["LILYPAD_PORT"] = str(port)
     files_dir = files("lilypad").joinpath("server")
+
     process = subprocess.Popen(
         ["fastapi", "dev", "--port", str(port)],
         cwd=str(files_dir),
@@ -94,27 +97,22 @@ def local_command(
     - Create the SQLite database if it doesn't exist
     - Start the FastAPI server
     """
+    settings = get_settings()
     existing_project = True
     project_name = "DEFAULT"
+    new_port: int = int(port) if port else settings.port
     if not os.path.exists(".lilypad"):
         existing_project = False
         project_name = typer.prompt("What's your project name?")
     if not os.path.exists("pad.db"):
-        create_tables()
-    if not port:
-        config = load_config()
-        new_port: str = config.get("port", "8000")
-    else:
-        new_port = port
+        create_tables("local")
     if existing_project:
         with open(".lilypad/config.json") as f:
             data = json.load(f)
         data["port"] = new_port
         with open(".lilypad/config.json", "w") as f:
             json.dump(data, f, indent=4)
-    lilypad_client = LilypadClient(
-        base_url=f"http://localhost:{new_port}/api", timeout=10
-    )
+    lilypad_client = LilypadClient(timeout=10)
     process = _start_lilypad(Path.cwd(), new_port)
 
     def signal_handler(sig: int, frame: FrameType | None) -> None:
@@ -125,13 +123,12 @@ def local_command(
     if not existing_project:
         try:
             if _wait_for_server(lilypad_client):
-                project = lilypad_client.post_project(project_name)
                 os.mkdir(".lilypad")
+                project = lilypad_client.post_project(project_name)
                 with open(".lilypad/config.json", "w") as f:
                     data = {
+                        "project_uuid": str(project.uuid),
                         "project_name": project_name,
-                        "project_id": project.id,
-                        "port": new_port,
                     }
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:

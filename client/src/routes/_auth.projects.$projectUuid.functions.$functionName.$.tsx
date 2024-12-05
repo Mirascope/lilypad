@@ -5,24 +5,22 @@ import { versionQueryOptions } from "@/utils/versions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 export const Route = createFileRoute(
-  "/projects/$projectId/functions/$functionName/$"
+  "/_auth/projects/$projectUuid/functions/$functionName/$"
 )({
   component: () => {
     const params = useParams({
       from: Route.id,
     });
-    const { projectId: strProjectId, _splat } = params;
-    const strVersionId = _splat?.split("/")[1];
-    if (!strProjectId) return <NotFound />;
-    const projectId = Number(strProjectId);
-    const versionId = strVersionId ? Number(strVersionId) : undefined;
+    const { projectUuid, _splat } = params;
+    const versionUuid = _splat?.split("/")[1];
+    if (!projectUuid) return <NotFound />;
     const { data: version } = useSuspenseQuery(
-      versionQueryOptions(Number(projectId), Number(versionId))
+      versionQueryOptions(projectUuid, versionUuid)
     );
     return (
       <div className='w-full'>
-        <SelectVersionForm versionId={versionId} />
-        <LLMFunction projectId={Number(projectId)} version={version} />
+        <SelectVersionForm versionUuid={versionUuid} />
+        <LLMFunction projectUuid={projectUuid} version={version} />
       </div>
     );
   },

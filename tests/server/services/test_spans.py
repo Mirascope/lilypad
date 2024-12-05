@@ -1,31 +1,32 @@
 """Tests for the SpanService class"""
 
-import pytest
+from uuid import uuid4
+
 from sqlmodel import Session
 
-from lilypad.server.models import ProjectTable, Scope, SpanTable
+from lilypad.server.models import (
+    ProjectPublic,
+    ProjectTable,
+    Scope,
+    SpanTable,
+    UserPublic,
+)
 from lilypad.server.services import SpanService
 
 
-@pytest.fixture
-def test_project(db_session: Session) -> ProjectTable:
-    """Create test project"""
-    project = ProjectTable(name="Test Project")
-    db_session.add(project)
-    db_session.commit()
-    return project
-
-
-def test_find_records_by_version_id(db_session: Session, test_project: ProjectTable):
-    """Test finding spans by version ID"""
-    service = SpanService(db_session)
-
+def test_find_records_by_version_uuid(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test finding spans by version uuid"""
+    service = SpanService(db_session, test_user)
+    version_uuid = uuid4()
     # Create test spans
     spans = [
         SpanTable(
-            id=f"span_{i}",
-            project_id=test_project.id,
-            version_id=1,
+            organization_uuid=test_project.organization_uuid,
+            span_id=f"span_{i}",
+            project_uuid=test_project.uuid,
+            version_uuid=version_uuid,
             scope=Scope.LILYPAD,
             data={
                 "attributes": {
@@ -38,8 +39,10 @@ def test_find_records_by_version_id(db_session: Session, test_project: ProjectTa
 
     db_session.add_all(spans)
     db_session.commit()
-
+    test_project_public = ProjectPublic.model_validate(test_project)
     # Test retrieval
-    found_spans = service.find_records_by_version_id(test_project.id, 1)  # pyright: ignore [reportArgumentType]
+    found_spans = service.find_records_by_version_uuid(
+        test_project_public.uuid, version_uuid
+    )
     assert len(found_spans) == 3
-    assert all(span.version_id == 1 for span in found_spans)
+    assert all(span.version_uuid == version_uuid for span in found_spans)

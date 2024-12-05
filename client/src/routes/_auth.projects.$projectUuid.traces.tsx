@@ -10,20 +10,21 @@ import {
 import api from "@/api";
 import { Typography } from "@/components/ui/typography";
 
-export const Route = createFileRoute("/projects/$projectId/traces")({
-  loader: async ({ params: { projectId } }) =>
-    (await api.get<ProjectPublic>(`/projects/${projectId}`)).data,
+export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
+  loader: async ({ params: { projectUuid } }) =>
+    (await api.get<ProjectPublic>(`/projects/${projectUuid}`)).data,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ({ error }) => <div>{error.message}</div>,
   component: () => <Trace />,
 });
 
 export const Trace = () => {
-  const { projectId } = useParams({ from: Route.id });
+  const { projectUuid } = useParams({ from: Route.id });
   const project = useLoaderData({ from: Route.id }) as ProjectPublic;
   const { isPending, error, data } = useQuery<SpanPublic[]>({
     queryKey: ["traces"],
-    queryFn: async () => (await api.get(`/projects/${projectId}/traces`)).data,
+    queryFn: async () =>
+      (await api.get(`/projects/${projectUuid}/traces`)).data,
     refetchInterval: 1000,
   });
   if (isPending) return <div>Loading...</div>;

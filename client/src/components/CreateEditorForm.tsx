@@ -55,10 +55,9 @@ export const CreateEditorForm = ({
 }: {
   version: VersionPublic | null;
 }) => {
-  const { projectId: strProjectId, functionName } = useParams({
+  const { projectUuid, functionName } = useParams({
     strict: false,
   });
-  const projectId = Number(strProjectId);
   const navigate = useNavigate();
   const createVersionMutation = useCreateVersion();
   const patchActiveVersionMutation = usePatchActiveVersion();
@@ -81,7 +80,7 @@ export const CreateEditorForm = ({
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
-  if (!projectId || !functionName) return <NotFound />;
+  if (!projectUuid || !functionName) return <NotFound />;
   const onSubmit: SubmitHandler<CreateEditorFormValues> = (
     data: CreateEditorFormValues,
     event
@@ -142,7 +141,7 @@ export const CreateEditorForm = ({
         const isValid = await methods.trigger();
         if (!isValid) return;
         const newVersion = await createVersionMutation.mutateAsync({
-          projectId,
+          projectUuid,
           versionCreate: {
             function_create: functionCreate,
             prompt_create: promptCreate,
@@ -157,12 +156,12 @@ export const CreateEditorForm = ({
         );
 
         await runMutation.mutateAsync({
-          projectId,
-          versionId: newVersion.id,
+          projectUuid,
+          versionUuid: newVersion.uuid,
           values: inputValues,
         });
         navigate({
-          to: `/projects/${projectId}/functions/${newVersion.function_name}/versions/${newVersion.id}`,
+          to: `/projects/${projectUuid}/functions/${newVersion.function_name}/versions/${newVersion.uuid}`,
           replace: true,
         });
       } catch (error) {
@@ -244,7 +243,6 @@ export const CreateEditorForm = ({
     );
   };
   if (version && !version.prompt) {
-    console.log(version.function.code);
     return (
       <Card className='w-[600px] m-auto'>
         <CardHeader>
@@ -284,8 +282,8 @@ if __name__ == "__main__":
                   onClick={(e) => {
                     e.preventDefault();
                     patchActiveVersionMutation.mutate({
-                      projectId,
-                      versionId: version.id,
+                      projectUuid,
+                      versionUuid: version.uuid,
                     });
                   }}
                 >

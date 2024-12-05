@@ -13,12 +13,15 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
-import { Route as ProjectsIndexImport } from './routes/projects.index'
-import { Route as ProjectsProjectIdImport } from './routes/projects.$projectId'
-import { Route as ProjectsProjectIdTracesImport } from './routes/projects.$projectId.traces'
-import { Route as ProjectsProjectIdFunctionsIndexImport } from './routes/projects.$projectId.functions.index'
-import { Route as ProjectsProjectIdFunctionsFunctionNameSplatImport } from './routes/projects.$projectId.functions.$functionName.$'
+import { Route as AuthLoginImport } from './routes/auth.login'
+import { Route as AuthCallbackImport } from './routes/auth.callback'
+import { Route as AuthProjectsIndexImport } from './routes/_auth.projects.index'
+import { Route as AuthProjectsProjectUuidImport } from './routes/_auth.projects.$projectUuid'
+import { Route as AuthProjectsProjectUuidTracesImport } from './routes/_auth.projects.$projectUuid.traces'
+import { Route as AuthProjectsProjectUuidFunctionsIndexImport } from './routes/_auth.projects.$projectUuid.functions.index'
+import { Route as AuthProjectsProjectUuidFunctionsFunctionNameSplatImport } from './routes/_auth.projects.$projectUuid.functions.$functionName.$'
 
 // Create Virtual Routes
 
@@ -31,36 +34,52 @@ const DiffLazyRoute = DiffLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/diff.lazy').then((d) => d.Route))
 
+const AuthRoute = AuthImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexRoute = IndexImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProjectsIndexRoute = ProjectsIndexImport.update({
+const AuthLoginRoute = AuthLoginImport.update({
+  path: '/auth/login',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthCallbackRoute = AuthCallbackImport.update({
+  path: '/auth/callback',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthProjectsIndexRoute = AuthProjectsIndexImport.update({
   path: '/projects/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => AuthRoute,
 } as any)
 
-const ProjectsProjectIdRoute = ProjectsProjectIdImport.update({
-  path: '/projects/$projectId',
-  getParentRoute: () => rootRoute,
+const AuthProjectsProjectUuidRoute = AuthProjectsProjectUuidImport.update({
+  path: '/projects/$projectUuid',
+  getParentRoute: () => AuthRoute,
 } as any)
 
-const ProjectsProjectIdTracesRoute = ProjectsProjectIdTracesImport.update({
-  path: '/traces',
-  getParentRoute: () => ProjectsProjectIdRoute,
-} as any)
-
-const ProjectsProjectIdFunctionsIndexRoute =
-  ProjectsProjectIdFunctionsIndexImport.update({
-    path: '/functions/',
-    getParentRoute: () => ProjectsProjectIdRoute,
+const AuthProjectsProjectUuidTracesRoute =
+  AuthProjectsProjectUuidTracesImport.update({
+    path: '/traces',
+    getParentRoute: () => AuthProjectsProjectUuidRoute,
   } as any)
 
-const ProjectsProjectIdFunctionsFunctionNameSplatRoute =
-  ProjectsProjectIdFunctionsFunctionNameSplatImport.update({
+const AuthProjectsProjectUuidFunctionsIndexRoute =
+  AuthProjectsProjectUuidFunctionsIndexImport.update({
+    path: '/functions/',
+    getParentRoute: () => AuthProjectsProjectUuidRoute,
+  } as any)
+
+const AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute =
+  AuthProjectsProjectUuidFunctionsFunctionNameSplatImport.update({
     path: '/functions/$functionName/$',
-    getParentRoute: () => ProjectsProjectIdRoute,
+    getParentRoute: () => AuthProjectsProjectUuidRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -74,6 +93,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
     '/diff': {
       id: '/diff'
       path: '/diff'
@@ -81,136 +107,186 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiffLazyImport
       parentRoute: typeof rootRoute
     }
-    '/projects/$projectId': {
-      id: '/projects/$projectId'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof ProjectsProjectIdImport
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackImport
       parentRoute: typeof rootRoute
     }
-    '/projects/': {
-      id: '/projects/'
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/_auth/projects/$projectUuid': {
+      id: '/_auth/projects/$projectUuid'
+      path: '/projects/$projectUuid'
+      fullPath: '/projects/$projectUuid'
+      preLoaderRoute: typeof AuthProjectsProjectUuidImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/projects/': {
+      id: '/_auth/projects/'
       path: '/projects'
       fullPath: '/projects'
-      preLoaderRoute: typeof ProjectsIndexImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof AuthProjectsIndexImport
+      parentRoute: typeof AuthImport
     }
-    '/projects/$projectId/traces': {
-      id: '/projects/$projectId/traces'
+    '/_auth/projects/$projectUuid/traces': {
+      id: '/_auth/projects/$projectUuid/traces'
       path: '/traces'
-      fullPath: '/projects/$projectId/traces'
-      preLoaderRoute: typeof ProjectsProjectIdTracesImport
-      parentRoute: typeof ProjectsProjectIdImport
+      fullPath: '/projects/$projectUuid/traces'
+      preLoaderRoute: typeof AuthProjectsProjectUuidTracesImport
+      parentRoute: typeof AuthProjectsProjectUuidImport
     }
-    '/projects/$projectId/functions/': {
-      id: '/projects/$projectId/functions/'
+    '/_auth/projects/$projectUuid/functions/': {
+      id: '/_auth/projects/$projectUuid/functions/'
       path: '/functions'
-      fullPath: '/projects/$projectId/functions'
-      preLoaderRoute: typeof ProjectsProjectIdFunctionsIndexImport
-      parentRoute: typeof ProjectsProjectIdImport
+      fullPath: '/projects/$projectUuid/functions'
+      preLoaderRoute: typeof AuthProjectsProjectUuidFunctionsIndexImport
+      parentRoute: typeof AuthProjectsProjectUuidImport
     }
-    '/projects/$projectId/functions/$functionName/$': {
-      id: '/projects/$projectId/functions/$functionName/$'
+    '/_auth/projects/$projectUuid/functions/$functionName/$': {
+      id: '/_auth/projects/$projectUuid/functions/$functionName/$'
       path: '/functions/$functionName/$'
-      fullPath: '/projects/$projectId/functions/$functionName/$'
-      preLoaderRoute: typeof ProjectsProjectIdFunctionsFunctionNameSplatImport
-      parentRoute: typeof ProjectsProjectIdImport
+      fullPath: '/projects/$projectUuid/functions/$functionName/$'
+      preLoaderRoute: typeof AuthProjectsProjectUuidFunctionsFunctionNameSplatImport
+      parentRoute: typeof AuthProjectsProjectUuidImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface ProjectsProjectIdRouteChildren {
-  ProjectsProjectIdTracesRoute: typeof ProjectsProjectIdTracesRoute
-  ProjectsProjectIdFunctionsIndexRoute: typeof ProjectsProjectIdFunctionsIndexRoute
-  ProjectsProjectIdFunctionsFunctionNameSplatRoute: typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
+interface AuthProjectsProjectUuidRouteChildren {
+  AuthProjectsProjectUuidTracesRoute: typeof AuthProjectsProjectUuidTracesRoute
+  AuthProjectsProjectUuidFunctionsIndexRoute: typeof AuthProjectsProjectUuidFunctionsIndexRoute
+  AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute: typeof AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute
 }
 
-const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
-  ProjectsProjectIdTracesRoute: ProjectsProjectIdTracesRoute,
-  ProjectsProjectIdFunctionsIndexRoute: ProjectsProjectIdFunctionsIndexRoute,
-  ProjectsProjectIdFunctionsFunctionNameSplatRoute:
-    ProjectsProjectIdFunctionsFunctionNameSplatRoute,
+const AuthProjectsProjectUuidRouteChildren: AuthProjectsProjectUuidRouteChildren =
+  {
+    AuthProjectsProjectUuidTracesRoute: AuthProjectsProjectUuidTracesRoute,
+    AuthProjectsProjectUuidFunctionsIndexRoute:
+      AuthProjectsProjectUuidFunctionsIndexRoute,
+    AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute:
+      AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute,
+  }
+
+const AuthProjectsProjectUuidRouteWithChildren =
+  AuthProjectsProjectUuidRoute._addFileChildren(
+    AuthProjectsProjectUuidRouteChildren,
+  )
+
+interface AuthRouteChildren {
+  AuthProjectsProjectUuidRoute: typeof AuthProjectsProjectUuidRouteWithChildren
+  AuthProjectsIndexRoute: typeof AuthProjectsIndexRoute
 }
 
-const ProjectsProjectIdRouteWithChildren =
-  ProjectsProjectIdRoute._addFileChildren(ProjectsProjectIdRouteChildren)
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthProjectsProjectUuidRoute: AuthProjectsProjectUuidRouteWithChildren,
+  AuthProjectsIndexRoute: AuthProjectsIndexRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
-  '/projects': typeof ProjectsIndexRoute
-  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
-  '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/projects': typeof AuthProjectsIndexRoute
+  '/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
+  '/projects/$projectUuid/functions': typeof AuthProjectsProjectUuidFunctionsIndexRoute
+  '/projects/$projectUuid/functions/$functionName/$': typeof AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
-  '/projects': typeof ProjectsIndexRoute
-  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
-  '/projects/$projectId/functions': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/projects': typeof AuthProjectsIndexRoute
+  '/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
+  '/projects/$projectUuid/functions': typeof AuthProjectsProjectUuidFunctionsIndexRoute
+  '/projects/$projectUuid/functions/$functionName/$': typeof AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
-  '/projects/': typeof ProjectsIndexRoute
-  '/projects/$projectId/traces': typeof ProjectsProjectIdTracesRoute
-  '/projects/$projectId/functions/': typeof ProjectsProjectIdFunctionsIndexRoute
-  '/projects/$projectId/functions/$functionName/$': typeof ProjectsProjectIdFunctionsFunctionNameSplatRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/_auth/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/_auth/projects/': typeof AuthProjectsIndexRoute
+  '/_auth/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
+  '/_auth/projects/$projectUuid/functions/': typeof AuthProjectsProjectUuidFunctionsIndexRoute
+  '/_auth/projects/$projectUuid/functions/$functionName/$': typeof AuthProjectsProjectUuidFunctionsFunctionNameSplatRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | ''
     | '/diff'
-    | '/projects/$projectId'
+    | '/auth/callback'
+    | '/auth/login'
+    | '/projects/$projectUuid'
     | '/projects'
-    | '/projects/$projectId/traces'
-    | '/projects/$projectId/functions'
-    | '/projects/$projectId/functions/$functionName/$'
+    | '/projects/$projectUuid/traces'
+    | '/projects/$projectUuid/functions'
+    | '/projects/$projectUuid/functions/$functionName/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | ''
     | '/diff'
-    | '/projects/$projectId'
+    | '/auth/callback'
+    | '/auth/login'
+    | '/projects/$projectUuid'
     | '/projects'
-    | '/projects/$projectId/traces'
-    | '/projects/$projectId/functions'
-    | '/projects/$projectId/functions/$functionName/$'
+    | '/projects/$projectUuid/traces'
+    | '/projects/$projectUuid/functions'
+    | '/projects/$projectUuid/functions/$functionName/$'
   id:
     | '__root__'
     | '/'
+    | '/_auth'
     | '/diff'
-    | '/projects/$projectId'
-    | '/projects/'
-    | '/projects/$projectId/traces'
-    | '/projects/$projectId/functions/'
-    | '/projects/$projectId/functions/$functionName/$'
+    | '/auth/callback'
+    | '/auth/login'
+    | '/_auth/projects/$projectUuid'
+    | '/_auth/projects/'
+    | '/_auth/projects/$projectUuid/traces'
+    | '/_auth/projects/$projectUuid/functions/'
+    | '/_auth/projects/$projectUuid/functions/$functionName/$'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   DiffLazyRoute: typeof DiffLazyRoute
-  ProjectsProjectIdRoute: typeof ProjectsProjectIdRouteWithChildren
-  ProjectsIndexRoute: typeof ProjectsIndexRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthLoginRoute: typeof AuthLoginRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   DiffLazyRoute: DiffLazyRoute,
-  ProjectsProjectIdRoute: ProjectsProjectIdRouteWithChildren,
-  ProjectsIndexRoute: ProjectsIndexRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthLoginRoute: AuthLoginRoute,
 }
 
 export const routeTree = rootRoute
@@ -226,39 +302,55 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/_auth",
         "/diff",
-        "/projects/$projectId",
-        "/projects/"
+        "/auth/callback",
+        "/auth/login"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/projects/$projectUuid",
+        "/_auth/projects/"
+      ]
+    },
     "/diff": {
       "filePath": "diff.lazy.tsx"
     },
-    "/projects/$projectId": {
-      "filePath": "projects.$projectId.tsx",
+    "/auth/callback": {
+      "filePath": "auth.callback.tsx"
+    },
+    "/auth/login": {
+      "filePath": "auth.login.tsx"
+    },
+    "/_auth/projects/$projectUuid": {
+      "filePath": "_auth.projects.$projectUuid.tsx",
+      "parent": "/_auth",
       "children": [
-        "/projects/$projectId/traces",
-        "/projects/$projectId/functions/",
-        "/projects/$projectId/functions/$functionName/$"
+        "/_auth/projects/$projectUuid/traces",
+        "/_auth/projects/$projectUuid/functions/",
+        "/_auth/projects/$projectUuid/functions/$functionName/$"
       ]
     },
-    "/projects/": {
-      "filePath": "projects.index.tsx"
+    "/_auth/projects/": {
+      "filePath": "_auth.projects.index.tsx",
+      "parent": "/_auth"
     },
-    "/projects/$projectId/traces": {
-      "filePath": "projects.$projectId.traces.tsx",
-      "parent": "/projects/$projectId"
+    "/_auth/projects/$projectUuid/traces": {
+      "filePath": "_auth.projects.$projectUuid.traces.tsx",
+      "parent": "/_auth/projects/$projectUuid"
     },
-    "/projects/$projectId/functions/": {
-      "filePath": "projects.$projectId.functions.index.tsx",
-      "parent": "/projects/$projectId"
+    "/_auth/projects/$projectUuid/functions/": {
+      "filePath": "_auth.projects.$projectUuid.functions.index.tsx",
+      "parent": "/_auth/projects/$projectUuid"
     },
-    "/projects/$projectId/functions/$functionName/$": {
-      "filePath": "projects.$projectId.functions.$functionName.$.tsx",
-      "parent": "/projects/$projectId"
+    "/_auth/projects/$projectUuid/functions/$functionName/$": {
+      "filePath": "_auth.projects.$projectUuid.functions.$functionName.$.tsx",
+      "parent": "/_auth/projects/$projectUuid"
     }
   }
 }

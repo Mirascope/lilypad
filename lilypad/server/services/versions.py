@@ -1,6 +1,7 @@
 """The `VersionService` class for versions."""
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlmodel import col, func, select
@@ -16,42 +17,45 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
     create_model: type[VersionCreate] = VersionCreate
 
     def find_versions_by_function_name(
-        self, project_id: int, function_name: str
+        self, project_uuid: UUID, function_name: str
     ) -> Sequence[VersionTable]:
         """Find versions by function name"""
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
                 self.table.function_name == function_name,
             )
         ).all()
 
-    def find_prompt_version_by_id(
-        self, project_id: int, function_id: int, prompt_id: int
+    def find_prompt_version_by_uuid(
+        self, project_uuid: UUID, function_uuid: UUID, prompt_uuid: UUID
     ) -> VersionTable | None:
         """Find function version by hash"""
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id,
-                self.table.function_id == function_id,
-                self.table.prompt_id == prompt_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.prompt_uuid == prompt_uuid,
             )
         ).first()
 
     def find_function_version_by_hash(
-        self, project_id: int, hash: str
+        self, project_uuid: UUID, hash: str
     ) -> VersionTable | None:
         """Find function version by hash"""
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
                 self.table.prompt_hash.is_(None),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                 self.table.function_hash == hash,
             )
         ).first()
 
     def find_prompt_versions_by_hash(
-        self, project_id: int, function_hash: str, prompt_hash: str
+        self, project_uuid: UUID, function_hash: str, prompt_hash: str
     ) -> Sequence[VersionTable]:
         """Find prompt versions by hash
 
@@ -60,21 +64,23 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
                 self.table.function_hash == function_hash,
                 self.table.prompt_hash == prompt_hash,
             )
         ).all()
 
     def find_prompt_active_version(
-        self, project_id: int, function_hash: str
+        self, project_uuid: UUID, function_hash: str
     ) -> VersionTable:
         """Find the active version for a prompt"""
         version = self.session.exec(
             select(VersionTable).where(
-                VersionTable.project_id == project_id,
-                VersionTable.is_active,
-                VersionTable.function_hash == function_hash,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.is_active,
+                self.table.function_hash == function_hash,
             )
         ).first()
 
@@ -85,12 +91,12 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         return version
 
     def change_active_version(
-        self, project_id: int, new_active_version: VersionTable
+        self, project_uuid: UUID, new_active_version: VersionTable
     ) -> VersionTable:
         """Change the active version for a function, deactivating any currently active versions.
 
         Args:
-            project_id: The project ID
+            project_uuid: The project UUID
             new_active_version: The version to make active
 
         Returns:
@@ -98,7 +104,7 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         """
         # Deactivate all currently active versions for the same function
         stmt = select(VersionTable).where(
-            VersionTable.project_id == project_id,
+            VersionTable.project_uuid == project_uuid,
             VersionTable.function_name == new_active_version.function_name,
             VersionTable.is_active,
         )
@@ -117,11 +123,12 @@ class VersionService(BaseService[VersionTable, VersionCreate]):
         self.session.refresh(new_active_version)
         return new_active_version
 
-    def get_function_version_count(self, project_id: int, function_name: str) -> int:
+    def get_function_version_count(self, project_uuid: UUID, function_name: str) -> int:
         """Get the count of function versions"""
         return self.session.exec(
-            select(func.count(col(VersionTable.id))).where(
-                VersionTable.project_id == project_id,
-                VersionTable.function_name == function_name,
+            select(func.count(col(self.table.uuid))).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_name == function_name,
             )
         ).one()

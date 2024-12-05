@@ -7,26 +7,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { uniqueFunctionNamesQueryOptions } from "@/utils/functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-export const Route = createFileRoute("/projects/$projectId/functions/")({
-  component: () => <CreatePrompt />,
-});
+export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
+  {
+    component: () => <CreatePrompt />,
+  }
+);
 
 export const CreatePrompt = () => {
-  const { projectId } = useParams({ from: Route.id });
+  const { projectUuid } = useParams({ from: Route.id });
   const { data: functionNames } = useSuspenseQuery(
-    uniqueFunctionNamesQueryOptions(Number(projectId))
+    uniqueFunctionNamesQueryOptions(projectUuid)
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();
-  const handleClick = (e) => {
+  const handleClick = (e: FormEvent<HTMLInputElement>) => {
     e.preventDefault();
     navigate({
-      to: `/projects/${projectId}/functions/${value}`,
+      to: `/projects/${projectUuid}/functions/${value}`,
     });
   };
   return (
@@ -37,7 +39,7 @@ export const CreatePrompt = () => {
           functionNames.map((functionName) => (
             <Link
               key={functionName}
-              to={`/projects/${projectId}/functions/${functionName}`}
+              to={`/projects/${projectUuid}/functions/${functionName}`}
             >
               <Card className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
                 <CardContent className='p-4'>{functionName}</CardContent>
