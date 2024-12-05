@@ -5,7 +5,7 @@ WORKDIR /app/client
 RUN npm install -g pnpm
 
 # Copy client files
-COPY client/. .
+COPY . /app
 
 # Install dependencies and build
 RUN pnpm install
