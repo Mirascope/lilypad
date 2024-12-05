@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ButtonProps } from "@/components/ui/button";
 import { ReactNode } from "react";
-import axios from "axios";
+import { settingsQueryOptions } from "@/utils/settings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 interface GithubButtonProps extends ButtonProps {
   iconSize?: number;
   iconColor?: string;
@@ -33,12 +34,12 @@ const GithubButton = ({
 };
 
 export const GithubLogin = ({ deviceCode }: { deviceCode?: string }) => {
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const getAuthUrl = () => {
     const githubAuthUrl = "https://github.com/login/oauth/authorize";
-
     const params = new URLSearchParams({
-      client_id: import.meta.env.VITE_GITHUB_CLIENT_ID,
-      redirect_uri: `${import.meta.env.VITE_API_SERVER}/auth/callback`,
+      client_id: settings.github_client_id,
+      redirect_uri: `${settings.remote_base_url}/auth/callback`,
       scope: "read:user user:email",
       response_type: "code",
     });

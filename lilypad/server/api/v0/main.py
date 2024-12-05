@@ -1,7 +1,11 @@
 """The `/api/v0` FastAPI sub-app for `lilypad`."""
 
-from fastapi import FastAPI
+from typing import Annotated
 
+from fastapi import Depends, FastAPI
+from pydantic import BaseModel
+
+from ...settings import Settings, get_settings
 from .auth import auth_router
 from .device_codes_api import device_codes_api
 from .functions_api import functions_router
@@ -22,5 +26,22 @@ api.include_router(traces_router)
 api.include_router(versions_router)
 api.include_router(auth_router)
 api.include_router(users_router)
+
+
+class SettingsPublic(BaseModel):
+    remote_base_url: str
+    github_client_id: str
+
+
+@api.get("/settings", response_model=SettingsPublic)
+async def get_settings(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> SettingsPublic:
+    """Get the configuration."""
+    return SettingsPublic(
+        remote_base_url=settings.remote_base_url,
+        github_client_id=settings.github_client_id,
+    )
+
 
 __all__ = ["api"]
