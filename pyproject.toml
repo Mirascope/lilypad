@@ -178,6 +178,3 @@ packages = ["lilypad"]
 
 [tool.hatch.build.targets.sdist]
 include = ["/lilypad"]
-
-[tool.hatch.build.force-include]
-"lilypad/server/static" = "lilypad/server/static"

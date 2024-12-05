@@ -1,17 +1,3 @@
-FROM node:20-slim as frontend
-WORKDIR /app/client
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy client files
-COPY client/. .
-
-# Install dependencies and build
-RUN pnpm install
-RUN pnpm run build:notypescript
-
-
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 
