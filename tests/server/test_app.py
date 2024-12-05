@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from lilypad.server.api import v0_api
 
 
-def create_test_app() -> FastAPI:
+def create_mock_app() -> FastAPI:
     """Create a FastAPI test application without static file mounting."""
     app = FastAPI()
 
@@ -31,4 +31,4 @@ def create_test_app() -> FastAPI:
 
 
 # Create a single instance of the test app
-test_app = create_test_app()
+mock_app = create_mock_app()
