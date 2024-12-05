@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "mirascope>=1.9.2",
+    "mirascope>=1.11.2",
     "sqlmodel>=0.0.22",
     "psycopg2-binary>=2.9.9",
     "fastapi[standard]>=0.114.0",

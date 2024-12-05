@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ['python310', 'uv']
+
+[phases.install]
+cmds = [
+  'uv sync --all-extras --no-dev'
+]
+
+[phases.build]
+cmds = [
+  'uv build'
+]
+
+[start]
+cmd = 'fastapi run'
