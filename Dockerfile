@@ -12,8 +12,8 @@ ENV UV_LINK_MODE=copy
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
-    --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv.lock,target=/root/.cache/uv.lock \
-    --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/pyproject.toml,target=/root/.cache/pyproject.toml \
+    --mount=type=bind,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv.lock,target=/root/.cache/uv.lock \
+    --mount=type=bind,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/pyproject.toml,target=/root/.cache/pyproject.toml \
     uv sync --frozen --no-install-project --no-dev --all-extras
 
 # Then, add the rest of the project source code and install it
