@@ -1,6 +1,7 @@
 """The `FunctionService` class for functions."""
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlmodel import select
@@ -16,23 +17,28 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
     create_model: type[FunctionCreate] = FunctionCreate
 
     def find_records_by_name(
-        self, project_id: int, name: str
+        self, project_uuid: UUID, name: str
     ) -> Sequence[FunctionTable]:
-        """Find record by id"""
+        """Find record by uuid"""
         record_tables = self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id, self.table.name == name
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
             )
         ).all()
         return record_tables
 
-    def find_unique_function_names_by_project_id(
-        self, project_id: int
+    def find_unique_function_names_by_project_uuid(
+        self, project_uuid: UUID
     ) -> Sequence[str]:
-        """Find record by id"""
+        """Find record by uuid"""
         record_tables = self.session.exec(
             select(self.table.name)
-            .where(self.table.project_id == project_id)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+            )
             .distinct()
         ).all()
         return record_tables
@@ -40,7 +46,10 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
     def find_record_by_hash(self, hash: str) -> FunctionTable:
         """Find record by hash"""
         record_table = self.session.exec(
-            select(self.table).where(self.table.hash == hash)
+            select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.hash == hash,
+            )
         ).first()
         if not record_table:
             raise HTTPException(

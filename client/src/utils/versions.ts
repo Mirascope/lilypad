@@ -8,77 +8,84 @@ import {
 import { AxiosResponse } from "axios";
 
 export const fetchVersionsByFunctionName = async (
-  projectId: number,
-  functionName: string
+  functionName: string,
+  projectUuid?: string
 ) => {
+  if (!projectUuid || !functionName) return [];
+
   return (
     await api.get<VersionPublic[]>(
-      `/projects/${projectId}/functions/${functionName}/versions`
+      `/projects/${projectUuid}/functions/name/${functionName}/versions`
     )
   ).data;
 };
 
-export const fetchVersion = async (projectId: number, versionId?: number) => {
-  if (!versionId) return null;
+export const fetchVersion = async (
+  projectUuid: string,
+  versionUuid?: string
+) => {
+  if (!versionUuid) return null;
   return (
-    await api.get<VersionPublic>(`/projects/${projectId}/versions/${versionId}`)
+    await api.get<VersionPublic>(
+      `/projects/${projectUuid}/versions/${versionUuid}`
+    )
   ).data;
 };
 
 export const createVersion = async (
-  projectId: number,
+  projectUuid: string,
   versionCreate: FunctionAndPromptVersionCreate
 ): Promise<VersionPublic> => {
   return (
     await api.post<
       FunctionAndPromptVersionCreate,
       AxiosResponse<VersionPublic>
-    >(`projects/${projectId}/versions`, versionCreate)
+    >(`projects/${projectUuid}/versions`, versionCreate)
   ).data;
 };
 
 export const patchVersion = async (
-  projectId: number,
-  versionId: number
+  projectUuid: string,
+  versionUuid: string
 ): Promise<VersionPublic> => {
   return (
     await api.patch<undefined, AxiosResponse<VersionPublic>>(
-      `projects/${projectId}/versions/${versionId}/active`
+      `projects/${projectUuid}/versions/${versionUuid}/active`
     )
   ).data;
 };
 
 export const runVersion = async (
-  projectId: number,
-  versionId: number,
+  projectUuid: string,
+  versionUuid: string,
   values: Record<string, string>
 ): Promise<string> => {
   return (
     await api.post<Record<string, string>, AxiosResponse<string>>(
-      `projects/${projectId}/versions/${versionId}/run`,
+      `projects/${projectUuid}/versions/${versionUuid}/run`,
       values
     )
   ).data;
 };
 
 export const versionsByFunctionNameQueryOptions = (
-  projectId: number,
-  functionName: string
+  functionName: string,
+  projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["projects", projectId, "functions", functionName, "versions"],
-    queryFn: () => fetchVersionsByFunctionName(projectId, functionName),
+    queryKey: ["projects", projectUuid, "functions", functionName, "versions"],
+    queryFn: () => fetchVersionsByFunctionName(functionName, projectUuid),
     enabled: !!functionName,
   });
 
 export const versionQueryOptions = (
-  projectId: number,
-  versionId?: number,
+  projectUuid: string,
+  versionUuid?: string,
   options = {}
 ) =>
   queryOptions({
-    queryKey: ["projects", projectId, "versions", versionId],
-    queryFn: () => fetchVersion(projectId, versionId),
+    queryKey: ["projects", projectUuid, "versions", versionUuid],
+    queryFn: () => fetchVersion(projectUuid, versionUuid),
     ...options,
   });
 
@@ -87,15 +94,15 @@ export const usePatchActiveVersion = () => {
 
   return useMutation({
     mutationFn: async ({
-      projectId,
-      versionId,
+      projectUuid,
+      versionUuid,
     }: {
-      projectId: number;
-      versionId: number;
-    }) => await patchVersion(projectId, versionId),
-    onSuccess: (newVersion, { projectId }) => {
+      projectUuid: string;
+      versionUuid: string;
+    }) => await patchVersion(projectUuid, versionUuid),
+    onSuccess: (newVersion, { projectUuid }) => {
       queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "versions", newVersion.id],
+        queryKey: ["projects", projectUuid, "versions", newVersion.uuid],
       });
     },
   });
@@ -106,17 +113,17 @@ export const useCreateVersion = () => {
 
   return useMutation({
     mutationFn: async ({
-      projectId,
+      projectUuid,
       versionCreate,
     }: {
-      projectId: number;
+      projectUuid: string;
       versionCreate: FunctionAndPromptVersionCreate;
-    }) => await createVersion(projectId, versionCreate),
-    onSuccess: (newVersion, { projectId }) => {
+    }) => await createVersion(projectUuid, versionCreate),
+    onSuccess: (newVersion, { projectUuid }) => {
       queryClient.invalidateQueries({
         queryKey: [
           "projects",
-          projectId,
+          projectUuid,
           "functions",
           newVersion.function.name,
           "versions",
@@ -129,13 +136,13 @@ export const useCreateVersion = () => {
 export const useRunMutation = () => {
   return useMutation({
     mutationFn: async ({
-      projectId,
-      versionId,
+      projectUuid,
+      versionUuid,
       values,
     }: {
-      projectId: number;
-      versionId: number;
+      projectUuid: string;
+      versionUuid: string;
       values: Record<string, string>;
-    }) => await runVersion(projectId, versionId, values),
+    }) => await runVersion(projectUuid, versionUuid, values),
   });
 };

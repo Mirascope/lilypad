@@ -1,6 +1,7 @@
 """The `SpanService` class for spans."""
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from sqlmodel import select
 
@@ -14,12 +15,14 @@ class SpanService(BaseService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    def find_records_by_version_id(
-        self, project_id: int, version_id: int
+    def find_records_by_version_uuid(
+        self, project_uuid: UUID, version_uuid: UUID
     ) -> Sequence[SpanTable]:
-        """Find spans by version id"""
+        """Find spans by version uuid"""
         return self.session.exec(
             select(self.table).where(
-                self.table.project_id == project_id, self.table.version_id == version_id
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.version_uuid == version_uuid,
             )
         ).all()

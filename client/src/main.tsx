@@ -6,9 +6,9 @@ import ReactDOM from "react-dom/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import { AuthProvider, useAuth } from "@/auth";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +21,7 @@ const router = createRouter({
   defaultPreloadStaleTime: 0,
   context: {
     queryClient,
+    auth: undefined!,
   },
 });
 
@@ -31,6 +32,11 @@ declare module "@tanstack/react-router" {
   }
 }
 
+const InnerApp = () => {
+  const auth = useAuth();
+  return <RouterProvider router={router} context={{ auth }} />;
+};
+
 // Render the app
 const rootElement = document.getElementById("root")!;
 if (!rootElement.innerHTML) {
@@ -38,9 +44,11 @@ if (!rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider delayDuration={200}>
-          <RouterProvider router={router} />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider delayDuration={200}>
+            <InnerApp />
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </StrictMode>
   );

@@ -96,16 +96,16 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: ({ column }) => {
         return (
           <Button
-            variant="ghost"
+            variant='ghost'
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Timestamp
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className='ml-2 h-4 w-4' />
           </Button>
         );
       },
       cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("timestamp")}</div>
+        <div className='lowercase'>{row.getValue("timestamp")}</div>
       ),
     },
     {
@@ -115,23 +115,24 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant='ghost' className='h-8 w-8 p-0'>
+                <span className='sr-only'>Open menu</span>
+                <MoreHorizontal className='h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
-                    const { project_id, version_id, id, data } = row.original;
+                    const { project_uuid, version_uuid, uuid, data } =
+                      row.original;
                     const name = data?.name;
                     if (!name) return;
                     navigate({
-                      to: `/projects/${project_id}/functions/${name}/versions/${version_id}`,
+                      to: `/projects/${project_uuid}/functions/${name}/versions/${version_uuid}`,
                       search: {
-                        spanId: id,
+                        spanUuid: uuid,
                       },
                     });
                   }}
@@ -152,12 +153,12 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
 
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
     return (
-      <div className="p-4 border rounded-md overflow-auto">
-        <h2 className="text-lg font-semibold mb-2">Row Details</h2>
+      <div className='p-4 border rounded-md overflow-auto'>
+        <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
         {data.scope === Scope.LILYPAD ? (
           <LilypadPanel span={data} />
         ) : (
-          <LlmPanel spanId={data.id} />
+          <LlmPanel spanId={data.uuid} />
         )}
       </div>
     );
@@ -168,7 +169,7 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       data={data}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
-      filterColumn="display_name"
+      filterColumn='display_name'
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
     />

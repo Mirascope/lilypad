@@ -41,8 +41,12 @@ type FunctionFormValues = {
   version: VersionPublic | null;
 };
 
-export const SelectVersionForm = ({ versionId }: { versionId?: number }) => {
-  const { projectId, functionName: defaultFunctionName } = useParams({
+export const SelectVersionForm = ({
+  versionUuid,
+}: {
+  versionUuid?: string;
+}) => {
+  const { projectUuid, functionName: defaultFunctionName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();
@@ -67,11 +71,11 @@ export const SelectVersionForm = ({ versionId }: { versionId?: number }) => {
       if (name === "functionName") {
         method.setValue("version", null);
         navigate({
-          to: `/projects/${projectId}/functions/${value.functionName}`,
+          to: `/projects/${projectUuid}/functions/${value.functionName}`,
         });
       } else if (name === "version" && value.version) {
         navigate({
-          to: `/projects/${projectId}/functions/${value.version.function_name}/versions/${value.version.id}`,
+          to: `/projects/${projectUuid}/functions/${value.version.function_name}/versions/${value.version.uuid}`,
         });
       }
     });
@@ -80,20 +84,20 @@ export const SelectVersionForm = ({ versionId }: { versionId?: number }) => {
   }, [method.watch]);
 
   const { data: versions } = useSuspenseQuery(
-    versionsByFunctionNameQueryOptions(Number(projectId), functionName)
+    versionsByFunctionNameQueryOptions(functionName, projectUuid)
   );
   const { data: uniqueFunctionNames } = useSuspenseQuery(
-    uniqueFunctionNamesQueryOptions(Number(projectId))
+    uniqueFunctionNamesQueryOptions(projectUuid)
   );
   const uniqueFunctionNamesWithNew = [...uniqueFunctionNames];
   if (newFunctionName && !uniqueFunctionNames.includes(newFunctionName)) {
     uniqueFunctionNamesWithNew.push(newFunctionName);
   }
   useEffect(() => {
-    const version = versions?.find((v) => v.id === Number(versionId));
+    const version = versions?.find((v) => v.uuid === versionUuid);
     if (!version) return;
     method.setValue("version", version);
-  }, [versions, versionId]);
+  }, [versions, versionUuid]);
   const handleCancelClick = () => {
     method.setValue("newFunctionName", "");
   };
@@ -162,7 +166,7 @@ export const SelectVersionForm = ({ versionId }: { versionId?: number }) => {
                 <SelectContent>
                   {versions.map((version, i) => (
                     <SelectItem
-                      key={version.id}
+                      key={version.uuid}
                       value={JSON.stringify(version)}
                     >
                       v{i + 1}

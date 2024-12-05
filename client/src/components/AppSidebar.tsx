@@ -4,10 +4,13 @@ import {
   ScrollText,
   Table,
   Parentheses,
+  User2,
+  ChevronUp,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,10 +18,20 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { projectsQueryOptions } from "@/utils/projects";
+import { useAuth } from "@/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useUpdateActiveOrganizationMutation } from "@/utils/auth";
 
 const RecursiveMenuContent = ({ item, depth = 0 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -73,19 +86,24 @@ const RecursiveMenuContent = ({ item, depth = 0 }) => {
 };
 
 export const AppSidebar = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+  const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectList = projects.map((project) => ({
     title: project.name,
-    url: `/projects/${project.id}/functions`,
+    url: `/projects/${project.uuid}/functions`,
     children: [
       {
         title: "Traces",
-        url: `/projects/${project.id}/traces`,
+        url: `/projects/${project.uuid}/traces`,
         icon: Table,
       },
       {
         title: "New Function",
-        url: `/projects/${project.id}/functions`,
+        url: `/projects/${project.uuid}/functions`,
         icon: Parentheses,
       },
     ],
@@ -98,7 +116,38 @@ export const AppSidebar = () => {
       children: projectList,
     },
   ];
-
+  const handleOrganizationSwitch = async (organizationUuid: string) => {
+    if (user?.active_organization_uuid == organizationUuid) return;
+    const newSession = await organizationMutation.mutateAsync({
+      organizationUuid,
+    });
+    auth.setSession(newSession);
+  };
+  const handleLogout = () => {
+    auth.logout().then(() => {
+      router.invalidate().finally(() => {
+        navigate({
+          to: "/auth/login",
+          search: { redirect: undefined },
+        });
+      });
+    });
+  };
+  const renderOrganizationsDropdownItems = () => {
+    return user?.user_organizations.map((user_organization) => (
+      <DropdownMenuCheckboxItem
+        key={user_organization.uuid}
+        onClick={() =>
+          handleOrganizationSwitch(user_organization.organization.uuid)
+        }
+        checked={
+          user_organization.organization.uuid === user.active_organization_uuid
+        }
+      >
+        {user_organization.organization.name}
+      </DropdownMenuCheckboxItem>
+    ));
+  };
   return (
     <Sidebar collapsible='icon' className='lilypad-sidebar'>
       <SidebarContent>
@@ -116,6 +165,29 @@ export const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <User2 /> {user?.first_name}
+                  <ChevronUp className='ml-auto' />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side='top'
+                className='w-[--radix-popper-anchor-width]'
+              >
+                {renderOrganizationsDropdownItems()}
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 };
