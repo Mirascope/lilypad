@@ -1,3 +1,17 @@
+FROM node:20-slim as frontend
+WORKDIR /app/client
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy client files
+COPY client/. .
+
+# Install dependencies and build
+RUN pnpm install
+RUN pnpm run build:notypescript
+
+
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 
@@ -11,6 +25,9 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
 COPY . /app
+
+# Copy the built frontend from the frontend stage
+COPY --from=frontend /app/client/dist /app/foo/server/static
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
