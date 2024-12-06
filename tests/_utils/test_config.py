@@ -39,5 +39,4 @@ def test_load_config_with_empty_file(config_dir: Path, monkeypatch):
     config_file.write_text("")
 
     monkeypatch.setenv("LILYPAD_PROJECT_DIR", str(config_dir.parent))
-    with pytest.raises(json.JSONDecodeError):
-        load_config()
+    assert load_config() == {}

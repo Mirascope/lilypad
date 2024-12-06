@@ -11,14 +11,13 @@ class Settings(BaseSettings):
     """Server settings"""
 
     # Server settings
-    environment: str = Field(default="development")
+    environment: str = Field(default="production")
     port: int = Field(default=8000)
-    remote_base_url: str = Field(default="http://localhost:8000")
+    remote_base_url: str = Field(default="https://lilypad-production.up.railway.app")
 
     # GitHub OAuth settings
-    github_client_id: str | None = None
-    github_client_secret: str | None = None
-
+    github_client_id: str = Field(default="my_client_id")
+    github_client_secret: str = Field(default="my_client_secret")
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
