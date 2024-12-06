@@ -17,6 +17,7 @@ FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 # Install the project into `/app
 WORKDIR /app
 
+# Copy the built frontend from the frontend stage
 COPY --from=frontend /app/lilypad/server/static /app/lilypad/server/static
 
 # Enable bytecode compilation
@@ -27,7 +28,6 @@ ENV UV_LINK_MODE=copy
 
 COPY . /app
 
-# Copy the built frontend from the frontend stage
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
