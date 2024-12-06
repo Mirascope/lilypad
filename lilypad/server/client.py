@@ -49,12 +49,13 @@ class LilypadClient:
             token (str, optional): Default authentication token to include in all requests. Defaults to None.
             **session_kwargs: Additional keyword arguments for the session.
         """
+        config = load_config()
         settings = get_settings()
-        self.base_url = f"{settings.base_url.rstrip('/')}/api"
+        base_url: str = config.get("base_url", None) or settings.base_url
+        self.base_url = f"{base_url.rstrip('/')}/api"
         self.timeout = timeout
         self.session = requests.Session()
         try:
-            config = load_config()
             self.project_uuid = (
                 UUID(config["project_uuid"])
                 if config.get("project_uuid", None)

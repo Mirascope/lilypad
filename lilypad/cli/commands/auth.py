@@ -15,6 +15,7 @@ from rich.prompt import Confirm, IntPrompt
 from ...server.client import LilypadClient
 from ...server.models import DeviceCodeTable, ProjectPublic
 from ...server.settings import Settings, get_settings
+from ._utils import get_and_create_config
 
 
 def _generate_device_code() -> str:
@@ -102,14 +103,27 @@ def _check_existing_token(settings: Settings) -> bool:
     return False
 
 
-def auth_command() -> None:
+def auth_command(
+    base_url: str | None = typer.Option(
+        default=None, help="Remote url to send generations to"
+    ),
+) -> None:
     """Open browser for authentication and save the received token."""
     settings = get_settings()
+
+    if not base_url:
+        base_url = settings.base_url
+    config_path = os.path.join(".lilypad", "config.json")
+    data = get_and_create_config(config_path)
+    if "base_url" not in data:
+        with open(config_path, "w") as f:
+            data["base_url"] = base_url
+            json.dump(data, f, indent=4)
+
     if _check_existing_token(settings):
         return
-
     device_code = _generate_device_code()
-    login_url = f"{settings.client_url}/auth/login?deviceCode={device_code}"
+    login_url = f"{data['base_url']}/auth/login?deviceCode={device_code}"
     webbrowser.open(login_url)
 
     typer.echo("\nWaiting for authentication to complete...")
@@ -132,8 +146,6 @@ def auth_command() -> None:
     else:
         typer.echo("Authentication timed out. Please try again.")
         return
-    with open(".lilypad/config.json") as f:
-        data: dict = json.load(f)
     if "token" in data:
         lilypad_client = LilypadClient(timeout=10, token=data["token"])
         project_name = typer.prompt(
