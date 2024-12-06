@@ -19,7 +19,7 @@ from lilypad.server.models import Provider
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
 
 
-class TestResponseModel(BaseModel):
+class MockResponseModel(BaseModel):
     """Mock response model for testing"""
 
     message: str
@@ -33,17 +33,17 @@ class FormatBook(BaseTool):
 
 
 # Mock test functions
-async def async_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
+async def async_test_fn(text: str) -> MockResponseModel:  # pyright: ignore [reportReturnType]
     """Mock async test function."""
     pass
 
 
-def sync_test_fn(text: str) -> TestResponseModel:  # pyright: ignore [reportReturnType]
+def sync_test_fn(text: str) -> MockResponseModel:  # pyright: ignore [reportReturnType]
     """Mock sync test function."""
     pass
 
 
-async def async_stream_test_fn(text: str) -> AsyncIterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+async def async_stream_test_fn(text: str) -> AsyncIterable[MockResponseModel]:  # pyright: ignore [reportReturnType]
     """Mock async stream test function."""
     pass
 
@@ -53,7 +53,7 @@ async def async_stream_str_test_fn(text: str) -> AsyncIterable[str]:  # pyright:
     pass
 
 
-def sync_stream_test_fn(text: str) -> Iterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+def sync_stream_test_fn(text: str) -> Iterable[MockResponseModel]:  # pyright: ignore [reportReturnType]
     """Mock sync stream test function."""
     pass
 
@@ -73,12 +73,12 @@ def sync_message_test_fn(text: str) -> Message[Any]:  # pyright: ignore [reportR
     pass
 
 
-async def async_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+async def async_iterable_model_test_fn(text: str) -> Iterable[MockResponseModel]:  # pyright: ignore [reportReturnType]
     """Mock async iterable model test function."""
     pass
 
 
-def sync_iterable_model_test_fn(text: str) -> Iterable[TestResponseModel]:  # pyright: ignore [reportReturnType]
+def sync_iterable_model_test_fn(text: str) -> Iterable[MockResponseModel]:  # pyright: ignore [reportReturnType]
     """Mock sync iterable model test function."""
     pass
 

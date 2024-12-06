@@ -1,6 +1,6 @@
 import textwrap
 
-from lilypad._utils.closure import format_code
+from ...closure import _run_ruff
 
 
 def construct_function(
@@ -15,6 +15,4 @@ def construct_function(
     @lilypad.prompt()
     def {function_name}({', '.join(arg_list)}) -> str: ...
     """
-    source = textwrap.dedent(func_def)
-    code = format_code(source)
-    return code
+    return _run_ruff(textwrap.dedent(func_def))
