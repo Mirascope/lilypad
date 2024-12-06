@@ -34,7 +34,7 @@ class SettingsPublic(BaseModel):
 
 
 @api.get("/settings", response_model=SettingsPublic)
-async def get_settings(
+async def get_settings_client(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> SettingsPublic:
     """Get the configuration."""
