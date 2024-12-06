@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Server settings"""
 
     # Server settings
-    environment: str = Field(default="development")
+    environment: str = Field(default="production")
     port: int = Field(default=8000)
     remote_base_url: str = Field(default="https://lilypad-production.up.railway.app")
 
@@ -64,4 +64,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Cached settings instance"""
-    return Settings(environment="development")
+    return Settings()
