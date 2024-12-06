@@ -109,13 +109,11 @@ def local_command(
         create_tables("local")
     config_path = os.path.join(".lilypad", "config.json")
     data = get_and_create_config(config_path)
-    with open(config_path, "w") as f:
-        data["base_url"] = f"http://localhost:{new_port}"
-        json.dump(data, f, indent=4)
+    data["base_url"] = f"http://localhost:{new_port}"
     if existing_project:
         data["port"] = new_port
-        with open(config_path, "w") as f:
-            json.dump(data, f, indent=4)
+    with open(config_path, "w") as f:
+        json.dump(data, f, indent=4)
     lilypad_client = LilypadClient(timeout=10)
     process = _start_lilypad(Path.cwd(), new_port)
 
@@ -130,7 +128,6 @@ def local_command(
                 project = lilypad_client.post_project(project_name)
                 with open(config_path, "w") as f:
                     data["project_uuid"] = str(project.uuid)
-                    data["project_name"] = project_name
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:
             print("Shutting down...")
