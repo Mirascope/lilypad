@@ -12,10 +12,13 @@ from .closure_test_functions import (
     annotated_assignment_fn,
     annotated_input_arg_fn,
     built_in_fn,
+    closure_inside_decorator_fn,
+    closure_inside_imported_decorator_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,
     global_var_fn,
+    import_with_different_dist_name_fn,
     inner_class_fn,
     inner_fn,
     inner_sub_fn,
@@ -289,6 +292,33 @@ def test_global_var_fn() -> None:
         },
         "openai": {"version": importlib.metadata.version("openai"), "extras": None},
     }
+
+
+def test_import_with_different_dist_name_fn() -> None:
+    """Test the `Closure` class with an import with a different distribution name."""
+    closure = Closure.from_fn(import_with_different_dist_name_fn)
+    assert closure.code == _expected(import_with_different_dist_name_fn)
+    assert closure.dependencies == {
+        "google-generativeai": {"version": "0.8.3", "extras": None},
+        "googleapis-common-protos": {"version": "1.66.0", "extras": None},
+        "google-auth": {"version": "2.36.0", "extras": None},
+        "google-ai-generativelanguage": {"version": "0.6.10", "extras": None},
+        "google-api-core": {"version": "2.23.0", "extras": None},
+    }
+
+
+def test_closure_inside_decorator_fn() -> None:
+    """Test the `Closure` class inside a decorator."""
+    closure = closure_inside_decorator_fn()
+    assert closure.code == _expected(closure_inside_decorator_fn)
+    assert closure.dependencies == {}
+
+
+def test_closure_inside_imported_decorator_fn() -> None:
+    """Test the `Closure` class inside an imported decorator."""
+    closure = closure_inside_imported_decorator_fn()
+    assert closure.code == _expected(closure_inside_imported_decorator_fn)
+    assert closure.dependencies == {}
 
 
 def test_closure_run() -> None:
