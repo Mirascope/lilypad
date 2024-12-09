@@ -384,6 +384,7 @@ class _DependencyCollector:
                 continue
 
             dist_names = import_to_dist.get(root_module, [root_module])
+            print(f"Dist Names: {dist_names}")  # noqa: T201
             for dist_name in dist_names:
                 if dist_name not in installed_packages:  # pragma: no cover
                     continue
