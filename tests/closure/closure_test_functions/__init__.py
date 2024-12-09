@@ -8,6 +8,7 @@ from .main import (
     built_in_fn,
     closure_inside_decorator_fn,
     closure_inside_imported_decorator_fn,
+    closure_with_long_function_name_that_wraps_around_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,

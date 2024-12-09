@@ -15,6 +15,7 @@ from .closure_test_functions import (
     built_in_fn,
     closure_inside_decorator_fn,
     closure_inside_imported_decorator_fn,
+    closure_with_long_function_name_that_wraps_around_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,
@@ -351,3 +352,19 @@ def test_closure_run() -> None:
 
     closure = Closure.from_fn(fn)
     assert closure.run("Hello, world!") == "Hello, world!"
+
+
+def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
+    """Test the `Closure` class with a long function name that wraps around."""
+    closure = Closure.from_fn(closure_with_long_function_name_that_wraps_around_fn)
+    assert closure.code == _expected(
+        closure_with_long_function_name_that_wraps_around_fn
+    )
+    assert closure.dependencies == {
+        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+    }
+    assert closure.signature == inspect.cleandoc("""
+        def closure_with_long_function_name_that_wraps_around_fn(
+            arg1: str, arg2: str
+        ) -> ChatCompletionUserMessageParam: ...
+        """)

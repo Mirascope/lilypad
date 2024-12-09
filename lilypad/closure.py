@@ -41,7 +41,11 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     )
 
 
-def _clean_source_code(fn: Callable[..., Any] | type) -> str:
+def _clean_source_code(
+    fn: Callable[..., Any] | type,
+    *,
+    exclude_fn_body: bool = False,
+) -> str:
     source = dedent(inspect.getsource(fn))
     tree = ast.parse(source)
     fn_def = tree.body[0]
@@ -51,7 +55,9 @@ def _clean_source_code(fn: Callable[..., Any] | type) -> str:
     ):
         fn_def.body = fn_def.body[1:]
     cleaned_source = ast.unparse(ast.Module(body=[fn_def], type_ignores=[]))
-    if cleaned_source[-3:] == "():":
+    if exclude_fn_body and (definition_end := cleaned_source.find(":\n")) != -1:
+        cleaned_source = cleaned_source[: definition_end + 1]
+    if cleaned_source[-1] == ":":
         cleaned_source += " ..."
     return cleaned_source
 
@@ -474,6 +480,7 @@ class Closure:
     """Represents the closure of a function."""
 
     fn_name: str
+    signature: str
     code: str
     hash: str
     dependencies: dict[str, DependencyInfo]
@@ -481,11 +488,13 @@ class Closure:
     def __init__(
         self,
         fn_name: str,
+        signature: str,
         code: str,
         hash: str,
         dependencies: dict[str, DependencyInfo],
     ) -> None:
         self.fn_name = fn_name
+        self.signature = signature
         self.code = code
         self.hash = hash
         self.dependencies = dependencies
@@ -513,7 +522,13 @@ class Closure:
         except Exception:  # pragma: no cover
             formatted_code = code
         hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
-        return cls(fn.__name__, formatted_code, hash, dependencies)
+        return cls(
+            fn.__name__,
+            _run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
+            formatted_code,
+            hash,
+            dependencies,
+        )
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the closure."""

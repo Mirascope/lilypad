@@ -548,3 +548,19 @@ def closure_inside_imported_decorator_fn() -> str:
         return "Hello, world!"
     """
     return "Hello, world!"
+
+
+def closure_with_long_function_name_that_wraps_around_fn(
+    arg1: str,
+    arg2: str,
+) -> ChatCompletionUserMessageParam:
+    """
+    from openai.types.chat import ChatCompletionUserMessageParam
+
+
+    def closure_with_long_function_name_that_wraps_around_fn(
+        arg1: str, arg2: str
+    ) -> ChatCompletionUserMessageParam:
+        return {"role": "user", "content": "Hello, world!"}
+    """
+    return {"role": "user", "content": "Hello, world!"}
