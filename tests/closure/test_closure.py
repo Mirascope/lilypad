@@ -2,6 +2,7 @@
 
 import importlib.metadata
 import inspect
+import sys
 from collections.abc import Callable
 
 from lilypad.closure import Closure
@@ -298,13 +299,34 @@ def test_import_with_different_dist_name_fn() -> None:
     """Test the `Closure` class with an import with a different distribution name."""
     closure = Closure.from_fn(import_with_different_dist_name_fn)
     assert closure.code == _expected(import_with_different_dist_name_fn)
-    assert closure.dependencies == {
-        "google-generativeai": {"version": "0.8.3", "extras": None},
-        "googleapis-common-protos": {"version": "1.66.0", "extras": None},
-        "google-auth": {"version": "2.36.0", "extras": None},
-        "google-ai-generativelanguage": {"version": "0.6.10", "extras": None},
-        "google-api-core": {"version": "2.23.0", "extras": None},
+    expected_dependencies = {
+        "google-generativeai": {
+            "version": importlib.metadata.version("google-generativeai"),
+            "extras": None,
+        },
+        "googleapis-common-protos": {
+            "version": importlib.metadata.version("googleapis-common-protos"),
+            "extras": None,
+        },
+        "google-auth": {
+            "version": importlib.metadata.version("google-auth"),
+            "extras": None,
+        },
+        "google-ai-generativelanguage": {
+            "version": importlib.metadata.version("google-ai-generativelanguage"),
+            "extras": None,
+        },
+        "google-api-core": {
+            "version": importlib.metadata.version("google-api-core"),
+            "extras": None,
+        },
     }
+    if sys.version_info >= (3, 11):
+        expected_dependencies["protobuf"] = {
+            "version": importlib.metadata.version("protobuf"),
+            "extras": None,
+        }
+    assert closure.dependencies == expected_dependencies
 
 
 def test_closure_inside_decorator_fn() -> None:
