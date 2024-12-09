@@ -141,10 +141,11 @@ def get_tool_call(content: Any) -> dict[str, Any] | None:
     if tool_type := content.type:
         tool_call_dict["type"] = tool_type
 
-    if func := content.get("input"):
+    tool_call_dict["function"] = {}
+    if func := content.input:
         tool_call_dict["function"]["arguments"] = func
 
-    if name := content.get("name"):
+    if name := content.name:
         tool_call_dict["function"]["name"] = name
 
     return tool_call_dict
@@ -182,8 +183,8 @@ def get_message_event(message: Any) -> dict[str, AttributeValue]:
     }
 
     message_dict = {}
-    if content := message.text:
-        message_dict["content"] = json.dumps(content)
+    if message.type == "text" and (content := message.text):
+        message_dict["content"] = content
     if tool_calls := get_tool_call(message):
         message_dict["tool_calls"] = tool_calls
 

@@ -1,9 +1,8 @@
 import {
   ChevronDown,
-  ChevronRight,
   ScrollText,
   Table,
-  Parentheses,
+  // Parentheses,
   User2,
   ChevronUp,
 } from "lucide-react";
@@ -17,9 +16,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { projectsQueryOptions } from "@/utils/projects";
@@ -33,35 +37,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUpdateActiveOrganizationMutation } from "@/utils/auth";
 
-const RecursiveMenuContent = ({ item, depth = 0 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+type Item = {
+  title: string;
+  url: string;
+  icon?: React.ElementType;
+  children?: Item[];
+};
+const RecursiveMenuContent = ({
+  item,
+  depth = 0,
+}: {
+  item: Item;
+  depth?: number;
+}) => {
   const hasChildren = item.children && item.children.length > 0;
 
-  const handleClick = (e) => {
-    if (hasChildren) {
-      e.preventDefault();
-      setIsExpanded(!isExpanded);
-    }
-  };
-
-  return (
-    <>
-      <SidebarMenuButton
-        asChild={!hasChildren}
-        className={`w-full ${depth > 0 ? "ml-4" : ""}`}
-        onClick={hasChildren ? handleClick : undefined}
-      >
-        {hasChildren ? (
-          <div className='flex items-center w-full gap-2'>
-            {item.icon && <item.icon className='w-4 h-4' />}
-            <span>{item.title}</span>
-            {isExpanded ? (
-              <ChevronDown className='w-4 h-4 ml-auto' />
-            ) : (
-              <ChevronRight className='w-4 h-4 ml-auto' />
-            )}
-          </div>
-        ) : (
+  if (!hasChildren) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton className={depth > 0 ? "ml-4" : ""}>
           <Link
             to={item.url}
             className='flex items-center w-full gap-2 [&.active]:font-bold'
@@ -69,22 +63,40 @@ const RecursiveMenuContent = ({ item, depth = 0 }) => {
             {item.icon && <item.icon className='w-4 h-4' />}
             <span>{item.title}</span>
           </Link>
-        )}
-      </SidebarMenuButton>
-
-      {hasChildren && isExpanded && (
-        <SidebarMenu className='ml-4 relative before:absolute before:left-2 before:top-0 before:h-full before:w-px before:bg-gray-200'>
-          {item.children.map((child, index) => (
-            <SidebarMenuItem key={`${child.title}-${index}`}>
-              <RecursiveMenuContent item={child} depth={depth + 1} />
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      )}
-    </>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
+  return (
+    <Collapsible
+      defaultOpen
+      className={`group/collapsible-${depth.toString()}`}
+    >
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton className={depth > 0 ? "ml-4" : ""}>
+            {item.icon && <item.icon className='w-4 h-4' />}
+            <span>{item.title}</span>
+            <ChevronDown
+              className={`ml-auto transition-transform group-data-[state=open]/collapsible-${depth.toString()}:rotate-180`}
+            />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub className='nested-menu'>
+            {item.children?.map((child, index) => (
+              <RecursiveMenuContent
+                key={`${child.title}-${index}`}
+                item={child}
+                depth={depth + 1}
+              />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 };
-
 export const AppSidebar = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -92,23 +104,23 @@ export const AppSidebar = () => {
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const organizationMutation = useUpdateActiveOrganizationMutation();
-  const projectList = projects.map((project) => ({
+  const projectList: Item[] = projects.map((project) => ({
     title: project.name,
     url: `/projects/${project.uuid}/functions`,
     children: [
       {
-        title: "Traces",
-        url: `/projects/${project.uuid}/traces`,
+        title: "Generations",
+        url: `/projects/${project.uuid}/generations`,
         icon: Table,
       },
-      {
-        title: "New Function",
-        url: `/projects/${project.uuid}/functions`,
-        icon: Parentheses,
-      },
+      // {
+      //   title: "New Function",
+      //   url: `/projects/${project.uuid}/functions`,
+      //   icon: Parentheses,
+      // },
     ],
   }));
-  const items = [
+  const items: Item[] = [
     {
       title: "Projects",
       url: "/projects",
@@ -134,7 +146,7 @@ export const AppSidebar = () => {
     });
   };
   const renderOrganizationsDropdownItems = () => {
-    return user?.user_organizations.map((user_organization) => (
+    return user?.user_organizations?.map((user_organization) => (
       <DropdownMenuCheckboxItem
         key={user_organization.uuid}
         onClick={() =>
