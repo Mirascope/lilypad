@@ -247,6 +247,8 @@ export interface ProjectPublic {
  * Prompt create model.
  */
 export interface PromptCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
   /** Hash */
   hash?: string | null;
   /** Template */
@@ -312,6 +314,14 @@ export enum Scope {
   LLM = "llm",
 }
 
+/** SettingsPublic */
+export interface SettingsPublic {
+  /** Remote Base Url */
+  remote_base_url: string;
+  /** Github Client Id */
+  github_client_id: string;
+}
+
 /**
  * SpanMoreDetails
  * Span more details model.
@@ -370,6 +380,11 @@ export interface SpanPublic {
   version?: VersionPublic | null;
   /** Child Spans */
   child_spans: SpanPublic[];
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
 }
 
 /**
@@ -425,7 +440,7 @@ export interface UserPublic {
   /** Access Token */
   access_token?: string | null;
   /** User Organizations */
-  user_organizations: UserOrganizationPublic[];
+  user_organizations?: UserOrganizationPublic[] | null;
 }
 
 /**

@@ -3,7 +3,7 @@ import { AUTH_STORAGE_KEY } from "@/utils/constants";
 import axios from "axios";
 let baseURL = "/api/v0";
 if (import.meta.env.MODE === "development") {
-  baseURL = `${import.meta.env.VITE_API_SERVER}/api/v0`;
+  baseURL = "http://localhost:8000/api/v0";
 }
 const api = axios.create({
   baseURL,

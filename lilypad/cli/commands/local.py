@@ -17,6 +17,7 @@ from rich import print
 from ...server.client import LilypadClient
 from ...server.db.setup import create_tables
 from ...server.settings import get_settings
+from ._utils import get_and_create_config
 
 
 def _start_lilypad(project_dir: Path, port: int) -> subprocess.Popen:
@@ -106,12 +107,13 @@ def local_command(
         project_name = typer.prompt("What's your project name?")
     if not os.path.exists("pad.db"):
         create_tables("local")
+    config_path = os.path.join(".lilypad", "config.json")
+    data = get_and_create_config(config_path)
+    data["base_url"] = f"http://localhost:{new_port}"
     if existing_project:
-        with open(".lilypad/config.json") as f:
-            data = json.load(f)
         data["port"] = new_port
-        with open(".lilypad/config.json", "w") as f:
-            json.dump(data, f, indent=4)
+    with open(config_path, "w") as f:
+        json.dump(data, f, indent=4)
     lilypad_client = LilypadClient(timeout=10)
     process = _start_lilypad(Path.cwd(), new_port)
 
@@ -123,13 +125,9 @@ def local_command(
     if not existing_project:
         try:
             if _wait_for_server(lilypad_client):
-                os.mkdir(".lilypad")
                 project = lilypad_client.post_project(project_name)
-                with open(".lilypad/config.json", "w") as f:
-                    data = {
-                        "project_uuid": str(project.uuid),
-                        "project_name": project_name,
-                    }
+                with open(config_path, "w") as f:
+                    data["project_uuid"] = str(project.uuid)
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:
             print("Shutting down...")

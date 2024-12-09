@@ -12,5 +12,5 @@ def load_config() -> dict[str, Any]:
         with open(f"{project_dir}/.lilypad/config.json") as f:
             config = json.loads(f.read())
         return config
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return {}

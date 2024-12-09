@@ -6,6 +6,7 @@ import os
 import secrets
 import time
 import webbrowser
+from typing import Any
 
 import httpx
 import typer
@@ -15,6 +16,7 @@ from rich.prompt import Confirm, IntPrompt
 from ...server.client import LilypadClient
 from ...server.models import DeviceCodeTable, ProjectPublic
 from ...server.settings import Settings, get_settings
+from ._utils import get_and_create_config
 
 
 def _generate_device_code() -> str:
@@ -22,20 +24,15 @@ def _generate_device_code() -> str:
     return secrets.token_urlsafe(16)
 
 
-def _save_token(device_code: DeviceCodeTable) -> bool:
+def _save_token(device_code: DeviceCodeTable) -> dict[str, Any]:
     """Save the token to a JSON file."""
-    if not os.path.exists(".lilypad"):
-        os.mkdir(".lilypad")
-    try:
-        with open(".lilypad/config.json") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        data = {}
+    config_path = os.path.join(".lilypad", "config.json")
+    data = get_and_create_config(config_path)
 
-    with open(".lilypad/config.json", "w") as f:
+    with open(config_path, "w") as f:
         data["token"] = device_code.token
         json.dump(data, f, indent=4)
-        return True
+    return data
 
 
 async def _poll_auth_status(
@@ -76,40 +73,72 @@ def _show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
     return projects[choice - 1]
 
 
-def _check_existing_token(settings: Settings) -> bool:
+def _create_or_switch_project(data: dict) -> bool:
+    """Prompt the user to create a new project or switch to an existing one."""
+    lilypad_client = LilypadClient(timeout=10, token=data["token"])
+    projects = lilypad_client.get_projects()
+    if len(projects) == 0:
+        typer.echo("You don't have any projects. Let's create one!")
+        project_name = typer.prompt("What is your project name?")
+        project_public = lilypad_client.post_project(project_name)
+        with open(".lilypad/config.json", "w") as f:
+            data["project_uuid"] = str(project_public.uuid)
+            json.dump(data, f, indent=4)
+        typer.echo(f"\nProject created: {project_name}. You are now ready to trace!")
+        return True
+    elif "project_uuid" in data:
+        if Confirm.ask("Would you like to switch projects?"):
+            selected_project = _show_project_selection(projects)
+            typer.echo(f"\nSwitching to project: {selected_project.name}")
+            with open(".lilypad/config.json", "w") as f:
+                data["project_uuid"] = str(selected_project.uuid)
+                json.dump(data, f, indent=4)
+            return True
+        else:
+            typer.echo("Bye!")
+            return True
+    else:
+        typer.echo("Project is missing in config, please select one to continue.")
+        selected_project = _show_project_selection(projects)
+        with open(".lilypad/config.json", "w") as f:
+            data["project_uuid"] = str(selected_project.uuid)
+            json.dump(data, f, indent=4)
+        typer.echo(
+            f"\nProject selected: {selected_project.name}. You are now ready to trace!"
+        )
+        return True
+
+
+def _check_existing_token() -> bool:
     """Check if an existing token exists and prompt the user to switch projects."""
     if os.path.exists(".lilypad/config.json"):
         with open(".lilypad/config.json") as f:
             data = json.load(f)
         if "token" in data:
-            lilypad_client = LilypadClient(timeout=10, token=data["token"])
-            if Confirm.ask(
-                "You're already authenticated. Would you like to switch projects?"
-            ):
-                projects = lilypad_client.get_projects()
-                if not projects:
-                    typer.echo("Error: Failed to fetch projects.")
-                    raise typer.Exit()
-                selected_project = _show_project_selection(projects)
-                typer.echo(f"\nSwitching to project: {selected_project.name}")
-                with open(".lilypad/config.json", "w") as f:
-                    data["project_uuid"] = str(selected_project.uuid)
-                    json.dump(data, f, indent=4)
-                return True
-            if not Confirm.ask("Would you like to create a new project?"):
-                print("Bye!")
-                raise typer.Exit()
+            return _create_or_switch_project(data)
     return False
 
 
-def auth_command() -> None:
+def auth_command(
+    base_url: str | None = typer.Option(
+        default=None, help="Remote url to send generations to"
+    ),
+) -> None:
     """Open browser for authentication and save the received token."""
     settings = get_settings()
-    if _check_existing_token(settings):
+    if not base_url:
+        base_url = settings.base_url
+    config_path = os.path.join(".lilypad", "config.json")
+    data = get_and_create_config(config_path)
+    with open(config_path, "w") as f:
+        data["base_url"] = base_url
+        json.dump(data, f, indent=4)
+
+    if _check_existing_token():
         return
 
     device_code = _generate_device_code()
-    login_url = f"{settings.client_url}/auth/login?deviceCode={device_code}"
+    login_url = f"{data['base_url']}/auth/login?deviceCode={device_code}"
     webbrowser.open(login_url)
 
     typer.echo("\nWaiting for authentication to complete...")
@@ -122,8 +151,10 @@ def auth_command() -> None:
         session_data = asyncio.run(_poll_auth_status(device_code, settings))
         if session_data:
             did_delete = asyncio.run(_delete_device_code(device_code, settings))
-            did_save = _save_token(session_data)
-            if not did_delete and not did_save:
+            with open(config_path, "w") as f:
+                data["token"] = session_data.token
+                json.dump(data, f, indent=4)
+            if not did_delete:
                 typer.echo("Authentication failed. Please try again.")
                 return
             typer.echo("\nAuthentication successful!")
@@ -132,18 +163,5 @@ def auth_command() -> None:
     else:
         typer.echo("Authentication timed out. Please try again.")
         return
-    with open(".lilypad/config.json") as f:
-        data: dict = json.load(f)
-    if "token" in data:
-        lilypad_client = LilypadClient(timeout=10, token=data["token"])
-        project_name = typer.prompt(
-            "Let's create a new project. What is your project name?"
-        )
-        project_public = lilypad_client.post_project(project_name)
-        with open(".lilypad/config.json", "w") as f:
-            data["project_uuid"] = str(project_public.uuid)
-            json.dump(data, f, indent=4)
-        typer.echo(f"\nProject created: {project_name}. You are now ready to trace!")
-        return
-    typer.echo("Error, failed to retrieve token, please reauthenticate.")
-    typer.Exit()
+
+    _create_or_switch_project(data)
