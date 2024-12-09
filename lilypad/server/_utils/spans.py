@@ -99,9 +99,19 @@ def convert_gemini_messages(
             if len(assistant_message.content) <= index:
                 assistant_message.content.append(_TextPart(type="text", text=""))
             attribute_message = json.loads(attributes.get("message", "{}"))
-            content = attribute_message.get("content", "{}")
-            for c in content:
-                assistant_message.content[index].text += c
+            if content := attribute_message.get("content"):
+                for c in content:
+                    assistant_message.content[index].text += c
+            if tool_calls := attribute_message.get("tool_calls"):
+                for tool_call in tool_calls:
+                    function: dict = tool_call.get("function", {})
+                    assistant_message.content.append(
+                        _ToolCall(
+                            type="tool_call",
+                            name=function.get("name", ""),
+                            arguments=function.get("arguments", {}),
+                        )
+                    )
     structured_messages.append(assistant_message)
     return structured_messages
 
@@ -238,7 +248,16 @@ def convert_anthropic_messages(
                     assistant_message.content[index].text += c
             else:
                 attribute_message = json.loads(attributes.get("message", "{}"))
-                content = attribute_message.get("content", "{}")
-                assistant_message.content = [_TextPart(type="text", text=content)]
+                if content := attribute_message.get("content"):
+                    assistant_message.content = [_TextPart(type="text", text=content)]
+                elif tool_calls := attribute_message.get("tool_calls"):
+                    function = tool_calls.get("function", {})
+                    assistant_message.content.append(
+                        _ToolCall(
+                            type="tool_call",
+                            name=function.get("name", ""),
+                            arguments=function.get("arguments", {}),
+                        )
+                    )
     structured_messages.append(assistant_message)
     return structured_messages
