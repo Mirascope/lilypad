@@ -167,7 +167,7 @@ export const DataTable = <T extends { uuid: string }>({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className='rounded-md border h-[calc(100vh-100px)] overflow-auto'>
+        <div className='rounded-md border overflow-auto'>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

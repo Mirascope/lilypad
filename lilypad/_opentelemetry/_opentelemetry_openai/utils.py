@@ -123,19 +123,19 @@ def get_tool_calls(message: Any) -> list[dict[str, Any]] | None:
     calls = []
     for tool_call in tool_calls:
         tool_call_dict = {}
-        if call_id := tool_call.get("id"):
+        if call_id := tool_call.id:
             tool_call_dict["id"] = call_id
 
-        if tool_type := tool_call.get("type"):
+        if tool_type := tool_call.type:
             tool_call_dict["type"] = tool_type
 
-        if func := tool_call.get("function"):
+        if func := tool_call.function:
             tool_call_dict["function"] = {}
 
-            if name := func.get("name"):
+            if name := func.name:
                 tool_call_dict["function"]["name"] = name
 
-            if arguments := func.get("arguments"):
+            if arguments := func.arguments:
                 tool_call_dict["function"]["arguments"] = arguments
 
         calls.append(tool_call_dict)

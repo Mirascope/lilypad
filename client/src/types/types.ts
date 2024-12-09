@@ -63,10 +63,6 @@ export interface AnthropicCallParams {
   top_p?: number | null;
 }
 
-/**
- * DeviceCodeTable
- * Device codes table.
- */
 export type DeviceCodeTable = object;
 
 /**

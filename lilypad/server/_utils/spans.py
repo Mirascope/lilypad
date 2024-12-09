@@ -30,12 +30,20 @@ class _AudioPart(BaseModel):
     audio: str
 
 
+class _ToolCall(BaseModel):
+    """Image part model."""
+
+    type: Literal["tool_call"]
+    name: str
+    arguments: dict[str, Any]
+
+
 # TODO: Add support for tools
 class MessageParam(BaseModel):
     """Message param model agnostic to providers."""
 
     role: str
-    content: list[_AudioPart | _TextPart | _ImagePart]
+    content: list[_AudioPart | _TextPart | _ImagePart | _ToolCall]
 
 
 def convert_gemini_messages(
@@ -151,14 +159,26 @@ def convert_openai_messages(
         elif name == "gen_ai.choice":
             attributes = message.get("attributes", {})
             index = attributes["index"]
-            if len(assistant_message.content) <= index:
+            attribute_message: dict = json.loads(attributes.get("message", "{}"))
+            if tool_calls := attribute_message.get("tool_calls"):
+                for tool_call in tool_calls:
+                    function: dict = tool_call.get("function", {})
+                    assistant_message.content.append(
+                        _ToolCall(
+                            type="tool_call",
+                            name=function.get("name", ""),
+                            arguments=json.loads(function.get("arguments", "{}")),
+                        )
+                    )
+            elif len(assistant_message.content) <= index and attribute_message.get(
+                "content"
+            ):
                 assistant_message.content.append(_TextPart(type="text", text=""))
-            attribute_message = json.loads(attributes.get("message", "{}"))
-            try:
-                content = json.loads(attribute_message.get("content", "{}"))
-            except json.JSONDecodeError:
-                content = attribute_message.get("content", "")
-            assistant_message.content[index].text += content
+                try:
+                    content = str(json.loads(attribute_message.get("content", "{}")))
+                except json.JSONDecodeError:
+                    content = attribute_message.get("content", "")
+                assistant_message.content[index].text += content
     structured_messages.append(assistant_message)
     return structured_messages
 

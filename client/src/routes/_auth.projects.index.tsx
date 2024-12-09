@@ -32,10 +32,10 @@ const Projects = () => {
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left'>Projects</h1>
-        <p className='text-lg'>Select a project to view its traces.</p>
+        <p className='text-lg'>Select a project to view generations.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
-            <Link key={project.uuid} to={`/projects/${project.uuid}/functions`}>
+            <Link key={project.uuid} to={`/projects/${project.uuid}/traces`}>
               <Card
                 key={project.uuid}
                 className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -47,7 +47,7 @@ const Projects = () => {
         ) : (
           <>
             <div>
-              No projects found. To begin tracing, please authenticate first.
+              No projects found. To view generations, please authenticate first.
             </div>
             <CodeSnippet code='lilypad auth' />
           </>

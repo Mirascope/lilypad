@@ -54,8 +54,8 @@ def get_llm_request_attributes(
             "frequency_penalty"
         ),
         gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: kwargs.get(
-            "response_format"
-        ),
+            "response_format", {}
+        ).get("type"),
         gen_ai_attributes.GEN_AI_OPENAI_REQUEST_SEED: kwargs.get("seed"),
     }
 

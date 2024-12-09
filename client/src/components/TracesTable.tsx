@@ -1,5 +1,4 @@
 import { ArrowUpDown, ChevronRight, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
 import { Scope } from "@/types/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +95,7 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: ({ column }) => {
         return (
           <Button
+            className='p-0'
             variant='ghost'
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
@@ -122,24 +122,22 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {row.original.scope === Scope.LILYPAD && (
+              {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
-                    const { project_uuid, version_uuid, uuid, data } =
+                    const { project_uuid, version_uuid, version } =
                       row.original;
-                    const name = data?.name;
+                    console.log(row.original);
+                    const name = version?.function_name;
                     if (!name) return;
                     navigate({
                       to: `/projects/${project_uuid}/functions/${name}/versions/${version_uuid}`,
-                      search: {
-                        spanUuid: uuid,
-                      },
                     });
                   }}
                 >
                   Open Playground
                 </DropdownMenuItem>
-              )}
+              )} */}
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
