@@ -374,6 +374,7 @@ class _DependencyCollector:
             dist.name: dist for dist in importlib.metadata.distributions()
         }
         import_to_dist = importlib.metadata.packages_distributions()
+        print(import_to_dist.get("protobuf", "PROTOBUF NOT FOUND"))  # noqa: T201
 
         dependencies = {}
         for import_stmt in imports:
