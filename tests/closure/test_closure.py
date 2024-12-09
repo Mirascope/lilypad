@@ -334,24 +334,32 @@ def test_closure_inside_decorator_fn() -> None:
     """Test the `Closure` class inside a decorator."""
     closure = closure_inside_decorator_fn()
     assert closure.code == _expected(closure_inside_decorator_fn)
-    assert closure.dependencies == {}
+    assert closure.dependencies == {
+        "python-lilypad": {
+            "version": importlib.metadata.version("python-lilypad"),
+            "extras": [
+                "anthropic",
+                "gemini",
+                "openai",
+            ],
+        }
+    }
 
 
 def test_closure_inside_imported_decorator_fn() -> None:
     """Test the `Closure` class inside an imported decorator."""
     closure = closure_inside_imported_decorator_fn()
     assert closure.code == _expected(closure_inside_imported_decorator_fn)
-    assert closure.dependencies == {}
-
-
-def test_closure_run() -> None:
-    """Tests the `Closure.run` method."""
-
-    def fn(arg: str) -> str:
-        return arg
-
-    closure = Closure.from_fn(fn)
-    assert closure.run("Hello, world!") == "Hello, world!"
+    assert closure.dependencies == {
+        "python-lilypad": {
+            "version": importlib.metadata.version("python-lilypad"),
+            "extras": [
+                "anthropic",
+                "gemini",
+                "openai",
+            ],
+        }
+    }
 
 
 def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
@@ -368,3 +376,13 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
             arg1: str, arg2: str
         ) -> ChatCompletionUserMessageParam: ...
         """)
+
+
+def test_closure_run() -> None:
+    """Tests the `Closure.run` method."""
+
+    def fn(arg: str) -> str:
+        return arg
+
+    closure = Closure.from_fn(fn)
+    assert closure.run("Hello, world!") == "Hello, world!"

@@ -390,9 +390,12 @@ class _DependencyCollector:
 
             dist_names = import_to_dist.get(root_module, [root_module])
             for dist_name in dist_names:
+                # only >= 3.12 properly discovers this in testing due to structure
+                if dist_name == "lilypad":  # pragma: no cover
+                    dist_name = "python-lilypad"
                 if dist_name not in installed_packages:  # pragma: no cover
                     continue
-                dist = importlib.metadata.distribution(dist_name)
+                dist = installed_packages[dist_name]
                 extras = []
                 for extra in dist.metadata.get_all("Provides-Extra", []):
                     extra_reqs = dist.requires or []
