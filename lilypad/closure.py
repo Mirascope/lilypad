@@ -31,7 +31,8 @@ class DependencyInfo(TypedDict):
 def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     module_file = getattr(module, "__file__", None)
     return (
-        module.__name__ in sys.stdlib_module_names
+        module.__name__ == "lilypad"  # always consider lilypad as third-party
+        or module.__name__ in sys.stdlib_module_names
         or module_file is None
         or any(
             str(Path(module_file).resolve()).startswith(site_pkg)
@@ -40,7 +41,11 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     )
 
 
-def _clean_source_code(fn: Callable[..., Any] | type) -> str:
+def _clean_source_code(
+    fn: Callable[..., Any] | type,
+    *,
+    exclude_fn_body: bool = False,
+) -> str:
     source = dedent(inspect.getsource(fn))
     tree = ast.parse(source)
     fn_def = tree.body[0]
@@ -50,7 +55,9 @@ def _clean_source_code(fn: Callable[..., Any] | type) -> str:
     ):
         fn_def.body = fn_def.body[1:]
     cleaned_source = ast.unparse(ast.Module(body=[fn_def], type_ignores=[]))
-    if cleaned_source[-3:] == "():":
+    if exclude_fn_body and (definition_end := cleaned_source.find(":\n")) != -1:
+        cleaned_source = cleaned_source[: definition_end + 1]
+    if cleaned_source[-1] == ":":
         cleaned_source += " ..."
     return cleaned_source
 
@@ -182,6 +189,25 @@ class _DefinitionCollector(ast.NodeVisitor):
         self.imports: set[str] = set()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        for decorator_node in node.decorator_list:
+            if isinstance(decorator_node, ast.Name):
+                if decorator_func := getattr(self.module, decorator_node.id, None):
+                    self.definitions_to_include.append(decorator_func)
+            elif isinstance(decorator_node, ast.Attribute):
+                names = []
+                current = decorator_node
+                while isinstance(current, ast.Attribute):
+                    names.append(current.attr)
+                    current = current.value
+                if isinstance(current, ast.Name):
+                    names.append(current.id)
+                    full_path = ".".join(reversed(names))
+                    if (
+                        full_path in self.used_names
+                        and (decorator_module := getattr(self.module, names[-1], None))
+                        and (definition := getattr(decorator_module, names[0], None))
+                    ):
+                        self.definitions_to_include.append(definition)
         if nested_func := getattr(self.module, node.name, None):
             self.definitions_to_analyze.append(nested_func)
         self.generic_visit(node)
@@ -328,8 +354,8 @@ class _DependencyCollector:
             self.user_defined_imports.update(import_collector.user_defined_imports)
 
             if include_source:
-                for udi in self.user_defined_imports:
-                    source = source.replace(udi, "")
+                for user_defined_import in self.user_defined_imports:
+                    source = source.replace(user_defined_import, "")
                 self.source_code.insert(0, source)
 
             self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
@@ -350,7 +376,10 @@ class _DependencyCollector:
         self, imports: set[str]
     ) -> dict[str, DependencyInfo]:
         stdlib_modules = set(sys.stdlib_module_names)
-        installed_packages = {dist.name for dist in importlib.metadata.distributions()}
+        installed_packages = {
+            dist.name: dist for dist in importlib.metadata.distributions()
+        }
+        import_to_dist = importlib.metadata.packages_distributions()
 
         dependencies = {}
         for import_stmt in imports:
@@ -358,12 +387,15 @@ class _DependencyCollector:
             root_module = parts[1].split(".")[0]
             if root_module in stdlib_modules:
                 continue
-            spec = importlib.util.find_spec(root_module)
-            if spec is None or spec.origin is None:  # pragma: no cover
-                continue
-            dist = importlib.metadata.distribution(root_module)
 
-            if dist:
+            dist_names = import_to_dist.get(root_module, [root_module])
+            for dist_name in dist_names:
+                # only >= 3.12 properly discovers this in testing due to structure
+                if dist_name == "lilypad":  # pragma: no cover
+                    dist_name = "python-lilypad"
+                if dist_name not in installed_packages:  # pragma: no cover
+                    continue
+                dist = installed_packages[dist_name]
                 extras = []
                 for extra in dist.metadata.get_all("Provides-Extra", []):
                     extra_reqs = dist.requires or []
@@ -451,6 +483,7 @@ class Closure:
     """Represents the closure of a function."""
 
     fn_name: str
+    signature: str
     code: str
     hash: str
     dependencies: dict[str, DependencyInfo]
@@ -458,11 +491,13 @@ class Closure:
     def __init__(
         self,
         fn_name: str,
+        signature: str,
         code: str,
         hash: str,
         dependencies: dict[str, DependencyInfo],
     ) -> None:
         self.fn_name = fn_name
+        self.signature = signature
         self.code = code
         self.hash = hash
         self.dependencies = dependencies
@@ -490,7 +525,13 @@ class Closure:
         except Exception:  # pragma: no cover
             formatted_code = code
         hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
-        return cls(fn.__name__, formatted_code, hash, dependencies)
+        return cls(
+            fn.__name__,
+            _run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
+            formatted_code,
+            hash,
+            dependencies,
+        )
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the closure."""

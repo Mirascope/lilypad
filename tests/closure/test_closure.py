@@ -2,6 +2,7 @@
 
 import importlib.metadata
 import inspect
+import sys
 from collections.abc import Callable
 
 from lilypad.closure import Closure
@@ -12,10 +13,14 @@ from .closure_test_functions import (
     annotated_assignment_fn,
     annotated_input_arg_fn,
     built_in_fn,
+    closure_inside_decorator_fn,
+    closure_inside_imported_decorator_fn,
+    closure_with_long_function_name_that_wraps_around_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,
     global_var_fn,
+    import_with_different_dist_name_fn,
     inner_class_fn,
     inner_fn,
     inner_sub_fn,
@@ -289,6 +294,88 @@ def test_global_var_fn() -> None:
         },
         "openai": {"version": importlib.metadata.version("openai"), "extras": None},
     }
+
+
+def test_import_with_different_dist_name_fn() -> None:
+    """Test the `Closure` class with an import with a different distribution name."""
+    closure = Closure.from_fn(import_with_different_dist_name_fn)
+    assert closure.code == _expected(import_with_different_dist_name_fn)
+    expected_dependencies = {
+        "google-generativeai": {
+            "version": importlib.metadata.version("google-generativeai"),
+            "extras": None,
+        },
+        "googleapis-common-protos": {
+            "version": importlib.metadata.version("googleapis-common-protos"),
+            "extras": None,
+        },
+        "google-auth": {
+            "version": importlib.metadata.version("google-auth"),
+            "extras": None,
+        },
+        "google-ai-generativelanguage": {
+            "version": importlib.metadata.version("google-ai-generativelanguage"),
+            "extras": None,
+        },
+        "google-api-core": {
+            "version": importlib.metadata.version("google-api-core"),
+            "extras": None,
+        },
+    }
+    if sys.version_info >= (3, 11):
+        expected_dependencies["protobuf"] = {
+            "version": importlib.metadata.version("protobuf"),
+            "extras": None,
+        }
+    assert closure.dependencies == expected_dependencies
+
+
+def test_closure_inside_decorator_fn() -> None:
+    """Test the `Closure` class inside a decorator."""
+    closure = closure_inside_decorator_fn()
+    assert closure.code == _expected(closure_inside_decorator_fn)
+    assert closure.dependencies == {
+        "python-lilypad": {
+            "version": importlib.metadata.version("python-lilypad"),
+            "extras": [
+                "anthropic",
+                "gemini",
+                "openai",
+            ],
+        }
+    }
+
+
+def test_closure_inside_imported_decorator_fn() -> None:
+    """Test the `Closure` class inside an imported decorator."""
+    closure = closure_inside_imported_decorator_fn()
+    assert closure.code == _expected(closure_inside_imported_decorator_fn)
+    assert closure.dependencies == {
+        "python-lilypad": {
+            "version": importlib.metadata.version("python-lilypad"),
+            "extras": [
+                "anthropic",
+                "gemini",
+                "openai",
+            ],
+        }
+    }
+
+
+def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
+    """Test the `Closure` class with a long function name that wraps around."""
+    closure = Closure.from_fn(closure_with_long_function_name_that_wraps_around_fn)
+    assert closure.code == _expected(
+        closure_with_long_function_name_that_wraps_around_fn
+    )
+    assert closure.dependencies == {
+        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+    }
+    assert closure.signature == inspect.cleandoc("""
+        def closure_with_long_function_name_that_wraps_around_fn(
+            arg1: str, arg2: str
+        ) -> ChatCompletionUserMessageParam: ...
+        """)
 
 
 def test_closure_run() -> None:
