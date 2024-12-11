@@ -37,6 +37,7 @@ class _PromptBase(SQLModel):
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
     template: str
+    is_active: bool = Field(default=False)
 
 
 class PromptPublic(_PromptBase):

@@ -12,16 +12,30 @@ prompts_router = APIRouter()
 
 
 @prompts_router.get(
-    "/projects/{project_uuid}/prompts/hash/{prompt_hash}",
+    "/projects/{project_uuid}/prompts/hash/{prompt_hash}/active",
     response_model=PromptPublic,
 )
-async def get_prompt_by_hash(
+async def get_prompt_active_version_by_hash(
     project_uuid: UUID,
     prompt_hash: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> PromptTable:
     """Get prompt by hash."""
-    return prompt_service.find_record_by_hash(prompt_hash)
+    return prompt_service.find_prompt_active_version_by_hash(prompt_hash)
+
+
+@prompts_router.patch(
+    "/projects/{project_uuid}/prompts/{prompt_uuid}/active",
+    response_model=PromptPublic,
+)
+async def set_active_version(
+    project_uuid: UUID,
+    prompt_uuid: UUID,
+    prompt_service: Annotated[PromptService, Depends(PromptService)],
+) -> PromptTable:
+    """Set active version for synced function."""
+    new_active_version = prompt_service.find_record_by_uuid(prompt_uuid)
+    return prompt_service.change_active_version(project_uuid, new_active_version)
 
 
 # @prompts_router.post("/project/{project_uuid/prompts/{prompt_uuid}/run")

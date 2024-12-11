@@ -4,15 +4,7 @@ import inspect
 import json
 from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    ParamSpec,
-    Protocol,
-    TypeVar,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, overload
 
 from mirascope.core import BaseMessageParam, prompt_template
 from mirascope.core.base import CommonCallParams
@@ -27,7 +19,6 @@ from .server.models import PromptPublic
 from .server.settings import get_settings
 
 _P = ParamSpec("_P")
-_R = TypeVar("_R")
 
 config = load_config()
 settings = get_settings()
@@ -36,14 +27,6 @@ lilypad_client = LilypadClient(
     timeout=10,
     token=config.get("token", None),
 )
-
-# NEED TO FIGRUE THESE OUT
-# from anthropic.types import MessageParam
-# from google.generativeai.types import ContentDict
-# from mirascope.core.anthropic import AnthropicCallParams
-# from mirascope.core.gemini import GeminiCallParams
-# from mirascope.core.openai import OpenAICallParams
-# from openai.types.chat import ChatCompletionMessageParam
 
 if TYPE_CHECKING:
     try:
@@ -296,10 +279,10 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_version(fn)
+                version = lilypad_client.get_prompt_active_version(fn)
                 if not version:
                     raise ValueError(
-                        f"Prompt version not found for function: {fn.__name__}"
+                        f"Prompt active version not found for function: {fn.__name__}"
                     )
                 decorator = _trace(version, arg_types, arg_values)
                 return await decorator(fn)(*args, **kwargs)
@@ -310,10 +293,10 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_version(fn)
+                version = lilypad_client.get_prompt_active_version(fn)
                 if not version:
                     raise ValueError(
-                        f"Prompt version not found for function: {fn.__name__}"
+                        f"Prompt active version not found for function: {fn.__name__}"
                     )
                 decorator = _trace(version, arg_types, arg_values)
                 return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]

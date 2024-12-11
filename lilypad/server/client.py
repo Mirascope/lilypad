@@ -250,20 +250,20 @@ class LilypadClient:
                 },
             )
 
-    def get_prompt_version(self, fn: Callable[..., Any]) -> PromptPublic | None:
+    def get_prompt_active_version(self, fn: Callable[..., Any]) -> PromptPublic | None:
         """Get the matching version for a prompt.
 
         Args:
             fn (Callable): The prompt for which to get the version.
 
         Returns:
-            PromptPublic | Nonr: The matching version for the prompt, or `None`.
+            PromptPublic | None: The matching version for the prompt, or `None`.
         """
         closure = Closure.from_fn(fn)
         try:
             return self._request(
                 "GET",
-                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}",
+                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
                 response_model=PromptPublic,
             )
         except NotFoundError:
