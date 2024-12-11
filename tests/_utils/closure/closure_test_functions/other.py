@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from functools import wraps
 
-from lilypad.closure import Closure
+from lilypad._utils import Closure
 
 
 def imported_fn() -> str:

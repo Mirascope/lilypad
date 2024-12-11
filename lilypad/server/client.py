@@ -9,10 +9,11 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
-from .._utils import load_config
-from ..closure import Closure
+from lilypad._utils.functions import PromptPublic
+
+from .._utils import Closure, load_config
 from ..server.settings import get_settings
-from .models import ActiveVersionPublic, ProjectPublic, SpanPublic, VersionPublic
+from .models import GenerationPublic, ProjectPublic, SpanPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -215,51 +216,72 @@ class LilypadClient:
             **kwargs,
         )
 
-    def get_or_create_function_version(
+    def get_or_create_generation_version(
         self, fn: Callable[..., Any], arg_types: dict[str, str]
-    ) -> VersionPublic:
-        """Get the active version for a function or create it if non-existent.
+    ) -> GenerationPublic:
+        """Get the matching version for a generation or create it if non-existent.
 
         Args:
-            fn (Callable): The function to get the version for.
+            fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
 
         Returns:
-            VersionPublic: The active version for the function.
+            GenerationPublic: The matching (or created) version for the generation.
         """
         closure = Closure.from_fn(fn)
         try:
             return self._request(
                 "GET",
-                f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions",
-                response_model=VersionPublic,
+                f"v0/projects/{self.project_uuid}/generations/hash/{closure.hash}",
+                response_model=GenerationPublic,
             )
         except NotFoundError:
             return self._request(
                 "POST",
-                f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions",
-                response_model=VersionPublic,
+                f"v0/projects/{self.project_uuid}/generations",
+                response_model=GenerationPublic,
                 json={
-                    "name": fn.__name__,
-                    "hash": closure.hash,
+                    "name": closure.name,
+                    "signature": closure.signature,
                     "code": closure.code,
+                    "hash": closure.hash,
+                    "dependencies": closure.dependencies,
                     "arg_types": arg_types,
                 },
             )
 
-    def get_prompt_active_version(self, fn: Callable[..., Any]) -> ActiveVersionPublic:
-        """Get the active version for a function with a prompt.
+    def get_prompt_active_version(self, fn: Callable[..., Any]) -> PromptPublic | None:
+        """Get the matching version for a prompt.
 
         Args:
-            fn (Callable): The function to get the version for.
-            arg_types (dict): Dictionary of argument names and types.
+            fn (Callable): The prompt for which to get the version.
 
         Returns:
-            VersionPublic: The active version for the function.
+            PromptPublic | None: The matching version for the prompt, or `None`.
         """
         closure = Closure.from_fn(fn)
-        return self._request(
-            "GET",
-            f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions/active",
-            response_model=ActiveVersionPublic,
-        )
+        try:
+            return self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
+                response_model=PromptPublic,
+            )
+        except NotFoundError:
+            return None
+
+    # def get_prompt_active_version(self, fn: Callable[..., Any]) -> ActiveVersionPublic:
+    #     """Get the active version for a function with a prompt.
+
+    #     Args:
+    #         fn (Callable): The function to get the version for.
+    #         arg_types (dict): Dictionary of argument names and types.
+
+    #     Returns:
+    #         VersionPublic: The active version for the function.
+    #     """
+    #     closure = Closure.from_fn(fn)
+    #     return self._request(
+    #         "GET",
+    #         f"/v0/projects/{self.project_uuid}/functions/{closure.hash}/versions/active",
+    #         response_model=ActiveVersionPublic,
+    #     )

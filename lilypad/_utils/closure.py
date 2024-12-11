@@ -18,9 +18,11 @@ from functools import lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 from packaging.requirements import Requirement
+from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 
 class DependencyInfo(TypedDict):
@@ -479,28 +481,14 @@ def _run_ruff(code: str) -> str:
         tmp_path.unlink()
 
 
-class Closure:
+class Closure(BaseModel):
     """Represents the closure of a function."""
 
-    fn_name: str
+    name: str
     signature: str
     code: str
     hash: str
     dependencies: dict[str, DependencyInfo]
-
-    def __init__(
-        self,
-        fn_name: str,
-        signature: str,
-        code: str,
-        hash: str,
-        dependencies: dict[str, DependencyInfo],
-    ) -> None:
-        self.fn_name = fn_name
-        self.signature = signature
-        self.code = code
-        self.hash = hash
-        self.dependencies = dependencies
 
     @classmethod
     @lru_cache(maxsize=128)
@@ -526,11 +514,11 @@ class Closure:
             formatted_code = code
         hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
         return cls(
-            fn.__name__,
-            _run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
-            formatted_code,
-            hash,
-            dependencies,
+            name=fn.__name__,
+            signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
+            code=formatted_code,
+            hash=hash,
+            dependencies=dependencies,
         )
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
@@ -547,7 +535,7 @@ class Closure:
 
         if __name__ == "__main__":
             import json
-            result = {fn_name}(*{args}, **{kwargs})
+            result = {name}(*{args}, **{kwargs})
             print(json.dumps(result))
         """).format(
             dependencies="\n#   ".join(
@@ -559,7 +547,7 @@ class Closure:
                 ]
             ),
             code=self.code,
-            fn_name=self.fn_name,
+            name=self.name,
             args=args,
             kwargs=kwargs,
         )

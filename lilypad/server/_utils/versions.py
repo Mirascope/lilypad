@@ -1,6 +1,6 @@
 import textwrap
 
-from ...closure import _run_ruff
+from ..._utils.closure import _run_ruff
 
 
 def construct_function(

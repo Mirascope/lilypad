@@ -123,8 +123,8 @@ def test_set_call_response_attributes_serializable():
     span = MagicMock()
     _set_call_response_attributes(response, span)
     expected_attributes = {
-        "lilypad.output": json.dumps(response.message_param),
-        "lilypad.messages": json.dumps(response.messages),
+        "lilypad.generation.output": json.dumps(response.message_param),
+        "lilypad.generation.messages": json.dumps(response.messages),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -137,8 +137,8 @@ def test_set_call_response_attributes_non_serializable_message_param():
     span = MagicMock()
     _set_call_response_attributes(response, span)
     expected_attributes = {
-        "lilypad.output": str(response.message_param),
-        "lilypad.messages": json.dumps(response.messages),
+        "lilypad.generation.output": str(response.message_param),
+        "lilypad.generation.messages": json.dumps(response.messages),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -153,8 +153,8 @@ def test_set_call_response_attributes_non_serializable_messages():
         mock_serialize.return_value = "serialized_messages"
         _set_call_response_attributes(response, span)
         expected_attributes = {
-            "lilypad.output": json.dumps(response.message_param),
-            "lilypad.messages": "serialized_messages",
+            "lilypad.generation.output": json.dumps(response.message_param),
+            "lilypad.generation.messages": "serialized_messages",
         }
         span.set_attributes.assert_called_once_with(expected_attributes)
         mock_serialize.assert_called_once_with(response.messages)
@@ -169,8 +169,8 @@ def test_set_response_model_attributes_base_model_with_messages():
     span = MagicMock()
     _set_response_model_attributes(result, span)
     expected_attributes = {
-        "lilypad.output": '{"key": "value"}',
-        "lilypad.messages": '[{"message": "hello"}]',
+        "lilypad.generation.output": '{"key": "value"}',
+        "lilypad.generation.messages": '[{"message": "hello"}]',
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -183,7 +183,7 @@ def test_set_response_model_attributes_base_model_without_messages():
     span = MagicMock()
     _set_response_model_attributes(result, span)
     expected_attributes = {
-        "lilypad.output": '{"key": "value"}',
+        "lilypad.generation.output": '{"key": "value"}',
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -194,7 +194,7 @@ def test_set_response_model_attributes_base_type():
     span = MagicMock()
     _set_response_model_attributes(result, span)
     expected_attributes = {
-        "lilypad.output": "some value",
+        "lilypad.generation.output": "some value",
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -205,7 +205,7 @@ def test_set_response_model_attributes_non_serializable():
     span = MagicMock()
     _set_response_model_attributes(result, span)
     expected_attributes = {
-        "lilypad.output": str(result),
+        "lilypad.generation.output": str(result),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
@@ -418,18 +418,16 @@ async def test_handle_structured_stream_async_without_span():
 
 def test_get_custom_context_manager():
     """Test _get_custom_context_manager function."""
-    version = MagicMock()
-    version.version_num = 1
-    version.uuid = UUID("123e4567-e89b-12d3-a456-426614174123")
-    version.function.code = "function code"
-    version.prompt = MagicMock()
-    version.prompt.template = "prompt template"
+    generation = MagicMock()
+    generation.uuid = UUID("123e4567-e89b-12d3-a456-426614174123")
+    generation.signature = "def fn(): pass"
+    generation.code = "def fn(): pass"
     arg_types = {"arg1": "type1"}
     arg_values = {"arg1": "value1"}
     is_async = False
-    prompt_template = None
+    prompt_template = "prompt template"
     fn = MagicMock()
-    fn.__name__ = "function_name"
+    fn.__name__ = "fn"
 
     tracer = MagicMock()
     span = MagicMock()
@@ -437,21 +435,20 @@ def test_get_custom_context_manager():
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
     with patch("lilypad._utils.middleware.get_tracer", return_value=tracer):
         context_manager_factory = _get_custom_context_manager(
-            version, arg_types, arg_values, is_async, prompt_template, project_uuid
+            generation, arg_types, arg_values, is_async, prompt_template, project_uuid
         )
         with context_manager_factory(fn) as cm_span:
             assert cm_span == span
             expected_attributes = {
                 "lilypad.project_uuid": str(project_uuid),
-                "lilypad.function_name": fn.__name__,
-                "lilypad.version_num": version.version_num or -1,
-                "lilypad.version_uuid": str(version.uuid),
-                "lilypad.arg_types": json.dumps(arg_types),
-                "lilypad.arg_values": json.dumps(arg_values),
-                "lilypad.lexical_closure": version.function.code,
-                "lilypad.prompt_template": version.prompt.template
-                if version.prompt
-                else prompt_template or "",
+                "lilypad.type": "generation",
+                "lilypad.generation.uuid": str(generation.uuid),
+                "lilypad.generation.name": fn.__name__,
+                "lilypad.generation.signature": generation.signature,
+                "lilypad.generation.code": generation.code,
+                "lilypad.generation.arg_types": json.dumps(arg_types),
+                "lilypad.generation.arg_values": json.dumps(arg_values),
+                "lilypad.generation.prompt_template": prompt_template,
                 "lilypad.is_async": is_async,
             }
             span.set_attributes.assert_called_once_with(expected_attributes)

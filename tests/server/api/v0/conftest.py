@@ -11,7 +11,7 @@ from lilypad.server._utils import get_current_user
 from lilypad.server.api.v0.main import api
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
-    FunctionTable,
+    GenerationTable,
     OrganizationTable,
     ProjectTable,
     UserOrganizationTable,
@@ -154,23 +154,24 @@ def test_project(session: Session) -> Generator[ProjectTable, None, None]:
 
 
 @pytest.fixture
-def test_function(
+def test_generation(
     session: Session, test_project: ProjectTable
-) -> Generator[FunctionTable, None, None]:
-    """Create a test function.
+) -> Generator[GenerationTable, None, None]:
+    """Create a test generation.
 
     Args:
         session: Database session
         test_project: Parent project
 
     Yields:
-        FunctionTable: Test function
+        GenerationTable: Test generation
     """
-    function = FunctionTable(
+    function = GenerationTable(
         project_uuid=test_project.uuid,
         name="test_function",
-        hash="test_hash",
+        signature="def test(): pass",
         code="def test(): pass",
+        hash="test_hash",
         organization_uuid=test_project.organization_uuid,
     )
     session.add(function)

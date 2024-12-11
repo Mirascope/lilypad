@@ -12,9 +12,9 @@ from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
 
-import tests.closure.closure_test_functions.other
-import tests.closure.closure_test_functions.other as cloth
-from lilypad.closure import Closure
+import tests._utils.closure.closure_test_functions.other
+import tests._utils.closure.closure_test_functions.other as cloth
+from lilypad._utils import Closure
 
 from . import other
 from . import other as oth
@@ -375,7 +375,7 @@ def user_defined_dotted_import_fn() -> str:
     def user_defined_dotted_import_fn() -> str:
         return imported_fn()
     """
-    return tests.closure.closure_test_functions.other.imported_fn()
+    return tests._utils.closure.closure_test_functions.other.imported_fn()
 
 
 def user_defined_aliased_dotted_import_fn() -> str:
@@ -508,7 +508,7 @@ def closure_inside_decorator_fn() -> str:
     from collections.abc import Callable
     from functools import wraps
 
-    from lilypad.closure import Closure
+    from lilypad._utils import Closure
 
 
     def _decorator(fn: Callable) -> Callable[[], Closure]:
@@ -532,7 +532,7 @@ def closure_inside_imported_decorator_fn() -> str:
     from collections.abc import Callable
     from functools import wraps
 
-    from lilypad.closure import Closure
+    from lilypad._utils import Closure
 
 
     def imported_decorator(fn: Callable) -> Callable[[], Closure]:

@@ -18,14 +18,14 @@ from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from ..server.client import LilypadClient
-from ..server.models import ActiveVersionPublic, VersionPublic
+from ..server.models import GenerationPublic
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
 def _get_custom_context_manager(
-    version: VersionPublic | ActiveVersionPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
@@ -44,17 +44,14 @@ def _get_custom_context_manager(
                 "lilypad.project_uuid": str(new_project_uuid)
                 if new_project_uuid
                 else "",
-                "lilypad.function_name": fn.__name__,
-                "lilypad.version_num": version.version_num
-                if version.version_num
-                else -1,
-                "lilypad.version_uuid": str(version.uuid),
-                "lilypad.arg_types": json.dumps(arg_types),
-                "lilypad.arg_values": json.dumps(arg_values),
-                "lilypad.lexical_closure": version.function.code,
-                "lilypad.prompt_template": version.prompt.template
-                if version.prompt
-                else prompt_template or "",
+                "lilypad.type": "generation",
+                "lilypad.generation.uuid": str(generation.uuid),
+                "lilypad.generation.name": fn.__name__,
+                "lilypad.generation.signature": generation.signature,
+                "lilypad.generation.code": generation.code,
+                "lilypad.generation.arg_types": json.dumps(arg_types),
+                "lilypad.generation.arg_values": json.dumps(arg_values),
+                "lilypad.generation.prompt_template": prompt_template or "",
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
@@ -108,8 +105,8 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> 
     except TypeError:
         messages = _serialize_proto_data(response.messages)  # Gemini
     attributes: dict[str, AttributeValue] = {
-        "lilypad.output": output,
-        "lilypad.messages": messages,
+        "lilypad.generation.output": output,
+        "lilypad.generation.messages": messages,
     }
     span.set_attributes(attributes)
 
@@ -131,10 +128,10 @@ def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) 
         messages = None
 
     attributes: dict[str, AttributeValue] = {
-        "lilypad.output": completion,
+        "lilypad.generation.output": completion,
     }
     if messages:
-        attributes["lilypad.messages"] = messages
+        attributes["lilypad.generation.messages"] = messages
     span.set_attributes(attributes)
 
 
@@ -206,7 +203,7 @@ async def _handle_structured_stream_async(
 
 
 def create_mirascope_middleware(
-    version: VersionPublic | ActiveVersionPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
@@ -216,7 +213,7 @@ def create_mirascope_middleware(
     """Creates the middleware decorator for a Lilypad/Mirascope function."""
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
-            version, arg_types, arg_values, is_async, prompt_template, project_uuid
+            generation, arg_types, arg_values, is_async, prompt_template, project_uuid
         ),
         handle_call_response=_handle_call_response,
         handle_call_response_async=_handle_call_response_async,

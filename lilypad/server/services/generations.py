@@ -1,4 +1,4 @@
-"""The `FunctionService` class for functions."""
+"""The `GenerationService` class for generations."""
 
 from collections.abc import Sequence
 from uuid import UUID
@@ -6,19 +6,19 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models import FunctionCreate, FunctionTable
+from ..models import GenerationCreate, GenerationTable
 from .base import BaseService
 
 
-class FunctionService(BaseService[FunctionTable, FunctionCreate]):
-    """The service class for functions."""
+class GenerationService(BaseService[GenerationTable, GenerationCreate]):
+    """The service class for generations."""
 
-    table: type[FunctionTable] = FunctionTable
-    create_model: type[FunctionCreate] = FunctionCreate
+    table: type[GenerationTable] = GenerationTable
+    create_model: type[GenerationCreate] = GenerationCreate
 
     def find_records_by_name(
         self, project_uuid: UUID, name: str
-    ) -> Sequence[FunctionTable]:
+    ) -> Sequence[GenerationTable]:
         """Find record by uuid"""
         record_tables = self.session.exec(
             select(self.table).where(
@@ -29,10 +29,10 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         ).all()
         return record_tables
 
-    def find_unique_function_names_by_project_uuid(
+    def find_unique_generation_names_by_project_uuid(
         self, project_uuid: UUID
     ) -> Sequence[str]:
-        """Find record by uuid"""
+        """Find record by UUID."""
         record_tables = self.session.exec(
             select(self.table.name)
             .where(
@@ -43,7 +43,7 @@ class FunctionService(BaseService[FunctionTable, FunctionCreate]):
         ).all()
         return record_tables
 
-    def find_record_by_hash(self, hash: str) -> FunctionTable:
+    def find_record_by_hash(self, hash: str) -> GenerationTable:
         """Find record by hash"""
         record_table = self.session.exec(
             select(self.table).where(

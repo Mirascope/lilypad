@@ -43,12 +43,12 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.6.1",
     "cryptography>=43.0.3",
-    "ruff>=0.6.3",
+    "ruff>=0.8.1",
 ]
 
 [project.urls]
-Homepage = "https://www.lilypad.so"
-Documentation = "https://www.lilypad.so/docs"
+Homepage = "https://lilypad.so"
+Documentation = "https://lilypad.so/docs"
 Repository = "https://github.com/Mirascope/lilypad"
 Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
@@ -113,8 +113,12 @@ target-version = "py310"
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
-"tests/closure/closure_test_functions/main.py" = ["D212", "D402"]
-"tests/closure/closure_test_functions/other.py" = ["D101", "D102", "D103"]
+"tests/_utils/closure/closure_test_functions/main.py" = ["D212", "D402"]
+"tests/_utils/closure/closure_test_functions/other.py" = [
+    "D101",
+    "D102",
+    "D103",
+]
 "docs/*.py" = ["ANN401"]
 
 [tool.ruff.lint]

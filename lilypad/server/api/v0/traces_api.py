@@ -87,12 +87,12 @@ async def traces(
         span_create = SpanCreate(
             span_id=lilypad_trace["span_id"],
             project_uuid=project_uuid,
-            version_uuid=UUID(version_uuid_str)
-            if (version_uuid_str := attributes.get("lilypad.version_uuid", None))
+            type=attributes.get("lilypad.type", None),
+            generation_uuid=UUID(generation_uuid_str)
+            if (generation_uuid_str := attributes.get("lilypad.generation.uuid", None))
             else None,
-            version_num=version_num
-            if (version_num := attributes.get("lilypad.version_num", None))
-            and version_num >= 0
+            prompt_uuid=UUID(prompt_uuid_str)
+            if (prompt_uuid_str := attributes.get("lilypad.prompt.uuid", None))
             else None,
             scope=scope,
             data=lilypad_trace,

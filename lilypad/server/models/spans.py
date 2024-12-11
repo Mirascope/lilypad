@@ -10,14 +10,18 @@ from sqlalchemy import JSON, Column, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .generations import GenerationPublic
+from .prompts import PromptPublic
 from .table_names import (
+    GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
+    PROMPT_TABLE_NAME,
     SPAN_TABLE_NAME,
-    VERSION_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
-    from .versions import VersionPublic, VersionTable
+    from .generations import GenerationTable
+    from .prompts import PromptTable
 
 
 class Scope(str, Enum):
@@ -27,6 +31,13 @@ class Scope(str, Enum):
     LLM = "llm"
 
 
+class SpanType(str, Enum):
+    """Span type"""
+
+    GENERATION = "generation"
+    PROMPT = "prompt"
+
+
 class _SpanBase(SQLModel):
     """Span base model"""
 
@@ -34,11 +45,14 @@ class _SpanBase(SQLModel):
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
     )
-    version_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{VERSION_TABLE_NAME}.uuid"
+    generation_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid"
     )
+    prompt_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
+    )
+    type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
-    version_num: int | None = Field(default=None)
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     parent_span_id: str | None = Field(
@@ -57,7 +71,8 @@ class SpanPublic(_SpanBase):
 
     uuid: UUID
     display_name: str | None = None
-    version: Optional["VersionPublic"] = None
+    generation: GenerationPublic | None = None
+    prompt: PromptPublic | None = None
     child_spans: list["SpanPublic"]
     created_at: datetime
 
@@ -78,7 +93,13 @@ class SpanPublic(_SpanBase):
         """Set the display name based on the scope."""
         # TODO: Handle error cases where spans dont have attributes
         if span.scope == Scope.LILYPAD:
-            display_name = span.data["attributes"]["lilypad.function_name"]
+            span_type = span.data["attributes"]["lilypad.type"]
+            if span_type == SpanType.GENERATION:
+                display_name = span.data["attributes"]["lilypad.generation.name"]
+            elif span_type == SpanType.PROMPT:
+                display_name = span.data["attributes"]["lilypad.prompt.name"]
+            else:
+                display_name = None
         else:  # Must be Scope.LLM because Scope is an Enum
             data = span.data
             display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
@@ -98,7 +119,8 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
     __table_args__ = (UniqueConstraint("span_id"), Index("ix_spans_span_id", "span_id"))
-    version: "VersionTable" = Relationship(back_populates="spans")
+    generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
+    prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True
     )
