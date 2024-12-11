@@ -49,9 +49,11 @@ def _construct_trace_attributes(
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     prompt_template: str,
-    results: Any,
+    output: Any,
     is_async: bool,
 ) -> dict[str, AttributeValue]:
+    if isinstance(output, BaseModel):
+        output = str(output.model_dump())
     return {
         "lilypad.project_uuid": str(lilypad_client.project_uuid)
         if lilypad_client.project_uuid
@@ -64,7 +66,7 @@ def _construct_trace_attributes(
         "lilypad.generation.arg_types": json.dumps(arg_types),
         "lilypad.generation.arg_values": json.dumps(arg_values),
         "lilypad.generation.prompt_template": prompt_template,
-        "lilypad.generation.output": results,
+        "lilypad.generation.output": str(output),
         "lilypad.is_async": is_async,
     }
 
@@ -94,12 +96,8 @@ def _trace(
                     f"{fn.__name__}"
                 ) as span:
                     output = await fn(*args, **kwargs)
-                    if isinstance(output, BaseModel):
-                        results = str(output.model_dump())
-                    else:
-                        results = str(output)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, prompt_template, results, True
+                        version, arg_types, arg_values, prompt_template, output, True
                     )
                     span.set_attributes(attributes)
                 return output  # pyright: ignore [reportReturnType]
@@ -114,11 +112,8 @@ def _trace(
                     f"{fn.__name__}"
                 ) as span:
                     output = fn(*args, **kwargs)
-                    results = str(output)
-                    if isinstance(output, BaseModel):
-                        results = str(output.model_dump())
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, prompt_template, results, False
+                        version, arg_types, arg_values, prompt_template, output, False
                     )
                     span.set_attributes(attributes)
                 return output  # pyright: ignore [reportReturnType]
