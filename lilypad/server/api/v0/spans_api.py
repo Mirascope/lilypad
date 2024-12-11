@@ -38,6 +38,7 @@ class SpanMoreDetails(BaseModel):
     output: str | None = None
     messages: list[MessageParam]
     data: dict[str, Any]
+    cost: float | None = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> "SpanMoreDetails":
@@ -86,6 +87,7 @@ class SpanMoreDetails(BaseModel):
             output=output,
             messages=messages,
             data=data,
+            cost=span.cost,
         )
 
 

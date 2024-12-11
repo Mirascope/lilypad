@@ -10,19 +10,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Plus } from "lucide-react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useEffect } from "react";
 import { VersionPublic } from "@/types/types";
 import { IconDialog } from "@/components/IconDialog";

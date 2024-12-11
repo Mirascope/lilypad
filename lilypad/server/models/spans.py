@@ -52,6 +52,7 @@ class _SpanBase(SQLModel):
         default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
     )
     type: SpanType | None = Field(default=None)
+    cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=Column(JSON), default_factory=dict)
     parent_span_id: str | None = Field(

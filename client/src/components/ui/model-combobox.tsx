@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Controller,
-  Control,
-  FieldPath,
-  FieldValues,
-  PathValue,
-} from "react-hook-form";
+import { Control, FieldPath, FieldValues, PathValue } from "react-hook-form";
 import {
   Popover,
   PopoverTrigger,
@@ -19,7 +13,6 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
-import { Label } from "@/components/ui/label";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
