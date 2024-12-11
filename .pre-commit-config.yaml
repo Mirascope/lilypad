@@ -7,7 +7,7 @@ repos:
           - tomli
         exclude: "client/pnpm-lock.yaml|docs/pnpm-lock.yaml"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.6.1"
+    rev: "v0.8.1"
     hooks:
       - id: ruff
         files: "^lilypad|^tests"
@@ -16,7 +16,7 @@ repos:
         files: "^lilypad|^tests"
         args: [--config=pyproject.toml]
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.389
+    rev: v1.1.390
     hooks:
       - id: pyright
   - repo: local

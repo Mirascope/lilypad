@@ -15,14 +15,14 @@ class SpanService(BaseService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    def find_records_by_version_uuid(
-        self, project_uuid: UUID, version_uuid: UUID
+    def find_records_by_generation_uuid(
+        self, project_uuid: UUID, generation_uuid: UUID
     ) -> Sequence[SpanTable]:
         """Find spans by version uuid"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.version_uuid == version_uuid,
+                self.table.generation_uuid == generation_uuid,
             )
         ).all()

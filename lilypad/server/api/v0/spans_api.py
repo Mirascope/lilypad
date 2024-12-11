@@ -32,6 +32,7 @@ class SpanMoreDetails(BaseModel):
     input_tokens: float | None = None
     output_tokens: float | None = None
     duration_ms: float
+    signature: str | None = None
     code: str | None = None
     arg_values: dict[str, Any] | None = None
     output: str | None = None
@@ -46,6 +47,7 @@ class SpanMoreDetails(BaseModel):
         attributes: dict = data["attributes"]
         if span.scope == Scope.LLM:
             display_name = data["name"]
+            signature = None
             code = None
             arg_values = None
             output = None
@@ -60,10 +62,15 @@ class SpanMoreDetails(BaseModel):
             elif provider == Provider.ANTHROPIC.value:
                 messages = convert_anthropic_messages(data["events"])
         else:
-            code = span.version.function.code
-            arg_values = json.loads(attributes.get("lilypad.arg_values", "{}"))
-            output = attributes.get("lilypad.output", "")
-            display_name = attributes.get("lilypad.function_name", "unknown")
+            signature, code = None, None
+            if span.generation:
+                signature = span.generation.signature
+                code = span.generation.code
+            arg_values = json.loads(
+                attributes.get("lilypad.generation.arg_values", "{}")
+            )
+            output = attributes.get("lilypad.generation.output", "")
+            display_name = attributes.get("lilypad.generation.name", "unknown")
             messages = attributes.get("lilypad.messages", [])
 
         return SpanMoreDetails(
@@ -73,6 +80,7 @@ class SpanMoreDetails(BaseModel):
             input_tokens=attributes.get(gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS),
             output_tokens=attributes.get(gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS),
             duration_ms=data["end_time"] - data["start_time"],
+            signature=signature,
             code=code,
             arg_values=arg_values,
             output=output,
@@ -94,16 +102,16 @@ async def get_span(
 
 
 @spans_router.get(
-    "/projects/{project_uuid}/versions/{version_uuid}/spans",
+    "/projects/{project_uuid}/generations/{generation_uuid}/spans",
     response_model=Sequence[SpanPublic],
 )
-async def get_span_by_version_uuid(
+async def get_span_by_generation_uuid(
     project_uuid: UUID,
-    version_uuid: UUID,
+    generation_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:
     """Get span by uuid."""
-    return span_service.find_records_by_version_uuid(project_uuid, version_uuid)
+    return span_service.find_records_by_generation_uuid(project_uuid, generation_uuid)
 
 
 @spans_router.get(

@@ -1,17 +1,29 @@
 """The `prompts` module for prompting LLMs with data pulled from the database."""
 
 import inspect
-from collections.abc import Callable, Coroutine
+import json
+from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
-from typing import Any, ParamSpec, Protocol, TypeVar, overload
-
-from ._utils import (
-    create_mirascope_call,
-    create_mirascope_middleware,
-    inspect_arguments,
-    load_config,
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    overload,
 )
+
+from mirascope.core import BaseMessageParam, prompt_template
+from mirascope.core.base import CommonCallParams
+from opentelemetry.trace import get_tracer
+from opentelemetry.util.types import AttributeValue
+from pydantic import BaseModel
+from typing_extensions import TypedDict
+
+from ._utils import inspect_arguments, load_config
 from .server.client import LilypadClient
+from .server.models import PromptPublic
 from .server.settings import get_settings
 
 _P = ParamSpec("_P")
@@ -25,31 +37,242 @@ lilypad_client = LilypadClient(
     token=config.get("token", None),
 )
 
+# NEED TO FIGRUE THESE OUT
+# from anthropic.types import MessageParam
+# from google.generativeai.types import ContentDict
+# from mirascope.core.anthropic import AnthropicCallParams
+# from mirascope.core.gemini import GeminiCallParams
+# from mirascope.core.openai import OpenAICallParams
+# from openai.types.chat import ChatCompletionMessageParam
+
+if TYPE_CHECKING:
+    try:
+        from mirascope.core.openai import OpenAICallParams
+        from openai.types.chat import (
+            ChatCompletionMessageParam,  # pyright: ignore [reportAssignmentType]
+        )
+    except ImportError:
+
+        class ChatCompletionMessageParam(TypedDict): ...
+
+        class OpenAICallParams(TypedDict): ...
+
+    try:
+        from anthropic.types import MessageParam
+        from mirascope.core.anthropic import AnthropicCallParams
+    except ImportError:
+
+        class MessageParam(TypedDict): ...
+
+        class AnthropicCallParams(TypedDict): ...
+
+    try:
+        from google.generativeai.types import ContentDict
+        from mirascope.core.gemini import GeminiCallParams
+    except ImportError:
+
+        class ContentDict(TypedDict): ...
+
+        class GeminiCallParams(TypedDict): ...
+
+
+def _base_message_params(
+    template: str, arg_values: dict[str, Any]
+) -> list[BaseMessageParam]:
+    @prompt_template(template)
+    def fn(*args: Any, **kwargs: Any) -> None: ...
+
+    return fn(**arg_values)
+
+
+class Prompt(BaseModel):
+    """The `Prompt` class for prompting LLMs with data pulled from the database."""
+
+    template: str
+    common_call_params: CommonCallParams
+    arg_values: dict[str, Any]
+    _base_message_params: list[BaseMessageParam]
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self._base_message_params = _base_message_params(self.template, self.arg_values)
+
+    @overload
+    def messages(
+        self, provider: Literal["openai"]
+    ) -> Sequence["ChatCompletionMessageParam"]: ...
+
+    @overload
+    def messages(self, provider: Literal["anthropic"]) -> Sequence["MessageParam"]: ...
+
+    @overload
+    def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...
+
+    def messages(
+        self, provider: Literal["openai", "anthropic", "gemini"]
+    ) -> (
+        Sequence["ChatCompletionMessageParam"]
+        | Sequence["MessageParam"]
+        | Sequence["ContentDict"]
+    ):
+        """Return the messages array for the given provider converted from base."""
+        if provider == "openai":
+            from mirascope.core.openai._utils import convert_message_params
+
+            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        elif provider == "anthropic":
+            from mirascope.core.anthropic._utils import convert_message_params
+
+            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        elif provider == "gemini":
+            from mirascope.core.gemini._utils import convert_message_params
+
+            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        else:
+            raise NotImplementedError(f"Unknown provider: {provider}")
+
+    @overload
+    def call_params(self, provider: Literal["openai"]) -> "OpenAICallParams": ...
+
+    @overload
+    def call_params(self, provider: Literal["anthropic"]) -> "AnthropicCallParams": ...
+
+    @overload
+    def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...
+
+    def call_params(
+        self, provider: Literal["openai", "anthropic", "gemini"]
+    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":
+        """Return the call parameters for the given provider converted from common."""
+        if provider == "openai":
+            from mirascope.core.openai._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+        elif provider == "anthropic":
+            from mirascope.core.anthropic._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+        elif provider == "gemini":
+            from mirascope.core.gemini._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+        else:
+            raise NotImplementedError(f"Unknown provider: {provider}")
+
+
+def _construct_trace_attributes(
+    version: PromptPublic,
+    arg_types: dict[str, str],
+    arg_values: dict[str, Any],
+    results: str,
+    is_async: bool,
+) -> dict[str, AttributeValue]:
+    return {
+        "lilypad.project_uuid": str(lilypad_client.project_uuid)
+        if lilypad_client.project_uuid
+        else 0,
+        "lilypad.type": "prompt",
+        "lilypad.prompt.uuid": str(version.uuid),
+        "lilypad.prompt.name": version.name,
+        "lilypad.prompt.signature": version.signature,
+        "lilypad.prompt.code": version.code,
+        "lilypad.prompt.template": version.template,
+        "lilypad.prompt.arg_types": json.dumps(arg_types),
+        "lilypad.prompt.arg_values": json.dumps(arg_values),
+        "lilypad.prompt.output": results,
+        "lilypad.is_async": is_async,
+    }
+
 
 class PromptDecorator(Protocol):
     """Protocol for the `prompt` decorator return type."""
 
     @overload
     def __call__(
-        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
-    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+        self, fn: Callable[_P, Coroutine[Any, Any, None]]
+    ) -> Callable[_P, Coroutine[Any, Any, Prompt]]: ...
 
     @overload
-    def __call__(self, fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+    def __call__(self, fn: Callable[_P, None]) -> Callable[_P, Prompt]: ...
 
     def __call__(
-        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+        self, fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]]
+    ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
         """Protocol `call` definition for `prompt` decorator return type."""
         ...
 
 
+def _trace(
+    version: PromptPublic, arg_types: dict[str, str], arg_values: dict[str, Any]
+) -> PromptDecorator:
+    @overload
+    def decorator(
+        fn: Callable[_P, Coroutine[Any, Any, None]],
+    ) -> Callable[_P, Coroutine[Any, Any, Prompt]]: ...
+
+    @overload
+    def decorator(fn: Callable[_P, None]) -> Callable[_P, Prompt]: ...
+
+    def decorator(
+        fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]],
+    ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
+        if inspect.iscoroutinefunction(fn):
+
+            @wraps(fn)
+            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
+                with get_tracer("lilypad").start_as_current_span(
+                    f"{fn.__name__}"
+                ) as span:
+                    prompt = Prompt(
+                        template=version.template,
+                        common_call_params=version.call_params or {},
+                        arg_values=arg_values,
+                    )
+                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
+                        version, arg_types, arg_values, str(prompt.model_dump()), False
+                    )
+                    span.set_attributes(attributes)
+                return prompt
+
+            return inner_async
+        else:
+
+            @wraps(fn)
+            def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
+                with get_tracer("lilypad").start_as_current_span(
+                    f"{fn.__name__}"
+                ) as span:
+                    prompt = Prompt(
+                        template=version.template,
+                        common_call_params=version.call_params or {},
+                        arg_values=arg_values,
+                    )
+                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
+                        version, arg_types, arg_values, str(prompt.model_dump()), False
+                    )
+                    span.set_attributes(attributes)
+                return prompt
+
+            return inner
+
+    return decorator
+
+
 def prompt() -> PromptDecorator:
-    """The `prompt` decorator for turning a Python function into an LLM prompt.
+    """The `prompt` decorator for turning a Python function into an managed prompt.
 
     The decorated function will not be run and will be used only for it's signature. The
     function will be called with the data pulled from the database, and the return value
-    will be generated by the LLM.
+    will be the corresponding `Prompt` instance.
 
     Functions decorated with `prompt` will be versioned and traced automatically.
 
@@ -59,42 +282,41 @@ def prompt() -> PromptDecorator:
 
     @overload
     def decorator(
-        fn: Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+        fn: Callable[_P, Coroutine[Any, Any, None]],
+    ) -> Callable[_P, Coroutine[Any, Any, Prompt]]: ...
 
     @overload
-    def decorator(fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+    def decorator(fn: Callable[_P, None]) -> Callable[_P, Prompt]: ...
 
     def decorator(
-        fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        prompt_template = (
-            fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
-        )
+        fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]],
+    ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)
-            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn)
-                decorator = create_mirascope_middleware(
-                    version, arg_types, arg_values, True, prompt_template
-                )
-                call = create_mirascope_call(fn, version.prompt, decorator)
-                return await call(*args, **kwargs)
+                version = lilypad_client.get_prompt_version(fn)
+                if not version:
+                    raise ValueError(
+                        f"Prompt version not found for function: {fn.__name__}"
+                    )
+                decorator = _trace(version, arg_types, arg_values)
+                return await decorator(fn)(*args, **kwargs)
 
             return inner_async
         else:
 
             @wraps(fn)
-            def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn)
-                decorator = create_mirascope_middleware(
-                    version, arg_types, arg_values, False, prompt_template
-                )
-                call = create_mirascope_call(fn, version.prompt, decorator)
-                return call(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                version = lilypad_client.get_prompt_version(fn)
+                if not version:
+                    raise ValueError(
+                        f"Prompt version not found for function: {fn.__name__}"
+                    )
+                decorator = _trace(version, arg_types, arg_values)
+                return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             return inner
 

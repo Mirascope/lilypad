@@ -5,7 +5,7 @@ import inspect
 import sys
 from collections.abc import Callable
 
-from lilypad.closure import Closure
+from lilypad._utils import Closure
 
 from .closure_test_functions import (
     aliased_import_fn,

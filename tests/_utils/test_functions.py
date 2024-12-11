@@ -1,7 +1,7 @@
 """Tests for lilypad._utils.functions module."""
 
 import os
-from collections.abc import AsyncIterable, Callable, Iterable
+from collections.abc import AsyncIterable, Iterable
 from typing import Any, TypeVar
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -223,7 +223,7 @@ async def test_create_mirascope_call_async_str(create_mock_prompt):
     mock_prompt = create_mock_prompt()
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         assert await result("test") == "test"
 
 
@@ -244,7 +244,9 @@ async def test_create_mirascope_call_async_stream_with_model(create_mock_prompt)
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(async_stream_test_fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            async_stream_test_fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         async for content, _ in await result("test"):
             assert content == "chunk"
 
@@ -268,7 +270,11 @@ async def test_create_mirascope_call_async_stream_with_str(create_mock_prompt):
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(
-            async_stream_str_test_fn, mock_prompt, lambda x: x
+            async_stream_str_test_fn,
+            mock_prompt,
+            Provider.OPENAI,
+            "gpt-4o",
+            lambda x: x,
         )
         async for content in await result("test"):
             assert content == "chunk"
@@ -314,7 +320,9 @@ async def test_create_mirascope_call_async_message(create_mock_prompt, mock_resp
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(async_message_test_fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            async_message_test_fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         assert await result("test")
 
 
@@ -363,7 +371,9 @@ async def test_create_mirascope_call_message_with_tool_args(
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         response = await result("test")
         assert isinstance(response, Message)
 
@@ -380,7 +390,7 @@ def test_create_mirascope_call_sync_str(create_mock_prompt):
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         assert result("test") == "test"
 
 
@@ -401,7 +411,7 @@ def test_create_mirascope_call_sync_stream_with_str(create_mock_prompt):
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
         result = create_mirascope_call(
-            sync_stream_test_str_fn, mock_prompt, lambda x: x
+            sync_stream_test_str_fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
         )
         for content in result("test"):
             assert content == "chunk"
@@ -421,7 +431,9 @@ def test_create_mirascope_call_sync_stream(create_mock_prompt):
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(sync_stream_test_fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            sync_stream_test_fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         for content, _ in result("test"):
             assert content == "chunk"
 
@@ -465,7 +477,9 @@ def test_create_mirascope_call_sync_message(create_mock_prompt, mock_response):
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(sync_message_test_fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            sync_message_test_fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         assert result("test")
 
 
@@ -490,6 +504,8 @@ def test_create_mirascope_call_sync_iterable_model(
         result = create_mirascope_call(
             test_fn,  # Use the local function with concrete type
             mock_prompt,
+            Provider.OPENAI,
+            "gpt-4o",
             None,
         )
         response = result("test")
@@ -502,10 +518,7 @@ def test_create_mirascope_call_sync_iterable_model(
 def test_create_mirascope_call_with_openrouter():
     """Test function with openrouter provider."""
     mock_prompt = Mock()
-    mock_prompt.provider = Mock()
-    mock_prompt.provider.value = "openrouter"
     mock_prompt.template = "test template"
-    mock_prompt.model = "test_model"
     mock_prompt.call_params = None
 
     def fn(text: str) -> str: ...
@@ -520,7 +533,9 @@ def test_create_mirascope_call_with_openrouter():
         patch("lilypad._utils.functions.import_module", return_value=mock_module),
         patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
     ):
-        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENROUTER, "test_model", lambda x: x
+        )
         output = result("test")
         assert output == "test"
         mock_openai.assert_called_once_with(
@@ -535,9 +550,7 @@ async def test_create_mirascope_call_async_openrouter():
     async def fn(text: str) -> str: ...
 
     mock_prompt = Mock()
-    mock_prompt.provider = Mock(value="openrouter")
     mock_prompt.template = "test template"
-    mock_prompt.model = "test_model"
     mock_prompt.call_params = None
 
     mock_response = Mock(content="test")
@@ -550,7 +563,9 @@ async def test_create_mirascope_call_async_openrouter():
         patch("lilypad._utils.functions.import_module", return_value=mock_module),
         patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
     ):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENROUTER, "test_model", None
+        )
         output = await result("test")
         assert output == "test"
         mock_async_openai.assert_called_once_with(
@@ -564,9 +579,7 @@ def test_create_mirascope_call_sync_openrouter():
     def fn(text: str) -> str: ...
 
     mock_prompt = Mock()
-    mock_prompt.provider = Mock(value="openrouter")
     mock_prompt.template = "test template"
-    mock_prompt.model = "test_model"
     mock_prompt.call_params = None
 
     mock_response = Mock(content="test")
@@ -579,7 +592,9 @@ def test_create_mirascope_call_sync_openrouter():
         patch("lilypad._utils.functions.import_module", return_value=mock_module),
         patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_key"}),
     ):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENROUTER, "test_model", None
+        )
         output = result("test")
         assert output == "test"
         mock_openai.assert_called_once_with(
@@ -715,7 +730,7 @@ async def test_create_mirascope_call_async_custom_message_class(
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         response = await result("test")
         assert isinstance(response, Message)
 
@@ -771,92 +786,9 @@ def test_create_mirascope_call_sync_custom_message_class(
     mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         response = result("test")
         assert isinstance(response, Message)
-
-
-@pytest.mark.parametrize(
-    "is_async,provider",
-    [
-        (False, Provider.GEMINI),
-        (True, Provider.GEMINI),
-        (False, Provider.OPENAI),
-        (True, Provider.OPENAI),
-    ],
-)
-@pytest.mark.asyncio
-async def test_create_mirascope_call_with_call_params(is_async, provider):
-    """Test sync/async function with provider and call params."""
-    if is_async:
-
-        async def fn(text: str) -> str:  # pyright: ignore [reportRedeclaration]
-            ...
-
-        # Setup mock response
-        mock_response = Mock()
-        mock_response.content = "test"
-
-        # Setup async mock call chain
-        def mock_decorator(func: Callable) -> Callable:
-            async def wrapper(*args, **kwargs):
-                await func(*args, **kwargs)
-                return mock_response
-
-            return wrapper
-
-        mock_call = Mock()
-        mock_call.return_value = mock_decorator
-    else:
-
-        def fn(text: str) -> str: ...
-
-        # Setup mock response
-        mock_response = Mock()
-        mock_response.content = "test"
-
-        # Setup sync mock call chain
-
-        def mock_decorator(func: Callable) -> Callable:
-            def wrapper(*args, **kwargs):
-                func(*args, **kwargs)
-                return mock_response
-
-            return wrapper
-
-        mock_call = Mock(return_value=mock_decorator)
-
-    # Setup mock module
-    mock_module = Mock()
-    mock_module.call = mock_call
-
-    # Set up prompt mock
-    mock_prompt = Mock()
-    mock_prompt.provider = provider
-    mock_prompt.template = "test template"
-    mock_prompt.model = "test_model"
-    mock_prompt.call_params = Mock()
-    mock_prompt.call_params.model_dump = Mock(return_value={"test": "config"})
-
-    fn._prompt_template = "test template"  # pyright: ignore [reportFunctionMemberAccess]
-    fn.__mirascope_prompt_template__ = True  # pyright: ignore [reportFunctionMemberAccess]
-
-    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
-        if is_async:
-            response = await result("test")  # pyright: ignore [reportGeneralTypeIssues]
-        else:
-            response = result("test")
-
-        assert response == "test"
-        # Verify call chain setup
-        mock_call.assert_called_once_with(
-            model="test_model", json_mode=False, client=None
-        )
-        # Verify that model_dump was called
-        mock_prompt.call_params.model_dump.assert_called_once_with(
-            exclude_defaults=True
-        )
 
 
 def test_create_mirascope_call_invalid_return_type(create_mock_prompt):
@@ -871,7 +803,9 @@ def test_create_mirascope_call_invalid_return_type(create_mock_prompt):
         mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
         with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-            result = create_mirascope_call(fn, mock_prompt, None)
+            result = create_mirascope_call(
+                fn, mock_prompt, Provider.OPENAI, "gpt-4o", None
+            )
             result("test")
 
 
@@ -888,22 +822,10 @@ async def test_create_mirascope_async_call_invalid_return_type(create_mock_promp
         mock_module.call = Mock(return_value=lambda *args, **kwargs: mock_provider_call)
 
         with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-            result = create_mirascope_call(fn, mock_prompt, None)
+            result = create_mirascope_call(
+                fn, mock_prompt, Provider.OPENAI, "gpt-4o", None
+            )
             await result("test")
-
-
-def test_create_mirascope_call_gemini(mock_gemini_prompt):
-    """Test Gemini provider specific functionality."""
-    mock_provider_call = Mock(return_value=lambda x: x)
-    mock_module = Mock()
-    mock_module.call = mock_provider_call
-
-    with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(sync_test_fn, mock_gemini_prompt, None)
-        result("test")
-        mock_gemini_prompt.call_params.model_dump.assert_called_with(
-            exclude_defaults=True
-        )
 
 
 @pytest.mark.asyncio
@@ -919,7 +841,7 @@ async def test_create_mirascope_call_async_base_type(create_mock_prompt):
     mock_prompt = create_mock_prompt()
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         output = await result("test")
         assert output == "42"
 
@@ -936,7 +858,7 @@ def test_create_mirascope_call_sync_base_type(create_mock_prompt):
     mock_prompt = create_mock_prompt()
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, None)
+        result = create_mirascope_call(fn, mock_prompt, Provider.OPENAI, "gpt-4o", None)
         output = result("test")
         assert output == "42"
 
@@ -953,7 +875,9 @@ def test_create_mirascope_call_with_trace_decorator(create_mock_prompt):
 
     mock_prompt = create_mock_prompt()
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         output = result("test")
         assert output == "42"
 
@@ -972,6 +896,8 @@ async def test_create_mirascope_call_async_with_trace_decorator(create_mock_prom
     mock_prompt = create_mock_prompt()
 
     with patch("lilypad._utils.functions.import_module", return_value=mock_module):
-        result = create_mirascope_call(fn, mock_prompt, lambda x: x)
+        result = create_mirascope_call(
+            fn, mock_prompt, Provider.OPENAI, "gpt-4o", lambda x: x
+        )
         output = await result("test")
         assert output == "42"

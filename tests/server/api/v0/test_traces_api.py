@@ -9,53 +9,44 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from lilypad.server.models import (
-    FunctionTable,
+    GenerationTable,
     ProjectTable,
     Scope,
     SpanTable,
-    VersionTable,
+    SpanType,
 )
 
 
 @pytest.fixture
-def test_version(
-    session: Session, test_project: ProjectTable, test_function: FunctionTable
-) -> Generator[VersionTable, None, None]:
-    """Create a test version.
+def test_generation(
+    session: Session, test_project: ProjectTable, test_generation: GenerationTable
+) -> Generator[GenerationTable, None, None]:
+    """Create a test generation.
 
     Args:
         session: Database session
         test_project: Parent project
-        test_function: Function for this version
+        test_generation: The Generation
 
     Yields:
-        VersionTable: Test version
+        GenerationTable: Test generation
     """
-    version = VersionTable(
-        organization_uuid=test_project.organization_uuid,
-        version_num=1,
-        project_uuid=test_project.uuid,
-        function_uuid=test_function.uuid,
-        function_name=test_function.name,
-        function_hash=test_function.hash,
-        is_active=True,
-    )
-    session.add(version)
+    session.add(test_generation)
     session.commit()
-    session.refresh(version)
-    yield version
+    session.refresh(test_generation)
+    yield test_generation
 
 
 @pytest.fixture
 def test_span(
-    session: Session, test_project: ProjectTable, test_version: VersionTable
+    session: Session, test_project: ProjectTable, test_generation: GenerationTable
 ) -> Generator[SpanTable, None, None]:
     """Create a test span.
 
     Args:
         session: Database session
         test_project: Parent project
-        test_version: Parent version
+        test_generation: Parent generation
 
     Yields:
         SpanTable: Test span
@@ -66,18 +57,19 @@ def test_span(
         span_id="test_span_1",
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
-        version_uuid=test_version.uuid,
-        version_num=test_version.version_num,
+        generation_uuid=test_generation.uuid,
+        type=SpanType.GENERATION,
         scope=Scope.LILYPAD,
         data={
             "start_time": current_time,
             "end_time": current_time + 100,
             "attributes": {
-                "lilypad.function_name": test_version.function_name,
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.version_uuid": str(test_version.uuid),
-                "lilypad.version_num": test_version.version_num,
-                "lilypad.lexical_closure": "def test(): pass",
+                "lilypad.type": SpanType.GENERATION,
+                "lilypad.generation.uuid": str(test_generation.uuid),
+                "lilypad.generation.name": test_generation.name,
+                "lilypad.generation.signature": "def test(): pass",
+                "lilypad.generation.code": "def test(): pass",
             },
             "name": "test_function",
         },
@@ -107,7 +99,7 @@ def test_get_traces_by_project(
 
 
 def test_post_traces(
-    client: TestClient, test_project: ProjectTable, test_version: VersionTable
+    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
 ):
     """Test posting trace data creates expected spans."""
     current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
@@ -120,10 +112,11 @@ def test_post_traces(
             "end_time": current_time + 100,
             "attributes": {
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.version_uuid": str(test_version.uuid),
-                "lilypad.version_num": 1,
-                "lilypad.function_name": "test_function",
-                "lilypad.lexical_closure": "def test(): pass",
+                "lilypad.type": SpanType.GENERATION,
+                "lilypad.generation.uuid": str(test_generation.uuid),
+                "lilypad.generation.name": "test_function",
+                "lilypad.generation.signature": "def test(): pass",
+                "lilypad.generation.code": "def test(): pass",
             },
             "name": "test_function",
         }
@@ -139,12 +132,12 @@ def test_post_traces(
 def test_get_spans_by_version(
     client: TestClient,
     test_project: ProjectTable,
-    test_version: VersionTable,
+    test_generation: GenerationTable,
     test_span: SpanTable,
 ):
     """Test getting spans for a version returns expected spans."""
     response = client.get(
-        f"/projects/{test_project.uuid}/versions/{test_version.uuid}/spans"
+        f"/projects/{test_project.uuid}/generations/{test_generation.uuid}/spans"
     )
     assert response.status_code == 200
     spans = response.json()

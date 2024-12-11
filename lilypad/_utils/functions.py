@@ -105,10 +105,12 @@ def inspect_arguments(
     return arg_types, arg_values
 
 
-def _construct_call_decorator(fn: Callable, prompt: PromptPublic) -> partial[Any]:
-    provider, client = prompt.provider.value, None
-    if prompt.provider.value == "openrouter":
-        provider = "openai"
+def _construct_call_decorator(
+    fn: Callable, prompt: PromptPublic, provider: Provider, model: str
+) -> partial[Any]:
+    client = None
+    if provider == Provider.OPENROUTER:
+        provider = Provider.OPENAI
         if inspect.iscoroutinefunction(fn):
             from openai import AsyncOpenAI
 
@@ -125,8 +127,8 @@ def _construct_call_decorator(fn: Callable, prompt: PromptPublic) -> partial[Any
             )
 
     return partial(
-        import_module(f"mirascope.core.{provider}").call,
-        model=prompt.model,
+        import_module(f"mirascope.core.{provider.value}").call,
+        model=model,
         json_mode=False,
         client=client,
     )
@@ -136,6 +138,8 @@ def _construct_call_decorator(fn: Callable, prompt: PromptPublic) -> partial[Any
 def create_mirascope_call(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
     prompt: PromptPublic,
+    provider: Provider,
+    model: str,
     trace_decorator: Callable | None,
 ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
 
@@ -144,6 +148,8 @@ def create_mirascope_call(
 def create_mirascope_call(
     fn: Callable[_P, _R],
     prompt: PromptPublic,
+    provider: Provider,
+    model: str,
     trace_decorator: Callable | None,
 ) -> Callable[_P, _R]: ...
 
@@ -151,13 +157,15 @@ def create_mirascope_call(
 def create_mirascope_call(
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     prompt: PromptPublic,
+    provider: Provider,
+    model: str,
     trace_decorator: Callable | None,
 ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
     """Returns the constructed Mirascope call function."""
     if not trace_decorator:
         trace_decorator = lambda x: x  # noqa: E731
 
-    call_decorator = _construct_call_decorator(fn, prompt)
+    call_decorator = _construct_call_decorator(fn, prompt, provider, model)
     return_type = get_type_hints(fn).get("return", type(None))
     if inspect.iscoroutinefunction(fn):
 
@@ -166,21 +174,7 @@ def create_mirascope_call(
         async def prompt_template_async(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            if prompt.provider == Provider.GEMINI:
-                return {
-                    "call_params": {
-                        "generation_config": prompt.call_params.model_dump(
-                            exclude_defaults=True
-                        )
-                    }
-                    if prompt.call_params
-                    else {}
-                }
-            return {
-                "call_params": prompt.call_params.model_dump(exclude_defaults=True)
-                if prompt.call_params
-                else {}
-            }
+            return {"call_params": prompt.call_params}
 
         @wraps(fn)
         async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
@@ -247,21 +241,7 @@ def create_mirascope_call(
         def prompt_template(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            if prompt.provider == Provider.GEMINI:
-                return {
-                    "call_params": {
-                        "generation_config": prompt.call_params.model_dump(
-                            exclude_defaults=True
-                        )
-                    }
-                    if prompt.call_params
-                    else {}
-                }
-            return {
-                "call_params": prompt.call_params.model_dump(exclude_defaults=True)
-                if prompt.call_params
-                else {}
-            }
+            return {"call_params": prompt.call_params}
 
         @wraps(fn)
         def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
