@@ -28,11 +28,19 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+
+interface VirtualizerOptions {
+  count: number;
+  estimateSize?: (index: number) => number;
+  overscan?: number;
+  containerHeight?: number;
+}
 
 interface GenericDataTableProps<T> {
   data: T[];
@@ -43,6 +51,9 @@ interface GenericDataTableProps<T> {
   DetailPanel?: React.ComponentType<{ data: T }>;
   onRowClick?: (row: T) => void;
   defaultPanelSize?: number;
+  virtualizerRef?: React.RefObject<HTMLDivElement>;
+  virtualizerOptions: VirtualizerOptions;
+  onFilterChange?: (value: string) => void;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -54,6 +65,9 @@ export const DataTable = <T extends { uuid: string }>({
   DetailPanel,
   onRowClick,
   defaultPanelSize = 50,
+  virtualizerRef,
+  virtualizerOptions,
+  onFilterChange,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -82,6 +96,15 @@ export const DataTable = <T extends { uuid: string }>({
       expanded,
     },
     getSubRows,
+  });
+
+  const { rows } = table.getRowModel();
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualizerOptions.count,
+    getScrollElement: () => virtualizerRef?.current || null,
+    estimateSize: virtualizerOptions.estimateSize ?? (() => 45),
+    overscan: virtualizerOptions.overscan ?? 10,
   });
 
   const toggleRowSelection = (row: T) => {
@@ -117,6 +140,13 @@ export const DataTable = <T extends { uuid: string }>({
     );
   };
 
+  const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
+  const paddingBottom =
+    rowVirtualizer.getTotalSize() -
+    (rowVirtualizer.getVirtualItems()[
+      rowVirtualizer.getVirtualItems().length - 1
+    ]?.end ?? 0);
+
   return (
     <ResizablePanelGroup direction='horizontal' className='rounded-lg border'>
       <ResizablePanel
@@ -132,11 +162,12 @@ export const DataTable = <T extends { uuid: string }>({
                 (table.getColumn(filterColumn)?.getFilterValue() as string) ??
                 ""
               }
-              onChange={(event) =>
+              onChange={(event) => {
+                onFilterChange && onFilterChange(event.target.value);
                 table
                   .getColumn(filterColumn)
-                  ?.setFilterValue(event.target.value)
-              }
+                  ?.setFilterValue(event.target.value);
+              }}
               className='max-w-sm'
             />
           )}
@@ -167,31 +198,48 @@ export const DataTable = <T extends { uuid: string }>({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className='rounded-md border overflow-auto'>
+        <div ref={virtualizerRef} className='rounded-md border overflow-auto'>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table
-                  .getRowModel()
-                  .rows.map((row) => <CollapsibleRow key={row.id} row={row} />)
+              {rows.length ? (
+                <>
+                  {paddingTop > 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        style={{ height: `${paddingTop}px`, padding: 0 }}
+                      />
+                    </TableRow>
+                  )}
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const row = rows[virtualRow.index];
+                    return <CollapsibleRow key={row.id} row={row} />;
+                  })}
+                  {paddingBottom > 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        style={{ height: `${paddingBottom}px`, padding: 0 }}
+                      />
+                    </TableRow>
+                  )}
+                </>
               ) : (
                 <TableRow>
                   <TableCell

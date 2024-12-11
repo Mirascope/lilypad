@@ -4,6 +4,7 @@ import { lazy } from "react";
 import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
 import { NotFound } from "@/components/NotFound";
 import { AuthContext } from "@/auth";
+import { Toaster } from "@/components/ui/toaster";
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
     ? () => null // Render nothing in production
@@ -20,6 +21,7 @@ const RootComponent = () => {
   return (
     <>
       <Outlet />
+      <Toaster />
       <TanStackRouterDevtools position='bottom-right' />
     </>
   );

@@ -1,22 +1,24 @@
 import {
   ChevronDown,
-  ScrollText,
-  Table,
-  // Parentheses,
   User2,
   ChevronUp,
+  Home,
+  Wrench,
+  ScrollText,
 } from "lucide-react";
+import { LilypadIcon } from "@/components/LilypadIcon";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -36,6 +38,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUpdateActiveOrganizationMutation } from "@/utils/auth";
+import { useState } from "react";
+import { ProjectPublic } from "@/types/types";
 
 type Item = {
   title: string;
@@ -55,7 +59,7 @@ const RecursiveMenuContent = ({
   if (!hasChildren) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton className={depth > 0 ? "ml-4" : ""}>
+        <SidebarMenuButton className={depth > 0 ? "ml-4" : ""} asChild>
           <Link
             to={item.url}
             className='flex items-center w-full gap-2 [&.active]:font-bold'
@@ -104,30 +108,23 @@ export const AppSidebar = () => {
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const organizationMutation = useUpdateActiveOrganizationMutation();
-  const projectList: Item[] = projects.map((project) => ({
-    title: project.name,
-    url: `/projects/${project.uuid}/functions`,
-    children: [
-      {
-        title: "Generations",
-        url: `/projects/${project.uuid}/generations`,
-        icon: Table,
-      },
-      // {
-      //   title: "New Function",
-      //   url: `/projects/${project.uuid}/functions`,
-      //   icon: Parentheses,
-      // },
-    ],
-  }));
-  const items: Item[] = [
-    {
-      title: "Projects",
-      url: "/projects",
-      icon: ScrollText,
-      children: projectList,
-    },
-  ];
+  const [activeProject, setActiveProject] = useState<ProjectPublic | null>(
+    projects.length > 0 ? projects[0] : null
+  );
+  const projectItems: Item[] = activeProject
+    ? [
+        {
+          title: "Home",
+          url: `/projects/${activeProject.uuid}/generations`,
+          icon: Home,
+        },
+        {
+          title: "Workbench",
+          url: `/projects/${activeProject.uuid}/functions`,
+          icon: Wrench,
+        },
+      ]
+    : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
     if (user?.active_organization_uuid == organizationUuid) return;
     const newSession = await organizationMutation.mutateAsync({
@@ -144,6 +141,45 @@ export const AppSidebar = () => {
         });
       });
     });
+  };
+  const renderProjectSelector = () => {
+    return (
+      <SidebarMenu>
+        <SidebarGroup>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <ScrollText />
+                  {activeProject ? activeProject.name : "Select Project"}
+                  <ChevronDown className='ml-auto' />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className='w-[--radix-popper-anchor-width]'>
+                {projects.map((project) => (
+                  <DropdownMenuItem
+                    key={project.uuid}
+                    onClick={() => setActiveProject(project)}
+                  >
+                    {project.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {projectItems.map((item, index) => (
+                <RecursiveMenuContent
+                  key={`${item.title}-${index}`}
+                  item={item}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarMenu>
+    );
   };
   const renderOrganizationsDropdownItems = () => {
     return user?.user_organizations?.map((user_organization) => (
@@ -162,21 +198,12 @@ export const AppSidebar = () => {
   };
   return (
     <Sidebar collapsible='icon' className='lilypad-sidebar'>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Lilypad</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item, index) => (
-                <RecursiveMenuContent
-                  key={`${item.title}-${index}`}
-                  item={item}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+      <SidebarHeader>
+        <SidebarMenuButton>
+          <LilypadIcon /> Lilypad
+        </SidebarMenuButton>
+      </SidebarHeader>
+      <SidebarContent>{renderProjectSelector()}</SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -200,6 +227,7 @@ export const AppSidebar = () => {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 };

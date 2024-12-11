@@ -142,8 +142,6 @@ ignore = [
     'B011',
     'B028',
     'B904',
-    'ANN101',
-    'ANN102',
     'ANN401',
 ]
 fixable = ["ALL"]

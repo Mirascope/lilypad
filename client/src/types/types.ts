@@ -157,7 +157,7 @@ export interface MessageParam {
   /** Role */
   role: string;
   /** Content */
-  content: (AudioPart | TextPart | ImagePart)[];
+  content: (AudioPart | TextPart | ImagePart | ToolCall)[];
 }
 
 /**
@@ -345,6 +345,8 @@ export interface SpanMoreDetails {
   messages: MessageParam[];
   /** Data */
   data: object;
+  /** Cost */
+  cost?: number | null;
 }
 
 /**
@@ -358,6 +360,8 @@ export interface SpanPublic {
   project_uuid?: string | null;
   /** Version Uuid */
   version_uuid?: string | null;
+  /** Cost */
+  cost?: number | null;
   /** Version Num */
   version_num?: number | null;
   /** Instrumentation Scope name of the span */
@@ -531,4 +535,17 @@ export interface TextPart {
   type: "text";
   /** Text */
   text: string;
+}
+
+/**
+ * _ToolCall
+ * Image part model.
+ */
+export interface ToolCall {
+  /** Type */
+  type: "tool_call";
+  /** Name */
+  name: string;
+  /** Arguments */
+  arguments: object;
 }

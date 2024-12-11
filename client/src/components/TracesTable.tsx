@@ -1,4 +1,10 @@
-import { ArrowUpDown, ChevronRight, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronRight,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { Scope } from "@/types/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +21,7 @@ import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { useNavigate } from "@tanstack/react-router";
 import { DataTable } from "@/components/DataTable";
+import { useRef } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -34,6 +41,7 @@ const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
 
 export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
   const navigate = useNavigate();
+  const virtualizerRef = useRef<HTMLDivElement>(null);
 
   const columns: ColumnDef<SpanPublic>[] = [
     {
@@ -46,15 +54,13 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
         const paddingLeft = `${depth * 1}rem`;
         const hasSubRows = row.subRows.length > 0;
         return (
-          <div
-            style={{ paddingLeft }}
-            onClick={(event) => {
-              row.toggleExpanded();
-              event.stopPropagation();
-            }}
-          >
+          <div style={{ paddingLeft }}>
             {hasSubRows && (
               <ChevronRight
+                onClick={(event) => {
+                  row.toggleExpanded();
+                  event.stopPropagation();
+                }}
                 className={`h-4 w-4 inline mr-2 ${
                   row.getIsExpanded() ? "rotate-90" : ""
                 }`}
@@ -71,7 +77,27 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
     },
     {
       accessorKey: "version_num",
-      header: "Version",
+      id: "version",
+      header: ({ column }) => {
+        return (
+          <Button
+            className='p-0'
+            variant='ghost'
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Version
+            {column.getIsSorted() ? (
+              column.getIsSorted() === "asc" ? (
+                <ArrowUp className='ml-2 h-4 w-4' />
+              ) : (
+                <ArrowDown className='ml-2 h-4 w-4' />
+              )
+            ) : (
+              <ArrowUpDown className='ml-2 h-4 w-4' />
+            )}
+          </Button>
+        );
+      },
     },
     // {
     //   accessorKey: "output",
@@ -100,7 +126,15 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Timestamp
-            <ArrowUpDown className='ml-2 h-4 w-4' />
+            {column.getIsSorted() ? (
+              column.getIsSorted() === "asc" ? (
+                <ArrowUp className='ml-2 h-4 w-4' />
+              ) : (
+                <ArrowDown className='ml-2 h-4 w-4' />
+              )
+            ) : (
+              <ArrowUpDown className='ml-2 h-4 w-4' />
+            )}
           </Button>
         );
       },
@@ -165,6 +199,12 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
     <DataTable<SpanPublic>
       columns={columns}
       data={data}
+      virtualizerRef={virtualizerRef}
+      virtualizerOptions={{
+        count: data.length,
+        estimateSize: () => 45,
+        overscan: 20,
+      }}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
       filterColumn='display_name'

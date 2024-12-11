@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_auth")({
@@ -24,7 +24,6 @@ function AuthLayout() {
         <SidebarProvider>
           <AppSidebar />
           <main className='flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-secondary/10 pb-1'>
-            <SidebarTrigger />
             <Outlet />
           </main>
         </SidebarProvider>

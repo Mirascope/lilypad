@@ -107,7 +107,7 @@ def default_openai_cleanup(
                 tool_calls.append(tool_call_dict)
             message["tool_calls"] = tool_calls
 
-        event_attributes = {
+        event_attributes: dict[str, AttributeValue] = {
             gen_ai_attributes.GEN_AI_SYSTEM: "openai",
             "index": idx,
             "finish_reason": choice.finish_reason or "none",

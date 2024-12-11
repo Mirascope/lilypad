@@ -7,6 +7,7 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
 import ReactMarkdown from "react-markdown";
+import JsonView from "@uiw/react-json-view";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
@@ -48,9 +49,11 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
         <CardHeader>
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <pre className='overflow-auto'>{JSON.stringify(data, null, 2)}</pre>
-        </CardContent>
+        {data && (
+          <CardContent>
+            <JsonView value={data} />
+          </CardContent>
+        )}
       </Card>
     </div>
   );
