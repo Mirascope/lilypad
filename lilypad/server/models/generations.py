@@ -6,8 +6,9 @@ from uuid import UUID
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
-from ..._utils import Closure, DependencyInfo
+from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .prompts import PromptPublic
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
@@ -36,18 +37,18 @@ class _GenerationBase(SQLModel):
     dependencies: dict[str, DependencyInfo] = Field(
         sa_column=Column(JSON), default_factory=dict
     )
+    arg_types: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
 
 
-class GenerationCreate(Closure):
+class GenerationCreate(_GenerationBase):
     """Generation create model."""
-
-    arg_types: dict[str, str]
 
 
 class GenerationPublic(_GenerationBase):
     """Generation public model."""
 
     uuid: UUID
+    prompt: PromptPublic | None = None
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):

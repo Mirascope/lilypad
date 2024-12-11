@@ -71,7 +71,7 @@ def test_generation_models() -> None:
         "hash": "abc123",
         "dependencies": {},
         "arg_types": {"arg1": "str"},
-        "project_uuid": 1,
+        "project_uuid": uuid4(),
     }
     func_create = GenerationCreate(**generation_data)
     assert func_create.name == "test_func"

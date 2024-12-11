@@ -36,21 +36,20 @@ class _PromptBase(SQLModel):
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
+    dependencies: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
     template: str
     is_active: bool = Field(default=False)
+    call_params: CommonCallParams = Field(sa_column=Column(JSON), default_factory=dict)
 
 
 class PromptPublic(_PromptBase):
     """Prompt public model."""
 
     uuid: UUID
-    call_params: CommonCallParams | None = None
 
 
 class PromptCreate(_PromptBase):
     """Prompt create model."""
-
-    call_params: CommonCallParams | None = None
 
 
 class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
@@ -58,7 +57,6 @@ class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
 
     __tablename__ = PROMPT_TABLE_NAME  # type: ignore
 
-    call_params: dict | None = Field(sa_column=Column(JSON), default_factory=dict)
     project: "ProjectTable" = Relationship(back_populates="prompts")
     spans: list["SpanTable"] = Relationship(
         back_populates="prompt", cascade_delete=True
