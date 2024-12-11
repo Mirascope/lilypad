@@ -12,9 +12,9 @@ import api from "@/api";
 import { AxiosResponse } from "axios";
 import { ReactNode } from "@tanstack/react-router";
 import { stringToBytes } from "@/utils/strings";
+import JsonView from "@uiw/react-json-view";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
-
 const renderMessagesCard = (messages: MessageParam[]) => {
   try {
     return messages.map((message: MessageParam, index: number) => {
@@ -41,9 +41,7 @@ const renderMessagesCard = (messages: MessageParam[]) => {
                 <CardTitle>{content.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className='overflow-auto'>
-                  {JSON.stringify(content.arguments, null, 2)}
-                </pre>
+                <JsonView value={content.arguments} />
               </CardContent>
             </Card>
           );
@@ -93,6 +91,7 @@ export const LlmPanel = ({ spanId }: { spanId: string }) => {
             <span>{span.input_tokens + span.output_tokens}</span>
           </Badge>
         )}
+        {span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
         <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
       </div>
       <Card>
@@ -107,11 +106,11 @@ export const LlmPanel = ({ spanId }: { spanId: string }) => {
         <CardHeader>
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <pre className='overflow-auto'>
-            {JSON.stringify(span.data, null, 2)}
-          </pre>
-        </CardContent>
+        {span.data && (
+          <CardContent>
+            <JsonView value={span.data} />
+          </CardContent>
+        )}
       </Card>
     </div>
   );

@@ -1,5 +1,5 @@
-import { ProjectPublic, SpanPublic } from "@/types/types";
-import { useQuery } from "@tanstack/react-query";
+import { ProjectPublic } from "@/types/types";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { TracesTable } from "@/components/TracesTable";
 import {
@@ -9,8 +9,11 @@ import {
 } from "@tanstack/react-router";
 import api from "@/api";
 import { Typography } from "@/components/ui/typography";
+import { generationsQueryOptions } from "@/utils/traces";
 
-export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
+export const Route = createFileRoute(
+  "/_auth/projects/$projectUuid/generations"
+)({
   loader: async ({ params: { projectUuid } }) =>
     (await api.get<ProjectPublic>(`/projects/${projectUuid}`)).data,
   pendingComponent: () => <div>Loading...</div>,
@@ -21,18 +24,13 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
 export const Trace = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const project = useLoaderData({ from: Route.id }) as ProjectPublic;
-  const { isPending, error, data } = useQuery<SpanPublic[]>({
-    queryKey: ["traces"],
-    queryFn: async () =>
-      (await api.get(`/projects/${projectUuid}/traces`)).data,
-    refetchInterval: 1000,
-  });
-  if (isPending) return <div>Loading...</div>;
-  if (error) return <div>An error occurred: {error.message}</div>;
+  const { data } = useSuspenseQuery(generationsQueryOptions(projectUuid));
   return (
-    <div className='h-screen p-2'>
+    <div className='h-full flex flex-col px-2'>
       <Typography variant='h2'>{project.name}</Typography>
-      <TracesTable data={data} />
+      <div className='flex-1 min-h-0 overflow-auto'>
+        <TracesTable data={data} />
+      </div>
     </div>
   );
 };

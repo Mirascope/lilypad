@@ -37,6 +37,7 @@ class _SpanBase(SQLModel):
     version_uuid: UUID | None = Field(
         default=None, foreign_key=f"{VERSION_TABLE_NAME}.uuid"
     )
+    cost: float | None = Field(default=None)
     version_num: int | None = Field(default=None)
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=Column(JSON), default_factory=dict)
