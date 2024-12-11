@@ -2,15 +2,19 @@
 
 import importlib.metadata
 import os
+from collections.abc import Callable
+from functools import wraps
 from typing import Any, Literal, TypeAlias
 
 import openai as oai
+from google.generativeai.generative_models import GenerativeModel
 from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
 
 import tests.closure.closure_test_functions.other
 import tests.closure.closure_test_functions.other as cloth
+from lilypad.closure import Closure
 
 from . import other
 from . import other as oth
@@ -477,3 +481,86 @@ def global_var_fn() -> str:
         return "Hello, world!"
     """
     return "Hello, world!"
+
+
+def _decorator(fn: Callable) -> Callable[[], Closure]:
+    @wraps(fn)
+    def inner() -> Closure:
+        return Closure.from_fn(fn)
+
+    return inner
+
+
+def import_with_different_dist_name_fn() -> type[GenerativeModel]:
+    """
+    from google.generativeai.generative_models import GenerativeModel
+
+
+    def import_with_different_dist_name_fn() -> type[GenerativeModel]:
+        return GenerativeModel
+    """
+    return GenerativeModel
+
+
+@_decorator
+def closure_inside_decorator_fn() -> str:
+    """
+    from collections.abc import Callable
+    from functools import wraps
+
+    from lilypad.closure import Closure
+
+
+    def _decorator(fn: Callable) -> Callable[[], Closure]:
+        @wraps(fn)
+        def inner() -> Closure:
+            return Closure.from_fn(fn)
+
+        return inner
+
+
+    @_decorator
+    def closure_inside_decorator_fn() -> str:
+        return "Hello, world!"
+    """
+    return "Hello, world!"
+
+
+@other.imported_decorator
+def closure_inside_imported_decorator_fn() -> str:
+    """
+    from collections.abc import Callable
+    from functools import wraps
+
+    from lilypad.closure import Closure
+
+
+    def imported_decorator(fn: Callable) -> Callable[[], Closure]:
+        @wraps(fn)
+        def inner() -> Closure:
+            return Closure.from_fn(fn)
+
+        return inner
+
+
+    @imported_decorator
+    def closure_inside_imported_decorator_fn() -> str:
+        return "Hello, world!"
+    """
+    return "Hello, world!"
+
+
+def closure_with_long_function_name_that_wraps_around_fn(
+    arg1: str,
+    arg2: str,
+) -> ChatCompletionUserMessageParam:
+    """
+    from openai.types.chat import ChatCompletionUserMessageParam
+
+
+    def closure_with_long_function_name_that_wraps_around_fn(
+        arg1: str, arg2: str
+    ) -> ChatCompletionUserMessageParam:
+        return {"role": "user", "content": "Hello, world!"}
+    """
+    return {"role": "user", "content": "Hello, world!"}
