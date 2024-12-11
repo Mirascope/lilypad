@@ -25,7 +25,7 @@ _R = TypeVar("_R")
 
 
 def _get_custom_context_manager(
-    version: GenerationPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
@@ -45,10 +45,10 @@ def _get_custom_context_manager(
                 if new_project_uuid
                 else "",
                 "lilypad.type": "generation",
-                "lilypad.generation.uuid": str(version.uuid),
+                "lilypad.generation.uuid": str(generation.uuid),
                 "lilypad.generation.name": fn.__name__,
-                "lilypad.generation.signature": version.signature,
-                "lilypad.generation.code": version.code,
+                "lilypad.generation.signature": generation.signature,
+                "lilypad.generation.code": generation.code,
                 "lilypad.generation.arg_types": json.dumps(arg_types),
                 "lilypad.generation.arg_values": json.dumps(arg_values),
                 "lilypad.generation.prompt_template": prompt_template or "",
@@ -203,7 +203,7 @@ async def _handle_structured_stream_async(
 
 
 def create_mirascope_middleware(
-    version: GenerationPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     is_async: bool,
@@ -213,7 +213,7 @@ def create_mirascope_middleware(
     """Creates the middleware decorator for a Lilypad/Mirascope function."""
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
-            version, arg_types, arg_values, is_async, prompt_template, project_uuid
+            generation, arg_types, arg_values, is_async, prompt_template, project_uuid
         ),
         handle_call_response=_handle_call_response,
         handle_call_response_async=_handle_call_response_async,

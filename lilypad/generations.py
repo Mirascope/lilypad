@@ -45,7 +45,7 @@ class GenerationDecorator(Protocol):
 
 
 def _construct_trace_attributes(
-    version: GenerationPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     prompt_template: str,
@@ -59,10 +59,10 @@ def _construct_trace_attributes(
         if lilypad_client.project_uuid
         else 0,
         "lilypad.type": "generation",
-        "lilypad.generation.uuid": str(version.uuid),
-        "lilypad.generation.name": version.name,
-        "lilypad.generation.signature": version.signature,
-        "lilypad.generation.code": version.code,
+        "lilypad.generation.uuid": str(generation.uuid),
+        "lilypad.generation.name": generation.name,
+        "lilypad.generation.signature": generation.signature,
+        "lilypad.generation.code": generation.code,
         "lilypad.generation.arg_types": json.dumps(arg_types),
         "lilypad.generation.arg_values": json.dumps(arg_values),
         "lilypad.generation.prompt_template": prompt_template,
@@ -72,7 +72,7 @@ def _construct_trace_attributes(
 
 
 def _trace(
-    version: GenerationPublic,
+    generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     prompt_template: str = "",
@@ -97,7 +97,7 @@ def _trace(
                 ) as span:
                     output = await fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, prompt_template, output, True
+                        generation, arg_types, arg_values, prompt_template, output, True
                     )
                     span.set_attributes(attributes)
                 return output  # pyright: ignore [reportReturnType]
@@ -113,7 +113,12 @@ def _trace(
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, prompt_template, output, False
+                        generation,
+                        arg_types,
+                        arg_values,
+                        prompt_template,
+                        output,
+                        False,
                     )
                     span.set_attributes(attributes)
                 return output  # pyright: ignore [reportReturnType]
@@ -153,17 +158,19 @@ def generation() -> GenerationDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_or_create_generation_version(fn, arg_types)
+                generation = lilypad_client.get_or_create_generation_version(
+                    fn, arg_types
+                )
                 if not is_mirascope_call:
                     decorator = _trace(
-                        version=version,
+                        generation=generation,
                         arg_types=arg_types,
                         arg_values=arg_values,
                         prompt_template="",
                     )
                     return await decorator(fn)(*args, **kwargs)
                 decorator = create_mirascope_middleware(
-                    version, arg_types, arg_values, True, prompt_template
+                    generation, arg_types, arg_values, True, prompt_template
                 )
                 return await decorator(fn)(*args, **kwargs)
 
@@ -174,17 +181,19 @@ def generation() -> GenerationDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_or_create_generation_version(fn, arg_types)
+                generation = lilypad_client.get_or_create_generation_version(
+                    fn, arg_types
+                )
                 if not is_mirascope_call:
                     decorator = _trace(
-                        version=version,
+                        generation=generation,
                         arg_types=arg_types,
                         arg_values=arg_values,
                         prompt_template="",
                     )
                     return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 decorator = create_mirascope_middleware(
-                    version, arg_types, arg_values, False, prompt_template
+                    generation, arg_types, arg_values, False, prompt_template
                 )
                 return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 

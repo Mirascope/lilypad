@@ -153,7 +153,7 @@ class Prompt(BaseModel):
 
 
 def _construct_trace_attributes(
-    version: PromptPublic,
+    prompt: PromptPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     results: str,
@@ -164,11 +164,11 @@ def _construct_trace_attributes(
         if lilypad_client.project_uuid
         else 0,
         "lilypad.type": "prompt",
-        "lilypad.prompt.uuid": str(version.uuid),
-        "lilypad.prompt.name": version.name,
-        "lilypad.prompt.signature": version.signature,
-        "lilypad.prompt.code": version.code,
-        "lilypad.prompt.template": version.template,
+        "lilypad.prompt.uuid": str(prompt.uuid),
+        "lilypad.prompt.name": prompt.name,
+        "lilypad.prompt.signature": prompt.signature,
+        "lilypad.prompt.code": prompt.code,
+        "lilypad.prompt.template": prompt.template,
         "lilypad.prompt.arg_types": json.dumps(arg_types),
         "lilypad.prompt.arg_values": json.dumps(arg_values),
         "lilypad.prompt.output": results,
@@ -195,7 +195,7 @@ class PromptDecorator(Protocol):
 
 
 def _trace(
-    version: PromptPublic, arg_types: dict[str, str], arg_values: dict[str, Any]
+    prompt: PromptPublic, arg_types: dict[str, str], arg_values: dict[str, Any]
 ) -> PromptDecorator:
     @overload
     def decorator(
@@ -215,16 +215,16 @@ def _trace(
                 with get_tracer("lilypad").start_as_current_span(
                     f"{fn.__name__}"
                 ) as span:
-                    prompt = Prompt(
-                        template=version.template,
-                        common_call_params=version.call_params or {},
+                    _prompt = Prompt(
+                        template=prompt.template,
+                        common_call_params=prompt.call_params or {},
                         arg_values=arg_values,
                     )
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, str(prompt.model_dump()), False
+                        prompt, arg_types, arg_values, str(prompt.model_dump()), False
                     )
                     span.set_attributes(attributes)
-                return prompt
+                return _prompt
 
             return inner_async
         else:
@@ -234,16 +234,16 @@ def _trace(
                 with get_tracer("lilypad").start_as_current_span(
                     f"{fn.__name__}"
                 ) as span:
-                    prompt = Prompt(
-                        template=version.template,
-                        common_call_params=version.call_params or {},
+                    _prompt = Prompt(
+                        template=prompt.template,
+                        common_call_params=prompt.call_params or {},
                         arg_values=arg_values,
                     )
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        version, arg_types, arg_values, str(prompt.model_dump()), False
+                        prompt, arg_types, arg_values, str(prompt.model_dump()), False
                     )
                     span.set_attributes(attributes)
-                return prompt
+                return _prompt
 
             return inner
 
@@ -279,12 +279,12 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn)
-                if not version:
+                prompt = lilypad_client.get_prompt_active_version(fn)
+                if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"
                     )
-                decorator = _trace(version, arg_types, arg_values)
+                decorator = _trace(prompt, arg_types, arg_values)
                 return await decorator(fn)(*args, **kwargs)
 
             return inner_async
@@ -293,12 +293,12 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                version = lilypad_client.get_prompt_active_version(fn)
-                if not version:
+                prompt = lilypad_client.get_prompt_active_version(fn)
+                if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"
                     )
-                decorator = _trace(version, arg_types, arg_values)
+                decorator = _trace(prompt, arg_types, arg_values)
                 return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             return inner
