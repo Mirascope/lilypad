@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { versionsByFunctionNameQueryOptions } from "@/utils/versions";
-import { uniqueFunctionNamesQueryOptions } from "@/utils/functions";
+import {
+  uniqueGenerationNamesQueryOptions,
+  versionsByFunctionNameQueryOptions,
+} from "@/utils/generations";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,7 +15,7 @@ import {
 import { Plus } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useEffect } from "react";
-import { VersionPublic } from "@/types/types";
+import { GenerationPublic } from "@/types/types";
 import { IconDialog } from "@/components/IconDialog";
 import {
   Form,
@@ -25,9 +27,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 type FunctionFormValues = {
-  newFunctionName: string;
-  functionName: string;
-  version: VersionPublic | null;
+  newGenerationName: string;
+  generationName: string;
+  version: GenerationPublic | null;
 };
 
 export const SelectVersionForm = ({
@@ -35,36 +37,36 @@ export const SelectVersionForm = ({
 }: {
   versionUuid?: string;
 }) => {
-  const { projectUuid, functionName: defaultFunctionName } = useParams({
+  const { projectUuid, generationName: defaultFunctionName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();
   const method = useForm<FunctionFormValues>({
     defaultValues: {
-      newFunctionName: defaultFunctionName,
+      newGenerationName: defaultFunctionName,
       functionName: defaultFunctionName,
       version: null,
     },
   });
   const functionName = useWatch({
     control: method.control,
-    name: "functionName",
+    name: "generationName",
   });
 
   const newFunctionName = useWatch({
     control: method.control,
-    name: "newFunctionName",
+    name: "newGenerationName",
   });
   useEffect(() => {
     const subscription = method.watch((value, { name }) => {
-      if (name === "functionName") {
+      if (name === "generationName") {
         method.setValue("version", null);
         navigate({
-          to: `/projects/${projectUuid}/functions/${value.functionName}`,
+          to: `/projects/${projectUuid}/functions/${value.generationName}`,
         });
       } else if (name === "version" && value.version) {
         navigate({
-          to: `/projects/${projectUuid}/functions/${value.version.function_name}/versions/${value.version.uuid}`,
+          to: `/projects/${projectUuid}/generations/${value.version.name}/versions/${value.version.uuid}`,
         });
       }
     });
@@ -75,12 +77,12 @@ export const SelectVersionForm = ({
   const { data: versions } = useSuspenseQuery(
     versionsByFunctionNameQueryOptions(functionName, projectUuid)
   );
-  const { data: uniqueFunctionNames } = useSuspenseQuery(
-    uniqueFunctionNamesQueryOptions(projectUuid)
+  const { data: uniqueGenerationNames } = useSuspenseQuery(
+    uniqueGenerationNamesQueryOptions(projectUuid)
   );
-  const uniqueFunctionNamesWithNew = [...uniqueFunctionNames];
-  if (newFunctionName && !uniqueFunctionNames.includes(newFunctionName)) {
-    uniqueFunctionNamesWithNew.push(newFunctionName);
+  const uniqueGenerationNamesWithNew = [...uniqueGenerationNames];
+  if (newFunctionName && !uniqueGenerationNames.includes(newFunctionName)) {
+    uniqueGenerationNamesWithNew.push(newFunctionName);
   }
   useEffect(() => {
     const version = versions?.find((v) => v.uuid === versionUuid);
@@ -88,10 +90,10 @@ export const SelectVersionForm = ({
     method.setValue("version", version);
   }, [versions, versionUuid]);
   const handleCancelClick = () => {
-    method.setValue("newFunctionName", "");
+    method.setValue("newGenerationName", "");
   };
   const handleSaveClick = () => {
-    method.setValue("functionName", newFunctionName);
+    method.setValue("generationName", newFunctionName);
   };
   const buttons = [
     <Button onClick={handleSaveClick}>Save</Button>,
@@ -99,7 +101,7 @@ export const SelectVersionForm = ({
   ];
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      method.setValue("newFunctionName", "");
+      method.setValue("newGenerationName", "");
     }
   };
   return (
@@ -119,18 +121,18 @@ export const SelectVersionForm = ({
           }}
           dialogButtons={buttons}
         >
-          <NewFunctionDialog />
+          <NewGenerationDialog />
         </IconDialog>
         <Controller
           control={method.control}
-          name='functionName'
+          name='generationName'
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className='w-[200px]'>
                 <SelectValue placeholder='Select a function' />
               </SelectTrigger>
               <SelectContent>
-                {uniqueFunctionNamesWithNew.map((name) => (
+                {uniqueGenerationNamesWithNew.map((name) => (
                   <SelectItem key={name} value={name}>
                     {name}
                   </SelectItem>
@@ -171,25 +173,25 @@ export const SelectVersionForm = ({
   );
 };
 
-const NewFunctionDialog = () => {
+const NewGenerationDialog = () => {
   const methods = useFormContext<FunctionFormValues>();
   return (
     <>
       <FormField
         control={methods.control}
-        name='newFunctionName'
+        name='newGenerationName'
         rules={{
-          required: "Function Name is required",
+          required: "Generation Name is required",
         }}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Function Name</FormLabel>
+            <FormLabel>Generation Name</FormLabel>
             <FormControl>
               <Input
                 {...field}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder='Enter function name'
+                placeholder='Enter generation name'
               />
             </FormControl>
             <FormMessage />

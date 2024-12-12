@@ -24,10 +24,10 @@ import {
   AnthropicCallParams,
   OpenAICallParams,
   GeminiCallParams,
-  Provider,
   ResponseFormat,
   VersionPublic,
 } from "@/types/types";
+import { Provider } from "@/types/enums";
 import { useEffect } from "react";
 import {
   Control,

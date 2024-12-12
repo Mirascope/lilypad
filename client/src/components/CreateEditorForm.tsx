@@ -28,19 +28,19 @@ import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
-  useCreateVersion,
+  // useCreateVersion,
   usePatchActiveVersion,
   useRunMutation,
-} from "@/utils/versions";
+} from "@/utils/generations";
 import {
   FunctionCreate,
   PromptCreate,
-  Provider,
   OpenAICallParams,
   AnthropicCallParams,
   GeminiCallParams,
-  VersionPublic,
+  GenerationPublic,
 } from "@/types/types";
+import { Provider } from "@/types/enums";
 import { NotFound } from "@/components/NotFound";
 import IconDialog from "@/components/IconDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
@@ -53,19 +53,19 @@ type CreateEditorFormValues = EditorFormValues & {
 export const CreateEditorForm = ({
   version,
 }: {
-  version: VersionPublic | null;
+  version: GenerationPublic | null;
 }) => {
-  const { projectUuid, functionName } = useParams({
+  const { projectUuid, generationName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();
-  const createVersionMutation = useCreateVersion();
+  // const createVersionMutation = useCreateVersion();
   const patchActiveVersionMutation = usePatchActiveVersion();
   const runMutation = useRunMutation();
   const methods = useBaseEditorForm<CreateEditorFormValues>({
     additionalDefaults: {
-      inputs: version?.function.arg_types
-        ? Object.keys(version.function.arg_types).map((key) => ({
+      inputs: version?.arg_types
+        ? Object.keys(version.arg_types).map((key) => ({
             key,
             value: "",
           }))
@@ -80,7 +80,7 @@ export const CreateEditorForm = ({
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
-  if (!projectUuid || !functionName) return <NotFound />;
+  if (!projectUuid || !generationName) return <NotFound />;
   const onSubmit: SubmitHandler<CreateEditorFormValues> = (
     data: CreateEditorFormValues,
     event
@@ -103,7 +103,7 @@ export const CreateEditorForm = ({
       data.template = markdown;
       methods.trigger();
       const functionCreate: FunctionCreate = {
-        name: functionName,
+        name: generationName,
         arg_types: inputs.reduce(
           (acc, input) => {
             acc[input.key] = "str";
@@ -157,7 +157,7 @@ export const CreateEditorForm = ({
 
         await runMutation.mutateAsync({
           projectUuid,
-          versionUuid: newVersion.uuid,
+          generationUuid: newVersion.uuid,
           values: inputValues,
         });
         navigate({
@@ -252,7 +252,7 @@ export const CreateEditorForm = ({
           Execute the function below to run a trace.
         </CardHeader>
         <CardContent>
-          <CodeSnippet code={version.function.code} />
+          <CodeSnippet code={version.code} />
         </CardContent>
       </Card>
     );
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <div className='flex justify-between'>
             <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{functionName}</Typography>
+              <Typography variant='h3'>{generationName}</Typography>
               {version && (
                 <Button
                   disabled={
@@ -283,7 +283,7 @@ if __name__ == "__main__":
                     e.preventDefault();
                     patchActiveVersionMutation.mutate({
                       projectUuid,
-                      versionUuid: version.uuid,
+                      generationUuid: version.uuid,
                     });
                   }}
                 >

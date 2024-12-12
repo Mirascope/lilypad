@@ -118,11 +118,11 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/generations`,
           icon: Home,
         },
-        {
-          title: "Workbench",
-          url: `/projects/${activeProject.uuid}/functions`,
-          icon: Wrench,
-        },
+        // {
+        //   title: "Workbench",
+        //   url: `/projects/${activeProject.uuid}/functions`,
+        //   icon: Wrench,
+        // },
       ]
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {

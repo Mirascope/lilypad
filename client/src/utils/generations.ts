@@ -119,7 +119,7 @@ export const usePatchActiveVersion = () => {
   });
 };
 
-export const uniqueFunctionNamesQueryOptions = (projectUuid?: string) =>
+export const uniqueGenerationNamesQueryOptions = (projectUuid?: string) =>
   queryOptions({
     queryKey: ["project", projectUuid, "generations"],
     queryFn: async () => await fetchUniqueGenerationNames(projectUuid),
