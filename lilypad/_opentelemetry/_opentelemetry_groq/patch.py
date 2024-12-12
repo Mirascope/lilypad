@@ -92,6 +92,14 @@ def chat_completions_create(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
+                    # Ensure stream implements required protocol
+                    if not hasattr(result, "close"):
+                        original_result = result
+                        result = type("WrappedStream", (), {
+                            "__iter__": lambda self: self,
+                            "__next__": lambda self: next(original_result),
+                            "close": lambda: None,
+                        })()
                     return StreamWrapper(
                         span=span,
                         stream=result,
@@ -153,6 +161,14 @@ def chat_completions_create_async(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
+                    # Ensure stream implements required protocol
+                    if not hasattr(result, "__aiter__"):
+                        original_result = result
+                        result = type("WrappedAsyncStream", (), {
+                            "__aiter__": lambda self: self,
+                            "__anext__": lambda self: next(original_result),
+                            "aclose": lambda: None,
+                        })()
                     return AsyncStreamWrapper(
                         span=span,
                         stream=result,
