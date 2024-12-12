@@ -32,10 +32,10 @@ if TYPE_CHECKING:
     try:
         from mirascope.core.openai import OpenAICallParams
         from openai.types.chat import (
-            ChatCompletionMessageParam,  # pyright: ignore [reportAssignmentType]
+            ChatCompletionMessageParam as OpenAIChatCompletionMessageParam,  # pyright: ignore [reportAssignmentType]
         )
     except ImportError:
-        ChatCompletionMessageParam = Any
+        OpenAIChatCompletionMessageParam = Any
         OpenAICallParams = Any
     try:
         from anthropic.types import MessageParam
@@ -81,7 +81,7 @@ class Prompt(BaseModel):
     @overload
     def messages(
         self, provider: Literal["openai"]
-    ) -> Sequence["ChatCompletionMessageParam"]: ...
+    ) -> Sequence["OpenAIChatCompletionMessageParam"]: ...
 
     @overload
     def messages(self, provider: Literal["anthropic"]) -> Sequence["MessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
@@ -95,7 +95,7 @@ class Prompt(BaseModel):
     def messages(
         self, provider: Literal["openai", "anthropic", "gemini", "groq"]
     ) -> (
-        Sequence["ChatCompletionMessageParam"]
+        Sequence["OpenAIChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["GroqMessageParam"]  # pyright: ignore [reportInvalidTypeForm]

@@ -1,6 +1,6 @@
 """OpenTelemetry patch for Groq."""
 
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any, ParamSpec
 
 from opentelemetry.semconv._incubating.attributes import (
@@ -97,7 +97,7 @@ def chat_completions_create(
                         original_result = result
 
                         class WrappedStream:
-                            def __iter__(self) -> "WrappedStream":
+                            def __iter__(self) -> Iterator[Any]:
                                 return self
 
                             def __next__(self) -> Any:
@@ -173,14 +173,20 @@ def chat_completions_create_async(
                         original_result = result
 
                         class WrappedAsyncStream:
-                            async def __aiter__(self) -> "WrappedAsyncStream":
+                            def __aiter__(self) -> AsyncIterator[Any]:
                                 return self
 
                             async def __anext__(self) -> Any:
-                                return next(original_result)
+                                try:
+                                    if hasattr(original_result, "__anext__"):
+                                        return await original_result.__anext__()
+                                    return await original_result
+                                except (StopIteration, StopAsyncIteration):
+                                    raise StopAsyncIteration
 
                             async def aclose(self) -> None:
-                                pass
+                                if hasattr(original_result, "aclose"):
+                                    await original_result.aclose()
 
                         result = WrappedAsyncStream()
                     return AsyncStreamWrapper(
