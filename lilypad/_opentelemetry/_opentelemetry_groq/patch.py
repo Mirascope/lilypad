@@ -196,41 +196,54 @@ def chat_completions_create_async(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
+
+                    class WrappedAsyncStream(AsyncStreamProtocol):
+                        """A wrapper for async streams that ensures proper protocol implementation."""
+
+                        def __init__(self) -> None:
+                            """Initialize the async stream wrapper."""
+                            self._iterator = result
+
+                        def __aiter__(self) -> AsyncIterator[Any]:
+                            """Return self as an async iterator."""
+                            return self
+
+                        async def __anext__(self) -> Any:
+                            """Get the next item from the stream."""
+                            try:
+                                if hasattr(self._iterator, "__anext__"):
+                                    # Handle native async iterators
+                                    return await self._iterator.__anext__()
+                                if hasattr(self._iterator, "__next__"):
+                                    # Handle sync iterators
+                                    try:
+                                        return next(self._iterator)
+                                    except StopIteration:
+                                        raise StopAsyncIteration
+                                # Handle async generators
+                                if hasattr(self._iterator, "asend"):
+                                    return await self._iterator.asend(None)
+                                raise StopAsyncIteration
+                            except (StopIteration, StopAsyncIteration):
+                                raise StopAsyncIteration
+
+                        async def aclose(self) -> None:
+                            """Close the async stream."""
+                            if hasattr(self._iterator, "aclose"):
+                                await self._iterator.aclose()
+
                     # Ensure stream implements required protocol
                     if not hasattr(result, "__aiter__"):
-                        original_result = result
-
-                        class WrappedAsyncStream(AsyncStreamProtocol):
-                            def __init__(self) -> None:
-                                self._iterator = original_result
-
-                            def __aiter__(self) -> AsyncIterator[Any]:
-                                return self
-
-                            async def __anext__(self) -> Any:
-                                try:
-                                    if hasattr(self._iterator, "__anext__"):
-                                        return await cast(
-                                            AsyncIterator[Any], self._iterator
-                                        ).__anext__()
-                                    if hasattr(self._iterator, "__next__"):
-                                        return next(cast(Iterator[Any], self._iterator))
-                                    return await cast(
-                                        AsyncIterator[Any], self._iterator
-                                    ).__anext__()
-                                except (StopIteration, StopAsyncIteration):
-                                    raise StopAsyncIteration
-
-                            async def aclose(self) -> None:
-                                if hasattr(self._iterator, "aclose"):
-                                    await cast(
-                                        AsyncStreamProtocol, self._iterator
-                                    ).aclose()
-
                         result = WrappedAsyncStream()
+                    elif not isinstance(result, WrappedAsyncStream):
+                        # Wrap existing async iterators to ensure consistent behavior
+                        wrapped_stream = WrappedAsyncStream()
+                        wrapped_stream._iterator = result
+                        result = wrapped_stream
+
                     return AsyncStreamWrapper(
                         span=span,
-                        stream=cast(AsyncStreamProtocol, result if isinstance(result, WrappedAsyncStream) else WrappedAsyncStream()),
+                        stream=cast(AsyncStreamProtocol, result),
                         metadata=GroqMetadata(),
                         chunk_handler=GroqChunkHandler(),
                         cleanup_handler=default_groq_cleanup,
