@@ -149,7 +149,12 @@ async def test_chat_completions_create_async_streaming(mock_tracer, mock_respons
     chunk.choices = [choice]
     chunk.model = "mixtral-8x7b-32768"
     chunk.id = "test-id"
-    wrapped.return_value = AsyncMock(__aiter__=AsyncMock(return_value=iter([chunk])))
+
+    # Create a proper async iterator
+    async def async_iter():
+        yield chunk
+
+    wrapped.return_value = async_iter()
     instance = Mock()
     kwargs = {
         "model": "mixtral-8x7b-32768",

@@ -57,12 +57,10 @@ class GroqChunkHandler:
             if choice.finish_reason:
                 buffers[choice.index].finish_reason = choice.finish_reason
 
-            if hasattr(choice, "delta"):
-                if choice.delta.content is not None:
-                    buffers[choice.index].append_text_content(choice.delta.content)
-            elif hasattr(choice, "message"):
-                if choice.message.content is not None:
-                    buffers[choice.index].append_text_content(choice.message.content)
+            if hasattr(choice, "delta") and choice.delta.content is not None:
+                buffers[choice.index].append_text_content(choice.delta.content)
+            elif hasattr(choice, "message") and choice.message.content is not None:
+                buffers[choice.index].append_text_content(choice.message.content)
 
 
 def default_groq_cleanup(
