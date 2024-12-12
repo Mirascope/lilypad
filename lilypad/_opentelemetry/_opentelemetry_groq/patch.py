@@ -7,6 +7,7 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
 from opentelemetry.util.types import AttributeValue
+from unittest.mock import AsyncMock
 
 from lilypad._opentelemetry._opentelemetry_groq.utils import (
     GroqChunkHandler,
@@ -207,6 +208,7 @@ def chat_completions_create_async(
                     set_message_event(span, message)
             try:
                 result = await wrapped(*args, **kwargs)
+
                 if kwargs.get("stream", False):
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
@@ -276,7 +278,7 @@ def chat_completions_create_async(
                         )
                     )
                     span.set_attributes(error_attributes(e))
-                raise
+                raise  # Re-raise the original error without modification
             finally:
                 span.end()
 
