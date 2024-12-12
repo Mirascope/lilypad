@@ -24,6 +24,7 @@ class Provider(str, Enum):
     ANTHROPIC = "anthropic"
     OPENROUTER = "openrouter"
     GEMINI = "gemini"
+    GROQ = "groq"
 
 
 class _PromptBase(SQLModel):
