@@ -57,21 +57,27 @@ P = ParamSpec("P")
 class StreamProtocol(Protocol):
     """Protocol for synchronous streams."""
 
-    def __iter__(self) -> Iterator[Any]: ...
+    def __iter__(self) -> Iterator[Any]:
+        ...
 
-    def __next__(self) -> Any: ...
+    def __next__(self) -> Any:
+        ...
 
-    def close(self) -> None: ...
+    def close(self) -> None:
+        ...
 
 
 class AsyncStreamProtocol(Protocol):
     """Protocol for asynchronous streams."""
 
-    def __aiter__(self) -> AsyncIterator[Any]: ...
+    def __aiter__(self) -> AsyncIterator[Any]:
+        ...
 
-    async def __anext__(self) -> Any: ...
+    async def __anext__(self) -> Any:
+        ...
 
-    async def aclose(self) -> None: ...
+    async def aclose(self) -> None:
+        ...
 
 
 def chat_completions_create(
@@ -131,7 +137,7 @@ def chat_completions_create(
                         result = WrappedStream()
                     return StreamWrapper(
                         span=span,
-                        stream=result,
+                        stream=cast(StreamProtocol, result if isinstance(result, WrappedStream) else WrappedStream()),
                         metadata=GroqMetadata(),
                         chunk_handler=GroqChunkHandler(),
                         cleanup_handler=default_groq_cleanup,
@@ -224,7 +230,7 @@ def chat_completions_create_async(
                         result = WrappedAsyncStream()
                     return AsyncStreamWrapper(
                         span=span,
-                        stream=result,
+                        stream=cast(AsyncStreamProtocol, result if isinstance(result, WrappedAsyncStream) else WrappedAsyncStream()),
                         metadata=GroqMetadata(),
                         chunk_handler=GroqChunkHandler(),
                         cleanup_handler=default_groq_cleanup,
