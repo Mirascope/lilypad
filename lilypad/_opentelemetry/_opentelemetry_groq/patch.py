@@ -187,97 +187,104 @@ def chat_completions_create_async(
         A wrapped async function that creates a traced chat completion.
     """
 
-    async def traced_method(
-        wrapped: Callable[P, Any],
-        instance: Any,
-        args: tuple[Any, ...],
-        kwargs: dict[str, Any],
-    ) -> Any:
-        span_attributes = {**get_llm_request_attributes(kwargs, instance)}
+    def decorator(
+        func: Callable[P, Any],
+    ) -> Callable[P, Any]:
+        """Decorate the async chat completion function."""
 
-        span_name = f"{span_attributes[gen_ai_attributes.GEN_AI_OPERATION_NAME]} {span_attributes[gen_ai_attributes.GEN_AI_REQUEST_MODEL]}"
-        with tracer.start_as_current_span(
-            name=span_name,
-            kind=SpanKind.CLIENT,
-            attributes=span_attributes,
-            end_on_exit=False,
-        ) as span:
-            if span.is_recording():
-                for message in kwargs.get("messages", []):
-                    set_message_event(span, message)
-            try:
-                result = await wrapped(*args, **kwargs)
-                if kwargs.get("stream", False):
-                    # Convert list to iterator if necessary
-                    if isinstance(result, list):
-                        result = iter(result)
+        async def traced_method(
+            wrapped: Callable[P, Any],
+            instance: Any,
+            args: tuple[Any, ...],
+            kwargs: dict[str, Any],
+        ) -> Any:
+            span_attributes = {**get_llm_request_attributes(kwargs, instance)}
 
-                    class WrappedAsyncStream(AsyncStreamProtocol):
-                        """A wrapper for async streams that ensures proper protocol implementation."""
-
-                        def __init__(self) -> None:
-                            """Initialize the async stream wrapper."""
-                            self._iterator: Union[AsyncIterator[Any], Iterator[Any]] = result
-
-                        def __aiter__(self) -> AsyncIterator[Any]:
-                            """Return self as an async iterator."""
-                            return self
-
-                        async def __anext__(self) -> Any:
-                            """Get the next item from the stream."""
-                            try:
-                                if isinstance(self._iterator, AsyncIterator):
-                                    return await self._iterator.__anext__()
-                                if isinstance(self._iterator, Iterator):
-                                    try:
-                                        return next(self._iterator)
-                                    except StopIteration:
-                                        raise StopAsyncIteration
-                                # Handle async generators
-                                if hasattr(self._iterator, "asend"):
-                                    return await self._iterator.asend(None)  # type: ignore
-                                raise StopAsyncIteration
-                            except (StopIteration, StopAsyncIteration):
-                                raise StopAsyncIteration
-
-                        async def aclose(self) -> None:
-                            """Close the async stream."""
-                            if hasattr(self._iterator, "aclose"):
-                                await self._iterator.aclose()  # type: ignore
-
-                    # Ensure stream implements required protocol
-                    if not hasattr(result, "__aiter__"):
-                        result = WrappedAsyncStream()
-                    elif not isinstance(result, WrappedAsyncStream):
-                        # Wrap existing async iterators to ensure consistent behavior
-                        wrapped_stream = WrappedAsyncStream()
-                        wrapped_stream._iterator = result
-                        result = wrapped_stream
-
-                    return AsyncStreamWrapper(
-                        span=span,
-                        stream=cast(AsyncStreamProtocol, result),
-                        metadata=GroqMetadata(),
-                        chunk_handler=GroqChunkHandler(),
-                        cleanup_handler=default_groq_cleanup,
-                    )
-
-                # Handle non-streaming response
+            span_name = f"{span_attributes[gen_ai_attributes.GEN_AI_OPERATION_NAME]} {span_attributes[gen_ai_attributes.GEN_AI_REQUEST_MODEL]}"
+            with tracer.start_as_current_span(
+                name=span_name,
+                kind=SpanKind.CLIENT,
+                attributes=span_attributes,
+                end_on_exit=False,
+            ) as span:
                 if span.is_recording():
-                    set_response_attributes(span, result)
-                span.set_status(Status(StatusCode.OK))
-                return result
-            except Exception as e:
-                if span.is_recording():
-                    span.set_status(
-                        Status(
-                            StatusCode.ERROR,
-                            str(e),
+                    for message in kwargs.get("messages", []):
+                        set_message_event(span, message)
+                try:
+                    result = await wrapped(*args, **kwargs)
+                    if kwargs.get("stream", False):
+                        # Convert list to iterator if necessary
+                        if isinstance(result, list):
+                            result = iter(result)
+
+                        class WrappedAsyncStream(AsyncStreamProtocol):
+                            """A wrapper for async streams that ensures proper protocol implementation."""
+
+                            def __init__(self) -> None:
+                                """Initialize the async stream wrapper."""
+                                self._iterator: Union[AsyncIterator[Any], Iterator[Any]] = result
+
+                            def __aiter__(self) -> AsyncIterator[Any]:
+                                """Return self as an async iterator."""
+                                return self
+
+                            async def __anext__(self) -> Any:
+                                """Get the next item from the stream."""
+                                try:
+                                    if isinstance(self._iterator, AsyncIterator):
+                                        return await self._iterator.__anext__()
+                                    if isinstance(self._iterator, Iterator):
+                                        try:
+                                            return next(self._iterator)
+                                        except StopIteration:
+                                            raise StopAsyncIteration
+                                    # Handle async generators
+                                    if hasattr(self._iterator, "asend"):
+                                        return await self._iterator.asend(None)  # type: ignore
+                                    raise StopAsyncIteration
+                                except (StopIteration, StopAsyncIteration):
+                                    raise StopAsyncIteration
+
+                            async def aclose(self) -> None:
+                                """Close the async stream."""
+                                if hasattr(self._iterator, "aclose"):
+                                    await self._iterator.aclose()  # type: ignore
+
+                        # Ensure stream implements required protocol
+                        if not hasattr(result, "__aiter__"):
+                            result = WrappedAsyncStream()
+                        elif not isinstance(result, WrappedAsyncStream):
+                            # Wrap existing async iterators to ensure consistent behavior
+                            wrapped_stream = WrappedAsyncStream()
+                            wrapped_stream._iterator = result
+                            result = wrapped_stream
+
+                        return AsyncStreamWrapper(
+                            span=span,
+                            stream=cast(AsyncStreamProtocol, result),
+                            metadata=GroqMetadata(),
+                            chunk_handler=GroqChunkHandler(),
+                            cleanup_handler=default_groq_cleanup,
                         )
-                    )
-                    span.set_attributes(error_attributes(e))
-                raise
-            finally:
-                span.end()
 
-    return traced_method
+                    # Handle non-streaming response
+                    if span.is_recording():
+                        set_response_attributes(span, result)
+                    span.set_status(Status(StatusCode.OK))
+                    return result
+                except Exception as e:
+                    if span.is_recording():
+                        span.set_status(
+                            Status(
+                                StatusCode.ERROR,
+                                str(e),
+                            )
+                        )
+                        span.set_attributes(error_attributes(e))
+                    raise
+                finally:
+                    span.end()
+
+        return cast(Callable[P, Any], traced_method)
+
+    return decorator
