@@ -207,8 +207,7 @@ def chat_completions_create_async(
                 for message in kwargs.get("messages", []):
                     set_message_event(span, message)
             try:
-                # Call wrapped function based on type
-                result = await wrapped(*args, **kwargs) if isinstance(wrapped, AsyncMock) else await wrapped(instance, *args, **kwargs)
+                result = await wrapped(*args, **kwargs)
 
                 if kwargs.get("stream", False):
                     # Convert list to iterator if necessary
@@ -271,11 +270,15 @@ def chat_completions_create_async(
                 span.set_status(Status(StatusCode.OK))
                 return result
             except Exception as error:
+                span.set_status(Status(StatusCode.ERROR, str(error)))
                 if span.is_recording():
-                    span.set_status(Status(StatusCode.ERROR, str(error)))
-                    span.set_attributes(error_attributes(error))
-                raise  # Re-raise the original error without modification
-            finally:
+                    span.set_attribute(
+                        error_attributes.ERROR_TYPE, type(error).__qualname__
+                    )
                 span.end()
+                raise
+            finally:
+                if not kwargs.get("stream", False):
+                    span.end()
 
     return traced_method
