@@ -1,7 +1,7 @@
 """OpenTelemetry patch for Groq."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, ParamSpec, Protocol, cast
+from typing import Any, ParamSpec, Protocol, cast, Union
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
@@ -116,46 +116,61 @@ def chat_completions_create(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
+
+                    class WrappedStream(StreamProtocol):
+                        """A wrapper for sync streams that ensures proper protocol implementation."""
+
+                        def __init__(self) -> None:
+                            """Initialize the stream wrapper."""
+                            self._iterator = result
+
+                        def __iter__(self) -> Iterator[Any]:
+                            """Return self as an iterator."""
+                            return self
+
+                        def __next__(self) -> Any:
+                            """Get the next item from the stream."""
+                            return next(self._iterator)
+
+                        def close(self) -> None:
+                            """Close the stream if possible."""
+                            if hasattr(self._iterator, "close"):
+                                self._iterator.close()  # type: ignore
+
                     # Ensure stream implements required protocol
-                    if not hasattr(result, "close"):
-                        original_result = result
-
-                        class WrappedStream(StreamProtocol):
-                            def __init__(self) -> None:
-                                self._iterator = iter(original_result)
-
-                            def __iter__(self) -> Iterator[Any]:
-                                return self
-
-                            def __next__(self) -> Any:
-                                return next(self._iterator)
-
-                            def close(self) -> None:
-                                if hasattr(self._iterator, "close"):
-                                    self._iterator.close()
-
+                    if not hasattr(result, "__iter__"):
                         result = WrappedStream()
+                    elif not isinstance(result, WrappedStream):
+                        # Wrap existing iterators to ensure consistent behavior
+                        wrapped_stream = WrappedStream()
+                        wrapped_stream._iterator = result
+                        result = wrapped_stream
+
                     return StreamWrapper(
                         span=span,
-                        stream=cast(StreamProtocol, result if isinstance(result, WrappedStream) else WrappedStream()),
+                        stream=cast(StreamProtocol, result),
                         metadata=GroqMetadata(),
                         chunk_handler=GroqChunkHandler(),
                         cleanup_handler=default_groq_cleanup,
                     )
 
+                # Handle non-streaming response
                 if span.is_recording():
                     set_response_attributes(span, result)
-                span.end()
+                span.set_status(Status(StatusCode.OK))
                 return result
-
-            except Exception as error:
-                span.set_status(Status(StatusCode.ERROR, str(error)))
+            except Exception as e:
                 if span.is_recording():
-                    span.set_attribute(
-                        error_attributes.ERROR_TYPE, type(error).__qualname__
+                    span.set_status(
+                        Status(
+                            StatusCode.ERROR,
+                            str(e),
+                        )
                     )
-                span.end()
+                    span.set_attributes(error_attributes(e))
                 raise
+            finally:
+                span.end()
 
     return traced_method
 
@@ -202,7 +217,7 @@ def chat_completions_create_async(
 
                         def __init__(self) -> None:
                             """Initialize the async stream wrapper."""
-                            self._iterator = result
+                            self._iterator: Union[AsyncIterator[Any], Iterator[Any]] = result
 
                         def __aiter__(self) -> AsyncIterator[Any]:
                             """Return self as an async iterator."""
@@ -211,18 +226,16 @@ def chat_completions_create_async(
                         async def __anext__(self) -> Any:
                             """Get the next item from the stream."""
                             try:
-                                if hasattr(self._iterator, "__anext__"):
-                                    # Handle native async iterators
+                                if isinstance(self._iterator, AsyncIterator):
                                     return await self._iterator.__anext__()
-                                if hasattr(self._iterator, "__next__"):
-                                    # Handle sync iterators
+                                if isinstance(self._iterator, Iterator):
                                     try:
                                         return next(self._iterator)
                                     except StopIteration:
                                         raise StopAsyncIteration
                                 # Handle async generators
                                 if hasattr(self._iterator, "asend"):
-                                    return await self._iterator.asend(None)
+                                    return await self._iterator.asend(None)  # type: ignore
                                 raise StopAsyncIteration
                             except (StopIteration, StopAsyncIteration):
                                 raise StopAsyncIteration
@@ -230,7 +243,7 @@ def chat_completions_create_async(
                         async def aclose(self) -> None:
                             """Close the async stream."""
                             if hasattr(self._iterator, "aclose"):
-                                await self._iterator.aclose()
+                                await self._iterator.aclose()  # type: ignore
 
                     # Ensure stream implements required protocol
                     if not hasattr(result, "__aiter__"):
@@ -249,18 +262,22 @@ def chat_completions_create_async(
                         cleanup_handler=default_groq_cleanup,
                     )
 
+                # Handle non-streaming response
                 if span.is_recording():
                     set_response_attributes(span, result)
-                span.end()
+                span.set_status(Status(StatusCode.OK))
                 return result
-
-            except Exception as error:
-                span.set_status(Status(StatusCode.ERROR, str(error)))
+            except Exception as e:
                 if span.is_recording():
-                    span.set_attribute(
-                        error_attributes.ERROR_TYPE, type(error).__qualname__
+                    span.set_status(
+                        Status(
+                            StatusCode.ERROR,
+                            str(e),
+                        )
                     )
-                span.end()
+                    span.set_attributes(error_attributes(e))
                 raise
+            finally:
+                span.end()
 
     return traced_method
