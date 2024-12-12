@@ -101,13 +101,14 @@ def chat_completions_create(
                                 self._iterator = iter(original_result)
 
                             def __iter__(self) -> Iterator[Any]:
-                                return self._iterator
+                                return self
 
                             def __next__(self) -> Any:
                                 return next(self._iterator)
 
                             def close(self) -> None:
-                                pass
+                                if hasattr(self._iterator, "close"):
+                                    self._iterator.close()
 
                         result = WrappedStream()
                     return StreamWrapper(
@@ -177,14 +178,10 @@ def chat_completions_create_async(
 
                         class WrappedAsyncStream:
                             def __init__(self) -> None:
-                                self._iterator = (
-                                    original_result.__aiter__()
-                                    if hasattr(original_result, "__aiter__")
-                                    else original_result
-                                )
+                                self._iterator = original_result
 
                             def __aiter__(self) -> AsyncIterator[Any]:
-                                return cast(AsyncIterator[Any], self)
+                                return self
 
                             async def __anext__(self) -> Any:
                                 try:
