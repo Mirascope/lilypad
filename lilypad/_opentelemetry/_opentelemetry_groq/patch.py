@@ -97,13 +97,13 @@ def chat_completions_create(
                         original_result = result
 
                         class WrappedStream:
-                            def __iter__(self):
+                            def __iter__(self) -> "WrappedStream":
                                 return self
 
-                            def __next__(self):
+                            def __next__(self) -> Any:
                                 return next(original_result)
 
-                            def close(self):
+                            def close(self) -> None:
                                 pass
 
                         result = WrappedStream()
@@ -173,13 +173,13 @@ def chat_completions_create_async(
                         original_result = result
 
                         class WrappedAsyncStream:
-                            async def __aiter__(self):
+                            async def __aiter__(self) -> "WrappedAsyncStream":
                                 return self
 
-                            async def __anext__(self):
+                            async def __anext__(self) -> Any:
                                 return next(original_result)
 
-                            async def aclose(self):
+                            async def aclose(self) -> None:
                                 pass
 
                         result = WrappedAsyncStream()
