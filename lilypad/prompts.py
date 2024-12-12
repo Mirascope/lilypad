@@ -40,7 +40,7 @@ if TYPE_CHECKING:
         ContentDict = Any
 
     try:
-        from groq.types import ChatCompletionMessageParam as GroqMessageParam
+        from groq.types.chat import ChatCompletionMessageParam as GroqMessageParam
     except ImportError:
         GroqMessageParam = Any
 

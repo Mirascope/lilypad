@@ -204,16 +204,22 @@ def chat_completions_create_async(
                             async def __anext__(self) -> Any:
                                 try:
                                     if hasattr(self._iterator, "__anext__"):
-                                        return await cast(AsyncIterator[Any], self._iterator).__anext__()
+                                        return await cast(
+                                            AsyncIterator[Any], self._iterator
+                                        ).__anext__()
                                     if hasattr(self._iterator, "__next__"):
                                         return next(cast(Iterator[Any], self._iterator))
-                                    return await cast(AsyncIterator[Any], self._iterator)
+                                    return await cast(
+                                        AsyncIterator[Any], self._iterator
+                                    ).__anext__()
                                 except (StopIteration, StopAsyncIteration):
                                     raise StopAsyncIteration
 
                             async def aclose(self) -> None:
                                 if hasattr(self._iterator, "aclose"):
-                                    await cast(AsyncStreamProtocol, self._iterator).aclose()
+                                    await cast(
+                                        AsyncStreamProtocol, self._iterator
+                                    ).aclose()
 
                         result = WrappedAsyncStream()
                     return AsyncStreamWrapper(
