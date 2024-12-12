@@ -30,8 +30,8 @@ lilypad_client = LilypadClient(
 
 if TYPE_CHECKING:
     try:
-        from mirascope.core.openai import OpenAICallParams
         from openai.types.chat import ChatCompletionMessageParam  # pyright: ignore [reportUnknownVariableType]
+        from mirascope.core.openai import OpenAICallParams
     except ImportError:
         ChatCompletionMessageParam = Any
         OpenAICallParams = Any
