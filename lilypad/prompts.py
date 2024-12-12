@@ -30,24 +30,9 @@ lilypad_client = LilypadClient(
 
 if TYPE_CHECKING:
     try:
-        from mirascope.core.openai import OpenAICallParams
-    except ImportError:
-        OpenAICallParams = Any
-
-    try:
-        from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-    except ImportError:
-        ChatCompletionMessageParam = Any
-
-    try:
         from anthropic.types import MessageParam
     except ImportError:
         MessageParam = Any
-
-    try:
-        from mirascope.core.anthropic import AnthropicCallParams
-    except ImportError:
-        AnthropicCallParams = Any
 
     try:
         from google.generativeai.types import ContentDict
@@ -55,19 +40,36 @@ if TYPE_CHECKING:
         ContentDict = Any
 
     try:
-        from mirascope.core.gemini import GeminiCallParams
-    except ImportError:
-        GeminiCallParams = Any
-
-    try:
         from groq.types import ChatCompletionMessageParam as GroqMessageParam
     except ImportError:
         GroqMessageParam = Any
 
     try:
+        from mirascope.core.anthropic import AnthropicCallParams
+    except ImportError:
+        AnthropicCallParams = Any
+
+    try:
+        from mirascope.core.gemini import GeminiCallParams
+    except ImportError:
+        GeminiCallParams = Any
+
+    try:
         from mirascope.core.groq import GroqCallParams
     except ImportError:
         GroqCallParams = Any
+
+    try:
+        from mirascope.core.openai import OpenAICallParams
+    except ImportError:
+        OpenAICallParams = Any
+
+    try:
+        from openai.types.chat.chat_completion_message_param import (
+            ChatCompletionMessageParam,
+        )
+    except ImportError:
+        ChatCompletionMessageParam = Any
 
 
 def _base_message_params(

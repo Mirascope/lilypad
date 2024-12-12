@@ -1,11 +1,9 @@
 """OpenTelemetry patch for Groq."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, ParamSpec, cast, Protocol
+from typing import Any, ParamSpec, Protocol, cast
 
-from opentelemetry.semconv._incubating.attributes import (
-    gen_ai_attributes,
-)
+from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
 from opentelemetry.util.types import AttributeValue
