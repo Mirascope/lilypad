@@ -3,6 +3,7 @@
 import inspect
 import json
 from collections.abc import Callable, Coroutine
+from contextvars import ContextVar
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
@@ -23,6 +24,11 @@ settings = get_settings()
 lilypad_client = LilypadClient(
     timeout=10,
     token=config.get("token", None),
+)
+
+
+current_generation: ContextVar[GenerationPublic | None] = ContextVar(
+    "current_generation", default=None
 )
 
 
@@ -161,18 +167,22 @@ def generation() -> GenerationDecorator:
                 generation = lilypad_client.get_or_create_generation_version(
                     fn, arg_types
                 )
-                if not is_mirascope_call:
-                    decorator = _trace(
-                        generation=generation,
-                        arg_types=arg_types,
-                        arg_values=arg_values,
-                        prompt_template="",
+                token = current_generation.set(generation)
+                try:
+                    if not is_mirascope_call:
+                        decorator = _trace(
+                            generation=generation,
+                            arg_types=arg_types,
+                            arg_values=arg_values,
+                            prompt_template="",
+                        )
+                        return await decorator(fn)(*args, **kwargs)
+                    decorator = create_mirascope_middleware(
+                        generation, arg_types, arg_values, True, prompt_template
                     )
                     return await decorator(fn)(*args, **kwargs)
-                decorator = create_mirascope_middleware(
-                    generation, arg_types, arg_values, True, prompt_template
-                )
-                return await decorator(fn)(*args, **kwargs)
+                finally:
+                    current_generation.reset(token)
 
             return inner_async
 
@@ -184,18 +194,22 @@ def generation() -> GenerationDecorator:
                 generation = lilypad_client.get_or_create_generation_version(
                     fn, arg_types
                 )
-                if not is_mirascope_call:
-                    decorator = _trace(
-                        generation=generation,
-                        arg_types=arg_types,
-                        arg_values=arg_values,
-                        prompt_template="",
+                token = current_generation.set(generation)
+                try:
+                    if not is_mirascope_call:
+                        decorator = _trace(
+                            generation=generation,
+                            arg_types=arg_types,
+                            arg_values=arg_values,
+                            prompt_template="",
+                        )
+                        return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                    decorator = create_mirascope_middleware(
+                        generation, arg_types, arg_values, False, prompt_template
                     )
                     return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                decorator = create_mirascope_middleware(
-                    generation, arg_types, arg_values, False, prompt_template
-                )
-                return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                finally:
+                    current_generation.reset(token)
 
             return inner
 
