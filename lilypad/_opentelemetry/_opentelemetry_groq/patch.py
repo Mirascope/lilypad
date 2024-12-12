@@ -1,13 +1,12 @@
 """OpenTelemetry patch for Groq."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, ParamSpec, Protocol, cast, Union
+from typing import Any, ParamSpec, Protocol, cast
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
 from opentelemetry.util.types import AttributeValue
-from unittest.mock import AsyncMock
 
 from lilypad._opentelemetry._opentelemetry_groq.utils import (
     GroqChunkHandler,
@@ -219,7 +218,7 @@ def chat_completions_create_async(
 
                         def __init__(self) -> None:
                             """Initialize the async stream wrapper."""
-                            self._iterator: Union[AsyncIterator[Any], Iterator[Any]] = result
+                            self._iterator: AsyncIterator[Any] | Iterator[Any] = result
 
                         def __aiter__(self) -> AsyncIterator[Any]:
                             """Return self as an async iterator."""
