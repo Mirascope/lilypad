@@ -46,7 +46,7 @@ def get_llm_request_attributes(
         gen_ai_attributes.GEN_AI_REQUEST_TEMPERATURE: kwargs.get("temperature"),
         gen_ai_attributes.GEN_AI_REQUEST_TOP_P: kwargs.get("top_p"),
         gen_ai_attributes.GEN_AI_REQUEST_MAX_TOKENS: kwargs.get("max_tokens"),
-        gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.GROQ.value,
+        gen_ai_attributes.GEN_AI_SYSTEM: "groq",
     }
     set_server_address_and_port(client_instance, attributes)
 
