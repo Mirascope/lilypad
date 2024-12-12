@@ -35,7 +35,7 @@ if TYPE_CHECKING:
         OpenAICallParams = Any
 
     try:
-        from openai.types.chat import ChatCompletionMessageParam
+        from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
     except ImportError:
         ChatCompletionMessageParam = Any
 
