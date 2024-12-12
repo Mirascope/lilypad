@@ -1,7 +1,7 @@
 """OpenTelemetry patch for Groq."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, ParamSpec
+from typing import Any, ParamSpec, cast
 
 from opentelemetry.semconv._incubating.attributes import (
     gen_ai_attributes,
@@ -97,11 +97,14 @@ def chat_completions_create(
                         original_result = result
 
                         class WrappedStream:
+                            def __init__(self) -> None:
+                                self._iterator = iter(original_result)
+
                             def __iter__(self) -> Iterator[Any]:
-                                return self
+                                return self._iterator
 
                             def __next__(self) -> Any:
-                                return next(original_result)
+                                return next(self._iterator)
 
                             def close(self) -> None:
                                 pass
@@ -173,20 +176,29 @@ def chat_completions_create_async(
                         original_result = result
 
                         class WrappedAsyncStream:
+                            def __init__(self) -> None:
+                                self._iterator = (
+                                    original_result.__aiter__()
+                                    if hasattr(original_result, "__aiter__")
+                                    else original_result
+                                )
+
                             def __aiter__(self) -> AsyncIterator[Any]:
-                                return self
+                                return cast(AsyncIterator[Any], self)
 
                             async def __anext__(self) -> Any:
                                 try:
-                                    if hasattr(original_result, "__anext__"):
-                                        return await original_result.__anext__()
-                                    return await original_result
+                                    if hasattr(self._iterator, "__anext__"):
+                                        return await self._iterator.__anext__()
+                                    if hasattr(self._iterator, "__next__"):
+                                        return next(cast(Iterator[Any], self._iterator))
+                                    return await self._iterator
                                 except (StopIteration, StopAsyncIteration):
                                     raise StopAsyncIteration
 
                             async def aclose(self) -> None:
-                                if hasattr(original_result, "aclose"):
-                                    await original_result.aclose()
+                                if hasattr(self._iterator, "aclose"):
+                                    await self._iterator.aclose()
 
                         result = WrappedAsyncStream()
                     return AsyncStreamWrapper(

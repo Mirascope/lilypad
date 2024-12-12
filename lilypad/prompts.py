@@ -31,11 +31,9 @@ lilypad_client = LilypadClient(
 if TYPE_CHECKING:
     try:
         from mirascope.core.openai import OpenAICallParams
-        from openai.types.chat import (
-            ChatCompletionMessageParam as OpenAIChatCompletionMessageParam,  # pyright: ignore [reportAssignmentType]
-        )
+        from openai.types.chat import ChatCompletionMessageParam  # pyright: ignore [reportUnknownVariableType]
     except ImportError:
-        OpenAIChatCompletionMessageParam = Any
+        ChatCompletionMessageParam = Any
         OpenAICallParams = Any
     try:
         from anthropic.types import MessageParam
@@ -81,7 +79,7 @@ class Prompt(BaseModel):
     @overload
     def messages(
         self, provider: Literal["openai"]
-    ) -> Sequence["OpenAIChatCompletionMessageParam"]: ...
+    ) -> Sequence["ChatCompletionMessageParam"]: ...
 
     @overload
     def messages(self, provider: Literal["anthropic"]) -> Sequence["MessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
@@ -95,7 +93,7 @@ class Prompt(BaseModel):
     def messages(
         self, provider: Literal["openai", "anthropic", "gemini", "groq"]
     ) -> (
-        Sequence["OpenAIChatCompletionMessageParam"]
+        Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["GroqMessageParam"]  # pyright: ignore [reportInvalidTypeForm]
