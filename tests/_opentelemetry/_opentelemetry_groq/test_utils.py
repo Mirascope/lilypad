@@ -136,13 +136,7 @@ def test_groq_chunk_handler_streaming():
     chunk = Mock()
     chunk.model = "mixtral-8x7b-32768"
     chunk.id = "test-id"
-    chunk.choices = [
-        Mock(
-            index=0,
-            delta=Mock(content="Hello"),
-            finish_reason=None
-        )
-    ]
+    chunk.choices = [Mock(index=0, delta=Mock(content="Hello"), finish_reason=None)]
 
     handler.process_chunk(chunk, buffers)
     assert len(buffers) == 1

@@ -39,7 +39,10 @@ class GroqChunkHandler:
         # Add finish reason if present in chunk
         if hasattr(chunk, "choices") and chunk.choices:
             for choice in chunk.choices:
-                if choice.finish_reason and choice.finish_reason not in metadata["finish_reasons"]:
+                if (
+                    choice.finish_reason
+                    and choice.finish_reason not in metadata["finish_reasons"]
+                ):
                     metadata["finish_reasons"].append(choice.finish_reason)
 
     def process_chunk(self, chunk: Any, buffers: list[ChoiceBuffer]) -> None:
@@ -95,9 +98,7 @@ def default_groq_cleanup(
 
 
 def get_choice_event(choice: Any) -> dict[str, AttributeValue]:
-    attributes: dict[str, AttributeValue] = {
-        gen_ai_attributes.GEN_AI_SYSTEM: "groq"
-    }
+    attributes: dict[str, AttributeValue] = {gen_ai_attributes.GEN_AI_SYSTEM: "groq"}
 
     if message := choice.message:
         message_dict = {
@@ -113,9 +114,7 @@ def get_choice_event(choice: Any) -> dict[str, AttributeValue]:
 
 
 def set_message_event(span: Span, message: dict) -> None:
-    attributes = {
-        gen_ai_attributes.GEN_AI_SYSTEM: "groq"
-    }
+    attributes = {gen_ai_attributes.GEN_AI_SYSTEM: "groq"}
     role = message.get("role", "")
     if content := message.get("content"):
         if not isinstance(content, str):
