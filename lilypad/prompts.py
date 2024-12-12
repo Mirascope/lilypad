@@ -49,6 +49,12 @@ if TYPE_CHECKING:
     except ImportError:
         ContentDict = Any
         GeminiCallParams = Any
+    try:
+        from groq.types import ChatCompletionMessageParam as GroqMessageParam
+        from mirascope.core.groq import GroqCallParams
+    except ImportError:
+        GroqMessageParam = Any
+        GroqCallParams = Any
 
 
 def _base_message_params(
@@ -83,12 +89,16 @@ class Prompt(BaseModel):
     @overload
     def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
+    def messages(self, provider: Literal["groq"]) -> Sequence["GroqMessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
+
     def messages(
-        self, provider: Literal["openai", "anthropic", "gemini"]
+        self, provider: Literal["openai", "anthropic", "gemini", "groq"]
     ) -> (
         Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
+        | Sequence["GroqMessageParam"]  # pyright: ignore [reportInvalidTypeForm]
     ):
         """Return the messages array for the given provider converted from base."""
         if provider == "openai":
@@ -106,6 +116,10 @@ class Prompt(BaseModel):
 
             # type error needs resolution on mirascope side
             return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        elif provider == "groq":
+            from mirascope.core.groq._utils import convert_message_params
+
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
         else:
             raise NotImplementedError(f"Unknown provider: {provider}")
 
@@ -118,9 +132,12 @@ class Prompt(BaseModel):
     @overload
     def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
+    def call_params(self, provider: Literal["groq"]) -> "GroqCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
+
     def call_params(
-        self, provider: Literal["openai", "anthropic", "gemini"]
-    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":  # pyright: ignore [reportInvalidTypeForm]
+        self, provider: Literal["openai", "anthropic", "gemini", "groq"]
+    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams | GroqCallParams":  # pyright: ignore [reportInvalidTypeForm]
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":
             from mirascope.core.openai._utils._convert_common_call_params import (
@@ -136,6 +153,12 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "gemini":
             from mirascope.core.gemini._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+        elif provider == "groq":
+            from mirascope.core.groq._utils._convert_common_call_params import (
                 convert_common_call_params,
             )
 
