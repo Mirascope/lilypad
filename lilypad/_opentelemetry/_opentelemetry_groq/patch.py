@@ -177,7 +177,7 @@ def chat_completions_create(
 
 def chat_completions_create_async(
     tracer: Tracer,
-) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+) -> Callable[[Callable[P, Any]], Callable[[Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]]:
     """Create an async traced chat completion.
 
     Args:
@@ -189,11 +189,10 @@ def chat_completions_create_async(
 
     def decorator(
         func: Callable[P, Any],
-    ) -> Callable[P, Any]:
+    ) -> Callable[[Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
         """Decorate the async chat completion function."""
 
         async def traced_method(
-            wrapped: Callable[P, Any],
             instance: Any,
             args: tuple[Any, ...],
             kwargs: dict[str, Any],
@@ -211,7 +210,7 @@ def chat_completions_create_async(
                     for message in kwargs.get("messages", []):
                         set_message_event(span, message)
                 try:
-                    result = await wrapped(*args, **kwargs)
+                    result = await func(*args, **kwargs)
                     if kwargs.get("stream", False):
                         # Convert list to iterator if necessary
                         if isinstance(result, list):
@@ -285,6 +284,6 @@ def chat_completions_create_async(
                 finally:
                     span.end()
 
-        return cast(Callable[P, Any], traced_method)
+        return traced_method
 
     return decorator
