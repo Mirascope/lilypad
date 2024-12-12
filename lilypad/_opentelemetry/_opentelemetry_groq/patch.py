@@ -207,8 +207,8 @@ def chat_completions_create_async(
                 for message in kwargs.get("messages", []):
                     set_message_event(span, message)
             try:
-                # For AsyncMock, we need to call it directly with args and kwargs
-                result = await wrapped(*args, **kwargs)
+                # Call wrapped function based on type
+                result = await wrapped(*args, **kwargs) if isinstance(wrapped, AsyncMock) else await wrapped(instance, *args, **kwargs)
 
                 if kwargs.get("stream", False):
                     # Convert list to iterator if necessary
@@ -274,7 +274,7 @@ def chat_completions_create_async(
                 if span.is_recording():
                     span.set_status(Status(StatusCode.ERROR, str(error)))
                     span.set_attributes(error_attributes(error))
-                raise error  # Re-raise the original error
+                raise  # Re-raise the original error without modification
             finally:
                 span.end()
 
