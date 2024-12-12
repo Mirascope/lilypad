@@ -508,11 +508,8 @@ class Closure(BaseModel):
             assignments="\n".join(assignments),
             source_code="\n\n".join(source_code),
         )
-        try:
-            formatted_code = _run_ruff(code)
-        except Exception:  # pragma: no cover
-            formatted_code = code
-        hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
+        formatted_code = _run_ruff(code)
+        hash = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
             name=fn.__name__,
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),

@@ -11,9 +11,9 @@ from mirascope.core.base import CommonCallParams
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
-from typing_extensions import TypedDict
 
 from ._utils import inspect_arguments, load_config
+from .generations import current_generation
 from .server.client import LilypadClient
 from .server.models import PromptPublic
 from .server.settings import get_settings
@@ -35,28 +35,20 @@ if TYPE_CHECKING:
             ChatCompletionMessageParam,  # pyright: ignore [reportAssignmentType]
         )
     except ImportError:
-
-        class ChatCompletionMessageParam(TypedDict): ...
-
-        class OpenAICallParams(TypedDict): ...
-
+        ChatCompletionMessageParam = Any
+        OpenAICallParams = Any
     try:
         from anthropic.types import MessageParam
         from mirascope.core.anthropic import AnthropicCallParams
     except ImportError:
-
-        class MessageParam(TypedDict): ...
-
-        class AnthropicCallParams(TypedDict): ...
-
+        MessageParam = Any
+        AnthropicCallParams = Any
     try:
         from google.generativeai.types import ContentDict
         from mirascope.core.gemini import GeminiCallParams
     except ImportError:
-
-        class ContentDict(TypedDict): ...
-
-        class GeminiCallParams(TypedDict): ...
+        ContentDict = Any
+        GeminiCallParams = Any
 
 
 def _base_message_params(
@@ -86,17 +78,17 @@ class Prompt(BaseModel):
     ) -> Sequence["ChatCompletionMessageParam"]: ...
 
     @overload
-    def messages(self, provider: Literal["anthropic"]) -> Sequence["MessageParam"]: ...
+    def messages(self, provider: Literal["anthropic"]) -> Sequence["MessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
-    def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...
+    def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
     def messages(
         self, provider: Literal["openai", "anthropic", "gemini"]
     ) -> (
         Sequence["ChatCompletionMessageParam"]
-        | Sequence["MessageParam"]
-        | Sequence["ContentDict"]
+        | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
+        | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
     ):
         """Return the messages array for the given provider converted from base."""
         if provider == "openai":
@@ -118,17 +110,17 @@ class Prompt(BaseModel):
             raise NotImplementedError(f"Unknown provider: {provider}")
 
     @overload
-    def call_params(self, provider: Literal["openai"]) -> "OpenAICallParams": ...
+    def call_params(self, provider: Literal["openai"]) -> "OpenAICallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
-    def call_params(self, provider: Literal["anthropic"]) -> "AnthropicCallParams": ...
+    def call_params(self, provider: Literal["anthropic"]) -> "AnthropicCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
-    def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...
+    def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     def call_params(
         self, provider: Literal["openai", "anthropic", "gemini"]
-    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":
+    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":  # pyright: ignore [reportInvalidTypeForm]
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":
             from mirascope.core.openai._utils._convert_common_call_params import (
@@ -279,7 +271,9 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                prompt = lilypad_client.get_prompt_active_version(fn)
+                prompt = lilypad_client.get_prompt_active_version(
+                    fn, current_generation.get()
+                )
                 if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"
@@ -293,7 +287,9 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                prompt = lilypad_client.get_prompt_active_version(fn)
+                prompt = lilypad_client.get_prompt_active_version(
+                    fn, current_generation.get()
+                )
                 if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"
