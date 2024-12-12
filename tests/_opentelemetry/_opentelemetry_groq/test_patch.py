@@ -115,7 +115,11 @@ async def test_chat_completions_create_async_error(mock_tracer, mock_span):
 def test_chat_completions_create_streaming(mock_tracer, mock_response):
     wrapped = Mock()
     chunk = Mock()
-    chunk.choices = [Mock(delta=Mock(content="Hello"), finish_reason=None)]
+    choice = Mock()
+    choice.index = 0  # Add index attribute
+    choice.delta = Mock(content="Hello")
+    choice.finish_reason = None
+    chunk.choices = [choice]
     chunk.model = "mixtral-8x7b-32768"
     chunk.id = "test-id"
     wrapped.return_value = [chunk]  # Return an iterator for streaming
@@ -138,7 +142,11 @@ def test_chat_completions_create_streaming(mock_tracer, mock_response):
 async def test_chat_completions_create_async_streaming(mock_tracer, mock_response):
     wrapped = AsyncMock()
     chunk = Mock()
-    chunk.choices = [Mock(delta=Mock(content="Hello"), finish_reason=None)]
+    choice = Mock()
+    choice.index = 0  # Add index attribute
+    choice.delta = Mock(content="Hello")
+    choice.finish_reason = None
+    chunk.choices = [choice]
     chunk.model = "mixtral-8x7b-32768"
     chunk.id = "test-id"
     wrapped.return_value = AsyncMock(__aiter__=AsyncMock(return_value=iter([chunk])))

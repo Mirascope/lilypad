@@ -90,6 +90,9 @@ def chat_completions_create(
             try:
                 result = wrapped(*args, **kwargs)
                 if kwargs.get("stream", False):
+                    # Convert list to iterator if necessary
+                    if isinstance(result, list):
+                        result = iter(result)
                     return StreamWrapper(
                         span=span,
                         stream=result,
@@ -148,6 +151,9 @@ def chat_completions_create_async(
             try:
                 result = await wrapped(*args, **kwargs)
                 if kwargs.get("stream", False):
+                    # Convert list to iterator if necessary
+                    if isinstance(result, list):
+                        result = iter(result)
                     return AsyncStreamWrapper(
                         span=span,
                         stream=result,
