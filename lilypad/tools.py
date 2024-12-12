@@ -1,4 +1,15 @@
-"""The lilypad `tool` decorator."""
+"""The lilypad `tool` decorator.
+
+This decorator is used for creating AI-powered tools with built-in input validation
+and metadata extraction capabilities. It transforms functions into BaseTool instances
+that can be used within the Lilypad framework for AI interactions.
+
+The decorator automatically:
+- Enables input validation for tool parameters
+- Extracts metadata for AI system understanding
+- Integrates with the prompt template editor
+- Supports proper versioning and tracing
+"""
 
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
