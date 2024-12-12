@@ -341,6 +341,7 @@ def test_closure_inside_decorator_fn() -> None:
                 "anthropic",
                 "gemini",
                 "openai",
+                "outlines",
             ],
         }
     }
@@ -357,6 +358,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
                 "anthropic",
                 "gemini",
                 "openai",
+                "outlines",
             ],
         }
     }

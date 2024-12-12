@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Generator
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from opentelemetry.trace import SpanKind, Status, StatusCode
 from typing_extensions import ParamSpec
@@ -35,11 +35,11 @@ P = ParamSpec("P")
 def model_generate(tracer: Any) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
     """Wrapper for synchronous generate methods."""
 
-    def decorator(wrapped: Callable[P, Any]) -> Callable[P, Any]:
-        @wraps(wrapped)
+    def decorator(generate: Callable[P, Any]) -> Callable[P, Any]:
+        @wraps(generate)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
             self = args[0]
-            prompts: str | list[str] = args[1]
+            prompts = cast(str | list[str], args[1])
             generation_parameters: Any = args[2]
             _ = args[3]  # logits_processor
             sampling_parameters: Any = args[4]
@@ -66,7 +66,7 @@ def model_generate(tracer: Any) -> Callable[[Callable[P, Any]], Callable[P, Any]
                 record_stop_sequences(span, stop_at)
 
                 try:
-                    result = wrapped(*args, **kwargs)
+                    result = generate(*args, **kwargs)
                     set_response_event(span, result)
                     span.end()
                     return result
@@ -90,7 +90,7 @@ def model_generate_stream(
         @wraps(wrapped)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
             self = args[0]
-            prompts: str | list[str] = args[1]
+            prompts = cast(str | list[str], args[1])
             generation_parameters: Any = kwargs.get("generation_parameters")
             sampling_parameters: Any = kwargs.get("sampling_parameters")
 
@@ -155,7 +155,7 @@ def model_generate_async(
         @wraps(wrapped)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
             self = args[0]
-            prompts: str | list[str] = args[1]
+            prompts = cast(str | list[str], args[1])
             generation_parameters: Any = args[2]
             _ = args[3]  # logits_processor
             sampling_parameters: Any = args[4]
