@@ -35,7 +35,9 @@ if TYPE_CHECKING:
         OpenAICallParams = Any
 
     try:
-        from openai.types.chat import ChatCompletionMessageParam  # pyright: ignore [reportUnknownVariableType]
+        from openai.types.chat import (
+            ChatCompletionMessageParam,  # pyright: ignore [reportUnknownVariableType]
+        )
     except ImportError:
         ChatCompletionMessageParam = Any
 
