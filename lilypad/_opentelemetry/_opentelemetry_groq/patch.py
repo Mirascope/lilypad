@@ -1,7 +1,8 @@
-"""OpenTelemetry patch for Groq."""
+"""OpenTelemetry instrumentation for Groq."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any, ParamSpec, Protocol, cast
+from unittest.mock import AsyncMock
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
@@ -206,6 +207,7 @@ def chat_completions_create_async(
                 for message in kwargs.get("messages", []):
                     set_message_event(span, message)
             try:
+                # For AsyncMock, we need to call it directly with args and kwargs
                 result = await wrapped(*args, **kwargs)
 
                 if kwargs.get("stream", False):
@@ -268,16 +270,11 @@ def chat_completions_create_async(
                     set_response_attributes(span, result)
                 span.set_status(Status(StatusCode.OK))
                 return result
-            except Exception as e:
+            except Exception as error:
                 if span.is_recording():
-                    span.set_status(
-                        Status(
-                            StatusCode.ERROR,
-                            str(e),
-                        )
-                    )
-                    span.set_attributes(error_attributes(e))
-                raise  # Re-raise the original error without modification
+                    span.set_status(Status(StatusCode.ERROR, str(error)))
+                    span.set_attributes(error_attributes(error))
+                raise error  # Re-raise the original error
             finally:
                 span.end()
 
