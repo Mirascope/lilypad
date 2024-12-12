@@ -95,11 +95,18 @@ def chat_completions_create(
                     # Ensure stream implements required protocol
                     if not hasattr(result, "close"):
                         original_result = result
-                        result = type("WrappedStream", (), {
-                            "__iter__": lambda self: self,
-                            "__next__": lambda self: next(original_result),
-                            "close": lambda: None,
-                        })()
+
+                        class WrappedStream:
+                            def __iter__(self):
+                                return self
+
+                            def __next__(self):
+                                return next(original_result)
+
+                            def close(self):
+                                pass
+
+                        result = WrappedStream()
                     return StreamWrapper(
                         span=span,
                         stream=result,
@@ -164,11 +171,18 @@ def chat_completions_create_async(
                     # Ensure stream implements required protocol
                     if not hasattr(result, "__aiter__"):
                         original_result = result
-                        result = type("WrappedAsyncStream", (), {
-                            "__aiter__": lambda self: self,
-                            "__anext__": lambda self: next(original_result),
-                            "aclose": lambda: None,
-                        })()
+
+                        class WrappedAsyncStream:
+                            async def __aiter__(self):
+                                return self
+
+                            async def __anext__(self):
+                                return next(original_result)
+
+                            async def aclose(self):
+                                pass
+
+                        result = WrappedAsyncStream()
                     return AsyncStreamWrapper(
                         span=span,
                         stream=result,
