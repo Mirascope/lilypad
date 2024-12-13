@@ -31,7 +31,7 @@ from lilypad._opentelemetry._opentelemetry_outlines.patch import (
     model_generate_stream,
 )
 
-_patched_targets: list[tuple[str, str, str]] = []
+_patched_targets: list[tuple[str, ...]] = []
 
 
 class OutlinesInstrumentor(BaseInstrumentor):
@@ -110,13 +110,6 @@ class OutlinesInstrumentor(BaseInstrumentor):
             model_generate_stream(tracer),
         )
         _patched_targets.append(("outlines.models.openai", "OpenAI", "stream"))
-
-        wrap_function_wrapper(
-            "outlines.models.openai",
-            "OpenAI.generate_chat",
-            model_generate_async(tracer),
-        )
-        _patched_targets.append(("outlines.models.openai", "OpenAI", "generate_chat"))
 
         # Transformers
         wrap_function_wrapper(

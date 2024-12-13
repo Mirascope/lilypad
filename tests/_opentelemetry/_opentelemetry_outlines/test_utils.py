@@ -60,10 +60,10 @@ def test_extract_generation_attributes():
         sampler="multinomial", num_samples=1, top_p=0.9, top_k=None, temperature=0.5
     )
     attrs = extract_generation_attributes(
-        generation_parameters, sampling_parameters, "system_test", "test-model"
+        generation_parameters, sampling_parameters, "test-model"
     )
 
-    assert attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "system_test"
+    assert attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "outlines"
     assert attrs[gen_ai_attributes.GEN_AI_OPERATION_NAME] == "generate"
     assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MODEL] == "test-model"
     assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MAX_TOKENS] == 100
@@ -73,8 +73,8 @@ def test_extract_generation_attributes():
 
 
 def test_extract_generation_attributes_no_params():
-    attrs = extract_generation_attributes(None, None, "sys", "model")
-    assert attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "sys"
+    attrs = extract_generation_attributes(None, None, "model")
+    assert attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "outlines"
     assert attrs[gen_ai_attributes.GEN_AI_OPERATION_NAME] == "generate"
     assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MODEL] == "model"
     assert len(attrs) == 3

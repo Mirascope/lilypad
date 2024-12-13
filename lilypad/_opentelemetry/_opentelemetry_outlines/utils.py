@@ -15,11 +15,33 @@
 # Modifications copyright (C) 2024 Mirascope
 from __future__ import annotations
 
+import inspect
 import json
-from typing import Any
+from collections.abc import Callable
+from typing import Any, ParamSpec, cast
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.trace import Span
+
+P = ParamSpec("P")
+
+
+def get_fn_args(
+    fn: Callable, args: tuple[object, ...], kwargs: dict[str, Any]
+) -> dict[str, Any]:
+    """Returns the `args` and `kwargs` as a dictionary bound by `fn`'s signature."""
+    signature = inspect.signature(fn)
+    bound_args = signature.bind_partial(*args, **kwargs)
+    bound_args.apply_defaults()
+
+    fn_args = {}
+    for name, value in bound_args.arguments.items():
+        if signature.parameters[name].kind == inspect.Parameter.VAR_KEYWORD:
+            fn_args.update(value)
+        else:
+            fn_args[name] = value
+
+    return fn_args
 
 
 def record_prompts(span: Span, prompts: str | list[str]) -> None:
@@ -49,15 +71,28 @@ def set_response_event(span: Span, result: Any) -> None:
         span.add_event("gen_ai.response", attributes={"response": str(result)})
 
 
+def extract_arguments(
+    wrapped: Callable[P, Any],
+    instance: Any,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> tuple[str | list[str], Any, Any, str]:
+    bound_args = get_fn_args(wrapped, args, kwargs)
+    prompts = cast(str | list[str], bound_args.get("prompts"))
+    generation_parameters = bound_args.get("generation_parameters")
+    sampling_parameters = bound_args.get("sampling_parameters")
+    model_name = instance.__class__.__name__
+    return prompts, generation_parameters, sampling_parameters, model_name
+
+
 def extract_generation_attributes(
     generation_parameters: Any,
     sampling_parameters: Any,
-    system_name: str,
     model_name: str,
 ) -> dict[str, Any]:
     """Extract common attributes from generation/sampling parameters."""
     attributes: dict[str, Any] = {
-        gen_ai_attributes.GEN_AI_SYSTEM: system_name,
+        gen_ai_attributes.GEN_AI_SYSTEM: "outlines",
         gen_ai_attributes.GEN_AI_OPERATION_NAME: "generate",
         gen_ai_attributes.GEN_AI_REQUEST_MODEL: model_name,
     }
