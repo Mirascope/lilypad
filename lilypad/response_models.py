@@ -72,7 +72,7 @@ def _json_schema_to_python_type(schema: dict[str, Any], name: str = "Model") -> 
         return Any
 
 
-def _create_model_from_json_schema(json_schema: dict[str, Any]) -> type[BaseModel]:
+def _create_model_from_json_schema(json_schema: dict[str, Any], base_model: type[BaseModel]) -> type[BaseModel]:
     """Create a Pydantic model from a JSON schema."""
     properties = json_schema.get("properties", {})
     required_fields = json_schema.get("required", [])
@@ -92,7 +92,7 @@ def _create_model_from_json_schema(json_schema: dict[str, Any]) -> type[BaseMode
 
     return create_model(
         _snake_to_pascal(json_schema["title"]),
-        __config__=ConfigDict(extra="allow"),
+        __base__=base_model,
         **fields,
     )
 
@@ -214,7 +214,7 @@ def response_model() -> (
         ) -> type[BaseModel]:
             """Return the class associated with the current response model version."""
             model_version = get_response_model_version(cls_)
-            return _create_model_from_json_schema(model_version.schema_data)
+            return _create_model_from_json_schema(model_version.schema_data, cls)
 
         @classmethod
         def examples_method(
