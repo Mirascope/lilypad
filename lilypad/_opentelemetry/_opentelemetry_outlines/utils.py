@@ -78,7 +78,9 @@ def extract_arguments(
     kwargs: dict[str, Any],
 ) -> tuple[str | list[str], Any, Any, str]:
     bound_args = get_fn_args(wrapped, args, kwargs)
-    prompts = cast(str | list[str], bound_args.get("prompts"))
+    prompts = cast(str | list[str] | None, bound_args.get("prompts"))
+    if prompts is None:
+        prompts = args[0]
     generation_parameters = bound_args.get("generation_parameters")
     sampling_parameters = bound_args.get("sampling_parameters")
     model_name = instance.__class__.__name__
