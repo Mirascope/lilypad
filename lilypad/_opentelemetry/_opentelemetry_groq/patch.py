@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any, ParamSpec, Protocol, cast
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
-from opentelemetry.semconv.attributes import error_attributes
+from opentelemetry.semconv.attributes import error_attributes as error_attr
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
 from opentelemetry.util.types import AttributeValue
 
@@ -57,27 +57,21 @@ P = ParamSpec("P")
 class StreamProtocol(Protocol):
     """Protocol for synchronous streams."""
 
-    def __iter__(self) -> Iterator[Any]:
-        ...
+    def __iter__(self) -> Iterator[Any]: ...
 
-    def __next__(self) -> Any:
-        ...
+    def __next__(self) -> Any: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
 class AsyncStreamProtocol(Protocol):
     """Protocol for asynchronous streams."""
 
-    def __aiter__(self) -> AsyncIterator[Any]:
-        ...
+    def __aiter__(self) -> AsyncIterator[Any]: ...
 
-    async def __anext__(self) -> Any:
-        ...
+    async def __anext__(self) -> Any: ...
 
-    async def aclose(self) -> None:
-        ...
+    async def aclose(self) -> None: ...
 
 
 def chat_completions_create(
@@ -157,20 +151,16 @@ def chat_completions_create(
                 # Handle non-streaming response
                 if span.is_recording():
                     set_response_attributes(span, result)
-                span.set_status(Status(StatusCode.OK))
-                return result
-            except Exception as e:
-                if span.is_recording():
-                    span.set_status(
-                        Status(
-                            StatusCode.ERROR,
-                            str(e),
-                        )
-                    )
-                    span.set_attributes(error_attributes(e))
-                raise
-            finally:
                 span.end()
+                return result
+            except Exception as error:
+                span.set_status(Status(StatusCode.ERROR, str(error)))
+                if span.is_recording():
+                    span.set_attribute(
+                        error_attr.ERROR_TYPE, type(error).__qualname__
+                    )
+                span.end()
+                raise
 
     return traced_method
 
@@ -272,7 +262,7 @@ def chat_completions_create_async(
                 span.set_status(Status(StatusCode.ERROR, str(error)))
                 if span.is_recording():
                     span.set_attribute(
-                        error_attributes.ERROR_TYPE, type(error).__qualname__
+                        error_attr.ERROR_TYPE, type(error).__qualname__
                     )
                 span.end()
                 raise
