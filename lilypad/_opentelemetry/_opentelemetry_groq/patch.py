@@ -156,9 +156,7 @@ def chat_completions_create(
             except Exception as error:
                 span.set_status(Status(StatusCode.ERROR, str(error)))
                 if span.is_recording():
-                    span.set_attribute(
-                        error_attr.ERROR_TYPE, type(error).__qualname__
-                    )
+                    span.set_attribute(error_attr.ERROR_TYPE, type(error).__qualname__)
                 span.end()
                 raise
 
@@ -261,9 +259,7 @@ def chat_completions_create_async(
             except Exception as error:
                 span.set_status(Status(StatusCode.ERROR, str(error)))
                 if span.is_recording():
-                    span.set_attribute(
-                        error_attr.ERROR_TYPE, type(error).__qualname__
-                    )
+                    span.set_attribute(error_attr.ERROR_TYPE, type(error).__qualname__)
                 span.end()
                 raise
             finally:
