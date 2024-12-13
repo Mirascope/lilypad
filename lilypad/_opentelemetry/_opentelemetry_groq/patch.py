@@ -2,7 +2,6 @@
 
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any, ParamSpec, Protocol, cast
-from unittest.mock import AsyncMock
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes
