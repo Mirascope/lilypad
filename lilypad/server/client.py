@@ -9,8 +9,6 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 from rich import print
 
-from lilypad._utils.functions import PromptPublic
-
 from .._utils import Closure, load_config
 from ..server.settings import get_settings
 from .models import GenerationPublic, ProjectPublic, SpanPublic
@@ -249,28 +247,3 @@ class LilypadClient:
                     "arg_types": arg_types,
                 },
             )
-
-    def get_prompt_active_version(
-        self, fn: Callable[..., Any], generation: GenerationPublic | None
-    ) -> PromptPublic | None:
-        """Get the matching version for a prompt.
-
-        Args:
-            fn (Callable): The prompt for which to get the version.
-            generation (GenerationPublic | None): A generation that may have a specific
-                version of the prompt linked.
-
-        Returns:
-            PromptPublic | None: The matching version for the prompt, or `None`.
-        """
-        closure = Closure.from_fn(fn)
-        if generation and generation.prompt and generation.prompt.hash == closure.hash:
-            return generation.prompt
-        try:
-            return self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
-                response_model=PromptPublic,
-            )
-        except NotFoundError:
-            return None

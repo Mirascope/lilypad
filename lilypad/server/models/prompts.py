@@ -38,7 +38,6 @@ class _PromptBase(SQLModel):
     hash: str = Field(nullable=False, index=True)
     dependencies: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
     template: str
-    is_active: bool = Field(default=False)
     call_params: CommonCallParams = Field(sa_column=Column(JSON), default_factory=dict)
 
 

@@ -12,7 +12,7 @@ from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ._utils import inspect_arguments, load_config
+from ._utils import Closure, inspect_arguments, load_config
 from .generations import current_generation
 from .server.client import LilypadClient
 from .server.models import PromptPublic
@@ -266,20 +266,24 @@ def prompt() -> PromptDecorator:
     def decorator(
         fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]],
     ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
+        closure = Closure.from_fn(fn)
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                prompt = lilypad_client.get_prompt_active_version(
-                    fn, current_generation.get()
-                )
-                if not prompt:
-                    raise ValueError(
-                        f"Prompt active version not found for function: {fn.__name__}"
+                if not (generation := current_generation.get()):
+                    raise RuntimeError(
+                        "Prompt must be run inside a `generation` decorated function."
                     )
-                decorator = _trace(prompt, arg_types, arg_values)
-                return await decorator(fn)(*args, **kwargs)
+                if prompt := generation.prompt:
+                    if prompt.hash == closure.hash:
+                        decorator = _trace(prompt, arg_types, arg_values)
+                        return await decorator(fn)(*args, **kwargs)
+                    raise ValueError(
+                        "Prompt does not match signature of parent generations's prompt."
+                    )
+                raise ValueError("Parent generation does not have a prompt selected.")
 
             return inner_async
         else:
@@ -287,15 +291,18 @@ def prompt() -> PromptDecorator:
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                prompt = lilypad_client.get_prompt_active_version(
-                    fn, current_generation.get()
-                )
-                if not prompt:
-                    raise ValueError(
-                        f"Prompt active version not found for function: {fn.__name__}"
+                if not (generation := current_generation.get()):
+                    raise RuntimeError(
+                        "Prompt must be run inside a `generation` decorated function."
                     )
-                decorator = _trace(prompt, arg_types, arg_values)
-                return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                if prompt := generation.prompt:
+                    if prompt.hash == closure.hash:
+                        decorator = _trace(prompt, arg_types, arg_values)
+                        return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                    raise ValueError(
+                        "Prompt does not match signature of parent generations's prompt."
+                    )
+                raise ValueError("Parent generation does not have a prompt selected.")
 
             return inner
 
