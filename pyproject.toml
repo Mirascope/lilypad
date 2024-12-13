@@ -168,6 +168,7 @@ venv = ".venv"
 
 [tool.codespell]
 skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml"]
+ignore-words-list = "asend"
 
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
