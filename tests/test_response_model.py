@@ -1,4 +1,5 @@
 """Tests for the response_model decorator."""
+
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -19,8 +20,22 @@ def mock_model_response() -> ResponseModelPublic:
         name="test",
         signature="",
         code="",
-        dependencies={}, schema_data={'additionalProperties': True, 'properties': {'name': {'title': 'Name', 'type': 'string'}, 'age': {'description': 'The age of the user.', 'title': 'Age', 'type': 'integer'}}, 'required': ['name', 'age'], 'title': 'Userinforesponsemodel', 'type': 'object'}
-, examples=[{'name': 'Name', 'age': 30}],
+        dependencies={},
+        schema_data={
+            "additionalProperties": True,
+            "properties": {
+                "name": {"title": "Name", "type": "string"},
+                "age": {
+                    "description": "The age of the user.",
+                    "title": "Age",
+                    "type": "integer",
+                },
+            },
+            "required": ["name", "age"],
+            "title": "Userinforesponsemodel",
+            "type": "object",
+        },
+        examples=[{"name": "Name", "age": 30}],
         is_active=False,
     )
 
@@ -32,9 +47,9 @@ def mock_prompt_client(mock_model_response: ResponseModelPublic):
         mock.get_response_model_active_version.return_value = mock_model_response
         yield mock
 
+
 class MyResponseModelBase(BaseModel):
     """A base response model for a book recommendation."""
-
 
 
 @response_model()
@@ -54,5 +69,7 @@ def test_response_model_methods_exist():
 
 def test_response_model_methods(mock_prompt_client, mock_model_response):
     """Test the response_model and examples methods."""
-    assert issubclass(MyResponseModel.response_model(), MyResponseModelBase)
-    assert MyResponseModel.examples() == [{'age': 30, 'name': 'Name'}]
+    assert (
+        MyResponseModel.response_model().model_json_schema()
+    ), mock_model_response.schema_data
+    assert MyResponseModel.examples() == [{"age": 30, "name": "Name"}]
