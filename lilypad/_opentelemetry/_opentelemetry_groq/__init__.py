@@ -4,6 +4,7 @@ from collections.abc import Collection
 from typing import Any
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
+from opentelemetry.instrumentation.utils import unwrap
 from opentelemetry.semconv.schemas import Schemas
 from opentelemetry.trace import get_tracer
 from wrapt import wrap_function_wrapper
@@ -16,7 +17,7 @@ class GroqInstrumentor(BaseInstrumentor):
 
     def instrumentation_dependencies(self) -> Collection[str]:
         """Specify Groq SDK version requirements."""
-        return ("groq>=0.1.0,<1",)
+        return ("groq>=0.13.0",)
 
     def _instrument(self, **kwargs: Any) -> None:
         """Instrument Groq SDK.
@@ -46,4 +47,7 @@ class GroqInstrumentor(BaseInstrumentor):
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Uninstrument Groq SDK."""
-        pass  # No specific cleanup needed
+        import groq
+
+        unwrap(groq.resources.chat.completions.Completions, "create")  # pyright: ignore[reportAttributeAccessIssue]
+        unwrap(groq.resources.chat.completions.AsyncCompletions, "create")  # pyright: ignore[reportAttributeAccessIssue]
