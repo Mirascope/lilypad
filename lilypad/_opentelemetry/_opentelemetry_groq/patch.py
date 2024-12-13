@@ -1,7 +1,7 @@
 """OpenTelemetry instrumentation for Groq."""
 
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, ParamSpec, Protocol, cast
+from collections.abc import Awaitable, Callable
+from typing import Any, ParamSpec, cast
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.semconv.attributes import error_attributes as error_attr
@@ -16,10 +16,14 @@ from lilypad._opentelemetry._opentelemetry_groq.utils import (
     set_response_attributes,
 )
 from lilypad._opentelemetry._utils import (
+    AsyncStreamProtocol,
     AsyncStreamWrapper,
+    StreamProtocol,
     StreamWrapper,
     set_server_address_and_port,
 )
+
+P = ParamSpec("P")
 
 
 def get_llm_request_attributes(
@@ -49,29 +53,6 @@ def get_llm_request_attributes(
 
     # filter out None values
     return {k: v for k, v in attributes.items() if v is not None}
-
-
-P = ParamSpec("P")
-
-
-class StreamProtocol(Protocol):
-    """Protocol for synchronous streams."""
-
-    def __iter__(self) -> Iterator[Any]: ...
-
-    def __next__(self) -> Any: ...
-
-    def close(self) -> None: ...
-
-
-class AsyncStreamProtocol(Protocol):
-    """Protocol for asynchronous streams."""
-
-    def __aiter__(self) -> AsyncIterator[Any]: ...
-
-    async def __anext__(self) -> Any: ...
-
-    async def aclose(self) -> None: ...
 
 
 def chat_completions_create(
@@ -110,35 +91,6 @@ def chat_completions_create(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
-
-                    class WrappedStream(StreamProtocol):
-                        """A wrapper for sync streams that ensures proper protocol implementation."""
-
-                        def __init__(self) -> None:
-                            """Initialize the stream wrapper."""
-                            self._iterator = result
-
-                        def __iter__(self) -> Iterator[Any]:
-                            """Return self as an iterator."""
-                            return self
-
-                        def __next__(self) -> Any:
-                            """Get the next item from the stream."""
-                            return next(self._iterator)
-
-                        def close(self) -> None:
-                            """Close the stream if possible."""
-                            if hasattr(self._iterator, "close"):
-                                self._iterator.close()  # type: ignore
-
-                    # Ensure stream implements required protocol
-                    if not hasattr(result, "__iter__"):
-                        result = WrappedStream()
-                    elif not isinstance(result, WrappedStream):
-                        # Wrap existing iterators to ensure consistent behavior
-                        wrapped_stream = WrappedStream()
-                        wrapped_stream._iterator = result
-                        result = wrapped_stream
 
                     return StreamWrapper(
                         span=span,
@@ -200,48 +152,6 @@ def chat_completions_create_async(
                     # Convert list to iterator if necessary
                     if isinstance(result, list):
                         result = iter(result)
-
-                    class WrappedAsyncStream(AsyncStreamProtocol):
-                        """A wrapper for async streams that ensures proper protocol implementation."""
-
-                        def __init__(self) -> None:
-                            """Initialize the async stream wrapper."""
-                            self._iterator: AsyncIterator[Any] | Iterator[Any] = result
-
-                        def __aiter__(self) -> AsyncIterator[Any]:
-                            """Return self as an async iterator."""
-                            return self
-
-                        async def __anext__(self) -> Any:
-                            """Get the next item from the stream."""
-                            try:
-                                if isinstance(self._iterator, AsyncIterator):
-                                    return await self._iterator.__anext__()
-                                if isinstance(self._iterator, Iterator):
-                                    try:
-                                        return next(self._iterator)
-                                    except StopIteration:
-                                        raise StopAsyncIteration
-                                # Handle async generators
-                                if hasattr(self._iterator, "asend"):
-                                    return await self._iterator.asend(None)  # type: ignore
-                                raise StopAsyncIteration
-                            except (StopIteration, StopAsyncIteration):
-                                raise StopAsyncIteration
-
-                        async def aclose(self) -> None:
-                            """Close the async stream."""
-                            if hasattr(self._iterator, "aclose"):
-                                await self._iterator.aclose()  # type: ignore
-
-                    # Ensure stream implements required protocol
-                    if not hasattr(result, "__aiter__"):
-                        result = WrappedAsyncStream()
-                    elif not isinstance(result, WrappedAsyncStream):
-                        # Wrap existing async iterators to ensure consistent behavior
-                        wrapped_stream = WrappedAsyncStream()
-                        wrapped_stream._iterator = result
-                        result = wrapped_stream
 
                     return AsyncStreamWrapper(
                         span=span,
