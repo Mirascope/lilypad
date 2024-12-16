@@ -35,6 +35,16 @@ interface SpanData {
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   const data = span.data as SpanData;
   const attributes = data.attributes;
+  const type = attributes["lilypad.type"];
+  const signature = attributes[`lilypad.${type}.signature`];
+  const template = attributes[`lilypad.${type}.template`];
+  const output = attributes[`lilypad.${type}.output`];
+  let argValues = {};
+  try {
+    argValues = JSON.parse(attributes[`lilypad.${type}.arg_values`]);
+  } catch (e) {
+    argValues = {};
+  }
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{data.name}</Typography>
@@ -43,31 +53,25 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Code"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <CodeSnippet code={data.attributes["lilypad.generation.signature"]} />
+          <CodeSnippet code={signature} />
         </CardContent>
       </Card>
-      <ArgsCards
-        args={JSON.parse(data.attributes["lilypad.generation.arg_values"])}
-      />
-      {data.attributes["lilypad.generation.prompt_template"] && (
+      <ArgsCards args={argValues} />
+      {template && (
         <Card>
           <CardHeader>
             <CardTitle>{"Prompt Template"}</CardTitle>
           </CardHeader>
-          <CardContent className='whitespace-pre-wrap'>
-            {data.attributes["lilypad.generation.prompt_template"]}
-          </CardContent>
+          <CardContent className='whitespace-pre-wrap'>{template}</CardContent>
         </Card>
       )}
-      {data.attributes["lilypad.generation.output"] && (
+      {output && (
         <Card>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col'>
-            <ReactMarkdown>
-              {data.attributes["lilypad.generation.output"]}
-            </ReactMarkdown>
+            <ReactMarkdown>{output}</ReactMarkdown>
           </CardContent>
         </Card>
       )}

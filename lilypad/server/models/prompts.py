@@ -38,8 +38,9 @@ class _PromptBase(SQLModel):
     hash: str = Field(nullable=False, index=True)
     dependencies: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
     template: str
-    is_active: bool = Field(default=False)
+    is_default: bool = Field(default=False)
     call_params: CommonCallParams = Field(sa_column=Column(JSON), default_factory=dict)
+    arg_types: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
 
 
 class PromptPublic(_PromptBase):
@@ -50,6 +51,12 @@ class PromptPublic(_PromptBase):
 
 class PromptCreate(_PromptBase):
     """Prompt create model."""
+
+
+class PromptUpdate(SQLModel):
+    """Prompt update model"""
+
+    is_default: bool | None = None
 
 
 class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):

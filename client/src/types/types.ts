@@ -110,6 +110,15 @@ export interface GenerationPublic {
   prompt?: PromptPublic | null;
 }
 
+/**
+ * GenerationUpdate
+ * Generation update model.
+ */
+export interface GenerationUpdate {
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
@@ -142,6 +151,17 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
+}
+
+/** PlaygroundParameters */
+export interface PlaygroundParameters {
+  /** Arg Values */
+  arg_values: object;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  prompt?: PromptCreate | null;
 }
 
 /**
@@ -178,6 +198,53 @@ export interface ProjectPublic {
 }
 
 /**
+ * PromptCreate
+ * Prompt create model.
+ */
+export interface PromptCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, string>;
+  /** Template */
+  template: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+}
+
+/**
  * PromptPublic
  * Prompt public model.
  */
@@ -200,10 +267,10 @@ export interface PromptPublic {
   /** Template */
   template: string;
   /**
-   * Is Active
+   * Is Default
    * @default false
    */
-  is_active?: boolean;
+  is_default?: boolean;
   /**
    * Common parameters shared across LLM providers.
    *
@@ -220,11 +287,33 @@ export interface PromptPublic {
    *     stop: Stop sequence(s) to end generation.
    */
   call_params?: CommonCallParams;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
   /**
    * Uuid
    * @format uuid
    */
   uuid: string;
+}
+
+/**
+ * PromptUpdate
+ * Prompt update model
+ */
+export interface PromptUpdate {
+  /** Is Default */
+  is_default?: boolean | null;
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
+  GEMINI = "gemini",
 }
 
 /**

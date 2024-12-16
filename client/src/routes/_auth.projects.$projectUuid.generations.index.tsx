@@ -1,62 +1,58 @@
+import { generationsQueryOptions } from "@/utils/generations";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
-  Link,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
-import { Button } from "@/components/ui/button";
-import { FormEvent, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { uniqueGenerationNamesQueryOptions } from "@/utils/generations";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { GenerationPublic } from "@/types/types";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
-  component: () => <CreatePrompt />,
+  component: () => <GenerationsList />,
 });
 
-export const CreatePrompt = () => {
-  const { projectUuid } = useParams({ from: Route.id });
-  const { data: generationNames } = useSuspenseQuery(
-    uniqueGenerationNamesQueryOptions(projectUuid)
-  );
-  const [value, setValue] = useState("");
+const GenerationCards = ({
+  generation,
+  index,
+}: {
+  generation: GenerationPublic;
+  index: number;
+}) => {
   const navigate = useNavigate();
-  const handleClick = (e: FormEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    navigate({
-      to: `/projects/${projectUuid}/functions/${value}`,
-    });
+  const { projectUuid } = useParams({ from: Route.id });
+  const handleClick = () => {
+    navigate({ to: `/projects/${projectUuid}/generations/${generation.uuid}` });
   };
   return (
-    <div className='min-h-screen flex flex-col items-center w-[600px] m-auto'>
-      <Typography variant='h3'>Functions</Typography>
-      <div className='flex flex-wrap gap-2'>
-        {generationNames.length > 0 &&
-          generationNames.map((generationName) => (
-            <Link
-              key={generationName}
-              to={`/projects/${projectUuid}/generations/${generationName}`}
-            >
-              <Card className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
-                <CardContent className='p-4'>{generationName}</CardContent>
-              </Card>
-            </Link>
-          ))}
-      </div>
-      <Separator className='my-4' />
-      <form className=' flex flex-col gap-2'>
-        <Typography variant='h3'>Create a new function</Typography>
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder='Enter function name'
+    <Card className='w-auto' onClick={handleClick}>
+      <CardHeader>
+        <CardTitle>{generation.name}</CardTitle>
+        <CardDescription>Version {index + 1}</CardDescription>
+      </CardHeader>
+      <CardContent className='flex gap-2'></CardContent>
+    </Card>
+  );
+};
+const GenerationsList = () => {
+  const { projectUuid } = useParams({ from: Route.id });
+  const { data } = useSuspenseQuery(generationsQueryOptions(projectUuid));
+  return (
+    <div className='flex'>
+      {data.map((generation, i) => (
+        <GenerationCards
+          key={generation.uuid}
+          generation={generation}
+          index={i}
         />
-        <Button onClick={handleClick}>Get Started</Button>
-      </form>
+      ))}
     </div>
   );
 };
