@@ -46,13 +46,13 @@ async def get_prompts_by_signature(
     "/projects/{project_uuid}/prompts/name/{prompt_name}",
     response_model=Sequence[PromptPublic],
 )
-async def get_generations_by_name(
+async def get_prompts_by_name(
     project_uuid: UUID,
     prompt_name: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> Sequence[PromptTable]:
-    """Get generation by name."""
-    return prompt_service.find_records_by_name(project_uuid, prompt_name)
+    """Get prompts by name."""
+    return prompt_service.find_prompts_by_name(project_uuid, prompt_name)
 
 
 @prompts_router.get(

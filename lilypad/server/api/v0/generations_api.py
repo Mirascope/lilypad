@@ -50,7 +50,7 @@ async def get_generations_by_name(
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
 ) -> Sequence[GenerationTable]:
     """Get generation by name."""
-    return generation_service.find_records_by_name(project_uuid, generation_name)
+    return generation_service.find_generations_by_name(project_uuid, generation_name)
 
 
 @generations_router.get(

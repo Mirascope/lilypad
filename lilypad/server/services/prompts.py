@@ -16,7 +16,7 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
     table: type[PromptTable] = PromptTable
     create_model: type[PromptCreate] = PromptCreate
 
-    def find_records_by_name(
+    def find_prompts_by_name(
         self, project_uuid: UUID, name: str
     ) -> Sequence[PromptTable]:
         """Find record by uuid"""
