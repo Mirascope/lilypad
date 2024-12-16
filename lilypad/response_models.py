@@ -100,7 +100,7 @@ def _create_model_from_json_schema(json_schema: dict[str, Any]) -> type[BaseMode
 def _extract_example(schema: dict, definitions: dict) -> Any:
     """Extract an example from a JSON schema."""
     if "examples" in schema:
-        return schema["examples"][0]
+        return schema["examples"]
 
     if "$ref" in schema:
         ref = schema["$ref"]

@@ -35,7 +35,7 @@ def mock_model_response() -> ResponseModelPublic:
             "title": "Userinforesponsemodel",
             "type": "object",
         },
-        examples=[{"name": "Name", "age": 30}],
+        examples=[{"name": "foo", "age": 30}, {"name": "bar", "age": 50}],
         is_active=False,
     )
 
@@ -72,4 +72,4 @@ def test_response_model_methods(mock_prompt_client, mock_model_response):
     assert (
         MyResponseModel.response_model().model_json_schema()
     ), mock_model_response.schema_data
-    assert MyResponseModel.examples() == [{"age": 30, "name": "Name"}]
+    assert MyResponseModel.examples() == [{"age": 30, "name": "foo"}, {"age": 50, "name": "bar"}]
