@@ -22,12 +22,16 @@ class BaseService(Generic[_TableT, _CreateT]):
     table: type[_TableT]
     create_model: type[_CreateT]
 
-    def find_record_by_uuid(self, uuid: UUID) -> _TableT:
+    def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
         """Find record by uuid"""
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
         record_table = self.session.exec(
             select(self.table).where(
                 self.table.uuid == uuid,
                 self.table.organization_uuid == self.user.active_organization_uuid,
+                *filter_conditions,
             )
         ).first()
         if not record_table:
@@ -37,11 +41,15 @@ class BaseService(Generic[_TableT, _CreateT]):
             )
         return record_table
 
-    def find_all_records(self) -> Sequence[_TableT]:
+    def find_all_records(self, **filters: Any) -> Sequence[_TableT]:
         """Find all records"""
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
+                *filter_conditions,
             )
         ).all()
 
@@ -64,9 +72,9 @@ class BaseService(Generic[_TableT, _CreateT]):
         self.session.flush()
         return record_table
 
-    def update_record_by_uuid(self, uuid: UUID, data: dict) -> _TableT:
+    def update_record_by_uuid(self, uuid: UUID, data: dict, **filters: Any) -> _TableT:
         """Updates a record based on the uuid"""
-        record_table = self.find_record_by_uuid(uuid)
+        record_table = self.find_record_by_uuid(uuid, **filters)
         record_table.sqlmodel_update(data)
         self.session.add(record_table)
         self.session.flush()

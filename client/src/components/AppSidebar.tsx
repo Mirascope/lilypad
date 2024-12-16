@@ -5,6 +5,7 @@ import {
   Home,
   Wrench,
   ScrollText,
+  PencilLine,
 } from "lucide-react";
 import { LilypadIcon } from "@/components/LilypadIcon";
 import {
@@ -115,13 +116,18 @@ export const AppSidebar = () => {
     ? [
         {
           title: "Home",
-          url: `/projects/${activeProject.uuid}/generations`,
+          url: `/projects/${activeProject.uuid}/traces`,
           icon: Home,
         },
         {
-          title: "Workbench",
-          url: `/projects/${activeProject.uuid}/functions`,
+          title: "Generations",
+          url: `/projects/${activeProject.uuid}/generations`,
           icon: Wrench,
+        },
+        {
+          title: "Prompts",
+          url: `/projects/${activeProject.uuid}/prompts`,
+          icon: PencilLine,
         },
       ]
     : [];

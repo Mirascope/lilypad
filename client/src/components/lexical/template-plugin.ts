@@ -123,19 +123,21 @@ const useTemplates = (
 ): void => {
   const inputsRef = useRef(inputs);
   inputsRef.current = inputs;
-
   // Transform function for regular text nodes
-  const textTransformFunction = useCallback((node: TextNode) => {
-    if (!$isTemplateNode(node)) {
-      let targetNode: TextNode | null = node;
-      while (targetNode !== null) {
-        if (!targetNode.isSimpleText()) {
-          return;
+  const textTransformFunction = useCallback(
+    (node: TextNode) => {
+      if (!$isTemplateNode(node)) {
+        let targetNode: TextNode | null = node;
+        while (targetNode !== null) {
+          if (!targetNode.isSimpleText()) {
+            return;
+          }
+          targetNode = findAndTransformTemplate(targetNode, inputsRef.current);
         }
-        targetNode = findAndTransformTemplate(targetNode, inputsRef.current);
       }
-    }
-  }, []);
+    },
+    [JSON.stringify(inputs)]
+  );
 
   // Transform function for template nodes
   const templateTransformFunction = useCallback((node: TemplateNode) => {

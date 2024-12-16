@@ -7,8 +7,6 @@ import { Label } from "@/components/ui/label";
 import { LexicalEditor } from "lexical";
 import {
   BaseEditorFormFields,
-  EditorFormValues,
-  formValuesToApi,
   useBaseEditorForm,
 } from "@/utils/editor-form-utils";
 import { Input } from "@/components/ui/input";
@@ -28,18 +26,14 @@ import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
-  useCreateVersion,
-  usePatchActiveVersion,
+  useCreatePrompt,
+  usePatchPromptMutation,
   useRunMutation,
-} from "@/utils/versions";
+} from "@/utils/prompts";
 import {
-  FunctionCreate,
   PromptCreate,
-  Provider,
-  OpenAICallParams,
-  AnthropicCallParams,
-  GeminiCallParams,
-  VersionPublic,
+  PromptPublic,
+  PlaygroundParameters,
 } from "@/types/types";
 import { NotFound } from "@/components/NotFound";
 import IconDialog from "@/components/IconDialog";
@@ -47,42 +41,44 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Typography } from "@/components/ui/typography";
 import ReactMarkdown from "react-markdown";
 
-type CreateEditorFormValues = EditorFormValues & {
+type EditorParameters = PlaygroundParameters & {
   inputs: Record<string, string>[];
 };
 export const CreateEditorForm = ({
   version,
 }: {
-  version: VersionPublic | null;
+  version: PromptPublic | null;
 }) => {
-  const { projectUuid, functionName } = useParams({
+  const { projectUuid, promptName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();
-  const createVersionMutation = useCreateVersion();
-  const patchActiveVersionMutation = usePatchActiveVersion();
+  const createPromptMutation = useCreatePrompt();
   const runMutation = useRunMutation();
-  const methods = useBaseEditorForm<CreateEditorFormValues>({
+  const patchPrompt = usePatchPromptMutation();
+  const methods = useBaseEditorForm<EditorParameters>({
+    latestVersion: version,
     additionalDefaults: {
-      inputs: version?.function.arg_types
-        ? Object.keys(version.function.arg_types).map((key) => ({
+      inputs: version?.arg_types
+        ? Object.keys(version.arg_types).map((key) => ({
             key,
             value: "",
           }))
         : [],
     },
   });
-  const { fields, append, remove } = useFieldArray<CreateEditorFormValues>({
+  const { fields, append, remove } = useFieldArray<EditorParameters>({
     control: methods.control,
     name: "inputs",
   });
+
   const inputs: Record<string, string>[] = methods.watch("inputs");
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
-  if (!projectUuid || !functionName) return <NotFound />;
-  const onSubmit: SubmitHandler<CreateEditorFormValues> = (
-    data: CreateEditorFormValues,
+  if (!projectUuid || !promptName) return <NotFound />;
+  const onSubmit: SubmitHandler<EditorParameters> = (
+    data: PlaygroundParameters,
     event
   ) => {
     event?.preventDefault();
@@ -100,10 +96,10 @@ export const CreateEditorForm = ({
     const editorState = editorRef.current.getEditorState();
     editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      data.template = markdown;
-      methods.trigger();
-      const functionCreate: FunctionCreate = {
-        name: functionName,
+      const promptCreate: PromptCreate = {
+        template: markdown,
+        call_params: data?.prompt?.call_params,
+        name: promptName,
         arg_types: inputs.reduce(
           (acc, input) => {
             acc[input.key] = "str";
@@ -111,57 +107,20 @@ export const CreateEditorForm = ({
           },
           {} as Record<string, string>
         ),
-        hash: null,
-        code: null,
-      };
-      let callParams:
-        | OpenAICallParams
-        | AnthropicCallParams
-        | GeminiCallParams
-        | null = null;
-      if (
-        data.provider == Provider.OPENAI ||
-        data.provider == Provider.OPENROUTER
-      ) {
-        callParams = data.openaiCallParams as OpenAICallParams;
-      } else if (data.provider == Provider.ANTHROPIC) {
-        callParams = data.anthropicCallParams as AnthropicCallParams;
-      } else if (data.provider == Provider.GEMINI) {
-        callParams = data.geminiCallParams as GeminiCallParams;
-      }
-      callParams = formValuesToApi(callParams);
-      const promptCreate: PromptCreate = {
-        template: data.template,
-        provider: data.provider,
-        model: data.model,
-        call_params: callParams,
+        signature: "",
+        hash: "",
+        code: "",
       };
 
       try {
         const isValid = await methods.trigger();
         if (!isValid) return;
-        const newVersion = await createVersionMutation.mutateAsync({
+        const newVersion = await createPromptMutation.mutateAsync({
           projectUuid,
-          versionCreate: {
-            function_create: functionCreate,
-            prompt_create: promptCreate,
-          },
-        });
-        const inputValues = inputs.reduce(
-          (acc, input) => {
-            acc[input.key] = input.value;
-            return acc;
-          },
-          {} as Record<string, string>
-        );
-
-        await runMutation.mutateAsync({
-          projectUuid,
-          versionUuid: newVersion.uuid,
-          values: inputValues,
+          promptCreate,
         });
         navigate({
-          to: `/projects/${projectUuid}/functions/${newVersion.function_name}/versions/${newVersion.uuid}`,
+          to: `/projects/${projectUuid}/prompts/${newVersion.name}/versions/${newVersion.uuid}`,
           replace: true,
         });
       } catch (error) {
@@ -242,52 +201,69 @@ export const CreateEditorForm = ({
       </>
     );
   };
-  if (version && !version.prompt) {
-    return (
-      <Card className='w-[600px] m-auto'>
-        <CardHeader>
-          <Typography variant='h3'>
-            Playground is only available for Lilypad prompts.
-          </Typography>
-          Execute the function below to run a trace.
-        </CardHeader>
-        <CardContent>
-          <CodeSnippet code={version.function.code} />
-        </CardContent>
-      </Card>
-    );
-  }
-  const code = `import lilypad
-
-
-${version?.function.code || ""}
-
-if __name__ == "__main__":
-    lilypad.configure()
-    output = ${version?.function.name}(${inputs.map((item) => `"${item.value}"`).join(", ")})
-    print(output)
-  `;
+  const runPlayground = async () => {
+    if (!editorRef?.current) return;
+    const data = methods.getValues();
+    const editorErrors = $findErrorTemplateNodes(editorRef.current);
+    if (editorErrors.length > 0) {
+      setEditorErrors(
+        editorErrors.map(
+          (node) => `'${node.getValue()}' is not a function argument.`
+        )
+      );
+      return;
+    }
+    const editorState = editorRef.current.getEditorState();
+    editorState.read(async () => {
+      const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+      const isValid = await methods.trigger();
+      if (!isValid) return;
+      const inputValues = inputs.reduce(
+        (acc, input) => {
+          acc[input.key] = input.value;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
+      const playgroundValues: PlaygroundParameters = {
+        prompt: {
+          ...data.prompt,
+          name: promptName,
+          hash: "",
+          code: "",
+          signature: "",
+          template: markdown,
+        },
+        provider: data.provider,
+        model: data.model,
+        arg_values: inputValues,
+      };
+      await runMutation.mutateAsync({
+        projectUuid,
+        playgroundValues,
+      });
+    });
+  };
   return (
     <div className='m-auto w-[1200px] p-4'>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <div className='flex justify-between'>
             <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{functionName}</Typography>
+              <Typography variant='h3'>{promptName}</Typography>
               {version && (
                 <Button
-                  disabled={
-                    version.is_active || patchActiveVersionMutation.isPending
-                  }
-                  onClick={(e) => {
+                  disabled={version.is_default || patchPrompt.isPending}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                     e.preventDefault();
-                    patchActiveVersionMutation.mutate({
+                    patchPrompt.mutate({
                       projectUuid,
-                      versionUuid: version.uuid,
+                      promptUuid: version.uuid,
+                      promptUpdate: { is_default: true },
                     });
                   }}
                 >
-                  {version.is_active ? "Active" : "Set active"}
+                  {version.is_default ? "Default" : "Set default"}
                 </Button>
               )}
             </div>
@@ -298,10 +274,22 @@ if __name__ == "__main__":
                   title='Copy Code'
                   description='Copy this codeblock into your application.'
                 >
-                  <CodeSnippet code={code} />
+                  <CodeSnippet code={version.code} />
                 </IconDialog>
               )}
-              <Button type='submit' name='run' loading={runMutation.isPending}>
+              <Button
+                type='submit'
+                name='run'
+                loading={createPromptMutation.isPending}
+              >
+                Save
+              </Button>
+              <Button
+                type='button'
+                name='run'
+                loading={runMutation.isPending}
+                onClick={runPlayground}
+              >
                 Run
               </Button>
             </div>
@@ -312,9 +300,7 @@ if __name__ == "__main__":
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 ref={editorRef}
-                promptTemplate={
-                  (version && version.prompt && version.prompt.template) || ""
-                }
+                promptTemplate={(version && version.template) || ""}
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (

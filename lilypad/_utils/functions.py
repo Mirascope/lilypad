@@ -22,7 +22,7 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
-from ..server.models import PromptPublic, Provider
+from ..server.models import PromptCreate, PromptPublic, Provider
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -106,7 +106,7 @@ def inspect_arguments(
 
 
 def _construct_call_decorator(
-    fn: Callable, prompt: PromptPublic, provider: Provider, model: str
+    fn: Callable, provider: Provider, model: str
 ) -> partial[Any]:
     client = None
     if provider == Provider.OPENROUTER:
@@ -137,7 +137,7 @@ def _construct_call_decorator(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
-    prompt: PromptPublic,
+    prompt: PromptPublic | PromptCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -147,7 +147,7 @@ def create_mirascope_call(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, _R],
-    prompt: PromptPublic,
+    prompt: PromptPublic | PromptCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -156,7 +156,7 @@ def create_mirascope_call(
 
 def create_mirascope_call(
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    prompt: PromptPublic,
+    prompt: PromptPublic | PromptCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -165,7 +165,7 @@ def create_mirascope_call(
     if not trace_decorator:
         trace_decorator = lambda x: x  # noqa: E731
 
-    call_decorator = _construct_call_decorator(fn, prompt, provider, model)
+    call_decorator = _construct_call_decorator(fn, provider, model)
     return_type = get_type_hints(fn).get("return", type(None))
     if inspect.iscoroutinefunction(fn):
 

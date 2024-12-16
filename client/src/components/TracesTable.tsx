@@ -161,7 +161,6 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
                   onClick={() => {
                     const { project_uuid, version_uuid, version } =
                       row.original;
-                    console.log(row.original);
                     const name = version?.function_name;
                     if (!name) return;
                     navigate({
