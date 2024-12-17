@@ -140,7 +140,7 @@ class Prompt(BaseModel):
     def call_params(
         self, provider: Literal["openai", "anthropic", "gemini", "bedrock"]
     ) -> (
-        "OpenAICallParams | AnthropicCallParams | GeminiCallParams" | BedrockCallParams  # pyright: ignore [reportInvalidTypeForm]
+        "OpenAICallParams | AnthropicCallParams | GeminiCallParams | BedrockCallParams"  # pyright: ignore [reportInvalidTypeForm]
     ):
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":

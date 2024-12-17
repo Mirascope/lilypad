@@ -6,7 +6,7 @@ import pytest
 from opentelemetry.trace import StatusCode
 
 from lilypad._opentelemetry._opentelemetry_bedrock import (
-    async_make_api_call_patch,
+    make_api_call_async_patch,
     make_api_call_patch,
 )
 
@@ -125,7 +125,7 @@ async def test_bedrock_converse_success_async(mock_tracer, mock_span):
     args = ("Converse", {"modelId": "some_model_id", "messages": []})
     kwargs = {}
 
-    wrapper = async_make_api_call_patch(mock_tracer)
+    wrapper = make_api_call_async_patch(mock_tracer)
     result = await wrapper(wrapped, instance, args, kwargs)
 
     assert (
@@ -144,7 +144,7 @@ async def test_bedrock_converse_other_operation_async(mock_tracer, mock_span):
     args = ("OtherOperation", {"modelId": "some_model_id", "messages": []})
     kwargs = {}
 
-    wrapper = async_make_api_call_patch(mock_tracer)
+    wrapper = make_api_call_async_patch(mock_tracer)
     result = await wrapper(wrapped, instance, args, kwargs)
     assert result == {"some": "response"}
 
@@ -161,7 +161,7 @@ async def test_bedrock_converse_other_service_async(mock_tracer, mock_span):
     args = ("Converse", {"modelId": "some_model_id", "messages": []})
     kwargs = {}
 
-    wrapper = async_make_api_call_patch(mock_tracer)
+    wrapper = make_api_call_async_patch(mock_tracer)
     result = await wrapper(wrapped, instance, args, kwargs)
     assert result == {"some": "response"}
 
@@ -179,7 +179,7 @@ async def test_bedrock_converse_error_async(mock_tracer, mock_span):
     args = ("Converse", {"modelId": "some_model_id", "messages": []})
     kwargs = {}
 
-    wrapper = async_make_api_call_patch(mock_tracer)
+    wrapper = make_api_call_async_patch(mock_tracer)
     with pytest.raises(Exception) as exc_info:
         await wrapper(wrapped, instance, args, kwargs)
 
