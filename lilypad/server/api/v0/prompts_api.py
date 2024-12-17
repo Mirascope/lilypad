@@ -25,12 +25,13 @@ prompts_router = APIRouter()
 
 
 @prompts_router.get(
-    "/projects/{project_uuid}/prompts/metadata/names", response_model=Sequence[str]
+    "/projects/{project_uuid}/prompts/metadata/names",
+    response_model=Sequence[PromptPublic],
 )
 async def get_unique_generation_names(
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
-) -> Sequence[str]:
+) -> Sequence[PromptTable]:
     """Get all unique prompt names."""
     return prompt_service.find_unique_prompt_names(project_uuid)
 
@@ -123,7 +124,9 @@ async def create_prompt(
     prompt_create.signature = construct_function(
         prompt_create.arg_types or {}, prompt_create.name, False
     )
-
+    prompt_create.version_num = prompt_service.get_next_version(
+        project_uuid, prompt_create.name
+    )
     prompts = prompt_service.find_prompts_by_signature(
         project_uuid, prompt_create.signature
     )
@@ -186,7 +189,8 @@ prompt = PromptCreate(
     template = "{prompt.template}",
     arg_types = {arg_types},
     code = "{prompt.code}",
-    hash = "{prompt.hash}"
+    hash = "{prompt.hash}",
+    version_num = {prompt.version_num}
 )
 provider = Provider("{playground_parameters.provider}")
 model = "{playground_parameters.model}"

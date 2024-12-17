@@ -265,7 +265,7 @@ export const DataTable = <T extends { uuid: string }>({
             minSize={12}
             onCollapse={() => setSelectedRow(null)}
           >
-            <div className='p-4 border rounded-md overflow-auto'>
+            <div className='p-4 border overflow-auto'>
               <DetailPanel data={selectedRow} />
             </div>
           </ResizablePanel>

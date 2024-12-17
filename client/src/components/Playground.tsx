@@ -25,7 +25,7 @@ import { AddCardButton } from "@/components/AddCardButton";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   useCreatePrompt,
   usePatchPromptMutation,
@@ -169,7 +169,6 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                     <FormField
                       control={methods.control}
                       name={`inputs.${index}.value`}
-                      rules={{ required: "Value is required" }}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Value</FormLabel>
@@ -219,9 +218,20 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
     }
     const editorState = editorRef.current.getEditorState();
     editorState.read(async () => {
+      methods.clearErrors();
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       const isValid = await methods.trigger();
-      if (!isValid) return;
+      let hasErrors = false;
+      data.inputs.forEach((input, index) => {
+        if (!input.value) {
+          methods.setError(`inputs.${index}.value`, {
+            type: "required",
+            message: "Value is required for Run",
+          });
+          hasErrors = true;
+        }
+      });
+      if (!isValid || hasErrors) return;
       const inputValues = inputs.reduce(
         (acc, input) => {
           acc[input.key] = input.value;

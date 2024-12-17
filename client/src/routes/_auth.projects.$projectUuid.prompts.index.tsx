@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
 
 export const CreatePrompt = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: promptNames } = useSuspenseQuery(
+  const { data: uniquePrompts } = useSuspenseQuery(
     uniquePromptNamesQueryOptions(projectUuid)
   );
   const [value, setValue] = useState("");
@@ -33,14 +33,14 @@ export const CreatePrompt = () => {
     <div className='min-h-screen flex flex-col items-center w-[600px] m-auto'>
       <Typography variant='h3'>Prompts</Typography>
       <div className='flex flex-wrap gap-2'>
-        {promptNames.length > 0 &&
-          promptNames.map((promptName) => (
+        {uniquePrompts.length > 0 &&
+          uniquePrompts.map((uniquePrompt) => (
             <Link
-              key={promptName}
-              to={`/projects/${projectUuid}/prompts/${promptName}`}
+              key={uniquePrompt.name}
+              to={`/projects/${projectUuid}/prompts/${uniquePrompt.name}/versions/${uniquePrompt.uuid}`}
             >
               <Card className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
-                <CardContent className='p-4'>{promptName}</CardContent>
+                <CardContent className='p-4'>{uniquePrompt.name}</CardContent>
               </Card>
             </Link>
           ))}

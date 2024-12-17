@@ -422,6 +422,7 @@ def test_get_custom_context_manager():
     generation.uuid = UUID("123e4567-e89b-12d3-a456-426614174123")
     generation.signature = "def fn(): pass"
     generation.code = "def fn(): pass"
+    generation.version_num = 1
     arg_types = {"arg1": "type1"}
     arg_values = {"arg1": "value1"}
     is_async = False
@@ -449,6 +450,7 @@ def test_get_custom_context_manager():
                 "lilypad.generation.arg_types": json.dumps(arg_types),
                 "lilypad.generation.arg_values": json.dumps(arg_values),
                 "lilypad.generation.prompt_template": prompt_template,
+                "lilypad.generation.version": 1,
                 "lilypad.is_async": is_async,
             }
             span.set_attributes.assert_called_once_with(expected_attributes)

@@ -18,6 +18,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import JsonView from "@uiw/react-json-view";
+import { CodeSnippet } from "@/components/CodeSnippet";
+import { Label } from "@/components/ui/label";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationUuid"
 )({
@@ -48,12 +50,14 @@ const PromptCard = ({
         <CardTitle>{prompt.name}</CardTitle>
         <CardDescription>Version {index + 1}</CardDescription>
       </CardHeader>
-      <CardContent className='flex flex-col gap-2'>
+      <CardContent className='flex flex-col gap-2 h-[200px] overflow-auto'>
+        <Label>Template</Label>
         <ReactMarkdown>{prompt.template}</ReactMarkdown>
         <Separator />
+        <Label>Call Parameters</Label>
         <JsonView value={prompt.call_params} />
       </CardContent>
-      <CardFooter>
+      <CardFooter className='p-6'>
         <Button
           className='w-full'
           disabled={prompt.uuid === activePromptUuid}
@@ -74,16 +78,23 @@ const Generation = () => {
     promptsBySignature(projectUuid, generation.prompt?.signature)
   );
   return (
-    <div>
-      <h1>{generation.name}</h1>
-      {prompts.map((prompt, i) => (
-        <PromptCard
-          key={prompt.uuid}
-          activePromptUuid={generation.prompt?.uuid}
-          prompt={prompt}
-          index={i}
-        />
-      ))}
+    <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
+      <div className='text-left'>
+        <h1 className='text-4xl font-bold text-left'>{generation.name}</h1>
+        <Label>Code</Label>
+        <CodeSnippet code={generation.code} />
+        <Label>Available Prompts</Label>
+        <div className='flex gap-4'>
+          {prompts.map((prompt, i) => (
+            <PromptCard
+              key={prompt.uuid}
+              activePromptUuid={generation.prompt?.uuid}
+              prompt={prompt}
+              index={i}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
