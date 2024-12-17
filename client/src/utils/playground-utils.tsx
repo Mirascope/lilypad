@@ -1,3 +1,4 @@
+import { useAuth } from "@/auth";
 import { FormCombobox } from "@/components/FormCombobox";
 import { FormSlider } from "@/components/FormSlider";
 import {
@@ -22,6 +23,7 @@ import {
   PlaygroundParameters,
   PromptPublic,
   Provider,
+  UserPublic,
 } from "@/types/types";
 import { useEffect } from "react";
 import {
@@ -30,6 +32,7 @@ import {
   UseFormReturn,
   useForm,
   DefaultValues,
+  useFormContext,
 } from "react-hook-form";
 export type OptionalField<T> = {
   enabled: boolean;
@@ -241,10 +244,10 @@ export const getModelOptions = (provider: Provider) => {
 };
 
 export const renderStopSequences = (
-  method: UseFormReturn<PlaygroundParameters, any, undefined>,
   name: Path<PlaygroundParameters>,
   maxItems: number = 5
 ) => {
+  const method = useFormContext<PlaygroundParameters>();
   let stopSequences: string[] = [];
   const value = method.watch(name);
   if (Array.isArray(value)) {
@@ -328,9 +331,8 @@ const getDefaultValues = <T extends PlaygroundParameters>(
   } as DefaultValues<T>;
 };
 
-const renderSeed = (
-  method: UseFormReturn<PlaygroundParameters, any, undefined>
-) => {
+const renderSeed = () => {
+  const method = useFormContext<PlaygroundParameters>();
   return (
     <FormField
       key='editor-seed'
@@ -347,14 +349,33 @@ const renderSeed = (
     />
   );
 };
-export const BaseEditorFormFields = ({
-  methods,
-}: {
-  methods: UseFormReturn<PlaygroundParameters, any, undefined>;
-}) => {
-  const { control, getValues, resetField, watch } = methods;
 
-  const provider = watch("provider");
+export const getAvailableProviders = (user: UserPublic | null) => {
+  if (!user) return [];
+  const keys = user?.keys || {};
+  const availableProviders: Record<string, string>[] = [];
+  const providerKeys = {
+    [Provider.OPENAI]: "OpenAI",
+    [Provider.ANTHROPIC]: "Anthropic",
+    [Provider.GEMINI]: "Gemini",
+    [Provider.OPENROUTER]: "OpenRouter",
+  };
+  for (const key in keys) {
+    if (key in providerKeys && keys[key]) {
+      availableProviders.push({
+        key: key,
+        value: providerKeys[key as Provider],
+      });
+    }
+  }
+  return availableProviders;
+};
+export const BaseEditorFormFields = ({}: {}) => {
+  const methods = useFormContext<PlaygroundParameters>();
+  const { user } = useAuth();
+  const provider = methods.watch("provider");
+  const selectItems = getAvailableProviders(user);
+
   useEffect(() => {
     let model = "gpt-4o";
     if (provider === Provider.ANTHROPIC) {
@@ -365,16 +386,16 @@ export const BaseEditorFormFields = ({
       model = "openai/chatgpt-4o-latest";
     }
 
-    resetField("model", { defaultValue: model });
+    methods.resetField("model", { defaultValue: model });
   }, [provider, methods.resetField]);
 
   const renderSliders = {
-    maxTokens: createFormSlider(control, "maxTokens"),
-    temperature: createFormSlider(control, "temperature"),
-    topK: createFormSlider(control, "topK"),
-    topP: createFormSlider(control, "topP"),
-    frequencyPenalty: createFormSlider(control, "frequencyPenalty"),
-    presencePenalty: createFormSlider(control, "presencePenalty"),
+    maxTokens: createFormSlider(methods.control, "maxTokens"),
+    temperature: createFormSlider(methods.control, "temperature"),
+    topK: createFormSlider(methods.control, "topK"),
+    topP: createFormSlider(methods.control, "topP"),
+    frequencyPenalty: createFormSlider(methods.control, "frequencyPenalty"),
+    presencePenalty: createFormSlider(methods.control, "presencePenalty"),
   };
   const commonParams = [
     renderSliders.temperature("prompt.call_params.temperature"),
@@ -382,42 +403,48 @@ export const BaseEditorFormFields = ({
     renderSliders.topP("prompt.call_params.top_p"),
     renderSliders.frequencyPenalty("prompt.call_params.frequency_penalty"),
     renderSliders.presencePenalty("prompt.call_params.presence_penalty"),
-    renderSeed(methods),
-    renderStopSequences(methods, "prompt.call_params.stop", 4),
+    renderSeed(),
+    renderStopSequences("prompt.call_params.stop", 4),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>
-      <FormField
-        key='editor-response-mime-type'
-        control={methods.control}
-        name='provider'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Provider</FormLabel>
-            <FormControl>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className='w-full'>
-                  <SelectValue placeholder='Select a provider' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='openai'>OpenAI</SelectItem>
-                  <SelectItem value='anthropic'>Anthropic</SelectItem>
-                  <SelectItem value='gemini'>Gemini</SelectItem>
-                  <SelectItem value='openrouter'>OpenRouter</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <ModelCombobox<PlaygroundParameters, "model">
-        control={control}
-        name='model'
-        label='Choose a Model'
-        options={getModelOptions(provider)}
-        defaultValue={getValues("model")}
-      />
+      {selectItems.length > 0 && (
+        <>
+          <FormField
+            key='editor-response-mime-type'
+            control={methods.control}
+            name='provider'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Provider</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className='w-full'>
+                      <SelectValue placeholder='Select a provider' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectItems.map((item) => (
+                        <SelectItem key={item.key} value={item.key}>
+                          {item.value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <ModelCombobox<PlaygroundParameters, "model">
+            control={methods.control}
+            name='model'
+            label='Choose a Model'
+            options={getModelOptions(provider)}
+            defaultValue={methods.getValues("model")}
+          />
+        </>
+      )}
       {commonParams}
     </div>
   );
