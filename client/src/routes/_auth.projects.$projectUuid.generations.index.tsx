@@ -9,11 +9,13 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { GenerationPublic } from "@/types/types";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { Typography } from "@/components/ui/typography";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
@@ -33,21 +35,45 @@ const GenerationCards = ({
     navigate({ to: `/projects/${projectUuid}/generations/${generation.uuid}` });
   };
   return (
-    <Card className='w-auto' onClick={handleClick}>
-      <CardHeader>
+    <Card
+      className='w-auto hover:shadow-lg transition-all duration-200 cursor-pointer'
+      onClick={handleClick}
+    >
+      <CardHeader className='px-6 py-4'>
         <CardTitle>{generation.name}</CardTitle>
         <CardDescription>Version {index + 1}</CardDescription>
       </CardHeader>
-      <CardContent className='flex gap-2'></CardContent>
+      <CardContent className='p-0 m-6 overflow-auto max-h-[100px]'>
+        <CodeSnippet code={generation.code} />
+      </CardContent>
+      <CardFooter className='flex flex-col gap-2 items-start'>
+        {generation.prompt ? (
+          <div className='flex flex-col gap-2 w-full'>
+            <CardTitle className='font-semibold leading-none tracking-tight'>
+              Prompt
+            </CardTitle>
+            <CardDescription>
+              {generation.prompt.name} v{generation.prompt.version_num}
+            </CardDescription>
+            <CodeSnippet code={generation.prompt.code} />
+          </div>
+        ) : (
+          <Typography variant='body1'>No prompt</Typography>
+        )}
+      </CardFooter>
     </Card>
   );
 };
 const GenerationsList = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(generationsQueryOptions(projectUuid));
+  if (data.length === 0) {
+    return <GenerationNoDataPlaceholder />;
+  }
   return (
-    <>
-      {data.length > 0 ? (
+    <div className='p-4 flex flex-col items-center gap-2'>
+      <div className='text-left'>
+        <h1 className='text-4xl font-bold text-left'>Generations</h1>
         <div className='flex'>
           {data.map((generation, i) => (
             <GenerationCards
@@ -57,15 +83,21 @@ const GenerationsList = () => {
             />
           ))}
         </div>
-      ) : (
-        <div className='min-h-screen p-8'>
-          <div className='max-w-4xl mx-auto'>
-            <div>
-              No generations found. Start by decorating your LLM powered
-              functions with <code>@lilypad.generation()</code>.
-            </div>
-            <CodeSnippet
-              code={`
+      </div>
+    </div>
+  );
+};
+
+const GenerationNoDataPlaceholder = () => {
+  return (
+    <div className='min-h-screen p-8'>
+      <div className='max-w-4xl mx-auto'>
+        <div>
+          No generations found. Start by decorating your LLM powered functions
+          with <code>@lilypad.generation()</code>.
+        </div>
+        <CodeSnippet
+          code={`
 from openai import OpenAI
 
 import lilypad
@@ -76,18 +108,16 @@ lilypad.configure()
 
 @lilypad.generation()
 def recommend_book(genre: str) -> str:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
-    )
-    return str(completion.choices[0].message.content)
+completion = client.chat.completions.create(
+model="gpt-4o-mini",
+messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+)
+return str(completion.choices[0].message.content)
 
 
 recommend_book("fantasy")`}
-            />
-          </div>
-        </div>
-      )}
-    </>
+        />
+      </div>
+    </div>
   );
 };

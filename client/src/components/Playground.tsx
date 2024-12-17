@@ -25,7 +25,7 @@ import { AddCardButton } from "@/components/AddCardButton";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   useCreatePrompt,
   usePatchPromptMutation,
