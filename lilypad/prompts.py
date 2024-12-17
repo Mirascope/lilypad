@@ -112,8 +112,8 @@ class Prompt(BaseModel):
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence[
-            Union["AssistantMessage", "SystemMessage", "ToolMessage", "UserMessage"]
-        ]  # pyright: ignore [reportInvalidTypeForm]
+            Union["AssistantMessage", "SystemMessage", "ToolMessage", "UserMessage"]  # pyright: ignore [reportInvalidTypeForm]
+        ]
     ):
         """Return the messages array for the given provider converted from base."""
         if provider == "openai":
