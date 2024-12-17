@@ -50,6 +50,12 @@ class GenerationCreate(_GenerationBase):
     """Generation create model."""
 
 
+class GenerationUpdate(SQLModel):
+    """Generation update model."""
+
+    prompt_uuid: UUID | None = None
+
+
 class GenerationPublic(_GenerationBase):
     """Generation public model."""
 

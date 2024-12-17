@@ -9,51 +9,49 @@ import { Typography } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { FormEvent, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { uniqueFunctionNamesQueryOptions } from "@/utils/functions";
+import { uniquePromptNamesQueryOptions } from "@/utils/prompts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
-  {
-    component: () => <CreatePrompt />,
-  }
-);
+export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
+  component: () => <CreatePrompt />,
+});
 
 export const CreatePrompt = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: functionNames } = useSuspenseQuery(
-    uniqueFunctionNamesQueryOptions(projectUuid)
+  const { data: promptNames } = useSuspenseQuery(
+    uniquePromptNamesQueryOptions(projectUuid)
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();
   const handleClick = (e: FormEvent<HTMLInputElement>) => {
     e.preventDefault();
     navigate({
-      to: `/projects/${projectUuid}/functions/${value}`,
+      to: `/projects/${projectUuid}/prompts/${value}`,
     });
   };
   return (
     <div className='min-h-screen flex flex-col items-center w-[600px] m-auto'>
-      <Typography variant='h3'>Functions</Typography>
+      <Typography variant='h3'>Prompts</Typography>
       <div className='flex flex-wrap gap-2'>
-        {functionNames.length > 0 &&
-          functionNames.map((functionName) => (
+        {promptNames.length > 0 &&
+          promptNames.map((promptName) => (
             <Link
-              key={functionName}
-              to={`/projects/${projectUuid}/functions/${functionName}`}
+              key={promptName}
+              to={`/projects/${projectUuid}/prompts/${promptName}`}
             >
               <Card className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
-                <CardContent className='p-4'>{functionName}</CardContent>
+                <CardContent className='p-4'>{promptName}</CardContent>
               </Card>
             </Link>
           ))}
       </div>
       <Separator className='my-4' />
       <form className=' flex flex-col gap-2'>
-        <Typography variant='h3'>Create a new function</Typography>
+        <Typography variant='h3'>Create a new prompt</Typography>
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder='Enter function name'
+          placeholder='Enter prompt name'
         />
         <Button onClick={handleClick}>Get Started</Button>
       </form>

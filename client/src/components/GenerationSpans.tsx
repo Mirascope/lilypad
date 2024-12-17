@@ -1,20 +1,20 @@
 import { NotFound } from "@/components/NotFound";
 import { TracesTable } from "@/components/TracesTable";
-import { versionUuidSpansQueryOptions } from "@/utils/spans";
+import { spansByGenerationQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-export const FunctionSpans = ({
+export const GenerationSpans = ({
   projectUuid,
-  versionUuid,
+  generationUuid,
 }: {
   projectUuid: string;
-  versionUuid?: string;
+  generationUuid?: string;
 }) => {
-  if (!versionUuid) {
+  if (!generationUuid) {
     return <NotFound />;
   }
   const { data } = useSuspenseQuery(
-    versionUuidSpansQueryOptions(projectUuid, versionUuid)
+    spansByGenerationQueryOptions(projectUuid, generationUuid)
   );
   return <TracesTable data={data} />;
 };

@@ -16,7 +16,7 @@ class GenerationService(BaseService[GenerationTable, GenerationCreate]):
     table: type[GenerationTable] = GenerationTable
     create_model: type[GenerationCreate] = GenerationCreate
 
-    def find_records_by_name(
+    def find_generations_by_name(
         self, project_uuid: UUID, name: str
     ) -> Sequence[GenerationTable]:
         """Find record by uuid"""

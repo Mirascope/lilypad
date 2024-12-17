@@ -264,8 +264,30 @@ class LilypadClient:
             PromptPublic | None: The matching version for the prompt, or `None`.
         """
         closure = Closure.from_fn(fn)
-        if generation and generation.prompt and generation.prompt.hash == closure.hash:
+        if (
+            generation
+            and generation.prompt
+            and generation.prompt.signature == closure.signature
+        ):
             return generation.prompt
+        elif generation and not generation.prompt:
+            prompts = self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/prompts/metadata/signature",
+                params={"signature": closure.signature},
+                response_model=list[PromptPublic],
+            )
+            if not prompts:
+                return None
+
+            self._request(
+                "PATCH",
+                f"v0/projects/{self.project_uuid}/generations/{generation.uuid}",
+                json={"prompt_uuid": str(prompts[0].uuid)},
+                response_model=GenerationPublic,
+            )
+
+            return prompts[0]
         try:
             return self._request(
                 "GET",

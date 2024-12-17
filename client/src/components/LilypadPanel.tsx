@@ -11,8 +11,40 @@ import JsonView from "@uiw/react-json-view";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
+interface InstrumentationScope {
+  attributes: object;
+  name: string;
+  schema_url: string;
+  version: string;
+}
+interface SpanData {
+  name: string;
+  attributes: Record<string, any>;
+  end_time: number;
+  start_time: number;
+  events: any[];
+  links: any[];
+  instrumentation_scope: InstrumentationScope;
+  parent_span_id: string;
+  resource: string;
+  span_id: string;
+  status: string;
+  trace_id: string;
+}
+
 export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
-  const data = span.data;
+  const data = span.data as SpanData;
+  const attributes = data.attributes;
+  const type = attributes["lilypad.type"];
+  const signature = attributes[`lilypad.${type}.signature`];
+  const template = attributes[`lilypad.${type}.template`];
+  const output = attributes[`lilypad.${type}.output`];
+  let argValues = {};
+  try {
+    argValues = JSON.parse(attributes[`lilypad.${type}.arg_values`]);
+  } catch (e) {
+    argValues = {};
+  }
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{data.name}</Typography>
@@ -21,27 +53,25 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Code"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <CodeSnippet code={data.attributes["lilypad.lexical_closure"]} />
+          <CodeSnippet code={signature} />
         </CardContent>
       </Card>
-      <ArgsCards args={JSON.parse(data.attributes["lilypad.arg_values"])} />
-      {data.attributes["lilypad.prompt_template"] && (
+      <ArgsCards args={argValues} />
+      {template && (
         <Card>
           <CardHeader>
             <CardTitle>{"Prompt Template"}</CardTitle>
           </CardHeader>
-          <CardContent className='whitespace-pre-wrap'>
-            {data.attributes["lilypad.prompt_template"]}
-          </CardContent>
+          <CardContent className='whitespace-pre-wrap'>{template}</CardContent>
         </Card>
       )}
-      {data.attributes["lilypad.output"] && (
+      {output && (
         <Card>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col'>
-            <ReactMarkdown>{data.attributes["lilypad.output"]}</ReactMarkdown>
+            <ReactMarkdown>{output}</ReactMarkdown>
           </CardContent>
         </Card>
       )}

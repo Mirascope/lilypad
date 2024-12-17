@@ -9,7 +9,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ModelCombobox } from "@/components/ui/model-combobox";
 import {
   Select,
@@ -18,20 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
+  CommonCallParams,
+  PlaygroundParameters,
   PromptCreate,
-  AnthropicCallParams,
-  OpenAICallParams,
-  GeminiCallParams,
+  PromptPublic,
   Provider,
-  ResponseFormat,
-  VersionPublic,
 } from "@/types/types";
 import { useEffect } from "react";
 import {
   Control,
-  Controller,
   Path,
   UseFormReturn,
   useForm,
@@ -51,12 +46,6 @@ export type WithOptionalFields<T> = {
           value: NonNullable<T[K]>;
         }
       : T[K];
-};
-
-export type EditorFormValues = PromptCreate & {
-  openaiCallParams: WithOptionalFields<OpenAICallParams>;
-  anthropicCallParams: WithOptionalFields<AnthropicCallParams>;
-  geminiCallParams: WithOptionalFields<GeminiCallParams>;
 };
 
 function getDefaultValueForType(value: unknown): unknown {
@@ -132,19 +121,6 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
       className: "w-[100px] h-[1.5rem]",
     },
   },
-  topK: {
-    label: "Top K",
-    sliderProps: {
-      name: "topK",
-      min: 0,
-      max: 100,
-      step: 1,
-    },
-    inputProps: {
-      step: 1,
-      className: "w-[100px] h-[1.5rem]",
-    },
-  },
   topP: {
     label: "Top P",
     sliderProps: {
@@ -211,69 +187,14 @@ export function createFormSlider<T extends object>(
   };
 }
 
-export const anthropicCallParamsDefault: WithOptionalFields<AnthropicCallParams> =
-  {
-    max_tokens: 1024,
-    temperature: 1.0,
-    stop_sequences: {
-      enabled: false,
-      value: [],
-    },
-    top_k: {
-      enabled: false,
-      value: 0,
-    },
-    top_p: {
-      enabled: false,
-      value: 0,
-    },
-  };
-export const openaiCallParamsDefault: WithOptionalFields<OpenAICallParams> = {
-  response_format: {
-    type: "text",
-  },
+export const commonCallParamsDefault: CommonCallParams = {
   temperature: 1,
   max_tokens: 2048,
   top_p: 1,
-  frequency_penalty: {
-    enabled: false,
-    value: 0,
-  },
-  presence_penalty: {
-    enabled: false,
-    value: 0,
-  },
-};
-export const geminiCallParamsDefault: WithOptionalFields<GeminiCallParams> = {
-  response_mime_type: "text/plain",
-  max_output_tokens: {
-    enabled: false,
-    value: 1024,
-  },
-  temperature: {
-    enabled: false,
-    value: 0,
-  },
-  top_p: {
-    enabled: false,
-    value: 0,
-  },
-  top_k: {
-    enabled: false,
-    value: 0,
-  },
-  frequency_penalty: {
-    enabled: false,
-    value: 0,
-  },
-  presence_penalty: {
-    enabled: false,
-    value: 0,
-  },
-  response_schema: {
-    enabled: false,
-    value: {},
-  },
+  frequency_penalty: 0,
+  presence_penalty: 0,
+  seed: 0,
+  stop: [],
 };
 
 const modelOptions = {
@@ -320,62 +241,11 @@ export const getModelOptions = (provider: Provider) => {
   return modelOptions[provider] || [];
 };
 
-export const geminiResponseMimeType = (control: Control<EditorFormValues>) => {
-  return (
-    <FormField
-      key='editor-response-mime-type'
-      name='geminiCallParams.response_mime_type'
-      control={control}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Response Mime Type</FormLabel>
-          <FormControl>
-            <Input {...field} placeholder='Enter value' />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-};
-
-export const openaiResponseFormat = (control: Control<EditorFormValues>) => {
-  const responseFormatTypes: ResponseFormat["type"][] = [
-    "text",
-    "json_object",
-    "json_schema",
-  ];
-  return (
-    <div key='editor-response-format' className='form-group'>
-      <Label htmlFor='response-format'>Response Format</Label>
-      <Controller
-        name={"openaiCallParams.response_format.type"}
-        control={control}
-        render={({ field }) => (
-          <Select value={field.value} onValueChange={field.onChange}>
-            <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select a response format' />
-            </SelectTrigger>
-            <SelectContent>
-              {responseFormatTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      />
-    </div>
-  );
-};
 export const renderStopSequences = (
-  method: UseFormReturn<EditorFormValues, any, undefined>,
-  name: Path<EditorFormValues>,
-  enabled?: Path<EditorFormValues>,
+  method: UseFormReturn<PlaygroundParameters, any, undefined>,
+  name: Path<PlaygroundParameters>,
   maxItems: number = 5
 ) => {
-  const isOptional = !!enabled;
   let stopSequences: string[] = [];
   const value = method.watch(name);
   if (Array.isArray(value)) {
@@ -391,28 +261,9 @@ export const renderStopSequences = (
         <FormItem>
           <FormLabel className='flex items-center gap-2'>
             Stop Sequences
-            {isOptional && (
-              <Controller
-                name={enabled}
-                control={method.control}
-                render={({ field: switchField }) => (
-                  <div className='flex items-center gap-2'>
-                    <FormControl>
-                      <Switch
-                        checked={!!switchField.value}
-                        onCheckedChange={switchField.onChange}
-                      />
-                    </FormControl>
-                    <span className='text-xs'>
-                      {switchField.value ? "Active" : "Not set"}
-                    </span>
-                  </div>
-                )}
-              />
-            )}
           </FormLabel>
           <FormControl>
-            <FormCombobox<EditorFormValues>
+            <FormCombobox<PlaygroundParameters>
               items={stopSequences.map((str) => ({
                 value: str,
                 label: str,
@@ -421,7 +272,6 @@ export const renderStopSequences = (
               name={name}
               popoverText='Add stop sequences...'
               helperText='Enter a stop sequence'
-              disabled={enabled && !method.watch(enabled)}
             />
           </FormControl>
           <FormDescription>
@@ -433,11 +283,11 @@ export const renderStopSequences = (
   );
 };
 
-export const useBaseEditorForm = <T extends EditorFormValues>({
+export const useBaseEditorForm = <T extends PlaygroundParameters>({
   latestVersion,
   additionalDefaults = {},
 }: {
-  latestVersion?: VersionPublic | null;
+  latestVersion?: PromptPublic | null;
   additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
@@ -460,43 +310,48 @@ export const useBaseEditorForm = <T extends EditorFormValues>({
   return methods;
 };
 
-const getDefaultValues = <T extends EditorFormValues>(
-  latestVersion?: VersionPublic | null
+const getDefaultValues = <T extends PlaygroundParameters>(
+  latestVersion?: PromptPublic | null
 ): DefaultValues<T> => {
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
       model: "gpt-4o",
-      openaiCallParams: openaiCallParamsDefault,
-      geminiCallParams: geminiCallParamsDefault,
-      anthropicCallParams: anthropicCallParamsDefault,
+      prompt: {
+        call_params: commonCallParamsDefault,
+      },
     } as DefaultValues<T>;
   }
-
   return {
-    ...latestVersion.prompt,
-    openaiCallParams:
-      latestVersion.prompt?.provider === Provider.OPENAI ||
-      latestVersion.prompt?.provider === Provider.OPENROUTER
-        ? apiToFormValues(latestVersion.prompt.call_params as OpenAICallParams)
-        : openaiCallParamsDefault,
-    anthropicCallParams:
-      latestVersion.prompt?.provider === Provider.ANTHROPIC
-        ? apiToFormValues(
-            latestVersion.prompt.call_params as AnthropicCallParams
-          )
-        : anthropicCallParamsDefault,
-    geminiCallParams:
-      latestVersion.prompt?.provider === Provider.GEMINI
-        ? apiToFormValues(latestVersion.prompt.call_params as GeminiCallParams)
-        : geminiCallParamsDefault,
+    provider: Provider.OPENAI,
+    model: "gpt-4o",
+    prompt: latestVersion,
   } as DefaultValues<T>;
 };
 
+const renderSeed = (
+  method: UseFormReturn<PlaygroundParameters, any, undefined>
+) => {
+  return (
+    <FormField
+      key='editor-seed'
+      control={method.control}
+      name={"prompt.call_params.seed"}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Seed</FormLabel>
+          <FormControl>
+            <Input {...field} type='number' value={field.value ?? ""} />
+          </FormControl>
+        </FormItem>
+      )}
+    />
+  );
+};
 export const BaseEditorFormFields = ({
   methods,
 }: {
-  methods: UseFormReturn<EditorFormValues, any, undefined>;
+  methods: UseFormReturn<PlaygroundParameters, any, undefined>;
 }) => {
   const { control, getValues, resetField, watch } = methods;
 
@@ -522,59 +377,14 @@ export const BaseEditorFormFields = ({
     frequencyPenalty: createFormSlider(control, "frequencyPenalty"),
     presencePenalty: createFormSlider(control, "presencePenalty"),
   };
-
-  const openaiParams = [
-    renderSliders.maxTokens("openaiCallParams.max_tokens"),
-    openaiResponseFormat(control),
-    renderSliders.temperature("openaiCallParams.temperature"),
-    renderSliders.topP("openaiCallParams.top_p"),
-    renderSliders.frequencyPenalty("openaiCallParams.frequency_penalty"),
-    renderSliders.presencePenalty("openaiCallParams.presence_penalty"),
-    renderStopSequences(
-      methods,
-      "openaiCallParams.stop.value",
-      "openaiCallParams.stop.enabled",
-      4
-    ),
-  ];
-  const anthropicParams = [
-    renderSliders.maxTokens("anthropicCallParams.max_tokens"),
-    renderSliders.temperature("anthropicCallParams.temperature"),
-    renderSliders.topP(
-      "anthropicCallParams.top_p.value",
-      "anthropicCallParams.top_p.enabled"
-    ),
-    renderSliders.topK(
-      "anthropicCallParams.top_k.value",
-      "anthropicCallParams.top_k.enabled"
-    ),
-    renderStopSequences(
-      methods,
-      "anthropicCallParams.stop_sequences.value",
-      "anthropicCallParams.stop_sequences.enabled",
-      5
-    ),
-  ];
-  const geminiParams = [
-    renderSliders.maxTokens(
-      "geminiCallParams.max_output_tokens.value",
-      "geminiCallParams.max_output_tokens.enabled"
-    ),
-    geminiResponseMimeType(control),
-    renderSliders.temperature(
-      "geminiCallParams.temperature.value",
-      "geminiCallParams.temperature.enabled"
-    ),
-    renderSliders.topP(
-      "geminiCallParams.top_p.value",
-      "geminiCallParams.top_p.enabled"
-    ),
-    renderSliders.topK(
-      "geminiCallParams.top_k.value",
-      "geminiCallParams.top_k.enabled"
-    ),
-    renderSliders.frequencyPenalty("geminiCallParams.frequency_penalty.value"),
-    renderSliders.presencePenalty("geminiCallParams.presence_penalty.enabled"),
+  const commonParams = [
+    renderSliders.temperature("prompt.call_params.temperature"),
+    renderSliders.maxTokens("prompt.call_params.max_tokens"),
+    renderSliders.topP("prompt.call_params.top_p"),
+    renderSliders.frequencyPenalty("prompt.call_params.frequency_penalty"),
+    renderSliders.presencePenalty("prompt.call_params.presence_penalty"),
+    renderSeed(methods),
+    renderStopSequences(methods, "prompt.call_params.stop", 4),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>
@@ -602,34 +412,33 @@ export const BaseEditorFormFields = ({
           </FormItem>
         )}
       />
-      <ModelCombobox<EditorFormValues, "model">
+      <ModelCombobox<PlaygroundParameters, "model">
         control={control}
         name='model'
         label='Choose a Model'
         options={getModelOptions(provider)}
         defaultValue={getValues("model")}
       />
-      {provider === Provider.OPENAI || provider === Provider.OPENROUTER
-        ? openaiParams
-        : provider === Provider.ANTHROPIC
-          ? anthropicParams
-          : provider === Provider.GEMINI
-            ? geminiParams
-            : null}
+      {commonParams}
     </div>
   );
 };
 
-export const formValuesToApi = (obj) => {
-  // For each property that has an 'enabled' field
+export const formValuesToApi = (obj: { [key: string]: unknown }) => {
+  // For each property that has an 'enabled' field and a 'value' field, we want to
+  // replace the object with the 'value' field if 'enabled' is true, and delete the
+  // property if 'enabled' is false.
   for (const key of Object.keys(obj)) {
     const param = obj[key];
-    if (param && typeof param === "object" && "enabled" in param) {
+    if (
+      param &&
+      typeof param === "object" &&
+      "enabled" in param &&
+      "value" in param
+    ) {
       if (param.enabled) {
-        // If enabled is true, replace the object with its value
-        (obj as any)[key] = param.value;
+        obj[key] = param.value;
       } else {
-        // If enabled is false, delete the property
         delete (obj as any)[key];
       }
     }
