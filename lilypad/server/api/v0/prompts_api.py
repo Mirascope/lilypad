@@ -1,18 +1,24 @@
 """The `/prompts` API router."""
 
 import hashlib
-from collections.abc import Callable, Sequence
-from typing import Annotated, Any
+import subprocess
+import tempfile
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-import lilypad
-from lilypad._utils import create_mirascope_call
-from lilypad.server._utils import construct_function
-
-from ...models import PromptCreate, PromptPublic, PromptTable, PromptUpdate, Provider
+from ..._utils import construct_function, get_current_user
+from ...models import (
+    PlaygroundParameters,
+    PromptCreate,
+    PromptPublic,
+    PromptTable,
+    PromptUpdate,
+    UserPublic,
+)
 from ...services import PromptService
 
 prompts_router = APIRouter()
@@ -145,17 +151,11 @@ async def update_generation(
     )
 
 
-class PlaygroundParameters(BaseModel):
-    arg_values: dict[str, Any]
-    provider: Provider
-    model: str
-    prompt: PromptCreate | None = None
-
-
 @prompts_router.post("/projects/{project_uuid}/prompts/run")
 def run_version(
     project_uuid: UUID,
     playground_parameters: PlaygroundParameters,
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> str:
     """Run version."""
     if not playground_parameters.prompt:
@@ -165,13 +165,58 @@ def run_version(
     name = prompt.name
     arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
     func_def = f"def {name}({', '.join(arg_list)}) -> str: ..."
-    namespace: dict[str, Any] = {}
-    exec(func_def, namespace)
-    fn: Callable[..., str] = namespace[name]
-    lilypad.configure()
-    return create_mirascope_call(
-        fn, prompt, playground_parameters.provider, playground_parameters.model, None
-    )(**playground_parameters.arg_values)
+    wrapper_code = f"""
+import os
+
+import lilypad
+import google.generativeai as genai
+from lilypad._utils import create_mirascope_call
+from lilypad.server.models import PromptCreate, Provider
+
+genai.configure(api_key="{user.keys.get("gemini", "")}")
+os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
+os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
+os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
+
+{func_def}
+
+prompt = PromptCreate(
+    name = "{prompt.name}",
+    signature = "{prompt.signature}",
+    template = "{prompt.template}",
+    arg_types = {arg_types},
+    code = "{prompt.code}",
+    hash = "{prompt.hash}"
+)
+provider = Provider("{playground_parameters.provider}")
+model = "{playground_parameters.model}"
+arg_values = {playground_parameters.arg_values}
+print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
+"""
+    try:
+        processed_code = _run_playground(wrapper_code)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid API Key"
+        )
+    return processed_code
+
+
+def _run_playground(code: str) -> str:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
+        tmp_file.write(code)
+        tmp_path = Path(tmp_file.name)
+
+    try:
+        result = subprocess.run(
+            ["uv", "run", str(tmp_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    finally:
+        tmp_path.unlink()
 
 
 __all__ = ["prompts_router"]

@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { GenerationPublic } from "@/types/types";
+import { CodeSnippet } from "@/components/CodeSnippet";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
@@ -45,14 +46,48 @@ const GenerationsList = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(generationsQueryOptions(projectUuid));
   return (
-    <div className='flex'>
-      {data.map((generation, i) => (
-        <GenerationCards
-          key={generation.uuid}
-          generation={generation}
-          index={i}
-        />
-      ))}
-    </div>
+    <>
+      {data.length > 0 ? (
+        <div className='flex'>
+          {data.map((generation, i) => (
+            <GenerationCards
+              key={generation.uuid}
+              generation={generation}
+              index={i}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className='min-h-screen p-8'>
+          <div className='max-w-4xl mx-auto'>
+            <div>
+              No generations found. Start by decorating your LLM powered
+              functions with <code>@lilypad.generation()</code>.
+            </div>
+            <CodeSnippet
+              code={`
+from openai import OpenAI
+
+import lilypad
+
+client = OpenAI()
+lilypad.configure()
+
+
+@lilypad.generation()
+def recommend_book(genre: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+recommend_book("fantasy")`}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
