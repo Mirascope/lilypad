@@ -4,7 +4,7 @@ import inspect
 import json
 from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, overload
 
 from mirascope.core import BaseMessageParam, prompt_template
 from mirascope.core.base import CommonCallParams
@@ -102,7 +102,7 @@ class Prompt(BaseModel):
     def messages(
         self, provider: Literal["mistral"]
     ) -> Sequence[
-        Union["AssistantMessage", "SystemMessage", "ToolMessage", "UserMessage"]  # pyright: ignore [reportInvalidTypeForm]
+        "AssistantMessage | SystemMessage | ToolMessage | UserMessage"  # pyright: ignore [reportInvalidTypeForm]
     ]: ...
 
     def messages(
@@ -112,7 +112,7 @@ class Prompt(BaseModel):
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence[
-            Union["AssistantMessage", "SystemMessage", "ToolMessage", "UserMessage"]  # pyright: ignore [reportInvalidTypeForm]
+            "AssistantMessage | SystemMessage | ToolMessage | UserMessage"  # pyright: ignore [reportInvalidTypeForm]
         ]
     ):
         """Return the messages array for the given provider converted from base."""
