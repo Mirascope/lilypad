@@ -99,7 +99,7 @@ def test_third_party_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": ["anthropic", "gemini", "mistral", "openai", "opentelemetry"],
         }
     }
 
@@ -111,7 +111,7 @@ def test_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": ["anthropic", "gemini", "mistral", "openai", "opentelemetry"],
         }
     }
 
@@ -123,7 +123,7 @@ def test_multi_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": ["anthropic", "gemini", "mistral", "openai", "opentelemetry"],
         }
     }
 
@@ -290,7 +290,7 @@ def test_global_var_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": ["anthropic", "gemini", "mistral", "openai", "opentelemetry"],
         },
         "openai": {"version": importlib.metadata.version("openai"), "extras": None},
     }
@@ -340,6 +340,7 @@ def test_closure_inside_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "gemini",
+                "mistral",
                 "openai",
             ],
         }
@@ -356,6 +357,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "gemini",
+                "mistral",
                 "openai",
             ],
         }
