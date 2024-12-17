@@ -20,7 +20,6 @@ import {
 import {
   CommonCallParams,
   PlaygroundParameters,
-  PromptCreate,
   PromptPublic,
   Provider,
 } from "@/types/types";

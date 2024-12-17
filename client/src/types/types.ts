@@ -460,6 +460,8 @@ export interface UserPublic {
   email: string;
   /** Active Organization Uuid */
   active_organization_uuid?: string | null;
+  /** Keys */
+  keys?: Record<string, string>;
   /**
    * Uuid
    * @format uuid
