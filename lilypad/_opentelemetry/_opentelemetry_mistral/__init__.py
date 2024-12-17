@@ -7,7 +7,12 @@ from opentelemetry.semconv.schemas import Schemas
 from opentelemetry.trace import get_tracer
 from wrapt import wrap_function_wrapper
 
-from .patch import mistral_complete, mistral_complete_async
+from .patch import (
+    mistral_complete_async_patch,
+    mistral_complete_patch,
+    mistral_stream_async_patch,
+    mistral_stream_patch,
+)
 
 
 class MistralInstrumentor(BaseInstrumentor):
@@ -25,12 +30,21 @@ class MistralInstrumentor(BaseInstrumentor):
 
         # Patch sync complete
         wrap_function_wrapper(
-            "mistralai.chat", "Chat.complete", mistral_complete(tracer)
+            "mistralai.chat", "Chat.complete", mistral_complete_patch(tracer)
         )
 
         # Patch async complete
         wrap_function_wrapper(
-            "mistralai.chat", "Chat.complete_async", mistral_complete_async(tracer)
+            "mistralai.chat",
+            "Chat.complete_async",
+            mistral_complete_async_patch(tracer),
+        )
+
+        wrap_function_wrapper(
+            "mistralai.chat", "Chat.stream", mistral_stream_patch(tracer)
+        )
+        wrap_function_wrapper(
+            "mistralai.chat", "Chat.stream_async", mistral_stream_async_patch(tracer)
         )
 
     def _uninstrument(self, **kwargs: Any) -> None:
@@ -38,3 +52,5 @@ class MistralInstrumentor(BaseInstrumentor):
 
         unwrap(mistralai.chat.Chat, "complete")
         unwrap(mistralai.chat.Chat, "complete_async")
+        unwrap(mistralai.chat.Chat, "stream")
+        unwrap(mistralai.chat.Chat, "stream_async")

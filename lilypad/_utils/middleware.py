@@ -82,9 +82,21 @@ def encode_gemini_part(
     return part
 
 
+def _default_serializer(obj: Any) -> Any:
+    if hasattr(obj, "role") and hasattr(obj, "content"):
+        return {
+            "role": obj.role,
+            "content": obj.content,
+        }
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+
 def _serialize_proto_data(data: list[dict]) -> str:
     serializable_data = []
     for item in data:
+        if not isinstance(item, dict):
+            item = _default_serializer(item)
+
         serialized_item = item.copy()
         if "parts" in item:
             serialized_item["parts"] = [
@@ -92,18 +104,25 @@ def _serialize_proto_data(data: list[dict]) -> str:
             ]
         serializable_data.append(serialized_item)
 
-    return json.dumps(serializable_data)
+    return json.dumps(serializable_data, default=_default_serializer)
 
 
 def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> None:
     try:
-        output = json.dumps(response.message_param)
+        output = json.dumps(response.message_param, default=_default_serializer)
     except TypeError:
         output = str(response.message_param)
     try:
-        messages = json.dumps(response.messages)
+        messages = json.dumps(response.messages, default=_default_serializer)
     except TypeError:
-        messages = _serialize_proto_data(response.messages)  # Gemini
+        converted_messages = []
+        for m in response.messages:
+            if isinstance(m, dict):
+                converted_messages.append(m)
+            else:
+                converted_messages.append(_default_serializer(m))
+        messages = _serialize_proto_data(converted_messages)
+
     attributes: dict[str, AttributeValue] = {
         "lilypad.generation.output": output,
         "lilypad.generation.messages": messages,
@@ -114,11 +133,24 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> 
 def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) -> None:
     if isinstance(result, BaseModel):
         completion = result.model_dump_json()
-        # Safely handle the case where result._response might be None
+        # Attempt to serialize messages if _response and _response.messages exist
         if (_response := getattr(result, "_response", None)) and (
             _response_messages := getattr(_response, "messages", None)
         ):
-            messages = json.dumps(_response_messages)
+            try:
+                messages = json.dumps(_response_messages, default=_default_serializer)
+            except TypeError:
+                # If serialization fails, try fallback
+                if isinstance(_response_messages, list):
+                    converted_msgs = []
+                    for m in _response_messages:
+                        if isinstance(m, dict):
+                            converted_msgs.append(m)
+                        else:
+                            converted_msgs.append(_default_serializer(m))
+                    messages = _serialize_proto_data(converted_msgs)
+                else:
+                    messages = str(_response_messages)
         else:
             messages = None
     else:
