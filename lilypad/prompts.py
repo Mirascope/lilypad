@@ -164,7 +164,7 @@ def _construct_trace_attributes(
         "lilypad.prompt.arg_types": json.dumps(arg_types),
         "lilypad.prompt.arg_values": json.dumps(arg_values),
         "lilypad.prompt.output": results,
-        "lilypad.prompt.version": str(prompt.version_num),
+        "lilypad.prompt.version": prompt.version_num if prompt.version_num else -1,
         "lilypad.is_async": is_async,
     }
 

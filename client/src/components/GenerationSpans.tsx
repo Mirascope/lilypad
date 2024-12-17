@@ -16,6 +16,5 @@ export const GenerationSpans = ({
   const { data } = useSuspenseQuery(
     spansByGenerationQueryOptions(projectUuid, generationUuid)
   );
-  console.log(data);
   return <TracesTable data={data} />;
 };

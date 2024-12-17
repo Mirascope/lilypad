@@ -75,7 +75,7 @@ def _construct_trace_attributes(
         "lilypad.generation.output": str(output),
         "lilypad.generation.version": generation.version_num
         if generation.version_num
-        else 0,
+        else -1,
         "lilypad.is_async": is_async,
     }
 

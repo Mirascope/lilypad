@@ -207,7 +207,6 @@ print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values)
 
 
 def _run_playground(code: str) -> str:
-    print(code)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(code)
         tmp_path = Path(tmp_file.name)

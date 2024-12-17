@@ -54,7 +54,7 @@ def _get_custom_context_manager(
                 "lilypad.generation.prompt_template": prompt_template or "",
                 "lilypad.generation.version": generation.version_num
                 if generation.version_num
-                else 0,
+                else -1,
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
