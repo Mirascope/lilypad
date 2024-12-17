@@ -1,0 +1,46 @@
+from collections.abc import Collection
+from typing import TYPE_CHECKING, Any
+
+import aiobotocore
+import botocore.client
+from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
+from opentelemetry.instrumentation.utils import unwrap
+from opentelemetry.semconv.schemas import Schemas
+from opentelemetry.trace import get_tracer
+from wrapt import wrap_function_wrapper
+
+from .patch import async_make_api_call_patch, make_api_call_patch
+
+if TYPE_CHECKING:
+    import aiobotocore.client
+
+
+class BedrockInstrumentor(BaseInstrumentor):
+    def instrumentation_dependencies(self) -> Collection[str]:
+        return (
+            "aioboto3>=13.2.0,<14",
+            "boto3>=1.35.36,<2",
+        )
+
+    def _instrument(self, **kwargs: Any) -> None:
+        tracer_provider = kwargs.get("tracer_provider")
+        tracer = get_tracer(
+            __name__,
+            "0.1.0",
+            tracer_provider,
+            schema_url=Schemas.V1_28_0.value,
+        )
+
+        # Patch _make_api_call of BaseClient
+        wrap_function_wrapper(
+            "botocore.client", "BaseClient._make_api_call", make_api_call_patch(tracer)
+        )
+        wrap_function_wrapper(
+            "aiobotocore.client",
+            "AioBaseClient._make_api_call",
+            async_make_api_call_patch(tracer),
+        )
+
+    def _uninstrument(self, **kwargs: Any) -> None:
+        unwrap(botocore.client.BaseClient, "_make_api_call")
+        unwrap(aiobotocore.client.AioBaseClient, "_make_api_call")
