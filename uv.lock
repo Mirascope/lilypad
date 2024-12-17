@@ -1974,7 +1974,7 @@ gemini = [
 openai = [
     { name = "openai" },
 ]
-vertext = [
+vertex = [
     { name = "google-cloud-aiplatform" },
 ]
 
@@ -1998,7 +1998,7 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.36.0" },
     { name = "cryptography", specifier = ">=43.0.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
-    { name = "google-cloud-aiplatform", marker = "extra == 'vertext'", specifier = ">=1.74.0" },
+    { name = "google-cloud-aiplatform", marker = "extra == 'vertex'", specifier = ">=1.74.0" },
     { name = "google-generativeai", marker = "extra == 'gemini'", specifier = ">=0.4.0,<1" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "mirascope", specifier = ">=1.9.5" },
