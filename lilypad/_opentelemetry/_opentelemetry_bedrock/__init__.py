@@ -1,8 +1,6 @@
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any
 
-import aiobotocore
-import botocore.client
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
 from opentelemetry.semconv.schemas import Schemas
@@ -10,9 +8,6 @@ from opentelemetry.trace import get_tracer
 from wrapt import wrap_function_wrapper
 
 from .patch import async_make_api_call_patch, make_api_call_patch
-
-if TYPE_CHECKING:
-    import aiobotocore.client
 
 
 class BedrockInstrumentor(BaseInstrumentor):
@@ -42,5 +37,8 @@ class BedrockInstrumentor(BaseInstrumentor):
         )
 
     def _uninstrument(self, **kwargs: Any) -> None:
+        import aiobotocore.client
+        import botocore.client
+
         unwrap(botocore.client.BaseClient, "_make_api_call")
         unwrap(aiobotocore.client.AioBaseClient, "_make_api_call")
