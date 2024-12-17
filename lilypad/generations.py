@@ -73,6 +73,9 @@ def _construct_trace_attributes(
         "lilypad.generation.arg_values": json.dumps(arg_values),
         "lilypad.generation.prompt_template": prompt_template,
         "lilypad.generation.output": str(output),
+        "lilypad.generation.version": generation.version_num
+        if generation.version_num
+        else 0,
         "lilypad.is_async": is_async,
     }
 

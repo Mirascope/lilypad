@@ -71,7 +71,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
         <CardHeader>
           <CardTitle>{"Code"}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className='overflow-x-auto'>
           <Tabs defaultValue='signature' className='w-full'>
             <div className='flex w-full'>
               <TabsList className={`w-[160px]`}>
@@ -118,7 +118,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
         {data && (
-          <CardContent>
+          <CardContent className='overflow-x-auto'>
             <JsonView value={data} />
           </CardContent>
         )}

@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import func, select
 
 from ..models import GenerationCreate, GenerationTable
 from .base import BaseService
@@ -28,6 +28,18 @@ class GenerationService(BaseService[GenerationTable, GenerationCreate]):
             )
         ).all()
         return record_tables
+
+    def get_next_version(self, project_uuid: UUID, name: str) -> int:
+        """Get the next version number for a generation with this name."""
+        count = self.session.exec(
+            select(func.count()).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
+            )
+        ).one()
+
+        return count + 1
 
     def find_unique_generation_names_by_project_uuid(
         self, project_uuid: UUID
