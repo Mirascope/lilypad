@@ -49,6 +49,11 @@ if TYPE_CHECKING:
     except ImportError:
         ContentDict = Any
         GeminiCallParams = Any
+    try:
+        from mirascope.core.bedrock import BedrockCallParams, BedrockMessageParam
+    except ImportError:
+        BedrockCallParams = Any
+        BedrockMessageParam = Any
 
 
 def _base_message_params(
@@ -83,12 +88,18 @@ class Prompt(BaseModel):
     @overload
     def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
     def messages(
-        self, provider: Literal["openai", "anthropic", "gemini"]
+        self, provider: Literal["bedrock"]
+    ) -> Sequence["BedrockMessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
+
+    def messages(
+        self, provider: Literal["openai", "anthropic", "gemini", "bedrock"]
     ) -> (
         Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
+        | Sequence["BedrockMessageParam"]  # pyright: ignore [reportInvalidTypeForm]
     ):
         """Return the messages array for the given provider converted from base."""
         if provider == "openai":
@@ -106,6 +117,11 @@ class Prompt(BaseModel):
 
             # type error needs resolution on mirascope side
             return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        elif provider == "bedrock":
+            from mirascope.core.bedrock._utils import convert_message_params
+
+            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
         else:
             raise NotImplementedError(f"Unknown provider: {provider}")
 
@@ -118,9 +134,14 @@ class Prompt(BaseModel):
     @overload
     def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
+    def call_params(self, provider: Literal["bedrock"]) -> "BedrockCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
+
     def call_params(
-        self, provider: Literal["openai", "anthropic", "gemini"]
-    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":  # pyright: ignore [reportInvalidTypeForm]
+        self, provider: Literal["openai", "anthropic", "gemini", "bedrock"]
+    ) -> (
+        "OpenAICallParams | AnthropicCallParams | GeminiCallParams" | BedrockCallParams  # pyright: ignore [reportInvalidTypeForm]
+    ):
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":
             from mirascope.core.openai._utils._convert_common_call_params import (
@@ -136,6 +157,12 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "gemini":
             from mirascope.core.gemini._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+        elif provider == "bedrock":
+            from mirascope.core.bedrock._utils._convert_common_call_params import (
                 convert_common_call_params,
             )
 
