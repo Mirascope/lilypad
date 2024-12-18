@@ -199,7 +199,6 @@ arg_values = {playground_parameters.arg_values}
 print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
 '''
     try:
-        print(wrapper_code)
         processed_code = _run_playground(wrapper_code)
     except Exception:
         raise HTTPException(
