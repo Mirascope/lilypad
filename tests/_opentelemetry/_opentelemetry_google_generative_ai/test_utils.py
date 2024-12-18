@@ -1,164 +1,124 @@
-"""Tests for Google Generative AI OpenTelemetry utilities."""
+"""Tests for Vertex AI OpenTelemetry utils."""
 
-from unittest.mock import Mock, PropertyMock
+from unittest.mock import Mock
 
 import pytest
-from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad._opentelemetry._opentelemetry_google_generative_ai.utils import (
-    get_candidate_event,
-    get_gemini_model_name,
-    get_llm_request_attributes,
-    set_content_event,
-    set_response_attributes,
-    set_stream,
-    set_stream_async,
+from lilypad._opentelemetry._opentelemetry_vertex.utils import (
+    get_vertex_llm_request_attributes,
+    set_vertex_response_attributes,
+    set_vertex_stream,
+    set_vertex_stream_async,
 )
 
 
-class MockPart:
-    """Mock class for Gemini content parts"""
-
-    def __init__(self, text: str):
-        self.text = text
-        self.function_call = None
+class MockGenerativeModel:
+    def __init__(self, model_name="gemini-pro"):
+        self._model_name = model_name
 
 
-class MockContent:
-    """Mock class for Gemini content"""
-
-    def __init__(self, role: str, text: str):
-        self.role = role
-        part = MockPart(text)
-        self.parts = [part]
+class MockResponse:
+    def __init__(self, candidates=None, usage_metadata=None):
+        self.candidates = candidates or []
+        self.usage_metadata = usage_metadata
 
 
 class MockCandidate:
-    """Mock class for Gemini candidates"""
-
-    def __init__(self, index: int, content: MockContent, finish_reason: int = 1):
+    def __init__(self, index=0, finish_reason=1, content=None):
         self.index = index
-        self.content = content
         self.finish_reason = finish_reason
+        self.content = content
+        self.function_calls = []
+
+
+class MockContent:
+    def __init__(self, role="assistant", parts=None):
+        self.role = role
+        self.parts = parts or []
+
+
+class MockPart:
+    def __init__(self, text=None):
+        self.text = text
 
 
 @pytest.fixture
-def mock_client():
-    """Create a mock client with proper model ID property"""
-    client = Mock()
-    # Configure _model_id as a property correctly
-    PropertyMock(return_value="gemini-pro")
-    type(client).__getattr__ = Mock(return_value="gemini-pro")
-    return client
-
-
-@pytest.fixture
-def mock_candidate():
-    content = MockContent("assistant", "test response")
-    return MockCandidate(0, content, 1)  # Use integer for finish_reason
-
-
-@pytest.fixture
-def mock_chunk(mock_candidate):
-    chunk = Mock()
-    chunk.model = "gemini-pro"
-    chunk.candidates = [mock_candidate]
-    chunk.usage_metadata = Mock(prompt_token_count=10, candidates_token_count=20)
-    return chunk
-
-
-def test_get_llm_request_attributes(mock_client):
-    kwargs = {"temperature": 0.7, "max_output_tokens": 100, "top_p": 0.9, "top_k": 40}
-
-    attrs = get_llm_request_attributes(kwargs, mock_client)
-    assert attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "gemini"
-    assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MODEL] == "gemini-pro"
-    assert attrs[gen_ai_attributes.GEN_AI_REQUEST_TEMPERATURE] == 0.7
-    assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MAX_TOKENS] == 100
-    assert attrs[gen_ai_attributes.GEN_AI_REQUEST_TOP_P] == 0.9
-    assert attrs[gen_ai_attributes.GEN_AI_REQUEST_TOP_K] == 40
-
-
-def test_get_gemini_model_name():
-    # Test with model_id
-    client = Mock()
-
-    # Configure direct returns instead of nested Mocks
-    def get_attr(name):
-        values = {"_model_id": "gemini-pro", "_model_name": "gemini-pro"}
-        return values.get(name)
-
-    type(client).__getattr__ = Mock(side_effect=get_attr)
-    assert get_gemini_model_name(client) == "gemini-pro"
-
-    # Test with model_name fallback
-    client = Mock()
-
-    # First request for _model_id returns None, then _model_name returns the value
-    def get_attr_fallback(name):
-        values = {"_model_id": None, "_model_name": "gemini-pro"}
-        return values.get(name)
-
-    type(client).__getattr__ = Mock(side_effect=get_attr_fallback)
-    assert get_gemini_model_name(client) == "gemini-pro"
-
-    # Test unknown case
-    client = Mock(spec=[])
-    assert get_gemini_model_name(client) == "unknown"
-
-
-def test_get_candidate_event(mock_candidate):
-    event_attrs = get_candidate_event(mock_candidate)
-    assert event_attrs[gen_ai_attributes.GEN_AI_SYSTEM] == "gemini"
-    assert event_attrs["index"] == 0
-    assert event_attrs["finish_reason"] == 1
-    assert "message" in event_attrs
-
-
-def test_set_content_event():
+def mock_span():
     span = Mock()
+    span.is_recording.return_value = True
+    return span
 
-    # Test simple text content
-    content = {"role": "user", "parts": ["Hello"]}
-    set_content_event(span, content)
-    span.add_event.assert_called_once()
 
-    # Test binary content
-    span = Mock()
-    binary_data = b"test data"
-    content = {
-        "role": "user",
-        "parts": [{"mime_type": "image/jpeg", "data": binary_data}],
+def test_get_vertex_llm_request_attributes():
+    instance = MockGenerativeModel()
+    kwargs = {
+        "stream": True,
+        "generation_config": Mock(
+            _raw_generation_config=Mock(
+                temperature=0.7,
+                top_p=0.9,
+                top_k=40,
+                max_output_tokens=100,
+                frequency_penalty=0.5,
+                presence_penalty=0.1,
+                stop_sequences=["STOP"],
+            )
+        ),
     }
-    set_content_event(span, content)
-    span.add_event.assert_called_once()
+    attrs = get_vertex_llm_request_attributes(kwargs, instance)
+    assert attrs["gen_ai.request.model"] == "gemini-pro"
+    assert attrs["vertex.stream"] is True
+    assert attrs["gen_ai.request.temperature"] == 0.7
+    assert attrs["gen_ai.request.top_p"] == 0.9
+    assert attrs["gen_ai.request.top_k"] == 40
+    assert attrs["gen_ai.request.max_tokens"] == 100
+    assert attrs["gen_ai.request.frequency_penalty"] == 0.5
+    assert attrs["gen_ai.request.presence_penalty"] == 0.1
+    assert attrs["gen_ai.request.stop_sequences"] == ["STOP"]
 
 
-def test_set_response_attributes(mock_chunk, mock_client):
-    span = Mock()
-    set_response_attributes(span, mock_chunk, mock_client)
-    assert span.set_attributes.called
-    assert span.add_event.called
+def test_set_vertex_response_attributes(mock_span):
+    candidate = MockCandidate(
+        index=0,
+        finish_reason=1,
+        content=MockContent(role="assistant", parts=[MockPart(text="Hello!")]),
+    )
+    response = MockResponse(candidates=[candidate])
+    instance = MockGenerativeModel()
+    set_vertex_response_attributes(mock_span, response, instance)
+    mock_span.set_attributes.assert_called_once()
+    mock_span.add_event.assert_called_once()
+    event_call = mock_span.add_event.call_args[0][0]
+    assert event_call == "gen_ai.choice"
+
+
+def test_set_vertex_stream(mock_span):
+    candidate = MockCandidate(
+        index=0,
+        finish_reason=1,
+        content=MockContent(role="assistant", parts=[MockPart(text="Hello!")]),
+    )
+    chunk = MockResponse(candidates=[candidate])
+    stream = [chunk]
+    instance = MockGenerativeModel()
+    set_vertex_stream(mock_span, stream, instance)
+    mock_span.set_attributes.assert_called_once()
+    mock_span.add_event.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_set_stream_async(mock_chunk, mock_client):
-    span = Mock()
-    stream = [mock_chunk]
+async def test_set_vertex_stream_async(mock_span):
+    candidate = MockCandidate(
+        index=0,
+        finish_reason=1,
+        content=MockContent(role="assistant", parts=[MockPart(text="Hello!")]),
+    )
+    chunk = MockResponse(candidates=[candidate])
 
-    async def async_iterator():
-        for chunk in stream:
-            yield chunk
+    async def async_gen():
+        yield chunk
 
-    await set_stream_async(span, async_iterator(), mock_client)
-    assert span.set_attributes.called
-    assert span.add_event.called
-
-
-def test_set_stream(mock_chunk, mock_client):
-    span = Mock()
-    stream = [mock_chunk]
-
-    set_stream(span, stream, mock_client)
-    assert span.set_attributes.called
-    assert span.add_event.called
+    instance = MockGenerativeModel()
+    await set_vertex_stream_async(mock_span, async_gen(), instance)
+    mock_span.set_attributes.assert_called_once()
+    mock_span.add_event.assert_called_once()
