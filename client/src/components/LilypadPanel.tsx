@@ -8,9 +8,15 @@ import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
 import ReactMarkdown from "react-markdown";
 import JsonView from "@uiw/react-json-view";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
+type Tab = {
+  label: string;
+  value: string;
+  component?: JSX.Element | null;
+};
 interface InstrumentationScope {
   attributes: object;
   name: string;
@@ -37,6 +43,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   const attributes = data.attributes;
   const type = attributes["lilypad.type"];
   const signature = attributes[`lilypad.${type}.signature`];
+  const code = attributes[`lilypad.${type}.code`];
   const template = attributes[`lilypad.${type}.template`];
   const output = attributes[`lilypad.${type}.output`];
   let argValues = {};
@@ -45,6 +52,18 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
   } catch (e) {
     argValues = {};
   }
+  const tabs: Tab[] = [
+    {
+      label: "Signature",
+      value: "signature",
+      component: <CodeSnippet code={signature} />,
+    },
+    {
+      label: "Code",
+      value: "code",
+      component: <CodeSnippet code={code} />,
+    },
+  ];
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{data.name}</Typography>
@@ -52,8 +71,27 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
         <CardHeader>
           <CardTitle>{"Code"}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <CodeSnippet code={signature} />
+        <CardContent className='overflow-x-auto'>
+          <Tabs defaultValue='signature' className='w-full'>
+            <div className='flex w-full'>
+              <TabsList className={`w-[160px]`}>
+                {tabs.map((tab) => (
+                  <TabsTrigger key={tab.value} value={tab.value}>
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            {tabs.map((tab) => (
+              <TabsContent
+                key={tab.value}
+                value={tab.value}
+                className='w-full bg-gray-50'
+              >
+                {tab.component}
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
       <ArgsCards args={argValues} />
@@ -80,7 +118,7 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
         {data && (
-          <CardContent>
+          <CardContent className='overflow-x-auto'>
             <JsonView value={data} />
           </CardContent>
         )}

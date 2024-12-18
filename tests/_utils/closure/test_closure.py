@@ -342,6 +342,7 @@ def test_closure_inside_decorator_fn() -> None:
                 "gemini",
                 "mistral",
                 "openai",
+                "outlines",
             ],
         }
     }
@@ -359,6 +360,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
                 "gemini",
                 "mistral",
                 "openai",
+                "outlines",
             ],
         }
     }

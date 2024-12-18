@@ -65,7 +65,9 @@ export const fetchPromptsBySignature = async (
 export const fetchUniquePromptNames = async (projectUuid?: string) => {
   if (!projectUuid) return [];
   return (
-    await api.get<string[]>(`/projects/${projectUuid}/prompts/metadata/names`)
+    await api.get<PromptPublic[]>(
+      `/projects/${projectUuid}/prompts/metadata/names`
+    )
   ).data;
 };
 

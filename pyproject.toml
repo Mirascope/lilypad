@@ -60,6 +60,7 @@ gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 mistral = [
     "mistralai>=1.0.0,<2",
 ]
+outlines = ["outlines>=0.1.10"]
 
 [tool.uv]
 dev-dependencies = [
