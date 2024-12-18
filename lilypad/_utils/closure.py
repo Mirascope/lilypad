@@ -224,23 +224,34 @@ class _DefinitionCollector(ast.NodeVisitor):
                     self.definitions_to_analyze.append(definition)
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call) -> None:
-        if isinstance(node.func, ast.Name):
-            if obj := getattr(self.module, node.func.id, None):
+    def _process_name_or_attribute(self, node: ast.AST) -> None:
+        if isinstance(node, ast.Name):
+            if (obj := getattr(self.module, node.id, None)) and hasattr(
+                obj, "__name__"
+            ):
                 self.definitions_to_include.append(obj)
-        elif isinstance(node.func, ast.Attribute):
+        elif isinstance(node, ast.Attribute):
             names = []
-            current = node.func
+            current = node
             while isinstance(current, ast.Attribute):
                 names.append(current.attr)
                 current = current.value
             if isinstance(current, ast.Name):
                 names.append(current.id)
                 full_path = ".".join(reversed(names))
-                if full_path in self.used_names and (
-                    definition := getattr(self.module, names[0], None)
+                if (
+                    full_path in self.used_names
+                    and (definition := getattr(self.module, names[0], None))
+                    and hasattr(definition, "__name__")
                 ):
                     self.definitions_to_include.append(definition)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        self._process_name_or_attribute(node.func)
+        for arg in node.args:
+            self._process_name_or_attribute(arg)
+        for keyword in node.keywords:
+            self._process_name_or_attribute(keyword.value)
         self.generic_visit(node)
 
 
