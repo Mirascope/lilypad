@@ -1,7 +1,7 @@
 """The module for the `lilypad` database tables and models."""
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
-from .base_sql_model import BaseSQLModel
+from .base_sql_model import BaseSQLModel, get_json_column
 from .device_codes import DeviceCodeTable
 from .generations import (
     GenerationCreate,
@@ -60,4 +60,5 @@ __all__ = [
     "UserOrganizationCreate",
     "UserOrganizationPublic",
     "UserOrganizationTable",
+    "get_json_column",
 ]

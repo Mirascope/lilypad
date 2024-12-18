@@ -31,6 +31,7 @@ api.include_router(users_router)
 class SettingsPublic(BaseModel):
     remote_base_url: str
     github_client_id: str
+    environment: str
 
 
 @api.get("/settings", response_model=SettingsPublic)
@@ -41,6 +42,7 @@ async def get_settings_client(
     return SettingsPublic(
         remote_base_url=settings.remote_base_url,
         github_client_id=settings.github_client_id,
+        environment=settings.environment,
     )
 
 

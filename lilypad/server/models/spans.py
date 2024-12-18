@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from pydantic import model_validator
-from sqlalchemy import JSON, Column, Index, UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .base_sql_model import get_json_column
 from .generations import GenerationPublic
 from .prompts import PromptPublic
 from .response_models import ResponseModelPublic
@@ -60,7 +61,7 @@ class _SpanBase(SQLModel):
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
-    data: dict = Field(sa_column=Column(JSON), default_factory=dict)
+    data: dict = Field(sa_column=get_json_column(), default_factory=dict)
     parent_span_id: str | None = Field(
         default=None, foreign_key=f"{SPAN_TABLE_NAME}.span_id"
     )

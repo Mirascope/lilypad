@@ -3,11 +3,11 @@
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .base_sql_model import get_json_column
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
@@ -27,10 +27,14 @@ class _ResponseModelBase(SQLModel):
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
     dependencies: dict[str, DependencyInfo] = Field(
-        sa_column=Column(JSON), default_factory=dict
+        sa_column=get_json_column(), default_factory=dict
     )
-    schema_data: dict[str, Any] = Field(sa_column=Column(JSON), default_factory=dict)
-    examples: list[dict[str, Any]] = Field(sa_column=Column(JSON), default_factory=list)
+    schema_data: dict[str, Any] = Field(
+        sa_column=get_json_column(), default_factory=dict
+    )
+    examples: list[dict[str, Any]] = Field(
+        sa_column=get_json_column(), default_factory=list
+    )
     is_active: bool = Field(default=False)
 
 
