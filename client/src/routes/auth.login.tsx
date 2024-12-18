@@ -12,6 +12,7 @@ import { GithubLogin } from "@/components/GithubLogin";
 import { useAuth } from "@/auth";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { settingsQueryOptions } from "@/utils/settings";
 
 type LoginSearchParam = {
   redirect?: string;
@@ -39,7 +40,8 @@ export const Route = createFileRoute("/auth/login")({
 
 const LoginComponent = () => {
   const { deviceCode } = Route.useSearch();
-  const isLocal = import.meta.env.DEV;
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const isLocal = settings.environment === "local";
 
   return (
     <div className='flex items-center justify-center h-screen'>

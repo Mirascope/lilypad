@@ -3,13 +3,13 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_auth")({
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated && !import.meta.env.DEV) {
+  beforeLoad: async ({ context }) => {
+    if (!context.auth.isAuthenticated) {
       throw redirect({
         to: "/auth/login",
         search: {
-          redirect: location.href,
-          deviceCode: "",
+          redirect: undefined,
+          deviceCode: undefined,
         },
       });
     }
