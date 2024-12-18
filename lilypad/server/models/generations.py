@@ -9,15 +9,18 @@ from sqlmodel import Field, Relationship, SQLModel
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .prompts import PromptPublic
+from .response_models import ResponseModelPublic, ResponseModelTable
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     PROMPT_TABLE_NAME,
+    RESPONSE_MODEL_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from .projects import ProjectTable
     from .prompts import PromptTable
+    from .response_models import ResponseModelTable
     from .spans import SpanTable
 
 
@@ -29,6 +32,9 @@ class _GenerationBase(SQLModel):
     )
     prompt_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
+    )
+    response_model_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid"
     )
     version_num: int | None = Field(default=None)
     name: str = Field(nullable=False, index=True, min_length=1)
@@ -56,6 +62,7 @@ class GenerationPublic(_GenerationBase):
 
     uuid: UUID
     prompt: PromptPublic | None = None
+    response_model: ResponseModelPublic | None = None
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
@@ -68,3 +75,6 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
         back_populates="generation", cascade_delete=True
     )
     prompt: Optional["PromptTable"] = Relationship(back_populates="generations")
+    response_model: Optional["ResponseModelTable"] = Relationship(
+        back_populates="generations"
+    )

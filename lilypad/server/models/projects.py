@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .generations import GenerationTable
     from .organizations import OrganizationTable
     from .prompts import PromptTable
+    from .response_models import ResponseModelTable
 
 
 class _ProjectBase(SQLModel):
@@ -47,3 +48,6 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")
+    response_models: list["ResponseModelTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
