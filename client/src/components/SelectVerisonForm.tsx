@@ -73,11 +73,15 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
   const { data: prompts } = useSuspenseQuery(
     promptsByNameQueryOptions(promptName, projectUuid)
   );
-  const { data: uniquePromptNames } = useSuspenseQuery(
+  const { data: uniquePrompts } = useSuspenseQuery(
     uniquePromptNamesQueryOptions(projectUuid)
   );
-  const uniquePromptNamesWithNew = [...uniquePromptNames];
-  if (newPromptName && !uniquePromptNames.includes(newPromptName)) {
+  const uniquePromptNamesWithNew =
+    uniquePrompts?.map((prompt) => prompt.name) || [];
+  if (
+    newPromptName &&
+    !uniquePrompts.find((uniquePrompt) => uniquePrompt.name == newPromptName)
+  ) {
     uniquePromptNamesWithNew.push(newPromptName);
   }
   useEffect(() => {

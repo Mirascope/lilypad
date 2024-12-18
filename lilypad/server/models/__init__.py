@@ -11,7 +11,14 @@ from .generations import (
 )
 from .organizations import OrganizationCreate, OrganizationPublic, OrganizationTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
-from .prompts import PromptCreate, PromptPublic, PromptTable, PromptUpdate, Provider
+from .prompts import (
+    PlaygroundParameters,
+    PromptCreate,
+    PromptPublic,
+    PromptTable,
+    PromptUpdate,
+    Provider,
+)
 from .spans import Scope, SpanCreate, SpanPublic, SpanTable, SpanType
 from .user_organizations import (
     UserOrganizationCreate,
@@ -32,6 +39,7 @@ __all__ = [
     "OrganizationCreate",
     "OrganizationPublic",
     "OrganizationTable",
+    "PlaygroundParameters",
     "ProjectCreate",
     "ProjectPublic",
     "ProjectTable",

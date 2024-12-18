@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import func, select
 
 from ..models import PromptCreate, PromptTable
 from .base import BaseService
@@ -29,6 +29,18 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
         ).all()
         return record_tables
 
+    def get_next_version(self, project_uuid: UUID, name: str) -> int:
+        """Get the next version number for a prompt with this name."""
+        count = self.session.exec(
+            select(func.count()).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
+            )
+        ).one()
+
+        return count + 1
+
     def find_prompts_by_signature(
         self, project_uuid: UUID, signature: str
     ) -> Sequence[PromptTable]:
@@ -42,15 +54,16 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
         ).all()
         return record_tables
 
-    def find_unique_prompt_names(self, project_uuid: UUID) -> Sequence[str]:
-        """Find record by UUID."""
+    def find_unique_prompt_names(self, project_uuid: UUID) -> Sequence[PromptTable]:
+        """Find record by UUID, getting latest version for each name."""
         record_tables = self.session.exec(
-            select(self.table.name)
+            select(self.table)
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
             )
-            .distinct()
+            .group_by(self.table.name)
+            .order_by(func.max(self.table.version_num).desc())
         ).all()
         return record_tables
 

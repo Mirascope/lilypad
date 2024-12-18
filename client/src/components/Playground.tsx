@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { LexicalEditor } from "lexical";
 import {
   BaseEditorFormFields,
+  getAvailableProviders,
   useBaseEditorForm,
-} from "@/utils/editor-form-utils";
+} from "@/utils/playground-utils";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -19,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { X } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AddCardButton } from "@/components/AddCardButton";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { $convertToMarkdownString } from "@lexical/markdown";
@@ -40,18 +41,21 @@ import IconDialog from "@/components/IconDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { Typography } from "@/components/ui/typography";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "@/auth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type EditorParameters = PlaygroundParameters & {
   inputs: Record<string, string>[];
 };
-export const CreateEditorForm = ({
-  version,
-}: {
-  version: PromptPublic | null;
-}) => {
+export const Playground = ({ version }: { version: PromptPublic | null }) => {
   const { projectUuid, promptName } = useParams({
     strict: false,
   });
+  const { user } = useAuth();
   const navigate = useNavigate();
   const createPromptMutation = useCreatePrompt();
   const runMutation = useRunMutation();
@@ -165,7 +169,6 @@ export const CreateEditorForm = ({
                     <FormField
                       control={methods.control}
                       name={`inputs.${index}.value`}
-                      rules={{ required: "Value is required" }}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Value</FormLabel>
@@ -215,9 +218,20 @@ export const CreateEditorForm = ({
     }
     const editorState = editorRef.current.getEditorState();
     editorState.read(async () => {
+      methods.clearErrors();
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       const isValid = await methods.trigger();
-      if (!isValid) return;
+      let hasErrors = false;
+      data.inputs.forEach((input, index) => {
+        if (!input.value) {
+          methods.setError(`inputs.${index}.value`, {
+            type: "required",
+            message: "Value is required for Run",
+          });
+          hasErrors = true;
+        }
+      });
+      if (!isValid || hasErrors) return;
       const inputValues = inputs.reduce(
         (acc, input) => {
           acc[input.key] = input.value;
@@ -244,6 +258,7 @@ export const CreateEditorForm = ({
       });
     });
   };
+  const doesProviderExist = getAvailableProviders(user).length > 0;
   return (
     <div className='m-auto w-[1200px] p-4'>
       <Form {...methods}>
@@ -284,14 +299,32 @@ export const CreateEditorForm = ({
               >
                 Save
               </Button>
-              <Button
-                type='button'
-                name='run'
-                loading={runMutation.isPending}
-                onClick={runPlayground}
-              >
-                Run
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      type='button'
+                      name='run'
+                      loading={runMutation.isPending}
+                      onClick={runPlayground}
+                      disabled={!doesProviderExist}
+                    >
+                      Run
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className='bg-gray-500'>
+                  <p className='max-w-xs break-words'>
+                    {doesProviderExist ? (
+                      "Run the playground with the selected provider."
+                    ) : (
+                      <span>
+                        You need to add an API key to run the playground.
+                      </span>
+                    )}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div className='flex gap-4'>

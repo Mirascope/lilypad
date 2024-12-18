@@ -25,13 +25,6 @@ const saveToStorage = (session: UserPublic | null) => {
 };
 
 const loadFromStorage = (): UserPublic | null => {
-  if (import.meta.env.DEV)
-    return {
-      uuid: "local",
-      first_name: "Local User",
-      email: "local@local.com",
-      user_organizations: [],
-    };
   const stored = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!stored) return null;
 

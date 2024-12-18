@@ -36,6 +36,7 @@ class _GenerationBase(SQLModel):
     response_model_uuid: UUID | None = Field(
         default=None, foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid"
     )
+    version_num: int | None = Field(default=None)
     name: str = Field(nullable=False, index=True, min_length=1)
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)

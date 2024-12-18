@@ -61,6 +61,8 @@ export interface GenerationCreate {
   project_uuid?: string | null;
   /** Prompt Uuid */
   prompt_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
   /**
    * Name
    * @minLength 1
@@ -87,6 +89,8 @@ export interface GenerationPublic {
   project_uuid?: string | null;
   /** Prompt Uuid */
   prompt_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
   /**
    * Name
    * @minLength 1
@@ -153,7 +157,10 @@ export interface OrganizationPublic {
   uuid: string;
 }
 
-/** PlaygroundParameters */
+/**
+ * PlaygroundParameters
+ * Playground parameters model.
+ */
 export interface PlaygroundParameters {
   /** Arg Values */
   arg_values: object;
@@ -204,6 +211,8 @@ export interface ProjectPublic {
 export interface PromptCreate {
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
   /**
    * Name
    * @minLength 1
@@ -251,6 +260,8 @@ export interface PromptCreate {
 export interface PromptPublic {
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
   /**
    * Name
    * @minLength 1
@@ -460,6 +471,8 @@ export interface UserPublic {
   email: string;
   /** Active Organization Uuid */
   active_organization_uuid?: string | null;
+  /** Keys */
+  keys?: Record<string, string>;
   /**
    * Uuid
    * @format uuid

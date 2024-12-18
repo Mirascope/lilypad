@@ -102,7 +102,12 @@ async def create_new_generation(
 ) -> GenerationTable:
     """Create a new generation version."""
     generation_create = generation_create.model_copy(
-        update={"project_uuid": project_uuid}
+        update={
+            "project_uuid": project_uuid,
+            "version_num": generation_service.get_next_version(
+                project_uuid, generation_create.name
+            ),
+        }
     )
     try:
         return generation_service.find_record_by_hash(generation_create.hash)

@@ -1,4 +1,3 @@
-import { CreateEditorForm } from "@/components/CreateEditorForm";
 import { GenerationSpans } from "@/components/GenerationSpans";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -18,13 +17,6 @@ export const GenerationWorkbench = ({
   generationVersion,
 }: LLMFunctionProps) => {
   const tabs: Tab[] = [
-    {
-      label: "Prompt",
-      value: "prompt",
-      component:
-        (projectUuid && <CreateEditorForm version={generationVersion} />) ||
-        null,
-    },
     {
       label: "Traces",
       value: "traces",
