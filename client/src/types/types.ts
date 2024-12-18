@@ -10,137 +10,117 @@
  */
 
 /**
- * ActiveVersionPublic
- * Active version public model
- */
-export interface ActiveVersionPublic {
-  /** Version Num */
-  version_num: number;
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Function Uuid */
-  function_uuid?: string | null;
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-  /** Function Name */
-  function_name: string;
-  /** Function Hash */
-  function_hash: string;
-  /** Prompt Hash */
-  prompt_hash?: string | null;
-  /**
-   * Is Active
-   * @default false
-   */
-  is_active?: boolean;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /** Function public model. */
-  function: FunctionPublic;
-  /** Prompt public model. */
-  prompt: PromptPublic;
-  /** Spans */
-  spans: SpanPublic[];
-}
-
-/**
- * AnthropicCallParams
- * Anthropic call args model.
- */
-export interface AnthropicCallParams {
-  /** Max Tokens */
-  max_tokens: number;
-  /** Temperature */
-  temperature: number;
-  /** Stop Sequences */
-  stop_sequences?: string[] | null;
-  /** Top K */
-  top_k?: number | null;
-  /** Top P */
-  top_p?: number | null;
-}
-
-export type DeviceCodeTable = object;
-
-/**
- * FunctionAndPromptVersionCreate
- * Function version (with prompt) create model.
- */
-export interface FunctionAndPromptVersionCreate {
-  /** Function create model. */
-  function_create: FunctionCreate;
-  /** Prompt create model. */
-  prompt_create: PromptCreate;
-}
-
-/**
- * FunctionCreate
- * Function create model.
- */
-export interface FunctionCreate {
-  /** Name */
-  name: string;
-  /** Arg Types */
-  arg_types?: Record<string, string> | null;
-  /** Hash */
-  hash?: string | null;
-  /** Code */
-  code?: string | null;
-}
-
-/**
- * FunctionPublic
- * Function public model.
- */
-export interface FunctionPublic {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-  /** Arg Types */
-  arg_types?: Record<string, string> | null;
-  /** Hash */
-  hash: string;
-  /** Code */
-  code: string;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-}
-
-/**
- * GeminiCallParams
- * Gemini GenerationConfig call args model.
+ * CommonCallParams
+ * Common parameters shared across LLM providers.
  *
- * https://ai.google.dev/api/generate-content#v1beta.GenerationConfig
+ * Note: Each provider may handle these parameters differently or not support them at all.
+ * Please check provider-specific documentation for parameter support and behavior.
+ *
+ * Attributes:
+ *     temperature: Controls randomness in the output (0.0 to 1.0).
+ *     max_tokens: Maximum number of tokens to generate.
+ *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+ *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+ *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+ *     seed: Random seed for reproducibility.
+ *     stop: Stop sequence(s) to end generation.
  */
-export interface GeminiCallParams {
-  /** Response Mime Type */
-  response_mime_type: string;
-  /** Max Output Tokens */
-  max_output_tokens?: number | null;
+export interface CommonCallParams {
   /** Temperature */
   temperature?: number | null;
-  /** Top K */
-  top_k?: number | null;
+  /** Max Tokens */
+  max_tokens?: number | null;
   /** Top P */
   top_p?: number | null;
   /** Frequency Penalty */
   frequency_penalty?: number | null;
   /** Presence Penalty */
   presence_penalty?: number | null;
-  /** Response Schema */
-  response_schema?: object | null;
-  /** Stop Sequences */
-  stop_sequences?: string[] | null;
+  /** Seed */
+  seed?: number | null;
+  /** Stop */
+  stop?: string | string[] | null;
+}
+
+/** DependencyInfo */
+export interface DependencyInfo {
+  /** Version */
+  version: string;
+  /** Extras */
+  extras: string[] | null;
+}
+
+export type DeviceCodeTable = object;
+
+/**
+ * GenerationCreate
+ * Generation create model.
+ */
+export interface GenerationCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+}
+
+/**
+ * GenerationPublic
+ * Generation public model.
+ */
+export interface GenerationPublic {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  prompt?: PromptPublic | null;
+}
+
+/**
+ * GenerationUpdate
+ * Generation update model.
+ */
+export interface GenerationUpdate {
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
 }
 
 /** HTTPValidationError */
@@ -161,29 +141,6 @@ export interface MessageParam {
 }
 
 /**
- * OpenAICallParams
- * OpenAI call args model.
- *
- * https://platform.openai.com/docs/api-reference/chat/create
- */
-export interface OpenAICallParams {
-  /** Max Tokens */
-  max_tokens: number;
-  /** Temperature */
-  temperature: number;
-  /** Top P */
-  top_p: number;
-  /** Frequency Penalty */
-  frequency_penalty?: number | null;
-  /** Presence Penalty */
-  presence_penalty?: number | null;
-  /** Response format model. */
-  response_format: ResponseFormat;
-  /** Stop */
-  stop?: string | string[] | null;
-}
-
-/**
  * OrganizationPublic
  * Organization public model
  */
@@ -198,6 +155,20 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
+}
+
+/**
+ * PlaygroundParameters
+ * Playground parameters model.
+ */
+export interface PlaygroundParameters {
+  /** Arg Values */
+  arg_values: object;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  prompt?: PromptCreate | null;
 }
 
 /**
@@ -222,20 +193,15 @@ export interface ProjectPublic {
    */
   uuid: string;
   /**
-   * Functions
+   * Generations
    * @default []
    */
-  functions?: FunctionPublic[];
+  generations?: GenerationPublic[];
   /**
    * Prompts
    * @default []
    */
   prompts?: PromptPublic[];
-  /**
-   * Versions
-   * @default []
-   */
-  versions?: VersionPublic[];
 }
 
 /**
@@ -245,16 +211,46 @@ export interface ProjectPublic {
 export interface PromptCreate {
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
   /** Hash */
-  hash?: string | null;
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, string>;
   /** Template */
   template: string;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
-  /** Call Params */
-  call_params?: OpenAICallParams | AnthropicCallParams | GeminiCallParams | null;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
 }
 
 /**
@@ -264,21 +260,60 @@ export interface PromptCreate {
 export interface PromptPublic {
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
   /** Hash */
-  hash?: string | null;
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, string>;
   /** Template */
   template: string;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
   /**
    * Uuid
    * @format uuid
    */
   uuid: string;
-  /** Call Params */
-  call_params?: OpenAICallParams | AnthropicCallParams | GeminiCallParams | null;
+}
+
+/**
+ * PromptUpdate
+ * Prompt update model
+ */
+export interface PromptUpdate {
+  /** Is Default */
+  is_default?: boolean | null;
 }
 
 /**
@@ -290,15 +325,6 @@ export enum Provider {
   ANTHROPIC = "anthropic",
   OPENROUTER = "openrouter",
   GEMINI = "gemini",
-}
-
-/**
- * ResponseFormat
- * Response format model.
- */
-export interface ResponseFormat {
-  /** Type */
-  type: "text" | "json_object" | "json_schema";
 }
 
 /**
@@ -335,6 +361,8 @@ export interface SpanMoreDetails {
   output_tokens?: number | null;
   /** Duration Ms */
   duration_ms: number;
+  /** Signature */
+  signature?: string | null;
   /** Code */
   code?: string | null;
   /** Arg Values */
@@ -358,12 +386,13 @@ export interface SpanPublic {
   span_id: string;
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Version Uuid */
-  version_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
+  /** Prompt Uuid */
+  prompt_uuid?: string | null;
+  type?: SpanType | null;
   /** Cost */
   cost?: number | null;
-  /** Version Num */
-  version_num?: number | null;
   /** Instrumentation Scope name of the span */
   scope: Scope;
   /** Data */
@@ -377,7 +406,8 @@ export interface SpanPublic {
   uuid: string;
   /** Display Name */
   display_name?: string | null;
-  version?: VersionPublic | null;
+  generation?: GenerationPublic | null;
+  prompt?: PromptPublic | null;
   /** Child Spans */
   child_spans: SpanPublic[];
   /**
@@ -385,6 +415,15 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
+}
+
+/**
+ * SpanType
+ * Span type
+ */
+export enum SpanType {
+  GENERATION = "generation",
+  PROMPT = "prompt",
 }
 
 /**
@@ -432,6 +471,8 @@ export interface UserPublic {
   email: string;
   /** Active Organization Uuid */
   active_organization_uuid?: string | null;
+  /** Keys */
+  keys?: Record<string, string>;
   /**
    * Uuid
    * @format uuid
@@ -460,42 +501,6 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
-}
-
-/**
- * VersionPublic
- * Version public model
- */
-export interface VersionPublic {
-  /** Version Num */
-  version_num: number;
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Function Uuid */
-  function_uuid?: string | null;
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-  /** Function Name */
-  function_name: string;
-  /** Function Hash */
-  function_hash: string;
-  /** Prompt Hash */
-  prompt_hash?: string | null;
-  /**
-   * Is Active
-   * @default false
-   */
-  is_active?: boolean;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /** Function public model. */
-  function: FunctionPublic;
-  prompt: PromptPublic | null;
-  /** Spans */
-  spans: SpanPublic[];
 }
 
 /**

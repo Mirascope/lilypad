@@ -1,10 +1,6 @@
 import api from "@/api";
 import { DeviceCodeTable, UserPublic } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation } from "@tanstack/react-query";
 
 export const fetchCallbackCode = async (code?: string, deviceCode?: string) => {
   if (!code) {
@@ -19,23 +15,8 @@ export const fetchCallbackCode = async (code?: string, deviceCode?: string) => {
   ).data;
 };
 
-export const updateActiveOrganization = async (organizationUuid: string) => {
-  return (await api.put<UserPublic>(`/users/${organizationUuid}`)).data;
-};
-
 export const postDeviceCode = async (deviceCode: string) => {
   return (await api.post<DeviceCodeTable>(`/device-codes/${deviceCode}`)).data;
-};
-
-export const useUpdateActiveOrganizationMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ organizationUuid }: { organizationUuid: string }) =>
-      await updateActiveOrganization(organizationUuid),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["user"] });
-    },
-  });
 };
 
 export const useDeviceCodeMutation = () => {

@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { versionsByFunctionNameQueryOptions } from "@/utils/versions";
-import { uniqueFunctionNamesQueryOptions } from "@/utils/functions";
+import {
+  uniquePromptNamesQueryOptions,
+  promptsByNameQueryOptions,
+} from "@/utils/prompts";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,7 +15,7 @@ import {
 import { Plus } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useEffect } from "react";
-import { VersionPublic } from "@/types/types";
+import { PromptPublic } from "@/types/types";
 import { IconDialog } from "@/components/IconDialog";
 import {
   Form,
@@ -25,46 +27,42 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 type FunctionFormValues = {
-  newFunctionName: string;
-  functionName: string;
-  version: VersionPublic | null;
+  newPromptName: string;
+  promptName: string;
+  version: PromptPublic | null;
 };
 
-export const SelectVersionForm = ({
-  versionUuid,
-}: {
-  versionUuid?: string;
-}) => {
-  const { projectUuid, functionName: defaultFunctionName } = useParams({
+export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
+  const { projectUuid, promptName: defaultPromptName } = useParams({
     strict: false,
   });
   const navigate = useNavigate();
   const method = useForm<FunctionFormValues>({
     defaultValues: {
-      newFunctionName: defaultFunctionName,
-      functionName: defaultFunctionName,
+      newPromptName: defaultPromptName,
+      promptName: defaultPromptName,
       version: null,
     },
   });
-  const functionName = useWatch({
+  const promptName = useWatch({
     control: method.control,
-    name: "functionName",
+    name: "promptName",
   });
 
-  const newFunctionName = useWatch({
+  const newPromptName = useWatch({
     control: method.control,
-    name: "newFunctionName",
+    name: "newPromptName",
   });
   useEffect(() => {
     const subscription = method.watch((value, { name }) => {
-      if (name === "functionName") {
+      if (name === "promptName") {
         method.setValue("version", null);
         navigate({
-          to: `/projects/${projectUuid}/functions/${value.functionName}`,
+          to: `/projects/${projectUuid}/prompts/${value.promptName}`,
         });
       } else if (name === "version" && value.version) {
         navigate({
-          to: `/projects/${projectUuid}/functions/${value.version.function_name}/versions/${value.version.uuid}`,
+          to: `/projects/${projectUuid}/prompts/${value.version.name}/versions/${value.version.uuid}`,
         });
       }
     });
@@ -72,26 +70,30 @@ export const SelectVersionForm = ({
     return () => subscription.unsubscribe();
   }, [method.watch]);
 
-  const { data: versions } = useSuspenseQuery(
-    versionsByFunctionNameQueryOptions(functionName, projectUuid)
+  const { data: prompts } = useSuspenseQuery(
+    promptsByNameQueryOptions(promptName, projectUuid)
   );
-  const { data: uniqueFunctionNames } = useSuspenseQuery(
-    uniqueFunctionNamesQueryOptions(projectUuid)
+  const { data: uniquePrompts } = useSuspenseQuery(
+    uniquePromptNamesQueryOptions(projectUuid)
   );
-  const uniqueFunctionNamesWithNew = [...uniqueFunctionNames];
-  if (newFunctionName && !uniqueFunctionNames.includes(newFunctionName)) {
-    uniqueFunctionNamesWithNew.push(newFunctionName);
+  const uniquePromptNamesWithNew =
+    uniquePrompts?.map((prompt) => prompt.name) || [];
+  if (
+    newPromptName &&
+    !uniquePrompts.find((uniquePrompt) => uniquePrompt.name == newPromptName)
+  ) {
+    uniquePromptNamesWithNew.push(newPromptName);
   }
   useEffect(() => {
-    const version = versions?.find((v) => v.uuid === versionUuid);
-    if (!version) return;
-    method.setValue("version", version);
-  }, [versions, versionUuid]);
+    const prompt = prompts?.find((prompt) => prompt.uuid === promptUuid);
+    if (!prompt) return;
+    method.setValue("version", prompt);
+  }, [prompts, promptUuid]);
   const handleCancelClick = () => {
-    method.setValue("newFunctionName", "");
+    method.setValue("newPromptName", "");
   };
   const handleSaveClick = () => {
-    method.setValue("functionName", newFunctionName);
+    method.setValue("promptName", newPromptName);
   };
   const buttons = [
     <Button onClick={handleSaveClick}>Save</Button>,
@@ -99,7 +101,7 @@ export const SelectVersionForm = ({
   ];
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      method.setValue("newFunctionName", "");
+      method.setValue("newPromptName", "");
     }
   };
   return (
@@ -108,10 +110,10 @@ export const SelectVersionForm = ({
         <IconDialog
           onOpenChange={handleOpenChange}
           icon={<Plus />}
-          title='Add a new function'
-          description='Start by naming your function'
+          title='Add a new prompt'
+          description='Start by naming your prompt'
           buttonProps={{ variant: "default" }}
-          tooltipContent='Create a new function'
+          tooltipContent='Create a new prompt'
           tooltipProps={{
             className: "bg-slate-500",
             side: "top",
@@ -119,18 +121,18 @@ export const SelectVersionForm = ({
           }}
           dialogButtons={buttons}
         >
-          <NewFunctionDialog />
+          <NewGenerationDialog />
         </IconDialog>
         <Controller
           control={method.control}
-          name='functionName'
+          name='promptName'
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className='w-[200px]'>
-                <SelectValue placeholder='Select a function' />
+                <SelectValue placeholder='Select a prompt' />
               </SelectTrigger>
               <SelectContent>
-                {uniqueFunctionNamesWithNew.map((name) => (
+                {uniquePromptNamesWithNew.map((name) => (
                   <SelectItem key={name} value={name}>
                     {name}
                   </SelectItem>
@@ -139,7 +141,7 @@ export const SelectVersionForm = ({
             </Select>
           )}
         />
-        {versions && versions.length > 0 ? (
+        {prompts && prompts.length > 0 ? (
           <Controller
             control={method.control}
             name='version'
@@ -147,16 +149,16 @@ export const SelectVersionForm = ({
               <Select
                 value={JSON.stringify(field.value)}
                 onValueChange={(value) => field.onChange(JSON.parse(value))}
-                disabled={!functionName || !versions}
+                disabled={!promptName || !prompts}
               >
                 <SelectTrigger className='w-[100px]'>
                   <SelectValue placeholder='version' />
                 </SelectTrigger>
                 <SelectContent>
-                  {versions.map((version, i) => (
+                  {prompts.map((prompt, i) => (
                     <SelectItem
-                      key={version.uuid}
-                      value={JSON.stringify(version)}
+                      key={prompt.uuid}
+                      value={JSON.stringify(prompt)}
                     >
                       v{i + 1}
                     </SelectItem>
@@ -171,25 +173,25 @@ export const SelectVersionForm = ({
   );
 };
 
-const NewFunctionDialog = () => {
+const NewGenerationDialog = () => {
   const methods = useFormContext<FunctionFormValues>();
   return (
     <>
       <FormField
         control={methods.control}
-        name='newFunctionName'
+        name='newPromptName'
         rules={{
-          required: "Function Name is required",
+          required: "Generation Name is required",
         }}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Function Name</FormLabel>
+            <FormLabel>Generation Name</FormLabel>
             <FormControl>
               <Input
                 {...field}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder='Enter function name'
+                placeholder='Enter generation name'
               />
             </FormControl>
             <FormMessage />

@@ -121,34 +121,38 @@ const useTemplates = (
   editor: LexicalEditor,
   inputs: readonly string[]
 ): void => {
-  const inputsRef = useRef(inputs);
-  inputsRef.current = inputs;
-
   // Transform function for regular text nodes
-  const textTransformFunction = useCallback((node: TextNode) => {
-    if (!$isTemplateNode(node)) {
-      let targetNode: TextNode | null = node;
-      while (targetNode !== null) {
-        if (!targetNode.isSimpleText()) {
-          return;
+  const textTransformFunction = useCallback(
+    (node: TextNode) => {
+      if (!$isTemplateNode(node)) {
+        let targetNode: TextNode | null = node;
+        while (targetNode !== null) {
+          if (!targetNode.isSimpleText()) {
+            return;
+          }
+          targetNode = findAndTransformTemplate(targetNode, inputs);
         }
-        targetNode = findAndTransformTemplate(targetNode, inputsRef.current);
       }
-    }
-  }, []);
+    },
+    [inputs]
+  );
 
   // Transform function for template nodes
-  const templateTransformFunction = useCallback((node: TemplateNode) => {
-    updateTemplateNode(node, inputsRef.current);
-  }, []);
+  const templateTransformFunction = useCallback(
+    (node: TemplateNode) => {
+      updateTemplateNode(node, inputs);
+    },
+    [inputs]
+  );
 
   useEffect(() => {
+    editor.setEditable(false);
+
     if (!editor.hasNodes([TemplateNode])) {
       throw new Error(
         "TemplateAutoReplacePlugin: TemplateNode not registered on editor"
       );
     }
-
     const removeTextTransform = editor.registerNodeTransform(
       TextNode,
       textTransformFunction
@@ -158,7 +162,7 @@ const useTemplates = (
       TemplateNode,
       templateTransformFunction
     );
-
+    requestAnimationFrame(() => editor.setEditable(true));
     return () => {
       removeTextTransform();
       removeTemplateTransform();
@@ -172,7 +176,6 @@ export const TemplatePlugin = ({
   inputs: readonly string[];
 }): JSX.Element | null => {
   const [editor] = useLexicalComposerContext();
-
   useEffect(() => {
     if (!editor.hasNodes([TemplateNode])) {
       throw new Error(
