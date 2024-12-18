@@ -114,7 +114,7 @@ async def create_prompt(
     prompt_create.hash = hashlib.sha256(
         prompt_create.template.encode("utf-8")
     ).hexdigest()
-    if prompt := prompt_service.find_prompt_by_call_params(prompt_create):
+    if prompt := prompt_service.check_duplicate_prompt(prompt_create):
         return prompt
 
     prompt_create.code = construct_function(
@@ -164,15 +164,16 @@ def run_version(
     if not playground_parameters.prompt:
         raise ValueError("Missing prompt.")
     prompt = playground_parameters.prompt
-    arg_types = prompt.arg_types
     name = prompt.name
-    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
+    arg_list = [
+        f"{arg_name}: {arg_type}" for arg_name, arg_type in prompt.arg_types.items()
+    ]
     func_def = f"def {name}({', '.join(arg_list)}) -> str: ..."
-    wrapper_code = f"""
+    wrapper_code = f'''
 import os
 
-import lilypad
 import google.generativeai as genai
+
 from lilypad._utils import create_mirascope_call
 from lilypad.server.models import PromptCreate, Provider
 
@@ -186,8 +187,8 @@ os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
 prompt = PromptCreate(
     name = "{prompt.name}",
     signature = "{prompt.signature}",
-    template = "{prompt.template}",
-    arg_types = {arg_types},
+    template = """{prompt.template}""",
+    arg_types = {prompt.arg_types},
     code = "{prompt.code}",
     hash = "{prompt.hash}",
     version_num = {prompt.version_num}
@@ -196,7 +197,7 @@ provider = Provider("{playground_parameters.provider}")
 model = "{playground_parameters.model}"
 arg_values = {playground_parameters.arg_values}
 print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
-"""
+'''
     try:
         processed_code = _run_playground(wrapper_code)
     except Exception:

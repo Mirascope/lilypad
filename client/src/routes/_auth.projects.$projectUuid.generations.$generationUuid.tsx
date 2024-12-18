@@ -20,11 +20,70 @@ import ReactMarkdown from "react-markdown";
 import JsonView from "@uiw/react-json-view";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { Label } from "@/components/ui/label";
+import { GenerationSpans } from "@/components/GenerationSpans";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { GenerationPublic } from "@/types/types";
+import { Typography } from "@/components/ui/typography";
+
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationUuid"
 )({
-  component: () => <Generation />,
+  component: () => <GenerationWorkbench />,
 });
+
+type Tab = {
+  label: string;
+  value: string;
+  component?: JSX.Element | null;
+};
+const GenerationWorkbench = () => {
+  const { projectUuid, generationUuid } = useParams({ from: Route.id });
+  const { data: generation } = useSuspenseQuery(
+    generationQueryOptions(projectUuid, generationUuid)
+  );
+  const tabs: Tab[] = [
+    {
+      label: "Overview",
+      value: "overview",
+      component: <Generation />,
+    },
+    {
+      label: "Traces",
+      value: "traces",
+      component: (
+        <GenerationSpans
+          projectUuid={projectUuid}
+          generationUuid={generationUuid}
+        />
+      ),
+    },
+  ];
+  const tabWidth = 80 * tabs.length;
+  return (
+    <div className='w-full'>
+      <div className=' flex justify-center '>
+        <Typography variant='h2'>{generation.name}</Typography>
+      </div>
+      <Tabs defaultValue='overview' className='w-full'>
+        <div className='flex justify-center w-full '>
+          <TabsList className={`w-[${tabWidth}px]`}>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+        {tabs.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value} className='w-full'>
+            {tab.component}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+};
 
 const PromptCard = ({
   prompt,
@@ -80,7 +139,6 @@ const Generation = () => {
   return (
     <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
       <div className='text-left'>
-        <h1 className='text-4xl font-bold text-left'>{generation.name}</h1>
         <Label>Code</Label>
         <CodeSnippet code={generation.code} />
         <Label>Available Prompts</Label>

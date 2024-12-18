@@ -66,10 +66,25 @@ async def github_callback(
                     "Accept": "application/json",
                 },
             )
-
             user_data: dict = user_response.json()
+            email = user_data.get("email")
+            if not email:
+                user_email_response = await client.get(
+                    "https://api.github.com/user/emails",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/json",
+                    },
+                )
+                user_emails: list[dict] = user_email_response.json()
+                if len(user_emails) > 0:
+                    email = user_emails[0].get("email")
+            if not email:
+                raise HTTPException(
+                    status_code=400, detail="No email address found in GitHub account"
+                )
             user = session.exec(
-                select(UserTable).where(UserTable.email == user_data["email"])
+                select(UserTable).where(UserTable.email == email)
             ).first()
             if user:
                 user_public = UserPublic.model_validate(user)
@@ -87,8 +102,8 @@ async def github_callback(
             session.flush()
             organization_public = OrganizationPublic.model_validate(organization)
             user = UserTable(
-                email=user_data["email"],
-                first_name=user_data["name"],
+                email=email,
+                first_name=user_data.get("first_name") or user_data.get("name", ""),
                 last_name=user_data.get("last_name", ""),
                 active_organization_uuid=organization_public.uuid,
             )

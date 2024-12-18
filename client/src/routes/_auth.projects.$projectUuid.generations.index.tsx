@@ -16,6 +16,7 @@ import {
 import { GenerationPublic } from "@/types/types";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { Typography } from "@/components/ui/typography";
+import { Separator } from "@/components/ui/separator";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
@@ -35,14 +36,15 @@ const GenerationCards = ({
     navigate({ to: `/projects/${projectUuid}/generations/${generation.uuid}` });
   };
   return (
-    <Card
-      className='w-auto hover:shadow-lg transition-all duration-200 cursor-pointer'
-      onClick={handleClick}
-    >
-      <CardHeader className='px-6 py-4'>
+    <Card className='w-auto h max-w-[400px]'>
+      <CardHeader
+        className='px-6 py-4 over:shadow-lg transition-all duration-200 cursor-pointer'
+        onClick={handleClick}
+      >
         <CardTitle>{generation.name}</CardTitle>
         <CardDescription>Version {index + 1}</CardDescription>
       </CardHeader>
+      <Separator />
       <CardContent className='p-0 m-6 overflow-auto max-h-[100px]'>
         <CodeSnippet code={generation.code} />
       </CardContent>
@@ -74,7 +76,7 @@ const GenerationsList = () => {
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left'>Generations</h1>
-        <div className='flex'>
+        <div className='flex gap-2'>
           {data.map((generation, i) => (
             <GenerationCards
               key={generation.uuid}
