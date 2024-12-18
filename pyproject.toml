@@ -44,6 +44,8 @@ dependencies = [
     "pydantic-settings>=2.6.1",
     "cryptography>=43.0.3",
     "ruff>=0.8.1",
+    "requests>=2.32.3",
+    "pillow>=10.4.0",
 ]
 
 [project.urls]
