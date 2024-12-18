@@ -13,6 +13,7 @@ from .table_names import PROJECT_TABLE_NAME
 if TYPE_CHECKING:
     from .generations import GenerationTable
     from .projects import ProjectTable
+    from .spans import SpanTable
 
 
 class _ResponseModelBase(SQLModel):
@@ -49,6 +50,9 @@ class ResponseModelTable(_ResponseModelBase, BaseOrganizationSQLModel, table=Tru
     __tablename__ = "response_models"  # pyright: ignore [reportAssignmentType]
 
     project: "ProjectTable" = Relationship(back_populates="response_models")
+    spans: list["SpanTable"] = Relationship(
+        back_populates="response_model", cascade_delete=True
+    )
     generations: list["GenerationTable"] = Relationship(
         back_populates="response_model", cascade_delete=True
     )
