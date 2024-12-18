@@ -76,7 +76,13 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: "Scope",
     },
     {
-      accessorKey: "version_num",
+      accessorFn: (row) => {
+        console.log(row);
+        const attributes = row.data?.attributes || {};
+        console.log(attributes);
+        const type = attributes["lilypad.type"];
+        return attributes[`lilypad.${type}.version`];
+      },
       id: "version",
       header: ({ column }) => {
         return (
@@ -161,7 +167,6 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
                   onClick={() => {
                     const { project_uuid, version_uuid, version } =
                       row.original;
-                    console.log(row.original);
                     const name = version?.function_name;
                     if (!name) return;
                     navigate({

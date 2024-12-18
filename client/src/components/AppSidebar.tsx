@@ -5,6 +5,8 @@ import {
   Home,
   Wrench,
   ScrollText,
+  PencilLine,
+  Settings,
 } from "lucide-react";
 import { LilypadIcon } from "@/components/LilypadIcon";
 import {
@@ -37,7 +39,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUpdateActiveOrganizationMutation } from "@/utils/auth";
+import { useUpdateActiveOrganizationMutation } from "@/utils/users";
 import { useState } from "react";
 import { ProjectPublic } from "@/types/types";
 
@@ -115,13 +117,18 @@ export const AppSidebar = () => {
     ? [
         {
           title: "Home",
-          url: `/projects/${activeProject.uuid}/generations`,
+          url: `/projects/${activeProject.uuid}/traces`,
           icon: Home,
         },
         {
-          title: "Workbench",
-          url: `/projects/${activeProject.uuid}/functions`,
+          title: "Generations",
+          url: `/projects/${activeProject.uuid}/generations`,
           icon: Wrench,
+        },
+        {
+          title: "Prompts",
+          url: `/projects/${activeProject.uuid}/prompts`,
+          icon: PencilLine,
         },
       ]
     : [];
@@ -206,6 +213,17 @@ export const AppSidebar = () => {
       <SidebarContent>{renderProjectSelector()}</SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link
+                to={"/settings"}
+                className='flex items-center w-full gap-2 [&.active]:font-bold'
+              >
+                <Settings />
+                Settings
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

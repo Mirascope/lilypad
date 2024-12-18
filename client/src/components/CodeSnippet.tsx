@@ -16,7 +16,11 @@ export const CodeSnippet = ({ code }: { code: string }) => {
   }, [code]);
   return (
     <pre>
-      <code ref={codeRef} className='language-python text-sm' key={code}>
+      <code
+        ref={codeRef}
+        className='language-python text-sm overflow-x-auto'
+        key={code}
+      >
         {code}
       </code>
     </pre>

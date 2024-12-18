@@ -1,10 +1,11 @@
 """Prompts table and models."""
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
+from pydantic import BaseModel
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -32,14 +33,16 @@ class _PromptBase(SQLModel):
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
     )
+    version_num: int | None = Field(default=None)
     name: str = Field(nullable=False, index=True, min_length=1)
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
     dependencies: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
     template: str
-    is_active: bool = Field(default=False)
+    is_default: bool = Field(default=False)
     call_params: CommonCallParams = Field(sa_column=Column(JSON), default_factory=dict)
+    arg_types: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
 
 
 class PromptPublic(_PromptBase):
@@ -50,6 +53,12 @@ class PromptPublic(_PromptBase):
 
 class PromptCreate(_PromptBase):
     """Prompt create model."""
+
+
+class PromptUpdate(SQLModel):
+    """Prompt update model"""
+
+    is_default: bool | None = None
 
 
 class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
@@ -64,3 +73,12 @@ class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
     generations: list["GenerationTable"] = Relationship(
         back_populates="prompt", cascade_delete=True
     )
+
+
+class PlaygroundParameters(BaseModel):
+    """Playground parameters model."""
+
+    arg_values: dict[str, Any]
+    provider: Provider
+    model: str
+    prompt: PromptCreate | None = None

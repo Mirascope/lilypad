@@ -19,23 +19,23 @@ export const spanQueryOptions = (projectUuid: string, spanUuid?: string) =>
     retry: false,
   });
 
-export const fetchSpansByVersionUuid = async (
+export const fetchSpansByGenerationUuid = async (
   projectUuid: string,
-  versionUuid: string
+  generationUuid: string
 ) => {
   return (
     await api.get<SpanPublic[]>(
-      `/projects/${projectUuid}/versions/${versionUuid}/spans`
+      `/projects/${projectUuid}/generations/${generationUuid}/spans`
     )
   ).data;
 };
 
-export const versionUuidSpansQueryOptions = (
+export const spansByGenerationQueryOptions = (
   projectUuid: string,
-  versionUuid: string
+  generationUuid: string
 ) =>
   queryOptions({
-    queryKey: ["projects", projectUuid, "versions", versionUuid, "spans"],
-    queryFn: () => fetchSpansByVersionUuid(projectUuid, versionUuid),
+    queryKey: ["projects", projectUuid, "generations", generationUuid, "spans"],
+    queryFn: () => fetchSpansByGenerationUuid(projectUuid, generationUuid),
     refetchInterval: 1000,
   });

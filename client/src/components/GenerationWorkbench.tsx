@@ -1,11 +1,10 @@
-import { CreateEditorForm } from "@/components/CreateEditorForm";
-import { FunctionSpans } from "@/components/FunctionSpans";
+import { GenerationSpans } from "@/components/GenerationSpans";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { VersionPublic } from "@/types/types";
+import { GenerationPublic } from "@/types/types";
 type LLMFunctionProps = {
   projectUuid: string;
-  version: VersionPublic | null;
+  generationVersion: GenerationPublic | null;
 };
 
 type Tab = {
@@ -13,19 +12,19 @@ type Tab = {
   value: string;
   component?: JSX.Element | null;
 };
-export const LLMFunction = ({ projectUuid, version }: LLMFunctionProps) => {
+export const GenerationWorkbench = ({
+  projectUuid,
+  generationVersion,
+}: LLMFunctionProps) => {
   const tabs: Tab[] = [
-    {
-      label: "Prompt",
-      value: "prompt",
-      component:
-        (projectUuid && <CreateEditorForm version={version} />) || null,
-    },
     {
       label: "Traces",
       value: "traces",
-      component: version && (
-        <FunctionSpans projectUuid={projectUuid} versionUuid={version.uuid} />
+      component: generationVersion && (
+        <GenerationSpans
+          projectUuid={projectUuid}
+          generationUuid={generationVersion.uuid}
+        />
       ),
     },
   ];

@@ -9,6 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GithubLogin } from "@/components/GithubLogin";
+import { useAuth } from "@/auth";
+import { userQueryOptions } from "@/utils/users";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 type LoginSearchParam = {
   redirect?: string;
@@ -36,7 +39,6 @@ export const Route = createFileRoute("/auth/login")({
 
 const LoginComponent = () => {
   const { deviceCode } = Route.useSearch();
-  const navigate = useNavigate();
   const isLocal = import.meta.env.DEV;
 
   return (
@@ -49,22 +51,23 @@ const LoginComponent = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className='flex flex-col gap-2'>
-          {isLocal ? (
-            <Button
-              onClick={() =>
-                navigate({
-                  to: "/projects",
-                  search: { deviceCode: undefined, redirect: undefined },
-                })
-              }
-            >
-              Sign in with Local
-            </Button>
-          ) : (
-            <GithubLogin deviceCode={deviceCode} />
-          )}
+          {isLocal ? <LocalLogin /> : <GithubLogin deviceCode={deviceCode} />}
         </CardContent>
       </Card>
     </div>
   );
+};
+
+const LocalLogin = () => {
+  const { data } = useSuspenseQuery(userQueryOptions());
+  const { setSession } = useAuth();
+  const navigate = useNavigate();
+  const handleLocalLogin = () => {
+    setSession(data);
+    navigate({
+      to: "/projects",
+      search: { deviceCode: undefined, redirect: undefined },
+    });
+  };
+  return <Button onClick={handleLocalLogin}>Sign in with Local</Button>;
 };
