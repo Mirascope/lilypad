@@ -1,0 +1,148 @@
+import { Tabs } from 'nextra/components'
+
+# Prompt Versioning and Management
+
+When working with non-technical team members, it's important that they can iterate on prompts without needing to involve the engineering team unless absolutely necessary.
+
+Lilypad provides a simple way to version and manage prompts, so that you can use them in your generations and ensure specific versions are used. This also enables swapping prompt versions without reploying your code.
+
+First, navigate to the "Prompts" section in the app to create a new `answer_question_prompt`.
+
+Add a new input `question` and set the prompt template to `Answer this question: {question}`. Hit "Save".
+
+Click on the "Code" button and copy the code. It should look like this:
+
+```python
+import lilypad
+
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+```
+
+Now add the prompt to your `answer_question` generation:
+
+<Tabs items={["OpenAI", "Anthropic", "Gemini", "OpenRouter"]}>
+<Tabs.Tab>
+```python
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    prompt = answer_question_prompt(question)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=prompt.messages("openai"),
+    )
+    return str(completion.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+import lilypad
+from anthropic import Anthropic
+
+client = Anthropic()
+
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    prompt = answer_question_prompt(question)
+    message = client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        messages=prompt.messages("anthropic"),
+        max_tokens=1024,
+    )
+    block = message.content[0]
+    return block.text if block.type == "text" else ""
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+from google.generativeai import GenerativeModel
+import lilypad
+
+client = GenerativeModel("gemini-1.5-flash")
+
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    prompt = answer_question_prompt(question)
+    generation = client.generate_content(
+        contents=prompt.messages("gemini"),
+    )
+    return generation.candidates[0].content.parts[0].text
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+import os
+
+import lilypad
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
+
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    prompt = answer_question_prompt(question)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=prompt.messages("openai"),
+    )
+    return str(completion.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+</Tabs>
+
+Now when you run `main.py`, the `answer_question` generation will use the active version of the prompt with a matching hash.
+
+You can also go to the "Generation" section in the app to select which version you would like that generation to use.

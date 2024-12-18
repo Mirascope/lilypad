@@ -1,16 +1,7 @@
 import { Callout } from 'nextra/components'
+import { Tabs } from 'nextra/components'
 
 # Lilypad
-
-Lilypad is an open-source prompt engineering framework built on these principles:
-
-- Prompt engineering is an optimization process, which requires...
-- Versioning and tracing of every prompt for...
-- Building a data flywheel, so you can...
-- Properly evaluate and iterate on your prompts and...
-- Ship confidently
-
-The primary goal of Lilypad is to automate as much of this process as possible so you can focus on building your application and making it good.
 
 <Callout type="info" emoji="ℹ️">
     **Lilypad is currently in a closed beta.**
@@ -19,36 +10,87 @@ The primary goal of Lilypad is to automate as much of this process as possible s
 
     This means that things like user interface, database schemas, etc. are still subject to change.
     
-    If you're interested in joining the beta, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message in the #lilypad channel about your team and why you think you would be a good fit.
+    If you're interested in joining the beta, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message to William Bakst about your team and why you think you would be a good fit.
 </Callout>
+
+Lilypad is an open-source prompt engineering framework built on these principles:
+- Prompt engineering is an optimization process, which requires...
+- Versioning and tracing of every call to the LLM for...
+- Building a data flywheel, so you can...
+- Properly evaluate and iterate on your prompts and...
+- Ship confidently.
+
+The most common team structure we've seen consists of a mixture of engineers and (likely non-technical) domain experts. The above principles we've outlined thus rely on the effective collaboration between the technical and non-technical team members.
+
+We've purpose-built Lilypad around the necessity of such collaboration, helping to automate the annoying parts so you can focus on what really matters: making your LLM calls **measurably good**.
 
 ## 30 Second Quickstart
 
+Install `uv` and create a new project:
+
+<Tabs items={['macOS and Linux', 'Windows']}>
+<Tabs.Tab>
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv init my-first-lily
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+uv init my-first-lily
+```
+</Tabs.Tab>
+</Tabs>
+
 Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
 
+<Tabs items={['OpenAI', 'Anthropic', 'Gemini', 'OpenRouter']}>
+<Tabs.Tab>
 ```bash
 pip install "python-lilypad[openai]"
 export OPENAI_API_KEY=XXXXX
 ```
+</Tabs.Tab>
+<Tabs.Tab>
+```bash
+pip install "python-lilypad[anthropic]"
+export ANTHROPIC_API_KEY=XXXXX
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```bash
+pip install "python-lilypad[gemini]"
+export GOOGLE_API_KEY=XXXXX
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```bash
+pip install "python-lilypad[openai]"
+export OPENROUTER_API_KEY=XXXXX
+```
+</Tabs.Tab>
+</Tabs>
 
-Spin up the local Lilypad server:
+Authenticate and create your first project (`my-first-lily`):
 
 ```bash
-lilypad local
+uv run lilypad auth
 ```
 
-Create your first traced prompt function to answer an important question:
+Copy-paste this generation into a new Python file (`main.py`):
 
+<Tabs items={["OpenAI", "Anthropic", "Gemini", "OpenRouter"]}>
+<Tabs.Tab>
 ```python
 import lilypad
 from openai import OpenAI
 
-lilypad.configure()
+client = OpenAI()
 
 
-@lilypad.trace()
+@lilypad.generation()
 def answer_question(question: str) -> str:
-    client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": question}],
@@ -56,25 +98,95 @@ def answer_question(question: str) -> str:
     return str(completion.choices[0].message.content)
 
 
-answer = answer_question("What is the meaning of life?")
-print(answer)
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
 ```
-
-Navigate to the Lilypad UI at `http://localhost:8000` to see the version and trace of your prompt.
-
-Next, try updating your function's prompt:
-
+</Tabs.Tab>
+<Tabs.Tab>
 ```python
-@lilypad.trace()
+import lilypad
+from anthropic import Anthropic
+
+client = Anthropic()
+
+
+@lilypad.generation()
 def answer_question(question: str) -> str:
-    client = OpenAI()
+    message = client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        messages=[{"role": "user", "content": question}],
+        max_tokens=1024,
+    )
+    block = message.content[0]
+    return block.text if block.type == "text" else ""
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+from google.generativeai import GenerativeModel
+import lilypad
+
+client = GenerativeModel("gemini-1.5-flash")
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    generation = client.generate_content(
+        contents=[{"role": "user", "parts": question}]
+    )
+    return generation.candidates[0].content.parts[0].text
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+import os
+
+import lilypad
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Answer this question: {question}"}],
+        messages=[{"role": "user", "content": question}],
     )
     return str(completion.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+</Tabs.Tab>
+</Tabs>
+
+Run the Python file and navigate to `https://app.lilypad.so/projects` and select your project.
+
+```bash
+uv run main.py
 ```
 
-Run the function again and see the new version and trace in the UI.
+The `@lilypad.generation` decorator will automatically version the `answer_question` function and collect a trace against that version. This ensures that you can always trace back to the exact code that generated a particular output.
 
-And that's it. Now every call to the `answer_question` function will be versioned and traced automatically.
+This means that you can code as you always have, and Lilypad will take care of the rest.
