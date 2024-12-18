@@ -59,7 +59,7 @@ export const GithubLogin = ({ deviceCode }: { deviceCode?: string }) => {
         window.location.href = getAuthUrl();
       }}
     >
-      Login with Github
+      Login with GitHub
     </GithubButton>
   );
 };

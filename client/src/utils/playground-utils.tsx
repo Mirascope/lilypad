@@ -370,7 +370,7 @@ export const getAvailableProviders = (user: UserPublic | null) => {
   }
   return availableProviders;
 };
-export const BaseEditorFormFields = ({}: {}) => {
+export const BaseEditorFormFields = () => {
   const methods = useFormContext<PlaygroundParameters>();
   const { user } = useAuth();
   const provider = methods.watch("provider");

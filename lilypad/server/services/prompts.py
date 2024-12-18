@@ -67,15 +67,14 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
         ).all()
         return record_tables
 
-    def find_prompt_by_call_params(
-        self, prompt_create: PromptCreate
-    ) -> PromptTable | None:
+    def check_duplicate_prompt(self, prompt_create: PromptCreate) -> PromptTable | None:
         """Find prompt by call params"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == prompt_create.hash,
                 self.table.call_params == prompt_create.call_params,
+                self.table.arg_types == prompt_create.arg_types,
             )
         ).first()
 

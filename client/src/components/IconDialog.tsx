@@ -1,4 +1,5 @@
 import { Button, ButtonProps } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogClose,
@@ -27,6 +28,7 @@ export const IconDialog = ({
   tooltipProps = {},
   dialogButtons,
   onOpenChange,
+  dialogContentProps = {},
 }: {
   icon?: ReactNode;
   text?: string;
@@ -38,6 +40,7 @@ export const IconDialog = ({
   tooltipProps?: React.ComponentProps<typeof TooltipContent>;
   dialogButtons?: ReactNode[];
   onOpenChange?: (open: boolean) => void;
+  dialogContentProps?: React.ComponentProps<typeof DialogContent>;
 }) => {
   const ButtonComponent = (
     <Button
@@ -63,7 +66,13 @@ export const IconDialog = ({
       ) : (
         TriggerButton
       )}
-      <DialogContent className='max-w-[425px]'>
+      <DialogContent
+        className={cn(
+          "max-w-[425px] overflow-x-auto",
+          dialogContentProps?.className
+        )}
+        {...dialogContentProps}
+      >
         <DialogHeader className='flex-shrink-0'>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
