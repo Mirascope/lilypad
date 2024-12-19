@@ -72,4 +72,7 @@ def test_response_model_methods(mock_prompt_client, mock_model_response):
     assert (
         MyResponseModel.response_model().model_json_schema()
     ), mock_model_response.schema_data
-    assert MyResponseModel.examples() == [{"age": 30, "name": "foo"}, {"age": 50, "name": "bar"}]
+    assert MyResponseModel.examples() == [
+        {"age": 30, "name": "foo"},
+        {"age": 50, "name": "bar"},
+    ]
