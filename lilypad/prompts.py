@@ -6,6 +6,7 @@ from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, overload
 
+from fastapi.encoders import jsonable_encoder
 from mirascope.core import BaseMessageParam, prompt_template
 from mirascope.core.base import CommonCallParams
 from opentelemetry.trace import get_tracer
@@ -162,7 +163,7 @@ def _construct_trace_attributes(
         "lilypad.prompt.code": prompt.code,
         "lilypad.prompt.template": prompt.template,
         "lilypad.prompt.arg_types": json.dumps(arg_types),
-        "lilypad.prompt.arg_values": json.dumps(arg_values),
+        "lilypad.prompt.arg_values": json.dumps(jsonable_encoder(arg_values)),
         "lilypad.prompt.output": results,
         "lilypad.prompt.version": prompt.version_num if prompt.version_num else -1,
         "lilypad.is_async": is_async,

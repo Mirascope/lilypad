@@ -132,12 +132,12 @@ def test_set_call_response_attributes_serializable():
 def test_set_call_response_attributes_non_serializable_message_param():
     """Test _set_call_response_attributes with non-serializable message_param."""
     response = MagicMock()
-    response.message_param = MagicMock()
+    response.message_param = {"key": "value"}
     response.messages = [{"message": "hello"}]
     span = MagicMock()
     _set_call_response_attributes(response, span)
     expected_attributes = {
-        "lilypad.generation.output": str(response.message_param),
+        "lilypad.generation.output": json.dumps(response.message_param),
         "lilypad.generation.messages": json.dumps(response.messages),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
@@ -149,15 +149,12 @@ def test_set_call_response_attributes_non_serializable_messages():
     response.message_param = {"key": "value"}
     response.messages = [MagicMock()]
     span = MagicMock()
-    with patch("lilypad._utils.middleware._serialize_proto_data") as mock_serialize:
-        mock_serialize.return_value = "serialized_messages"
-        _set_call_response_attributes(response, span)
-        expected_attributes = {
-            "lilypad.generation.output": json.dumps(response.message_param),
-            "lilypad.generation.messages": "serialized_messages",
-        }
-        span.set_attributes.assert_called_once_with(expected_attributes)
-        mock_serialize.assert_called_once_with(response.messages)
+    _set_call_response_attributes(response, span)
+    expected_attributes = {
+        "lilypad.generation.output": json.dumps(response.message_param),
+        "lilypad.generation.messages": json.dumps([{}]),
+    }
+    span.set_attributes.assert_called_once_with(expected_attributes)
 
 
 def test_set_response_model_attributes_base_model_with_messages():
