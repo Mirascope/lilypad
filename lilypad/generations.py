@@ -12,7 +12,12 @@ from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ._utils import create_mirascope_middleware, inspect_arguments, load_config
+from ._utils import (
+    call_safely,
+    create_mirascope_middleware,
+    inspect_arguments,
+    load_config,
+)
 from .server.client import LilypadClient
 from .server.models import GenerationPublic
 from .server.settings import get_settings
@@ -165,7 +170,7 @@ def generation() -> GenerationDecorator:
         )
         if inspect.iscoroutinefunction(fn):
 
-            @wraps(fn)
+            @call_safely(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
@@ -192,7 +197,7 @@ def generation() -> GenerationDecorator:
 
         else:
 
-            @wraps(fn)
+            @call_safely(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
@@ -215,6 +220,6 @@ def generation() -> GenerationDecorator:
                 finally:
                     current_generation.reset(token)
 
-            return inner
+            return inner  # pyright: ignore [reportReturnType]
 
     return decorator
