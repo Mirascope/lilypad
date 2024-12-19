@@ -19,6 +19,7 @@ def get_json_column() -> Column:
 
     class JSONTypeDecorator(TypeDecorator):
         impl = JSON
+        cache_ok = True
 
         def load_dialect_impl(self, dialect: Dialect) -> TypeEngine:
             """Load dialect implementation."""

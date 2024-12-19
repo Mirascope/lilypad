@@ -1,6 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import JsonView from "@uiw/react-json-view";
+import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Args {
   [key: string]: any;
@@ -11,8 +19,9 @@ interface ArgsCardsProps {
 }
 
 export const ArgsCards = ({ args }: ArgsCardsProps) => {
+  console.log(args);
   return (
-    <Card className='w-auto'>
+    <Card className='w-full max-w-4xl'>
       <CardHeader>
         <CardTitle>{"Function Arguments"}</CardTitle>
       </CardHeader>
@@ -20,18 +29,7 @@ export const ArgsCards = ({ args }: ArgsCardsProps) => {
         <CardContent className='flex gap-2'>
           {Object.keys(args).length > 0 ? (
             Object.entries(args).map(([key, value]) => (
-              <Card key={key} className='p-4'>
-                <CardHeader className='p-0'>
-                  <CardTitle>{key}</CardTitle>
-                </CardHeader>
-                <CardContent className='p-0'>
-                  {typeof value === "object" ? (
-                    <JsonView collapsed={true} value={value} />
-                  ) : (
-                    <span>{String(value)}</span>
-                  )}
-                </CardContent>
-              </Card>
+              <ArgCard key={key} title={key} value={value} />
             ))
           ) : (
             <CardContent className='p-0'>{"No arguments"}</CardContent>
@@ -40,5 +38,37 @@ export const ArgsCards = ({ args }: ArgsCardsProps) => {
         <ScrollBar orientation='horizontal' />
       </ScrollArea>
     </Card>
+  );
+};
+
+const ArgCard = ({ title, value }: { title: string; value: any }) => {
+  console.log(title, value);
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Card className='p-4 max-w-[200px] hover:shadow-lg transition-all duration-200 cursor-pointer'>
+          <CardHeader className='p-0'>
+            <CardTitle>{title}</CardTitle>
+          </CardHeader>
+          <CardContent className='p-0 truncate'>
+            {typeof value === "object" && value ? (
+              <JsonView collapsed={true} value={value} />
+            ) : (
+              <span className='text-base'>{String(value)}</span>
+            )}
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
+        <DialogHeader className='flex-shrink-0'>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        {typeof value === "object" && value ? (
+          <JsonView collapsed={true} value={value} />
+        ) : (
+          <span className='text-base'>{String(value)}</span>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
