@@ -1,3 +1,5 @@
+"""Alembic environment configuration."""
+
 from collections.abc import Iterable
 from logging.config import fileConfig
 

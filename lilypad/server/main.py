@@ -1,11 +1,10 @@
 """The main FastAPI app for `lilypad`."""
 
 import logging
+import subprocess
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from alembic import command
-from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -23,19 +22,22 @@ log = logging.getLogger("lilypad")
 
 
 def run_migrations() -> None:
-    """Run the migrations."""
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
+    """Run the migrations in a separate process."""
+    try:
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"], capture_output=True, text=True, check=True
+        )
+        log.info(f"Migration output: {result.stdout}")
+    except subprocess.CalledProcessError as e:
+        log.error(f"Migration failed: {e.stderr}")
+        raise
 
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     """Run the migrations on startup."""
-    log.info("Starting up...")
-    log.info("run alembic upgrade head...")
     run_migrations()
     yield
-    log.info("Shutting down...")
 
 
 settings = get_settings()
