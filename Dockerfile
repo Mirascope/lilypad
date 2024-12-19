@@ -46,13 +46,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
-ENV LILYPAD_DB_HOST=$LILYPAD_DB_HOST
-ENV LILYPAD_DB_NAME=$LILYPAD_DB_NAME
-ENV LILYPAD_DB_USER=$LILYPAD_DB_USER
-ENV LILYPAD_DB_PASSWORD=$LILYPAD_DB_PASSWORD
-ENV LILYPAD_DB_PORT=$LILYOAD_DB_PORT
-
-
-RUN alembic upgrade head
 # Run the FastAPI application by default
 CMD ["fastapi", "run"]

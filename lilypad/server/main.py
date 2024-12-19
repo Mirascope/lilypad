@@ -1,5 +1,11 @@
 """The main FastAPI app for `lilypad`."""
 
+import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -13,6 +19,25 @@ from starlette.types import Scope as StarletteScope
 from .api import v0_api
 from .settings import get_settings
 
+log = logging.getLogger("lilypad")
+
+
+def run_migrations() -> None:
+    """Run the migrations."""
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+
+@asynccontextmanager
+async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
+    """Run the migrations on startup."""
+    log.info("Starting up...")
+    log.info("run alembic upgrade head...")
+    run_migrations()
+    yield
+    log.info("Shutting down...")
+
+
 settings = get_settings()
 origins = [
     "http://localhost:5173",
@@ -22,7 +47,7 @@ origins = [
     f"http://127.0.0.1:{settings.port}",
 ]
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
