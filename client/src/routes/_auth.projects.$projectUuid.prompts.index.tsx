@@ -1,17 +1,17 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Typography } from "@/components/ui/typography";
+import { uniqueLatestVersionPromptNamesQueryOptions } from "@/utils/prompts";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   Link,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
-import { Button } from "@/components/ui/button";
 import { FormEvent, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { uniquePromptNamesQueryOptions } from "@/utils/prompts";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
   component: () => <CreatePrompt />,
 });
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
 export const CreatePrompt = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data: uniquePrompts } = useSuspenseQuery(
-    uniquePromptNamesQueryOptions(projectUuid)
+    uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();

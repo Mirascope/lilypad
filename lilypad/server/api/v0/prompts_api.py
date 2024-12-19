@@ -25,10 +25,10 @@ prompts_router = APIRouter()
 
 
 @prompts_router.get(
-    "/projects/{project_uuid}/prompts/metadata/names",
+    "/projects/{project_uuid}/prompts/metadata/names/versions",
     response_model=Sequence[PromptPublic],
 )
-async def get_unique_generation_names(
+async def get_latest_version_unique_prompt_names(
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> Sequence[PromptTable]:

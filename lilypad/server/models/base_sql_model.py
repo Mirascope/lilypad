@@ -15,9 +15,10 @@ from sqlmodel import Field, SQLModel
 
 
 class JSONTypeDecorator(TypeDecorator):
-    """JSON Type Decorator"""
+    """JSON type decorator."""
 
     impl = JSON
+    cache_ok = True
 
     def load_dialect_impl(self, dialect: Dialect) -> TypeEngine:
         """Load dialect implementation."""
