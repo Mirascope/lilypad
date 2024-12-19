@@ -91,7 +91,8 @@
   "pnpm": {
     "overrides": {
       "cross-spawn@>=7.0.0 <7.0.5": ">=7.0.5",
-      "@eslint/plugin-kit@<0.2.3": ">=0.2.3"
+      "@eslint/plugin-kit@<0.2.3": ">=0.2.3",
+      "rollup": "npm:@rollup/wasm-node"
     }
   }
 }
