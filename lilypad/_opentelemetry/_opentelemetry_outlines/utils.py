@@ -1,4 +1,5 @@
 """Utility functions for the OpenTelemetry Outlines integration."""
+
 from __future__ import annotations
 
 import inspect

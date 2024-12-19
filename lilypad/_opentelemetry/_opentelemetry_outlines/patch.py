@@ -1,4 +1,5 @@
 """Patch methods for OpenTelemetry tracing in Outlines."""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine, Generator
