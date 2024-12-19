@@ -1,10 +1,4 @@
-import { generationsQueryOptions } from "@/utils/generations";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { CodeSnippet } from "@/components/CodeSnippet";
 import {
   Card,
   CardContent,
@@ -13,10 +7,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GenerationPublic } from "@/types/types";
-import { CodeSnippet } from "@/components/CodeSnippet";
-import { Typography } from "@/components/ui/typography";
 import { Separator } from "@/components/ui/separator";
+import { Typography } from "@/components/ui/typography";
+import { GenerationPublic } from "@/types/types";
+import { uniqueLatestVersionGenerationNamesQueryOptions } from "@/utils/generations";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
+
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
@@ -33,7 +34,7 @@ const GenerationCards = ({
   const navigate = useNavigate();
   const { projectUuid } = useParams({ from: Route.id });
   const handleClick = () => {
-    navigate({ to: `/projects/${projectUuid}/generations/${generation.uuid}` });
+    navigate({ to: `/projects/${projectUuid}/generations/${generation.name}` });
   };
   return (
     <Card className='w-auto h max-w-[400px]'>
@@ -42,7 +43,9 @@ const GenerationCards = ({
         onClick={handleClick}
       >
         <CardTitle>{generation.name}</CardTitle>
-        <CardDescription>Version {index + 1}</CardDescription>
+        <CardDescription>
+          Latest Version: v{generation.version_num}
+        </CardDescription>
       </CardHeader>
       <Separator />
       <CardContent className='p-0 m-6 overflow-auto max-h-[100px]'>
@@ -55,7 +58,7 @@ const GenerationCards = ({
               Prompt
             </CardTitle>
             <CardDescription>
-              {generation.prompt.name} v{generation.prompt.version_num}
+              Using {generation.prompt.name}: v{generation.prompt.version_num}
             </CardDescription>
             <CodeSnippet code={generation.prompt.code} />
           </div>
@@ -68,7 +71,9 @@ const GenerationCards = ({
 };
 const GenerationsList = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(generationsQueryOptions(projectUuid));
+  const { data } = useSuspenseQuery(
+    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
+  );
   if (data.length === 0) {
     return <GenerationNoDataPlaceholder />;
   }
@@ -76,7 +81,7 @@ const GenerationsList = () => {
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left'>Generations</h1>
-        <div className='flex gap-2'>
+        <div className='flex gap-2 max-w-full flex-wrap'>
           {data.map((generation, i) => (
             <GenerationCards
               key={generation.uuid}

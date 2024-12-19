@@ -1,3 +1,5 @@
+import { CodeSnippet } from "@/components/CodeSnippet";
+import { GenerationSpans } from "@/components/GenerationSpans";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,27 +9,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { PromptPublic } from "@/types/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GenerationPublic, PromptPublic } from "@/types/types";
 import {
-  generationQueryOptions,
+  generationsByNameQueryOptions,
   usePatchGenerationMutation,
 } from "@/utils/generations";
 import { promptsBySignature } from "@/utils/prompts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import ReactMarkdown from "react-markdown";
 import JsonView from "@uiw/react-json-view";
-import { CodeSnippet } from "@/components/CodeSnippet";
-import { Label } from "@/components/ui/label";
-import { GenerationSpans } from "@/components/GenerationSpans";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReactMarkdown from "react-markdown";
 
-import { GenerationPublic } from "@/types/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-
+import { useState } from "react";
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationUuid"
+  "/_auth/projects/$projectUuid/generations/$generationName"
 )({
   component: () => <GenerationWorkbench />,
 });
@@ -37,16 +43,20 @@ type Tab = {
   value: string;
   component?: JSX.Element | null;
 };
+
 const GenerationWorkbench = () => {
-  const { projectUuid, generationUuid } = useParams({ from: Route.id });
-  const { data: generation } = useSuspenseQuery(
-    generationQueryOptions(projectUuid, generationUuid)
+  const { projectUuid, generationName } = useParams({ from: Route.id });
+  const { data: generations } = useSuspenseQuery(
+    generationsByNameQueryOptions(generationName, projectUuid)
   );
+  const [generation, setGeneration] = useState<
+    GenerationPublic | null | undefined
+  >(generations.length > 0 ? generations.at(-1) : null);
   const tabs: Tab[] = [
     {
       label: "Overview",
       value: "overview",
-      component: <Generation />,
+      component: <Generation generation={generation} />,
     },
     {
       label: "Traces",
@@ -54,17 +64,32 @@ const GenerationWorkbench = () => {
       component: (
         <GenerationSpans
           projectUuid={projectUuid}
-          generationUuid={generationUuid}
+          generationUuid={generation?.uuid}
         />
       ),
     },
   ];
   const tabWidth = 80 * tabs.length;
   return (
-    <div className='w-full'>
-      <div className=' flex justify-center '>
-        <Typography variant='h2'>{generation.name}</Typography>
-      </div>
+    <div className='w-full p-6'>
+      <Typography variant='h2'>{generationName}</Typography>
+      <Select
+        value={generation?.uuid}
+        onValueChange={(uuid) =>
+          setGeneration(generations.find((g) => g.uuid === uuid) || null)
+        }
+      >
+        <SelectTrigger className='w-[200px]'>
+          <SelectValue placeholder='Select a generation' />
+        </SelectTrigger>
+        <SelectContent>
+          {generations.map((generation) => (
+            <SelectItem key={generation.uuid} value={generation.uuid}>
+              v{generation.version_num}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Tabs defaultValue='overview' className='w-full'>
         <div className='flex justify-center w-full '>
           <TabsList className={`w-[${tabWidth}px]`}>
@@ -75,6 +100,7 @@ const GenerationWorkbench = () => {
             ))}
           </TabsList>
         </div>
+        <Separator className='my-2' />
         {tabs.map((tab) => (
           <TabsContent key={tab.value} value={tab.value} className='w-full'>
             {tab.component}
@@ -87,14 +113,16 @@ const GenerationWorkbench = () => {
 
 const PromptCard = ({
   prompt,
+  generationUuid,
   activePromptUuid,
   index,
 }: {
   prompt: PromptPublic;
+  generationUuid: string;
   activePromptUuid?: string;
   index: number;
 }) => {
-  const { projectUuid, generationUuid } = useParams({ from: Route.id });
+  const { projectUuid } = useParams({ from: Route.id });
   const patchGeneration = usePatchGenerationMutation();
   const handleButtonClick = () => {
     patchGeneration.mutate({
@@ -128,31 +156,42 @@ const PromptCard = ({
     </Card>
   );
 };
-const Generation = () => {
-  const { projectUuid, generationUuid } = useParams({ from: Route.id });
-  const { data: generation } = useSuspenseQuery(
-    generationQueryOptions(projectUuid, generationUuid)
-  );
+const Generation = ({
+  generation,
+}: {
+  generation?: GenerationPublic | null;
+}) => {
+  const { projectUuid } = useParams({ from: Route.id });
+
   const { data: prompts } = useSuspenseQuery(
-    promptsBySignature(projectUuid, generation.prompt?.signature)
+    promptsBySignature(projectUuid, generation?.prompt?.signature)
   );
+
+  if (!generation) {
+    return <div>No generation selected.</div>;
+  }
   return (
-    <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
-      <div className='text-left'>
-        <Label>Code</Label>
-        <CodeSnippet code={generation.code} />
-        <Label>Available Prompts</Label>
-        <div className='flex gap-4'>
-          {prompts.map((prompt, i) => (
-            <PromptCard
-              key={prompt.uuid}
-              activePromptUuid={generation.prompt?.uuid}
-              prompt={prompt}
-              index={i}
-            />
-          ))}
+    <>
+      {generation && (
+        <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
+          <div className='text-left'>
+            <Label>Code</Label>
+            <CodeSnippet code={generation.code} />
+            <Label>Available Prompts</Label>
+            <div className='flex gap-4 w-max-full flex-wrap'>
+              {prompts.map((prompt, i) => (
+                <PromptCard
+                  key={prompt.uuid}
+                  generationUuid={generation.uuid}
+                  activePromptUuid={generation.prompt?.uuid}
+                  prompt={prompt}
+                  index={i}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
