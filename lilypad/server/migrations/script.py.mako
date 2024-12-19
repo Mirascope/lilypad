@@ -9,10 +9,10 @@ Create Date: ${create_date}
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-import sqlmodel
 from alembic import op
+from sqlmodel.sql.sqltypes import AutoString
 
-import lilypad
+from lilypad.server.models.base_sql_model import JSONTypeDecorator
 
 ${imports if imports else ""}
 

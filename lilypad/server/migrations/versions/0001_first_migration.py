@@ -9,8 +9,8 @@ Create Date: 2024-12-18 20:26:39.034946
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-import sqlmodel
 from alembic import op
+from sqlmodel.sql.sqltypes import AutoString
 
 from lilypad.server.models.base_sql_model import JSONTypeDecorator
 
@@ -27,24 +27,24 @@ def upgrade() -> None:
         "device_codes",
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("token", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("id", AutoString(), nullable=False),
+        sa.Column("token", AutoString(), nullable=False),
         sa.PrimaryKeyConstraint("uuid", "id", name=op.f("device_codes_pkey")),
     )
     op.create_table(
         "organizations",
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
         sa.PrimaryKeyConstraint("uuid", name=op.f("organizations_pkey")),
     )
     op.create_table(
         "users",
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("first_name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("last_name", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("first_name", AutoString(), nullable=False),
+        sa.Column("last_name", AutoString(), nullable=True),
+        sa.Column("email", AutoString(), nullable=False),
         sa.Column("active_organization_uuid", sa.Uuid(), nullable=True),
         sa.Column(
             "keys",
@@ -59,7 +59,7 @@ def upgrade() -> None:
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("organization_uuid", sa.Uuid(), nullable=False),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
         sa.ForeignKeyConstraint(
             ["organization_uuid"],
             ["organizations.uuid"],
@@ -112,16 +112,16 @@ def upgrade() -> None:
         sa.Column("organization_uuid", sa.Uuid(), nullable=False),
         sa.Column("project_uuid", sa.Uuid(), nullable=True),
         sa.Column("version_num", sa.Integer(), nullable=True),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("signature", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("hash", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
+        sa.Column("signature", AutoString(), nullable=False),
+        sa.Column("code", AutoString(), nullable=False),
+        sa.Column("hash", AutoString(), nullable=False),
         sa.Column(
             "dependencies",
             JSONTypeDecorator(),
             nullable=True,
         ),
-        sa.Column("template", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("template", AutoString(), nullable=False),
         sa.Column("is_default", sa.Boolean(), nullable=False),
         sa.Column(
             "call_params",
@@ -159,10 +159,10 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("organization_uuid", sa.Uuid(), nullable=False),
         sa.Column("project_uuid", sa.Uuid(), nullable=True),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("signature", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("hash", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
+        sa.Column("signature", AutoString(), nullable=False),
+        sa.Column("code", AutoString(), nullable=False),
+        sa.Column("hash", AutoString(), nullable=False),
         sa.Column(
             "dependencies",
             JSONTypeDecorator(),
@@ -212,10 +212,10 @@ def upgrade() -> None:
         sa.Column("prompt_uuid", sa.Uuid(), nullable=True),
         sa.Column("response_model_uuid", sa.Uuid(), nullable=True),
         sa.Column("version_num", sa.Integer(), nullable=True),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("signature", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("hash", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
+        sa.Column("signature", AutoString(), nullable=False),
+        sa.Column("code", AutoString(), nullable=False),
+        sa.Column("hash", AutoString(), nullable=False),
         sa.Column(
             "dependencies",
             JSONTypeDecorator(),
@@ -261,7 +261,7 @@ def upgrade() -> None:
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("organization_uuid", sa.Uuid(), nullable=False),
-        sa.Column("span_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("span_id", AutoString(), nullable=False),
         sa.Column("project_uuid", sa.Uuid(), nullable=True),
         sa.Column("generation_uuid", sa.Uuid(), nullable=True),
         sa.Column("prompt_uuid", sa.Uuid(), nullable=True),
@@ -276,7 +276,7 @@ def upgrade() -> None:
             JSONTypeDecorator(),
             nullable=True,
         ),
-        sa.Column("parent_span_id", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("parent_span_id", AutoString(), nullable=True),
         sa.ForeignKeyConstraint(
             ["generation_uuid"],
             ["generations.uuid"],
