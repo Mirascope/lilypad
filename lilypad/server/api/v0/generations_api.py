@@ -54,6 +54,18 @@ async def get_generations_by_name(
 
 
 @generations_router.get(
+    "/projects/{project_uuid}/generations/metadata/names/versions",
+    response_model=Sequence[GenerationPublic],
+)
+async def get_latest_version_unique_generation_names(
+    project_uuid: UUID,
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+) -> Sequence[GenerationTable]:
+    """Get all unique prompt names."""
+    return generation_service.find_unique_generation_names(project_uuid)
+
+
+@generations_router.get(
     "/projects/{project_uuid}/generations/hash/{generation_hash}",
     response_model=GenerationPublic,
 )

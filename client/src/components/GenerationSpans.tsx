@@ -1,4 +1,3 @@
-import { NotFound } from "@/components/NotFound";
 import { TracesTable } from "@/components/TracesTable";
 import { spansByGenerationQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -11,7 +10,7 @@ export const GenerationSpans = ({
   generationUuid?: string;
 }) => {
   if (!generationUuid) {
-    return <NotFound />;
+    return <div>No generation selected.</div>;
   }
   const { data } = useSuspenseQuery(
     spansByGenerationQueryOptions(projectUuid, generationUuid)
