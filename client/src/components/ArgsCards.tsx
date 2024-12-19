@@ -1,7 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import JsonView from "@uiw/react-json-view";
-import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +6,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import JsonView from "@uiw/react-json-view";
 
 interface Args {
   [key: string]: any;
@@ -19,7 +19,6 @@ interface ArgsCardsProps {
 }
 
 export const ArgsCards = ({ args }: ArgsCardsProps) => {
-  console.log(args);
   return (
     <Card className='w-full max-w-4xl'>
       <CardHeader>
@@ -42,7 +41,6 @@ export const ArgsCards = ({ args }: ArgsCardsProps) => {
 };
 
 const ArgCard = ({ title, value }: { title: string; value: any }) => {
-  console.log(title, value);
   return (
     <Dialog>
       <DialogTrigger asChild>

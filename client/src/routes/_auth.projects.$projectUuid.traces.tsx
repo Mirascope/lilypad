@@ -1,15 +1,15 @@
 import { ProjectPublic } from "@/types/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import api from "@/api";
 import { TracesTable } from "@/components/TracesTable";
+import { Typography } from "@/components/ui/typography";
+import { tracesQueryOptions } from "@/utils/traces";
 import {
   createFileRoute,
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
-import api from "@/api";
-import { Typography } from "@/components/ui/typography";
-import { tracesQueryOptions } from "@/utils/traces";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
   loader: async ({ params: { projectUuid } }) =>
@@ -23,7 +23,6 @@ export const Trace = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const project = useLoaderData({ from: Route.id }) as ProjectPublic;
   const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
-  console.log(data);
   return (
     <div className='h-full flex flex-col px-2'>
       <Typography variant='h2'>{project.name}</Typography>
