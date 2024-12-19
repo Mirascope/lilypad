@@ -1,5 +1,10 @@
 """The main FastAPI app for `lilypad`."""
 
+import logging
+import subprocess
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -13,6 +18,28 @@ from starlette.types import Scope as StarletteScope
 from .api import v0_api
 from .settings import get_settings
 
+log = logging.getLogger("lilypad")
+
+
+def run_migrations() -> None:
+    """Run the migrations in a separate process."""
+    try:
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"], capture_output=True, text=True, check=True
+        )
+        log.info(f"Migration output: {result.stdout}")
+    except subprocess.CalledProcessError as e:
+        log.error(f"Migration failed: {e.stderr}")
+        raise
+
+
+@asynccontextmanager
+async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
+    """Run the migrations on startup."""
+    run_migrations()
+    yield
+
+
 settings = get_settings()
 origins = [
     "http://localhost:5173",
@@ -22,7 +49,7 @@ origins = [
     f"http://127.0.0.1:{settings.port}",
 ]
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
