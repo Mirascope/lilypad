@@ -1,0 +1,194 @@
+import { Tabs } from 'nextra/components';
+
+# Generations
+
+> Non-determinstic functions that require evaluation.
+
+When you mark a function with the `generation` decorator, you are telling Lilypad that the decorated function is powered by a Large Language Model (LLM).
+This ensures that the function is automatically versioned, and any call the function is traced against the version.
+
+```python {1,7,17}
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": question}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
+```
+
+In the above example, `answer_question` will be versioned and traced when called.
+If you change anything inside of `answer_quesetion`, that will change the version.
+For example, if you change the model from `gpt-4o-mini` to `gpt-4o`, that will create a new version of `answer_question`.
+
+Since Lilypad versions generations using their function closure, this means that even changes to functions or classes used within the generation are automatically tracked and versioned (so long as they are user-defined).
+
+## Best Practices
+
+Generations are non-deterministic and must be optimized. this means that they should be structured with such optimization in mind.
+
+You can think of a generation as a simple machine learning model where the model's input is the generations's arguments, and the model's output is the generations's final return value.
+We use this analogy as the basis for the following best practices:
+
+### Single LLM Call Per Generation
+
+Every call made to an LLM is non-deterministic and must be evaluated and optimized.
+This means that you should structure your generations to make **at most one call to an LLM**.
+
+Consider the following code:
+
+<Tabs items={["Good", "Bad"]}>
+<Tabs.Tab>
+```python {7-13,26}
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.generation()
+def recommend_author(genre: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+@lilypad.generation()
+def recommend_book(genre: str, author: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+genre = "fantasy"
+author = recommend_author(genre)
+book = recommend_book(genre, author)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python {9-12}
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.generation()
+def recommend_book(genre: str) -> str:
+    author = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+    ).choices[0].message.content
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+genre = "fantasy"
+book = recommend_book(genre)
+```
+</Tabs.Tab>
+</Tabs>
+
+In the "Good" example, `recommend_author` and `recommend_book` are written as separate generations, each making a single call to the LLM.
+This structure enables:
+1. Evaluating the `recommend_author` generation individually
+2. Evaluating the `recommend_book` generation individually
+3. Evaluating both together by supplying `recommend_book` with an actual output from `recommend_author`
+
+In the "Bad" example, the `recommend_author` functionality is instead written inside of `recommend_book`.
+This makes evaluating the quality of the `recommend_book` generation significantly more difficult and eliminated the possibility of evaluating `recommend_author`.
+
+### Chain According To Versioning
+
+Generally we recommend chaining generations inside of a non-generation function. For example:
+
+```python {25-27}
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.generation()
+def recommend_author(genre: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+@lilypad.generation()
+def recommend_book(genre: str, author: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+def recommend_book_chain(genre: str) -> str:
+    author = recommend_author(genre)
+    return recommend_book(genre, author)
+
+genre = "fantasy"
+book = recommend_book(genre)
+```
+
+This sticks to the "Single LLM Call Per Generation" best practice and allows for easy evaluation of both `recommend_author` and `recommend_book` individually.
+
+However, there are some cases where the entire chain should be versioned together. In such a case, you can chain generations inside of a generation function.
+For example, we could call `recommend_author` inside of `recommend_book` to ensure that changes to `recommend_author` impact the version of `recommend_book`.
+
+```python {18}
+import lilypad
+from openai import OpenAI
+
+client = OpenAI()
+
+
+@lilypad.generation()
+def recommend_author(genre: str) -> str:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+@lilypad.generation()
+def recommend_book(genre: str) -> str:
+    author = recommend_author(genre)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+    )
+    return str(completion.choices[0].message.content)
+
+
+genre = "fantasy"
+book = recommend_book(genre)
+```
+
+Since `recommend_author` is a generation, we can still evaluate `recommend_book` individually by mocking `recommend_author` with real outputs, but this requires additional overhead.
+
+It's up to you to determine which structure best suits your use-case.
