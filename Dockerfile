@@ -47,5 +47,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
+RUN alembic upgrade head
 # Run the FastAPI application by default
 CMD ["fastapi", "run"]

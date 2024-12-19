@@ -46,6 +46,7 @@ dependencies = [
     "ruff>=0.8.1",
     "requests>=2.32.3",
     "pillow>=10.4.0",
+    "alembic>=1.14.0",
 ]
 
 [project.urls]
