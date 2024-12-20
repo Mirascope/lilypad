@@ -40,6 +40,13 @@ def _get_custom_context_manager(
         tracer = get_tracer("lilypad")
         lilypad_client = LilypadClient(timeout=10)
         new_project_uuid = project_uuid or lilypad_client.project_uuid
+        jsonable_arg_values = {}
+        for arg_name, arg_value in arg_values.items():
+            try:
+                serialized_arg_value = jsonable_encoder(arg_value)
+            except ValueError:
+                serialized_arg_value = "could not serialize"
+            jsonable_arg_values[arg_name] = serialized_arg_value
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_uuid": str(new_project_uuid)
@@ -51,9 +58,7 @@ def _get_custom_context_manager(
                 "lilypad.generation.signature": generation.signature,
                 "lilypad.generation.code": generation.code,
                 "lilypad.generation.arg_types": json.dumps(arg_types),
-                "lilypad.generation.arg_values": json.dumps(
-                    jsonable_encoder(arg_values)
-                ),
+                "lilypad.generation.arg_values": json.dumps(jsonable_arg_values),
                 "lilypad.generation.prompt_template": prompt_template or "",
                 "lilypad.generation.version": generation.version_num
                 if generation.version_num
