@@ -152,6 +152,13 @@ def _construct_trace_attributes(
     results: str,
     is_async: bool,
 ) -> dict[str, AttributeValue]:
+    jsonable_arg_values = {}
+    for arg_name, arg_value in arg_values.items():
+        try:
+            serialized_arg_value = jsonable_encoder(arg_value)
+        except ValueError:
+            serialized_arg_value = "could not serialize"
+        jsonable_arg_values[arg_name] = serialized_arg_value
     return {
         "lilypad.project_uuid": str(lilypad_client.project_uuid)
         if lilypad_client.project_uuid
@@ -163,7 +170,7 @@ def _construct_trace_attributes(
         "lilypad.prompt.code": prompt.code,
         "lilypad.prompt.template": prompt.template,
         "lilypad.prompt.arg_types": json.dumps(arg_types),
-        "lilypad.prompt.arg_values": json.dumps(jsonable_encoder(arg_values)),
+        "lilypad.prompt.arg_values": json.dumps(jsonable_arg_values),
         "lilypad.prompt.output": results,
         "lilypad.prompt.version": prompt.version_num if prompt.version_num else -1,
         "lilypad.is_async": is_async,
