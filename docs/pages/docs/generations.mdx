@@ -117,9 +117,9 @@ This structure enables:
 In the "Bad" example, the `recommend_author` functionality is instead written inside of `recommend_book`.
 This makes evaluating the quality of the `recommend_book` generation significantly more difficult and eliminated the possibility of evaluating `recommend_author`.
 
-### Chain According To Versioning
+### Structure Multiple Steps According To Versioning
 
-Generally we recommend chaining generations inside of a non-generation function. For example:
+Generally when running multi-step generations, we recommend connecting the steps inside of a non-generation function. For example:
 
 ```python {25-27}
 import lilypad
@@ -151,12 +151,12 @@ def recommend_book_chain(genre: str) -> str:
     return recommend_book(genre, author)
 
 genre = "fantasy"
-book = recommend_book(genre)
+book = recommend_book_chain(genre)
 ```
 
 This sticks to the "Single LLM Call Per Generation" best practice and allows for easy evaluation of both `recommend_author` and `recommend_book` individually.
 
-However, there are some cases where the entire chain should be versioned together. In such a case, you can chain generations inside of a generation function.
+However, there are some cases where the entire chain should be versioned and evaluated together. In such a case, you can chain generations inside of a generation function.
 For example, we could call `recommend_author` inside of `recommend_book` to ensure that changes to `recommend_author` impact the version of `recommend_book`.
 
 ```python {18}
@@ -189,6 +189,73 @@ genre = "fantasy"
 book = recommend_book(genre)
 ```
 
-Since `recommend_author` is a generation, we can still evaluate `recommend_book` individually by mocking `recommend_author` with real outputs, but this requires additional overhead.
-
 It's up to you to determine which structure best suits your use-case.
+
+### Jsonable Arguments
+
+Although not required, we highly recommend making sure that input arguments to your generations are JSON serializable.
+This makes it possible to generate synthetic data for generations based on the function signature.
+
+We have some features in the works for this type of generation, so it's a good idea to use JSON serializable arguments to be able to best take advantage of these upcoming features.
+
+For example, we would recommend passing in a `Literal` or `Enum` type and selecting an object from that argument rather than directly passing in the argument:
+
+<Tabs items={["Good", "Bad"]}>
+<Tabs.Tab>
+```python
+from typing import Literal
+
+from anthropic import Anthropic
+import lilypad
+from openai import OpenAI
+
+openai_client = OpenAI()
+anthropic_client = Anthropic()
+
+
+@lilypad.generation()
+def recommend_book(genre: str, provider: Literal["openai", "anthropic"]) -> str:
+    if provider == "openai":
+        completion = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+        )
+        return str(completion.choices[0].message.content)
+    else:
+        message = anthropic_client.messages.create(
+            model="claude-3-5-sonnet-latest",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+        )
+        block = message.content[0]
+        return block.text if block.type == "text" else ""
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```python
+from anthropic import Anthropic
+import lilypad
+from openai import OpenAI
+
+
+@lilypad.generation()
+def recommend_book(genre: str, client: OpenAI | Anthropic) -> str:
+    if isinstance(client, OpenAI):
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+        )
+        return str(completion.choices[0].message.content)
+    else:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-latest",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+        )
+        block = message.content[0]
+        return block.text if block.type == "text" else ""
+```
+</Tabs.Tab>
+</Tabs>
+
+In the "Bad" example, the `client` argument is not JSON serializable, which makes it difficult to generate synthetic data for the `recommend_book` generation.
+
+In the "Good" example, the `provider` argument is JSON serializable, which makes it easy to generate synthetic data for the `recommend_book` generation.
