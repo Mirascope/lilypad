@@ -7,10 +7,10 @@ from fastapi import HTTPException, status
 from sqlmodel import and_, func, select
 
 from ..models import PromptCreate, PromptTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class PromptService(BaseService[PromptTable, PromptCreate]):
+class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
     """The service class for functions."""
 
     table: type[PromptTable] = PromptTable
