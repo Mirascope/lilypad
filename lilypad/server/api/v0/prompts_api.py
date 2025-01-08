@@ -1,30 +1,37 @@
 """The `/prompts` API router."""
 
 import hashlib
-from collections.abc import Callable, Sequence
-from typing import Annotated, Any
+import subprocess
+import tempfile
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-import lilypad
-from lilypad._utils import create_mirascope_call
-from lilypad.server._utils import construct_function
-
-from ...models import PromptCreate, PromptPublic, PromptTable, PromptUpdate, Provider
+from ..._utils import construct_function, get_current_user
+from ...models import (
+    PlaygroundParameters,
+    PromptCreate,
+    PromptPublic,
+    PromptTable,
+    PromptUpdate,
+    UserPublic,
+)
 from ...services import PromptService
 
 prompts_router = APIRouter()
 
 
 @prompts_router.get(
-    "/projects/{project_uuid}/prompts/metadata/names", response_model=Sequence[str]
+    "/projects/{project_uuid}/prompts/metadata/names/versions",
+    response_model=Sequence[PromptPublic],
 )
-async def get_unique_generation_names(
+async def get_latest_version_unique_prompt_names(
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
-) -> Sequence[str]:
+) -> Sequence[PromptTable]:
     """Get all unique prompt names."""
     return prompt_service.find_unique_prompt_names(project_uuid)
 
@@ -107,7 +114,7 @@ async def create_prompt(
     prompt_create.hash = hashlib.sha256(
         prompt_create.template.encode("utf-8")
     ).hexdigest()
-    if prompt := prompt_service.find_prompt_by_call_params(prompt_create):
+    if prompt := prompt_service.check_duplicate_prompt(prompt_create):
         return prompt
 
     prompt_create.code = construct_function(
@@ -117,7 +124,9 @@ async def create_prompt(
     prompt_create.signature = construct_function(
         prompt_create.arg_types or {}, prompt_create.name, False
     )
-
+    prompt_create.version_num = prompt_service.get_next_version(
+        project_uuid, prompt_create.name
+    )
     prompts = prompt_service.find_prompts_by_signature(
         project_uuid, prompt_create.signature
     )
@@ -145,33 +154,74 @@ async def update_generation(
     )
 
 
-class PlaygroundParameters(BaseModel):
-    arg_values: dict[str, Any]
-    provider: Provider
-    model: str
-    prompt: PromptCreate | None = None
-
-
 @prompts_router.post("/projects/{project_uuid}/prompts/run")
 def run_version(
     project_uuid: UUID,
     playground_parameters: PlaygroundParameters,
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> str:
     """Run version."""
     if not playground_parameters.prompt:
         raise ValueError("Missing prompt.")
     prompt = playground_parameters.prompt
-    arg_types = prompt.arg_types
     name = prompt.name
-    arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
+    arg_list = [
+        f"{arg_name}: {arg_type}" for arg_name, arg_type in prompt.arg_types.items()
+    ]
     func_def = f"def {name}({', '.join(arg_list)}) -> str: ..."
-    namespace: dict[str, Any] = {}
-    exec(func_def, namespace)
-    fn: Callable[..., str] = namespace[name]
-    lilypad.configure()
-    return create_mirascope_call(
-        fn, prompt, playground_parameters.provider, playground_parameters.model, None
-    )(**playground_parameters.arg_values)
+    wrapper_code = f'''
+import os
+
+import google.generativeai as genai
+
+from lilypad._utils import create_mirascope_call
+from lilypad.server.models import PromptCreate, Provider
+
+genai.configure(api_key="{user.keys.get("gemini", "")}")
+os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
+os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
+os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
+
+{func_def}
+
+prompt = PromptCreate(
+    name = "{prompt.name}",
+    signature = "{prompt.signature}",
+    template = """{prompt.template}""",
+    arg_types = {prompt.arg_types},
+    code = "{prompt.code}",
+    hash = "{prompt.hash}",
+    version_num = {prompt.version_num}
+)
+provider = Provider("{playground_parameters.provider}")
+model = "{playground_parameters.model}"
+arg_values = {playground_parameters.arg_values}
+print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
+'''
+    try:
+        processed_code = _run_playground(wrapper_code)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid API Key"
+        )
+    return processed_code
+
+
+def _run_playground(code: str) -> str:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
+        tmp_file.write(code)
+        tmp_path = Path(tmp_file.name)
+
+    try:
+        result = subprocess.run(
+            ["uv", "run", str(tmp_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    finally:
+        tmp_path.unlink()
 
 
 __all__ = ["prompts_router"]

@@ -37,12 +37,19 @@ from lilypad._opentelemetry._utils import (
     set_server_address_and_port,
 )
 
+P = ParamSpec("P")
+
 
 def get_llm_request_attributes(
     kwargs: dict[str, Any],
     client_instance: Any,
     operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
 ) -> dict[str, AttributeValue]:
+    response_format = kwargs.get("response_format", {})
+    if isinstance(response_format, dict):
+        response_format = response_format.get("type")
+    else:
+        response_format = response_format.__name__
     attributes = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
         gen_ai_attributes.GEN_AI_REQUEST_MODEL: kwargs.get("model"),
@@ -55,9 +62,7 @@ def get_llm_request_attributes(
         gen_ai_attributes.GEN_AI_REQUEST_FREQUENCY_PENALTY: kwargs.get(
             "frequency_penalty"
         ),
-        gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: kwargs.get(
-            "response_format", {}
-        ).get("type"),
+        gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: response_format,
         gen_ai_attributes.GEN_AI_OPENAI_REQUEST_SEED: kwargs.get("seed"),
     }
     set_server_address_and_port(client_instance, attributes)
@@ -75,12 +80,11 @@ def get_llm_request_attributes(
     return {k: v for k, v in attributes.items() if v is not None}
 
 
-P = ParamSpec("P")
-
-
-def chat_completions_create(
-    tracer: Tracer,
+def _sync_wrapper(
+    tracer: Tracer, handle_stream: bool
 ) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
+    """Internal sync wrapper for OpenAI API calls."""
+
     def traced_method(
         wrapped: Callable[P, Any],
         instance: Any,
@@ -101,7 +105,7 @@ def chat_completions_create(
                     set_message_event(span, message)
             try:
                 result = wrapped(*args, **kwargs)
-                if kwargs.get("stream", False):
+                if handle_stream and kwargs.get("stream", False):
                     return StreamWrapper(
                         span=span,
                         stream=result,
@@ -127,9 +131,11 @@ def chat_completions_create(
     return traced_method
 
 
-def chat_completions_create_async(
-    tracer: Tracer,
+def _async_wrapper(
+    tracer: Tracer, handle_stream: bool
 ) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+    """Internal async wrapper for OpenAI API calls."""
+
     async def traced_method(
         wrapped: Callable[P, Any],
         instance: Any,
@@ -150,7 +156,7 @@ def chat_completions_create_async(
                     set_message_event(span, message)
             try:
                 result = await wrapped(*args, **kwargs)
-                if kwargs.get("stream", False):
+                if handle_stream and kwargs.get("stream", False):
                     return AsyncStreamWrapper(
                         span=span,
                         stream=result,
@@ -174,3 +180,33 @@ def chat_completions_create_async(
                 raise
 
     return traced_method
+
+
+def chat_completions_create(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
+    """Wrapper for sync chat completions create method."""
+    return _sync_wrapper(tracer, handle_stream=True)
+
+
+def chat_completions_create_async(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+    """Wrapper for async chat completions create method."""
+    return _async_wrapper(tracer, handle_stream=True)
+
+
+def chat_completions_parse(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
+    """Wrapper for sync chat completions parse method."""
+    # Stream is not handled in .parse method
+    # https://platform.openai.com/docs/guides/structured-outputs/structured-outputs#streaming
+    return _sync_wrapper(tracer, handle_stream=False)
+
+
+def chat_completions_parse_async(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+    """Wrapper for async chat completions parse method."""
+    return _async_wrapper(tracer, handle_stream=False)

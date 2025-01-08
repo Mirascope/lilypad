@@ -10,6 +10,7 @@ from uuid import UUID
 
 import PIL
 import PIL.WebPImagePlugin
+from fastapi.encoders import jsonable_encoder
 from mirascope.core import base as mb
 from mirascope.integrations import middleware_factory
 from opentelemetry.trace import get_tracer
@@ -39,6 +40,13 @@ def _get_custom_context_manager(
         tracer = get_tracer("lilypad")
         lilypad_client = LilypadClient(timeout=10)
         new_project_uuid = project_uuid or lilypad_client.project_uuid
+        jsonable_arg_values = {}
+        for arg_name, arg_value in arg_values.items():
+            try:
+                serialized_arg_value = jsonable_encoder(arg_value)
+            except ValueError:
+                serialized_arg_value = "could not serialize"
+            jsonable_arg_values[arg_name] = serialized_arg_value
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_uuid": str(new_project_uuid)
@@ -50,8 +58,11 @@ def _get_custom_context_manager(
                 "lilypad.generation.signature": generation.signature,
                 "lilypad.generation.code": generation.code,
                 "lilypad.generation.arg_types": json.dumps(arg_types),
-                "lilypad.generation.arg_values": json.dumps(arg_values),
+                "lilypad.generation.arg_values": json.dumps(jsonable_arg_values),
                 "lilypad.generation.prompt_template": prompt_template or "",
+                "lilypad.generation.version": generation.version_num
+                if generation.version_num
+                else -1,
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
@@ -97,11 +108,11 @@ def _serialize_proto_data(data: list[dict]) -> str:
 
 def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> None:
     try:
-        output = json.dumps(response.message_param)
+        output = json.dumps(jsonable_encoder(response.message_param))
     except TypeError:
         output = str(response.message_param)
     try:
-        messages = json.dumps(response.messages)
+        messages = json.dumps(jsonable_encoder(response.messages))
     except TypeError:
         messages = _serialize_proto_data(response.messages)  # Gemini
     attributes: dict[str, AttributeValue] = {
@@ -118,7 +129,7 @@ def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) 
         if (_response := getattr(result, "_response", None)) and (
             _response_messages := getattr(_response, "messages", None)
         ):
-            messages = json.dumps(_response_messages)
+            messages = json.dumps(jsonable_encoder(_response_messages))
         else:
             messages = None
     else:

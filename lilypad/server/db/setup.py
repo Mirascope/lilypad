@@ -12,4 +12,4 @@ def create_tables(environment: str | None = None) -> None:
 
 
 if __name__ == "__main__":
-    create_tables()
+    SQLModel.metadata.drop_all(get_engine())

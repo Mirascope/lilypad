@@ -1,25 +1,25 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Typography } from "@/components/ui/typography";
+import { uniqueLatestVersionPromptNamesQueryOptions } from "@/utils/prompts";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   Link,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
-import { Button } from "@/components/ui/button";
 import { FormEvent, useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { uniquePromptNamesQueryOptions } from "@/utils/prompts";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
   component: () => <CreatePrompt />,
 });
 
 export const CreatePrompt = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: promptNames } = useSuspenseQuery(
-    uniquePromptNamesQueryOptions(projectUuid)
+  const { data: uniquePrompts } = useSuspenseQuery(
+    uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();
@@ -33,14 +33,14 @@ export const CreatePrompt = () => {
     <div className='min-h-screen flex flex-col items-center w-[600px] m-auto'>
       <Typography variant='h3'>Prompts</Typography>
       <div className='flex flex-wrap gap-2'>
-        {promptNames.length > 0 &&
-          promptNames.map((promptName) => (
+        {uniquePrompts.length > 0 &&
+          uniquePrompts.map((uniquePrompt) => (
             <Link
-              key={promptName}
-              to={`/projects/${projectUuid}/prompts/${promptName}`}
+              key={uniquePrompt.name}
+              to={`/projects/${projectUuid}/prompts/${uniquePrompt.name}/versions/${uniquePrompt.uuid}`}
             >
               <Card className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
-                <CardContent className='p-4'>{promptName}</CardContent>
+                <CardContent className='p-4'>{uniquePrompt.name}</CardContent>
               </Card>
             </Link>
           ))}

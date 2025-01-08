@@ -6,22 +6,26 @@ from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from pydantic import model_validator
-from sqlalchemy import JSON, Column, Index, UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .base_sql_model import get_json_column
 from .generations import GenerationPublic
 from .prompts import PromptPublic
+from .response_models import ResponseModelPublic
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     PROMPT_TABLE_NAME,
+    RESPONSE_MODEL_TABLE_NAME,
     SPAN_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from .generations import GenerationTable
     from .prompts import PromptTable
+    from .response_models import ResponseModelTable
 
 
 class Scope(str, Enum):
@@ -51,10 +55,13 @@ class _SpanBase(SQLModel):
     prompt_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
     )
+    response_model_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid"
+    )
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
-    data: dict = Field(sa_column=Column(JSON), default_factory=dict)
+    data: dict = Field(sa_column=get_json_column(), default_factory=dict)
     parent_span_id: str | None = Field(
         default=None, foreign_key=f"{SPAN_TABLE_NAME}.span_id"
     )
@@ -73,6 +80,7 @@ class SpanPublic(_SpanBase):
     display_name: str | None = None
     generation: GenerationPublic | None = None
     prompt: PromptPublic | None = None
+    response_model: ResponseModelPublic | None = None
     child_spans: list["SpanPublic"]
     created_at: datetime
 
@@ -121,6 +129,9 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
     __table_args__ = (UniqueConstraint("span_id"), Index("ix_spans_span_id", "span_id"))
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
     prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
+    response_model: Optional["ResponseModelTable"] = Relationship(
+        back_populates="spans"
+    )
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span", cascade_delete=True
     )

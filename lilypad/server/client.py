@@ -14,6 +14,7 @@ from lilypad._utils.functions import PromptPublic
 from .._utils import Closure, load_config
 from ..server.settings import get_settings
 from .models import GenerationPublic, ProjectPublic, SpanPublic
+from .models.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -97,7 +98,6 @@ class LilypadClient:
         response_model: type[_R],
         **kwargs: Any,
     ) -> _R: ...
-
     @overload
     def _request(
         self,
@@ -296,3 +296,59 @@ class LilypadClient:
             )
         except NotFoundError:
             return None
+
+    def get_response_model_active_version(
+        self, cls: type[BaseModel], generation: GenerationPublic | None
+    ) -> ResponseModelPublic | None:
+        """Get the active version of a response model."""
+        closure = Closure.from_fn(cls)
+        if (
+            generation
+            and generation.response_model
+            and generation.response_model.hash == closure.hash
+        ):
+            return generation.response_model
+        try:
+            return self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/response_models/hash/{closure.hash}/active",
+                response_model=ResponseModelPublic,
+            )
+        except NotFoundError:
+            return None
+
+    def get_or_create_response_model_version(
+        self,
+        cls: type[BaseModel],
+        schema_data: dict[str, Any],
+        examples: list[dict[str, Any]],
+    ) -> ResponseModelPublic:
+        """Get or create a response model version by hash.
+
+        If not found, this method will create a new response model version.
+        """
+        closure = Closure.from_fn(cls)
+        try:
+            rm = self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/response_models/hash/{closure.hash}/active",
+                response_model=ResponseModelPublic,
+            )
+            return rm
+        except NotFoundError:
+            create_data = {
+                "name": closure.name,
+                "signature": closure.signature,
+                "code": closure.code,
+                "hash": closure.hash,
+                "dependencies": closure.dependencies,
+                "schema_data": schema_data,
+                "examples": examples,
+            }
+            rm_new = self._request(
+                "POST",
+                f"v0/projects/{self.project_uuid}/response_models",
+                response_model=ResponseModelPublic,
+                json=create_data,
+            )
+            return rm_new

@@ -18,6 +18,7 @@ from .main import (
     inner_fn,
     inner_sub_fn,
     internal_imports_fn,
+    mirascope_response_model_fn,
     multi_decorated_fn,
     self_fn_class_fn,
     single_fn,
