@@ -93,21 +93,9 @@ def encode_gemini_part(
     return part
 
 
-def _default_serializer(obj: Any) -> Any:
-    if hasattr(obj, "role") and hasattr(obj, "content"):
-        return {
-            "role": obj.role,
-            "content": obj.content,
-        }
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
-
-
 def _serialize_proto_data(data: list[dict]) -> str:
     serializable_data = []
     for item in data:
-        if not isinstance(item, dict):
-            item = _default_serializer(item)
-
         serialized_item = item.copy()
         if "parts" in item:
             serialized_item["parts"] = [
@@ -115,7 +103,7 @@ def _serialize_proto_data(data: list[dict]) -> str:
             ]
         serializable_data.append(serialized_item)
 
-    return json.dumps(serializable_data, default=_default_serializer)
+    return json.dumps(serializable_data)
 
 
 def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> None:
@@ -126,14 +114,7 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> 
     try:
         messages = json.dumps(jsonable_encoder(response.messages))
     except TypeError:
-        converted_messages = []
-        for m in response.messages:
-            if isinstance(m, dict):
-                converted_messages.append(m)
-            else:
-                converted_messages.append(_default_serializer(m))
-        messages = _serialize_proto_data(converted_messages)
-
+        messages = _serialize_proto_data(response.messages)  # Gemini
     attributes: dict[str, AttributeValue] = {
         "lilypad.generation.output": output,
         "lilypad.generation.messages": messages,
@@ -144,7 +125,7 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span) -> 
 def _set_response_model_attributes(result: BaseModel | mb.BaseType, span: Span) -> None:
     if isinstance(result, BaseModel):
         completion = result.model_dump_json()
-        # Attempt to serialize messages if _response and _response.messages exist
+        # Safely handle the case where result._response might be None
         if (_response := getattr(result, "_response", None)) and (
             _response_messages := getattr(_response, "messages", None)
         ):
