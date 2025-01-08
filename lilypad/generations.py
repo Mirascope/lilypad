@@ -7,11 +7,17 @@ from contextvars import ContextVar
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
+from fastapi.encoders import jsonable_encoder
 from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ._utils import create_mirascope_middleware, inspect_arguments, load_config
+from ._utils import (
+    call_safely,
+    create_mirascope_middleware,
+    inspect_arguments,
+    load_config,
+)
 from .server.client import LilypadClient
 from .server.models import GenerationPublic
 from .server.settings import get_settings
@@ -60,6 +66,13 @@ def _construct_trace_attributes(
 ) -> dict[str, AttributeValue]:
     if isinstance(output, BaseModel):
         output = str(output.model_dump())
+    jsonable_arg_values = {}
+    for arg_name, arg_value in arg_values.items():
+        try:
+            serialized_arg_value = jsonable_encoder(arg_value)
+        except ValueError:
+            serialized_arg_value = "could not serialize"
+        jsonable_arg_values[arg_name] = serialized_arg_value
     return {
         "lilypad.project_uuid": str(lilypad_client.project_uuid)
         if lilypad_client.project_uuid
@@ -70,9 +83,12 @@ def _construct_trace_attributes(
         "lilypad.generation.signature": generation.signature,
         "lilypad.generation.code": generation.code,
         "lilypad.generation.arg_types": json.dumps(arg_types),
-        "lilypad.generation.arg_values": json.dumps(arg_values),
+        "lilypad.generation.arg_values": json.dumps(jsonable_arg_values),
         "lilypad.generation.prompt_template": prompt_template,
         "lilypad.generation.output": str(output),
+        "lilypad.generation.version": generation.version_num
+        if generation.version_num
+        else -1,
         "lilypad.is_async": is_async,
     }
 
@@ -161,7 +177,7 @@ def generation() -> GenerationDecorator:
         )
         if inspect.iscoroutinefunction(fn):
 
-            @wraps(fn)
+            @call_safely(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
@@ -188,7 +204,7 @@ def generation() -> GenerationDecorator:
 
         else:
 
-            @wraps(fn)
+            @call_safely(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
@@ -211,6 +227,6 @@ def generation() -> GenerationDecorator:
                 finally:
                     current_generation.reset(token)
 
-            return inner
+            return inner  # pyright: ignore [reportReturnType]
 
     return decorator

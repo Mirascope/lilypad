@@ -76,7 +76,11 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: "Scope",
     },
     {
-      accessorKey: "version_num",
+      accessorFn: (row) => {
+        const attributes = row.data?.attributes || {};
+        const type = attributes["lilypad.type"];
+        return attributes[`lilypad.${type}.version`];
+      },
       id: "version",
       header: ({ column }) => {
         return (

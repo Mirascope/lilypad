@@ -23,7 +23,12 @@ from opentelemetry.semconv.schemas import Schemas
 from opentelemetry.trace import get_tracer
 from wrapt import wrap_function_wrapper
 
-from .patch import chat_completions_create, chat_completions_create_async
+from .patch import (
+    chat_completions_create,
+    chat_completions_create_async,
+    chat_completions_parse,
+    chat_completions_parse_async,
+)
 
 
 class OpenAIInstrumentor(BaseInstrumentor):
@@ -50,8 +55,21 @@ class OpenAIInstrumentor(BaseInstrumentor):
             wrapper=chat_completions_create_async(tracer),
         )
 
+        wrap_function_wrapper(
+            module="openai.resources.beta.chat.completions",
+            name="Completions.parse",
+            wrapper=chat_completions_parse(tracer),
+        )
+        wrap_function_wrapper(
+            module="openai.resources.beta.chat.completions",
+            name="AsyncCompletions.parse",
+            wrapper=chat_completions_parse_async(tracer),
+        )
+
     def _uninstrument(self, **kwargs: Any) -> None:
         import openai
 
         unwrap(openai.resources.chat.completions.Completions, "create")  # pyright: ignore[reportAttributeAccessIssue]
         unwrap(openai.resources.chat.completions.AsyncCompletions, "create")  # pyright: ignore[reportAttributeAccessIssue]
+        unwrap(openai.resources.beta.chat.completions.Completions, "parse")  # pyright: ignore[reportAttributeAccessIssue]
+        unwrap(openai.resources.beta.chat.completions.AsyncCompletions, "parse")  # pyright: ignore[reportAttributeAccessIssue]

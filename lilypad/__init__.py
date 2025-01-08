@@ -8,6 +8,7 @@ from ._configure import configure
 from .generations import generation
 from .messages import Message
 from .prompts import prompt
+from .response_models import response_model
 from .tools import tool
 
 __version__ = importlib.metadata.version("python-lilypad")
@@ -20,4 +21,5 @@ __all__ = [
     "prompt",
     "server",
     "tool",
+    "response_model",
 ]

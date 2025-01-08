@@ -1,8 +1,8 @@
 import api from "@/api";
 import {
-  PromptPublic,
-  PromptCreate,
   PlaygroundParameters,
+  PromptCreate,
+  PromptPublic,
   PromptUpdate,
 } from "@/types/types";
 import {
@@ -62,10 +62,14 @@ export const fetchPromptsBySignature = async (
   ).data;
 };
 
-export const fetchUniquePromptNames = async (projectUuid?: string) => {
+export const fetchLatestVersionUniquePromptNames = async (
+  projectUuid?: string
+) => {
   if (!projectUuid) return [];
   return (
-    await api.get<string[]>(`/projects/${projectUuid}/prompts/metadata/names`)
+    await api.get<PromptPublic[]>(
+      `/projects/${projectUuid}/prompts/metadata/names/versions`
+    )
   ).data;
 };
 
@@ -114,10 +118,12 @@ export const promptQueryOptions = (
     ...options,
   });
 
-export const uniquePromptNamesQueryOptions = (projectUuid?: string) =>
+export const uniqueLatestVersionPromptNamesQueryOptions = (
+  projectUuid?: string
+) =>
   queryOptions({
     queryKey: ["project", projectUuid, "prompts"],
-    queryFn: async () => await fetchUniquePromptNames(projectUuid),
+    queryFn: async () => await fetchLatestVersionUniquePromptNames(projectUuid),
   });
 
 export const promptsBySignature = (projectUuid: string, signature?: string) =>

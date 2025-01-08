@@ -1,6 +1,6 @@
 name: 🐛 Bug
 description: Report any issue with Lillypad
-labels: [Bug]
+labels: [bug]
 
 body:
   - type: textarea

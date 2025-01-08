@@ -1,7 +1,7 @@
 """The module for the `lilypad` database tables and models."""
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
-from .base_sql_model import BaseSQLModel
+from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
 from .device_codes import DeviceCodeTable
 from .generations import (
     GenerationCreate,
@@ -11,7 +11,14 @@ from .generations import (
 )
 from .organizations import OrganizationCreate, OrganizationPublic, OrganizationTable
 from .projects import ProjectCreate, ProjectPublic, ProjectTable
-from .prompts import PromptCreate, PromptPublic, PromptTable, PromptUpdate, Provider
+from .prompts import (
+    PlaygroundParameters,
+    PromptCreate,
+    PromptPublic,
+    PromptTable,
+    PromptUpdate,
+    Provider,
+)
 from .spans import Scope, SpanCreate, SpanPublic, SpanTable, SpanType
 from .user_organizations import (
     UserOrganizationCreate,
@@ -29,9 +36,11 @@ __all__ = [
     "GenerationPublic",
     "GenerationTable",
     "GenerationUpdate",
+    "JSONTypeDecorator",
     "OrganizationCreate",
     "OrganizationPublic",
     "OrganizationTable",
+    "PlaygroundParameters",
     "ProjectCreate",
     "ProjectPublic",
     "ProjectTable",
@@ -52,4 +61,5 @@ __all__ = [
     "UserOrganizationCreate",
     "UserOrganizationPublic",
     "UserOrganizationTable",
+    "get_json_column",
 ]

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # Server settings
     environment: str = Field(default="production")
     port: int = Field(default=8000)
-    remote_base_url: str = Field(default="https://lilypad-production.up.railway.app")
+    remote_base_url: str = Field(default="https://app.lilypad.so")
 
     # GitHub OAuth settings
     github_client_id: str = Field(default="my_client_id")

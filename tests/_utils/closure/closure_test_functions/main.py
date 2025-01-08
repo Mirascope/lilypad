@@ -11,6 +11,7 @@ from google.generativeai.generative_models import GenerativeModel
 from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
+from pydantic import BaseModel
 
 import tests._utils.closure.closure_test_functions.other
 import tests._utils.closure.closure_test_functions.other as cloth
@@ -564,3 +565,27 @@ def closure_with_long_function_name_that_wraps_around_fn(
         return {"role": "user", "content": "Hello, world!"}
     """
     return {"role": "user", "content": "Hello, world!"}
+
+
+class Response(BaseModel):
+    """Test response model."""
+
+    response: str
+
+
+@openai.call("gpt-4o-mini", response_model=Response)
+def mirascope_response_model_fn() -> str:
+    """
+    from mirascope.core import openai
+    from pydantic import BaseModel
+
+
+    class Response(BaseModel):
+        response: str
+
+
+    @openai.call("gpt-4o-mini", response_model=Response)
+    def mirascope_response_model_fn() -> str:
+        return "Hello, world!"
+    """
+    return "Hello, world!"

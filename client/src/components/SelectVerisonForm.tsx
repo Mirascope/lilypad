@@ -1,22 +1,5 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  uniquePromptNamesQueryOptions,
-  promptsByNameQueryOptions,
-} from "@/utils/prompts";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
-import { useEffect } from "react";
-import { PromptPublic } from "@/types/types";
 import { IconDialog } from "@/components/IconDialog";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -26,6 +9,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PromptPublic } from "@/types/types";
+import {
+  promptsByNameQueryOptions,
+  uniqueLatestVersionPromptNamesQueryOptions,
+} from "@/utils/prompts";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
+import { useEffect } from "react";
+import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 type FunctionFormValues = {
   newPromptName: string;
   promptName: string;
@@ -73,11 +73,15 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
   const { data: prompts } = useSuspenseQuery(
     promptsByNameQueryOptions(promptName, projectUuid)
   );
-  const { data: uniquePromptNames } = useSuspenseQuery(
-    uniquePromptNamesQueryOptions(projectUuid)
+  const { data: uniquePrompts } = useSuspenseQuery(
+    uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
-  const uniquePromptNamesWithNew = [...uniquePromptNames];
-  if (newPromptName && !uniquePromptNames.includes(newPromptName)) {
+  const uniquePromptNamesWithNew =
+    uniquePrompts?.map((prompt) => prompt.name) || [];
+  if (
+    newPromptName &&
+    !uniquePrompts.find((uniquePrompt) => uniquePrompt.name == newPromptName)
+  ) {
     uniquePromptNamesWithNew.push(newPromptName);
   }
   useEffect(() => {

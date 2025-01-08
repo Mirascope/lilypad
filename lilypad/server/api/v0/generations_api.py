@@ -54,6 +54,18 @@ async def get_generations_by_name(
 
 
 @generations_router.get(
+    "/projects/{project_uuid}/generations/metadata/names/versions",
+    response_model=Sequence[GenerationPublic],
+)
+async def get_latest_version_unique_generation_names(
+    project_uuid: UUID,
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+) -> Sequence[GenerationTable]:
+    """Get all unique prompt names."""
+    return generation_service.find_unique_generation_names(project_uuid)
+
+
+@generations_router.get(
     "/projects/{project_uuid}/generations/hash/{generation_hash}",
     response_model=GenerationPublic,
 )
@@ -102,7 +114,12 @@ async def create_new_generation(
 ) -> GenerationTable:
     """Create a new generation version."""
     generation_create = generation_create.model_copy(
-        update={"project_uuid": project_uuid}
+        update={
+            "project_uuid": project_uuid,
+            "version_num": generation_service.get_next_version(
+                project_uuid, generation_create.name
+            ),
+        }
     )
     try:
         return generation_service.find_record_by_hash(generation_create.hash)

@@ -1,5 +1,4 @@
-import { CreateEditorForm } from "@/components/CreateEditorForm";
-import { GenerationWorkbench } from "@/components/GenerationWorkbench";
+import { Playground } from "@/components/Playground";
 import { NotFound } from "@/components/NotFound";
 import { SelectVersionForm } from "@/components/SelectVerisonForm";
 import { promptQueryOptions } from "@/utils/prompts";
@@ -21,7 +20,7 @@ export const Route = createFileRoute(
     return (
       <div className='w-full'>
         <SelectVersionForm promptUuid={promptUuid} />
-        <CreateEditorForm version={promptVersion} />
+        <Playground version={promptVersion} />
       </div>
     );
   },

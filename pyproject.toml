@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.7"
+version = "0.0.10"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -44,6 +44,9 @@ dependencies = [
     "pydantic-settings>=2.6.1",
     "cryptography>=43.0.3",
     "ruff>=0.8.1",
+    "requests>=2.32.3",
+    "pillow>=10.4.0",
+    "alembic>=1.14.0",
 ]
 
 [project.urls]
@@ -63,11 +66,12 @@ bedrock = [
     "boto3-stubs[bedrock-runtime]>=1.35.82",
     "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
 ]
+outlines = ["outlines>=0.1.11"]
 
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.3.2",
-    "pyright>=1.1.390",
+    "pyright>=1.1.391",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
@@ -117,6 +121,7 @@ line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
+"lilypad/server/migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = ["D212", "D402"]
