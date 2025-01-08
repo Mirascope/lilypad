@@ -16,6 +16,7 @@ from .closure_test_functions import (
     closure_inside_decorator_fn,
     closure_inside_imported_decorator_fn,
     closure_with_long_function_name_that_wraps_around_fn,
+    datetime_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,
@@ -381,6 +382,13 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
             arg1: str, arg2: str
         ) -> ChatCompletionUserMessageParam: ...
         """)
+
+
+def test_datetime() -> None:
+    """Test the `Closure` class with a datetime function."""
+    closure = Closure.from_fn(datetime_fn)
+    assert closure.code == _expected(datetime_fn)
+    assert closure.dependencies == {}
 
 
 def test_closure_run() -> None:
