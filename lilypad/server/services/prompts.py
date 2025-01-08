@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlmodel import func, select
+from sqlmodel import and_, func, select
 
 from ..models import PromptCreate, PromptTable
 from .base import BaseService
@@ -56,26 +56,43 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
 
     def find_unique_prompt_names(self, project_uuid: UUID) -> Sequence[PromptTable]:
         """Find record by UUID, getting latest version for each name."""
-        record_tables = self.session.exec(
-            select(self.table)
+        latest_versions = (
+            select(
+                self.table.name, func.max(self.table.version_num).label("max_version")
+            )
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
             )
             .group_by(self.table.name)
-            .order_by(func.max(self.table.version_num).desc())
+            .subquery()
+        )
+
+        record_tables = self.session.exec(
+            select(self.table)
+            .join(
+                latest_versions,
+                and_(
+                    self.table.name == latest_versions.c.name,
+                    self.table.version_num == latest_versions.c.max_version,
+                ),
+            )
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+            )
+            .order_by(latest_versions.c.max_version.desc())
         ).all()
         return record_tables
 
-    def find_prompt_by_call_params(
-        self, prompt_create: PromptCreate
-    ) -> PromptTable | None:
+    def check_duplicate_prompt(self, prompt_create: PromptCreate) -> PromptTable | None:
         """Find prompt by call params"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == prompt_create.hash,
                 self.table.call_params == prompt_create.call_params,
+                self.table.arg_types == prompt_create.arg_types,
             )
         ).first()
 

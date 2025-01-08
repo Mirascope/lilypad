@@ -23,6 +23,29 @@ export const fetchGeneration = async (
   ).data;
 };
 
+export const fetchGenerationsByName = async (
+  generationName: string,
+  projectUuid?: string
+) => {
+  if (!projectUuid) return [];
+  return (
+    await api.get<GenerationPublic[]>(
+      `/projects/${projectUuid}/generations/name/${generationName}`
+    )
+  ).data;
+};
+
+export const fetchLatestVersionUniqueGenerationNames = async (
+  projectUuid?: string
+) => {
+  if (!projectUuid) return [];
+  return (
+    await api.get<GenerationPublic[]>(
+      `/projects/${projectUuid}/generations/metadata/names/versions`
+    )
+  ).data;
+};
+
 export const patchGeneration = async (
   projectUuid: string,
   generationUuid: string,
@@ -73,3 +96,22 @@ export const usePatchGenerationMutation = () => {
     },
   });
 };
+
+export const uniqueLatestVersionGenerationNamesQueryOptions = (
+  projectUuid?: string
+) =>
+  queryOptions({
+    queryKey: ["project", projectUuid, "generations"],
+    queryFn: async () =>
+      await fetchLatestVersionUniqueGenerationNames(projectUuid),
+  });
+
+export const generationsByNameQueryOptions = (
+  generationName: string,
+  projectUuid?: string
+) =>
+  queryOptions({
+    queryKey: ["project", projectUuid, "generations"],
+    queryFn: async () =>
+      await fetchGenerationsByName(generationName, projectUuid),
+  });

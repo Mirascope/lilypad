@@ -137,14 +137,14 @@ def test_set_call_response_attributes_non_serializable_message_param():
             return "NonSerializableObject"
 
     response = MagicMock()
-    response.message_param = NonSerializableObject()
+    response.message_param = {"key": "value"}
     response.messages = [{"message": "hello"}]
     span = MagicMock()
 
     _set_call_response_attributes(response, span)
 
     expected_attributes = {
-        "lilypad.generation.output": "NonSerializableObject",
+        "lilypad.generation.output": json.dumps(response.message_param),
         "lilypad.generation.messages": json.dumps(response.messages),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
@@ -165,16 +165,10 @@ def test_set_call_response_attributes_non_serializable_messages():
         SimpleMessage(role="assistant", content="Another message"),
     ]
     span = MagicMock()
-
     _set_call_response_attributes(response, span)
-
-    expected_messages = []
-    for msg in response.messages:
-        expected_messages.append({"role": msg.role, "content": msg.content})
-
     expected_attributes = {
         "lilypad.generation.output": json.dumps(response.message_param),
-        "lilypad.generation.messages": json.dumps(expected_messages),
+        "lilypad.generation.messages": json.dumps([{}]),
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 

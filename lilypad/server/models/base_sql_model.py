@@ -6,7 +6,30 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, model_serializer
+from sqlalchemy import JSON, Column, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql.base import PGDialect
+from sqlalchemy.engine.interfaces import Dialect
+from sqlalchemy.types import TypeEngine
 from sqlmodel import Field, SQLModel
+
+
+class JSONTypeDecorator(TypeDecorator):
+    """JSON type decorator."""
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Dialect) -> TypeEngine:
+        """Load dialect implementation."""
+        if isinstance(dialect, PGDialect):
+            return dialect.type_descriptor(JSONB())
+        return dialect.type_descriptor(JSON())
+
+
+def get_json_column() -> Column:
+    """Uses JSONB for PostgreSQL and JSON for other databases."""
+    return Column(JSONTypeDecorator)
 
 
 class BaseSQLModel(SQLModel):

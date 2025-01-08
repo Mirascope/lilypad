@@ -3,11 +3,11 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .base_sql_model import get_json_column
 from .prompts import PromptPublic
 from .response_models import ResponseModelPublic, ResponseModelTable
 from .table_names import (
@@ -42,9 +42,9 @@ class _GenerationBase(SQLModel):
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True, unique=True)
     dependencies: dict[str, DependencyInfo] = Field(
-        sa_column=Column(JSON), default_factory=dict
+        sa_column=get_json_column(), default_factory=dict
     )
-    arg_types: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
+    arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
 
 
 class GenerationCreate(_GenerationBase):

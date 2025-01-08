@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel
-from sqlmodel import JSON, Column, Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
-from .base_sql_model import BaseSQLModel
+from .base_sql_model import BaseSQLModel, get_json_column
 from .table_names import USER_TABLE_NAME
 from .user_organizations import UserOrganizationPublic
 
@@ -21,7 +21,7 @@ class _UserBase(SQLModel):
     last_name: str | None = Field(default=None)
     email: str = Field(nullable=False, index=True, min_length=1)
     active_organization_uuid: UUID | None = Field(default=None)
-    keys: dict[str, str] = Field(sa_column=Column(JSON), default_factory=dict)
+    keys: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
 
 
 class UserTable(_UserBase, BaseSQLModel, table=True):

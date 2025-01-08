@@ -25,6 +25,7 @@ from .closure_test_functions import (
     inner_fn,
     inner_sub_fn,
     internal_imports_fn,
+    mirascope_response_model_fn,
     multi_decorated_fn,
     self_fn_class_fn,
     single_fn,
@@ -390,3 +391,19 @@ def test_closure_run() -> None:
 
     closure = Closure.from_fn(fn)
     assert closure.run("Hello, world!") == "Hello, world!"
+
+
+def test_mirascope_response_model_fn() -> None:
+    """Test the `Closure` class with a Mirascope response model."""
+    closure = Closure.from_fn(mirascope_response_model_fn)
+    assert closure.code == _expected(mirascope_response_model_fn)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+        },
+        "pydantic": {
+            "extras": None,
+            "version": "2.10.3",
+        },
+    }

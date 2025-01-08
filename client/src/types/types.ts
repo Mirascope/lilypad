@@ -61,6 +61,8 @@ export interface GenerationCreate {
   project_uuid?: string | null;
   /** Prompt Uuid */
   prompt_uuid?: string | null;
+  /** Response Model Uuid */
+  response_model_uuid?: string | null;
   /** Version Num */
   version_num?: number | null;
   /**
@@ -89,6 +91,8 @@ export interface GenerationPublic {
   project_uuid?: string | null;
   /** Prompt Uuid */
   prompt_uuid?: string | null;
+  /** Response Model Uuid */
+  response_model_uuid?: string | null;
   /** Version Num */
   version_num?: number | null;
   /**
@@ -112,6 +116,7 @@ export interface GenerationPublic {
    */
   uuid: string;
   prompt?: PromptPublic | null;
+  response_model?: ResponseModelPublic | null;
 }
 
 /**
@@ -202,6 +207,11 @@ export interface ProjectPublic {
    * @default []
    */
   prompts?: PromptPublic[];
+  /**
+   * Response Models
+   * @default []
+   */
+  response_models?: ResponseModelPublic[];
 }
 
 /**
@@ -328,6 +338,73 @@ export enum Provider {
 }
 
 /**
+ * ResponseModelCreate
+ * Create model for response models.
+ */
+export interface ResponseModelCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Schema Data */
+  schema_data?: object;
+  /** Examples */
+  examples?: object[];
+  /**
+   * Is Active
+   * @default false
+   */
+  is_active?: boolean;
+}
+
+/**
+ * ResponseModelPublic
+ * Public model for response models.
+ */
+export interface ResponseModelPublic {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Schema Data */
+  schema_data?: object;
+  /** Examples */
+  examples?: object[];
+  /**
+   * Is Active
+   * @default false
+   */
+  is_active?: boolean;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+}
+
+/**
  * Scope
  * Instrumentation Scope name of the span
  */
@@ -342,6 +419,8 @@ export interface SettingsPublic {
   remote_base_url: string;
   /** Github Client Id */
   github_client_id: string;
+  /** Environment */
+  environment: string;
 }
 
 /**
@@ -390,6 +469,8 @@ export interface SpanPublic {
   generation_uuid?: string | null;
   /** Prompt Uuid */
   prompt_uuid?: string | null;
+  /** Response Model Uuid */
+  response_model_uuid?: string | null;
   type?: SpanType | null;
   /** Cost */
   cost?: number | null;
@@ -408,6 +489,7 @@ export interface SpanPublic {
   display_name?: string | null;
   generation?: GenerationPublic | null;
   prompt?: PromptPublic | null;
+  response_model?: ResponseModelPublic | null;
   /** Child Spans */
   child_spans: SpanPublic[];
   /**

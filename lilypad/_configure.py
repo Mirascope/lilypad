@@ -143,7 +143,7 @@ def configure() -> None:
         from lilypad._opentelemetry import MistralInstrumentor
 
         MistralInstrumentor().instrument()
-    if  importlib.util.find_spec("outlines") is not None:
+    if importlib.util.find_spec("outlines") is not None:
         from lilypad._opentelemetry import OutlinesInstrumentor
 
         OutlinesInstrumentor().instrument()

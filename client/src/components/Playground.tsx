@@ -1,6 +1,6 @@
 import { Editor } from "@/components/Editor";
 
-import { useRef, useState } from "react";
+import { BaseSyntheticEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SubmitHandler, useFieldArray } from "react-hook-form";
 import { Label } from "@/components/ui/label";
@@ -82,12 +82,16 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
 
   if (!projectUuid || !promptName) return <NotFound />;
   const onSubmit: SubmitHandler<EditorParameters> = (
-    data: PlaygroundParameters,
-    event
+    data: EditorParameters,
+    event?: BaseSyntheticEvent
   ) => {
     event?.preventDefault();
+    methods.clearErrors();
+    setEditorErrors([]);
     if (!editorRef?.current) return;
-
+    const buttonName = (
+      event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
+    ).submitter.name;
     const editorErrors = $findErrorTemplateNodes(editorRef.current);
     if (editorErrors.length > 0) {
       setEditorErrors(
@@ -115,20 +119,50 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
         hash: "",
         code: "",
       };
-
-      try {
-        const isValid = await methods.trigger();
-        if (!isValid) return;
-        const newVersion = await createPromptMutation.mutateAsync({
+      const isValid = await methods.trigger();
+      if (buttonName === "run") {
+        let hasErrors = false;
+        data.inputs.forEach((input, index) => {
+          if (!input.value) {
+            methods.setError(`inputs.${index}.value`, {
+              type: "required",
+              message: "Value is required for Run",
+            });
+            hasErrors = true;
+          }
+        });
+        if (!isValid || hasErrors) return;
+        const inputValues = inputs.reduce(
+          (acc, input) => {
+            acc[input.key] = input.value;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+        const playgroundValues: PlaygroundParameters = {
+          prompt: promptCreate,
+          provider: data.provider,
+          model: data.model,
+          arg_values: inputValues,
+        };
+        await runMutation.mutateAsync({
           projectUuid,
-          promptCreate,
+          playgroundValues,
         });
-        navigate({
-          to: `/projects/${projectUuid}/prompts/${newVersion.name}/versions/${newVersion.uuid}`,
-          replace: true,
-        });
-      } catch (error) {
-        console.error(error);
+      } else {
+        try {
+          if (!isValid) return;
+          const newVersion = await createPromptMutation.mutateAsync({
+            projectUuid,
+            promptCreate,
+          });
+          navigate({
+            to: `/projects/${projectUuid}/prompts/${newVersion.name}/versions/${newVersion.uuid}`,
+            replace: true,
+          });
+        } catch (error) {
+          console.error(error);
+        }
       }
     });
   };
@@ -204,60 +238,6 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
       </>
     );
   };
-  const runPlayground = async () => {
-    if (!editorRef?.current) return;
-    const data = methods.getValues();
-    const editorErrors = $findErrorTemplateNodes(editorRef.current);
-    if (editorErrors.length > 0) {
-      setEditorErrors(
-        editorErrors.map(
-          (node) => `'${node.getValue()}' is not a function argument.`
-        )
-      );
-      return;
-    }
-    const editorState = editorRef.current.getEditorState();
-    editorState.read(async () => {
-      methods.clearErrors();
-      const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      const isValid = await methods.trigger();
-      let hasErrors = false;
-      data.inputs.forEach((input, index) => {
-        if (!input.value) {
-          methods.setError(`inputs.${index}.value`, {
-            type: "required",
-            message: "Value is required for Run",
-          });
-          hasErrors = true;
-        }
-      });
-      if (!isValid || hasErrors) return;
-      const inputValues = inputs.reduce(
-        (acc, input) => {
-          acc[input.key] = input.value;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
-      const playgroundValues: PlaygroundParameters = {
-        prompt: {
-          ...data.prompt,
-          name: promptName,
-          hash: "",
-          code: "",
-          signature: "",
-          template: markdown,
-        },
-        provider: data.provider,
-        model: data.model,
-        arg_values: inputValues,
-      };
-      await runMutation.mutateAsync({
-        projectUuid,
-        playgroundValues,
-      });
-    });
-  };
   const doesProviderExist = getAvailableProviders(user).length > 0;
   return (
     <div className='m-auto w-[1200px] p-4'>
@@ -281,20 +261,26 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   {version.is_default ? "Default" : "Set default"}
                 </Button>
               )}
-            </div>
-            <div className='flex items-center gap-2'>
               {version && (
                 <IconDialog
                   text='Code'
                   title='Copy Code'
                   description='Copy this codeblock into your application.'
+                  dialogContentProps={{
+                    className: "max-w-[600px]",
+                  }}
+                  buttonProps={{
+                    disabled: methods.formState.isDirty,
+                  }}
                 >
                   <CodeSnippet code={version.code} />
                 </IconDialog>
               )}
+            </div>
+            <div className='flex items-center gap-2'>
               <Button
                 type='submit'
-                name='run'
+                name='save'
                 loading={createPromptMutation.isPending}
               >
                 Save
@@ -303,10 +289,8 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                 <TooltipTrigger asChild>
                   <span>
                     <Button
-                      type='button'
                       name='run'
                       loading={runMutation.isPending}
-                      onClick={runPlayground}
                       disabled={!doesProviderExist}
                     >
                       Run
@@ -342,8 +326,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   </div>
                 ))}
             </div>
-            {/* @ts-ignore */}
-            <BaseEditorFormFields methods={methods} />
+            <BaseEditorFormFields />
           </div>
           {renderBottomPanel()}
         </form>
