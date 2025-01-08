@@ -437,7 +437,7 @@ class _DependencyCollector:
         return dependencies
 
     @classmethod
-    def _map_child_to_parent(cls,child_to_parent: dict[ast.AST, ast.AST] ,node: ast.AST, parent: ast.AST | None = None) -> None:
+    def _map_child_to_parent(cls,child_to_parent: dict[ast.AST, ast.AST | None] ,node: ast.AST, parent: ast.AST | None = None) -> None:
         child_to_parent[node] = parent
         for _field, value in ast.iter_fields(node):
             if isinstance(value, list):
