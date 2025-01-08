@@ -1,34 +1,37 @@
-import { ProjectPublic } from "@/types/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import api from "@/api";
+import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
+import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
-import {
-  createFileRoute,
-  useLoaderData,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
+import { Suspense } from "react";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
-  loader: async ({ params: { projectUuid } }) =>
-    (await api.get<ProjectPublic>(`/projects/${projectUuid}`)).data,
-  pendingComponent: () => <div>Loading...</div>,
-  errorComponent: ({ error }) => <div>{error.message}</div>,
-  component: () => <Trace />,
+  component: () => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Trace />
+    </Suspense>
+  ),
 });
 
 export const Trace = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const project = useLoaderData({ from: Route.id }) as ProjectPublic;
-  const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
+  const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   return (
     <div className='h-full flex flex-col px-2'>
       <Typography variant='h2'>{project.name}</Typography>
       <div className='flex-1 min-h-0 overflow-auto'>
-        <TracesTable data={data} />
+        <Suspense fallback={<TableSkeleton />}>
+          <TraceBody projectUuid={projectUuid} />
+        </Suspense>
       </div>
     </div>
   );
+};
+
+export const TraceBody = ({ projectUuid }: { projectUuid: string }) => {
+  const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
+  return <TracesTable data={data} />;
 };
