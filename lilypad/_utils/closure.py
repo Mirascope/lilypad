@@ -436,6 +436,17 @@ class _DependencyCollector:
 
         return dependencies
 
+    @classmethod
+    def _map_child_to_parent(cls,child_to_parent: dict[ast.AST, ast.AST] ,node: ast.AST, parent: ast.AST | None = None) -> None:
+        child_to_parent[node] = parent
+        for _field, value in ast.iter_fields(node):
+            if isinstance(value, list):
+                for child in value:
+                    if isinstance(child, ast.AST):
+                        cls._map_child_to_parent(child_to_parent, child, node)
+            elif isinstance(value, ast.AST):
+                cls._map_child_to_parent(child_to_parent, value, node)
+
     def collect(
         self, fn: Callable[..., Any]
     ) -> tuple[list[str], list[str], list[str], dict[str, DependencyInfo]]:
@@ -448,17 +459,7 @@ class _DependencyCollector:
 
             child_to_parent = {}
 
-            def visit_node(node_: ast.AST, parent_: ast.AST | None=None) -> None:
-                child_to_parent[node_] = parent_
-                for _field, value in ast.iter_fields(node_):
-                    if isinstance(value, list):
-                        for child in value:
-                            if isinstance(child, ast.AST):
-                                visit_node(child, node_)
-                    elif isinstance(value, ast.AST):
-                        visit_node(value, node_)
-
-            visit_node(tree)
+            self._map_child_to_parent(child_to_parent, tree)
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef | ast.ClassDef):

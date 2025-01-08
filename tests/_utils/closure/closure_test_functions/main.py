@@ -551,11 +551,14 @@ def closure_inside_imported_decorator_fn() -> str:
     return "Hello, world!"
 
 class MockClient:
+    """Mock client class."""
     @cached_property
     def foo(self) -> str:
+        """Foo"""
         return "Hello, "
     @property
     def bar(self) -> str:
+        """Bar"""
         return "world!"
 
 def closure_with_properties_fn() -> str:
