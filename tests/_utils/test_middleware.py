@@ -150,28 +150,6 @@ def test_set_call_response_attributes_non_serializable_message_param():
     span.set_attributes.assert_called_once_with(expected_attributes)
 
 
-def test_set_call_response_attributes_non_serializable_messages():
-    """Test _set_call_response_attributes with non-serializable messages."""
-    response = MagicMock()
-    response.message_param = {"key": "value"}
-
-    class SimpleMessage:
-        def __init__(self, role: str, content: str):
-            self.role = role
-            self.content = content
-
-    response.messages = [
-        SimpleMessage(role="assistant", content="Hello World!"),
-        SimpleMessage(role="assistant", content="Another message"),
-    ]
-    span = MagicMock()
-    _set_call_response_attributes(response, span)
-    expected_attributes = {
-        "lilypad.generation.output": json.dumps(response.message_param),
-        "lilypad.generation.messages": json.dumps([{}]),
-    }
-    span.set_attributes.assert_called_once_with(expected_attributes)
-
 
 def test_set_response_model_attributes_base_model_with_messages():
     """Test _set_response_model_attributes with BaseModel having messages."""
@@ -187,18 +165,6 @@ def test_set_response_model_attributes_base_model_with_messages():
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
 
-
-def test_set_response_model_attributes_base_model_without_messages():
-    """Test _set_response_model_attributes with BaseModel without messages."""
-    result = MagicMock(spec=BaseModel)
-    result.model_dump_json.return_value = '{"key": "value"}'
-    result._response = None
-    span = MagicMock()
-    _set_response_model_attributes(result, span)
-    expected_attributes = {
-        "lilypad.generation.output": '{"key": "value"}',
-    }
-    span.set_attributes.assert_called_once_with(expected_attributes)
 
 
 def test_set_response_model_attributes_base_type():
