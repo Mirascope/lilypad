@@ -60,7 +60,11 @@ Changelog = "https://github.com/Mirascope/lilypad/releases"
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]
 gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
+mistral = [
+    "mistralai>=1.0.0,<2",
+]
 outlines = ["outlines>=0.1.11"]
+
 
 [tool.uv]
 dev-dependencies = [
