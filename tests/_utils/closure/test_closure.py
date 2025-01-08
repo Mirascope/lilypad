@@ -392,7 +392,7 @@ def test_mirascope_response_model_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": ["anthropic", "gemini", "openai", "opentelemetry", "vertex"],
         },
         "pydantic": {
             "extras": None,

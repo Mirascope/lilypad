@@ -17,7 +17,7 @@ def get_vertex_llm_request_attributes(
 ) -> dict[str, Any]:
     attributes: dict[str, Any] = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: "chat",
-        gen_ai_attributes.GEN_AI_SYSTEM: "vertex",
+        gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.VERTEX_AI,
         gen_ai_attributes.GEN_AI_REQUEST_MODEL: get_vertex_model_name(instance),
     }
 
@@ -74,7 +74,7 @@ def get_vertex_llm_request_attributes(
 
 
 def get_vertex_candidate_event(candidate: Any) -> dict[str, Any]:
-    attributes: dict[str, Any] = {gen_ai_attributes.GEN_AI_SYSTEM: "vertex"}
+    attributes: dict[str, Any] = {gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.VERTEX_AI}
     message_dict = {
         "role": candidate.content.role if candidate.content else "assistant",
     }
