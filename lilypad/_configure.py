@@ -139,6 +139,10 @@ def configure() -> None:
         from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
 
         GoogleGenerativeAIInstrumentor().instrument()
+    if importlib.util.find_spec("mistralai") is not None:
+        from lilypad._opentelemetry import MistralInstrumentor
+
+        MistralInstrumentor().instrument()
     if importlib.util.find_spec("outlines") is not None:
         from lilypad._opentelemetry import OutlinesInstrumentor
 

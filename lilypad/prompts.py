@@ -51,6 +51,21 @@ if TYPE_CHECKING:
         ContentDict = Any
         GeminiCallParams = Any
 
+    try:
+        from mirascope.core.mistral import MistralCallParams
+        from mistralai.models import (
+            AssistantMessage,
+            SystemMessage,
+            ToolMessage,
+            UserMessage,
+        )
+
+    except ImportError:
+        MistralCallParams = Any
+        AssistantMessage = Any
+        SystemMessage = Any
+        ToolMessage = Any
+
 
 def _base_message_params(
     template: str, arg_values: dict[str, Any]
@@ -84,12 +99,22 @@ class Prompt(BaseModel):
     @overload
     def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
     def messages(
-        self, provider: Literal["openai", "anthropic", "gemini"]
+        self, provider: Literal["mistral"]
+    ) -> Sequence[
+        "AssistantMessage | SystemMessage | ToolMessage | UserMessage"  # pyright: ignore [reportInvalidTypeForm]
+    ]: ...
+
+    def messages(
+        self, provider: Literal["openai", "anthropic", "gemini", "bedrock", "mistral"]
     ) -> (
         Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
+        | Sequence[
+            "AssistantMessage | SystemMessage | ToolMessage | UserMessage"  # pyright: ignore [reportInvalidTypeForm]
+        ]
     ):
         """Return the messages array for the given provider converted from base."""
         if provider == "openai":
@@ -105,7 +130,11 @@ class Prompt(BaseModel):
         elif provider == "gemini":
             from mirascope.core.gemini._utils import convert_message_params
 
-            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+
+        elif provider == "mistral":
+            from mirascope.core.mistral._utils import convert_message_params
+
             return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
         else:
             raise NotImplementedError(f"Unknown provider: {provider}")
@@ -119,9 +148,14 @@ class Prompt(BaseModel):
     @overload
     def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
+    def call_params(self, provider: Literal["mistral"]) -> "MistralCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
+
     def call_params(
-        self, provider: Literal["openai", "anthropic", "gemini"]
-    ) -> "OpenAICallParams | AnthropicCallParams | GeminiCallParams":  # pyright: ignore [reportInvalidTypeForm]
+        self, provider: Literal["openai", "anthropic", "gemini", "mistral"]
+    ) -> (
+        "OpenAICallParams | AnthropicCallParams | GeminiCallParams | MistralCallParams"  # pyright: ignore [reportInvalidTypeForm]
+    ):
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":
             from mirascope.core.openai._utils._convert_common_call_params import (
@@ -137,6 +171,13 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "gemini":
             from mirascope.core.gemini._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
+
+            return convert_common_call_params(self.common_call_params)
+
+        elif provider == "mistral":
+            from mirascope.core.mistral._utils._convert_common_call_params import (
                 convert_common_call_params,
             )
 
