@@ -161,7 +161,7 @@ def test_span_models() -> None:
         data={
             "name": "test_span",
             "attributes": {
-                "lilypad.type": SpanType.GENERATION,
+                "lilypad.type": "generation",
                 "lilypad.generation.name": "test_function",
             },
         },

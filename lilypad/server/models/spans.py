@@ -77,7 +77,6 @@ class SpanPublic(_SpanBase):
     """Span public model"""
 
     uuid: UUID
-    # project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
     prompt: PromptPublic | None = None
