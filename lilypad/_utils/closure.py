@@ -24,6 +24,10 @@ from packaging.requirements import Requirement
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
+try:
+    from ipykernel.zmqshell import ZMQInteractiveShell
+except ImportError:
+    ZMQInteractiveShell = None
 
 class DependencyInfo(TypedDict):
     version: str
@@ -334,6 +338,15 @@ class _DependencyCollector:
             self.imports.update(import_collector.imports)
             self.user_defined_imports.update(import_collector.user_defined_imports)
 
+    @classmethod
+    def _get_ipython(cls, module: ModuleType) -> ZMQInteractiveShell | None:
+        if ZMQInteractiveShell is None:
+            return None
+
+        if get_ipython := getattr(module, "get_ipython", None):
+            return get_ipython()
+        return None
+
     def _collect_imports_and_source_code(
         self, definition: Callable[..., Any] | type, include_source: bool
     ) -> None:
@@ -343,11 +356,18 @@ class _DependencyCollector:
             self.visited_functions.add(definition.__name__)
 
             module = inspect.getmodule(definition)
+
+            ipython_shell = None
             if not module or _is_third_party(module, self.site_packages):
-                return
+                ipython_shell = self._get_ipython(module)
+                if not ipython_shell:
+                    return
 
             source = _clean_source_code(definition)
-            module_source = inspect.getsource(module)
+            if ipython_shell:
+                module_source = ipython_shell.parent_header["content"]["code"]
+            else:
+                module_source = inspect.getsource(module)
             module_tree = ast.parse(module_source)
             fn_tree = ast.parse(source)
 
