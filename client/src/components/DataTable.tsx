@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +6,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import {
   Table,
   TableBody,
@@ -29,11 +32,8 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ChevronDown } from "lucide-react";
+import React, { useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -54,6 +54,8 @@ interface GenericDataTableProps<T> {
   virtualizerRef?: React.RefObject<HTMLDivElement>;
   virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
+  hideColumnButton?: boolean;
+  customControls?: React.ReactNode;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -68,6 +70,8 @@ export const DataTable = <T extends { uuid: string }>({
   virtualizerRef,
   virtualizerOptions,
   onFilterChange,
+  hideColumnButton,
+  customControls,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -107,7 +111,7 @@ export const DataTable = <T extends { uuid: string }>({
     overscan: virtualizerOptions.overscan ?? 10,
   });
 
-  const toggleRowSelection = (row: T) => {
+  const toggleRowSelection = (row: T, e) => {
     if (onRowClick) {
       onRowClick(row);
     } else {
@@ -124,7 +128,7 @@ export const DataTable = <T extends { uuid: string }>({
           key={row.id}
           data-state={row.getIsSelected() && "selected"}
           className='cursor-pointer hover:bg-gray-100'
-          onClick={() => toggleRowSelection(row.original)}
+          onClick={(e) => toggleRowSelection(row.original, e)}
         >
           {row.getVisibleCells().map((cell) => (
             <TableCell key={cell.id}>
@@ -146,7 +150,6 @@ export const DataTable = <T extends { uuid: string }>({
     (rowVirtualizer.getVirtualItems()[
       rowVirtualizer.getVirtualItems().length - 1
     ]?.end ?? 0);
-
   return (
     <ResizablePanelGroup direction='horizontal' className='rounded-lg border'>
       <ResizablePanel
@@ -171,32 +174,35 @@ export const DataTable = <T extends { uuid: string }>({
               className='max-w-sm'
             />
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='outline' className='ml-auto'>
-                Columns <ChevronDown className='ml-2 h-4 w-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className='capitalize'
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!hideColumnButton && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' className='ml-auto'>
+                  Columns <ChevronDown className='ml-2 h-4 w-4' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className='capitalize'
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {customControls}
         </div>
         <div ref={virtualizerRef} className='rounded-md border overflow-auto'>
           <Table>

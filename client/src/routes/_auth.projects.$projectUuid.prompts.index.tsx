@@ -11,7 +11,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
   component: () => <CreatePrompt />,
 });
@@ -23,7 +23,7 @@ export const CreatePrompt = () => {
   );
   const [value, setValue] = useState("");
   const navigate = useNavigate();
-  const handleClick = (e: FormEvent<HTMLInputElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     navigate({
       to: `/projects/${projectUuid}/prompts/${value}`,
