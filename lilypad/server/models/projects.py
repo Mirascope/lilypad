@@ -1,5 +1,6 @@
 """Projects table and models."""
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from .response_models import ResponseModelPublic
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
+    from .api_keys import APIKeyTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
     from .prompts import PromptTable
@@ -37,6 +39,7 @@ class ProjectPublic(_ProjectBase):
     generations: list[GenerationPublic] = []
     prompts: list[PromptPublic] = []
     response_models: list[ResponseModelPublic] = []
+    created_at: datetime
 
 
 class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
@@ -56,3 +59,4 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")
+    api_keys: list["APIKeyTable"] = Relationship(back_populates="project")

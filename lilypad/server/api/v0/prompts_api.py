@@ -10,7 +10,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from ..._utils import construct_function, get_current_user
+from ..._utils import construct_function, get_current_user, match_api_key_with_project
 from ...models import (
     PlaygroundParameters,
     PromptCreate,
@@ -41,6 +41,7 @@ async def get_latest_version_unique_prompt_names(
     response_model=Sequence[PromptPublic],
 )
 async def get_prompts_by_signature(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
     signature: str = Query(...),
@@ -79,7 +80,7 @@ async def get_prompt_by_uuid(
     response_model=PromptPublic,
 )
 async def get_prompt_active_version_by_hash(
-    project_uuid: UUID,
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     prompt_hash: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> PromptTable:

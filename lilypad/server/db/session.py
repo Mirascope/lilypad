@@ -29,29 +29,34 @@ def get_database_url(environment: str | None = None) -> str:
     return database_url
 
 
-def get_engine(environment: str | None = None) -> Engine:
-    """Get a sqlite or postgres engine
+class DatabaseEngine:
+    """Database engine singleton"""
 
-    Args:
-        environment (str): Override the environment to use. Defaults to None.
+    _engine: Engine | None = None
 
-    Returns:
-        Engine: The SQLAlchemy engine
-    """
-    database_url = get_database_url(environment)
-    if database_url.startswith("sqlite"):
-        engine = create_engine(
-            database_url,
-            connect_args={"check_same_thread": False},
-        )
-    else:
-        engine = create_engine(database_url)
-    return engine
+    def get_engine(self, environment: str | None = None) -> Engine:
+        """Get the database engine"""
+        if self._engine is None:
+            database_url = get_database_url(environment)
+            if database_url.startswith("sqlite"):
+                self._engine = create_engine(
+                    database_url,
+                    connect_args={"check_same_thread": False},
+                    pool_pre_ping=True,
+                )
+            else:
+                self._engine = create_engine(
+                    database_url, pool_size=5, max_overflow=10, pool_pre_ping=True
+                )
+        return self._engine
+
+
+db = DatabaseEngine()
 
 
 def get_session() -> Generator[Session, None, None]:
     """Get a SQLModel session"""
-    engine = get_engine()
+    engine = db.get_engine()
     with Session(engine) as session:
         yield session
         try:

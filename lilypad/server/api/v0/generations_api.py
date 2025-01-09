@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from ..._utils import match_api_key_with_project
 from ...models import (
     GenerationCreate,
     GenerationPublic,
@@ -70,7 +71,7 @@ async def get_latest_version_unique_generation_names(
     response_model=GenerationPublic,
 )
 async def get_generation_by_hash(
-    project_uuid: UUID,
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     generation_hash: str,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
 ) -> GenerationTable:
@@ -108,6 +109,7 @@ async def get_generation(
     "/projects/{project_uuid}/generations", response_model=GenerationPublic
 )
 async def create_new_generation(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     project_uuid: UUID,
     generation_create: GenerationCreate,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
@@ -134,6 +136,7 @@ async def create_new_generation(
     response_model=GenerationPublic,
 )
 async def update_generation(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     project_uuid: UUID,
     generation_uuid: UUID,
     generation_update: GenerationUpdate,

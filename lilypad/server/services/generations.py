@@ -7,10 +7,10 @@ from fastapi import HTTPException, status
 from sqlmodel import and_, func, select
 
 from ..models import GenerationCreate, GenerationTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class GenerationService(BaseService[GenerationTable, GenerationCreate]):
+class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreate]):
     """The service class for generations."""
 
     table: type[GenerationTable] = GenerationTable
