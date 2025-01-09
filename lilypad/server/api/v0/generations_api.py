@@ -75,7 +75,7 @@ async def get_generation_by_hash(
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
 ) -> GenerationTable:
     """Get generation by hash."""
-    return generation_service.find_record_by_hash(generation_hash)
+    return generation_service.find_record_by_hash(project_uuid, generation_hash)
 
 
 @generations_router.get(
@@ -122,7 +122,9 @@ async def create_new_generation(
         }
     )
     try:
-        return generation_service.find_record_by_hash(generation_create.hash)
+        return generation_service.find_record_by_hash(
+            project_uuid, generation_create.hash
+        )
     except HTTPException:
         return generation_service.create_record(generation_create)
 
