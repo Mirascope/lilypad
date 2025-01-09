@@ -40,8 +40,4 @@ async def delete_api_key(
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
 ) -> bool:
     """Delete an API key."""
-    try:
-        api_key_service.delete_record_by_uuid(api_key_uuid)
-    except Exception:
-        return False
-    return True
+    return api_key_service.delete_record_by_uuid(api_key_uuid)

@@ -46,7 +46,7 @@ async def create_project(
 async def delete_project(
     project_uuid: UUID,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
-) -> None:
+) -> bool:
     """Create a project"""
     return project_service.delete_record_by_uuid(project_uuid)
 
