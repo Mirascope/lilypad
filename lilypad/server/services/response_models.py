@@ -18,12 +18,13 @@ class ResponseModelService(
     create_model: type[ResponseModelCreate] = ResponseModelCreate
 
     def find_response_model_active_version_by_hash(
-        self, response_model_hash: str
+        self, project_uuid: UUID, response_model_hash: str
     ) -> ResponseModelTable:
         """Find active version of response model by its hash."""
         record_table = self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
                 self.table.hash == response_model_hash,
                 self.table.is_active,
             )
@@ -39,10 +40,10 @@ class ResponseModelService(
         self, project_uuid: UUID, new_active_version: ResponseModelTable
     ) -> ResponseModelTable:
         """Change active version of response model."""
-        stmt = select(ResponseModelTable).where(
-            ResponseModelTable.project_uuid == project_uuid,
-            ResponseModelTable.name == new_active_version.name,
-            ResponseModelTable.is_active,
+        stmt = select(self.table).where(
+            self.table.project_uuid == project_uuid,
+            self.table.name == new_active_version.name,
+            self.table.is_active,
         )
         current_active_versions = self.session.exec(stmt).all()
 

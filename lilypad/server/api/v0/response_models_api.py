@@ -22,6 +22,7 @@ response_models_router = APIRouter()
 )
 async def get_response_model_active_version_by_hash(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     response_model_hash: str,
     response_model_service: Annotated[
         ResponseModelService, Depends(ResponseModelService)
@@ -29,7 +30,7 @@ async def get_response_model_active_version_by_hash(
 ) -> ResponseModelTable:
     # Retrieve the active version of the response model by its hash.
     return response_model_service.find_response_model_active_version_by_hash(
-        response_model_hash
+        project_uuid, response_model_hash
     )
 
 
@@ -69,7 +70,7 @@ async def create_response_model_version(
 
     try:
         return response_model_service.find_response_model_active_version_by_hash(
-            response_model_create.hash
+            project_uuid, response_model_create.hash
         )
     except HTTPException:
         return response_model_service.create_record(response_model_create)

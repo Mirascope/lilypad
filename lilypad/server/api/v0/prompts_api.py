@@ -81,11 +81,12 @@ async def get_prompt_by_uuid(
 )
 async def get_prompt_active_version_by_hash(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     prompt_hash: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> PromptTable:
     """Get prompt by hash."""
-    return prompt_service.find_prompt_active_version_by_hash(prompt_hash)
+    return prompt_service.find_prompt_active_version_by_hash(project_uuid, prompt_hash)
 
 
 @prompts_router.patch(
@@ -115,7 +116,7 @@ async def create_prompt(
     prompt_create.hash = hashlib.sha256(
         prompt_create.template.encode("utf-8")
     ).hexdigest()
-    if prompt := prompt_service.check_duplicate_prompt(prompt_create):
+    if prompt := prompt_service.check_duplicate_prompt(project_uuid, prompt_create):
         return prompt
 
     prompt_create.code = construct_function(

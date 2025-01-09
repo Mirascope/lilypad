@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .generations import GenerationPublic
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class _ProjectBase(SQLModel):
     """Base Project Model."""
 
-    name: str = Field(nullable=False, unique=True)
+    name: str = Field(nullable=False)
 
 
 class ProjectCreate(_ProjectBase):
@@ -46,6 +46,9 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     """Project Table Model."""
 
     __tablename__ = PROJECT_TABLE_NAME  # type: ignore
+    __table_args__ = (
+        UniqueConstraint("organization_uuid", "name", name="unique_project_name"),
+    )
     generations: list["GenerationTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )

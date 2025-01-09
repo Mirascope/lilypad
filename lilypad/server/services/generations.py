@@ -88,11 +88,12 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
         ).all()
         return record_tables
 
-    def find_record_by_hash(self, hash: str) -> GenerationTable:
+    def find_record_by_hash(self, project_uuid: UUID, hash: str) -> GenerationTable:
         """Find record by hash"""
         record_table = self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
                 self.table.hash == hash,
             )
         ).first()
