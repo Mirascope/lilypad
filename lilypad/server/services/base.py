@@ -51,11 +51,14 @@ class BaseService(Generic[_TableT, _CreateT]):
             )
         ).all()
 
-    def delete_record_by_uuid(self, uuid: UUID) -> None:
+    def delete_record_by_uuid(self, uuid: UUID) -> bool:
         """Delete record by uuid"""
         record_table = self.find_record_by_uuid(uuid)
-        self.session.delete(record_table)
-        return
+        try:
+            self.session.delete(record_table)
+        except Exception:
+            return False
+        return True
 
     def create_record(self, data: _CreateT, **kwargs: Any) -> _TableT:
         """Create a new record"""

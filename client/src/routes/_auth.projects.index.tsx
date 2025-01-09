@@ -1,11 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { CodeSnippet } from "@/components/CodeSnippet";
-import { projectsQueryOptions } from "@/utils/projects";
-import { useEffect } from "react";
-import { useDeviceCodeMutation } from "@/utils/auth";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useDeviceCodeMutation } from "@/utils/auth";
+import { projectsQueryOptions } from "@/utils/projects";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Suspense, useEffect } from "react";
 export const Route = createFileRoute("/_auth/projects/")({
   validateSearch: (search) => {
     return {
@@ -13,7 +13,11 @@ export const Route = createFileRoute("/_auth/projects/")({
       deviceCode: (search.deviceCode as string) || undefined,
     };
   },
-  component: () => <Projects />,
+  component: () => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Projects />
+    </Suspense>
+  ),
 });
 
 const Projects = () => {

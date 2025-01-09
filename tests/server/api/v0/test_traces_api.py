@@ -66,7 +66,7 @@ def test_span(
             "end_time": current_time + 100,
             "attributes": {
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.type": SpanType.GENERATION,
+                "lilypad.type": "generation",
                 "lilypad.generation.uuid": str(test_generation.uuid),
                 "lilypad.generation.name": test_generation.name,
                 "lilypad.generation.signature": "def test(): pass",
@@ -116,7 +116,7 @@ def test_post_traces(
             "end_time": current_time + 100,
             "attributes": {
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.type": SpanType.GENERATION,
+                "lilypad.type": "generation",
                 "lilypad.generation.uuid": str(test_generation.uuid),
                 "lilypad.generation.name": "test_function",
                 "lilypad.generation.signature": "def test(): pass",

@@ -54,6 +54,7 @@ interface GenericDataTableProps<T> {
   virtualizerRef?: React.RefObject<HTMLDivElement>;
   virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
+  defaultSorting?: SortingState;
   hideColumnButton?: boolean;
   customControls?: React.ReactNode;
 }
@@ -70,11 +71,12 @@ export const DataTable = <T extends { uuid: string }>({
   virtualizerRef,
   virtualizerOptions,
   onFilterChange,
+  defaultSorting = [],
   hideColumnButton,
   customControls,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -111,7 +113,7 @@ export const DataTable = <T extends { uuid: string }>({
     overscan: virtualizerOptions.overscan ?? 10,
   });
 
-  const toggleRowSelection = (row: T, e) => {
+  const toggleRowSelection = (row: T) => {
     if (onRowClick) {
       onRowClick(row);
     } else {
@@ -128,7 +130,7 @@ export const DataTable = <T extends { uuid: string }>({
           key={row.id}
           data-state={row.getIsSelected() && "selected"}
           className='cursor-pointer hover:bg-gray-100'
-          onClick={(e) => toggleRowSelection(row.original, e)}
+          onClick={() => toggleRowSelection(row.original)}
         >
           {row.getVisibleCells().map((cell) => (
             <TableCell key={cell.id}>

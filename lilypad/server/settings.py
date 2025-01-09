@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     remote_base_url: str = Field(default="https://app.lilypad.so")
     api_key: str | None = None
     project_id: str | None = None
+
     # GitHub OAuth settings
     github_client_id: str = Field(default="my_client_id")
     github_client_secret: str = Field(default="my_client_secret")
