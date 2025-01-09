@@ -50,7 +50,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Check, Copy, KeyRound, Trash } from "lucide-react";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, Suspense, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 export const OrgSettings = () => {
   const { user } = useAuth();
@@ -64,8 +64,10 @@ export const OrgSettings = () => {
       title={`${activeUserOrg.organization.name}'s Keys`}
       icon={KeyRound}
     >
-      <ProjectsTable />
-      <APIKeysTable />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ProjectsTable />
+        <APIKeysTable />
+      </Suspense>
     </SettingsLayout>
   );
 };
