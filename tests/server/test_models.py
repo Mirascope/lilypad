@@ -110,6 +110,7 @@ def test_project_models(session) -> None:
         name="test_project",
         generations=[],
         prompts=[],
+        created_at=proj_table.created_at,
     )
     assert proj_public.uuid == uuid
     assert proj_public.name == "test_project"

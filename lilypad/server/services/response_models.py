@@ -6,10 +6,12 @@ from fastapi import HTTPException, status
 from sqlmodel import select
 
 from ..models.response_models import ResponseModelCreate, ResponseModelTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class ResponseModelService(BaseService[ResponseModelTable, ResponseModelCreate]):
+class ResponseModelService(
+    BaseOrganizationService[ResponseModelTable, ResponseModelCreate]
+):
     """The service class for response models."""
 
     table: type[ResponseModelTable] = ResponseModelTable

@@ -5,6 +5,7 @@ import json
 import os
 import secrets
 import time
+import warnings
 import webbrowser
 from typing import Any
 
@@ -126,6 +127,10 @@ def auth_command(
 ) -> None:
     """Open browser for authentication and save the received token."""
     settings = get_settings()
+    warnings.warn(
+        "`lilypad auth` is deprecated. Navigate to https://app.lilypad.so to first create a project and generate an API key.",
+        UserWarning,
+    )
     if not base_url:
         base_url = settings.base_url
     config_path = os.path.join(".lilypad", "config.json")

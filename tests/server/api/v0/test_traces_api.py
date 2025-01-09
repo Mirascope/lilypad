@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from lilypad.server.models import (
+    APIKeyTable,
     GenerationTable,
     ProjectTable,
     Scope,
@@ -99,7 +100,10 @@ def test_get_traces_by_project(
 
 
 def test_post_traces(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    test_api_key: APIKeyTable,
 ):
     """Test posting trace data creates expected spans."""
     current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
@@ -122,7 +126,11 @@ def test_post_traces(
         }
     ]
 
-    response = client.post("/traces", json=trace_data)
+    response = client.post(
+        f"/projects/{test_project.uuid}/traces",
+        headers={"X-API-Key": test_api_key.key_hash},
+        json=trace_data,
+    )
     assert response.status_code == 200
     spans = response.json()
     assert len(spans) == 1

@@ -23,7 +23,7 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { FormEvent, Suspense, useState } from "react";
+import { Suspense, useState } from "react";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
   component: () => (
@@ -119,7 +119,7 @@ const PromptNoDataPlaceholder = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const navigate = useNavigate();
   const [value, setValue] = useState("");
-  const handleClick = (e: FormEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     navigate({
       to: `/projects/${projectUuid}/prompts/${value}`,

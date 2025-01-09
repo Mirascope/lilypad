@@ -10,14 +10,14 @@ from sqlmodel import Session, select
 
 from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseOrganizationSQLModel, UserPublic
+from ..models import BaseSQLModel, UserPublic
 
-_TableT = TypeVar("_TableT", bound=BaseOrganizationSQLModel)
+_TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
 
 
 class BaseService(Generic[_TableT, _CreateT]):
-    """Base class for all services that are under an organization."""
+    """Base class for all services."""
 
     table: type[_TableT]
     create_model: type[_CreateT]
@@ -30,7 +30,6 @@ class BaseService(Generic[_TableT, _CreateT]):
         record_table = self.session.exec(
             select(self.table).where(
                 self.table.uuid == uuid,
-                self.table.organization_uuid == self.user.active_organization_uuid,
                 *filter_conditions,
             )
         ).first()
@@ -48,7 +47,6 @@ class BaseService(Generic[_TableT, _CreateT]):
         ]
         return self.session.exec(
             select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
                 *filter_conditions,
             )
         ).all()
@@ -64,7 +62,6 @@ class BaseService(Generic[_TableT, _CreateT]):
         record_table = self.table.model_validate(
             {
                 **data.model_dump(),
-                "organization_uuid": self.user.active_organization_uuid,
                 **kwargs,
             }
         )

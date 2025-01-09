@@ -30,7 +30,7 @@ async def get_project(
     return project_service.find_record_by_uuid(project_uuid)
 
 
-@projects_router.post("/projects/", response_model=ProjectPublic)
+@projects_router.post("/projects", response_model=ProjectPublic)
 async def create_project(
     project_create: ProjectCreate,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
