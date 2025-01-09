@@ -39,6 +39,7 @@ class SpanMoreDetails(BaseModel):
     messages: list[MessageParam]
     data: dict[str, Any]
     cost: float | None = None
+    template: str | None = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> "SpanMoreDetails":
@@ -52,6 +53,7 @@ class SpanMoreDetails(BaseModel):
             code = None
             arg_values = None
             output = None
+            template = None
             provider = attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown")
             if provider == Provider.GEMINI.value:
                 messages = convert_gemini_messages(data["events"])
@@ -63,16 +65,18 @@ class SpanMoreDetails(BaseModel):
             elif provider == Provider.ANTHROPIC.value:
                 messages = convert_anthropic_messages(data["events"])
         else:
-            signature, code = None, None
-            if span.generation:
-                signature = span.generation.signature
-                code = span.generation.code
+            lilypad_type = attributes.get("lilypad.type")
+            if not lilypad_type:
+                raise ValueError("Span type is unknown. Please set `lilypad.type`.")
+            signature = attributes.get(f"lilypad.{lilypad_type}.signature", "")
+            code = attributes.get(f"lilypad.{lilypad_type}.code", "")
             arg_values = json.loads(
-                attributes.get("lilypad.generation.arg_values", "{}")
+                attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
             )
-            output = attributes.get("lilypad.generation.output", "")
-            display_name = attributes.get("lilypad.generation.name", "unknown")
-            messages = attributes.get("lilypad.messages", [])
+            output = attributes.get(f"lilypad.{lilypad_type}.output", "")
+            display_name = attributes.get(f"lilypad.{lilypad_type}.name", "unknown")
+            messages = attributes.get(f"lilypad.{lilypad_type}.messages", [])
+            template = attributes.get(f"lilypad.{lilypad_type}.template", "")
 
         return SpanMoreDetails(
             display_name=display_name,
@@ -86,6 +90,7 @@ class SpanMoreDetails(BaseModel):
             arg_values=arg_values,
             output=output,
             messages=messages,
+            template=template,
             data=data,
             cost=span.cost,
         )
@@ -114,17 +119,6 @@ async def get_span_by_generation_uuid(
 ) -> Sequence[SpanTable]:
     """Get span by uuid."""
     return span_service.find_records_by_generation_uuid(project_uuid, generation_uuid)
-
-
-@spans_router.get(
-    "/projects/{project_uuid}/spans/{span_uuid}", response_model=SpanPublic
-)
-async def get_span_by_uuid(
-    span_uuid: UUID,
-    span_service: Annotated[SpanService, Depends(SpanService)],
-) -> SpanTable:
-    """Get span by uuid."""
-    return span_service.find_record_by_uuid(span_uuid)
 
 
 __all__ = ["spans_router"]

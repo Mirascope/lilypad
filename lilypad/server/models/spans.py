@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import model_validator
 from sqlalchemy import Index, UniqueConstraint
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, text
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
@@ -77,12 +77,14 @@ class SpanPublic(_SpanBase):
     """Span public model"""
 
     uuid: UUID
+    # project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
     prompt: PromptPublic | None = None
     response_model: ResponseModelPublic | None = None
     child_spans: list["SpanPublic"]
     created_at: datetime
+    version: int | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -101,16 +103,14 @@ class SpanPublic(_SpanBase):
         """Set the display name based on the scope."""
         # TODO: Handle error cases where spans dont have attributes
         if span.scope == Scope.LILYPAD:
-            span_type = span.data["attributes"]["lilypad.type"]
-            if span_type == SpanType.GENERATION:
-                display_name = span.data["attributes"]["lilypad.generation.name"]
-            elif span_type == SpanType.PROMPT:
-                display_name = span.data["attributes"]["lilypad.prompt.name"]
-            else:
-                display_name = None
+            attributes: dict[str, Any] = span.data.get("attributes", {})
+            span_type: str = attributes.get("lilypad.type", "unknown")
+            display_name = attributes.get(f"lilypad.{span_type}.name", None)
+            version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
             data = span.data
             display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
+            version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
             for child_span in span.child_spans
@@ -118,7 +118,8 @@ class SpanPublic(_SpanBase):
         return {
             "display_name": display_name,
             "child_spans": child_spans,
-            **span.model_dump(exclude={"child_spans"}),
+            "version": version,
+            **span.model_dump(exclude={"child_spans", "data"}),
         }
 
 
@@ -126,7 +127,15 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
-    __table_args__ = (UniqueConstraint("span_id"), Index("ix_spans_span_id", "span_id"))
+    __table_args__ = (
+        UniqueConstraint("span_id"),
+        Index("ix_spans_span_id", "span_id"),
+        Index(
+            "idx_spans_project_parent_filtered",
+            "project_uuid",
+            postgresql_where=text("parent_span_id IS NULL"),
+        ),
+    )
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
     prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
     response_model: Optional["ResponseModelTable"] = Relationship(

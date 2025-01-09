@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +6,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import {
   Table,
   TableBody,
@@ -29,11 +32,8 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ChevronDown } from "lucide-react";
+import React, { useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -54,6 +54,7 @@ interface GenericDataTableProps<T> {
   virtualizerRef?: React.RefObject<HTMLDivElement>;
   virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
+  defaultSorting?: SortingState;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -68,9 +69,10 @@ export const DataTable = <T extends { uuid: string }>({
   virtualizerRef,
   virtualizerOptions,
   onFilterChange,
+  defaultSorting = [],
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});

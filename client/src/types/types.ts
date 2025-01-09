@@ -454,6 +454,8 @@ export interface SpanMoreDetails {
   data: object;
   /** Cost */
   cost?: number | null;
+  /** Template */
+  template?: string | null;
 }
 
 /**
@@ -497,6 +499,8 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
+  /** Version */
+  version?: number | null;
 }
 
 /**

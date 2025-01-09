@@ -5,10 +5,22 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-const CardSkeleton = ({ items = 2 }: { items?: number }) => {
+const CardSkeleton = ({
+  items = 2,
+  className,
+}: {
+  items?: number;
+  className?: string;
+}) => {
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+    <div
+      className={cn(
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+        className
+      )}
+    >
       {[...Array(items)].map((_, index) => (
         <Card key={index} className='overflow-hidden'>
           <CardHeader className='pb-4'>
