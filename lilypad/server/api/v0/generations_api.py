@@ -72,6 +72,7 @@ async def get_latest_version_unique_generation_names(
 )
 async def get_generation_by_hash(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     generation_hash: str,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
 ) -> GenerationTable:

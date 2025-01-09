@@ -81,6 +81,7 @@ async def get_prompt_by_uuid(
 )
 async def get_prompt_active_version_by_hash(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     prompt_hash: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
 ) -> PromptTable:

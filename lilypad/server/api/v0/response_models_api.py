@@ -22,6 +22,7 @@ response_models_router = APIRouter()
 )
 async def get_response_model_active_version_by_hash(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     response_model_hash: str,
     response_model_service: Annotated[
         ResponseModelService, Depends(ResponseModelService)
