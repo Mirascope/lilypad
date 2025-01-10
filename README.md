@@ -21,33 +21,9 @@ An open-source prompt engineering framework built on these principles:
 >
 > There are limited spots.
 
-## 30 Second Quickstart
-
-Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
-
-```bash
-pip install "python-lilypad[openai]"
-
-export OPENAI_API_KEY=XXXXX
-```
-
-Create your first synced prompt to recommend a book.
-
-For example, you could use the prompt `Recommend a fantasy book`:
-
-```bash
-lilypad start                  # initialize local project
-lilypad create recommend_book  # creates a synced LLM function
-lilypad run recommend_book     # runs the function (and opens editor)
-```
-
-Once you hit "Submit" you'll see the function run in your shell. Follow the link to see the version and trace in an interactive UI.
-
-Next, try editing the function signature to take a `genre: str` argument. When you run the function again it will open the editor and give you access to the `{genre}` template variable (with autocomplete).
-
 ## Usage
 
-We are actively working on this library and it's documentation, which you can find [here](https://lilypad.mirascope.com/docs)
+We are actively working on this library and it's documentation, which you can find [here](https://lilypad.so/docs)
 
 ## Versioning
 

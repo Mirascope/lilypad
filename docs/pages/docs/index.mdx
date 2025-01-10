@@ -1,5 +1,5 @@
-import { Callout } from 'nextra/components'
-import { Tabs } from 'nextra/components'
+import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
 
 # Lilypad
 
@@ -9,11 +9,13 @@ import { Tabs } from 'nextra/components'
     You can install and use the library locally today, but we are working with a few select teams to ensure that the library is ready for broader, production use.
 
     This means that things like user interface, database schemas, etc. are still subject to change.
-    
+
     If you're interested in joining the beta, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message to William Bakst about your team and why you think you would be a good fit.
+
 </Callout>
 
 Lilypad is an open-source prompt engineering framework built on these principles:
+
 - Prompt engineering is an optimization process, which requires...
 - Versioning and tracing of every call to the LLM for...
 - Building a data flywheel, so you can...
@@ -28,55 +30,52 @@ We've purpose-built Lilypad around the necessity of such collaboration, helping 
 
 Install `uv` and create a new project:
 
-<Tabs items={['macOS and Linux', 'Windows']}>
-<Tabs.Tab>
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv init my-first-lily
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```bash
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-uv init my-first-lily
-```
-</Tabs.Tab>
+<Tabs items={["macOS and Linux", "Windows"]}>
+  <Tabs.Tab>
+    ```bash curl -LsSf https://astral.sh/uv/install.sh | sh uv init
+    my-first-lily ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash powershell -ExecutionPolicy ByPass -c "irm
+    https://astral.sh/uv/install.ps1 | iex" uv init my-first-lily ```
+  </Tabs.Tab>
 </Tabs>
 
 Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
 
-<Tabs items={['OpenAI', 'Anthropic', 'Gemini', 'OpenRouter']}>
-<Tabs.Tab>
-```bash
-uv add "python-lilypad[openai]"
-export OPENAI_API_KEY=XXXXX
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```bash
-uv add "python-lilypad[anthropic]"
-export ANTHROPIC_API_KEY=XXXXX
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```bash
-uv add "python-lilypad[gemini]"
-export GOOGLE_API_KEY=XXXXX
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```bash
-uv add "python-lilypad[openai]"
-export OPENROUTER_API_KEY=XXXXX
-```
-</Tabs.Tab>
+<Tabs items={["OpenAI", "Anthropic", "Gemini", "Mistral", "OpenRouter"]}>
+  <Tabs.Tab>
+    ```bash uv add "python-lilypad[openai]" export OPENAI_API_KEY=XXXXX ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash uv add "python-lilypad[anthropic]" export ANTHROPIC_API_KEY=XXXXX
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash uv add "python-lilypad[gemini]" export GOOGLE_API_KEY=XXXXX ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash uv add "python-lilypad[mistral]" export MISTRAL_API_KEY=XXXXX ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash uv add "python-lilypad[openai]" export OPENROUTER_API_KEY=XXXXX ```
+  </Tabs.Tab>
 </Tabs>
 
-Authenticate and create your first project (`my-first-lily`):
+Navigate to [Lilypad App](https://app.lilypad.so)
+
+Create an account by signing in your GitHub.
+
+Then navigate to [Your Organization Settings](http://localhost:8000/settings/org) to create a project and API key.
+
+Copy the project ID and API key and place them in your environment
 
 ```bash
-uv run lilypad auth
+LILYPAD_PROJECT_ID=XXXXX
+LILYPAD_API_KEY=XXXXX
 ```
+
+You are now ready to start tracing your generations.
 
 Copy-paste this generation into a new Python file (`main.py`):
 
@@ -88,21 +87,20 @@ from openai import OpenAI
 
 client = OpenAI()
 
-
 @lilypad.generation()
 def answer_question(question: str) -> str:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": question}],
-    )
-    return str(completion.choices[0].message.content)
+completion = client.chat.completions.create(
+model="gpt-4o-mini",
+messages=[{"role": "user", "content": question}],
+)
+return str(completion.choices[0].message.content)
 
+if **name** == "**main**":
+lilypad.configure()
+answer = answer_question("What is the meaning of life?")
+print(answer)
 
-if __name__ == "__main__":
-    lilypad.configure()
-    answer = answer_question("What is the meaning of life?")
-    print(answer)
-```
+````
 </Tabs.Tab>
 <Tabs.Tab>
 ```python
@@ -127,7 +125,8 @@ if __name__ == "__main__":
     lilypad.configure()
     answer = answer_question("What is the meaning of life?")
     print(answer)
-```
+````
+
 </Tabs.Tab>
 <Tabs.Tab>
 ```python
@@ -136,20 +135,19 @@ import lilypad
 
 client = GenerativeModel("gemini-1.5-flash")
 
-
 @lilypad.generation()
 def answer_question(question: str) -> str:
-    generation = client.generate_content(
-        contents=[{"role": "user", "parts": question}]
-    )
-    return generation.candidates[0].content.parts[0].text
+generation = client.generate_content(
+contents=[{"role": "user", "parts": question}]
+)
+return generation.candidates[0].content.parts[0].text
 
+if **name** == "**main**":
+lilypad.configure()
+answer = answer_question("What is the meaning of life?")
+print(answer)
 
-if __name__ == "__main__":
-    lilypad.configure()
-    answer = answer_question("What is the meaning of life?")
-    print(answer)
-```
+````
 </Tabs.Tab>
 <Tabs.Tab>
 ```python
@@ -177,7 +175,8 @@ if __name__ == "__main__":
     lilypad.configure()
     answer = answer_question("What is the meaning of life?")
     print(answer)
-```
+````
+
 </Tabs.Tab>
 </Tabs>
 
