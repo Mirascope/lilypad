@@ -109,14 +109,18 @@ async def github_callback(
             )
             session.add(user)
             session.flush()
-            user_public = UserPublic.model_validate(user)
+            if not user.uuid:
+                raise HTTPException(
+                    status_code=500, detail="User creation failed, please try again"
+                )
             user_organization = UserOrganizationTable(
-                user_uuid=user_public.uuid,
+                user_uuid=user.uuid,
                 organization_uuid=organization_public.uuid,
                 role=UserRole.ADMIN,
             )
             session.add(user_organization)
             session.flush()
+            user_public = UserPublic.model_validate(user)
 
             lilypad_token = create_jwt_token(user_public)
             user_public = user_public.model_copy(update={"access_token": lilypad_token})

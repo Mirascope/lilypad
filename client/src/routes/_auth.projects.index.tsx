@@ -1,6 +1,5 @@
-import { CodeSnippet } from "@/components/CodeSnippet";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { useDeviceCodeMutation } from "@/utils/auth";
 import { projectsQueryOptions } from "@/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -22,7 +21,6 @@ export const Route = createFileRoute("/_auth/projects/")({
 
 const Projects = () => {
   const { deviceCode } = Route.useSearch();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const addDeviceCodeMutation = useDeviceCodeMutation();
   useEffect(() => {
@@ -31,10 +29,6 @@ const Projects = () => {
     navigate({
       to: "/projects",
       search: { redirect: undefined, deviceCode: undefined },
-    });
-    toast({
-      title: "Successfully authenticated",
-      description: "You may now close this window and proceed in the CLI.",
     });
   }, [deviceCode]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
@@ -60,9 +54,13 @@ const Projects = () => {
         ) : (
           <>
             <div>
-              No projects found. To view generations, please authenticate first.
+              No projects found.
+              <Button variant='ghost' asChild>
+                <Link to='/settings/$' params={{ _splat: "org" }}>
+                  Create a project here
+                </Link>
+              </Button>
             </div>
-            <CodeSnippet code='lilypad auth' />
           </>
         )}
       </div>
