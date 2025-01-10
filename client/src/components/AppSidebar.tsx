@@ -39,6 +39,7 @@ import {
   User2,
   Wrench,
 } from "lucide-react";
+import { useEffect } from "react";
 
 type Item = {
   title: string;
@@ -107,6 +108,11 @@ export const AppSidebar = () => {
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const organizationMutation = useUpdateActiveOrganizationMutation();
+  useEffect(() => {
+    if (!activeProject && projects.length > 0) {
+      setProject(projects[0]);
+    }
+  }, [activeProject]);
   const projectItems: Item[] = activeProject
     ? [
         {
@@ -210,7 +216,7 @@ export const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link
-                to={"/settings"}
+                to={"/settings/$"}
                 className='flex items-center w-full gap-2 [&.active]:font-bold'
               >
                 <Settings />

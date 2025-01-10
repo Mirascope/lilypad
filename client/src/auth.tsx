@@ -1,7 +1,5 @@
 import { ProjectPublic, UserPublic } from "@/types/types";
 import { AUTH_STORAGE_KEY } from "@/utils/constants";
-import { projectsQueryOptions } from "@/utils/projects";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createContext,
   ReactNode,
@@ -47,10 +45,9 @@ const loadFromStorage = (): UserPublic | null => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
   const [activeProject, setActiveProject] = useState<ProjectPublic | null>(
-    projects.length > 0 ? projects[0] : null
+    null
   );
   const isAuthenticated = !!user;
 

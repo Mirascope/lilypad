@@ -35,6 +35,7 @@ def run_migrations() -> None:
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     """Run the migrations on startup."""
+    log.info("Running migrations")
     run_migrations()
     yield
 
