@@ -379,9 +379,9 @@ const CopyKeyButton = ({
       setApiCopied(true);
       title = "Successfully copied API key to clipboard";
     } else if (activeProject && mode === PROJECT_MODE) {
-      await navigator.clipboard.writeText(activeProject.name);
+      await navigator.clipboard.writeText(activeProject.uuid);
       setProjectCopied(true);
-      title = "Successfully copied project to clipboard";
+      title = "Successfully copied project ID to clipboard";
     }
     if (title) {
       toast({
@@ -398,9 +398,9 @@ const CopyKeyButton = ({
       <DialogHeader className='flex-shrink-0'>
         <DialogTitle>API Key Created</DialogTitle>
         <DialogDescription className='space-y-4'>
-          <p>Copy your project name and API key into your environment.</p>
+          <p>Copy your project ID and API key into your environment.</p>
           <div className='bg-muted rounded-md p-4 font-mono text-sm'>
-            LILYPAD_PROJECT="..."
+            LILYPAD_PROJECT_ID="..."
             {"\n"}
             LILYPAD_API_KEY="..."
           </div>
@@ -410,9 +410,9 @@ const CopyKeyButton = ({
         </DialogDescription>
       </DialogHeader>
       <Alert>
-        <AlertTitle>LILYPAD_PROJECT</AlertTitle>
+        <AlertTitle>LILYPAD_PROJECT ID</AlertTitle>
         <AlertDescription className='flex items-center justify-between break-all font-mono text-sm'>
-          {activeProject.name}
+          {activeProject.uuid}
           <Button
             size='icon'
             variant='ghost'
