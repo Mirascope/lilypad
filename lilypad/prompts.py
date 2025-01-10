@@ -116,7 +116,10 @@ class Prompt(BaseModel):
     ]: ...
 
     def messages(
-        self, provider: Literal["openai", "anthropic", "gemini", "bedrock", "mistral", "vertex"]
+        self,
+        provider: Literal[
+            "openai", "anthropic", "gemini", "bedrock", "mistral", "vertex"
+        ],
     ) -> (
         Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
@@ -195,7 +198,8 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "vertex":
             from mirascope.core.vertex._utils._convert_common_call_params import (
-
+                convert_common_call_params,
+            )
         elif provider == "mistral":
             from mirascope.core.mistral._utils._convert_common_call_params import (
                 convert_common_call_params,
