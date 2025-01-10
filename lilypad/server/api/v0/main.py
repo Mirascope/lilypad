@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
 from ...settings import Settings, get_settings
+from .api_keys_api import api_keys_api
 from .auth import auth_router
 from .device_codes_api import device_codes_api
 from .generations_api import generations_router
@@ -17,6 +18,7 @@ from .traces_api import traces_router
 from .users_api import users_router
 
 api = FastAPI()
+api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
 api.include_router(projects_router)

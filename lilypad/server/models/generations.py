@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
@@ -40,7 +40,7 @@ class _GenerationBase(SQLModel):
     name: str = Field(nullable=False, index=True, min_length=1)
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)
-    hash: str = Field(nullable=False, index=True, unique=True)
+    hash: str = Field(nullable=False, index=True)
     dependencies: dict[str, DependencyInfo] = Field(
         sa_column=get_json_column(), default_factory=dict
     )
@@ -69,7 +69,9 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     """Generation table."""
 
     __tablename__ = GENERATION_TABLE_NAME  # type: ignore
-
+    __table_args__ = (
+        UniqueConstraint("project_uuid", "hash", name="unique_project_generation_hash"),
+    )
     project: "ProjectTable" = Relationship(back_populates="generations")
     spans: list["SpanTable"] = Relationship(
         back_populates="generation", cascade_delete=True

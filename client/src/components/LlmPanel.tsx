@@ -1,18 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import hljs from "highlight.js/lib/core";
-import python from "highlight.js/lib/languages/python";
-import markdown from "highlight.js/lib/languages/markdown";
-import { MessageParam, SpanMoreDetails } from "@/types/types";
-import { Badge } from "@/components/ui/badge";
-import { Typography } from "@/components/ui/typography";
 import { MessageCard } from "@/components/MessageCard";
-import ReactMarkdown from "react-markdown";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/api";
-import { AxiosResponse } from "axios";
-import { ReactNode } from "@tanstack/react-router";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Typography } from "@/components/ui/typography";
+import { MessageParam } from "@/types/types";
+import { spanQueryOptions } from "@/utils/spans";
 import { stringToBytes } from "@/utils/strings";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ReactNode } from "@tanstack/react-router";
 import JsonView from "@uiw/react-json-view";
+import hljs from "highlight.js/lib/core";
+import markdown from "highlight.js/lib/languages/markdown";
+import python from "highlight.js/lib/languages/python";
+import ReactMarkdown from "react-markdown";
+
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 const renderMessagesCard = (messages: MessageParam[]) => {
@@ -61,20 +61,8 @@ const renderMessagesCard = (messages: MessageParam[]) => {
   }
 };
 
-export const LlmPanel = ({ spanId }: { spanId: string }) => {
-  const {
-    data: span,
-    isLoading,
-    error,
-  } = useQuery<SpanMoreDetails>({
-    queryKey: ["span", spanId],
-    queryFn: async () =>
-      (await api.get<null, AxiosResponse<SpanMoreDetails>>(`spans/${spanId}`))
-        .data,
-  });
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>{error.message}</div>;
-  if (!span) return <div>Span not found</div>;
+export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
+  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
 
   return (
     <div className='flex flex-col gap-4'>

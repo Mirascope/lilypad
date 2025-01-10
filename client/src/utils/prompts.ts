@@ -122,7 +122,7 @@ export const uniqueLatestVersionPromptNamesQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["project", projectUuid, "prompts"],
+    queryKey: ["project", projectUuid, "prompts", "unique-names"],
     queryFn: async () => await fetchLatestVersionUniquePromptNames(projectUuid),
   });
 

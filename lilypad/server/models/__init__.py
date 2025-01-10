@@ -1,5 +1,6 @@
 """The module for the `lilypad` database tables and models."""
 
+from .api_keys import APIKeyCreate, APIKeyPublic, APIKeyTable
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
 from .device_codes import DeviceCodeTable
@@ -29,6 +30,9 @@ from .user_organizations import (
 from .users import UserCreate, UserPublic, UserTable
 
 __all__ = [
+    "APIKeyCreate",
+    "APIKeyPublic",
+    "APIKeyTable",
     "BaseOrganizationSQLModel",
     "BaseSQLModel",
     "DeviceCodeTable",

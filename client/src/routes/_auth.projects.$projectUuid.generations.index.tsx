@@ -1,3 +1,4 @@
+import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import {
   Card,
@@ -17,7 +18,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
@@ -25,7 +26,23 @@ export const Route = createFileRoute(
   component: () => <GenerationsList />,
 });
 
-const GenerationCards = ({ generation }: { generation: GenerationPublic }) => {
+const GenerationCards = () => {
+  const { projectUuid } = useParams({ from: Route.id });
+  const { data } = useSuspenseQuery(
+    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
+  );
+  if (data.length === 0) {
+    return <GenerationNoDataPlaceholder />;
+  }
+  return (
+    <>
+      {data.map((generation) => (
+        <GenerationCard key={generation.uuid} generation={generation} />
+      ))}
+    </>
+  );
+};
+const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
   const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const { projectUuid } = useParams({ from: Route.id });
@@ -34,7 +51,7 @@ const GenerationCards = ({ generation }: { generation: GenerationPublic }) => {
   };
   return (
     <Card
-      className={`w-auto max-w-[400px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
+      className={`w-full lg:max-w-[400px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
     >
       <CardHeader
         className='px-6 py-4 cursor-pointer'
@@ -52,39 +69,32 @@ const GenerationCards = ({ generation }: { generation: GenerationPublic }) => {
         <CodeSnippet code={generation.code} />
       </CardContent>
       <CardFooter className='flex flex-col gap-2 items-start'>
-        {generation.prompt ? (
-          <div className='flex flex-col gap-2 w-full'>
-            <CardTitle className='font-semibold leading-none tracking-tight'>
-              Prompt
-            </CardTitle>
-            <CardDescription>
-              Using {generation.prompt.name}: v{generation.prompt.version_num}
-            </CardDescription>
-            <CodeSnippet code={generation.prompt.code} />
-          </div>
-        ) : (
-          <Typography variant='body1'>No prompt</Typography>
-        )}
+        <div className='flex flex-col gap-2 w-full'>
+          <h3 className='text-sm font-medium text-gray-500'>Prompt</h3>
+          {generation.prompt ? (
+            <>
+              <CardDescription>
+                Using {generation.prompt.name}: v{generation.prompt.version_num}
+              </CardDescription>
+              <CodeSnippet code={generation.prompt.code} />
+            </>
+          ) : (
+            <Typography variant='small'>No prompt</Typography>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
 };
 const GenerationsList = () => {
-  const { projectUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(
-    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
-  );
-  if (data.length === 0) {
-    return <GenerationNoDataPlaceholder />;
-  }
   return (
-    <div className='p-4 flex flex-col items-center gap-2'>
+    <div className='p-4 flex flex-col lg:items-center gap-2'>
       <div className='text-left'>
-        <h1 className='text-4xl font-bold text-left'>Generations</h1>
+        <h1 className='text-4xl font-bold text-left mb-2'>Generations</h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
-          {data.map((generation, i) => (
-            <GenerationCards key={generation.uuid} generation={generation} />
-          ))}
+          <Suspense fallback={<CardSkeleton items={2} />}>
+            <GenerationCards />
+          </Suspense>
         </div>
       </div>
     </div>
@@ -111,11 +121,11 @@ lilypad.configure()
 
 @lilypad.generation()
 def recommend_book(genre: str) -> str:
-completion = client.chat.completions.create(
-model="gpt-4o-mini",
-messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
-)
-return str(completion.choices[0].message.content)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+    )
+    return str(completion.choices[0].message.content)
 
 
 recommend_book("fantasy")`}

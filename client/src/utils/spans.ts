@@ -1,22 +1,15 @@
 import api from "@/api";
-import { SpanPublic } from "@/types/types";
+import { SpanMoreDetails, SpanPublic } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 
-export const fetchSpan = async (projectUuid: string, spanUuid?: string) => {
-  if (!spanUuid) {
-    return null;
-  }
-  return (
-    await api.get<SpanPublic>(`/projects/${projectUuid}/spans/${spanUuid}`)
-  ).data;
+export const fetchSpan = async (spanUuid: string) => {
+  return (await api.get<SpanMoreDetails>(`/spans/${spanUuid}`)).data;
 };
 
-export const spanQueryOptions = (projectUuid: string, spanUuid?: string) =>
+export const spanQueryOptions = (spanUuid: string) =>
   queryOptions({
-    queryKey: ["projects", projectUuid, "spans", spanUuid],
-    queryFn: () => fetchSpan(projectUuid, spanUuid),
-    enabled: Boolean(spanUuid),
-    retry: false,
+    queryKey: ["spans", spanUuid],
+    queryFn: () => fetchSpan(spanUuid),
   });
 
 export const fetchSpansByGenerationUuid = async (

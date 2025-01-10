@@ -1,6 +1,8 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import SidebarSkeleton from "@/components/SidebarSkeleton";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { Suspense } from "react";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: async ({ context }) => {
@@ -22,7 +24,9 @@ function AuthLayout() {
     <>
       <div className='flex h-screen border-collapse overflow-hidden'>
         <SidebarProvider>
-          <AppSidebar />
+          <Suspense fallback={<SidebarSkeleton />}>
+            <AppSidebar />
+          </Suspense>
           <main className='flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-secondary/10 pb-1'>
             <Outlet />
           </main>

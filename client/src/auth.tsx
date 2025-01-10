@@ -1,3 +1,7 @@
+import { ProjectPublic, UserPublic } from "@/types/types";
+import { AUTH_STORAGE_KEY } from "@/utils/constants";
+import { projectsQueryOptions } from "@/utils/projects";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createContext,
   ReactNode,
@@ -5,13 +9,13 @@ import {
   useContext,
   useState,
 } from "react";
-import { AUTH_STORAGE_KEY } from "@/utils/constants";
-import { UserPublic } from "@/types/types";
 export interface AuthContext {
   isAuthenticated: boolean;
   logout: () => Promise<void>;
   user: UserPublic | null;
   setSession: (user: UserPublic | null) => void;
+  setProject: (project: ProjectPublic) => void;
+  activeProject: ProjectPublic | null;
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
@@ -43,12 +47,20 @@ const loadFromStorage = (): UserPublic | null => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
+  const [activeProject, setActiveProject] = useState<ProjectPublic | null>(
+    projects.length > 0 ? projects[0] : null
+  );
   const isAuthenticated = !!user;
 
   const setSession = useCallback((newSession: UserPublic | null) => {
     setUser(newSession);
     saveToStorage(newSession);
+  }, []);
+
+  const setProject = useCallback((project: ProjectPublic) => {
+    setActiveProject(project);
   }, []);
 
   const logout = useCallback(async () => {
@@ -57,7 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, logout, setSession }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        logout,
+        setSession,
+        setProject,
+        activeProject,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
