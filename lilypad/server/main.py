@@ -29,9 +29,7 @@ def run_migrations() -> None:
         )
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
-        print("Migration failed", e.stderr)  # noqa: T001
         log.error(f"Migration failed: {e.stderr}")
-        raise
 
 
 @asynccontextmanager
