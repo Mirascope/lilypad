@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
@@ -338,6 +338,13 @@ class _DependencyCollector:
         self, definition: Callable[..., Any] | type, include_source: bool
     ) -> None:
         try:
+            if isinstance(definition, property):
+                if definition.fget is None:
+                    return
+                definition = definition.fget
+
+            elif isinstance(definition, cached_property):
+                definition = definition.func
             if definition.__name__ in self.visited_functions:
                 return
             self.visited_functions.add(definition.__name__)
@@ -429,6 +436,17 @@ class _DependencyCollector:
 
         return dependencies
 
+    @classmethod
+    def _map_child_to_parent(cls,child_to_parent: dict[ast.AST, ast.AST | None] ,node: ast.AST, parent: ast.AST | None = None) -> None:
+        child_to_parent[node] = parent
+        for _field, value in ast.iter_fields(node):
+            if isinstance(value, list):
+                for child in value:
+                    if isinstance(child, ast.AST):
+                        cls._map_child_to_parent(child_to_parent, child, node)
+            elif isinstance(value, ast.AST):
+                cls._map_child_to_parent(child_to_parent, value, node)
+
     def collect(
         self, fn: Callable[..., Any]
     ) -> tuple[list[str], list[str], list[str], dict[str, DependencyInfo]]:
@@ -438,9 +456,16 @@ class _DependencyCollector:
         local_names = set()
         for code in self.source_code + self.assignments:
             tree = ast.parse(code)
+
+            child_to_parent = {}
+
+            self._map_child_to_parent(child_to_parent, tree)
+
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef | ast.ClassDef):
-                    local_names.add(node.name)
+                    parent = child_to_parent.get(node)
+                    if isinstance(parent, ast.Module):
+                        local_names.add(node.name)
 
         rewriter = _QualifiedNameRewriter(local_names, self.user_defined_imports)
 
