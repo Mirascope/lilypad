@@ -30,12 +30,12 @@ def run_migrations() -> None:
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
         log.error(f"Migration failed: {e.stderr}")
-        raise
 
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     """Run the migrations on startup."""
+    log.info("Running migrations")
     run_migrations()
     yield
 

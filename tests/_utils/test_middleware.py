@@ -150,7 +150,6 @@ def test_set_call_response_attributes_non_serializable_message_param():
     span.set_attributes.assert_called_once_with(expected_attributes)
 
 
-
 def test_set_response_model_attributes_base_model_with_messages():
     """Test _set_response_model_attributes with BaseModel having messages."""
     result = MagicMock(spec=BaseModel)
@@ -164,7 +163,6 @@ def test_set_response_model_attributes_base_model_with_messages():
         "lilypad.generation.messages": '[{"message": "hello"}]',
     }
     span.set_attributes.assert_called_once_with(expected_attributes)
-
 
 
 def test_set_response_model_attributes_base_type():

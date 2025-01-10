@@ -6,6 +6,7 @@ with suppress(ImportError):
     from ._opentelemetry_mistral import MistralInstrumentor
     from ._opentelemetry_openai import OpenAIInstrumentor
     from ._opentelemetry_outlines import OutlinesInstrumentor
+    from ._opentelemetry_vertex import VertexAIInstrumentor
 
 __all__ = [
     "AnthropicInstrumentor",
@@ -13,4 +14,5 @@ __all__ = [
     "MistralInstrumentor",
     "OpenAIInstrumentor",
     "OutlinesInstrumentor",
+    "VertexAIInstrumentor",
 ]

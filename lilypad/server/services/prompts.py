@@ -7,10 +7,10 @@ from fastapi import HTTPException, status
 from sqlmodel import and_, func, select
 
 from ..models import PromptCreate, PromptTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class PromptService(BaseService[PromptTable, PromptCreate]):
+class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
     """The service class for functions."""
 
     table: type[PromptTable] = PromptTable
@@ -85,10 +85,13 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
         ).all()
         return record_tables
 
-    def check_duplicate_prompt(self, prompt_create: PromptCreate) -> PromptTable | None:
+    def check_duplicate_prompt(
+        self, project_uuid: UUID, prompt_create: PromptCreate
+    ) -> PromptTable | None:
         """Find prompt by call params"""
         return self.session.exec(
             select(self.table).where(
+                self.table.project_uuid == project_uuid,
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == prompt_create.hash,
                 self.table.call_params == prompt_create.call_params,
@@ -96,10 +99,13 @@ class PromptService(BaseService[PromptTable, PromptCreate]):
             )
         ).first()
 
-    def find_prompt_active_version_by_hash(self, hash: str) -> PromptTable:
+    def find_prompt_active_version_by_hash(
+        self, project_uuid: UUID, hash: str
+    ) -> PromptTable:
         """Find active version of prompt by its hash"""
         record_table = self.session.exec(
             select(self.table).where(
+                self.table.project_uuid == project_uuid,
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == hash,
                 self.table.is_default,

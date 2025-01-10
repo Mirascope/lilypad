@@ -17,8 +17,8 @@ import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthLoginImport } from './routes/auth.login'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
-import { Route as AuthSettingsImport } from './routes/_auth.settings'
 import { Route as AuthProjectsIndexImport } from './routes/_auth.projects.index'
+import { Route as AuthSettingsSplatImport } from './routes/_auth.settings.$'
 import { Route as AuthProjectsProjectUuidImport } from './routes/_auth.projects.$projectUuid'
 import { Route as AuthProjectsProjectUuidTracesImport } from './routes/_auth.projects.$projectUuid.traces'
 import { Route as AuthProjectsProjectUuidPromptsIndexImport } from './routes/_auth.projects.$projectUuid.prompts.index'
@@ -57,13 +57,13 @@ const AuthCallbackRoute = AuthCallbackImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthSettingsRoute = AuthSettingsImport.update({
-  path: '/settings',
+const AuthProjectsIndexRoute = AuthProjectsIndexImport.update({
+  path: '/projects/',
   getParentRoute: () => AuthRoute,
 } as any)
 
-const AuthProjectsIndexRoute = AuthProjectsIndexImport.update({
-  path: '/projects/',
+const AuthSettingsSplatRoute = AuthSettingsSplatImport.update({
+  path: '/settings/$',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -127,13 +127,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiffLazyImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/settings': {
-      id: '/_auth/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthSettingsImport
-      parentRoute: typeof AuthImport
-    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -153,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$projectUuid'
       fullPath: '/projects/$projectUuid'
       preLoaderRoute: typeof AuthProjectsProjectUuidImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/settings/$': {
+      id: '/_auth/settings/$'
+      path: '/settings/$'
+      fullPath: '/settings/$'
+      preLoaderRoute: typeof AuthSettingsSplatImport
       parentRoute: typeof AuthImport
     }
     '/_auth/projects/': {
@@ -229,14 +229,14 @@ const AuthProjectsProjectUuidRouteWithChildren =
   )
 
 interface AuthRouteChildren {
-  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthProjectsProjectUuidRoute: typeof AuthProjectsProjectUuidRouteWithChildren
+  AuthSettingsSplatRoute: typeof AuthSettingsSplatRoute
   AuthProjectsIndexRoute: typeof AuthProjectsIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthSettingsRoute: AuthSettingsRoute,
   AuthProjectsProjectUuidRoute: AuthProjectsProjectUuidRouteWithChildren,
+  AuthSettingsSplatRoute: AuthSettingsSplatRoute,
   AuthProjectsIndexRoute: AuthProjectsIndexRoute,
 }
 
@@ -246,10 +246,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/settings': typeof AuthSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
   '/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
   '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
@@ -262,10 +262,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/settings': typeof AuthSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
   '/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
   '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
@@ -279,10 +279,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/diff': typeof DiffLazyRoute
-  '/_auth/settings': typeof AuthSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/_auth/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
+  '/_auth/settings/$': typeof AuthSettingsSplatRoute
   '/_auth/projects/': typeof AuthProjectsIndexRoute
   '/_auth/projects/$projectUuid/traces': typeof AuthProjectsProjectUuidTracesRoute
   '/_auth/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
@@ -297,10 +297,10 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/diff'
-    | '/settings'
     | '/auth/callback'
     | '/auth/login'
     | '/projects/$projectUuid'
+    | '/settings/$'
     | '/projects'
     | '/projects/$projectUuid/traces'
     | '/projects/$projectUuid/generations/$generationName'
@@ -312,10 +312,10 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/diff'
-    | '/settings'
     | '/auth/callback'
     | '/auth/login'
     | '/projects/$projectUuid'
+    | '/settings/$'
     | '/projects'
     | '/projects/$projectUuid/traces'
     | '/projects/$projectUuid/generations/$generationName'
@@ -327,10 +327,10 @@ export interface FileRouteTypes {
     | '/'
     | '/_auth'
     | '/diff'
-    | '/_auth/settings'
     | '/auth/callback'
     | '/auth/login'
     | '/_auth/projects/$projectUuid'
+    | '/_auth/settings/$'
     | '/_auth/projects/'
     | '/_auth/projects/$projectUuid/traces'
     | '/_auth/projects/$projectUuid/generations/$generationName'
@@ -381,17 +381,13 @@ export const routeTree = rootRoute
     "/_auth": {
       "filePath": "_auth.tsx",
       "children": [
-        "/_auth/settings",
         "/_auth/projects/$projectUuid",
+        "/_auth/settings/$",
         "/_auth/projects/"
       ]
     },
     "/diff": {
       "filePath": "diff.lazy.tsx"
-    },
-    "/_auth/settings": {
-      "filePath": "_auth.settings.tsx",
-      "parent": "/_auth"
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
@@ -409,6 +405,10 @@ export const routeTree = rootRoute
         "/_auth/projects/$projectUuid/prompts/",
         "/_auth/projects/$projectUuid/prompts/$promptName/$"
       ]
+    },
+    "/_auth/settings/$": {
+      "filePath": "_auth.settings.$.tsx",
+      "parent": "/_auth"
     },
     "/_auth/projects/": {
       "filePath": "_auth.projects.index.tsx",
