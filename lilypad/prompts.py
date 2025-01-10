@@ -50,6 +50,12 @@ if TYPE_CHECKING:
     except ImportError:
         ContentDict = Any
         GeminiCallParams = Any
+    try:
+        from mirascope.core.vertex import VertexCallParams
+        from vertexai.generative_models import Content
+    except ImportError:
+        Content = Any
+        VertexCallParams = Any
 
     try:
         from mirascope.core.mistral import MistralCallParams
@@ -100,6 +106,9 @@ class Prompt(BaseModel):
     def messages(self, provider: Literal["gemini"]) -> Sequence["ContentDict"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
+    def messages(self, provider: Literal["vertex"]) -> Sequence["Content"]: ...  # pyright: ignore [reportInvalidTypeForm]
+
+    @overload
     def messages(
         self, provider: Literal["mistral"]
     ) -> Sequence[
@@ -107,11 +116,15 @@ class Prompt(BaseModel):
     ]: ...
 
     def messages(
-        self, provider: Literal["openai", "anthropic", "gemini", "bedrock", "mistral"]
+        self,
+        provider: Literal[
+            "openai", "anthropic", "gemini", "bedrock", "mistral", "vertex"
+        ],
     ) -> (
         Sequence["ChatCompletionMessageParam"]
         | Sequence["MessageParam"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence["ContentDict"]  # pyright: ignore [reportInvalidTypeForm]
+        | Sequence["Content"]  # pyright: ignore [reportInvalidTypeForm]
         | Sequence[
             "AssistantMessage | SystemMessage | ToolMessage | UserMessage"  # pyright: ignore [reportInvalidTypeForm]
         ]
@@ -136,6 +149,11 @@ class Prompt(BaseModel):
             from mirascope.core.mistral._utils import convert_message_params
 
             return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
+        elif provider == "vertex":
+            from mirascope.core.vertex._utils import convert_message_params
+
+            # type error needs resolution on mirascope side
+            return convert_message_params(self._base_message_params)  # pyright: ignore [reportArgumentType]
         else:
             raise NotImplementedError(f"Unknown provider: {provider}")
 
@@ -149,10 +167,13 @@ class Prompt(BaseModel):
     def call_params(self, provider: Literal["gemini"]) -> "GeminiCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
+    def call_params(self, provider: Literal["vertex"]) -> "VertexCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
+
+    @overload
     def call_params(self, provider: Literal["mistral"]) -> "MistralCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     def call_params(
-        self, provider: Literal["openai", "anthropic", "gemini", "mistral"]
+        self, provider: Literal["openai", "anthropic", "gemini", "mistral", "vertex"]
     ) -> (
         "OpenAICallParams | AnthropicCallParams | GeminiCallParams | MistralCallParams"  # pyright: ignore [reportInvalidTypeForm]
     ):
@@ -175,7 +196,10 @@ class Prompt(BaseModel):
             )
 
             return convert_common_call_params(self.common_call_params)
-
+        elif provider == "vertex":
+            from mirascope.core.vertex._utils._convert_common_call_params import (
+                convert_common_call_params,
+            )
         elif provider == "mistral":
             from mirascope.core.mistral._utils._convert_common_call_params import (
                 convert_common_call_params,

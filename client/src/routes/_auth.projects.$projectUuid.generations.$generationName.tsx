@@ -31,11 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationName"
 )({
-  component: () => <GenerationWorkbench />,
+  component: () => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GenerationWorkbench />
+    </Suspense>
+  ),
 });
 
 type Tab = {
@@ -101,11 +105,13 @@ const GenerationWorkbench = () => {
           </TabsList>
         </div>
         <Separator className='my-2' />
-        {tabs.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className='w-full'>
-            {tab.component}
-          </TabsContent>
-        ))}
+        <Suspense fallback={<div>Loading...</div>}>
+          {tabs.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value} className='w-full'>
+              {tab.component}
+            </TabsContent>
+          ))}
+        </Suspense>
       </Tabs>
     </div>
   );

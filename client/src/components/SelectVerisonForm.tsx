@@ -96,8 +96,10 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
     method.setValue("promptName", newPromptName);
   };
   const buttons = [
-    <Button onClick={handleSaveClick}>Save</Button>,
-    <Button onClick={handleCancelClick}>Cancel</Button>,
+    <Button onClick={handleSaveClick}>Create</Button>,
+    <Button variant='outline' onClick={handleCancelClick}>
+      Cancel
+    </Button>,
   ];
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
@@ -121,7 +123,7 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
           }}
           dialogButtons={buttons}
         >
-          <NewGenerationDialog />
+          <NewPromptDialog />
         </IconDialog>
         <Controller
           control={method.control}
@@ -173,7 +175,7 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
   );
 };
 
-const NewGenerationDialog = () => {
+const NewPromptDialog = () => {
   const methods = useFormContext<FunctionFormValues>();
   return (
     <>
@@ -181,17 +183,17 @@ const NewGenerationDialog = () => {
         control={methods.control}
         name='newPromptName'
         rules={{
-          required: "Generation Name is required",
+          required: "Prompt name is required",
         }}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Generation Name</FormLabel>
+            <FormLabel>Prompt Name</FormLabel>
             <FormControl>
               <Input
                 {...field}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder='Enter generation name'
+                placeholder='Enter prompt name'
               />
             </FormControl>
             <FormMessage />

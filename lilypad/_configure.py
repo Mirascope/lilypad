@@ -147,3 +147,7 @@ def configure() -> None:
         from lilypad._opentelemetry import OutlinesInstrumentor
 
         OutlinesInstrumentor().instrument()
+    if importlib.util.find_spec("vertexai") is not None:
+        from lilypad._opentelemetry import VertexAIInstrumentor
+
+        VertexAIInstrumentor().instrument()

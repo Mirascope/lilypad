@@ -1,7 +1,6 @@
 import api from "@/api";
 import { DeviceCodeTable, UserPublic } from "@/types/types";
 import { queryOptions, useMutation } from "@tanstack/react-query";
-
 export const fetchCallbackCode = async (code?: string, deviceCode?: string) => {
   if (!code) {
     return null;

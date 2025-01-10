@@ -1,10 +1,10 @@
 """The `ProjectService` class for projects."""
 
 from ..models import ProjectCreate, ProjectTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class ProjectService(BaseService[ProjectTable, ProjectCreate]):
+class ProjectService(BaseOrganizationService[ProjectTable, ProjectCreate]):
     """The service class for projects."""
 
     table: type[ProjectTable] = ProjectTable
