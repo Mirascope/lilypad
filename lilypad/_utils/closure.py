@@ -79,9 +79,14 @@ class _NameCollector(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         names = []
         current = node
-        while isinstance(current, ast.Attribute):
-            names.append(current.attr)
-            current = current.value
+        while True:
+            if isinstance(current, ast.Attribute):
+                names.append(current.attr)
+                current = current.value
+            elif isinstance(current, ast.Call):
+                current = current.func
+            else:
+                break
         if isinstance(current, ast.Name):
             names.append(current.id)
             full_path = ".".join(reversed(names))
@@ -95,19 +100,25 @@ class _ImportCollector(ast.NodeVisitor):
         self.user_defined_imports: set[str] = set()
         self.used_names = used_names
         self.site_packages = site_packages
+        self.alias_map: dict[str, str] = {}
 
     def visit_Import(self, node: ast.Import) -> None:
         for name in node.names:
-            module = __import__(name.name.split(".")[0])
-            if any(
-                used_name.startswith(name.asname or name.name)
-                for used_name in self.used_names
-            ):
+            module_name = name.name.split(".")[0]
+            module = __import__(module_name)
+
+            is_used = module_name in self.used_names or any(
+                u.startswith(f"{module_name}.") for u in self.used_names
+            )
+            if is_used or (name.asname in self.used_names):
                 import_stmt = (
                     f"import {name.name} as {name.asname}"
                     if name.asname
                     else f"import {name.name}"
                 )
+                if name.asname:
+                    self.alias_map[name.asname] = import_stmt
+
                 if _is_third_party(module, self.site_packages):
                     self.imports.add(import_stmt)
                 else:
@@ -124,14 +135,16 @@ class _ImportCollector(ast.NodeVisitor):
             module = "." * node.level + module
             is_third_party = False
         for name in node.names:
-            if name.name in self.used_names:
-                import_stmt = f"from {module} import {name.name}"
-                if is_third_party:
-                    self.imports.add(import_stmt)
+            is_used = name.name in self.used_names or any(
+                u.startswith(f"{name.name}.") for u in self.used_names
+            )
+            if is_used or (name.asname in self.used_names):
+                if name.asname:
+                    import_stmt = f"from {module} import {name.name} as {name.asname}"
+                    self.alias_map[name.asname] = import_stmt
                 else:
-                    self.user_defined_imports.add(import_stmt)
-            elif name.asname in self.used_names:
-                import_stmt = f"from {module} import {name.name} as {name.asname}"
+                    import_stmt = f"from {module} import {name.name}"
+
                 if is_third_party:
                     self.imports.add(import_stmt)
                 else:
@@ -298,6 +311,7 @@ class _DependencyCollector:
         self.site_packages: set[str] = {
             str(Path(p).resolve()) for p in site.getsitepackages()
         }
+        self._last_import_collector: _ImportCollector | None = None
 
     def _collect_assignments_and_imports(
         self,
@@ -334,6 +348,50 @@ class _DependencyCollector:
             self.imports.update(import_collector.imports)
             self.user_defined_imports.update(import_collector.user_defined_imports)
 
+    @classmethod
+    def _remove_conflicting_imports(cls, imports_set: set[str]) -> set[str]:
+        from_imports: dict[str, str] = {}
+        for import_ in imports_set:
+            if import_.startswith("from "):
+                parts = import_.split()
+                if len(parts) >= 4:
+                    imported_symbol = parts[3]
+                    if imported_symbol != "*":
+                        from_imports[imported_symbol] = import_
+
+        filtered = set()
+        for import_ in imports_set:
+            if import_.startswith("import "):
+                parts = import_.split()
+                if len(parts) >= 2:
+                    raw_name = parts[1]
+                    top_name = raw_name.split(".")[0]
+                    if top_name in from_imports:
+                        continue
+            filtered.add(import_)
+
+        return filtered
+
+    @classmethod
+    def _remove_unused_aliases(
+        cls,
+        imports_set: set[str],
+        alias_map: dict[str, str],
+        final_source: str,
+    ) -> set[str]:
+        filtered = set(imports_set)  # copy
+
+        for alias, import_stmt in alias_map.items():
+            used_alias = False
+            patterns = [f"{alias}.", f"{alias}(", f"{alias} "]
+            if any(p in final_source for p in patterns):
+                used_alias = True
+
+            if not used_alias and import_stmt in filtered:
+                filtered.remove(import_stmt)
+
+        return filtered
+
     def _collect_imports_and_source_code(
         self, definition: Callable[..., Any] | type, include_source: bool
     ) -> None:
@@ -366,13 +424,20 @@ class _DependencyCollector:
             self.fn_internal_imports.update(import_collector.imports - new_imports)
             self.user_defined_imports.update(import_collector.user_defined_imports)
 
+            self.imports = self._remove_conflicting_imports(self.imports)
+
             if include_source:
                 for user_defined_import in self.user_defined_imports:
                     source = source.replace(user_defined_import, "")
                 self.source_code.insert(0, source)
 
             self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
-
+            final_code_str = "\n".join(self.source_code + self.assignments)
+            self.imports = self._remove_unused_aliases(
+                self.imports,
+                import_collector.alias_map,
+                final_code_str,
+            )
             definition_collector = _DefinitionCollector(
                 module, used_names, self.site_packages
             )

@@ -3,6 +3,7 @@
 import importlib.metadata
 import os
 from collections.abc import Callable
+from datetime import datetime
 from functools import wraps
 from typing import Any, Literal, TypeAlias
 
@@ -565,6 +566,18 @@ def closure_with_long_function_name_that_wraps_around_fn(
         return {"role": "user", "content": "Hello, world!"}
     """
     return {"role": "user", "content": "Hello, world!"}
+
+
+def datetime_fn() -> str:
+    """
+    from datetime import datetime
+
+
+    def datetime_fn() -> str:
+        return datetime.now().strftime("%B %d, %Y")
+
+    """
+    return datetime.now().strftime("%B %d, %Y")
 
 
 class Response(BaseModel):
