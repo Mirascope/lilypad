@@ -8,7 +8,11 @@ from fastapi import APIRouter, Depends, Request
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from sqlmodel import Session, select
 
-from ..._utils import calculate_cost, calculate_openrouter_cost
+from ..._utils import (
+    calculate_cost,
+    calculate_openrouter_cost,
+    match_api_key_with_project,
+)
 from ...db import get_session
 from ...models import Scope, SpanCreate, SpanPublic, SpanTable
 from ...services import SpanService
@@ -33,8 +37,11 @@ async def get_traces_by_project_uuid(
     return traces
 
 
-@traces_router.post("/traces", response_model=Sequence[SpanPublic])
+@traces_router.post(
+    "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
+)
 async def traces(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:

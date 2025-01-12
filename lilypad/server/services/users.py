@@ -1,17 +1,15 @@
 """The `UserService` class for users."""
 
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import HTTPException, status
+from sqlmodel import select
 
-from .._utils import get_current_user
-from ..db import get_session
-from ..models import UserCreate, UserPublic, UserTable
+from ..models import UserCreate, UserTable
+from .base import BaseService
 
 
-class UserService:
+class UserService(BaseService[UserTable, UserCreate]):
     """The service class for users."""
 
     table: type[UserTable] = UserTable
@@ -50,11 +48,3 @@ class UserService:
         self.session.flush()
         self.session.refresh(user)
         return user
-
-    def __init__(
-        self,
-        session: Annotated[Session, Depends(get_session)],
-        user: Annotated[UserPublic, Depends(get_current_user)],
-    ) -> None:
-        self.session = session
-        self.user = user

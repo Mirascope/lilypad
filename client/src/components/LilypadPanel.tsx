@@ -1,14 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import hljs from "highlight.js/lib/core";
-import python from "highlight.js/lib/languages/python";
-import markdown from "highlight.js/lib/languages/markdown";
-import { SpanPublic } from "@/types/types";
-import { CodeSnippet } from "@/components/CodeSnippet";
-import { Typography } from "@/components/ui/typography";
 import { ArgsCards } from "@/components/ArgsCards";
-import ReactMarkdown from "react-markdown";
-import JsonView from "@uiw/react-json-view";
+import { CodeSnippet } from "@/components/CodeSnippet";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Typography } from "@/components/ui/typography";
+import { spanQueryOptions } from "@/utils/spans";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import JsonView from "@uiw/react-json-view";
+import hljs from "highlight.js/lib/core";
+import markdown from "highlight.js/lib/languages/markdown";
+import python from "highlight.js/lib/languages/python";
+import ReactMarkdown from "react-markdown";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
@@ -17,56 +18,24 @@ type Tab = {
   value: string;
   component?: JSX.Element | null;
 };
-interface InstrumentationScope {
-  attributes: object;
-  name: string;
-  schema_url: string;
-  version: string;
-}
-interface SpanData {
-  name: string;
-  attributes: Record<string, any>;
-  end_time: number;
-  start_time: number;
-  events: any[];
-  links: any[];
-  instrumentation_scope: InstrumentationScope;
-  parent_span_id: string;
-  resource: string;
-  span_id: string;
-  status: string;
-  trace_id: string;
-}
 
-export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
-  const data = span.data as SpanData;
-  const attributes = data.attributes;
-  const type = attributes["lilypad.type"];
-  const signature = attributes[`lilypad.${type}.signature`];
-  const code = attributes[`lilypad.${type}.code`];
-  const template = attributes[`lilypad.${type}.template`];
-  const output = attributes[`lilypad.${type}.output`];
-  let argValues = {};
-  try {
-    argValues = JSON.parse(attributes[`lilypad.${type}.arg_values`]);
-  } catch (e) {
-    argValues = {};
-  }
+export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
+  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const tabs: Tab[] = [
     {
       label: "Signature",
       value: "signature",
-      component: <CodeSnippet code={signature} />,
+      component: <CodeSnippet code={span.signature || ""} />,
     },
     {
       label: "Code",
       value: "code",
-      component: <CodeSnippet code={code} />,
+      component: <CodeSnippet code={span.code || ""} />,
     },
   ];
   return (
     <div className='flex flex-col gap-4'>
-      <Typography variant='h3'>{data.name}</Typography>
+      <Typography variant='h3'>{span.display_name}</Typography>
       <Card>
         <CardHeader>
           <CardTitle>{"Code"}</CardTitle>
@@ -94,22 +63,24 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
           </Tabs>
         </CardContent>
       </Card>
-      <ArgsCards args={argValues} />
-      {template && (
+      {span.arg_values && <ArgsCards args={span.arg_values} />}
+      {span.template && (
         <Card>
           <CardHeader>
             <CardTitle>{"Prompt Template"}</CardTitle>
           </CardHeader>
-          <CardContent className='whitespace-pre-wrap'>{template}</CardContent>
+          <CardContent className='whitespace-pre-wrap'>
+            {span.template}
+          </CardContent>
         </Card>
       )}
-      {output && (
+      {span.output && (
         <Card>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col'>
-            <ReactMarkdown>{output}</ReactMarkdown>
+            <ReactMarkdown>{span.output}</ReactMarkdown>
           </CardContent>
         </Card>
       )}
@@ -117,9 +88,9 @@ export const LilypadPanel = ({ span }: { span: SpanPublic }) => {
         <CardHeader>
           <CardTitle>{"Data"}</CardTitle>
         </CardHeader>
-        {data && (
+        {span.data && (
           <CardContent className='overflow-x-auto'>
-            <JsonView value={data} />
+            <JsonView value={span.data} />
           </CardContent>
         )}
       </Card>
