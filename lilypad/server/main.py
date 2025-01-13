@@ -47,8 +47,11 @@ origins = [
     "http://127.0.0.1:8000",
     f"http://localhost:{settings.port}/*",
     f"http://127.0.0.1:{settings.port}",
+    "https://staging.lilypad.so",
+    "https://staging.lilypad.so/*",
+    "https://app.lilypad.so",
+    "https://app.lilypad.so/*",
     settings.client_url,
-    "*.lilypad.so",
 ]
 
 app = FastAPI(lifespan=lifespan)
