@@ -41,14 +41,12 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
 
 
 settings = get_settings()
+print(settings.client_url)
 origins = [
     "http://localhost:5173",
-    "http://localhost:8000/*",
     "http://127.0.0.1:8000",
-    f"http://localhost:{settings.port}/*",
     f"http://127.0.0.1:{settings.port}",
     settings.client_url,
-    f"{settings.client_url}/*",
 ]
 
 app = FastAPI(lifespan=lifespan)
