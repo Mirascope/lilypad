@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from ..._utils import (
@@ -27,12 +28,17 @@ async def get_traces_by_project_uuid(
     project_uuid: UUID,
     session: Annotated[Session, Depends(get_session)],
 ) -> Sequence[SpanTable]:
-    """Get all traces"""
+    """Get all traces.
+
+    Child spans are not lazy loaded to avoid N+1 queries.
+    """
     traces = session.exec(
-        select(SpanTable).where(
+        select(SpanTable)
+        .where(
             SpanTable.project_uuid == project_uuid,
             SpanTable.parent_span_id.is_(None),  # type: ignore
         )
+        .options(selectinload(SpanTable.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
     ).all()
     return traces
 
@@ -42,6 +48,7 @@ async def get_traces_by_project_uuid(
 )
 async def traces(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:
@@ -49,13 +56,11 @@ async def traces(
     traces_json: list[dict] = await request.json()
     span_tables: list[SpanTable] = []
     latest_parent_span_id = None
-    latest_project_uuid = None
     cost = None
     for lilypad_trace in reversed(traces_json):
         if lilypad_trace["instrumentation_scope"]["name"] == "lilypad":
             scope = Scope.LILYPAD
             latest_parent_span_id = lilypad_trace["span_id"]
-            latest_project_uuid = lilypad_trace["attributes"]["lilypad.project_uuid"]
         else:
             scope = Scope.LLM
             attributes: dict = lilypad_trace.get("attributes", {})
@@ -83,13 +88,9 @@ async def traces(
         # Handle streaming traces
         if scope == Scope.LLM and not lilypad_trace.get("parent_span_id"):
             parent_span_id = latest_parent_span_id
-            project_uuid = latest_project_uuid
 
         else:
             parent_span_id = lilypad_trace.get("parent_span_id", None)
-            project_uuid = lilypad_trace.get("attributes", {}).get(
-                "lilypad.project_uuid", None
-            )
         attributes = lilypad_trace.get("attributes", {})
         span_create = SpanCreate(
             span_id=lilypad_trace["span_id"],
