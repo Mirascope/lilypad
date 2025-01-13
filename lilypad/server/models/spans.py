@@ -141,7 +141,9 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="spans"
     )
     child_spans: list["SpanTable"] = Relationship(
-        back_populates="parent_span", cascade_delete=True
+        back_populates="parent_span",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
     )
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",
