@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     # Server settings
     environment: str = Field(default="production")
     port: int = Field(default=8000)
-    remote_base_url: str = Field(default="https://app.lilypad.so")
+    remote_api_url: str = Field(default="https://api.lilypad.so")
+    remote_client_url: str = Field(default="https://app.lilypad.so")
     api_key: str | None = None
     project_id: str | None = None
 
@@ -37,24 +38,24 @@ class Settings(BaseSettings):
         """Get the configuration for the current environment"""
         configs = {
             "development": {
-                "base_url": "http://localhost:8000",
+                "api_url": "http://localhost:8000/api",
                 "client_url": "http://localhost:5173",
             },
             "local": {
-                "base_url": self.remote_base_url,
-                "client_url": self.remote_base_url,
+                "api_url": self.remote_api_url,
+                "client_url": self.remote_client_url,
             },
             "production": {
-                "base_url": self.remote_base_url,
-                "client_url": self.remote_base_url,
+                "api_url": self.remote_api_url,
+                "client_url": self.remote_client_url,
             },
         }
         return configs.get(self.environment, configs["development"])
 
     @property
-    def base_url(self) -> str:
+    def api_url(self) -> str:
         """Get the API URL"""
-        return self.config["base_url"]
+        return self.config["api_url"]
 
     @property
     def client_url(self) -> str:

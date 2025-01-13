@@ -47,6 +47,7 @@ origins = [
     "http://127.0.0.1:8000",
     f"http://localhost:{settings.port}/*",
     f"http://127.0.0.1:{settings.port}",
+    settings.client_url,
 ]
 
 app = FastAPI(lifespan=lifespan)
