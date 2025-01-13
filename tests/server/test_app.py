@@ -20,9 +20,9 @@ def create_mock_app() -> FastAPI:
     )
 
     # Mount the API routes
-    app.mount("/api/v0", v0_api)
+    app.mount("/v0", v0_api)
 
-    @app.get("/api/health")
+    @app.get("/health")
     async def health() -> dict[str, str]:
         """Health check endpoint."""
         return {"status": "ok"}

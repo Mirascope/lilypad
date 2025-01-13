@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { ButtonProps } from "@/components/ui/button";
-import { ReactNode } from "react";
+import { Button, ButtonProps } from "@/components/ui/button";
 import { settingsQueryOptions } from "@/utils/settings";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { ReactNode } from "react";
 interface GithubButtonProps extends ButtonProps {
   iconSize?: number;
   iconColor?: string;
@@ -39,7 +38,7 @@ export const GithubLogin = ({ deviceCode }: { deviceCode?: string }) => {
     const githubAuthUrl = "https://github.com/login/oauth/authorize";
     const params = new URLSearchParams({
       client_id: settings.github_client_id,
-      redirect_uri: `${settings.remote_base_url}/auth/callback`,
+      redirect_uri: `${settings.remote_client_url}/auth/callback`,
       scope: "read:user user:email",
       response_type: "code",
     });

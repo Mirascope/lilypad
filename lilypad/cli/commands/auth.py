@@ -43,7 +43,7 @@ async def _poll_auth_status(
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                f"{settings.base_url}/api/v0/device-codes/{device_code}"
+                f"{settings.api_url}/v0/device-codes/{device_code}"
             )
             if response.status_code == 200:
                 return DeviceCodeTable.model_validate(response.json())
@@ -57,7 +57,7 @@ async def _delete_device_code(device_code: str, settings: Settings) -> bool:
     async with httpx.AsyncClient() as client:
         try:
             response = await client.delete(
-                f"{settings.base_url}/api/v0/device-codes/{device_code}"
+                f"{settings.api_url}/v0/device-codes/{device_code}"
             )
             return response.status_code == 200
         except httpx.RequestError:
@@ -132,7 +132,7 @@ def auth_command(
     )
     settings = get_settings()
     if not base_url:
-        base_url = settings.base_url
+        base_url = settings.api_url
     config_path = os.path.join(".lilypad", "config.json")
     data = get_and_create_config(config_path)
     with open(config_path, "w") as f:
