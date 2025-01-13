@@ -31,7 +31,8 @@ api.include_router(users_router)
 
 
 class SettingsPublic(BaseModel):
-    remote_base_url: str
+    remote_client_url: str
+    remote_api_url: str
     github_client_id: str
     environment: str
 
@@ -42,7 +43,8 @@ async def get_settings_client(
 ) -> SettingsPublic:
     """Get the configuration."""
     return SettingsPublic(
-        remote_base_url=settings.remote_base_url,
+        remote_client_url=settings.remote_client_url,
+        remote_api_url=settings.remote_api_url,
         github_client_id=settings.github_client_id,
         environment=settings.environment,
     )
