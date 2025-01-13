@@ -1,5 +1,7 @@
-import { KeyRound, Eye, EyeOff } from "lucide-react";
-import { useUpdateUserKeysMutation } from "@/utils/users";
+import { useAuth } from "@/auth";
+import { NotFound } from "@/components/NotFound";
+import { SettingsLayout } from "@/components/SettingsLayout";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,13 +10,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useAuth } from "@/auth";
-import { useForm, useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Typography } from "@/components/ui/typography";
-import { SettingsLayout } from "@/components/SettingsLayout";
+import { useUpdateUserKeysMutation } from "@/utils/users";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 
 interface UserKeysFormValues {
   openai: string;
@@ -96,9 +97,10 @@ export const KeysSettings = () => {
     { id: "gemini", label: "Gemini" },
     { id: "openrouter", label: "OpenRouter" },
   ];
+  if (!user) return <NotFound />;
   return (
-    <SettingsLayout title='Keys' icon={KeyRound}>
-      <Typography variant='h4'>API Keys</Typography>
+    <SettingsLayout title={`${user.first_name}'s Keys`} icon={KeyRound}>
+      <Typography variant='h4'> API Keys</Typography>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
           <div className='space-y-4'>

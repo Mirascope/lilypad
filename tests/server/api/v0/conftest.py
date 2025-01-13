@@ -11,6 +11,7 @@ from lilypad.server._utils import get_current_user
 from lilypad.server.api.v0.main import api
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
+    APIKeyTable,
     GenerationTable,
     OrganizationTable,
     ProjectTable,
@@ -151,6 +152,35 @@ def test_project(session: Session) -> Generator[ProjectTable, None, None]:
     session.commit()
     session.refresh(project)
     yield project
+
+
+@pytest.fixture
+def test_api_key(
+    session: Session, test_project: ProjectTable
+) -> Generator[APIKeyTable, None, None]:
+    """Create a test api key.
+
+    Args:
+        session: Database session
+        test_project: Parent project
+
+    Yields:
+        APIKeyTable
+    """
+    if not test_project.uuid:
+        raise ValueError("Project UUID is required for API key creation")
+
+    api_key = APIKeyTable(
+        key_hash="test_key",
+        user_uuid=uuid4(),
+        organization_uuid=ORGANIZATION_UUID,
+        name="test_key",
+        project_uuid=test_project.uuid,
+    )
+    session.add(api_key)
+    session.commit()
+    session.refresh(api_key)
+    yield api_key
 
 
 @pytest.fixture

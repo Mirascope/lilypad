@@ -6,10 +6,10 @@ from uuid import UUID
 from sqlmodel import select
 
 from ..models import SpanCreate, SpanTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
-class SpanService(BaseService[SpanTable, SpanCreate]):
+class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     """The service class for spans."""
 
     table: type[SpanTable] = SpanTable
