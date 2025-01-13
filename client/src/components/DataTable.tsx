@@ -57,6 +57,9 @@ interface GenericDataTableProps<T> {
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
   customControls?: React.ReactNode;
+  defaultRowSelection?: T | null;
+  customGetRowId?: (row: T) => string;
+  customExpanded?: true | Record<string, boolean>;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -74,17 +77,22 @@ export const DataTable = <T extends { uuid: string }>({
   defaultSorting = [],
   hideColumnButton,
   customControls,
+  defaultRowSelection = null,
+  customGetRowId = undefined,
+  customExpanded = {},
 }: GenericDataTableProps<T>) => {
-  const [expanded, setExpanded] = useState<true | Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
+    customExpanded
+  );
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedRow, setSelectedRow] = useState<T | null>(null);
-
+  const [selectedRow, setSelectedRow] = useState<T | null>(defaultRowSelection);
   const table = useReactTable({
     data,
     columns,
+    getRowId: customGetRowId,
     onExpandedChange: setExpanded,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
