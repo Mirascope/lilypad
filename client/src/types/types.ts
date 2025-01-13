@@ -480,8 +480,10 @@ export enum Scope {
 
 /** SettingsPublic */
 export interface SettingsPublic {
-  /** Remote Base Url */
-  remote_base_url: string;
+  /** Remote Client Url */
+  remote_client_url: string;
+  /** Remote Api Url */
+  remote_api_url: string;
   /** Github Client Id */
   github_client_id: string;
   /** Environment */
