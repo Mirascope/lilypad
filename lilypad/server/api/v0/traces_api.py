@@ -1,6 +1,5 @@
 """The `/traces` API router."""
 
-import time
 from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
@@ -33,7 +32,6 @@ async def get_traces_by_project_uuid(
 
     Child spans are not lazy loaded to avoid N+1 queries.
     """
-    start_time = time.time()
     traces = session.exec(
         select(SpanTable)
         .where(
@@ -42,7 +40,6 @@ async def get_traces_by_project_uuid(
         )
         .options(selectinload(SpanTable.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
     ).all()
-    print(f"Time to get traces: {((time.time() - start_time) / 1000)}ms")
     return traces
 
 
