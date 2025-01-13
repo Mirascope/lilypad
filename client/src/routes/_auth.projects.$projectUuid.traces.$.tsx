@@ -8,7 +8,7 @@ import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-export const Route = createFileRoute("/_auth/projects/$projectUuid/traces")({
+export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (
     <Suspense fallback={<div>Loading...</div>}>
       <Trace />
@@ -24,14 +24,17 @@ export const Trace = () => {
       <Typography variant='h2'>{project.name}</Typography>
       <div className='flex-1 min-h-0 overflow-auto'>
         <Suspense fallback={<TableSkeleton />}>
-          <TraceBody projectUuid={projectUuid} />
+          <TraceBody />
         </Suspense>
       </div>
     </div>
   );
 };
 
-export const TraceBody = ({ projectUuid }: { projectUuid: string }) => {
+export const TraceBody = () => {
+  const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
-  return <TracesTable data={data} />;
+  return (
+    <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+  );
 };
