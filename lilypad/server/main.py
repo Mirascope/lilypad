@@ -92,9 +92,3 @@ class SPAStaticFiles(StaticFiles):
                 return await super().get_response("index.html", scope)
             else:
                 raise ex
-
-
-app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
-app.mount(
-    "/assets", SPAStaticFiles(directory="static/assets", html=True), name="app_assets"
-)
