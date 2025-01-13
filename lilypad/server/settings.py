@@ -38,7 +38,7 @@ class Settings(BaseSettings):
         """Get the configuration for the current environment"""
         configs = {
             "development": {
-                "api_url": "http://localhost:8000/api",
+                "api_url": "http://localhost:8000",
                 "client_url": "http://localhost:5173",
             },
             "local": {
