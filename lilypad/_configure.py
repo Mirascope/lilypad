@@ -16,6 +16,7 @@ from rich import print
 from ._utils import load_config
 from .server.client import LilypadClient
 from .server.models import SpanPublic
+from .server.settings import get_settings
 
 
 class _JSONSpanExporter(SpanExporter):
@@ -32,6 +33,11 @@ class _JSONSpanExporter(SpanExporter):
 
     def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
+        settings = get_settings()
+        if len(spans) > 0:
+            print(
+                f"View the trace at: {settings.remote_api_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
+            )
         for span in spans:
             self._print_span_node(span, indent=0)
 
