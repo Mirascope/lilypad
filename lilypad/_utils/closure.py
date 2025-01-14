@@ -350,6 +350,28 @@ class _DependencyCollector:
 
     @classmethod
     def _remove_conflicting_imports(cls, imports_set: set[str]) -> set[str]:
+        """Removes conflicting imports from the given set of imports.
+
+        In this context, a "conflict" occurs when both "import X" and
+        "from X import Y" exist for the same top-level name X. For example:
+
+            import openai
+            from openai import OpenAI
+
+        If tests or docstrings expect only the "from openai import OpenAI" style,
+        we want to discard the plain "import openai" import, or vice versa.
+
+        Ruff can handle formatting and linting, but it does not always enforce
+        a single import style if there is a reason to keep "from X import Y" strictly
+        (e.g., to match exact test docstring expectations). This function explicitly
+        removes the conflicting import lines to match such requirements.
+
+        Args:
+            imports_set (set[str]): A set containing import statements.
+
+        Returns:
+            set[str]: A set of import statements with conflicting imports removed.
+        """
         from_imports: dict[str, str] = {}
         for import_ in imports_set:
             if import_.startswith("from "):
