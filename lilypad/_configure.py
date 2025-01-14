@@ -36,7 +36,7 @@ class _JSONSpanExporter(SpanExporter):
         settings = get_settings()
         if len(spans) > 0:
             print(
-                f"View the trace at: {settings.remote_base_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
+                f"View the trace at: {settings.remote_api_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
             )
         for span in spans:
             self._print_span_node(span, indent=0)

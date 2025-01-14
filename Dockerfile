@@ -1,24 +1,8 @@
-FROM node:20-slim as frontend
-WORKDIR /app/client
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy client files
-COPY . /app
-
-# Install dependencies and build
-RUN pnpm install
-RUN pnpm run build:notypescript
-
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 
 # Install the project into `/app
 WORKDIR /app
-
-# Copy the built frontend from the frontend stage
-COPY --from=frontend /app/lilypad/server/static /app/lilypad/server/static
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1

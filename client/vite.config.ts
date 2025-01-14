@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [TanStackRouterVite(), react()],
     build: {
-      outDir: "../lilypad/server/static",
+      outDir: env["VITE_OUT_DIR"] || "../lilypad/server/static",
     },
     resolve: {
       alias: {
