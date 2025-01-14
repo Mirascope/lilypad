@@ -437,7 +437,12 @@ class _DependencyCollector:
         return dependencies
 
     @classmethod
-    def _map_child_to_parent(cls,child_to_parent: dict[ast.AST, ast.AST | None] ,node: ast.AST, parent: ast.AST | None = None) -> None:
+    def _map_child_to_parent(
+        cls,
+        child_to_parent: dict[ast.AST, ast.AST | None],
+        node: ast.AST,
+        parent: ast.AST | None = None,
+    ) -> None:
         child_to_parent[node] = parent
         for _field, value in ast.iter_fields(node):
             if isinstance(value, list):
@@ -463,8 +468,19 @@ class _DependencyCollector:
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef | ast.ClassDef):
+                    # We build a "child_to_parent" map so that for each AST node, we can find its parent node.
+                    # In particular, if `parent` is an `ast.Module`, that means the current `node`
+                    # (e.g., a FunctionDef or ClassDef) is defined at the "top level" of the module.
+                    # This allows us to distinguish top-level definitions from those nested in a class or function.
+                    #
+                    # For example, if we only want to process function or class definitions that appear
+                    # directly in the module (not nested in another class or function), we can check:
+                    #   if isinstance(parent, ast.Module):
+                    #       # node is a top-level definition
+
                     parent = child_to_parent.get(node)
                     if isinstance(parent, ast.Module):
+                        # node is a top-level definition
                         local_names.add(node.name)
 
         rewriter = _QualifiedNameRewriter(local_names, self.user_defined_imports)

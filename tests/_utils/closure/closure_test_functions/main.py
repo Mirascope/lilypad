@@ -550,16 +550,20 @@ def closure_inside_imported_decorator_fn() -> str:
     """
     return "Hello, world!"
 
+
 class MockClient:
     """Mock client class."""
+
     @cached_property
     def foo(self) -> str:
         """Foo"""
         return "Hello, "
+
     @property
     def bar(self) -> str:
         """Bar"""
         return "world!"
+
 
 def closure_with_properties_fn() -> str:
     """
@@ -586,6 +590,7 @@ def closure_with_properties_fn() -> str:
     model = MockClient()
     assert isinstance(model, MockClient)
     return model.foo + model.bar
+
 
 def closure_with_long_function_name_that_wraps_around_fn(
     arg1: str,

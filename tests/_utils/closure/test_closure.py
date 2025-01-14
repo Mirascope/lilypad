@@ -389,6 +389,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
         }
     }
 
+
 def test_closure_with_properties_fn() -> None:
     """Test the fn with properties."""
     closure = Closure.from_fn(closure_with_properties_fn)
@@ -410,7 +411,6 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
             arg1: str, arg2: str
         ) -> ChatCompletionUserMessageParam: ...
         """)
-
 
 
 def test_closure_run() -> None:
