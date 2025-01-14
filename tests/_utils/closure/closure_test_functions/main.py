@@ -3,7 +3,7 @@
 import importlib.metadata
 import os
 from collections.abc import Callable
-from functools import wraps
+from functools import cached_property, wraps
 from typing import Any, Literal, TypeAlias
 
 import openai as oai
@@ -549,6 +549,47 @@ def closure_inside_imported_decorator_fn() -> str:
         return "Hello, world!"
     """
     return "Hello, world!"
+
+
+class MockClient:
+    """Mock client class."""
+
+    @cached_property
+    def foo(self) -> str:
+        """Foo"""
+        return "Hello, "
+
+    @property
+    def bar(self) -> str:
+        """Bar"""
+        return "world!"
+
+
+def closure_with_properties_fn() -> str:
+    """
+    from functools import cached_property
+
+
+    class MockClient:
+        @cached_property
+        def foo(self) -> str:
+            \"\"\"Foo\"\"\"
+            return "Hello, "
+
+        @property
+        def bar(self) -> str:
+            \"\"\"Bar\"\"\"
+            return "world!"
+
+
+    def closure_with_properties_fn() -> str:
+        model = MockClient()
+        assert isinstance(model, MockClient)
+        return model.foo + model.bar
+    """
+    model = MockClient()
+    assert isinstance(model, MockClient)
+    return model.foo + model.bar
 
 
 def closure_with_long_function_name_that_wraps_around_fn(
