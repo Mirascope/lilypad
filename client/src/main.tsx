@@ -7,8 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 // Import the generated route tree
-import { routeTree } from "./routeTree.gen";
 import { AuthProvider, useAuth } from "@/auth";
+import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient();
 
