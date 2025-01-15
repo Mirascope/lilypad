@@ -79,9 +79,14 @@ class _NameCollector(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         names = []
         current = node
-        while isinstance(current, ast.Attribute):
-            names.append(current.attr)
-            current = current.value
+        while True:
+            if isinstance(current, ast.Attribute):
+                names.append(current.attr)
+                current = current.value
+            elif isinstance(current, ast.Call):
+                current = current.func
+            else:
+                break
         if isinstance(current, ast.Name):
             names.append(current.id)
             full_path = ".".join(reversed(names))
@@ -95,19 +100,25 @@ class _ImportCollector(ast.NodeVisitor):
         self.user_defined_imports: set[str] = set()
         self.used_names = used_names
         self.site_packages = site_packages
+        self.alias_map: dict[str, str] = {}
 
     def visit_Import(self, node: ast.Import) -> None:
         for name in node.names:
-            module = __import__(name.name.split(".")[0])
-            if any(
-                used_name.startswith(name.asname or name.name)
-                for used_name in self.used_names
-            ):
+            module_name = name.name.split(".")[0]
+            module = __import__(module_name)
+            import_name = name.asname or module_name
+            is_used = import_name in self.used_names or any(
+                u.startswith(f"{import_name}.") for u in self.used_names
+            )
+            if is_used:
                 import_stmt = (
                     f"import {name.name} as {name.asname}"
                     if name.asname
                     else f"import {name.name}"
                 )
+                if name.asname:
+                    self.alias_map[name.asname] = import_stmt
+
                 if _is_third_party(module, self.site_packages):
                     self.imports.add(import_stmt)
                 else:
@@ -124,14 +135,17 @@ class _ImportCollector(ast.NodeVisitor):
             module = "." * node.level + module
             is_third_party = False
         for name in node.names:
-            if name.name in self.used_names:
-                import_stmt = f"from {module} import {name.name}"
-                if is_third_party:
-                    self.imports.add(import_stmt)
+            import_name = name.asname or name.name
+            is_used = import_name in self.used_names or any(
+                u.startswith(f"{import_name}.") for u in self.used_names
+            )
+            if is_used:
+                if name.asname:
+                    import_stmt = f"from {module} import {name.name} as {name.asname}"
+                    self.alias_map[name.asname] = import_stmt
                 else:
-                    self.user_defined_imports.add(import_stmt)
-            elif name.asname in self.used_names:
-                import_stmt = f"from {module} import {name.name} as {name.asname}"
+                    import_stmt = f"from {module} import {name.name}"
+
                 if is_third_party:
                     self.imports.add(import_stmt)
                 else:
@@ -298,6 +312,7 @@ class _DependencyCollector:
         self.site_packages: set[str] = {
             str(Path(p).resolve()) for p in site.getsitepackages()
         }
+        self._last_import_collector: _ImportCollector | None = None
 
     def _collect_assignments_and_imports(
         self,
@@ -379,7 +394,6 @@ class _DependencyCollector:
                 self.source_code.insert(0, source)
 
             self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
-
             definition_collector = _DefinitionCollector(
                 module, used_names, self.site_packages
             )
