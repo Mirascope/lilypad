@@ -11,6 +11,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
+import { usePostHog } from "posthog-js/react";
 
 export const fetchPromptsByName = async (
   promptName: string,
@@ -135,7 +136,7 @@ export const promptsBySignature = (projectUuid: string, signature?: string) =>
 
 export const useCreatePrompt = () => {
   const queryClient = useQueryClient();
-
+  const posthog = usePostHog();
   return useMutation({
     mutationFn: async ({
       projectUuid,
@@ -145,6 +146,7 @@ export const useCreatePrompt = () => {
       promptCreate: PromptCreate;
     }) => await createPrompt(projectUuid, promptCreate),
     onSuccess: (newVersion, { projectUuid }) => {
+      posthog.capture("promptCreated");
       queryClient.invalidateQueries({
         queryKey: ["projects", projectUuid, "prompts", newVersion.name],
       });

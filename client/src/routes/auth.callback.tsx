@@ -27,6 +27,7 @@ export const Route = createFileRoute("/auth/callback")({
 
 type State = {
   deviceCode?: string;
+  redirect?: string;
 };
 const CallbackPage = () => {
   const auth = useAuth();
@@ -44,11 +45,12 @@ const CallbackPage = () => {
   }, [session]);
 
   useEffect(() => {
-    if (auth.user)
+    if (auth.user) {
       navigate({
-        to: "/projects",
+        to: stateJson?.redirect || "/projects",
         search: { redirect: undefined, deviceCode: undefined },
       });
+    }
   }, [auth.user]);
 
   return (

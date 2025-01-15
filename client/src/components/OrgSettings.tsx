@@ -47,14 +47,14 @@ import {
   projectsQueryOptions,
   useCreateProjectMutation,
 } from "@/utils/projects";
+import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Check, Copy, KeyRound, Trash } from "lucide-react";
 import { Dispatch, SetStateAction, Suspense, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 export const OrgSettings = () => {
-  const { user } = useAuth();
-  if (!user) return <NotFound />;
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const activeUserOrg = user.user_organizations?.find(
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );

@@ -5,6 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 
 export const fetchApiKeys = async () => {
   return (await api.get<APIKeyPublic[]>(`/api-keys`)).data;
@@ -20,10 +21,12 @@ export const deleteApiKey = async (apiKeyUuid: string) => {
 
 export const useCreateApiKeyMutation = () => {
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
   return useMutation({
     mutationFn: async (apiKeyCreate: APIKeyCreate) =>
       await postApiKey(apiKeyCreate),
     onSuccess: () => {
+      posthog.capture("apiKeyCreated");
       queryClient.invalidateQueries({
         queryKey: ["apiKeys"],
       });

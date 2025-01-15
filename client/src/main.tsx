@@ -1,14 +1,14 @@
 import "./index.css";
 
-import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
-
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { PostHogProvider } from "posthog-js/react";
+import { StrictMode } from "react";
+import ReactDOM from "react-dom/client";
 // Import the generated route tree
-import { routeTree } from "./routeTree.gen";
 import { AuthProvider, useAuth } from "@/auth";
+import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient();
 
@@ -43,13 +43,21 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider delayDuration={200}>
-            <InnerApp />
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <PostHogProvider
+        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
+        options={{
+          api_host: import.meta.env.VITE_POSTHOG_HOST,
+          autocapture: false,
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <InnerApp />
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </PostHogProvider>
     </StrictMode>
   );
 }
