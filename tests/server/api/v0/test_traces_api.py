@@ -2,6 +2,7 @@
 
 import time
 from collections.abc import Generator
+from unittest.mock import patch
 from uuid import UUID
 
 import pytest
@@ -99,7 +100,9 @@ def test_get_traces_by_project(
     assert traces[0]["span_id"] == test_span.span_id
 
 
+@patch("posthog.Posthog")
 def test_post_traces(
+    mock_posthog,
     client: TestClient,
     test_project: ProjectTable,
     test_generation: GenerationTable,

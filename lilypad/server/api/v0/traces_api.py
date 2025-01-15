@@ -6,12 +6,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
+from posthog import Posthog
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from ..._utils import (
     calculate_cost,
     calculate_openrouter_cost,
+    get_posthog,
     match_api_key_with_project,
 )
 from ...db import get_session
@@ -48,6 +50,7 @@ async def get_traces_by_project_uuid(
 )
 async def traces(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
@@ -108,6 +111,13 @@ async def traces(
             cost=cost,
         )
         span_tables.append(span_service.create_record(span_create))
+    posthog.capture(
+        "span_created",
+        {
+            "span_uuids": [str(span.uuid) for span in span_tables],
+            "span_count": len(span_tables),
+        },
+    )
     return span_tables
 
 

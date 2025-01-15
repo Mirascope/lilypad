@@ -5,6 +5,7 @@ from .auth import (
     get_current_user,
     match_api_key_with_project,
 )
+from .posthog import get_posthog
 from .spans import (
     MessageParam,
     calculate_cost,
@@ -27,5 +28,6 @@ __all__ = [
     "create_api_key",
     "create_jwt_token",
     "get_current_user",
+    "get_posthog",
     "match_api_key_with_project",
 ]
