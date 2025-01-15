@@ -9,8 +9,14 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from posthog import Posthog
 
-from ..._utils import construct_function, get_current_user, match_api_key_with_project
+from ..._utils import (
+    construct_function,
+    get_current_user,
+    get_posthog,
+    match_api_key_with_project,
+)
 from ...models import (
     PlaygroundParameters,
     PromptCreate,
@@ -108,6 +114,7 @@ async def set_active_version(
     response_model=PromptPublic,
 )
 async def create_prompt(
+    posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     prompt_create: PromptCreate,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
@@ -135,7 +142,16 @@ async def create_prompt(
     if len(prompts) == 0:
         prompt_create.is_default = True
 
-    return prompt_service.create_record(prompt_create, project_uuid=project_uuid)
+    new_prompt = prompt_service.create_record(prompt_create, project_uuid=project_uuid)
+    posthog.capture(
+        "prompt_created",
+        {
+            "prompt_uuid": str(new_prompt.uuid),
+            "prompt_name": new_prompt.name,
+            "prompt_hash": new_prompt.hash,
+        },
+    )
+    return new_prompt
 
 
 @prompts_router.patch(

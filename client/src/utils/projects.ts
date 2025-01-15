@@ -5,6 +5,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 
 export const fetchProjects = async () =>
   (await api.get<ProjectPublic[]>("/projects")).data;
@@ -31,10 +32,12 @@ export const projectQueryOptions = (projectUuid: string) =>
 
 export const useCreateProjectMutation = () => {
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
   return useMutation({
     mutationFn: async (projectCreate: ProjectCreate) =>
       await postProject(projectCreate),
     onSuccess: () => {
+      posthog.capture("projectCreated");
       queryClient.invalidateQueries({
         queryKey: ["projects"],
       });

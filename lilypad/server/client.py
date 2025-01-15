@@ -55,7 +55,7 @@ class LilypadClient:
         config = load_config()
         settings = get_settings()
         base_url: str = config.get("base_url", None) or settings.api_url
-        self.base_url = f"{base_url.rstrip('/')}/api"
+        self.base_url = f"{base_url.rstrip('/')}"
         self.timeout = timeout
         self.session = requests.Session()
         self.project_uuid = settings.project_id

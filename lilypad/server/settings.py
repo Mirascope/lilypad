@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
 
+    # PostHog settings
+    posthog_api_key: str | None = None
+    posthog_host: str | None = None
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None

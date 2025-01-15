@@ -83,7 +83,11 @@ const PromptsList = () => {
     uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
   if (data.length === 0) {
-    return <PromptNoDataPlaceholder />;
+    return (
+      <div className='p-4 flex flex-col lg:items-center gap-2'>
+        <PromptNoDataPlaceholder />
+      </div>
+    );
   }
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
@@ -126,7 +130,7 @@ const PromptNoDataPlaceholder = () => {
     });
   };
   return (
-    <form className=' flex flex-col gap-2'>
+    <form className='flex flex-col gap-2'>
       <Typography variant='h3'>Create a new prompt</Typography>
       <Label>Prompt Name</Label>
       <Input

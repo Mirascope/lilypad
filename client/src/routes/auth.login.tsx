@@ -39,7 +39,7 @@ export const Route = createFileRoute("/auth/login")({
 });
 
 const LoginComponent = () => {
-  const { deviceCode } = Route.useSearch();
+  const { deviceCode, redirect } = Route.useSearch();
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const isLocal = settings.environment === "local";
 
@@ -53,7 +53,11 @@ const LoginComponent = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className='flex flex-col gap-2'>
-          {isLocal ? <LocalLogin /> : <GithubLogin deviceCode={deviceCode} />}
+          {isLocal ? (
+            <LocalLogin />
+          ) : (
+            <GithubLogin deviceCode={deviceCode} redirect={redirect} />
+          )}
         </CardContent>
       </Card>
     </div>
