@@ -277,7 +277,7 @@ class LilypadClient:
         elif generation and not generation.prompt:
             prompts = self._request(
                 "GET",
-                f"v0/projects/{self.project_uuid}/prompts/metadata/signature",
+                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
                 params={"signature": closure.signature},
                 response_model=list[PromptPublic],
             )

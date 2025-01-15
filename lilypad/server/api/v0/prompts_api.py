@@ -47,6 +47,19 @@ async def get_latest_version_unique_prompt_names(
     response_model=Sequence[PromptPublic],
 )
 async def get_prompts_by_signature(
+    project_uuid: UUID,
+    prompt_service: Annotated[PromptService, Depends(PromptService)],
+    signature: str = Query(...),
+) -> Sequence[PromptTable]:
+    """Get all prompts by signature."""
+    return prompt_service.find_prompts_by_signature(project_uuid, signature)
+
+
+@prompts_router.get(
+    "/projects/{project_uuid}/prompts/metadata/signature/public",
+    response_model=Sequence[PromptPublic],
+)
+async def get_prompts_by_signature_public(
     match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
