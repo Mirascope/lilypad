@@ -18,8 +18,6 @@ An open-source prompt engineering framework built on these principles:
 > We are also working on tooling for improved collaboration between technical and non-technical team members. This is particularly important for involving domain experts who may not have the technical chops to contribute to a code base.
 >
 > If you're interested, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and DM William Bakst :)
->
-> There are limited spots.
 
 ## Usage
 
