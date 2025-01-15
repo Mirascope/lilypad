@@ -106,11 +106,11 @@ class _ImportCollector(ast.NodeVisitor):
         for name in node.names:
             module_name = name.name.split(".")[0]
             module = __import__(module_name)
-
-            is_used = module_name in self.used_names or any(
-                u.startswith(f"{module_name}.") for u in self.used_names
+            import_name = name.asname or module_name
+            is_used = import_name in self.used_names or any(
+                u.startswith(f"{import_name}.") for u in self.used_names
             )
-            if is_used or (name.asname in self.used_names):
+            if is_used:
                 import_stmt = (
                     f"import {name.name} as {name.asname}"
                     if name.asname
@@ -135,10 +135,11 @@ class _ImportCollector(ast.NodeVisitor):
             module = "." * node.level + module
             is_third_party = False
         for name in node.names:
-            is_used = name.name in self.used_names or any(
-                u.startswith(f"{name.name}.") for u in self.used_names
+            import_name = name.asname or name.name
+            is_used = import_name in self.used_names or any(
+                u.startswith(f"{import_name}.") for u in self.used_names
             )
-            if is_used or (name.asname in self.used_names):
+            if is_used:
                 if name.asname:
                     import_stmt = f"from {module} import {name.name} as {name.asname}"
                     self.alias_map[name.asname] = import_stmt
@@ -348,26 +349,6 @@ class _DependencyCollector:
             self.imports.update(import_collector.imports)
             self.user_defined_imports.update(import_collector.user_defined_imports)
 
-    @classmethod
-    def _remove_unused_aliases(
-        cls,
-        imports_set: set[str],
-        alias_map: dict[str, str],
-        final_source: str,
-    ) -> set[str]:
-        filtered = set(imports_set)  # copy
-
-        for alias, import_stmt in alias_map.items():
-            used_alias = False
-            patterns = [f"{alias}.", f"{alias}(", f"{alias} "]
-            if any(p in final_source for p in patterns):
-                used_alias = True
-
-            if not used_alias and import_stmt in filtered:
-                filtered.remove(import_stmt)
-
-        return filtered
-
     def _collect_imports_and_source_code(
         self, definition: Callable[..., Any] | type, include_source: bool
     ) -> None:
@@ -413,12 +394,6 @@ class _DependencyCollector:
                 self.source_code.insert(0, source)
 
             self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
-            final_code_str = "\n".join(self.source_code + self.assignments)
-            self.imports = self._remove_unused_aliases(
-                self.imports,
-                import_collector.alias_map,
-                final_code_str,
-            )
             definition_collector = _DefinitionCollector(
                 module, used_names, self.site_packages
             )
