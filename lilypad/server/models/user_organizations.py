@@ -30,7 +30,9 @@ class _UserOrganizationBase(SQLModel):
     """Base UserOrganization Model."""
 
     role: UserRole = Field(nullable=False)
-    user_uuid: UUID = Field(index=True, foreign_key=f"{USER_TABLE_NAME}.uuid")
+    user_uuid: UUID = Field(
+        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
 
 
 class UserOrganizationTable(

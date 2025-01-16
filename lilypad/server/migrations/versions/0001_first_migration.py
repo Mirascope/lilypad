@@ -355,4 +355,7 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("organizations")
     op.drop_table("device_codes")
+    sa.Enum(name="userrole").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="spantype").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="scope").drop(op.get_bind(), checkfirst=False)
     # ### end Alembic commands ###
