@@ -31,7 +31,9 @@ class OrganizationTable(_OrganizationBase, BaseSQLModel, table=True):
     projects: list["ProjectTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
-    api_keys: list["APIKeyTable"] = Relationship(back_populates="organization")
+    api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="organization", cascade_delete=True
+    )
 
 
 class OrganizationPublic(_OrganizationBase):

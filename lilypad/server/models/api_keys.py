@@ -26,7 +26,9 @@ class _APIKeyBase(SQLModel):
         default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=365),
         nullable=False,
     )
-    project_uuid: UUID = Field(index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid")
+    project_uuid: UUID = Field(
+        index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
 
 
 class APIKeyTable(_APIKeyBase, BaseOrganizationSQLModel, table=True):
@@ -34,7 +36,9 @@ class APIKeyTable(_APIKeyBase, BaseOrganizationSQLModel, table=True):
 
     __tablename__ = API_KEY_TABLE_NAME  # type: ignore
     key_hash: str = Field(nullable=False)
-    user_uuid: UUID = Field(index=True, foreign_key=f"{USER_TABLE_NAME}.uuid")
+    user_uuid: UUID = Field(
+        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
     organization: "OrganizationTable" = Relationship(back_populates="api_keys")
     project: "ProjectTable" = Relationship(back_populates="api_keys")
     user: "UserTable" = Relationship(back_populates="api_keys")

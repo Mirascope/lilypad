@@ -33,7 +33,9 @@ class UserTable(_UserBase, BaseSQLModel, table=True):
     user_organizations: list["UserOrganizationTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )
-    api_keys: list["APIKeyTable"] = Relationship(back_populates="user")
+    api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
 
 
 class UserPublic(_UserBase):

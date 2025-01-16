@@ -12,5 +12,5 @@ class BaseOrganizationSQLModel(BaseSQLModel):
     """Base SQLModel class"""
 
     organization_uuid: UUID = Field(
-        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid"
+        index=True, foreign_key=f"{ORGANIZATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
