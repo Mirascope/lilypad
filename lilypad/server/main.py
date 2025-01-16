@@ -95,7 +95,7 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-if settings.environment == "local":
+if settings.environment == "local" or settings.environment == "development":
     app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
     app.mount(
         "/assets",

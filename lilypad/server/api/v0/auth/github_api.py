@@ -78,7 +78,12 @@ async def github_callback(
                 )
                 user_emails: list[dict] = user_email_response.json()
                 if len(user_emails) > 0:
-                    email = user_emails[0].get("email")
+                    for user_email in user_emails:
+                        if user_email.get("primary"):
+                            email = user_email.get("email")
+                            break
+                    if not email:  # Fall back to the first email if no primary email
+                        email = user_emails[0].get("email")
             if not email:
                 raise HTTPException(
                     status_code=400, detail="No email address found in GitHub account"
