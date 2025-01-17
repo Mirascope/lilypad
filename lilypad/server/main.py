@@ -30,12 +30,12 @@ def run_migrations() -> None:
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
         log.error(f"Migration failed: {e.stderr}")
-        raise
 
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     """Run the migrations on startup."""
+    log.info("Running migrations")
     run_migrations()
     yield
 
@@ -47,6 +47,8 @@ origins = [
     "http://127.0.0.1:8000",
     f"http://localhost:{settings.port}/*",
     f"http://127.0.0.1:{settings.port}",
+    settings.client_url,
+    f"{settings.client_url}/*",
 ]
 
 app = FastAPI(lifespan=lifespan)
@@ -58,10 +60,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/api/v0", v0_api)
+app.mount("/v0", v0_api)
 
 
-@app.get("/api/health")
+@app.get("/health")
 async def health() -> dict[str, str]:
     """Health check."""
     return {"status": "ok"}
@@ -93,7 +95,10 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
-app.mount(
-    "/assets", SPAStaticFiles(directory="static/assets", html=True), name="app_assets"
-)
+if settings.environment == "local" or settings.environment == "development":
+    app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
+    app.mount(
+        "/assets",
+        SPAStaticFiles(directory="static/assets", html=True),
+        name="app_assets",
+    )

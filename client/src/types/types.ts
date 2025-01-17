@@ -10,6 +10,66 @@
  */
 
 /**
+ * APIKeyCreate
+ * API key create model
+ */
+export interface APIKeyCreate {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /** Key Hash */
+  key_hash?: string | null;
+}
+
+/**
+ * APIKeyPublic
+ * API key public model
+ */
+export interface APIKeyPublic {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /** User public model */
+  user: UserPublic;
+  /** Project Public Model. */
+  project: ProjectPublic;
+  /**
+   * Prefix
+   * Return the first 8 characters of the key_hash.
+   */
+  prefix: string;
+}
+
+/**
  * CommonCallParams
  * Common parameters shared across LLM providers.
  *
@@ -212,6 +272,11 @@ export interface ProjectPublic {
    * @default []
    */
   response_models?: ResponseModelPublic[];
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
 }
 
 /**
@@ -415,8 +480,10 @@ export enum Scope {
 
 /** SettingsPublic */
 export interface SettingsPublic {
-  /** Remote Base Url */
-  remote_base_url: string;
+  /** Remote Client Url */
+  remote_client_url: string;
+  /** Remote Api Url */
+  remote_api_url: string;
   /** Github Client Id */
   github_client_id: string;
   /** Environment */
@@ -454,6 +521,8 @@ export interface SpanMoreDetails {
   data: object;
   /** Cost */
   cost?: number | null;
+  /** Template */
+  template?: string | null;
 }
 
 /**
@@ -497,6 +566,8 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
+  /** Version */
+  version?: number | null;
 }
 
 /**

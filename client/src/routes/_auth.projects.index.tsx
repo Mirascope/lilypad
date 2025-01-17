@@ -1,11 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CodeSnippet } from "@/components/CodeSnippet";
-import { projectsQueryOptions } from "@/utils/projects";
-import { useEffect } from "react";
 import { useDeviceCodeMutation } from "@/utils/auth";
-import { useToast } from "@/hooks/use-toast";
+import { projectsQueryOptions } from "@/utils/projects";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Suspense, useEffect } from "react";
 export const Route = createFileRoute("/_auth/projects/")({
   validateSearch: (search) => {
     return {
@@ -13,12 +12,15 @@ export const Route = createFileRoute("/_auth/projects/")({
       deviceCode: (search.deviceCode as string) || undefined,
     };
   },
-  component: () => <Projects />,
+  component: () => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Projects />
+    </Suspense>
+  ),
 });
 
 const Projects = () => {
   const { deviceCode } = Route.useSearch();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const addDeviceCodeMutation = useDeviceCodeMutation();
   useEffect(() => {
@@ -27,10 +29,6 @@ const Projects = () => {
     navigate({
       to: "/projects",
       search: { redirect: undefined, deviceCode: undefined },
-    });
-    toast({
-      title: "Successfully authenticated",
-      description: "You may now close this window and proceed in the CLI.",
     });
   }, [deviceCode]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
@@ -56,9 +54,13 @@ const Projects = () => {
         ) : (
           <>
             <div>
-              No projects found. To view generations, please authenticate first.
+              No projects found.
+              <Button variant='ghost' asChild>
+                <Link to='/settings/$' params={{ _splat: "org" }}>
+                  Create a project here
+                </Link>
+              </Button>
             </div>
-            <CodeSnippet code='lilypad auth' />
           </>
         )}
       </div>

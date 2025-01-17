@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
 from ...settings import Settings, get_settings
+from .api_keys_api import api_keys_api
 from .auth import auth_router
 from .device_codes_api import device_codes_api
 from .generations_api import generations_router
@@ -17,6 +18,7 @@ from .traces_api import traces_router
 from .users_api import users_router
 
 api = FastAPI()
+api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
 api.include_router(projects_router)
@@ -29,7 +31,8 @@ api.include_router(users_router)
 
 
 class SettingsPublic(BaseModel):
-    remote_base_url: str
+    remote_client_url: str
+    remote_api_url: str
     github_client_id: str
     environment: str
 
@@ -40,7 +43,8 @@ async def get_settings_client(
 ) -> SettingsPublic:
     """Get the configuration."""
     return SettingsPublic(
-        remote_base_url=settings.remote_base_url,
+        remote_client_url=settings.remote_client_url,
+        remote_api_url=settings.remote_api_url,
         github_client_id=settings.github_client_id,
         environment=settings.environment,
     )

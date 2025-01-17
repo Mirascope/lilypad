@@ -1,11 +1,7 @@
-import {
-  ArrowUpDown,
-  ChevronRight,
-  MoreHorizontal,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
-import { Scope } from "@/types/types";
+import CardSkeleton from "@/components/CardSkeleton";
+import { DataTable } from "@/components/DataTable";
+import { LilypadPanel } from "@/components/LilypadPanel";
+import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,13 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SpanPublic } from "@/types/types";
-import { ColumnDef, FilterFn } from "@tanstack/react-table";
-import { LilypadPanel } from "@/components/LilypadPanel";
-import { LlmPanel } from "@/components/LlmPanel";
+import { Scope, SpanPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
-import { DataTable } from "@/components/DataTable";
-import { useRef } from "react";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react";
+import { Suspense, useEffect, useRef } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -38,8 +38,35 @@ const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
   // Always include child rows
   return true;
 };
+const findRowWithUuid = (
+  rows: SpanPublic[],
+  targetUuid: string | undefined
+): SpanPublic | undefined => {
+  if (!targetUuid) return undefined;
+  for (const row of rows) {
+    if (row.uuid === targetUuid) {
+      return row;
+    }
 
-export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
+    if (row.child_spans?.length) {
+      const found = findRowWithUuid(row.child_spans, targetUuid);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
+
+export const TracesTable = ({
+  data,
+  traceUuid,
+  path,
+}: {
+  data: SpanPublic[];
+  traceUuid?: string;
+  path?: string;
+}) => {
+  const defaultRowSelection = findRowWithUuid(data, traceUuid);
+  const isSubRow = defaultRowSelection?.parent_span_id;
   const navigate = useNavigate();
   const virtualizerRef = useRef<HTMLDivElement>(null);
 
@@ -76,11 +103,7 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
       header: "Scope",
     },
     {
-      accessorFn: (row) => {
-        const attributes = row.data?.attributes || {};
-        const type = attributes["lilypad.type"];
-        return attributes[`lilypad.${type}.version`];
-      },
+      accessorKey: "version",
       id: "version",
       header: ({ column }) => {
         return (
@@ -187,14 +210,25 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
 
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
+    useEffect(() => {
+      navigate({
+        to: path,
+        replace: true,
+        params: { _splat: data.uuid },
+      });
+    }, [data]);
     return (
       <div className='p-4 border rounded-md overflow-auto'>
         <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-        {data.scope === Scope.LILYPAD ? (
-          <LilypadPanel span={data} />
-        ) : (
-          <LlmPanel spanId={data.uuid} />
-        )}
+        <Suspense
+          fallback={<CardSkeleton items={5} className='flex flex-col' />}
+        >
+          {data.scope === Scope.LILYPAD ? (
+            <LilypadPanel spanUuid={data.uuid} />
+          ) : (
+            <LlmPanel spanUuid={data.uuid} />
+          )}
+        </Suspense>
       </div>
     );
   };
@@ -208,11 +242,15 @@ export const TracesTable = ({ data }: { data: SpanPublic[] }) => {
         estimateSize: () => 45,
         overscan: 20,
       }}
+      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+      customGetRowId={(row) => row.span_id}
+      defaultRowSelection={defaultRowSelection}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
       filterColumn='display_name'
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
+      defaultSorting={[{ id: "timestamp", desc: true }]}
     />
   );
 };

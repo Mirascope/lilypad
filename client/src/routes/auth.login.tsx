@@ -1,5 +1,8 @@
-import { redirect, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
+import { useAuth } from "@/auth";
+import { GithubLogin } from "@/components/GithubLogin";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,12 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { GithubLogin } from "@/components/GithubLogin";
-import { useAuth } from "@/auth";
+import { settingsQueryOptions } from "@/utils/settings";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { settingsQueryOptions } from "@/utils/settings";
 
 type LoginSearchParam = {
   redirect?: string;
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/auth/login")({
 });
 
 const LoginComponent = () => {
-  const { deviceCode } = Route.useSearch();
+  const { deviceCode, redirect } = Route.useSearch();
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const isLocal = settings.environment === "local";
 
@@ -53,7 +53,11 @@ const LoginComponent = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className='flex flex-col gap-2'>
-          {isLocal ? <LocalLogin /> : <GithubLogin deviceCode={deviceCode} />}
+          {isLocal ? (
+            <LocalLogin />
+          ) : (
+            <GithubLogin deviceCode={deviceCode} redirect={redirect} />
+          )}
         </CardContent>
       </Card>
     </div>

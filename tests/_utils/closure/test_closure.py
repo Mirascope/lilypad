@@ -16,6 +16,8 @@ from .closure_test_functions import (
     closure_inside_decorator_fn,
     closure_inside_imported_decorator_fn,
     closure_with_long_function_name_that_wraps_around_fn,
+    closure_with_properties_fn,
+    datetime_fn,
     decorated_fn,
     dotted_import_fn,
     fn_inside_class_fn,
@@ -100,7 +102,15 @@ def test_third_party_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "bedrock", "gemini", "openai", "opentelemetry"],
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         }
     }
 
@@ -112,7 +122,15 @@ def test_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "bedrock", "gemini", "openai", "opentelemetry"],
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         }
     }
 
@@ -124,7 +142,15 @@ def test_multi_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "bedrock", "gemini", "openai", "opentelemetry"],
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         }
     }
 
@@ -291,7 +317,15 @@ def test_global_var_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "bedrock", "gemini", "openai", "opentelemetry"],
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         },
         "openai": {"version": importlib.metadata.version("openai"), "extras": None},
     }
@@ -302,26 +336,18 @@ def test_import_with_different_dist_name_fn() -> None:
     closure = Closure.from_fn(import_with_different_dist_name_fn)
     assert closure.code == _expected(import_with_different_dist_name_fn)
     expected_dependencies = {
-        "google-generativeai": {
-            "version": importlib.metadata.version("google-generativeai"),
-            "extras": None,
-        },
-        "googleapis-common-protos": {
-            "version": importlib.metadata.version("googleapis-common-protos"),
-            "extras": None,
-        },
-        "google-auth": {
-            "version": importlib.metadata.version("google-auth"),
-            "extras": None,
-        },
-        "google-ai-generativelanguage": {
-            "version": importlib.metadata.version("google-ai-generativelanguage"),
-            "extras": None,
-        },
-        "google-api-core": {
-            "version": importlib.metadata.version("google-api-core"),
-            "extras": None,
-        },
+        "google-ai-generativelanguage": {"extras": None, "version": "0.6.10"},
+        "google-api-core": {"extras": None, "version": "2.23.0"},
+        "google-auth": {"extras": None, "version": "2.36.0"},
+        "google-cloud-aiplatform": {"extras": None, "version": "1.74.0"},
+        "google-cloud-bigquery": {"extras": None, "version": "3.27.0"},
+        "google-cloud-core": {"extras": ["grpc"], "version": "2.4.1"},
+        "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
+        "google-cloud-storage": {"extras": None, "version": "2.19.0"},
+        "google-generativeai": {"extras": None, "version": "0.8.3"},
+        "google-resumable-media": {"extras": ["requests"], "version": "2.7.2"},
+        "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
+        "grpc-google-iam-v1": {"extras": None, "version": "0.13.1"},
     }
     if sys.version_info >= (3, 11):
         expected_dependencies["protobuf"] = {
@@ -342,8 +368,10 @@ def test_closure_inside_decorator_fn() -> None:
                 "anthropic",
                 "bedrock",
                 "gemini",
+                "mistral",
                 "openai",
                 "outlines",
+                "vertex",
             ],
         }
     }
@@ -360,11 +388,20 @@ def test_closure_inside_imported_decorator_fn() -> None:
                 "anthropic",
                 "bedrock",
                 "gemini",
+                "mistral",
                 "openai",
                 "outlines",
+                "vertex",
             ],
         }
     }
+
+
+def test_closure_with_properties_fn() -> None:
+    """Test the fn with properties."""
+    closure = Closure.from_fn(closure_with_properties_fn)
+    assert closure.code == _expected(closure_with_properties_fn)
+    assert closure.dependencies == {}
 
 
 def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
@@ -381,6 +418,13 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
             arg1: str, arg2: str
         ) -> ChatCompletionUserMessageParam: ...
         """)
+
+
+def test_datetime() -> None:
+    """Test the `Closure` class with a datetime function."""
+    closure = Closure.from_fn(datetime_fn)
+    assert closure.code == _expected(datetime_fn)
+    assert closure.dependencies == {}
 
 
 def test_closure_run() -> None:
@@ -400,7 +444,14 @@ def test_mirascope_response_model_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": ["anthropic", "gemini", "openai", "opentelemetry"],
+            "extras": [
+                "anthropic",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         },
         "pydantic": {
             "extras": None,

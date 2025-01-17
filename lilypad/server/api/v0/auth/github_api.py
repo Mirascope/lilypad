@@ -78,7 +78,12 @@ async def github_callback(
                 )
                 user_emails: list[dict] = user_email_response.json()
                 if len(user_emails) > 0:
-                    email = user_emails[0].get("email")
+                    for user_email in user_emails:
+                        if user_email.get("primary"):
+                            email = user_email.get("email")
+                            break
+                    if not email:  # Fall back to the first email if no primary email
+                        email = user_emails[0].get("email")
             if not email:
                 raise HTTPException(
                     status_code=400, detail="No email address found in GitHub account"
@@ -109,14 +114,18 @@ async def github_callback(
             )
             session.add(user)
             session.flush()
-            user_public = UserPublic.model_validate(user)
+            if not user.uuid:
+                raise HTTPException(
+                    status_code=500, detail="User creation failed, please try again"
+                )
             user_organization = UserOrganizationTable(
-                user_uuid=user_public.uuid,
+                user_uuid=user.uuid,
                 organization_uuid=organization_public.uuid,
                 role=UserRole.ADMIN,
             )
             session.add(user_organization)
             session.flush()
+            user_public = UserPublic.model_validate(user)
 
             lilypad_token = create_jwt_token(user_public)
             user_public = user_public.model_copy(update={"access_token": lilypad_token})

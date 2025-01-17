@@ -101,7 +101,7 @@ export const uniqueLatestVersionGenerationNamesQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["project", projectUuid, "generations"],
+    queryKey: ["project", projectUuid, "generations", "unique-names"],
     queryFn: async () =>
       await fetchLatestVersionUniqueGenerationNames(projectUuid),
   });
@@ -111,7 +111,13 @@ export const generationsByNameQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["project", projectUuid, "generations"],
+    queryKey: [
+      "project",
+      projectUuid,
+      "generations",
+      "by-name",
+      generationName,
+    ],
     queryFn: async () =>
       await fetchGenerationsByName(generationName, projectUuid),
   });

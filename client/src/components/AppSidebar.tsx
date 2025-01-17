@@ -1,14 +1,17 @@
-import {
-  ChevronDown,
-  User2,
-  ChevronUp,
-  Home,
-  Wrench,
-  ScrollText,
-  PencilLine,
-  Settings,
-} from "lucide-react";
+import { useAuth } from "@/auth";
 import { LilypadIcon } from "@/components/LilypadIcon";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -22,26 +25,21 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
 import { projectsQueryOptions } from "@/utils/projects";
-import { useAuth } from "@/auth";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useUpdateActiveOrganizationMutation } from "@/utils/users";
-import { useState } from "react";
-import { ProjectPublic } from "@/types/types";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import {
+  ChevronDown,
+  ChevronUp,
+  Home,
+  PencilLine,
+  ScrollText,
+  Settings,
+  User2,
+  Wrench,
+} from "lucide-react";
+import { useEffect } from "react";
 
 type Item = {
   title: string;
@@ -105,14 +103,16 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, activeProject, setProject } = useAuth();
   const navigate = useNavigate();
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const organizationMutation = useUpdateActiveOrganizationMutation();
-  const [activeProject, setActiveProject] = useState<ProjectPublic | null>(
-    projects.length > 0 ? projects[0] : null
-  );
+  useEffect(() => {
+    if (!activeProject && projects.length > 0) {
+      setProject(projects[0]);
+    }
+  }, [activeProject]);
   const projectItems: Item[] = activeProject
     ? [
         {
@@ -166,7 +166,7 @@ export const AppSidebar = () => {
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.uuid}
-                    onClick={() => setActiveProject(project)}
+                    onClick={() => setProject(project)}
                   >
                     {project.name}
                   </DropdownMenuItem>
@@ -216,7 +216,7 @@ export const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link
-                to={"/settings"}
+                to={"/settings/$"}
                 className='flex items-center w-full gap-2 [&.active]:font-bold'
               >
                 <Settings />

@@ -15,7 +15,6 @@ import typer
 from rich import print
 
 from ...server.client import LilypadClient
-from ...server.db.setup import create_tables
 from ...server.settings import get_settings
 from ._utils import get_and_create_config
 
@@ -105,8 +104,6 @@ def local_command(
     if not os.path.exists(".lilypad"):
         existing_project = False
         project_name = typer.prompt("What's your project name?")
-    if not os.path.exists("pad.db"):
-        create_tables("local")
     config_path = os.path.join(".lilypad", "config.json")
     data = get_and_create_config(config_path)
     data["base_url"] = f"http://localhost:{new_port}"

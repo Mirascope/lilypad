@@ -54,18 +54,22 @@ class LilypadClient:
         """
         config = load_config()
         settings = get_settings()
-        base_url: str = config.get("base_url", None) or settings.base_url
-        self.base_url = f"{base_url.rstrip('/')}/api"
+        base_url: str = config.get("base_url", None) or settings.api_url
+        self.base_url = f"{base_url.rstrip('/')}"
         self.timeout = timeout
         self.session = requests.Session()
-        try:
-            self.project_uuid = (
-                UUID(config["project_uuid"])
-                if config.get("project_uuid", None)
-                else None
-            )
-        except FileNotFoundError:
-            self.project_uuid = None
+        self.project_uuid = settings.project_id
+        if not self.project_uuid:
+            try:
+                self.project_uuid = (
+                    UUID(config["project_uuid"])
+                    if config.get("project_uuid", None)
+                    else None
+                )
+            except FileNotFoundError:
+                self.project_uuid = None
+        if settings.api_key:
+            self.session.headers.update({"X-API-Key": settings.api_key})
         if headers:
             self.session.headers.update(headers)
 
@@ -88,7 +92,7 @@ class LilypadClient:
         """
         self._token = value
         if value:
-            self.session.headers["Authorization"] = f"Bearer {value}"
+            self.session.headers.update({"Authorization": f"Bearer {value}"})
 
     @overload
     def _request(
@@ -210,7 +214,7 @@ class LilypadClient:
         """
         return self._request(
             "POST",
-            "/v0/traces",
+            f"/v0/projects/{self.project_uuid}/traces",
             response_model=list[SpanPublic],
             params=params,
             **kwargs,
@@ -273,7 +277,7 @@ class LilypadClient:
         elif generation and not generation.prompt:
             prompts = self._request(
                 "GET",
-                f"v0/projects/{self.project_uuid}/prompts/metadata/signature",
+                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
                 params={"signature": closure.signature},
                 response_model=list[PromptPublic],
             )

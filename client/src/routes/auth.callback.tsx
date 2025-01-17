@@ -1,5 +1,4 @@
 import { useAuth } from "@/auth";
-import { useToast } from "@/hooks/use-toast";
 import { callbackCodeQueryOptions } from "@/utils/auth";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
@@ -28,12 +27,12 @@ export const Route = createFileRoute("/auth/callback")({
 
 type State = {
   deviceCode?: string;
+  redirect?: string;
 };
 const CallbackPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
   const { code, state } = Route.useSearch();
-  const { toast } = useToast();
   let stateJson: State = {};
   if (state) {
     stateJson = JSON.parse(atob(state));
@@ -41,22 +40,17 @@ const CallbackPage = () => {
   const { data: session } = useSuspenseQuery(
     callbackCodeQueryOptions(code, stateJson?.deviceCode)
   );
-
   useEffect(() => {
     auth.setSession(session);
-    if (session)
-      toast({
-        title: "Successfully authenticated",
-        description: "You may now close this window and proceed in the CLI.",
-      });
   }, [session]);
 
   useEffect(() => {
-    if (auth.user)
+    if (auth.user) {
       navigate({
-        to: "/projects",
+        to: stateJson?.redirect || "/projects",
         search: { redirect: undefined, deviceCode: undefined },
       });
+    }
   }, [auth.user]);
 
   return (

@@ -1,5 +1,6 @@
-import { KeyRound, Eye, EyeOff } from "lucide-react";
-import { useUpdateUserKeysMutation } from "@/utils/users";
+import { NotFound } from "@/components/NotFound";
+import { SettingsLayout } from "@/components/SettingsLayout";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,13 +9,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useAuth } from "@/auth";
-import { useForm, useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Typography } from "@/components/ui/typography";
-import { SettingsLayout } from "@/components/SettingsLayout";
+import { useToast } from "@/hooks/use-toast";
+import { userQueryOptions, useUpdateUserKeysMutation } from "@/utils/users";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { useState } from "react";
+import { useForm, useFormContext } from "react-hook-form";
 
 interface UserKeysFormValues {
   openai: string;
@@ -69,9 +71,10 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
 };
 
 export const KeysSettings = () => {
-  const { user, setSession } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { toast } = useToast();
   const updateUserKeys = useUpdateUserKeysMutation();
-  const keys = user?.keys || {};
+  const keys = user.keys || {};
   const methods = useForm<UserKeysFormValues>({
     defaultValues: {
       openai: keys["openai"] || "",
@@ -83,8 +86,11 @@ export const KeysSettings = () => {
 
   const onSubmit = async (data: UserKeysFormValues) => {
     try {
-      const userSession = await updateUserKeys.mutateAsync(data);
-      setSession(userSession);
+      await updateUserKeys.mutateAsync(data);
+      toast({
+        title: "LLM Keys Updated",
+        description: "Your LLM API keys have been updated.",
+      });
     } catch (error) {
       console.error(error);
     }
@@ -96,9 +102,10 @@ export const KeysSettings = () => {
     { id: "gemini", label: "Gemini" },
     { id: "openrouter", label: "OpenRouter" },
   ];
+  if (!user) return <NotFound />;
   return (
-    <SettingsLayout title='Keys' icon={KeyRound}>
-      <Typography variant='h4'>API Keys</Typography>
+    <SettingsLayout title={`${user.first_name}'s Keys`} icon={KeyRound}>
+      <Typography variant='h4'> API Keys</Typography>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
           <div className='space-y-4'>
