@@ -66,6 +66,7 @@ bedrock = [
     "boto3>=1.35.36",
     "boto3-stubs[bedrock-runtime]>=1.35.82",
     "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
+]
 mistral = [
     "mistralai>=1.0.0,<2",
 ]
