@@ -1,7 +1,9 @@
+import { Caption } from "@/components/Caption";
+import Image from "next/image";
 import { Callout, Tabs } from "nextra/components";
-
-export const providers = ["OpenAI", "Anthropic", "Gemini", "Mistral", "OpenRouter"];
-export const os =  ["macOS and Linux", "Windows"];
+import promptPlayground from "../../public/prompt_playground.png";
+import promptPlaygroundOutput from "../../public/prompt_playground_output.png";
+import trace from "../../public/trace.png";
 
 # Lilypad
 
@@ -28,254 +30,84 @@ The most common team structure we've seen consists of a mixture of engineers and
 
 We've purpose-built Lilypad around the necessity of such collaboration, helping to automate the annoying parts so you can focus on what really matters: making your LLM calls **measurably good**.
 
+## Automatic Versioning
 
-## 30 Second Quickstart
+Use `@lilypad.generation` to decorate your LLM functions. This will automatically version your generations based on the function closure.
 
-Integrate your LLM application with Lilypad to get automatic versioning and tracing.
+[Learn more](docs/generations.mdx) about versioning your LLM functions.
 
-#### Setup
+## Prompt Playground
 
-Install `uv` and create a new project:
+Iterate and test your prompts in the prompt playground. Lilypad Web allows you to quickly test your prompts and see the results.
 
-<Tabs items={os} storageKey="os">
-  <Tabs.Tab>
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh 
-    uv init my-first-lily
-    ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```bash
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex" 
-    uv init my-first-lily 
-    ```
-  </Tabs.Tab>
-</Tabs>
+<Image
+  src={promptPlayground}
+  alt='prompt_playground'
+  width='1000'
+  height='500'
+/>
+<Caption>
+  Update prompt and model configurations to find your best prompt.
+</Caption>
 
-Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
+View your results.
 
-<Tabs items={os} storageKey="os">
-  <Tabs.Tab>
-    <Tabs items={providers} storageKey="provider">
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        export OPENAI_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[anthropic]"
-        export ANTHROPIC_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[gemini]"
-        export GOOGLE_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[mistral]"
-        export MISTRAL_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        export OPENROUTER_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-    </Tabs>
-  </Tabs.Tab>
-  <Tabs.Tab>
-    <Tabs items={providers} storageKey="provider">
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        set OPENAI_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[anthropic]"
-        set ANTHROPIC_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[gemini]"
-        set GOOGLE_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[mistral]"
-        set MISTRAL_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        set OPENROUTER_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-    </Tabs>
-  </Tabs.Tab>
-</Tabs>
+<Image
+  src={promptPlaygroundOutput}
+  alt='prompt_playground_output'
+  width='1000'
+  height='500'
+/>
+<Caption>View markdown supported output from your prompt.</Caption>
 
-#### Create a new project
+## Managed Prompts
 
-1. Navigate to [Lilypad App](https://app.lilypad.so)
+Collaborate with non technical team members by using managed prompts.
+Use your managed prompt in your generations using the `@lilypad.prompt` decorator.
 
-2. Create an account by signing in with your GitHub.
+[Learn more](docs/prompts.mdx) about managed prompts.
 
-3. Navigate to [Your Organization Settings](http://localhost:8000/settings/org) to create a project and API key.
+```python
+import lilypad
+from openai import OpenAI
 
-4. Copy the project ID and API key and place them in your environment
+client = OpenAI()
 
-```bash
-LILYPAD_PROJECT_ID=XXXXX
-LILYPAD_API_KEY=XXXXX
+
+@lilypad.prompt()
+def answer_question_prompt(question: str): ...
+
+@lilypad.generation()
+def answer_question(question: str) -> str:
+    prompt = answer_question_prompt(question)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=prompt.messages("openai"),
+    )
+    return str(completion.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    lilypad.configure()
+    answer = answer_question("What is the meaning of life?")
+    print(answer)
 ```
 
-You are now ready to start tracing your generations.
+Swap between different prompts safely without having to redeploy your code.
 
-#### Run a generation
+## Trace
 
-Copy-paste this generation into a new Python file (`main.py`):
+Trace your generations and prompts to gain insight into your LLM calls.
 
-<Tabs items={["OpenAI", "Anthropic", "Gemini", "Mistral", "OpenRouter"]} storageKey="provider">
-  <Tabs.Tab>
-  ```python
-  import lilypad
-  from openai import OpenAI
+Add `lilypad.configure()` to your application to enable tracing.
 
-  client = OpenAI()
+```python
+import lilypad
 
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      completion = client.chat.completions.create(
-          model="gpt-4o-mini",
-          messages=[{"role": "user", "content": question}],
-      )
-      return str(completion.choices[0].message.content)
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import lilypad
-  from anthropic import Anthropic
-
-  client = Anthropic()
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      message = client.messages.create(
-          model="claude-3-5-sonnet-20240620",
-          messages=[{"role": "user", "content": question}],
-          max_tokens=1024,
-      )
-      block = message.content[0]
-      return block.text if block.type == "text" else ""
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  from google.generativeai import GenerativeModel
-  import lilypad
-
-  client = GenerativeModel("gemini-1.5-flash")
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      generation = client.generate_content(
-          contents=[{"role": "user", "parts": question}]
-      )
-      return generation.candidates[0].content.parts[0].text
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import os
-
-  import lilypad
-  from typing import cast
-
-  from mistralai import Mistral
-
-  client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str | None:
-      completion = client.chat.complete(
-          model="mistral-large-latest",
-          messages=[{"role": "user", "content": question}],
-      )
-      if completion and (choices := completion.choices):
-          return cast(str, choices[0].message.content)
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import os
-
-  import lilypad
-  from openai import OpenAI
-
-  client = OpenAI(
-      base_url="https://openrouter.ai/api/v1",
-      api_key=os.getenv("OPENROUTER_API_KEY"),
-  )
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      completion = client.chat.completions.create(
-          model="gpt-4o-mini",
-          messages=[{"role": "user", "content": question}],
-      )
-      return str(completion.choices[0].message.content)
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-</Tabs>
-
-Run the Python file
-
-```bash
-uv run main.py
+lilypad.configure()
 ```
 
-Follow the link output by the command to view the trace in the Lilypad app.
+Any function decorated with `@lilypad.generation` or `@lilypad.prompt` will be traced.
 
-The `@lilypad.generation` decorator will automatically version the `answer_question` function and collect a trace against that version. This ensures that you can always trace back to the exact code that generated a particular output.
-
-This means that you can code as you always have, and Lilypad will take care of the rest.
+<Image src={trace} alt='trace' width='1000' height='500' />
+<Caption>View traces in real time.</Caption>

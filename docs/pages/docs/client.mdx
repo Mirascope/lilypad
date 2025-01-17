@@ -1,0 +1,68 @@
+import { Caption } from "@/components/Caption";
+import { Cards } from "@/components/Card";
+import { PencilLine, Wrench } from "lucide-react";
+import Image from "next/image";
+import llmKeys from "../../public/llm_keys.png";
+import login from "../../public/login.png";
+import sidebar from "../../public/sidebar.png";
+import workspace from "../../public/workspace.png";
+
+# Client
+
+Welcome to Lilypad!
+
+## Getting Started
+
+Navigate to [Lilypad](https://app.lilypad.so) to create an account.
+
+<Image src={login} alt='login' width='1000' height='500' />
+<Caption>Sign in with GitHub.</Caption>
+
+## Setup
+
+Navigate to [your organization](https://app.lilypad.so/settings/org) to create your project and API key.
+
+<Image src={workspace} alt='workspace' width='1000' height='500' />
+<Caption>Copy project ID and API key</Caption>
+
+Update your environment with the following:
+
+```bash
+LILYPAD_PROJECT_ID=...
+LILYPAD_API_KEY=...
+```
+
+### (Optional) LLM Keys for Prompt Playground
+
+Navigate to [your LLM keys](https://app.lilypad.so/settings/keys) to add your LLM API keys.
+In order to run your prompts in the Lilypad Playground, you will need to add your LLM API keys.
+
+<Image src={llmKeys} alt='LLM keys' width='1000' height='500' />
+<Caption>Add your LLM API Keys</Caption>
+
+## Start Generating Traces
+
+You are ready to start generating traces with Lilypad!
+Check out the following guides to get started:
+
+<Cards>
+  <Cards.Card
+    icon={<Wrench />}
+    title='Generations'
+    href='/docs/generations'
+    description='Get started with versioning your LLM functions.'
+  />
+  <Cards.Card
+    icon={<PencilLine />}
+    title='Prompts'
+    href='/docs/prompts'
+    description='Get started with collaborating with teammates by using managed prompts.'
+  />
+</Cards>
+
+## View Traces
+
+After you have generated traces, you can view them in the Home tab.
+
+<Image src={sidebar} alt='sidebar' width='100' height='100' />
+<Caption>View all your traces in the Home tab.</Caption>
