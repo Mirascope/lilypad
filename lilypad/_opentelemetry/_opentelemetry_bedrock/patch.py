@@ -47,7 +47,7 @@ class AsyncEventStreamAdapter:
 
     async def __anext__(self) -> Any:
         try:
-            return await self._stream.__anext__() # pyright: ignore [reportAttributeAccessIssue]
+            return await self._stream.__anext__()  # pyright: ignore [reportAttributeAccessIssue]
         except StopAsyncIteration:
             raise
         except Exception as ex:
@@ -111,16 +111,14 @@ def make_api_call_patch(
                         for m in msgs:
                             set_bedrock_message_event(span, m)
                     response = wrapped(*args, **kwargs)
-                    if "stream" in response and isinstance(
-                        response["stream"], EventStream
-                    ):
+                    if "stream" in response:
                         raw_stream = response["stream"]
                         adapt = SyncEventStreamAdapter(raw_stream)
                         metadata = BedrockMetadata()
                         chunk_handler = BedrockChunkHandler()
                         wrapped_stream = StreamWrapper(
                             span=span,
-                            stream=adapt, # pyright: ignore [reportArgumentType]
+                            stream=adapt,  # pyright: ignore [reportArgumentType]
                             metadata=metadata,
                             chunk_handler=chunk_handler,
                             cleanup_handler=default_bedrock_cleanup,
@@ -200,14 +198,14 @@ def make_api_call_async_patch(
                         for m in msgs:
                             set_bedrock_message_event(span, m)
                     resp = await wrapped(*args, **kwargs)
-                    if "stream" in resp and isinstance(resp["stream"], EventStream):
+                    if "stream" in resp:
                         raw_stream = resp["stream"]
                         adapt = AsyncEventStreamAdapter(raw_stream)
                         metadata = BedrockMetadata()
                         chunk_handler = BedrockChunkHandler()
                         wrapped_stream = AsyncStreamWrapper(
                             span=span,
-                            stream=adapt, # pyright: ignore [reportArgumentType]
+                            stream=adapt,  # pyright: ignore [reportArgumentType]
                             metadata=metadata,
                             chunk_handler=chunk_handler,
                             cleanup_handler=default_bedrock_cleanup,

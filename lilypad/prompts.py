@@ -193,7 +193,10 @@ class Prompt(BaseModel):
     def call_params(self, provider: Literal["vertex"]) -> "VertexCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     def call_params(
-        self, provider: Literal["openai", "anthropic", "bedrock", "gemini", "mistral", "vertex"]
+        self,
+        provider: Literal[
+            "openai", "anthropic", "bedrock", "gemini", "mistral", "vertex"
+        ],
     ) -> (
         "OpenAICallParams | AnthropicCallParams | BedrockCallParams | GeminiCallParams | MistralCallParams | VertexCallParams"  # pyright: ignore [reportInvalidTypeForm]
     ):
