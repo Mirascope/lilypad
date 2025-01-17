@@ -1,11 +1,15 @@
 """Tests for the `Closure` class"""
-
+import ast
 import importlib.metadata
 import inspect
 import sys
 from collections.abc import Callable
+from textwrap import dedent
+
+import pytest
 
 from lilypad._utils import Closure
+from lilypad._utils.closure import _convert_embedded_newlines_to_triple_quoted
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -47,6 +51,7 @@ from .closure_test_functions import (
     user_defined_from_import_fn,
     user_defined_import_fn,
 )
+from .closure_test_functions.main import multiple_literal_fn
 
 
 def _expected(fn: Callable) -> str:
@@ -452,3 +457,191 @@ def test_mirascope_response_model_fn() -> None:
             "version": "2.10.3",
         },
     }
+
+def test_multiple_literal_fn():
+    """Test the `Closure` class with multiple literal functions."""
+    closure = Closure.from_fn(multiple_literal_fn)
+    assert closure.code == _expected(multiple_literal_fn)
+    assert closure.dependencies == {}
+
+@pytest.mark.parametrize(
+    "original,is_fstring",
+    [
+        # Triple-quoted with double quotes
+        (
+            dedent(
+                '''\
+                """
+                a
+                b
+                c
+                """
+                '''
+            ),
+            False,
+        ),
+        # Triple-quoted with single quotes
+        (
+            dedent(
+                """\
+                '''
+                a
+                b
+                c
+                '''
+                """
+            ),
+            False,
+        ),
+        # f-string (double-quoted)
+        (
+            dedent(
+                '''\
+                f"""
+                a
+                b
+                c
+                """
+                '''
+            ),
+            True,
+        ),
+        # f-string (single-quoted)
+        (
+            dedent(
+                """\
+                f'''
+                a
+                b
+                c
+                '''
+                """
+            ),
+            True,
+        ),
+        # Parenthesized adjacent string literals (double quotes)
+        (
+            dedent(
+                '''\
+                ("a"
+                 "b"
+                 "c"
+                )
+                '''
+            ),
+            False,
+        ),
+        # Parenthesized adjacent string literals (single quotes)
+        (
+            dedent(
+                '''\
+                ('a'
+                 'b'
+                 'c'
+                )
+                '''
+            ),
+            False,
+        ),
+    ],
+)
+def test_various_multiline_strings(original, is_fstring):
+    converted = _convert_embedded_newlines_to_triple_quoted(original)
+
+    try:
+        compile(converted, "<test>", "exec")
+    except SyntaxError as e:
+        pytest.fail(f"SyntaxError after conversion:\n{e}\nConverted code:\n{converted}")
+
+    if not is_fstring:
+        original_val = ast.literal_eval(original)
+        converted_val = ast.literal_eval(converted)
+
+        assert original_val == converted_val, (
+            "Original and converted string values differ!\n"
+            f"Original: {original_val}\n"
+            f"Converted: {converted_val}\n"
+            f"Converted code:\n{converted}"
+        )
+
+        if "\n" in original_val:
+            assert '"""' in converted or "'''" in converted, (
+                "Expected triple quotes in the converted code, because the string has a real newline.\n"
+                f"Converted code:\n{converted}"
+            )
+    else:
+        if "\n" in original:
+            assert '"""' in converted or "'''" in converted, (
+                "Expected triple quotes in the converted code for an f-string with newlines.\n"
+                f"Converted code:\n{converted}"
+            )
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        r"'\tTabbed'",
+        r"'\rCarriage'",
+        r"'\nNewline'",
+        r"'\x41\x42\x43'",      # equals "ABC"
+        r"'\u0041\u0042\u0043'",# equals "ABC"
+    ],
+)
+def test_escaped_sequences(original):
+    converted = _convert_embedded_newlines_to_triple_quoted(original)
+
+    try:
+        compile(converted, "<test>", "exec")
+    except SyntaxError as e:
+        pytest.fail(f"SyntaxError after conversion:\n{e}\nConverted code:\n{converted}")
+
+    original_val = ast.literal_eval(original)
+    converted_val = ast.literal_eval(converted)
+
+    assert original_val == converted_val, (
+        "Escaped sequence mismatch!\n"
+        f"Original: {original_val}\n"
+        f"Converted: {converted_val}\n"
+        f"Converted code:\n{converted}"
+    )
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        r'r"\n not a real newline"',
+        r'r"\t not a real tab"',
+        r'r"C:\path\to\folder"',
+    ],
+)
+def test_raw_strings_as_normal_strings(original):
+    converted = _convert_embedded_newlines_to_triple_quoted(original)
+
+    # Check syntax
+    try:
+        compile(converted, "<test>", "exec")
+    except SyntaxError as e:
+        pytest.fail(f"SyntaxError:\n{e}\nConverted:\n{converted}")
+
+
+    assert converted == original, (
+        f"Mismatch: {converted} vs expected '\\\\n not a real newline'\n"
+        f"Converted:\n{converted}"
+    )
+
+def test_triple_quotes_inside():
+    original = '''"String with triple quotes inside: \\""" and more"'''
+    converted = _convert_embedded_newlines_to_triple_quoted(original)
+
+    try:
+        compile(converted, "<test>", "exec")
+    except SyntaxError as e:
+        pytest.fail(f"SyntaxError after conversion:\n{e}\nConverted code:\n{converted}")
+
+    original_val = ast.literal_eval(original)
+    converted_val = ast.literal_eval(converted)
+
+    assert original_val == converted_val, (
+        "String containing triple quotes inside was not preserved correctly.\n"
+        f"Original: {original_val}\n"
+        f"Converted: {converted_val}\n"
+        f"Converted code:\n{converted}"
+    )

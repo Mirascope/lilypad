@@ -7,12 +7,14 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import inspect
+import io
 import json
 import os
 import site
 import subprocess
 import sys
 import tempfile
+import tokenize
 from collections.abc import Callable
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -43,11 +45,61 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     )
 
 
+def _convert_embedded_newlines_to_triple_quoted(code: str) -> str:
+    """Convert single/double-quoted string tokens containing actual newlines
+    into triple-quoted strings. If the token is already triple-quoted, it is unchanged.
+    """
+    tokens = list(tokenize.generate_tokens(io.StringIO(code).readline))
+    new_tokens = []
+
+    for tok_type, tok_string, _start, _end, _line in tokens:
+        if tok_type == tokenize.STRING:
+            # If it's already triple-quoted, leave it as is.
+            if tok_string.startswith('"""') or tok_string.startswith("'''"):
+                new_tokens.append((tok_type, tok_string))
+            else:
+                # If it looks like an f-string, skip ast.literal_eval since it won't parse.
+                if tok_string.startswith(('f"', "f'", 'f"""', "f'''")):
+                    new_tokens.append((tok_type, tok_string))
+                    continue
+
+                # For normal string literals, parse and check for newlines.
+                val = ast.literal_eval(tok_string)
+                if "\n" in val:
+                    triple_str = f'"""{val}"""'
+                    new_tokens.append((tok_type, triple_str))
+                else:
+                    new_tokens.append((tok_type, tok_string))
+        else:
+            new_tokens.append((tok_type, tok_string))
+
+    return tokenize.untokenize(new_tokens)
+
+
 def _clean_source_code(
     fn: Callable[..., Any] | type,
     *,
     exclude_fn_body: bool = False,
 ) -> str:
+    """Cleans the source code of the given function or class definition by:
+      - Removing its docstring if present.
+      - Optionally truncating the body if exclude_fn_body=True.
+      - Normalizing multi-line strings, etc.
+
+    Constraints (current limitations of this implementation):
+      1. String literals concatenated with '+' are not supported.
+      2. Multiple string literals split across multiple lines and enclosed in parentheses
+         will be merged into a single string literal.
+      3. Raw strings (e.g. r"...") are treated as normal string literals.
+
+    Note:
+      These constraints apply specifically to the AST unparse step and are not handled
+      by the current implementation.
+
+    :param fn: The function or class object to inspect.
+    :param exclude_fn_body: If True, the function body will be truncated after the signature.
+    :return: A string representing the “cleaned” source code.
+    """
     source = dedent(inspect.getsource(fn))
     tree = ast.parse(source)
     fn_def = tree.body[0]
@@ -61,7 +113,7 @@ def _clean_source_code(
         cleaned_source = cleaned_source[: definition_end + 1]
     if cleaned_source[-1] == ":":
         cleaned_source += " ..."
-    return cleaned_source
+    return _convert_embedded_newlines_to_triple_quoted(cleaned_source)
 
 
 class _NameCollector(ast.NodeVisitor):
@@ -509,7 +561,9 @@ class _DependencyCollector:
         for code in self.source_code:
             tree = ast.parse(code)
             new_tree = rewriter.visit(tree)
-            source_code.append(ast.unparse(new_tree))
+            unparsed = ast.unparse(new_tree)
+            unparsed = _convert_embedded_newlines_to_triple_quoted(unparsed)
+            source_code.append(unparsed)
 
         required_dependencies = self._collect_required_dependencies(
             self.imports | self.fn_internal_imports
