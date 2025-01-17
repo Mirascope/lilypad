@@ -96,9 +96,11 @@ def _clean_source_code(
       These constraints apply specifically to the AST unparse step and are not handled
       by the current implementation.
 
-    :param fn: The function or class object to inspect.
-    :param exclude_fn_body: If True, the function body will be truncated after the signature.
-    :return: A string representing the “cleaned” source code.
+    Args:
+        fn: The function or class object to inspect.
+        exclude_fn_body: If True, the function body will be truncated after the signature.
+    Returns:
+        A string representing the “cleaned” source code.
     """
     source = dedent(inspect.getsource(fn))
     tree = ast.parse(source)
