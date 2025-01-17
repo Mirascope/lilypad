@@ -55,6 +55,8 @@ if TYPE_CHECKING:
     except ImportError:
         BedrockCallParams = Any
         BedrockMessageParam = Any
+
+    try:
         from mirascope.core.vertex import VertexCallParams
         from vertexai.generative_models import Content
     except ImportError:
@@ -114,6 +116,7 @@ class Prompt(BaseModel):
         self, provider: Literal["bedrock"]
     ) -> Sequence["BedrockMessageParam"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
     def messages(self, provider: Literal["vertex"]) -> Sequence["Content"]: ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
@@ -184,15 +187,15 @@ class Prompt(BaseModel):
     def call_params(self, provider: Literal["bedrock"]) -> "BedrockCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
     @overload
-    def call_params(self, provider: Literal["vertex"]) -> "VertexCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
-
-    @overload
     def call_params(self, provider: Literal["mistral"]) -> "MistralCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
 
+    @overload
+    def call_params(self, provider: Literal["vertex"]) -> "VertexCallParams": ...  # pyright: ignore [reportInvalidTypeForm]
+
     def call_params(
-        self, provider: Literal["openai", "anthropic", "gemini", "mistral", "vertex"]
+        self, provider: Literal["openai", "anthropic", "bedrock", "gemini", "mistral", "vertex"]
     ) -> (
-        "OpenAICallParams | AnthropicCallParams | BedrockCallParams | GeminiCallParams | MistralCallParams"  # pyright: ignore [reportInvalidTypeForm]
+        "OpenAICallParams | AnthropicCallParams | BedrockCallParams | GeminiCallParams | MistralCallParams | VertexCallParams"  # pyright: ignore [reportInvalidTypeForm]
     ):
         """Return the call parameters for the given provider converted from common."""
         if provider == "openai":
@@ -215,7 +218,7 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "bedrock":
             from mirascope.core.bedrock._utils._convert_common_call_params import (
-            convert_common_call_params,
+                convert_common_call_params,
             )
         elif provider == "vertex":
             from mirascope.core.vertex._utils._convert_common_call_params import (

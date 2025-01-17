@@ -1,11 +1,14 @@
-from opentelemetry.semconv.attributes import error_attributes
-from opentelemetry.trace import Status, StatusCode, Tracer
-from typing_extensions import ParamSpec
+"""Bedrock OpenTelemetry patching."""
 
-P = ParamSpec("P")
+from __future__ import annotations
+
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from botocore.eventstream import EventStream
-from mypy_boto3_bedrock_runtime.type_defs import ConverseStreamOutputTypeDef
+from opentelemetry.semconv.attributes import error_attributes
+from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
+from typing_extensions import ParamSpec
 
 from lilypad._opentelemetry._utils import AsyncStreamWrapper, StreamWrapper
 
@@ -14,145 +17,214 @@ from .utils import (
     BedrockMetadata,
     default_bedrock_cleanup,
     get_bedrock_llm_request_attributes,
+    set_bedrock_message_event,
 )
+
+P = ParamSpec("P")
 
 
 class SyncEventStreamAdapter:
-    """Convert EventStream into a Python iterator.
-    Assuming EventStream itself is iterable:
-    If not, fallback to read loop.
-    """
-    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]") -> None:
+    """Sync EventStream adapter."""
+
+    def __init__(self, event_stream: EventStream) -> None:
         self._iter = iter(event_stream)
 
-    def __iter__(self):
+    def __iter__(self) -> SyncEventStreamAdapter:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return next(self._iter)
 
 
 class AsyncEventStreamAdapter:
-    """Convert EventStream into an async iterator."""
-    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]") -> None:
-        self.event_stream = event_stream
-        self._iter = None
+    """Async EventStream adapter."""
 
-    def __aiter__(self):
-        return self._async_iter()
+    def __init__(self, event_stream: EventStream) -> None:
+        self._stream = event_stream
 
-    async def _async_iter(self):
-        async for chunk in self.event_stream:
-            yield chunk
+    def __aiter__(self) -> AsyncEventStreamAdapter:
+        return self
 
-def make_api_call_patch(tracer: Tracer):
-    def wrapper(wrapped, instance, args, kwargs):
+    async def __anext__(self) -> Any:
+        try:
+            return await self._stream.__anext__() # pyright: ignore [reportAttributeAccessIssue]
+        except StopAsyncIteration:
+            raise
+        except Exception as ex:
+            raise ex
+
+
+def make_api_call_patch(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
+    """Patch for bedrock-runtime synchronous _make_api_call."""
+
+    def wrapper(
+        wrapped: Callable[P, Any],
+        instance: Any,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
         operation_name, params = args
         service_name = instance.meta.service_model.service_name
-        if service_name == "bedrock-runtime":
-            span_attributes = get_bedrock_llm_request_attributes(params, instance)
-            if operation_name == "Converse":
-                # Non-stream sync call
-                span_name = f"chat {span_attributes.get('gen_ai.request.model','unknown')}"
-                with tracer.start_as_current_span(name=span_name, end_on_exit=False) as span:
-                    try:
-                        result = wrapped(*args, **kwargs)
+        if service_name != "bedrock-runtime":
+            return wrapped(*args, **kwargs)
+        span_attrs = get_bedrock_llm_request_attributes(params, instance)
+        if operation_name == "Converse":
+            span_name = f"chat {span_attrs.get('gen_ai.request.model','unknown')}"
+            with tracer.start_as_current_span(
+                name=span_name,
+                kind=SpanKind.CLIENT,
+                attributes=span_attrs,
+                end_on_exit=False,
+            ) as span:
+                try:
+                    if span.is_recording():
+                        msgs = params.get("messages", [])
+                        for m in msgs:
+                            set_bedrock_message_event(span, m)
+                    result = wrapped(*args, **kwargs)
+                    default_bedrock_cleanup(span, BedrockMetadata(), [])
+                    span.end()
+                    return result
+                except Exception as err:
+                    span.set_status(Status(StatusCode.ERROR, str(err)))
+                    if span.is_recording():
+                        span.set_attribute(
+                            error_attributes.ERROR_TYPE, type(err).__qualname__
+                        )
+                    span.end()
+                    raise
+        elif operation_name == "ConverseStream":
+            span_name = (
+                f"chat_stream {span_attrs.get('gen_ai.request.model','unknown')}"
+            )
+            with tracer.start_as_current_span(
+                name=span_name,
+                kind=SpanKind.CLIENT,
+                attributes=span_attrs,
+                end_on_exit=False,
+            ) as span:
+                try:
+                    if span.is_recording():
+                        msgs = params.get("messages", [])
+                        for m in msgs:
+                            set_bedrock_message_event(span, m)
+                    response = wrapped(*args, **kwargs)
+                    if "stream" in response and isinstance(
+                        response["stream"], EventStream
+                    ):
+                        raw_stream = response["stream"]
+                        adapt = SyncEventStreamAdapter(raw_stream)
+                        metadata = BedrockMetadata()
+                        chunk_handler = BedrockChunkHandler()
+                        wrapped_stream = StreamWrapper(
+                            span=span,
+                            stream=adapt, # pyright: ignore [reportArgumentType]
+                            metadata=metadata,
+                            chunk_handler=chunk_handler,
+                            cleanup_handler=default_bedrock_cleanup,
+                        )
+                        response["stream"] = wrapped_stream
+                    else:
                         default_bedrock_cleanup(span, BedrockMetadata(), [])
                         span.end()
-                        return result
-                    except Exception as error:
-                        span.set_status(Status(StatusCode.ERROR, str(error)))
-                        if span.is_recording():
-                            span.set_attribute(error_attributes.ERROR_TYPE, type(error).__qualname__)
-                        span.end()
-                        raise
-            elif operation_name == "ConverseStream":
-                # Streaming sync call
-                span_name = f"chat_stream {span_attributes.get('gen_ai.request.model','unknown')}"
-                with tracer.start_as_current_span(name=span_name, end_on_exit=False) as span:
-                    try:
-                        response = wrapped(*args, **kwargs)
-                        if "stream" in response:
-                            event_stream = response["stream"]
-                            # event_stream is EventStream[ConverseStreamOutputTypeDef]
-                            adapted_stream = SyncEventStreamAdapter(event_stream)
-                            metadata = BedrockMetadata()
-                            chunk_handler = BedrockChunkHandler()
-                            response["stream"] = StreamWrapper(
-                                span=span,
-                                stream=adapted_stream,
-                                metadata=metadata,
-                                chunk_handler=chunk_handler,
-                                cleanup_handler=default_bedrock_cleanup,
-                            )
-                        else:
-                            default_bedrock_cleanup(span, BedrockMetadata(), [])
-                            span.end()
-                        return response
-                    except Exception as error:
-                        span.set_status(Status(StatusCode.ERROR, str(error)))
-                        if span.is_recording():
-                            span.set_attribute(error_attributes.ERROR_TYPE, type(error).__qualname__)
-                        span.end()
-                        raise
-            else:
-                return wrapped(*args, **kwargs)
-        else:
-            return wrapped(*args, **kwargs)
+                    return response
+                except Exception as err:
+                    span.set_status(Status(StatusCode.ERROR, str(err)))
+                    if span.is_recording():
+                        span.set_attribute(
+                            error_attributes.ERROR_TYPE, type(err).__qualname__
+                        )
+                    span.end()
+                    raise
+        return wrapped(*args, **kwargs)
+
     return wrapper
 
 
-def make_api_call_async_patch(tracer: Tracer):
-    async def wrapper(wrapped, instance, args, kwargs):
+def make_api_call_async_patch(
+    tracer: Tracer,
+) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
+    """Patch for bedrock-runtime asynchronous _make_api_call."""
+
+    async def wrapper(
+        wrapped: Callable[P, Any],
+        instance: Any,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
         operation_name, params = args
         service_name = instance.meta.service_model.service_name
-        if service_name == "bedrock-runtime":
-            span_attributes = get_bedrock_llm_request_attributes(params, instance)
-            if operation_name == "Converse":
-                # Non-stream async call
-                span_name = f"chat {span_attributes.get('gen_ai.request.model','unknown')}"
-                with tracer.start_as_current_span(name=span_name, end_on_exit=False) as span:
-                    try:
-                        response = await wrapped(*args, **kwargs)
+        if service_name != "bedrock-runtime":
+            return await wrapped(*args, **kwargs)
+        span_attrs = get_bedrock_llm_request_attributes(params, instance)
+        if operation_name == "Converse":
+            span_name = f"chat {span_attrs.get('gen_ai.request.model','unknown')}"
+            with tracer.start_as_current_span(
+                name=span_name,
+                kind=SpanKind.CLIENT,
+                attributes=span_attrs,
+                end_on_exit=False,
+            ) as span:
+                try:
+                    if span.is_recording():
+                        msgs = params.get("messages", [])
+                        for m in msgs:
+                            set_bedrock_message_event(span, m)
+                    resp = await wrapped(*args, **kwargs)
+                    default_bedrock_cleanup(span, BedrockMetadata(), [])
+                    span.end()
+                    return resp
+                except Exception as err:
+                    span.set_status(Status(StatusCode.ERROR, str(err)))
+                    if span.is_recording():
+                        span.set_attribute(
+                            error_attributes.ERROR_TYPE, type(err).__qualname__
+                        )
+                    span.end()
+                    raise
+        elif operation_name == "ConverseStream":
+            span_name = (
+                f"chat_stream {span_attrs.get('gen_ai.request.model','unknown')}"
+            )
+            with tracer.start_as_current_span(
+                name=span_name,
+                kind=SpanKind.CLIENT,
+                attributes=span_attrs,
+                end_on_exit=False,
+            ) as span:
+                try:
+                    if span.is_recording():
+                        msgs = params.get("messages", [])
+                        for m in msgs:
+                            set_bedrock_message_event(span, m)
+                    resp = await wrapped(*args, **kwargs)
+                    if "stream" in resp and isinstance(resp["stream"], EventStream):
+                        raw_stream = resp["stream"]
+                        adapt = AsyncEventStreamAdapter(raw_stream)
+                        metadata = BedrockMetadata()
+                        chunk_handler = BedrockChunkHandler()
+                        wrapped_stream = AsyncStreamWrapper(
+                            span=span,
+                            stream=adapt, # pyright: ignore [reportArgumentType]
+                            metadata=metadata,
+                            chunk_handler=chunk_handler,
+                            cleanup_handler=default_bedrock_cleanup,
+                        )
+                        resp["stream"] = wrapped_stream
+                    else:
                         default_bedrock_cleanup(span, BedrockMetadata(), [])
                         span.end()
-                        return response
-                    except Exception as error:
-                        span.set_status(Status(StatusCode.ERROR, str(error)))
-                        if span.is_recording():
-                            span.set_attribute(error_attributes.ERROR_TYPE, type(error).__qualname__)
-                        span.end()
-                        raise
-            elif operation_name == "ConverseStream":
-                # Streaming async call
-                span_name = f"chat_stream {span_attributes.get('gen_ai.request.model','unknown')}"
-                with tracer.start_as_current_span(name=span_name, end_on_exit=False) as span:
-                    try:
-                        response = await wrapped(*args, **kwargs)
-                        if "stream" in response:
-                            event_stream = response["stream"]
-                            adapted_stream = AsyncEventStreamAdapter(event_stream)
-                            metadata = BedrockMetadata()
-                            chunk_handler = BedrockChunkHandler()
-                            response["stream"] = AsyncStreamWrapper(
-                                span=span,
-                                stream=adapted_stream,
-                                metadata=metadata,
-                                chunk_handler=chunk_handler,
-                                cleanup_handler=default_bedrock_cleanup,
-                            )
-                        else:
-                            default_bedrock_cleanup(span, BedrockMetadata(), [])
-                            span.end()
-                        return response
-                    except Exception as error:
-                        span.set_status(Status(StatusCode.ERROR, str(error)))
-                        if span.is_recording():
-                            span.set_attribute(error_attributes.ERROR_TYPE, type(error).__qualname__)
-                        span.end()
-                        raise
-            else:
-                return await wrapped(*args, **kwargs)
-        else:
-            return await wrapped(*args, **kwargs)
+                    return resp
+                except Exception as err:
+                    span.set_status(Status(StatusCode.ERROR, str(err)))
+                    if span.is_recording():
+                        span.set_attribute(
+                            error_attributes.ERROR_TYPE, type(err).__qualname__
+                        )
+                    span.end()
+                    raise
+        return await wrapped(*args, **kwargs)
+
     return wrapper

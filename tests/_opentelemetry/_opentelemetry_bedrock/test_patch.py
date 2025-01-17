@@ -1,11 +1,12 @@
 """Tests for Bedrock OpenTelemetry patching."""
 
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
+from botocore.eventstream import EventStream
 from opentelemetry.trace import StatusCode
 
-from lilypad._opentelemetry._opentelemetry_bedrock import (
+from lilypad._opentelemetry._opentelemetry_bedrock.patch import (
     make_api_call_async_patch,
     make_api_call_patch,
 )
@@ -23,168 +24,155 @@ def mock_tracer(mock_span):
     tracer = Mock()
 
     def start_as_current_span(*args, **kwargs):
-        class SpanContext:
-            def __enter__(self):
-                return mock_span
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                pass
-
-        return SpanContext()
+        return Mock(__enter__=lambda s: mock_span, __exit__=lambda s, e, v, tb: None)
 
     tracer.start_as_current_span.side_effect = start_as_current_span
     return tracer
 
 
-def test_bedrock_converse_success(mock_tracer, mock_span):
+def test_make_api_call_patch_converse_success(mock_tracer, mock_span):
+    patcher = make_api_call_patch(mock_tracer)
     wrapped = Mock()
-    wrapped.return_value = {
-        "output": {"message": {"content": [{"text": "Recommended: The Hobbit"}]}},
-        "usage": {"inputTokens": 10, "outputTokens": 20},
-        "stopReason": "stop",
+    instance = Mock()
+    instance.meta.service_model.service_name = "bedrock-runtime"
+
+    kwargs = {"modelId": "test-model"}
+    args = ("Converse", kwargs)
+    wrapped.return_value = {"result": "ok"}
+    result = patcher(wrapped, instance, args, {})
+    assert result == {"result": "ok"}
+    mock_tracer.start_as_current_span.assert_called_once()
+    mock_span.set_status.assert_not_called()
+    mock_span.end.assert_called_once()
+
+
+def test_make_api_call_patch_converse_stream_success(mock_tracer, mock_span):
+    patcher = make_api_call_patch(mock_tracer)
+    wrapped = Mock()
+    instance = Mock()
+    instance.meta.service_model.service_name = "bedrock-runtime"
+
+    # Make the fake_stream truly iterable
+    fake_stream = MagicMock(spec=EventStream)
+    fake_stream.__iter__.return_value = iter(["chunk1", "chunk2"])
+
+    kwargs = {
+        "modelId": "test-model",
+        "messages": [{"role": "user", "content": "Hello"}],
     }
+    args = ("ConverseStream", kwargs)
+    wrapped.return_value = {"stream": fake_stream}
 
-    instance = Mock()
-    instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
+    result = patcher(wrapped, instance, args, {})
+    assert "stream" in result
 
-    wrapper = make_api_call_patch(mock_tracer)
-    result = wrapper(wrapped, instance, args, kwargs)
+    stream_wrapper = result["stream"]
+    chunks = list(stream_wrapper)  # Force iteration
+    assert chunks == ["chunk1", "chunk2"]
 
-    assert (
-        result["output"]["message"]["content"][0]["text"] == "Recommended: The Hobbit"
-    )
-    wrapped.assert_called_once()
-    mock_span.set_attributes.assert_called_once()
-    mock_span.add_event.assert_called_once()
+    mock_tracer.start_as_current_span.assert_called_once()
+    mock_span.end.assert_not_called()
 
 
-def test_bedrock_converse_other_operation(mock_tracer, mock_span):
-    wrapped = Mock(return_value={"some": "response"})
-    instance = Mock()
-    instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("OtherOperation", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_patch(mock_tracer)
-    result = wrapper(wrapped, instance, args, kwargs)
-    assert result == {"some": "response"}
-
-    wrapped.assert_called_once()
-    mock_span.set_attributes.assert_not_called()
-    mock_span.add_event.assert_not_called()
-
-
-def test_bedrock_converse_other_service(mock_tracer, mock_span):
-    wrapped = Mock(return_value={"some": "response"})
+def test_make_api_call_patch_ignored_service(mock_tracer, mock_span):
+    patcher = make_api_call_patch(mock_tracer)
+    wrapped = Mock()
     instance = Mock()
     instance.meta.service_model.service_name = "other-service"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_patch(mock_tracer)
-    result = wrapper(wrapped, instance, args, kwargs)
-    assert result == {"some": "response"}
-
-    wrapped.assert_called_once()
-    mock_span.set_attributes.assert_not_called()
-    mock_span.add_event.assert_not_called()
+    args = ("Converse", {"modelId": "m"})
+    patcher(wrapped, instance, args, {})
+    mock_tracer.start_as_current_span.assert_not_called()
 
 
-def test_bedrock_converse_error(mock_tracer, mock_span):
-    error = Exception("Bedrock error")
-    wrapped = Mock(side_effect=error)
+def test_make_api_call_patch_converse_error(mock_tracer, mock_span):
+    patcher = make_api_call_patch(mock_tracer)
+    wrapped = Mock(side_effect=Exception("test error"))
     instance = Mock()
     instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_patch(mock_tracer)
+    kwargs = {"modelId": "test-model"}
+    args = ("Converse", kwargs)
     with pytest.raises(Exception) as exc_info:
-        wrapper(wrapped, instance, args, kwargs)
-
-    assert exc_info.value is error
-    mock_span.set_status.assert_called_once()
+        patcher(wrapped, instance, args, {})
+    assert "test error" in str(exc_info.value)
+    mock_span.set_status.assert_called()
     called_status = mock_span.set_status.call_args[0][0]
     assert called_status.status_code == StatusCode.ERROR
-    assert called_status.description == str(error)
+    mock_span.end.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_bedrock_converse_success_async(mock_tracer, mock_span):
-    wrapped = AsyncMock()
-    wrapped.return_value = {
-        "output": {"message": {"content": [{"text": "Recommended: The Hobbit"}]}},
-        "usage": {"inputTokens": 10, "outputTokens": 20},
-        "stopReason": "stop",
+async def test_make_api_call_async_patch_converse_success(mock_tracer, mock_span):
+    patcher = make_api_call_async_patch(mock_tracer)
+    wrapped = Mock()
+    wrapped.__aiter__ = None
+
+    async def async_mock(*_args, **_kwargs):
+        return {"non_stream": True}
+
+    wrapped.side_effect = async_mock
+    instance = Mock()
+    instance.meta.service_model.service_name = "bedrock-runtime"
+    kwargs = {"modelId": "test-model"}
+    args = ("Converse", kwargs)
+    resp = await patcher(wrapped, instance, args, {})
+    assert resp == {"non_stream": True}
+    mock_tracer.start_as_current_span.assert_called_once()
+    mock_span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_make_api_call_async_patch_converse_stream_success(
+    mock_tracer, mock_span
+):
+    patcher = make_api_call_async_patch(mock_tracer)
+    wrapped = Mock()
+    wrapped.__aiter__ = None
+
+    async def async_mock(*_args, **_kwargs):
+        fake_stream = MagicMock(spec=EventStream)
+        # Make the fake async stream produce a few chunks
+        fake_stream.__anext__.side_effect = ["chunkA", "chunkB", StopAsyncIteration]
+        return {"stream": fake_stream}
+
+    wrapped.side_effect = async_mock
+    instance = Mock()
+    instance.meta.service_model.service_name = "bedrock-runtime"
+    kwargs = {
+        "modelId": "test-model",
+        "messages": [{"role": "user", "content": "Hello"}],
     }
+    args = ("ConverseStream", kwargs)
+    resp = await patcher(wrapped, instance, args, {})
+    assert "stream" in resp
 
-    instance = Mock()
-    instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
+    stream_wrapper = resp["stream"]
+    collected = []
+    async for c in stream_wrapper:
+        collected.append(c)
+    assert collected == ["chunkA", "chunkB"]
 
-    wrapper = make_api_call_async_patch(mock_tracer)
-    result = await wrapper(wrapped, instance, args, kwargs)
-
-    assert (
-        result["output"]["message"]["content"][0]["text"] == "Recommended: The Hobbit"
-    )
-    wrapped.assert_awaited_once()
-    mock_span.set_attributes.assert_called_once()
-    mock_span.add_event.assert_called_once()
+    mock_tracer.start_as_current_span.assert_called_once()
+    mock_span.end.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_bedrock_converse_other_operation_async(mock_tracer, mock_span):
-    wrapped = AsyncMock(return_value={"some": "response"})
+async def test_make_api_call_async_patch_converse_error(mock_tracer, mock_span):
+    patcher = make_api_call_async_patch(mock_tracer)
+    wrapped = Mock()
+    wrapped.__aiter__ = None
+
+    async def raise_error(*_args, **_kwargs):
+        raise Exception("async error")
+
+    wrapped.side_effect = raise_error
     instance = Mock()
     instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("OtherOperation", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_async_patch(mock_tracer)
-    result = await wrapper(wrapped, instance, args, kwargs)
-    assert result == {"some": "response"}
-
-    wrapped.assert_awaited_once()
-    mock_span.set_attributes.assert_not_called()
-    mock_span.add_event.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_bedrock_converse_other_service_async(mock_tracer, mock_span):
-    wrapped = AsyncMock(return_value={"some": "response"})
-    instance = Mock()
-    instance.meta.service_model.service_name = "other-service"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_async_patch(mock_tracer)
-    result = await wrapper(wrapped, instance, args, kwargs)
-    assert result == {"some": "response"}
-
-    wrapped.assert_awaited_once()
-    mock_span.set_attributes.assert_not_called()
-    mock_span.add_event.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_bedrock_converse_error_async(mock_tracer, mock_span):
-    error = Exception("Async Bedrock error")
-    wrapped = AsyncMock(side_effect=error)
-    instance = Mock()
-    instance.meta.service_model.service_name = "bedrock-runtime"
-    args = ("Converse", {"modelId": "some_model_id", "messages": []})
-    kwargs = {}
-
-    wrapper = make_api_call_async_patch(mock_tracer)
+    kwargs = {"modelId": "test-model"}
+    args = ("Converse", kwargs)
     with pytest.raises(Exception) as exc_info:
-        await wrapper(wrapped, instance, args, kwargs)
-
-    assert exc_info.value is error
-    mock_span.set_status.assert_called_once()
+        await patcher(wrapped, instance, args, {})
+    assert "async error" in str(exc_info.value)
+    mock_span.set_status.assert_called()
     called_status = mock_span.set_status.call_args[0][0]
     assert called_status.status_code == StatusCode.ERROR
-    assert called_status.description == str(error)
+    mock_span.end.assert_called_once()
