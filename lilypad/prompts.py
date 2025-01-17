@@ -215,6 +215,8 @@ class Prompt(BaseModel):
             return convert_common_call_params(self.common_call_params)
         elif provider == "bedrock":
             from mirascope.core.bedrock._utils._convert_common_call_params import (
+            convert_common_call_params,
+            )
         elif provider == "vertex":
             from mirascope.core.vertex._utils._convert_common_call_params import (
                 convert_common_call_params,

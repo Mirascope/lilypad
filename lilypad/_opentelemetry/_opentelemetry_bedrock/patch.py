@@ -22,7 +22,7 @@ class SyncEventStreamAdapter:
     Assuming EventStream itself is iterable:
     If not, fallback to read loop.
     """
-    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]"):
+    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]") -> None:
         self._iter = iter(event_stream)
 
     def __iter__(self):
@@ -33,9 +33,8 @@ class SyncEventStreamAdapter:
 
 
 class AsyncEventStreamAdapter:
-    """Convert EventStream into an async iterator.
-    """
-    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]"):
+    """Convert EventStream into an async iterator."""
+    def __init__(self, event_stream: "EventStream[ConverseStreamOutputTypeDef]") -> None:
         self.event_stream = event_stream
         self._iter = None
 
