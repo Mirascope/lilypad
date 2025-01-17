@@ -644,6 +644,7 @@ def mirascope_response_model_fn() -> str:
     """
     return "Hello, world!"
 
+
 def multiple_literal_fn() -> str:
     """
     def multiple_literal_fn() -> str:

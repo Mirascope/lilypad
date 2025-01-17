@@ -99,6 +99,7 @@ def _clean_source_code(
     Args:
         fn: The function or class object to inspect.
         exclude_fn_body: If True, the function body will be truncated after the signature.
+
     Returns:
         A string representing the “cleaned” source code.
     """

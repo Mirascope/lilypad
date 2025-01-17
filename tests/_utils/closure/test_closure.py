@@ -1,4 +1,5 @@
 """Tests for the `Closure` class"""
+
 import ast
 import importlib.metadata
 import inspect
@@ -458,11 +459,13 @@ def test_mirascope_response_model_fn() -> None:
         },
     }
 
+
 def test_multiple_literal_fn():
     """Test the `Closure` class with multiple literal functions."""
     closure = Closure.from_fn(multiple_literal_fn)
     assert closure.code == _expected(multiple_literal_fn)
     assert closure.dependencies == {}
+
 
 @pytest.mark.parametrize(
     "original,is_fstring",
@@ -522,30 +525,31 @@ def test_multiple_literal_fn():
         # Parenthesized adjacent string literals (double quotes)
         (
             dedent(
-                '''\
+                """\
                 ("a"
                  "b"
                  "c"
                 )
-                '''
+                """
             ),
             False,
         ),
         # Parenthesized adjacent string literals (single quotes)
         (
             dedent(
-                '''\
+                """\
                 ('a'
                  'b'
                  'c'
                 )
-                '''
+                """
             ),
             False,
         ),
     ],
 )
 def test_various_multiline_strings(original, is_fstring):
+    """Test that various multiline strings are preserved correctly."""
     converted = _convert_embedded_newlines_to_triple_quoted(original)
 
     try:
@@ -576,17 +580,19 @@ def test_various_multiline_strings(original, is_fstring):
                 f"Converted code:\n{converted}"
             )
 
+
 @pytest.mark.parametrize(
     "original",
     [
         r"'\tTabbed'",
         r"'\rCarriage'",
         r"'\nNewline'",
-        r"'\x41\x42\x43'",      # equals "ABC"
-        r"'\u0041\u0042\u0043'",# equals "ABC"
+        r"'\x41\x42\x43'",  # equals "ABC"
+        r"'\u0041\u0042\u0043'",  # equals "ABC"
     ],
 )
 def test_escaped_sequences(original):
+    """Test that escaped sequences are preserved correctly."""
     converted = _convert_embedded_newlines_to_triple_quoted(original)
 
     try:
@@ -604,6 +610,7 @@ def test_escaped_sequences(original):
         f"Converted code:\n{converted}"
     )
 
+
 @pytest.mark.parametrize(
     "original",
     [
@@ -613,6 +620,7 @@ def test_escaped_sequences(original):
     ],
 )
 def test_raw_strings_as_normal_strings(original):
+    """Test that raw strings are treated as normal strings."""
     converted = _convert_embedded_newlines_to_triple_quoted(original)
 
     # Check syntax
@@ -621,13 +629,14 @@ def test_raw_strings_as_normal_strings(original):
     except SyntaxError as e:
         pytest.fail(f"SyntaxError:\n{e}\nConverted:\n{converted}")
 
-
     assert converted == original, (
         f"Mismatch: {converted} vs expected '\\\\n not a real newline'\n"
         f"Converted:\n{converted}"
     )
 
+
 def test_triple_quotes_inside():
+    """Test that triple quotes inside a string are preserved correctly."""
     original = '''"String with triple quotes inside: \\""" and more"'''
     converted = _convert_embedded_newlines_to_triple_quoted(original)
 
