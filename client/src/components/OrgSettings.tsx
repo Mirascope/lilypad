@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -46,6 +47,7 @@ import {
 import {
   projectsQueryOptions,
   useCreateProjectMutation,
+  useDeleteProjectMutation,
 } from "@/utils/projects";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -91,7 +93,7 @@ const ProjectsTable = () => {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => {
-        const createdDate = new Date(row.getValue("created_at") + "Z");
+        const createdDate = new Date(row.getValue("created_at"));
         const formattedCreatedDate = new Intl.DateTimeFormat("en-US", {
           year: "numeric",
           month: "short",
@@ -108,14 +110,17 @@ const ProjectsTable = () => {
       enableHiding: false,
       cell: ({ row }) => {
         return (
-          <Button
-            variant='outline'
-            size='icon'
-            className='h-8 w-8'
-            onClick={() => handleProjectCopy(row.original)}
-          >
-            <Copy />
-          </Button>
+          <>
+            <Button
+              variant='outline'
+              size='icon'
+              className='h-8 w-8'
+              onClick={() => handleProjectCopy(row.original)}
+            >
+              <Copy />
+            </Button>
+            <DeleteProjectButton project={row.original} />
+          </>
         );
       },
     },
@@ -165,7 +170,7 @@ const APIKeysTable = () => {
       accessorKey: "expires_at",
       header: "Expires",
       cell: ({ row }) => {
-        const expireDate = new Date(row.getValue("expires_at") + "Z");
+        const expireDate = new Date(row.getValue("expires_at"));
         const formattedExpireDate = new Intl.DateTimeFormat("en-US", {
           year: "numeric",
           month: "short",
@@ -202,6 +207,94 @@ const APIKeysTable = () => {
         customControls={<CreateKeyButton />}
       />
     </>
+  );
+};
+
+type DeleteProjectFormValues = {
+  projectName: string;
+};
+
+const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
+  const methods = useForm<DeleteProjectFormValues>({
+    defaultValues: {
+      projectName: "",
+    },
+  });
+  const deleteProject = useDeleteProjectMutation();
+  const { toast } = useToast();
+
+  const onSubmit = async (data: DeleteProjectFormValues) => {
+    const successfullyDeleted = await deleteProject.mutateAsync(project.uuid);
+    let title = "Failed to delete project. Please try again.";
+    if (successfullyDeleted) {
+      title = "Successfully deleted project";
+    }
+    toast({
+      title,
+    });
+  };
+
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+          <Trash />
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className={cn("max-w-[425px] overflow-x-auto")}
+        onClick={handleDialogClick}
+      >
+        <Form {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
+            <DialogHeader className='flex-shrink-0'>
+              <DialogTitle>{`Delete ${project.name}`}</DialogTitle>
+            </DialogHeader>
+            <DialogDescription>
+              {`Deleting ${project.name} will delete all resources tied to this project.`}
+            </DialogDescription>
+            <p className='text-red-500'>WARNING: This action is final.</p>
+            <FormField
+              key='projectName'
+              control={methods.control}
+              name='projectName'
+              rules={{
+                required: "Prompt name is required",
+                validate: (value) =>
+                  value === project.name || "Project name doesn't match",
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Please type "{project.name}" to confirm deletion
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button
+                type='submit'
+                variant='destructive'
+                loading={methods.formState.isSubmitting}
+                className='w-full'
+              >
+                {methods.formState.isSubmitting
+                  ? "Deleting..."
+                  : "Delete Project"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -404,10 +497,10 @@ const CopyKeyButton = ({
             {"\n"}
             LILYPAD_API_KEY="..."
           </div>
-          <p className='text-red-500'>
-            WARNING: You won't be able to see your API key again.
-          </p>
         </DialogDescription>
+        <p className='text-red-500'>
+          WARNING: You won't be able to see your API key again.
+        </p>
       </DialogHeader>
       <Alert>
         <AlertTitle>LILYPAD_PROJECT ID</AlertTitle>

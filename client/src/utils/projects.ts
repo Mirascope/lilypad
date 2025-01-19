@@ -1,4 +1,5 @@
 import api from "@/api";
+import { useAuth } from "@/auth";
 import { ProjectCreate, ProjectPublic } from "@/types/types";
 import {
   queryOptions,
@@ -18,6 +19,10 @@ export const postProject = async (projectCreate: ProjectCreate) => {
   return (await api.post<ProjectPublic>(`/projects`, projectCreate)).data;
 };
 
+export const deleteProject = async (projectUuid: string) => {
+  return (await api.delete<boolean>(`/projects/${projectUuid}`)).data;
+};
+
 export const projectsQueryOptions = () =>
   queryOptions({
     queryKey: ["projects"],
@@ -33,11 +38,30 @@ export const projectQueryOptions = (projectUuid: string) =>
 export const useCreateProjectMutation = () => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const { setProject } = useAuth();
   return useMutation({
     mutationFn: async (projectCreate: ProjectCreate) =>
       await postProject(projectCreate),
-    onSuccess: () => {
+    onSuccess: async () => {
       posthog.capture("projectCreated");
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      const projects = queryClient.getQueryData<ProjectPublic[]>(["projects"]);
+      if (projects && projects.length == 1) {
+        setProject(projects[0]);
+      }
+    },
+  });
+};
+
+export const useDeleteProjectMutation = () => {
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  return useMutation({
+    mutationFn: async (projectUuid: string) => await deleteProject(projectUuid),
+    onSuccess: () => {
+      posthog.capture("projectDeleted");
       queryClient.invalidateQueries({
         queryKey: ["projects"],
       });

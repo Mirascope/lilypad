@@ -111,6 +111,8 @@ export const AppSidebar = () => {
   useEffect(() => {
     if (!activeProject && projects.length > 0) {
       setProject(projects[0]);
+    } else if (!projects) {
+      setProject(null);
     }
   }, [activeProject]);
   const projectItems: Item[] = activeProject

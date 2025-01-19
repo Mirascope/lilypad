@@ -28,13 +28,15 @@ class _GenerationBase(SQLModel):
     """Base Generation Model."""
 
     project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     prompt_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     response_model_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid"
+        default=None,
+        foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
     )
     version_num: int | None = Field(default=None)
     name: str = Field(nullable=False, index=True, min_length=1)
