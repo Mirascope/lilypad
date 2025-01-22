@@ -1,6 +1,5 @@
 """Server settings"""
 
-import os
 from functools import lru_cache
 from typing import Any
 

@@ -1,5 +1,6 @@
 """Prompts table and models."""
 
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -47,6 +48,7 @@ class _PromptBase(SQLModel):
         sa_column=get_json_column(), default_factory=dict
     )
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
+    archived: datetime | None = Field(default=None, index=True)
 
 
 class PromptPublic(_PromptBase):

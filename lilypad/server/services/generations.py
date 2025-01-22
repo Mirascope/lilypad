@@ -1,6 +1,7 @@
 """The `GenerationService` class for generations."""
 
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -21,11 +22,14 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
     ) -> Sequence[GenerationTable]:
         """Find record by uuid"""
         record_tables = self.session.exec(
-            select(self.table).where(
+            select(self.table)
+            .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.name == name,
+                self.table.archived.is_(None),  # type: ignore
             )
+            .order_by(self.table.version_num.asc())  # type: ignore
         ).all()
         return record_tables
 
@@ -40,6 +44,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
+                self.table.archived.is_(None),  # type: ignore
             )
             .group_by(self.table.name)
             .subquery()
@@ -57,6 +62,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
+                self.table.archived.is_(None),  # type: ignore
             )
             .order_by(latest_versions.c.max_version.desc())
         ).all()
@@ -69,6 +75,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.name == name,
+                self.table.archived.is_(None),  # type: ignore
             )
         ).one()
 
@@ -83,6 +90,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
+                self.table.archived.is_(None),  # type: ignore
             )
             .distinct()
         ).all()
@@ -95,6 +103,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.hash == hash,
+                self.table.archived.is_(None),  # type: ignore
             )
         ).first()
         if not record_table:
@@ -103,3 +112,21 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 detail=f"Record for {self.table.__tablename__} not found",
             )
         return record_table
+
+    def archive_record_by_name(self, project_uuid: UUID, name: str) -> bool:
+        """Archive records by name"""
+        record_tables = self.find_generations_by_name(project_uuid, name)
+        archived_date = datetime.now(timezone.utc)
+        for record_table in record_tables:
+            record_table.archived = archived_date
+            self.session.add(record_table)
+        self.session.flush()
+        return True
+
+    def archive_record_by_uuid(self, uuid: UUID) -> bool:
+        """Archive record by uuid"""
+        record_table = self.find_record_by_uuid(uuid)
+        record_table.archived = datetime.now(timezone.utc)
+        self.session.add(record_table)
+        self.session.flush()
+        return True

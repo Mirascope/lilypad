@@ -68,8 +68,6 @@ async def match_api_key_with_project(
     api_key_row = session.exec(
         select(APIKeyTable).where(APIKeyTable.key_hash == api_key)
     ).first()
-    print(api_key)
-    print(api_key_row)
     if not api_key_row:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"

@@ -65,7 +65,10 @@ class _SpanBase(SQLModel):
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=get_json_column(), default_factory=dict)
     parent_span_id: str | None = Field(
-        default=None, index=True, foreign_key=f"{SPAN_TABLE_NAME}.span_id"
+        default=None,
+        index=True,
+        foreign_key=f"{SPAN_TABLE_NAME}.span_id",
+        ondelete="CASCADE",
     )
 
 

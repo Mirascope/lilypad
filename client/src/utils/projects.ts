@@ -19,6 +19,14 @@ export const postProject = async (projectCreate: ProjectCreate) => {
   return (await api.post<ProjectPublic>(`/projects`, projectCreate)).data;
 };
 
+export const patchProject = async (
+  projectUuid: string,
+  projectUpdate: ProjectCreate
+) => {
+  return (
+    await api.patch<ProjectPublic>(`/projects/${projectUuid}`, projectUpdate)
+  ).data;
+};
 export const deleteProject = async (projectUuid: string) => {
   return (await api.delete<boolean>(`/projects/${projectUuid}`)).data;
 };
@@ -55,16 +63,38 @@ export const useCreateProjectMutation = () => {
   });
 };
 
+export const useUpdateProjectMutation = () => {
+  const queryClient = useQueryClient();
+  const { setProject } = useAuth();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      projectUpdate,
+    }: {
+      projectUuid: string;
+      projectUpdate: ProjectCreate;
+    }) => await patchProject(projectUuid, projectUpdate),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      setProject(data);
+    },
+  });
+};
+
 export const useDeleteProjectMutation = () => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
+  const { setProject } = useAuth();
   return useMutation({
     mutationFn: async (projectUuid: string) => await deleteProject(projectUuid),
-    onSuccess: () => {
+    onSuccess: async () => {
       posthog.capture("projectDeleted");
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
+      setProject(null);
     },
   });
 };
