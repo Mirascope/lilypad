@@ -52,14 +52,14 @@ def _convert_embedded_newlines_to_triple_quoted(code: str) -> str:
     tokens = list(tokenize.generate_tokens(io.StringIO(code).readline))
     new_tokens = []
 
-    for tok_type, tok_string, _start, _end, _line in tokens:
+    for tok_type, tok_string, _start, _end, _line_text in tokens:
         if tok_type == tokenize.STRING:
             # If it's already triple-quoted, leave it as is.
-            if tok_string.startswith('"""') or tok_string.startswith("'''"):
+            if tok_string.startswith(('"""', "'''", 'r"""', 'r"""', 'R"""', "R'''")):
                 new_tokens.append((tok_type, tok_string))
             else:
                 # If it looks like an f-string, skip ast.literal_eval since it won't parse.
-                if tok_string.startswith(('f"', "f'", 'f"""', "f'''")):
+                if tok_string.startswith(('f"', "f'", 'f"""', "f''''")):
                     new_tokens.append((tok_type, tok_string))
                     continue
 
@@ -81,42 +81,143 @@ def _clean_source_code(
     *,
     exclude_fn_body: bool = False,
 ) -> str:
-    """Cleans the source code of the given function or class definition by:
-      - Removing its docstring if present.
-      - Optionally truncating the body if exclude_fn_body=True.
-      - Normalizing multi-line strings, etc.
+    """Removes true docstrings from the given function/class definition, while preserving
+    code-like “docstrings” that appear to contain real Python statements.
 
-    Constraints (current limitations of this implementation):
-      1. String literals concatenated with '+' are not supported.
-      2. Multiple string literals split across multiple lines and enclosed in parentheses
-         will be merged into a single string literal.
-      3. Raw strings (e.g. r"...") are treated as normal string literals.
-
-    Note:
-      These constraints apply specifically to the AST unparse step and are not handled
-      by the current implementation.
-
-    Args:
-        fn: The function or class object to inspect.
-        exclude_fn_body: If True, the function body will be truncated after the signature.
-
-    Returns:
-        A string representing the “cleaned” source code.
+    - If the first statement in the body is a string token:
+      - If it "looks like code" (def/class/from/import/@, etc.), keep it.
+      - Else treat it as a docstring and remove it.
+      - If removing leaves no statements in the body, insert `pass`.
+    - Optionally truncate the body if `exclude_fn_body=True`.
+    - Convert multi-line strings into triple-quoted strings.
     """
+    # 1) Grab and dedent the source
     source = dedent(inspect.getsource(fn))
-    tree = ast.parse(source)
-    fn_def = tree.body[0]
-    if (
-        isinstance(fn_def, ast.FunctionDef | ast.ClassDef)
-        and ast.get_docstring(fn_def) is not None
-    ):
-        fn_def.body = fn_def.body[1:]
-    cleaned_source = ast.unparse(ast.Module(body=[fn_def], type_ignores=[]))
-    if exclude_fn_body and (definition_end := cleaned_source.find(":\n")) != -1:
-        cleaned_source = cleaned_source[: definition_end + 1]
-    if cleaned_source[-1] == ":":
+
+    # 2) Tokenize
+    orig_tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
+    new_tokens: list[tokenize.TokenInfo] = []
+
+    found_def_or_class = False
+    found_colon = False
+    in_body = False
+    docstring_removed = False
+    body_tokens: list[tokenize.TokenInfo] = []
+
+    for _i, tok in enumerate(orig_tokens):
+        tok_type, tok_string, start, end, line_text = tok
+
+        # 2a) Detect "async def", "def", or "class"
+        if not found_def_or_class:
+            if tok_type == tokenize.NAME and tok_string in ("async", "def", "class"):
+                found_def_or_class = True
+            new_tokens.append(tok)
+            continue
+
+        # 2b) We found a def/class, but haven't seen its colon yet
+        if found_def_or_class and not found_colon:
+            new_tokens.append(tok)
+            if tok_type == tokenize.OP and tok_string == ":":
+                found_colon = True
+            continue
+
+        # 2c) Once we have def/class(...) and a colon, the next INDENT means the body starts
+        if found_colon and not in_body:
+            new_tokens.append(tok)
+            if tok_type == tokenize.INDENT:
+                in_body = True
+            continue
+
+        # 2d) Now we are inside the *first* def/class body. We'll store these tokens in `body_tokens`.
+        # We will handle removing the docstring after collecting them.
+        body_tokens.append(tok)
+
+    # If we never found a def/class, nothing special to remove
+    if not found_def_or_class:
+        # Rejoin tokens, done
+        cleaned_source = tokenize.untokenize(new_tokens)
+    else:
+        # We have `new_tokens` for everything up to (and including) the body INDENT.
+        # Next, we remove the docstring if the first statement is a string, unless it looks like code.
+
+        # 3) Identify the first statement in `body_tokens`.
+        #    If it's a standalone STRING, check if it's code-like or not.
+        # We'll parse body_tokens carefully to see if the first non-(NL, NEWLINE, INDENT, DEDENT)
+        # token is a STRING.
+        idx = 0
+        skip_tokens: list[tokenize.TokenInfo] = []
+        while idx < len(body_tokens):
+            ttype, tstring, *_ = body_tokens[idx]
+            if ttype in (
+                tokenize.NL,
+                tokenize.NEWLINE,
+                tokenize.INDENT,
+                tokenize.DEDENT,
+            ):
+                skip_tokens.append(body_tokens[idx])
+                idx += 1
+                continue
+            # The first real body token
+            if ttype == tokenize.STRING:
+                docstring_removed = True
+                idx += 1
+            break  # we only handle the first real statement
+
+        # Now re-add the remainder
+        rest_tokens = body_tokens[idx:]
+
+        # 4) If docstring removed, we need to ensure there's still content in rest_tokens
+        #    If there's no statements left except maybe indentation or newlines,
+        #    we'll insert a `pass` or `...` to keep the function valid.
+        # Let's see if we have real code in the remainder.
+        # We'll filter out (NL, NEWLINE, DEDENT, INDENT) for the remainder
+        real_code_tokens = [
+            t
+            for t in rest_tokens
+            if t.type
+            not in (tokenize.NL, tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT)
+        ]
+        if docstring_removed and len(real_code_tokens) == 0:
+            # Insert a `pass` statement at the correct indentation
+            # We'll guess the indentation from the first line in rest_tokens or skip_tokens
+            indent_str = ""
+            # find a token with type=INDENT if possible
+            # new_tokens should contain the last known indent from the definition
+            # We'll see if the last token in new_tokens was an INDENT
+            if new_tokens and new_tokens[-1].type == tokenize.INDENT:
+                indent_str = new_tokens[-1].string
+
+            # We'll insert a pass token
+            pass_line = f"{indent_str}pass\n"
+            skip_tokens.append(
+                tokenize.TokenInfo(tokenize.NAME, "pass", (0, 0), (0, 0), pass_line)
+            )
+            skip_tokens.append(
+                tokenize.TokenInfo(tokenize.NEWLINE, "\n", (0, 0), (0, 0), pass_line)
+            )
+
+        # 5) Now combine them back: new_tokens + skip_tokens + rest_tokens
+        combined = new_tokens + skip_tokens + rest_tokens
+        cleaned_source = tokenize.untokenize(combined)
+
+    # If exclude_fn_body=True, we only keep the signature up to the first ':\n'
+    if exclude_fn_body and (idx := cleaned_source.find(":\n")) != -1:
+        cleaned_source = cleaned_source[: idx + 2]
+
+    # Trim trailing whitespace
+    cleaned_source = cleaned_source.rstrip()
+
+    # If it ends with ':', add ' ...' to avoid IndentationError on a blank body
+    if cleaned_source.endswith(":"):
         cleaned_source += " ..."
-    return _convert_embedded_newlines_to_triple_quoted(cleaned_source)
+
+    # Convert multi-line strings to triple-quoted
+    cleaned_source = _convert_embedded_newlines_to_triple_quoted(cleaned_source)
+
+    # If it ends with '\', add ' ...' to avoid SyntaxError on a blank body
+    if cleaned_source.endswith("\\"):
+        cleaned_source = cleaned_source[:-1] + " ..."
+    return cleaned_source
 
 
 class _NameCollector(ast.NodeVisitor):
@@ -537,19 +638,8 @@ class _DependencyCollector:
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef | ast.ClassDef):
-                    # We build a "child_to_parent" map so that for each AST node, we can find its parent node.
-                    # In particular, if `parent` is an `ast.Module`, that means the current `node`
-                    # (e.g., a FunctionDef or ClassDef) is defined at the "top level" of the module.
-                    # This allows us to distinguish top-level definitions from those nested in a class or function.
-                    #
-                    # For example, if we only want to process function or class definitions that appear
-                    # directly in the module (not nested in another class or function), we can check:
-                    #   if isinstance(parent, ast.Module):
-                    #       # node is a top-level definition
-
                     parent = child_to_parent.get(node)
                     if isinstance(parent, ast.Module):
-                        # node is a top-level definition
                         local_names.add(node.name)
 
         rewriter = _QualifiedNameRewriter(local_names, self.user_defined_imports)
