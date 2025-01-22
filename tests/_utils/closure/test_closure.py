@@ -47,7 +47,7 @@ from .closure_test_functions import (
     user_defined_from_import_fn,
     user_defined_import_fn,
 )
-from .closure_test_functions.main import multiple_literal_fn, raw_literal_fn
+from .closure_test_functions.main import multiple_literal_fn
 
 
 def _expected(fn: Callable) -> str:

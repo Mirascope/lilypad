@@ -574,12 +574,10 @@ def closure_with_properties_fn() -> str:
     class MockClient:
         @cached_property
         def foo(self) -> str:
-            \"\"\"Foo\"\"\"
             return "Hello, "
 
         @property
         def bar(self) -> str:
-            \"\"\"Bar\"\"\"
             return "world!"
 
 

@@ -16,12 +16,18 @@ import sys
 import tempfile
 import tokenize
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import cached_property, lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
 from typing import Any, cast
 
+import libcst as cst
+import libcst.matchers as m
+from libcst import BaseSmallStatement, CSTVisitorT, MaybeSentinel, Semicolon
+from libcst._add_slots import add_slots
+from libcst._nodes.internal import CodegenState, visit_sentinel
 from packaging.requirements import Requirement
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -46,34 +52,120 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
 
 
 def _convert_embedded_newlines_to_triple_quoted(code: str) -> str:
-    """Convert single/double-quoted string tokens containing actual newlines
-    into triple-quoted strings. If the token is already triple-quoted, it is unchanged.
+    """Convert single/double-quoted string tokens containing actual newlines into
+    triple-quoted strings. If the token is already triple-quoted, leave it as-is.
     """
     tokens = list(tokenize.generate_tokens(io.StringIO(code).readline))
     new_tokens = []
-
     for tok_type, tok_string, _start, _end, _line_text in tokens:
         if tok_type == tokenize.STRING:
-            # If it's already triple-quoted, leave it as is.
-            if tok_string.startswith(('"""', "'''", 'r"""', 'r"""', 'R"""', "R'''")):
+            # If it's already triple-quoted, leave it as is
+            if tok_string.startswith(('"""', "'''")):
                 new_tokens.append((tok_type, tok_string))
             else:
-                # If it looks like an f-string, skip ast.literal_eval since it won't parse.
-                if tok_string.startswith(('f"', "f'", 'f"""', "f''''")):
+                # Check for f-strings
+                if tok_string.startswith(('f"', "f'", 'f"""', "f'''")):
                     new_tokens.append((tok_type, tok_string))
                     continue
 
-                # For normal string literals, parse and check for newlines.
+                # Try ast.literal_eval to see if it contains newlines
                 val = ast.literal_eval(tok_string)
                 if "\n" in val:
-                    triple_str = f'"""{val}"""'
-                    new_tokens.append((tok_type, triple_str))
+                    triple_quoted = f'"""{val}"""'
+                    new_tokens.append((tok_type, triple_quoted))
                 else:
                     new_tokens.append((tok_type, tok_string))
         else:
             new_tokens.append((tok_type, tok_string))
-
     return tokenize.untokenize(new_tokens)
+
+
+@add_slots
+@dataclass(frozen=True)
+class _Ellipsis(BaseSmallStatement):
+    """Represents a ``...`` statement.
+    libcst's Ellipsis node is not a statement, so we need to create a custom one.
+    """
+
+    #: Optional semicolon when this is used in a statement line. This semicolon
+    #: owns the whitespace on both sides of it when it is used.
+    semicolon: Semicolon | MaybeSentinel = MaybeSentinel.DEFAULT
+
+    def _visit_and_replace_children(self, visitor: CSTVisitorT) -> _Ellipsis:
+        return _Ellipsis(
+            semicolon=visit_sentinel(self, "semicolon", self.semicolon, visitor)
+        )
+
+    def _codegen_impl(
+        self, state: CodegenState, default_semicolon: bool = False
+    ) -> None:
+        with state.record_syntactic_position(self):
+            state.add_token("...")
+
+        semicolon = self.semicolon
+        if isinstance(semicolon, MaybeSentinel):
+            if default_semicolon:
+                state.add_token("; ")
+        elif isinstance(semicolon, Semicolon):
+            semicolon._codegen(state)
+
+
+class RemoveDocstringTransformer(cst.CSTTransformer):
+    """A LibCST transformer that unconditionally removes the first statement (docstring)
+    in each FunctionDef/ClassDef if it is a single string literal.
+    If removing leaves the body empty, we insert 'pass'.
+
+    If exclude_fn_body=True, we replace the entire body with a single 'pass' statement.
+    """
+
+    def __init__(self, exclude_fn_body: bool) -> None:
+        super().__init__()
+        self.exclude_fn_body = exclude_fn_body
+
+    @staticmethod
+    def _remove_first_docstring(body: cst.IndentedBlock) -> cst.IndentedBlock:
+        """Given a function/class body, remove its first statement if it is a
+        single string literal. If that leaves no statements, insert 'pass'.
+        """
+        stmts = list(body.body)
+        if stmts:
+            first_stmt = stmts[0]
+            # Check if the first statement is a single string-literal line
+            if m.matches(
+                first_stmt, m.SimpleStatementLine(body=[m.Expr(value=m.SimpleString())])
+            ):
+                # Remove the docstring
+                stmts.pop(0)
+
+        # If removing docstring leaves no statements, insert a single 'pass'
+        if not stmts:
+            stmts = [cst.SimpleStatementLine([_Ellipsis()])]
+
+        return body.with_changes(body=stmts)
+
+    def leave_FunctionDef(
+        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
+        if self.exclude_fn_body:
+            # Replace entire body with a single 'pass'
+            pass_stmt = cst.SimpleStatementLine([_Ellipsis()])
+            new_body = updated_node.body.with_changes(body=[pass_stmt])
+            return updated_node.with_changes(body=new_body)
+
+        new_body = self._remove_first_docstring(updated_node.body)
+        return updated_node.with_changes(body=new_body)
+
+    def leave_ClassDef(
+        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.ClassDef:
+        if self.exclude_fn_body:
+            # Replace entire body with a single 'pass'
+            pass_stmt = cst.SimpleStatementLine([cst.Pass()])
+            new_body = updated_node.body.with_changes(body=[pass_stmt])
+            return updated_node.with_changes(body=new_body)
+
+        new_body = self._remove_first_docstring(updated_node.body)
+        return updated_node.with_changes(body=new_body)
 
 
 def _clean_source_code(
@@ -81,143 +173,26 @@ def _clean_source_code(
     *,
     exclude_fn_body: bool = False,
 ) -> str:
-    """Removes true docstrings from the given function/class definition, while preserving
-    code-like “docstrings” that appear to contain real Python statements.
-
-    - If the first statement in the body is a string token:
-      - If it "looks like code" (def/class/from/import/@, etc.), keep it.
-      - Else treat it as a docstring and remove it.
-      - If removing leaves no statements in the body, insert `pass`.
-    - Optionally truncate the body if `exclude_fn_body=True`.
-    - Convert multi-line strings into triple-quoted strings.
+    """Uses LibCST to:
+    1. Remove the first docstring from any function/class in `fn`'s code.
+    2. If removing leaves the body empty, insert 'pass'.
+    3. If exclude_fn_body=True, replace the body with a single 'pass'.
+    4. Convert multi-line strings to triple-quoted strings.
     """
-    # 1) Grab and dedent the source
     source = dedent(inspect.getsource(fn))
+    module = cst.parse_module(source)
 
-    # 2) Tokenize
-    orig_tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
-    new_tokens: list[tokenize.TokenInfo] = []
+    transformer = RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
+    new_module = module.visit(transformer)
 
-    found_def_or_class = False
-    found_colon = False
-    in_body = False
-    docstring_removed = False
-    body_tokens: list[tokenize.TokenInfo] = []
-
-    for _i, tok in enumerate(orig_tokens):
-        tok_type, tok_string, start, end, line_text = tok
-
-        # 2a) Detect "async def", "def", or "class"
-        if not found_def_or_class:
-            if tok_type == tokenize.NAME and tok_string in ("async", "def", "class"):
-                found_def_or_class = True
-            new_tokens.append(tok)
-            continue
-
-        # 2b) We found a def/class, but haven't seen its colon yet
-        if found_def_or_class and not found_colon:
-            new_tokens.append(tok)
-            if tok_type == tokenize.OP and tok_string == ":":
-                found_colon = True
-            continue
-
-        # 2c) Once we have def/class(...) and a colon, the next INDENT means the body starts
-        if found_colon and not in_body:
-            new_tokens.append(tok)
-            if tok_type == tokenize.INDENT:
-                in_body = True
-            continue
-
-        # 2d) Now we are inside the *first* def/class body. We'll store these tokens in `body_tokens`.
-        # We will handle removing the docstring after collecting them.
-        body_tokens.append(tok)
-
-    # If we never found a def/class, nothing special to remove
-    if not found_def_or_class:
-        # Rejoin tokens, done
-        cleaned_source = tokenize.untokenize(new_tokens)
-    else:
-        # We have `new_tokens` for everything up to (and including) the body INDENT.
-        # Next, we remove the docstring if the first statement is a string, unless it looks like code.
-
-        # 3) Identify the first statement in `body_tokens`.
-        #    If it's a standalone STRING, check if it's code-like or not.
-        # We'll parse body_tokens carefully to see if the first non-(NL, NEWLINE, INDENT, DEDENT)
-        # token is a STRING.
-        idx = 0
-        skip_tokens: list[tokenize.TokenInfo] = []
-        while idx < len(body_tokens):
-            ttype, tstring, *_ = body_tokens[idx]
-            if ttype in (
-                tokenize.NL,
-                tokenize.NEWLINE,
-                tokenize.INDENT,
-                tokenize.DEDENT,
-            ):
-                skip_tokens.append(body_tokens[idx])
-                idx += 1
-                continue
-            # The first real body token
-            if ttype == tokenize.STRING:
-                docstring_removed = True
-                idx += 1
-            break  # we only handle the first real statement
-
-        # Now re-add the remainder
-        rest_tokens = body_tokens[idx:]
-
-        # 4) If docstring removed, we need to ensure there's still content in rest_tokens
-        #    If there's no statements left except maybe indentation or newlines,
-        #    we'll insert a `pass` or `...` to keep the function valid.
-        # Let's see if we have real code in the remainder.
-        # We'll filter out (NL, NEWLINE, DEDENT, INDENT) for the remainder
-        real_code_tokens = [
-            t
-            for t in rest_tokens
-            if t.type
-            not in (tokenize.NL, tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT)
-        ]
-        if docstring_removed and len(real_code_tokens) == 0:
-            # Insert a `pass` statement at the correct indentation
-            # We'll guess the indentation from the first line in rest_tokens or skip_tokens
-            indent_str = ""
-            # find a token with type=INDENT if possible
-            # new_tokens should contain the last known indent from the definition
-            # We'll see if the last token in new_tokens was an INDENT
-            if new_tokens and new_tokens[-1].type == tokenize.INDENT:
-                indent_str = new_tokens[-1].string
-
-            # We'll insert a pass token
-            pass_line = f"{indent_str}pass\n"
-            skip_tokens.append(
-                tokenize.TokenInfo(tokenize.NAME, "pass", (0, 0), (0, 0), pass_line)
-            )
-            skip_tokens.append(
-                tokenize.TokenInfo(tokenize.NEWLINE, "\n", (0, 0), (0, 0), pass_line)
-            )
-
-        # 5) Now combine them back: new_tokens + skip_tokens + rest_tokens
-        combined = new_tokens + skip_tokens + rest_tokens
-        cleaned_source = tokenize.untokenize(combined)
-
-    # If exclude_fn_body=True, we only keep the signature up to the first ':\n'
-    if exclude_fn_body and (idx := cleaned_source.find(":\n")) != -1:
-        cleaned_source = cleaned_source[: idx + 2]
-
+    code = new_module.code
     # Trim trailing whitespace
-    cleaned_source = cleaned_source.rstrip()
+    code = code.rstrip()
 
-    # If it ends with ':', add ' ...' to avoid IndentationError on a blank body
-    if cleaned_source.endswith(":"):
-        cleaned_source += " ..."
+    # Convert multi-line string literals
+    code = _convert_embedded_newlines_to_triple_quoted(code)
 
-    # Convert multi-line strings to triple-quoted
-    cleaned_source = _convert_embedded_newlines_to_triple_quoted(cleaned_source)
-
-    # If it ends with '\', add ' ...' to avoid SyntaxError on a blank body
-    if cleaned_source.endswith("\\"):
-        cleaned_source = cleaned_source[:-1] + " ..."
-    return cleaned_source
+    return code
 
 
 class _NameCollector(ast.NodeVisitor):
