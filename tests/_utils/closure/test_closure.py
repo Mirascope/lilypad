@@ -47,7 +47,11 @@ from .closure_test_functions import (
     user_defined_from_import_fn,
     user_defined_import_fn,
 )
-from .closure_test_functions.main import multiple_literal_fn, raw_string_fn, multi_joined_string_fn
+from .closure_test_functions.main import (
+    multi_joined_string_fn,
+    multiple_literal_fn,
+    raw_string_fn,
+)
 
 
 def _expected(fn: Callable) -> str:
@@ -462,11 +466,13 @@ def test_multiple_literal_fn():
     assert closure.code == _expected(multiple_literal_fn)
     assert closure.dependencies == {}
 
+
 def test_raw_string_fn():
     """Test the `Closure` class with a raw string."""
     closure = Closure.from_fn(raw_string_fn)
     assert closure.code == _expected(raw_string_fn)
     assert closure.dependencies == {}
+
 
 def test_multi_joined_string_fn():
     """Test the `Closure` class with multiple joined strings."""

@@ -92,7 +92,7 @@ class RemoveDocstringTransformer(cst.CSTTransformer):
         self.exclude_fn_body = exclude_fn_body
 
     @staticmethod
-    def _remove_first_docstring(body: cst.IndentedBlock) -> cst.IndentedBlock:
+    def _remove_first_docstring(body: cst.BaseSuite) -> cst.BaseSuite:
         """Given a function/class body, remove its first statement if it is a
         single string literal. If that leaves no statements, insert 'pass'.
         """
@@ -366,7 +366,7 @@ class _DefinitionCollector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-class QualifiedNameRewriter(cst.CSTTransformer):
+class _QualifiedNameRewriter(cst.CSTTransformer):
     """A transformer that rewrites qualified names and resolves import aliases."""
 
     def __init__(self, local_names: set[str], user_defined_imports: set[str]) -> None:
@@ -374,7 +374,6 @@ class QualifiedNameRewriter(cst.CSTTransformer):
         super().__init__()
         self.local_names: set[str] = local_names
         self.alias_mapping = {}
-
         for import_stmt in user_defined_imports:
             if import_stmt.startswith("from "):
                 parts = import_stmt.split(" ")
@@ -628,13 +627,22 @@ class _DependencyCollector:
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef | ast.ClassDef):
+                    # We build a "child_to_parent" map so that for each AST node, we can find its parent node.
+                    # In particular, if `parent` is an `ast.Module`, that means the current `node`
+                    # (e.g., a FunctionDef or ClassDef) is defined at the "top level" of the module.
+                    # This allows us to distinguish top-level definitions from those nested in a class or function.
+                    #
+                    # For example, if we only want to process function or class definitions that appear
+                    # directly in the module (not nested in another class or function), we can check:
+                    #   if isinstance(parent, ast.Module):
+                    #       # node is a top-level definition
+
                     parent = child_to_parent.get(node)
                     if isinstance(parent, ast.Module):
+                        # node is a top-level definition
                         local_names.add(node.name)
 
-        rewriter = QualifiedNameRewriter(
-            local_names=local_names, user_defined_imports=self.user_defined_imports
-        )
+        rewriter = _QualifiedNameRewriter(local_names, self.user_defined_imports)
 
         assignments = []
         for code in self.assignments:

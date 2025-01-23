@@ -653,6 +653,7 @@ def multiple_literal_fn() -> str:
     return """Hello
             World"""
 
+
 def raw_string_fn() -> str:
     """
     def raw_string_fn() -> str:
@@ -662,8 +663,9 @@ def raw_string_fn() -> str:
     return r"""Hello
             World"""
 
+
 def multi_joined_string_fn() -> str:
-    """
+    r"""
     def multi_joined_string_fn() -> str:
         return (
             \"Hello, -----------------------------------------------------------------\"
@@ -671,6 +673,6 @@ def multi_joined_string_fn() -> str:
         )
     """
     return (
-            "Hello, -----------------------------------------------------------------"
-            "world!"
+        "Hello, -----------------------------------------------------------------"
+        "world!"
     )
