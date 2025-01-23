@@ -1,5 +1,6 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,16 +9,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
+import { useToast } from "@/hooks/use-toast";
 import { GenerationPublic } from "@/types/types";
-import { uniqueLatestVersionGenerationNamesQueryOptions } from "@/utils/generations";
+import {
+  uniqueLatestVersionGenerationNamesQueryOptions,
+  useArchiveGenerationByNameMutation,
+} from "@/utils/generations";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
+import { MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 
 export const Route = createFileRoute(
@@ -46,8 +68,17 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
   const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const { projectUuid } = useParams({ from: Route.id });
+  const { toast } = useToast();
+  const archiveGenerationName = useArchiveGenerationByNameMutation();
   const handleClick = () => {
     navigate({ to: `/projects/${projectUuid}/generations/${generation.name}` });
+  };
+  const handleArchive = async () => {
+    await archiveGenerationName.mutateAsync({
+      projectUuid,
+      generationName: generation.name,
+    });
+    toast({ title: `Successfully deleted generation ${generation.name}` });
   };
   return (
     <Card
@@ -59,7 +90,50 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        <CardTitle>{generation.name}</CardTitle>
+        <CardTitle className='flex justify-between items-center'>
+          {generation.name}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' className='h-8 w-8 p-0'>
+                <span className='sr-only'>Open menu</span>
+                <MoreHorizontal className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              {/* Prevents closing the dropdown */}
+              <div onClick={(e) => e.stopPropagation()}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      className='flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive'
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash className='w-4 h-4' />
+                      <span className='font-medium'>Delete generation</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
+                    <DialogTitle>{`Delete Generation ${generation.name}`}</DialogTitle>
+                    <DialogDescription>
+                      {`Deleting ${generation.name} will delete all versions of this generation.`}
+                    </DialogDescription>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant='destructive' onClick={handleArchive}>
+                          Delete Generation
+                        </Button>
+                      </DialogClose>
+                      <DialogClose asChild>
+                        <Button variant='outline'>Cancel</Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardTitle>
         <CardDescription>
           Latest Version: v{generation.version_num}
         </CardDescription>

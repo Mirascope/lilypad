@@ -109,6 +109,7 @@ def test_third_party_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -128,6 +129,7 @@ def test_decorated_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -147,6 +149,7 @@ def test_multi_decorated_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -321,6 +324,7 @@ def test_global_var_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -346,7 +350,10 @@ def test_import_with_different_dist_name_fn() -> None:
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
         "google-generativeai": {"extras": None, "version": "0.8.3"},
-        "google-resumable-media": {"extras": ["requests"], "version": "2.7.2"},
+        "google-resumable-media": {
+            "extras": ["aiohttp", "requests"],
+            "version": "2.7.2",
+        },
         "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
         "grpc-google-iam-v1": {"extras": None, "version": "0.13.1"},
     }
@@ -367,6 +374,7 @@ def test_closure_inside_decorator_fn() -> None:
             "version": importlib.metadata.version("python-lilypad"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -386,6 +394,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
             "version": importlib.metadata.version("python-lilypad"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -446,6 +455,7 @@ def test_mirascope_response_model_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",

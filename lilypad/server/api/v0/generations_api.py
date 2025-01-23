@@ -14,7 +14,7 @@ from ...models import (
     GenerationTable,
     GenerationUpdate,
 )
-from ...services import GenerationService
+from ...services import GenerationService, SpanService
 
 generations_router = APIRouter()
 
@@ -63,7 +63,7 @@ async def get_latest_version_unique_generation_names(
     project_uuid: UUID,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
 ) -> Sequence[GenerationTable]:
-    """Get all unique prompt names."""
+    """Get all unique generation names."""
     return generation_service.find_unique_generation_names(project_uuid)
 
 
@@ -160,6 +160,40 @@ async def update_generation(
         generation_update.model_dump(exclude_unset=True),
         project_uuid=project_uuid,
     )
+
+
+@generations_router.delete(
+    "/projects/{project_uuid}/generations/names/{generation_name}"
+)
+async def archive_generations_by_name(
+    project_uuid: UUID,
+    generation_name: str,
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> bool:
+    """Archive a generation by name and delete spans by generation name."""
+    try:
+        generation_service.archive_record_by_name(project_uuid, generation_name)
+        span_service.delete_records_by_generation_name(project_uuid, generation_name)
+    except Exception:
+        return False
+    return True
+
+
+@generations_router.delete("/projects/{project_uuid}/generations/{generation_uuid}")
+async def archive_generation(
+    project_uuid: UUID,
+    generation_uuid: UUID,
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> bool:
+    """Archive a generation and delete spans by generation UUID."""
+    try:
+        generation_service.archive_record_by_uuid(generation_uuid)
+        span_service.delete_records_by_generation_uuid(project_uuid, generation_uuid)
+    except Exception:
+        return False
+    return True
 
 
 __all__ = ["generations_router"]

@@ -20,7 +20,7 @@ class _ResponseModelBase(SQLModel):
     """Base Response Model."""
 
     project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     name: str = Field(nullable=False, index=True, min_length=1)
     signature: str = Field(nullable=False)

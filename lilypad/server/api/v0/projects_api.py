@@ -42,12 +42,24 @@ async def create_project(
         raise ValueError("Project already exists")
 
 
+@projects_router.patch("/projects/{project_uuid}", response_model=ProjectPublic)
+async def patch_project(
+    project_uuid: UUID,
+    project_create: ProjectCreate,
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
+) -> ProjectTable:
+    """Update a project."""
+    return project_service.update_record_by_uuid(
+        project_uuid, project_create.model_dump(exclude_unset=True)
+    )
+
+
 @projects_router.delete("/projects/{project_uuid}")
 async def delete_project(
     project_uuid: UUID,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> bool:
-    """Create a project"""
+    """Delete a project"""
     return project_service.delete_record_by_uuid(project_uuid)
 
 

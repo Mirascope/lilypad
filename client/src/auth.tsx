@@ -12,7 +12,7 @@ export interface AuthContext {
   logout: () => Promise<void>;
   user: UserPublic | null;
   setSession: (user: UserPublic | null) => void;
-  setProject: (project: ProjectPublic) => void;
+  setProject: (project: ProjectPublic | null) => void;
   activeProject: ProjectPublic | null;
 }
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToStorage(newSession);
   }, []);
 
-  const setProject = useCallback((project: ProjectPublic) => {
+  const setProject = useCallback((project: ProjectPublic | null) => {
     setActiveProject(project);
   }, []);
 
