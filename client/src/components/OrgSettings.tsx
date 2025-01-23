@@ -1,6 +1,7 @@
 import { useAuth } from "@/auth";
 import { DataTable } from "@/components/DataTable";
 import { NotFound } from "@/components/NotFound";
+import { ProjectsTable } from "@/components/ProjectsTable";
 import { SettingsLayout } from "@/components/SettingsLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -32,21 +33,13 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  APIKeyCreate,
-  APIKeyPublic,
-  ProjectCreate,
-  ProjectPublic,
-} from "@/types/types";
+import { APIKeyCreate, APIKeyPublic } from "@/types/types";
 import {
   apiKeysQueryOptions,
   useCreateApiKeyMutation,
   useDeleteApiKeyMutation,
 } from "@/utils/api-keys";
-import {
-  projectsQueryOptions,
-  useCreateProjectMutation,
-} from "@/utils/projects";
+import { projectsQueryOptions } from "@/utils/projects";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
@@ -69,74 +62,6 @@ export const OrgSettings = () => {
         <APIKeysTable />
       </Suspense>
     </SettingsLayout>
-  );
-};
-
-const ProjectsTable = () => {
-  const virtualizerRef = useRef<HTMLDivElement>(null);
-  const { data } = useSuspenseQuery(projectsQueryOptions());
-  const { toast } = useToast();
-  const handleProjectCopy = (project: ProjectPublic) => {
-    navigator.clipboard.writeText(project.uuid);
-    toast({
-      title: `Successfully copied Project ID to clipboard for project ${project.name}`,
-    });
-  };
-  const columns: ColumnDef<ProjectPublic>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created",
-      cell: ({ row }) => {
-        const createdDate = new Date(row.getValue("created_at") + "Z");
-        const formattedCreatedDate = new Intl.DateTimeFormat("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          hour12: true,
-        }).format(createdDate);
-        return <div>{formattedCreatedDate}</div>;
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        return (
-          <Button
-            variant='outline'
-            size='icon'
-            className='h-8 w-8'
-            onClick={() => handleProjectCopy(row.original)}
-          >
-            <Copy />
-          </Button>
-        );
-      },
-    },
-  ];
-  return (
-    <>
-      <Typography variant='h4'>Projects</Typography>
-      <DataTable<ProjectPublic>
-        columns={columns}
-        data={data}
-        virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
-        virtualizerOptions={{
-          count: data.length,
-          estimateSize: () => 45,
-          overscan: 5,
-        }}
-        hideColumnButton
-        customControls={<CreateProjectButton />}
-      />
-    </>
   );
 };
 
@@ -165,7 +90,7 @@ const APIKeysTable = () => {
       accessorKey: "expires_at",
       header: "Expires",
       cell: ({ row }) => {
-        const expireDate = new Date(row.getValue("expires_at") + "Z");
+        const expireDate = new Date(row.getValue("expires_at"));
         const formattedExpireDate = new Intl.DateTimeFormat("en-US", {
           year: "numeric",
           month: "short",
@@ -202,67 +127,6 @@ const APIKeysTable = () => {
         customControls={<CreateKeyButton />}
       />
     </>
-  );
-};
-
-const CreateProjectButton = () => {
-  const { toast } = useToast();
-  const methods = useForm<ProjectCreate>({
-    defaultValues: { name: "" },
-  });
-  const createProject = useCreateProjectMutation();
-  const onSubmit = async (data: ProjectCreate) => {
-    const generatedKey = await createProject.mutateAsync(data);
-    if (generatedKey) {
-      toast({
-        title: "Successfully created project",
-      });
-    }
-  };
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>Create Project</Button>
-      </DialogTrigger>
-      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
-              <DialogTitle>Create a new project</DialogTitle>
-            </DialogHeader>
-            <DialogDescription>
-              Create a new project for your organization.
-            </DialogDescription>
-            <FormField
-              key='name'
-              control={methods.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button
-                  type='submit'
-                  loading={methods.formState.isSubmitting}
-                  className='w-full'
-                >
-                  {methods.formState.isSubmitting
-                    ? "Creating..."
-                    : "Create Project"}
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
   );
 };
 
@@ -404,10 +268,10 @@ const CopyKeyButton = ({
             {"\n"}
             LILYPAD_API_KEY="..."
           </div>
-          <p className='text-red-500'>
-            WARNING: You won't be able to see your API key again.
-          </p>
         </DialogDescription>
+        <p className='text-red-500'>
+          WARNING: You won't be able to see your API key again.
+        </p>
       </DialogHeader>
       <Alert>
         <AlertTitle>LILYPAD_PROJECT ID</AlertTitle>

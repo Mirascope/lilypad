@@ -14,12 +14,18 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import cached_property, lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
 from typing import Any, cast
 
+import libcst as cst
+import libcst.matchers as m
+from libcst import BaseSmallStatement, CSTVisitorT, MaybeSentinel, Semicolon
+from libcst._add_slots import add_slots
+from libcst._nodes.internal import CodegenState, visit_sentinel
 from packaging.requirements import Requirement
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -43,25 +49,119 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     )
 
 
+@add_slots
+@dataclass(frozen=True)
+class _Ellipsis(BaseSmallStatement):
+    """Represents a ``...`` statement.
+
+    LibCST's Ellipsis node is not a statement, so we need to create a custom one.
+    """
+
+    #: Optional semicolon when this is used in a statement line. This semicolon
+    #: owns the whitespace on both sides of it when it is used.
+    semicolon: Semicolon | MaybeSentinel = MaybeSentinel.DEFAULT
+
+    def _visit_and_replace_children(self, visitor: CSTVisitorT) -> _Ellipsis:
+        return _Ellipsis(
+            semicolon=visit_sentinel(self, "semicolon", self.semicolon, visitor)
+        )
+
+    def _codegen_impl(
+        self, state: CodegenState, default_semicolon: bool = False
+    ) -> None:
+        with state.record_syntactic_position(self):
+            state.add_token("...")
+
+        semicolon = self.semicolon
+        if isinstance(semicolon, MaybeSentinel):
+            if default_semicolon:
+                state.add_token("; ")
+        elif isinstance(semicolon, Semicolon):
+            semicolon._codegen(state)
+
+
+class _RemoveDocstringTransformer(cst.CSTTransformer):
+    """A LibCST transformer for removing docstrings from functions and classes.
+
+    This transformer unconditionally removes the first statement (docstring) in each
+    FunctionDef/ClassDef if it is a single string literal. If removing the docstring
+    leaves the body empty, we insert a single 'pass' statement.
+
+    If exclude_fn_body=True, we replace the entire body with a single 'pass' statement.
+    """
+
+    def __init__(self, exclude_fn_body: bool) -> None:
+        super().__init__()
+        self.exclude_fn_body = exclude_fn_body
+
+    @staticmethod
+    def _remove_first_docstring(body: cst.BaseSuite) -> cst.BaseSuite:
+        """Return the body without a docstring, inserting 'pass` if no docstring."""
+        stmts = list(body.body)
+        if stmts:
+            first_stmt = stmts[0]
+            # Check if the first statement is a single string-literal line
+            if m.matches(
+                first_stmt, m.SimpleStatementLine(body=[m.Expr(value=m.SimpleString())])
+            ):
+                # Remove the docstring
+                stmts.pop(0)
+
+        # If removing docstring leaves no statements, insert a single 'pass'
+        if not stmts:
+            stmts = [cst.SimpleStatementLine([_Ellipsis()])]
+
+        return body.with_changes(body=stmts)
+
+    def leave_FunctionDef(
+        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
+    ) -> cst.FunctionDef:
+        if self.exclude_fn_body:
+            # Replace entire body with a single 'pass'
+            pass_stmt = cst.SimpleStatementLine([_Ellipsis()])
+            new_body = updated_node.body.with_changes(body=[pass_stmt])
+            return updated_node.with_changes(body=new_body)
+
+        new_body = self._remove_first_docstring(updated_node.body)
+        return updated_node.with_changes(body=new_body)
+
+    def leave_ClassDef(
+        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
+    ) -> cst.ClassDef:
+        if self.exclude_fn_body:
+            # Replace entire body with a single 'pass'
+            pass_stmt = cst.SimpleStatementLine([cst.Pass()])
+            new_body = updated_node.body.with_changes(body=[pass_stmt])
+            return updated_node.with_changes(body=new_body)
+
+        new_body = self._remove_first_docstring(updated_node.body)
+        return updated_node.with_changes(body=new_body)
+
+
 def _clean_source_code(
     fn: Callable[..., Any] | type,
     *,
     exclude_fn_body: bool = False,
 ) -> str:
+    """Returns a function's source code cleaned of that which has no impact on behavior.
+
+    Uses LibCST to:
+        1. Remove the first docstring from any function/class in `fn`'s code.
+        2. If removing leaves the body empty, insert 'pass'.
+        3. If exclude_fn_body=True, replace the body with a single 'pass'.
+        4. Convert multi-line strings to triple-quoted strings.
+    """
     source = dedent(inspect.getsource(fn))
-    tree = ast.parse(source)
-    fn_def = tree.body[0]
-    if (
-        isinstance(fn_def, ast.FunctionDef | ast.ClassDef)
-        and ast.get_docstring(fn_def) is not None
-    ):
-        fn_def.body = fn_def.body[1:]
-    cleaned_source = ast.unparse(ast.Module(body=[fn_def], type_ignores=[]))
-    if exclude_fn_body and (definition_end := cleaned_source.find(":\n")) != -1:
-        cleaned_source = cleaned_source[: definition_end + 1]
-    if cleaned_source[-1] == ":":
-        cleaned_source += " ..."
-    return cleaned_source
+    module = cst.parse_module(source)
+
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
+    new_module = module.visit(transformer)
+
+    code = new_module.code
+    # Trim trailing whitespace
+    code = code.rstrip()
+
+    return code
 
 
 class _NameCollector(ast.NodeVisitor):
@@ -269,9 +369,13 @@ class _DefinitionCollector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-class _QualifiedNameRewriter(ast.NodeTransformer):
+class _QualifiedNameRewriter(cst.CSTTransformer):
+    """A transformer that rewrites qualified names and resolves import aliases."""
+
     def __init__(self, local_names: set[str], user_defined_imports: set[str]) -> None:
-        self.local_names = local_names
+        """Initialize alias mapping from import statements."""
+        super().__init__()
+        self.local_names: set[str] = local_names
         self.alias_mapping = {}
         for import_stmt in user_defined_imports:
             if import_stmt.startswith("from "):
@@ -281,22 +385,66 @@ class _QualifiedNameRewriter(ast.NodeTransformer):
                     alias = parts[parts.index("as") + 1]
                     self.alias_mapping[alias] = original_name
 
-    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+    def _gather_attribute_chain(self, node: cst.Attribute | cst.Name) -> list[str]:
+        """Recursively gather the full attribute chain into a list of names.
+
+        Args:
+            node: The current node to process
+
+        Returns:
+            List of attribute names in order from left to right
+        """
         names = []
         current = node
-        while isinstance(current, ast.Attribute):
-            names.append(current.attr)
-            current = current.value
-        if isinstance(current, ast.Name) and current.id not in ["self", "cls"]:
-            names.append(current.id)
-            if names[0] in self.local_names:
-                return ast.Name(id=names[0], ctx=node.ctx)
-        return node
 
-    def visit_Name(self, node: ast.Name) -> ast.AST:
-        if node.id in self.alias_mapping:
-            return ast.Name(id=self.alias_mapping[node.id], ctx=node.ctx)
-        return node
+        while isinstance(current, cst.Attribute):
+            names.append(current.attr.value)
+            current = current.value
+
+        if isinstance(current, cst.Name):
+            names.append(current.value)
+
+        return list(reversed(names))
+
+    def leave_Attribute(
+        self, original_node: cst.Attribute, updated_node: cst.Attribute
+    ) -> cst.Name | cst.Attribute:
+        """Process attribute access expressions and potentially simplify them.
+
+        Args:
+            original_node: Original Attribute node
+            updated_node: Updated Attribute node after visiting children
+
+        Returns:
+            Transformed node (either simplified Name or original Attribute)
+        """
+        names = self._gather_attribute_chain(updated_node)
+
+        node_name = names[-1]
+
+        if node_name in self.local_names:
+            return cst.Name(value=node_name)
+
+        return updated_node
+
+    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -> cst.Name:
+        """Process name nodes and resolve aliases.
+
+        Args:
+            original_node: Original Name node
+            updated_node: Updated Name node after visiting children
+
+        Returns:
+            Transformed name node with alias resolved if applicable
+        """
+        if updated_node.value in self.alias_mapping:
+            # Replace alias with original name
+            return cst.Name(
+                value=self.alias_mapping[updated_node.value],
+                lpar=updated_node.lpar,
+                rpar=updated_node.rpar,
+            )
+        return updated_node
 
 
 class _DependencyCollector:
@@ -501,15 +649,15 @@ class _DependencyCollector:
 
         assignments = []
         for code in self.assignments:
-            tree = ast.parse(code)
-            new_tree = rewriter.visit(tree)
-            assignments.append(ast.unparse(new_tree))
+            tree = cst.parse_module(code)
+            new_tree = tree.visit(rewriter)
+            assignments.append(new_tree.code)
 
         source_code = []
         for code in self.source_code:
-            tree = ast.parse(code)
-            new_tree = rewriter.visit(tree)
-            source_code.append(ast.unparse(new_tree))
+            tree = cst.parse_module(code)
+            new_tree = tree.visit(rewriter)
+            source_code.append(new_tree.code)
 
         required_dependencies = self._collect_required_dependencies(
             self.imports | self.fn_internal_imports

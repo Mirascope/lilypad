@@ -47,6 +47,11 @@ from .closure_test_functions import (
     user_defined_from_import_fn,
     user_defined_import_fn,
 )
+from .closure_test_functions.main import (
+    multi_joined_string_fn,
+    multiple_literal_fn,
+    raw_string_fn,
+)
 
 
 def _expected(fn: Callable) -> str:
@@ -104,6 +109,7 @@ def test_third_party_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -123,6 +129,7 @@ def test_decorated_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -142,6 +149,7 @@ def test_multi_decorated_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -316,6 +324,7 @@ def test_global_var_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -341,7 +350,10 @@ def test_import_with_different_dist_name_fn() -> None:
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
         "google-generativeai": {"extras": None, "version": "0.8.3"},
-        "google-resumable-media": {"extras": ["requests"], "version": "2.7.2"},
+        "google-resumable-media": {
+            "extras": ["aiohttp", "requests"],
+            "version": "2.7.2",
+        },
         "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
         "grpc-google-iam-v1": {"extras": None, "version": "0.13.1"},
     }
@@ -362,6 +374,7 @@ def test_closure_inside_decorator_fn() -> None:
             "version": importlib.metadata.version("python-lilypad"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -381,6 +394,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
             "version": importlib.metadata.version("python-lilypad"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -409,7 +423,8 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
     }
     assert closure.signature == inspect.cleandoc("""
         def closure_with_long_function_name_that_wraps_around_fn(
-            arg1: str, arg2: str
+            arg1: str,
+            arg2: str,
         ) -> ChatCompletionUserMessageParam: ...
         """)
 
@@ -440,6 +455,7 @@ def test_mirascope_response_model_fn() -> None:
             "version": importlib.metadata.version("mirascope"),
             "extras": [
                 "anthropic",
+                "bedrock",
                 "gemini",
                 "mistral",
                 "openai",
@@ -452,3 +468,24 @@ def test_mirascope_response_model_fn() -> None:
             "version": "2.10.3",
         },
     }
+
+
+def test_multiple_literal_fn():
+    """Test the `Closure` class with multiple literal functions."""
+    closure = Closure.from_fn(multiple_literal_fn)
+    assert closure.code == _expected(multiple_literal_fn)
+    assert closure.dependencies == {}
+
+
+def test_raw_string_fn():
+    """Test the `Closure` class with a raw string."""
+    closure = Closure.from_fn(raw_string_fn)
+    assert closure.code == _expected(raw_string_fn)
+    assert closure.dependencies == {}
+
+
+def test_multi_joined_string_fn():
+    """Test the `Closure` class with multiple joined strings."""
+    closure = Closure.from_fn(multi_joined_string_fn)
+    assert closure.code == _expected(multi_joined_string_fn)
+    assert closure.dependencies == {}

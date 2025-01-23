@@ -140,6 +140,8 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Archived */
+  archived?: string | null;
 }
 
 /**
@@ -170,6 +172,8 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Archived */
+  archived?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -326,6 +330,8 @@ export interface PromptCreate {
   call_params?: CommonCallParams;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Archived */
+  archived?: string | null;
 }
 
 /**
@@ -375,6 +381,8 @@ export interface PromptPublic {
   call_params?: CommonCallParams;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Archived */
+  archived?: string | null;
   /**
    * Uuid
    * @format uuid

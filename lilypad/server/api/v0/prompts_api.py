@@ -25,7 +25,7 @@ from ...models import (
     PromptUpdate,
     UserPublic,
 )
-from ...services import PromptService
+from ...services import GenerationService, PromptService
 
 prompts_router = APIRouter()
 
@@ -253,6 +253,38 @@ def _run_playground(code: str) -> str:
         return result.stdout.strip()
     finally:
         tmp_path.unlink()
+
+
+@prompts_router.delete("/projects/{project_uuid}/prompts/names/{prompt_name}")
+async def archive_prompts_by_name(
+    project_uuid: UUID,
+    prompt_name: str,
+    prompt_service: Annotated[PromptService, Depends(PromptService)],
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+) -> bool:
+    """Archive a prompt by name"""
+    if prompt_service.has_generations_by_name(project_uuid, prompt_name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot archive prompt with generations",
+        )
+
+    return prompt_service.archive_record_by_name(project_uuid, prompt_name)
+
+
+@prompts_router.delete("/projects/{project_uuid}/prompts/{prompt_uuid}")
+async def archive_prompt(
+    project_uuid: UUID,
+    prompt_uuid: UUID,
+    prompt_service: Annotated[PromptService, Depends(PromptService)],
+) -> bool:
+    """Archive a prompt"""
+    if prompt_service.has_generations_by_uuid(project_uuid, prompt_uuid):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot archive prompt with generations",
+        )
+    return prompt_service.archive_record_by_uuid(prompt_uuid)
 
 
 __all__ = ["prompts_router"]

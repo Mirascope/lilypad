@@ -1,12 +1,13 @@
 """The `PromptService` class for prompts."""
 
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlmodel import and_, func, select
+from sqlmodel import and_, func, join, select
 
-from ..models import PromptCreate, PromptTable
+from ..models import GenerationTable, PromptCreate, PromptTable
 from .base_organization import BaseOrganizationService
 
 
@@ -21,11 +22,14 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
     ) -> Sequence[PromptTable]:
         """Find record by uuid"""
         record_tables = self.session.exec(
-            select(self.table).where(
+            select(self.table)
+            .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.name == name,
+                self.table.archived.is_(None),  # type: ignore
             )
+            .order_by(self.table.version_num.asc())  # type: ignore
         ).all()
         return record_tables
 
@@ -50,6 +54,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.signature == signature,
+                self.table.archived.is_(None),  # type: ignore
             )
         ).all()
         return record_tables
@@ -63,6 +68,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
+                self.table.archived.is_(None),  # type: ignore
             )
             .group_by(self.table.name)
             .subquery()
@@ -80,6 +86,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
+                self.table.archived.is_(None),  # type: ignore
             )
             .order_by(latest_versions.c.max_version.desc())
         ).all()
@@ -96,6 +103,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
                 self.table.hash == prompt_create.hash,
                 self.table.call_params == prompt_create.call_params,
                 self.table.arg_types == prompt_create.arg_types,
+                self.table.archived.is_(None),  # type: ignore
             )
         ).first()
 
@@ -109,6 +117,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == hash,
                 self.table.is_default,
+                self.table.archived.is_(None),  # type: ignore
             )
         ).first()
         if not record_table:
@@ -128,6 +137,7 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
             self.table.name == new_active_version.name,
             self.table.signature == new_active_version.signature,
             self.table.is_default,
+            self.table.archived.is_(None),  # type: ignore
         )
         current_active_versions = self.session.exec(stmt).all()
 
@@ -143,3 +153,65 @@ class PromptService(BaseOrganizationService[PromptTable, PromptCreate]):
         # Refresh to get latest state
         self.session.refresh(new_active_version)
         return new_active_version
+
+    def archive_record_by_name(self, project_uuid: UUID, name: str) -> bool:
+        """Archive records by name"""
+        record_tables = self.find_prompts_by_name(project_uuid, name)
+        archived_date = datetime.now(timezone.utc)
+        for record_table in record_tables:
+            record_table.archived = archived_date
+            self.session.add(record_table)
+        self.session.flush()
+        return True
+
+    def has_generations_by_name(self, project_uuid: UUID, prompt_name: str) -> bool:
+        """Check if any prompts with given name have generations"""
+        stmt = (
+            select(self.table, GenerationTable)
+            .select_from(
+                join(
+                    self.table,
+                    GenerationTable,
+                    and_(self.table.uuid == GenerationTable.prompt_uuid),
+                )
+            )
+            .where(
+                self.table.project_uuid == project_uuid,
+                self.table.name == prompt_name,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.archived.is_(None),  # type: ignore
+                GenerationTable.archived.is_(None),  # type: ignore
+            )
+            .exists()
+        )
+        return self.session.exec(select(stmt)).one()
+
+    def has_generations_by_uuid(self, project_uuid: UUID, prompt_uuid: UUID) -> bool:
+        """Check if any prompts with given uuid have generations"""
+        stmt = (
+            select(self.table, GenerationTable)
+            .select_from(
+                join(
+                    self.table,
+                    GenerationTable,
+                    and_(self.table.uuid == GenerationTable.prompt_uuid),
+                )
+            )
+            .where(
+                self.table.project_uuid == project_uuid,
+                self.table.uuid == prompt_uuid,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.archived.is_(None),  # type: ignore
+                GenerationTable.archived.is_(None),  # type: ignore
+            )
+            .exists()
+        )
+        return self.session.exec(select(stmt)).one()
+
+    def archive_record_by_uuid(self, uuid: UUID) -> bool:
+        """Archive record by uuid"""
+        record_table = self.find_record_by_uuid(uuid)
+        record_table.archived = datetime.now(timezone.utc)
+        self.session.add(record_table)
+        self.session.flush()
+        return True

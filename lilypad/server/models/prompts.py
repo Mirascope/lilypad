@@ -1,5 +1,6 @@
 """Prompts table and models."""
 
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -31,7 +32,7 @@ class _PromptBase(SQLModel):
     """Base Prompt Model."""
 
     project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     version_num: int | None = Field(default=None)
     name: str = Field(nullable=False, index=True, min_length=1)
@@ -47,6 +48,7 @@ class _PromptBase(SQLModel):
         sa_column=get_json_column(), default_factory=dict
     )
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
+    archived: datetime | None = Field(default=None, index=True)
 
 
 class PromptPublic(_PromptBase):

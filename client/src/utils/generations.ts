@@ -59,6 +59,28 @@ export const patchGeneration = async (
   ).data;
 };
 
+export const archiveGeneration = async (
+  projectUuid: string,
+  generationUuid: string
+) => {
+  return (
+    await api.delete<boolean>(
+      `/projects/${projectUuid}/generations/${generationUuid}`
+    )
+  ).data;
+};
+
+export const archiveGenerationByName = async (
+  projectUuid: string,
+  generationName: string
+) => {
+  return (
+    await api.delete<boolean>(
+      `/projects/${projectUuid}/generations/names/${generationName}`
+    )
+  ).data;
+};
+
 export const generationsQueryOptions = (projectUuid: string, options = {}) =>
   queryOptions({
     queryKey: ["projects", projectUuid, "generations"],
@@ -101,7 +123,7 @@ export const uniqueLatestVersionGenerationNamesQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["project", projectUuid, "generations", "unique-names"],
+    queryKey: ["projects", projectUuid, "generations", "unique-names"],
     queryFn: async () =>
       await fetchLatestVersionUniqueGenerationNames(projectUuid),
   });
@@ -112,7 +134,7 @@ export const generationsByNameQueryOptions = (
 ) =>
   queryOptions({
     queryKey: [
-      "project",
+      "projects",
       projectUuid,
       "generations",
       "by-name",
@@ -121,3 +143,47 @@ export const generationsByNameQueryOptions = (
     queryFn: async () =>
       await fetchGenerationsByName(generationName, projectUuid),
   });
+
+export const useArchiveGenerationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      generationUuid,
+      generationName,
+    }: {
+      projectUuid: string;
+      generationUuid: string;
+      generationName: string;
+    }) => await archiveGeneration(projectUuid, generationUuid),
+    onSuccess: (_, { projectUuid, generationName }) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "projects",
+          projectUuid,
+          "generations",
+          "by-name",
+          generationName,
+        ],
+      });
+    },
+  });
+};
+
+export const useArchiveGenerationByNameMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      generationName,
+    }: {
+      projectUuid: string;
+      generationName: string;
+    }) => await archiveGenerationByName(projectUuid, generationName),
+    onSuccess: (_, { projectUuid }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "generations", "unique-names"],
+      });
+    },
+  });
+};

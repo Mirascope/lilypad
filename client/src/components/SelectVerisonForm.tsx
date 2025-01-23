@@ -157,12 +157,12 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
                   <SelectValue placeholder='version' />
                 </SelectTrigger>
                 <SelectContent>
-                  {prompts.map((prompt, i) => (
+                  {prompts.map((prompt) => (
                     <SelectItem
                       key={prompt.uuid}
                       value={JSON.stringify(prompt)}
                     >
-                      v{i + 1}
+                      v{prompt.version_num}
                     </SelectItem>
                   ))}
                 </SelectContent>
