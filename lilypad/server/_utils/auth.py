@@ -124,7 +124,6 @@ async def get_current_user(
     """Get the current user from JWT token"""
     if token == LOCAL_TOKEN:
         return await get_local_user(session)
-
     if api_key:
         api_key_row = session.exec(
             select(APIKeyTable).where(APIKeyTable.key_hash == api_key)

@@ -7,14 +7,40 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ToastVariants } from "@/components/ui/toast";
 import { Typography } from "@/components/ui/typography";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { PromptPublic } from "@/types/types";
-import { uniqueLatestVersionPromptNamesQueryOptions } from "@/utils/prompts";
+import {
+  uniqueLatestVersionPromptNamesQueryOptions,
+  useArchivePromptByNameMutation,
+} from "@/utils/prompts";
 import { FormattedText } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -22,8 +48,9 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/prompts/")({
   component: () => (
@@ -37,10 +64,26 @@ const PromptCard = ({ prompt }: { prompt: PromptPublic }) => {
   const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const { projectUuid } = useParams({ from: Route.id });
+  const { toast } = useToast();
+  const archivePromptName = useArchivePromptByNameMutation();
   const handleClick = () => {
     navigate({
       to: `/projects/${projectUuid}/prompts/${prompt.name}/versions/${prompt.uuid}`,
     });
+  };
+  const handleArchive = async () => {
+    let title = `Successfully deleted prompt ${prompt.name}`;
+    let variant: ToastVariants = "default";
+    try {
+      await archivePromptName.mutateAsync({
+        projectUuid,
+        promptName: prompt.name,
+      });
+    } catch (e) {
+      title = `Failed to delete prompt ${prompt.name}. Delete generations that use ${prompt.name}.`;
+      variant = "destructive";
+    }
+    toast({ title, variant });
   };
   return (
     <Card
@@ -52,7 +95,50 @@ const PromptCard = ({ prompt }: { prompt: PromptPublic }) => {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        <CardTitle>{prompt.name}</CardTitle>
+        <CardTitle className='flex justify-between items-center'>
+          {prompt.name}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' className='h-8 w-8 p-0'>
+                <span className='sr-only'>Open menu</span>
+                <MoreHorizontal className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              {/* Prevents closing the dropdown */}
+              <div onClick={(e) => e.stopPropagation()}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      className='flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive'
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash className='w-4 h-4' />
+                      <span className='font-medium'>Delete prompt</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
+                    <DialogTitle>{`Delete Prompt ${prompt.name}`}</DialogTitle>
+                    <DialogDescription>
+                      {`Deleting ${prompt.name} will delete all versions of this prompt.`}
+                    </DialogDescription>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant='destructive' onClick={handleArchive}>
+                          Delete Prompt
+                        </Button>
+                      </DialogClose>
+                      <DialogClose asChild>
+                        <Button variant='outline'>Cancel</Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardTitle>
         <CardDescription>Latest Version: v{prompt.version_num}</CardDescription>
       </CardHeader>
       <Separator />
@@ -82,9 +168,10 @@ const PromptsList = () => {
   const { data } = useSuspenseQuery(
     uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
+  console.log(data);
   if (data.length === 0) {
     return (
-      <div className='p-4 flex flex-col lg:items-center gap-2'>
+      <div className='p-4 flex flex-col md:items-center gap-2'>
         <PromptNoDataPlaceholder />
       </div>
     );
@@ -113,32 +200,62 @@ const CreatePromptButton = () => {
           <Plus />
         </Button>
       </DialogTrigger>
-      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
+      <DialogContent className={"max-w-[425px] overflow-x-auto"}>
         <PromptNoDataPlaceholder />
       </DialogContent>
     </Dialog>
   );
 };
+type CreatePromptFormValues = {
+  name: string;
+};
 const PromptNoDataPlaceholder = () => {
   const { projectUuid } = useParams({ from: Route.id });
+  const methods = useForm<CreatePromptFormValues>({
+    defaultValues: {
+      name: "",
+    },
+  });
   const navigate = useNavigate();
-  const [value, setValue] = useState("");
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const onSubmit = (data: CreatePromptFormValues) => {
     navigate({
-      to: `/projects/${projectUuid}/prompts/${value}`,
+      to: `/projects/${projectUuid}/prompts/${data.name}`,
     });
   };
   return (
-    <form className='flex flex-col gap-2'>
+    <Form {...methods}>
       <Typography variant='h3'>Create a new prompt</Typography>
-      <Label>Prompt Name</Label>
-      <Input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder='Enter prompt name'
-      />
-      <Button onClick={handleClick}>Get Started</Button>
-    </form>
+      <form
+        className='flex flex-col gap-2'
+        onSubmit={methods.handleSubmit(onSubmit)}
+      >
+        <FormField
+          key='name'
+          control={methods.control}
+          name='name'
+          rules={{
+            required: "Prompt name is required",
+            validate: (value) => {
+              const pythonFunctionNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+              return (
+                pythonFunctionNameRegex.test(value) ||
+                "Prompt name must be a valid Python function name."
+              );
+            },
+          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Prompt Name</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder='Enter prompt name' />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type='submit'>Get Started</Button>
+      </form>
+    </Form>
   );
 };
