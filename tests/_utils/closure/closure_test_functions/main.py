@@ -600,7 +600,8 @@ def closure_with_long_function_name_that_wraps_around_fn(
 
 
     def closure_with_long_function_name_that_wraps_around_fn(
-        arg1: str, arg2: str
+        arg1: str,
+        arg2: str,
     ) -> ChatCompletionUserMessageParam:
         return {"role": "user", "content": "Hello, world!"}
     """

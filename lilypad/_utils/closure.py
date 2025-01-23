@@ -7,14 +7,12 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import inspect
-import io
 import json
 import os
 import site
 import subprocess
 import sys
 import tempfile
-import tokenize
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cached_property, lru_cache
@@ -49,35 +47,6 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
             for site_pkg in site_packages
         )
     )
-
-
-def _convert_embedded_newlines_to_triple_quoted(code: str) -> str:
-    """Convert single/double-quoted string tokens containing actual newlines into
-    triple-quoted strings. If the token is already triple-quoted, leave it as-is.
-    """
-    tokens = list(tokenize.generate_tokens(io.StringIO(code).readline))
-    new_tokens = []
-    for tok_type, tok_string, _start, _end, _line_text in tokens:
-        if tok_type == tokenize.STRING:
-            # If it's already triple-quoted, leave it as is
-            if tok_string.startswith(('"""', "'''")):
-                new_tokens.append((tok_type, tok_string))
-            else:
-                # Check for f-strings
-                if tok_string.startswith(('f"', "f'", 'f"""', "f'''")):
-                    new_tokens.append((tok_type, tok_string))
-                    continue
-
-                # Try ast.literal_eval to see if it contains newlines
-                val = ast.literal_eval(tok_string)
-                if "\n" in val:
-                    triple_quoted = f'"""{val}"""'
-                    new_tokens.append((tok_type, triple_quoted))
-                else:
-                    new_tokens.append((tok_type, tok_string))
-        else:
-            new_tokens.append((tok_type, tok_string))
-    return tokenize.untokenize(new_tokens)
 
 
 @add_slots
@@ -188,9 +157,6 @@ def _clean_source_code(
     code = new_module.code
     # Trim trailing whitespace
     code = code.rstrip()
-
-    # Convert multi-line string literals
-    code = _convert_embedded_newlines_to_triple_quoted(code)
 
     return code
 
@@ -400,10 +366,15 @@ class _DefinitionCollector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-class _QualifiedNameRewriter(ast.NodeTransformer):
+class QualifiedNameRewriter(cst.CSTTransformer):
+    """A transformer that rewrites qualified names and resolves import aliases."""
+
     def __init__(self, local_names: set[str], user_defined_imports: set[str]) -> None:
-        self.local_names = local_names
+        """Initialize alias mapping from import statements."""
+        super().__init__()
+        self.local_names: set[str] = local_names
         self.alias_mapping = {}
+
         for import_stmt in user_defined_imports:
             if import_stmt.startswith("from "):
                 parts = import_stmt.split(" ")
@@ -412,22 +383,66 @@ class _QualifiedNameRewriter(ast.NodeTransformer):
                     alias = parts[parts.index("as") + 1]
                     self.alias_mapping[alias] = original_name
 
-    def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+    def _gather_attribute_chain(self, node: cst.Attribute | cst.Name) -> list[str]:
+        """Recursively gather the full attribute chain into a list of names.
+
+        Args:
+            node: The current node to process
+
+        Returns:
+            List of attribute names in order from left to right
+        """
         names = []
         current = node
-        while isinstance(current, ast.Attribute):
-            names.append(current.attr)
-            current = current.value
-        if isinstance(current, ast.Name) and current.id not in ["self", "cls"]:
-            names.append(current.id)
-            if names[0] in self.local_names:
-                return ast.Name(id=names[0], ctx=node.ctx)
-        return node
 
-    def visit_Name(self, node: ast.Name) -> ast.AST:
-        if node.id in self.alias_mapping:
-            return ast.Name(id=self.alias_mapping[node.id], ctx=node.ctx)
-        return node
+        while isinstance(current, cst.Attribute):
+            names.append(current.attr.value)
+            current = current.value
+
+        if isinstance(current, cst.Name):
+            names.append(current.value)
+
+        return list(reversed(names))
+
+    def leave_Attribute(
+        self, original_node: cst.Attribute, updated_node: cst.Attribute
+    ) -> cst.Name | cst.Attribute:
+        """Process attribute access expressions and potentially simplify them.
+
+        Args:
+            original_node: Original Attribute node
+            updated_node: Updated Attribute node after visiting children
+
+        Returns:
+            Transformed node (either simplified Name or original Attribute)
+        """
+        names = self._gather_attribute_chain(updated_node)
+
+        node_name = names[-1]
+
+        if node_name in self.local_names:
+            return cst.Name(value=node_name)
+
+        return updated_node
+
+    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -> cst.Name:
+        """Process name nodes and resolve aliases.
+
+        Args:
+            original_node: Original Name node
+            updated_node: Updated Name node after visiting children
+
+        Returns:
+            Transformed name node with alias resolved if applicable
+        """
+        if updated_node.value in self.alias_mapping:
+            # Replace alias with original name
+            return cst.Name(
+                value=self.alias_mapping[updated_node.value],
+                lpar=updated_node.lpar,
+                rpar=updated_node.rpar,
+            )
+        return updated_node
 
 
 class _DependencyCollector:
@@ -617,21 +632,21 @@ class _DependencyCollector:
                     if isinstance(parent, ast.Module):
                         local_names.add(node.name)
 
-        rewriter = _QualifiedNameRewriter(local_names, self.user_defined_imports)
+        rewriter = QualifiedNameRewriter(
+            local_names=local_names, user_defined_imports=self.user_defined_imports
+        )
 
         assignments = []
         for code in self.assignments:
-            tree = ast.parse(code)
-            new_tree = rewriter.visit(tree)
-            assignments.append(ast.unparse(new_tree))
+            tree = cst.parse_module(code)
+            new_tree = tree.visit(rewriter)
+            assignments.append(new_tree.code)
 
         source_code = []
         for code in self.source_code:
-            tree = ast.parse(code)
-            new_tree = rewriter.visit(tree)
-            unparsed = ast.unparse(new_tree)
-            unparsed = _convert_embedded_newlines_to_triple_quoted(unparsed)
-            source_code.append(unparsed)
+            tree = cst.parse_module(code)
+            new_tree = tree.visit(rewriter)
+            source_code.append(new_tree.code)
 
         required_dependencies = self._collect_required_dependencies(
             self.imports | self.fn_internal_imports
