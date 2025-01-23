@@ -652,3 +652,25 @@ def multiple_literal_fn() -> str:
     """
     return """Hello
             World"""
+
+def raw_string_fn() -> str:
+    """
+    def raw_string_fn() -> str:
+        return r\"\"\"Hello
+                World\"\"\"
+    """
+    return r"""Hello
+            World"""
+
+def multi_joined_string_fn() -> str:
+    """
+    def multi_joined_string_fn() -> str:
+        return (
+            \"Hello, -----------------------------------------------------------------\"
+            \"world!\"
+        )
+    """
+    return (
+            "Hello, -----------------------------------------------------------------"
+            "world!"
+    )
