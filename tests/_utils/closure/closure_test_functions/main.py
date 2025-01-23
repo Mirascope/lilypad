@@ -668,8 +668,8 @@ def multi_joined_string_fn() -> str:
     r"""
     def multi_joined_string_fn() -> str:
         return (
-            \"Hello, -----------------------------------------------------------------\"
-            \"world!\"
+            "Hello, -----------------------------------------------------------------"
+            "world!"
         )
     """
     return (
