@@ -53,7 +53,8 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
 @dataclass(frozen=True)
 class _Ellipsis(BaseSmallStatement):
     """Represents a ``...`` statement.
-    libcst's Ellipsis node is not a statement, so we need to create a custom one.
+
+    LibCST's Ellipsis node is not a statement, so we need to create a custom one.
     """
 
     #: Optional semicolon when this is used in a statement line. This semicolon
@@ -79,10 +80,12 @@ class _Ellipsis(BaseSmallStatement):
             semicolon._codegen(state)
 
 
-class RemoveDocstringTransformer(cst.CSTTransformer):
-    """A LibCST transformer that unconditionally removes the first statement (docstring)
-    in each FunctionDef/ClassDef if it is a single string literal.
-    If removing leaves the body empty, we insert 'pass'.
+class _RemoveDocstringTransformer(cst.CSTTransformer):
+    """A LibCST transformer for removing docstrings from functions and classes.
+
+    This transformer unconditionally removes the first statement (docstring) in each
+    FunctionDef/ClassDef if it is a single string literal. If removing the docstring
+    leaves the body empty, we insert a single 'pass' statement.
 
     If exclude_fn_body=True, we replace the entire body with a single 'pass' statement.
     """
@@ -93,9 +96,7 @@ class RemoveDocstringTransformer(cst.CSTTransformer):
 
     @staticmethod
     def _remove_first_docstring(body: cst.BaseSuite) -> cst.BaseSuite:
-        """Given a function/class body, remove its first statement if it is a
-        single string literal. If that leaves no statements, insert 'pass'.
-        """
+        """Return the body without a docstring, inserting 'pass` if no docstring."""
         stmts = list(body.body)
         if stmts:
             first_stmt = stmts[0]
@@ -142,16 +143,18 @@ def _clean_source_code(
     *,
     exclude_fn_body: bool = False,
 ) -> str:
-    """Uses LibCST to:
-    1. Remove the first docstring from any function/class in `fn`'s code.
-    2. If removing leaves the body empty, insert 'pass'.
-    3. If exclude_fn_body=True, replace the body with a single 'pass'.
-    4. Convert multi-line strings to triple-quoted strings.
+    """Returns a function's source code cleaned of that which has no impact on behavior.
+
+    Uses LibCST to:
+        1. Remove the first docstring from any function/class in `fn`'s code.
+        2. If removing leaves the body empty, insert 'pass'.
+        3. If exclude_fn_body=True, replace the body with a single 'pass'.
+        4. Convert multi-line strings to triple-quoted strings.
     """
     source = dedent(inspect.getsource(fn))
     module = cst.parse_module(source)
 
-    transformer = RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
     new_module = module.visit(transformer)
 
     code = new_module.code
