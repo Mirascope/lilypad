@@ -1,3 +1,4 @@
+import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDeviceCodeMutation } from "@/utils/auth";
@@ -23,6 +24,7 @@ const Projects = () => {
   const { deviceCode } = Route.useSearch();
   const navigate = useNavigate();
   const addDeviceCodeMutation = useDeviceCodeMutation();
+  const { setProject } = useAuth();
   useEffect(() => {
     if (!deviceCode) return;
     addDeviceCodeMutation.mutateAsync({ deviceCode });
@@ -31,6 +33,7 @@ const Projects = () => {
       search: { redirect: undefined, deviceCode: undefined },
     });
   }, [deviceCode]);
+
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   return (
     <div className='p-4 flex flex-col items-center gap-2'>
@@ -46,6 +49,7 @@ const Projects = () => {
               <Card
                 key={project.uuid}
                 className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'
+                onClick={() => setProject(project)}
               >
                 <CardContent className='p-4'>{project.name}</CardContent>
               </Card>

@@ -145,6 +145,10 @@ def configure() -> None:
         from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
 
         GoogleGenerativeAIInstrumentor().instrument()
+    if importlib.util.find_spec("botocore") is not None:
+        from lilypad._opentelemetry import BedrockInstrumentor
+
+        BedrockInstrumentor().instrument()
     if importlib.util.find_spec("mistralai") is not None:
         from lilypad._opentelemetry import MistralInstrumentor
 

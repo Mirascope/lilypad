@@ -1,16 +1,13 @@
 import { Editor } from "@/components/Editor";
 
-import { BaseSyntheticEvent, useRef, useState } from "react";
+import { AddCardButton } from "@/components/AddCardButton";
+import { CodeSnippet } from "@/components/CodeSnippet";
+import IconDialog from "@/components/IconDialog";
+import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
+import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
+import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
-import { SubmitHandler, useFieldArray } from "react-hook-form";
-import { Label } from "@/components/ui/label";
-import { LexicalEditor } from "lexical";
-import {
-  BaseEditorFormFields,
-  getAvailableProviders,
-  useBaseEditorForm,
-} from "@/utils/playground-utils";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -19,34 +16,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { AddCardButton } from "@/components/AddCardButton";
-import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
-import { $convertToMarkdownString } from "@lexical/markdown";
-import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import {
-  useCreatePrompt,
-  usePatchPromptMutation,
-  useRunMutation,
-} from "@/utils/prompts";
-import {
-  PromptCreate,
-  PromptPublic,
-  PlaygroundParameters,
-} from "@/types/types";
-import { NotFound } from "@/components/NotFound";
-import IconDialog from "@/components/IconDialog";
-import { CodeSnippet } from "@/components/CodeSnippet";
-import { Typography } from "@/components/ui/typography";
-import ReactMarkdown from "react-markdown";
-import { useAuth } from "@/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ToastVariants } from "@/components/ui/toast";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Typography } from "@/components/ui/typography";
+import { useToast } from "@/hooks/use-toast";
+import {
+  PlaygroundParameters,
+  PromptCreate,
+  PromptPublic,
+} from "@/types/types";
+import {
+  BaseEditorFormFields,
+  getAvailableProviders,
+  useBaseEditorForm,
+} from "@/utils/playground-utils";
+import {
+  useArchivePromptMutation,
+  useCreatePrompt,
+  usePatchPromptMutation,
+  useRunMutation,
+} from "@/utils/prompts";
+import { userQueryOptions } from "@/utils/users";
+import { $convertToMarkdownString } from "@lexical/markdown";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { LexicalEditor } from "lexical";
+import { Trash, X } from "lucide-react";
+import { BaseSyntheticEvent, useRef, useState } from "react";
+import { SubmitHandler, useFieldArray } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
 
 type EditorParameters = PlaygroundParameters & {
   inputs: Record<string, string>[];
@@ -55,11 +59,13 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
   const { projectUuid, promptName } = useParams({
     strict: false,
   });
-  const { user } = useAuth();
+  const { toast } = useToast();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
   const createPromptMutation = useCreatePrompt();
   const runMutation = useRunMutation();
   const patchPrompt = usePatchPromptMutation();
+  const archivePrompt = useArchivePromptMutation();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -165,6 +171,24 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
         }
       }
     });
+  };
+  const handleArchive = async () => {
+    if (!version) return;
+    let title = `Successfully deleted prompt ${version.name}`;
+    let variant: ToastVariants = "default";
+    try {
+      await archivePrompt.mutateAsync({
+        projectUuid,
+        promptUuid: version.uuid,
+      });
+      navigate({
+        to: `/projects/${projectUuid}/prompts`,
+      });
+    } catch (e) {
+      title = `Failed to delete prompt ${version.name} v${version.version_num}. Delete generations that use ${version.name} v${version.version_num}.`;
+      variant = "destructive";
+    }
+    toast({ title, variant });
   };
   const renderBottomPanel = () => {
     return (
@@ -274,6 +298,33 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   }}
                 >
                   <CodeSnippet code={version.code} />
+                </IconDialog>
+              )}
+              {version && (
+                <IconDialog
+                  icon={<Trash />}
+                  title={`Delete ${version.name} v${version.version_num}`}
+                  description=''
+                  dialogContentProps={{
+                    className: "max-w-[600px]",
+                  }}
+                  buttonProps={{
+                    variant: "outlineDestructive",
+                  }}
+                  dialogButtons={[
+                    <Button
+                      type='button'
+                      variant='destructive'
+                      onClick={handleArchive}
+                    >
+                      Delete
+                    </Button>,
+                    <Button type='button' variant='outline'>
+                      Cancel
+                    </Button>,
+                  ]}
+                >
+                  {`Are you sure you want to delete ${version.name} v${version.version_num}?`}
                 </IconDialog>
               )}
             </div>

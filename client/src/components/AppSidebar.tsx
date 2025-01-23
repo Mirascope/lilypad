@@ -107,12 +107,12 @@ export const AppSidebar = () => {
   const navigate = useNavigate();
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
-  const organizationMutation = useUpdateActiveOrganizationMutation();
   useEffect(() => {
     if (!activeProject && projects.length > 0) {
       setProject(projects[0]);
     }
-  }, [activeProject]);
+  }, [activeProject, projects]);
+  const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectItems: Item[] = activeProject
     ? [
         {

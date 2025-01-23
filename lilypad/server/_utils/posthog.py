@@ -14,6 +14,7 @@ def get_posthog_client() -> posthog.Posthog:
     """Get PostHog client."""
     settings = get_settings()
     return posthog.Posthog(
+        api_key="",
         project_api_key=settings.posthog_api_key,
         host=settings.posthog_host,
     )

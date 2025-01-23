@@ -80,7 +80,7 @@ export const createPrompt = async (
 ): Promise<PromptPublic> => {
   return (
     await api.post<PromptCreate, AxiosResponse<PromptPublic>>(
-      `projects/${projectUuid}/prompts`,
+      `/projects/${projectUuid}/prompts`,
       promptCreate
     )
   ).data;
@@ -92,8 +92,28 @@ export const runPrompt = async (
 ): Promise<string> => {
   return (
     await api.post<Record<string, string>, AxiosResponse<string>>(
-      `projects/${projectUuid}/prompts/run`,
+      `/projects/${projectUuid}/prompts/run`,
       playgroundValues
+    )
+  ).data;
+};
+
+export const archivePrompt = async (
+  projectUuid: string,
+  promptUuid: string
+) => {
+  return (
+    await api.delete<boolean>(`/projects/${projectUuid}/prompts/${promptUuid}`)
+  ).data;
+};
+
+export const archivePromptByName = async (
+  projectUuid: string,
+  promptName: string
+) => {
+  return (
+    await api.delete<boolean>(
+      `/projects/${projectUuid}/prompts/names/${promptName}`
     )
   ).data;
 };
@@ -123,7 +143,7 @@ export const uniqueLatestVersionPromptNamesQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: ["project", projectUuid, "prompts", "unique-names"],
+    queryKey: ["projects", projectUuid, "prompts", "unique-names"],
     queryFn: async () => await fetchLatestVersionUniquePromptNames(projectUuid),
   });
 
@@ -181,6 +201,42 @@ export const usePatchPromptMutation = () => {
     onSuccess: (prompt, { projectUuid }) => {
       queryClient.invalidateQueries({
         queryKey: ["projects", projectUuid, "prompts", prompt.uuid],
+      });
+    },
+  });
+};
+
+export const useArchivePromptMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      promptUuid,
+    }: {
+      projectUuid: string;
+      promptUuid: string;
+    }) => await archivePrompt(projectUuid, promptUuid),
+    onSuccess: (_, { projectUuid, promptUuid }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "prompts", promptUuid],
+      });
+    },
+  });
+};
+
+export const useArchivePromptByNameMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      promptName,
+    }: {
+      projectUuid: string;
+      promptName: string;
+    }) => await archivePromptByName(projectUuid, promptName),
+    onSuccess: (_, { projectUuid }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "prompts", "unique-names"],
       });
     },
   });

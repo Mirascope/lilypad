@@ -47,23 +47,28 @@ class _SpanBase(SQLModel):
 
     span_id: str = Field(nullable=False, index=True, unique=True)
     project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     generation_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     prompt_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid"
+        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     response_model_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid"
+        default=None,
+        foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
     )
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
     data: dict = Field(sa_column=get_json_column(), default_factory=dict)
     parent_span_id: str | None = Field(
-        default=None, index=True, foreign_key=f"{SPAN_TABLE_NAME}.span_id"
+        default=None,
+        index=True,
+        foreign_key=f"{SPAN_TABLE_NAME}.span_id",
+        ondelete="CASCADE",
     )
 
 

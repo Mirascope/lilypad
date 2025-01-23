@@ -15,14 +15,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GenerationPublic, PromptPublic } from "@/types/types";
 import {
   generationsByNameQueryOptions,
+  useArchiveGenerationMutation,
   usePatchGenerationMutation,
 } from "@/utils/generations";
 import { promptsBySignature } from "@/utils/prompts";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
+import IconDialog from "@/components/IconDialog";
 import {
   Select,
   SelectContent,
@@ -31,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
+import { Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationName"
@@ -53,9 +60,12 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
+  const navigate = useNavigate();
   const [generation, setGeneration] = useState<
     GenerationPublic | null | undefined
   >(generations.length > 0 ? generations.at(-1) : null);
+  console.log(generations);
+  const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
       label: "Overview",
@@ -73,27 +83,66 @@ const GenerationWorkbench = () => {
       ),
     },
   ];
+  const handleArchive = async () => {
+    if (!generation) return;
+    await archiveGeneration.mutateAsync({
+      projectUuid,
+      generationUuid: generation.uuid,
+      generationName,
+    });
+    navigate({ to: `/projects/${projectUuid}/generations` });
+  };
   const tabWidth = 80 * tabs.length;
   return (
     <div className='w-full p-6'>
       <Typography variant='h2'>{generationName}</Typography>
-      <Select
-        value={generation?.uuid}
-        onValueChange={(uuid) =>
-          setGeneration(generations.find((g) => g.uuid === uuid) || null)
-        }
-      >
-        <SelectTrigger className='w-[200px]'>
-          <SelectValue placeholder='Select a generation' />
-        </SelectTrigger>
-        <SelectContent>
-          {generations.map((generation) => (
-            <SelectItem key={generation.uuid} value={generation.uuid}>
-              v{generation.version_num}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className='flex gap-2 items-center'>
+        <Select
+          value={generation?.uuid}
+          onValueChange={(uuid) =>
+            setGeneration(generations.find((g) => g.uuid === uuid) || null)
+          }
+        >
+          <SelectTrigger className='w-[200px]'>
+            <SelectValue placeholder='Select a generation' />
+          </SelectTrigger>
+          <SelectContent>
+            {generations.map((generation) => (
+              <SelectItem key={generation.uuid} value={generation.uuid}>
+                v{generation.version_num}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {generation && (
+          <IconDialog
+            icon={<Trash />}
+            title={`Delete ${generation.name} v${generation.version_num}`}
+            description=''
+            dialogContentProps={{
+              className: "max-w-[600px]",
+            }}
+            buttonProps={{
+              variant: "outlineDestructive",
+              className: "w-9 h-9",
+            }}
+            dialogButtons={[
+              <Button
+                type='button'
+                variant='destructive'
+                onClick={handleArchive}
+              >
+                Delete
+              </Button>,
+              <Button type='button' variant='outline'>
+                Cancel
+              </Button>,
+            ]}
+          >
+            {`Are you sure you want to delete ${generation.name} v${generation.version_num}?`}
+          </IconDialog>
+        )}
+      </div>
       <Tabs defaultValue='overview' className='w-full'>
         <div className='flex justify-center w-full '>
           <TabsList className={`w-[${tabWidth}px]`}>

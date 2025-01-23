@@ -1,4 +1,3 @@
-import { useAuth } from "@/auth";
 import { FormCombobox } from "@/components/FormCombobox";
 import { FormSlider } from "@/components/FormSlider";
 import {
@@ -25,13 +24,14 @@ import {
   Provider,
   UserPublic,
 } from "@/types/types";
+import { userQueryOptions } from "@/utils/users";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
   Control,
-  Path,
-  UseFormReturn,
-  useForm,
   DefaultValues,
+  Path,
+  useForm,
   useFormContext,
 } from "react-hook-form";
 export type OptionalField<T> = {
@@ -372,7 +372,7 @@ export const getAvailableProviders = (user: UserPublic | null) => {
 };
 export const BaseEditorFormFields = () => {
   const methods = useFormContext<PlaygroundParameters>();
-  const { user } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const provider = methods.watch("provider");
   const selectItems = getAvailableProviders(user);
 
