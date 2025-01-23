@@ -574,12 +574,10 @@ def closure_with_properties_fn() -> str:
     class MockClient:
         @cached_property
         def foo(self) -> str:
-            \"\"\"Foo\"\"\"
             return "Hello, "
 
         @property
         def bar(self) -> str:
-            \"\"\"Bar\"\"\"
             return "world!"
 
 
@@ -602,7 +600,8 @@ def closure_with_long_function_name_that_wraps_around_fn(
 
 
     def closure_with_long_function_name_that_wraps_around_fn(
-        arg1: str, arg2: str
+        arg1: str,
+        arg2: str,
     ) -> ChatCompletionUserMessageParam:
         return {"role": "user", "content": "Hello, world!"}
     """
@@ -643,3 +642,37 @@ def mirascope_response_model_fn() -> str:
         return "Hello, world!"
     """
     return "Hello, world!"
+
+
+def multiple_literal_fn() -> str:
+    """
+    def multiple_literal_fn() -> str:
+        return \"\"\"Hello
+                World\"\"\"
+    """
+    return """Hello
+            World"""
+
+
+def raw_string_fn() -> str:
+    """
+    def raw_string_fn() -> str:
+        return r\"\"\"Hello
+                World\"\"\"
+    """
+    return r"""Hello
+            World"""
+
+
+def multi_joined_string_fn() -> str:
+    r"""
+    def multi_joined_string_fn() -> str:
+        return (
+            "Hello, -----------------------------------------------------------------"
+            "world!"
+        )
+    """
+    return (
+        "Hello, -----------------------------------------------------------------"
+        "world!"
+    )
