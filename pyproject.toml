@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.12"
+version = "0.0.13"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -68,13 +68,9 @@ bedrock = [
     "boto3-stubs[bedrock-runtime]>=1.35.82",
     "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
 ]
-mistral = [
-    "mistralai>=1.0.0,<2",
-]
+mistral = ["mistralai>=1.0.0,<2"]
 outlines = ["outlines>=0.1.11"]
-vertex = [
-    "google-cloud-aiplatform>=1.74.0",
-]
+vertex = ["google-cloud-aiplatform>=1.74.0"]
 
 
 [tool.uv]
