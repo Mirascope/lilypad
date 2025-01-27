@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
+from .datasets_api import datasets_router
 from .device_codes_api import device_codes_api
 from .generations_api import generations_router
 from .projects_api import projects_router
@@ -28,7 +29,7 @@ api.include_router(spans_router)
 api.include_router(traces_router)
 api.include_router(auth_router)
 api.include_router(users_router)
-
+api.include_router(datasets_router)
 
 class SettingsPublic(BaseModel):
     remote_client_url: str

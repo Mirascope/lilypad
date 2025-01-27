@@ -8,3 +8,4 @@ from .prompts import PromptService
 from .spans import SpanService
 from .user_organizations import UserOrganizationService
 from .users import UserService
+from .datasets import DatasetsService

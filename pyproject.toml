@@ -75,6 +75,9 @@ outlines = ["outlines>=0.1.11"]
 vertex = [
     "google-cloud-aiplatform>=1.74.0",
 ]
+evals = [
+    "oxenai>=0.19.0",
+]
 
 
 [tool.uv]

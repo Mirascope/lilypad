@@ -356,3 +356,27 @@ class LilypadClient:
                 json=create_data,
             )
             return rm_new
+
+    def get_dataset_metadata(
+        self,
+        generation_uuid: str | None = None,
+        generation_name: str | None = None,
+    ) -> dict[str, str]:
+        """
+        Fetch Oxen dataset metadata (repo_url, branch, path)
+        from the Lilypad server for a given generation.
+
+        Raises a KeyError or requests exceptions if not found.
+        """
+        params = {}
+        if generation_uuid:
+            params["generation_uuid"] = generation_uuid
+        if generation_name:
+            params["generation_name"] = generation_name
+
+        return self._request(
+            method="GET",
+            endpoint=f"/v0/projects/{self.project_uuid}/datasets",
+            response_model=None,  # We'll parse raw dict
+            params=params
+        )
