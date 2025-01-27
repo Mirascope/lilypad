@@ -10,6 +10,7 @@ from .api_keys_api import api_keys_api
 from .auth import auth_router
 from .device_codes_api import device_codes_api
 from .generations_api import generations_router
+from .oxen_api import oxen_router
 from .projects_api import projects_router
 from .prompts_api import prompts_router
 from .response_models_api import response_models_router
@@ -28,6 +29,7 @@ api.include_router(spans_router)
 api.include_router(traces_router)
 api.include_router(auth_router)
 api.include_router(users_router)
+api.include_router(oxen_router)
 
 
 class SettingsPublic(BaseModel):

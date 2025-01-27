@@ -70,6 +70,40 @@ export interface APIKeyPublic {
 }
 
 /**
+ * AnnotationPublic
+ * Annotation public model.
+ */
+export interface AnnotationPublic {
+  /** Input */
+  input?: Record<string, string> | null;
+  /** Output */
+  output: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  type?: EvaluationType | null;
+  /** Assigned To */
+  assigned_to?: string | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+}
+
+/**
  * CommonCallParams
  * Common parameters shared across LLM providers.
  *
@@ -111,6 +145,16 @@ export interface DependencyInfo {
 }
 
 export type DeviceCodeTable = object;
+
+/**
+ * EvaluationType
+ * Evaluation type enum
+ */
+export enum EvaluationType {
+  MANUAL = "manual",
+  VERIFIED = "verified",
+  EDITED = "edited",
+}
 
 /**
  * GenerationCreate
@@ -196,6 +240,15 @@ export interface GenerationUpdate {
 export interface HTTPValidationError {
   /** Detail */
   detail?: ValidationError[];
+}
+
+/**
+ * Label
+ * Label enum
+ */
+export enum Label {
+  PASS = "pass",
+  FAIL = "fail",
 }
 
 /**

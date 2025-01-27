@@ -23,8 +23,8 @@ import { Route as AuthProjectsProjectUuidImport } from './routes/_auth.projects.
 import { Route as AuthProjectsProjectUuidPromptsIndexImport } from './routes/_auth.projects.$projectUuid.prompts.index'
 import { Route as AuthProjectsProjectUuidGenerationsIndexImport } from './routes/_auth.projects.$projectUuid.generations.index'
 import { Route as AuthProjectsProjectUuidTracesSplatImport } from './routes/_auth.projects.$projectUuid.traces.$'
-import { Route as AuthProjectsProjectUuidGenerationsGenerationNameImport } from './routes/_auth.projects.$projectUuid.generations.$generationName'
 import { Route as AuthProjectsProjectUuidPromptsPromptNameSplatImport } from './routes/_auth.projects.$projectUuid.prompts.$promptName.$'
+import { Route as AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabImport } from './routes/_auth.projects.$projectUuid.generations.$generationName.$generationUuid.$tab'
 
 // Create Virtual Routes
 
@@ -90,17 +90,19 @@ const AuthProjectsProjectUuidTracesSplatRoute =
     getParentRoute: () => AuthProjectsProjectUuidRoute,
   } as any)
 
-const AuthProjectsProjectUuidGenerationsGenerationNameRoute =
-  AuthProjectsProjectUuidGenerationsGenerationNameImport.update({
-    path: '/generations/$generationName',
-    getParentRoute: () => AuthProjectsProjectUuidRoute,
-  } as any)
-
 const AuthProjectsProjectUuidPromptsPromptNameSplatRoute =
   AuthProjectsProjectUuidPromptsPromptNameSplatImport.update({
     path: '/prompts/$promptName/$',
     getParentRoute: () => AuthProjectsProjectUuidRoute,
   } as any)
+
+const AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute =
+  AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabImport.update(
+    {
+      path: '/generations/$generationName/$generationUuid/$tab',
+      getParentRoute: () => AuthProjectsProjectUuidRoute,
+    } as any,
+  )
 
 // Populate the FileRoutesByPath interface
 
@@ -162,13 +164,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsIndexImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/projects/$projectUuid/generations/$generationName': {
-      id: '/_auth/projects/$projectUuid/generations/$generationName'
-      path: '/generations/$generationName'
-      fullPath: '/projects/$projectUuid/generations/$generationName'
-      preLoaderRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameImport
-      parentRoute: typeof AuthProjectsProjectUuidImport
-    }
     '/_auth/projects/$projectUuid/traces/$': {
       id: '/_auth/projects/$projectUuid/traces/$'
       path: '/traces/$'
@@ -197,23 +192,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsProjectUuidPromptsPromptNameSplatImport
       parentRoute: typeof AuthProjectsProjectUuidImport
     }
+    '/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': {
+      id: '/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
+      path: '/generations/$generationName/$generationUuid/$tab'
+      fullPath: '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
+      preLoaderRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabImport
+      parentRoute: typeof AuthProjectsProjectUuidImport
+    }
   }
 }
 
 // Create and export the route tree
 
 interface AuthProjectsProjectUuidRouteChildren {
-  AuthProjectsProjectUuidGenerationsGenerationNameRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
   AuthProjectsProjectUuidTracesSplatRoute: typeof AuthProjectsProjectUuidTracesSplatRoute
   AuthProjectsProjectUuidGenerationsIndexRoute: typeof AuthProjectsProjectUuidGenerationsIndexRoute
   AuthProjectsProjectUuidPromptsIndexRoute: typeof AuthProjectsProjectUuidPromptsIndexRoute
   AuthProjectsProjectUuidPromptsPromptNameSplatRoute: typeof AuthProjectsProjectUuidPromptsPromptNameSplatRoute
+  AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute
 }
 
 const AuthProjectsProjectUuidRouteChildren: AuthProjectsProjectUuidRouteChildren =
   {
-    AuthProjectsProjectUuidGenerationsGenerationNameRoute:
-      AuthProjectsProjectUuidGenerationsGenerationNameRoute,
     AuthProjectsProjectUuidTracesSplatRoute:
       AuthProjectsProjectUuidTracesSplatRoute,
     AuthProjectsProjectUuidGenerationsIndexRoute:
@@ -222,6 +222,8 @@ const AuthProjectsProjectUuidRouteChildren: AuthProjectsProjectUuidRouteChildren
       AuthProjectsProjectUuidPromptsIndexRoute,
     AuthProjectsProjectUuidPromptsPromptNameSplatRoute:
       AuthProjectsProjectUuidPromptsPromptNameSplatRoute,
+    AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute:
+      AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute,
   }
 
 const AuthProjectsProjectUuidRouteWithChildren =
@@ -252,11 +254,11 @@ export interface FileRoutesByFullPath {
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
-  '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/projects/$projectUuid/generations': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/projects/$projectUuid/prompts': typeof AuthProjectsProjectUuidPromptsIndexRoute
   '/projects/$projectUuid/prompts/$promptName/$': typeof AuthProjectsProjectUuidPromptsPromptNameSplatRoute
+  '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute
 }
 
 export interface FileRoutesByTo {
@@ -268,11 +270,11 @@ export interface FileRoutesByTo {
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
-  '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/projects/$projectUuid/generations': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/projects/$projectUuid/prompts': typeof AuthProjectsProjectUuidPromptsIndexRoute
   '/projects/$projectUuid/prompts/$promptName/$': typeof AuthProjectsProjectUuidPromptsPromptNameSplatRoute
+  '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute
 }
 
 export interface FileRoutesById {
@@ -285,11 +287,11 @@ export interface FileRoutesById {
   '/_auth/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/_auth/settings/$': typeof AuthSettingsSplatRoute
   '/_auth/projects/': typeof AuthProjectsIndexRoute
-  '/_auth/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameRoute
   '/_auth/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/_auth/projects/$projectUuid/generations/': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/_auth/projects/$projectUuid/prompts/': typeof AuthProjectsProjectUuidPromptsIndexRoute
   '/_auth/projects/$projectUuid/prompts/$promptName/$': typeof AuthProjectsProjectUuidPromptsPromptNameSplatRoute
+  '/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameGenerationUuidTabRoute
 }
 
 export interface FileRouteTypes {
@@ -303,11 +305,11 @@ export interface FileRouteTypes {
     | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
-    | '/projects/$projectUuid/generations/$generationName'
     | '/projects/$projectUuid/traces/$'
     | '/projects/$projectUuid/generations'
     | '/projects/$projectUuid/prompts'
     | '/projects/$projectUuid/prompts/$promptName/$'
+    | '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,11 +320,11 @@ export interface FileRouteTypes {
     | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
-    | '/projects/$projectUuid/generations/$generationName'
     | '/projects/$projectUuid/traces/$'
     | '/projects/$projectUuid/generations'
     | '/projects/$projectUuid/prompts'
     | '/projects/$projectUuid/prompts/$promptName/$'
+    | '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
   id:
     | '__root__'
     | '/'
@@ -333,11 +335,11 @@ export interface FileRouteTypes {
     | '/_auth/projects/$projectUuid'
     | '/_auth/settings/$'
     | '/_auth/projects/'
-    | '/_auth/projects/$projectUuid/generations/$generationName'
     | '/_auth/projects/$projectUuid/traces/$'
     | '/_auth/projects/$projectUuid/generations/'
     | '/_auth/projects/$projectUuid/prompts/'
     | '/_auth/projects/$projectUuid/prompts/$promptName/$'
+    | '/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
   fileRoutesById: FileRoutesById
 }
 
@@ -400,11 +402,11 @@ export const routeTree = rootRoute
       "filePath": "_auth.projects.$projectUuid.tsx",
       "parent": "/_auth",
       "children": [
-        "/_auth/projects/$projectUuid/generations/$generationName",
         "/_auth/projects/$projectUuid/traces/$",
         "/_auth/projects/$projectUuid/generations/",
         "/_auth/projects/$projectUuid/prompts/",
-        "/_auth/projects/$projectUuid/prompts/$promptName/$"
+        "/_auth/projects/$projectUuid/prompts/$promptName/$",
+        "/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab"
       ]
     },
     "/_auth/settings/$": {
@@ -414,10 +416,6 @@ export const routeTree = rootRoute
     "/_auth/projects/": {
       "filePath": "_auth.projects.index.tsx",
       "parent": "/_auth"
-    },
-    "/_auth/projects/$projectUuid/generations/$generationName": {
-      "filePath": "_auth.projects.$projectUuid.generations.$generationName.tsx",
-      "parent": "/_auth/projects/$projectUuid"
     },
     "/_auth/projects/$projectUuid/traces/$": {
       "filePath": "_auth.projects.$projectUuid.traces.$.tsx",
@@ -433,6 +431,10 @@ export const routeTree = rootRoute
     },
     "/_auth/projects/$projectUuid/prompts/$promptName/$": {
       "filePath": "_auth.projects.$projectUuid.prompts.$promptName.$.tsx",
+      "parent": "/_auth/projects/$projectUuid"
+    },
+    "/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab": {
+      "filePath": "_auth.projects.$projectUuid.generations.$generationName.$generationUuid.$tab.tsx",
       "parent": "/_auth/projects/$projectUuid"
     }
   }

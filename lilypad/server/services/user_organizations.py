@@ -1,5 +1,7 @@
 """The `UserOrganizationService` class for user_organizations."""
 
+from typing import Sequence
+
 from fastapi import HTTPException, status
 from sqlmodel import select
 
@@ -29,3 +31,12 @@ class UserOrganizationService(
                 detail=f"Record for {self.table.__tablename__} not found",
             )
         return user_organization
+
+    def get_users_by_active_organization(self) -> Sequence[UserOrganizationTable]:
+        """Get all users from the active organization."""
+        user_organizations = self.session.exec(
+            select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+            )
+        ).all()
+        return user_organizations

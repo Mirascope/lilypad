@@ -1,8 +1,17 @@
+import { AnnotationForm } from "@/components/AnnotationForm";
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
+import IconDialog from "@/components/IconDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +28,9 @@ import {
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
+  MessageSquareText,
   MoreHorizontal,
+  Users,
 } from "lucide-react";
 import { Suspense, useEffect, useRef } from "react";
 
@@ -78,22 +89,26 @@ export const TracesTable = ({
       filterFn: onlyParentFilter,
       cell: ({ row }) => {
         const depth = row.depth;
-        const paddingLeft = `${depth * 1}rem`;
         const hasSubRows = row.subRows.length > 0;
         return (
-          <div style={{ paddingLeft }}>
-            {hasSubRows && (
-              <ChevronRight
-                onClick={(event) => {
-                  row.toggleExpanded();
-                  event.stopPropagation();
-                }}
-                className={`h-4 w-4 inline mr-2 ${
-                  row.getIsExpanded() ? "rotate-90" : ""
-                }`}
-              />
-            )}
-            {row.getValue("display_name")}
+          <div
+            className='flex items-center gap-2'
+            style={{ marginLeft: `${depth * 1}rem` }}
+          >
+            <div className='flex items-center gap-2'>
+              {hasSubRows && (
+                <ChevronRight
+                  onClick={(event) => {
+                    row.toggleExpanded();
+                    event.stopPropagation();
+                  }}
+                  className={`h-4 w-4 transition-transform ${
+                    row.getIsExpanded() ? "rotate-90" : ""
+                  }`}
+                />
+              )}
+              <span className='truncate'>{row.getValue("display_name")}</span>
+            </div>
           </div>
         );
       },
@@ -126,22 +141,6 @@ export const TracesTable = ({
         );
       },
     },
-    // {
-    //   accessorKey: "output",
-    //   header: "Output",
-    //   cell: ({ row }) => {
-    //     return (
-    //       <Tooltip>
-    //         <TooltipTrigger asChild>
-    //           <div className='line-clamp-1'>{row.getValue("output")}</div>
-    //         </TooltipTrigger>
-    //         <TooltipContent>
-    //           <p className='max-w-xs break-words'>{row.getValue("output")}</p>
-    //         </TooltipContent>
-    //       </Tooltip>
-    //     );
-    //   },
-    // },
     {
       accessorKey: "created_at",
       id: "timestamp",
@@ -170,6 +169,25 @@ export const TracesTable = ({
       ),
     },
     {
+      id: "annotations",
+      cell: ({ row }) => {
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <IconDialog
+              icon={<MessageSquareText />}
+              title='Annotations'
+              description='Annotations'
+              buttonProps={{
+                variant: "ghost",
+              }}
+            >
+              <AnnotationForm />
+            </IconDialog>
+          </div>
+        );
+      },
+    },
+    {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
@@ -183,6 +201,48 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      className='flex items-center gap-2'
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <MessageSquareText className='w-4 h-4' />
+                      <span className='font-medium'>Annotate</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
+                    <DialogTitle>{`Annotate`}</DialogTitle>
+                    <DialogDescription>
+                      {`Annotate this trace to add to your dataset.`}
+                    </DialogDescription>
+                    <AnnotationForm />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      className='flex items-center gap-2'
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Users className='w-4 h-4' />
+                      <span className='font-medium'>
+                        Add to annotation queue
+                      </span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
+                    <DialogTitle>{`Annotate`}</DialogTitle>
+                    <DialogDescription>
+                      {`Annotate this trace to add to your dataset.`}
+                    </DialogDescription>
+                    <AnnotationForm />
+                  </DialogContent>
+                </Dialog>
+              </div>
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {

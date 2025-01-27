@@ -17,10 +17,20 @@ export const fetchUser = async () => {
   return (await api.get<UserPublic>(`/current-user`)).data;
 };
 
+export const fetchUsersByOrganization = async () => {
+  return (await api.get<UserPublic[]>(`/users/organizations`)).data;
+};
+
 export const userQueryOptions = () =>
   queryOptions({
     queryKey: ["user"],
     queryFn: () => fetchUser(),
+  });
+
+export const usersByOrganizationQueryOptions = () =>
+  queryOptions({
+    queryKey: ["usersByOrganization"],
+    queryFn: () => fetchUsersByOrganization(),
   });
 
 export const useUpdateActiveOrganizationMutation = () => {

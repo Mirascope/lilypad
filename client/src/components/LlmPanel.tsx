@@ -67,7 +67,7 @@ export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{span.display_name}</Typography>
-      <div className='flex gap-1'>
+      <div className='flex gap-1 flex-wrap'>
         <Badge>{span.provider}</Badge>
         <Badge>{span.model}</Badge>
         {span.input_tokens && span.output_tokens && (
