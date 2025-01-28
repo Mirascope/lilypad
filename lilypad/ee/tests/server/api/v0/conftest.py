@@ -209,7 +209,16 @@ def test_generation(
         hash="test_hash",
         organization_uuid=test_project.organization_uuid,
     )
+    second_function = GenerationTable(
+        project_uuid=test_project.uuid,
+        name="test_function",
+        signature="def test_(): pass",
+        code="def test_(): pass",
+        hash="test__hash",
+        organization_uuid=test_project.organization_uuid,
+    )
     session.add(function)
+    session.add(second_function)
     session.commit()
     session.refresh(function)
     yield function

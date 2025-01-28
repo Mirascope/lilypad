@@ -1,393 +1,143 @@
-"""Tests for the LilypadClient and Dataset/DataFrame integration
-using the updated Oxen dataset API code.
-"""
-
 from unittest.mock import MagicMock, patch
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 
-from lilypad._utils import Closure
-from lilypad.ee.evals import Dataset
-from lilypad.ee.evals.datasets import (
+from lilypad.ee.evals import (
     DataFrame,
+    Dataset,
     datasets,
     datasets_from_fn,
     datasets_from_name,
 )
-from lilypad.ee.server.client import (
-    CommitModel,
-    DataFrameModel,
-    DataFrameViewModel,
-    DFSchema,
-    DFSchemaField,
-    LilypadClient,
-    NotFoundError,
-    OxenDatasetResponse,
-    PaginationModel,
-    RequestParamsModel,
-    ResourceInfoModel,
-    RowDataModel,
-    SizeModel,
-    SourceModel,
-    _get_dataset_from_oxen_response,
-)
 
 
-@pytest.fixture
-def sample_oxen_response() -> OxenDatasetResponse:
-    """Create a sample OxenDatasetResponse for testing."""
-    commit = CommitModel(
-        author="Test Author",
-        email="author@test.com",
-        id="abcdef123",
-        message="Test commit message",
-        parent_ids=[],
-        root_hash=None,
-        timestamp="2025-01-01T00:00:00Z",
-    )
-
-    schema_fields = [
-        DFSchemaField(changes=None, dtype="str", metadata=None, name="id"),
-        DFSchemaField(changes=None, dtype="str", metadata=None, name="text"),
-        DFSchemaField(changes=None, dtype="str", metadata=None, name="title"),
-        DFSchemaField(changes=None, dtype="str", metadata=None, name="url"),
-    ]
-    view_schema = DFSchema(fields=schema_fields, hash="viewhash", metadata=None)
-    source_schema = DFSchema(fields=schema_fields, hash="sourcehash", metadata=None)
-
-    row_data_models = [
-        RowDataModel(id="row1", text="hello", title="Title1", url="http://test1"),
-        RowDataModel(id="row2", text="world", title="Title2", url="http://test2"),
-    ]
-    pagination = PaginationModel(
-        page_number=1, page_size=2, total_entries=2, total_pages=1
-    )
-    view_size = SizeModel(height=2, width=4)
-    source_size = SizeModel(height=10, width=4)
-
-    data_frame_view = DataFrameViewModel(
-        data=row_data_models,
-        opts=[],
-        pagination=pagination,
-        schema=view_schema,
-        size=view_size,
-    )
-    source_model = SourceModel(schema=source_schema, size=source_size)
-    data_frame_model = DataFrameModel(source=source_model, view=data_frame_view)
-
-    req_params = RequestParamsModel(
-        namespace="ox",
-        repo_name="SimpleWikipedia",
-        resource=["main", "dataset.parquet"],
-    )
-    resource_info = ResourceInfoModel(path="dataset.parquet", version="main")
-
-    return OxenDatasetResponse(
-        commit=commit,
-        data_frame=data_frame_model,
-        derived_resource=None,
-        oxen_version="0.22.2",
-        request_params=req_params,
-        resource=resource_info,
-        status="success",
-        status_message="All good",
-    )
-
-
-def test_get_dataset_from_oxen_response(
-    sample_oxen_response: OxenDatasetResponse,
-) -> None:
-    """Test the internal _get_dataset_from_oxen_response function to ensure
-    it returns a valid Dataset object populated with the right fields.
-    """
-    ds = _get_dataset_from_oxen_response(sample_oxen_response)
-    assert isinstance(ds, Dataset)
-    # Check commit info
-    assert ds.commit_info["author"] == "Test Author"
-    assert ds.commit_info["id"] == "abcdef123"
-    # Check row count
-    assert ds.data_frame.get_row_count() == 2
-    # Check columns
-    assert ds.data_frame.get_column_count() == 4
-    # Check status
-    assert ds.status == "success"
-    assert ds.status_message == "All good"
-    # Check the row data
-    first_row = ds.data_frame.rows[0]
-    assert first_row["id"] == "row1"
-    assert first_row["title"] == "Title1"
-
-
-def test_dataframe_list_rows() -> None:
-    """Simple test for DataFrame to verify the list_rows method and size logic."""
+def test_data_frame_basic():
+    """Test creating a DataFrame and verifying the row count and column count."""
     rows = [
-        {"id": "1", "text": "alpha"},
-        {"id": "2", "text": "beta"},
+        {"col1": 10, "col2": 20},
+        {"col1": 30, "col2": 40},
     ]
-    schema = {"fields": [], "hash": "dummy", "metadata": None}
-    size_info = {"height": 2, "width": 2}
-    df = DataFrame(rows, schema, size_info)
-    assert df.list_rows() == rows
-    assert df.get_row_count() == 2
-    assert df.get_column_count() == 2
+    df = DataFrame(rows)
+    assert df.get_row_count() == 2, "Should have 2 rows"
+    assert df.get_column_count() == 2, "Should have 2 columns"
+    assert df.list_rows() == rows, "The rows should match the original data"
 
+def test_data_frame_empty():
+    """Test creating an empty DataFrame."""
+    df = DataFrame([])
+    assert df.get_row_count() == 0, "Should have 0 rows"
+    assert df.get_column_count() == 0, "Should have 0 columns"
+    assert df.list_rows() == [], "Should return an empty list for rows"
 
-def test_dataset_repr(sample_oxen_response: OxenDatasetResponse) -> None:
-    """Test the __repr__ method of Dataset for debugging info."""
-    ds = _get_dataset_from_oxen_response(sample_oxen_response)
-    rep_str = repr(ds)
-    assert "<Dataset commit_id=abcdef123 rows=2 cols=4>" in rep_str
-
+def test_dataset_repr():
+    """Test the string representation of a Dataset."""
+    rows = [
+        {"foo": "bar", "num": 123},
+        {"foo": "baz", "num": 456},
+    ]
+    df = DataFrame(rows)
+    ds = Dataset(df)
+    assert repr(ds) == "<Dataset rows=2 cols=2>", "Unexpected __repr__ output"
 
 @pytest.fixture
-def client() -> LilypadClient:
-    """Provide a LilypadClient instance for tests.
-    We can override the ._request method with mocks as needed.
+def mock_client():
+    """Create a mocked LilypadClient that simulates paginated row retrieval.
+    The first two pages return some data, the third returns no data to end pagination.
     """
-    # We'll simulate that the project_uuid is set
-    c = LilypadClient(timeout=2)
-    c.project_uuid = uuid4()  # pretend we've set it
-    return c
+    # Create a MagicMock instance to represent the client
+    client = MagicMock()
 
+    # Simulate client.get_dataset_rows(...) returning pages of data, then an empty page
+    # to signal no more rows.
+    # Each call to get_dataset_rows will return a mock response object.
+    # We'll track how many times it's called (page_num).
+    def mock_get_dataset_rows(**kwargs):
+        page_num = kwargs.get("page_num")
+        # Return different data based on page_num
+        if page_num == 1:
+            return MagicMock(rows=[{"a": 1, "b": 2}])
+        elif page_num == 2:
+            return MagicMock(rows=[{"a": 3, "b": 4}])
+        else:
+            return MagicMock(rows=[])
 
-def test_lilypad_client_get_dataset_rows_success(
-    client: LilypadClient, sample_oxen_response: OxenDatasetResponse
-) -> None:
-    """Test that get_dataset_rows returns an OxenDatasetResponse with valid data
-    when the server is successful.
-    """
-    with patch.object(
-        client, "_request", return_value=sample_oxen_response
-    ) as mock_req:
-        resp = client.get_dataset_rows(
-            generation_uuid="some-gen-id", page_num=1, page_size=10
-        )
-        # Check that we got an OxenDatasetResponse
-        assert isinstance(resp, OxenDatasetResponse)
-        # Check fields
-        assert resp.status == "success"
-        mock_req.assert_called_once()
+    client.get_dataset_rows.side_effect = mock_get_dataset_rows
+    return client
 
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_single_uuid(mock_get_client, mock_client):
+    """Test retrieving a single dataset by UUID."""
+    mock_get_client.return_value = mock_client
 
-def test_lilypad_client_get_dataset_rows_no_project_uuid() -> None:
-    """Test that if project_uuid is not set, we get a ValueError."""
-    c = LilypadClient(timeout=2)
-    with pytest.raises(ValueError, match="No project_uuid is set"):
-        c.get_dataset_rows(generation_uuid="some-gen-id")
+    # We pass a single UUID, expecting a single Dataset.
+    result = datasets("123e4567-e89b-12d3-a456-426655440000")
+    assert isinstance(result, Dataset), "Should return a single Dataset instance"
+    # Verify the internal data frame has 2 rows from our mocked pagination logic
+    assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows total"
+    assert result.data_frame.get_column_count() == 2, "Dataset should have 2 columns"
 
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_multiple_uuids(mock_get_client, mock_client):
+    """Test retrieving multiple datasets by passing multiple UUIDs."""
+    mock_get_client.return_value = mock_client
 
-def test_lilypad_client_get_dataset_rows_not_found(client: LilypadClient) -> None:
-    """If the server returns a 404, we want a NotFoundError raised."""
-    with (
-        patch.object(client, "_request", side_effect=NotFoundError("Not found!")),
-        pytest.raises(NotFoundError),
-    ):
-        client.get_dataset_rows(generation_uuid="some-gen-id")
+    uuid1 = "123e4567-e89b-12d3-a456-426655440000"
+    uuid2 = UUID("123e4567-e89b-12d3-a456-426655440001")
+    result = datasets(uuid1, uuid2)
 
+    assert isinstance(result, list), "Should return a list of Datasets"
+    assert len(result) == 2, "Should have exactly 2 Datasets in the result"
+    for ds in result:
+        assert isinstance(ds, Dataset), "All items should be Dataset instances"
+        # Each dataset should have 2 rows from our mocked pagination logic
+        assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"
 
-def test_lilypad_client_get_dataset_rows_connection_error(
-    client: LilypadClient,
-) -> None:
-    """If there's a connection error, ensure an APIConnectionError is raised."""
-    from requests.exceptions import ConnectionError
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_from_name_single(mock_get_client, mock_client):
+    """Test retrieving a single dataset from a generation name."""
+    mock_get_client.return_value = mock_client
 
-    with (
-        patch.object(client, "_request", side_effect=ConnectionError()),
-        pytest.raises(ConnectionError),
-    ):
-        client.get_dataset_rows(generation_uuid="some-gen-id")
+    result = datasets_from_name("my_generation_name")
+    assert isinstance(result, Dataset), "Should return a single Dataset"
+    assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
 
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_from_name_multiple(mock_get_client, mock_client):
+    """Test retrieving multiple datasets by passing multiple generation names."""
+    mock_get_client.return_value = mock_client
 
-def test_lilypad_client_get_datasets_success(
-    client: LilypadClient, sample_oxen_response: OxenDatasetResponse
-) -> None:
-    """Test get_datasets() calls get_dataset_rows under the hood,
-    then returns a custom Dataset.
-    """
-    with patch.object(
-        client, "get_dataset_rows", return_value=sample_oxen_response
-    ) as mock_gdr:
-        ds_obj = client.get_datasets(generation_uuid="test-gen")
-        # ds_obj should be a Dataset
-        assert isinstance(ds_obj, Dataset)
-        assert ds_obj.data_frame.get_row_count() == 2
-        mock_gdr.assert_called_once_with(
-            generation_uuid="test-gen", generation_name=None, page_num=1, page_size=50
-        )
+    result = datasets_from_name("gen_name_1", "gen_name_2")
+    assert isinstance(result, list), "Should return a list of Datasets"
+    assert len(result) == 2, "Should have 2 Datasets"
+    for ds in result:
+        assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"
 
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_from_fn_single(mock_get_client, mock_client):
+    """Test retrieving a single dataset from a function reference."""
+    mock_get_client.return_value = mock_client
 
-@pytest.fixture
-def mock_dataset() -> Dataset:
-    """A simple fixture that returns a dummy Dataset object."""
-    return Dataset(
-        commit_info={"id": "fake-commit-id"},
-        data_frame=None,  # Normally this would be a DataFrame object
-        status="success",
-        status_message="OK",
-    )
-
-
-def dummy_fn():
-    """A dummy function for testing Closure.from_fn usage."""
-    return "hello"
-
-
-#
-# tests for datasets
-#
-def test_datasets_no_input():
-    """If no UUIDs are provided, it should raise a ValueError."""
-    with pytest.raises(ValueError, match="No UUID provided to 'datasets'"):
-        datasets()
-
-
-@patch.object(LilypadClient, "get_datasets")
-def test_datasets_single(mock_get_datasets, mock_dataset):
-    """Test a single UUID -> returns a single Dataset."""
-    mock_get_datasets.return_value = mock_dataset
-
-    test_uuid = str(uuid4())
-    ds = datasets(test_uuid)
-
-    # We expect a single Dataset, not a list
-    assert isinstance(ds, Dataset)
-    mock_get_datasets.assert_called_once_with(
-        generation_uuid=test_uuid,
-        page_num=1,
-        page_size=50,
-    )
-
-
-@patch.object(LilypadClient, "get_datasets")
-def test_datasets_multiple(mock_get_datasets, mock_dataset):
-    """Test multiple UUIDs -> returns a list of Datasets."""
-    # Suppose each call returns a distinct dataset object
-    mock_get_datasets.side_effect = [mock_dataset, mock_dataset]
-
-    uuid1 = str(uuid4())
-    uuid2 = str(uuid4())
-    ds_list = datasets(uuid1, uuid2, page_num=2, page_size=20)
-
-    # We expect a list of Dataset
-    assert isinstance(ds_list, list)
-    assert len(ds_list) == 2
-    for item in ds_list:
-        assert isinstance(item, Dataset)
-
-    # Check calls
-    assert mock_get_datasets.call_count == 2
-    mock_get_datasets.assert_any_call(
-        generation_uuid=uuid1,
-        page_num=2,
-        page_size=20,
-    )
-    mock_get_datasets.assert_any_call(
-        generation_uuid=uuid2,
-        page_num=2,
-        page_size=20,
-    )
-
-
-#
-# tests for datasets_from_name
-#
-def test_datasets_from_name_no_input():
-    """If no names are provided, it should raise a ValueError."""
-    with pytest.raises(ValueError, match="No name provided to 'datasets_from_name'"):
-        datasets_from_name()
-
-
-@patch.object(LilypadClient, "get_datasets")
-def test_datasets_from_name_single(mock_get_datasets, mock_dataset):
-    """Test a single name -> returns a single Dataset."""
-    mock_get_datasets.return_value = mock_dataset
-
-    gen_name = "my_generation"
-    ds = datasets_from_name(gen_name, page_num=3, page_size=10)
-
-    assert isinstance(ds, Dataset)
-    mock_get_datasets.assert_called_once_with(
-        generation_name=gen_name,
-        page_num=3,
-        page_size=10,
-    )
-
-
-@patch.object(LilypadClient, "get_datasets")
-def test_datasets_from_name_multiple(mock_get_datasets, mock_dataset):
-    """Test multiple names -> returns a list of Datasets."""
-    mock_get_datasets.side_effect = [mock_dataset, mock_dataset, mock_dataset]
-
-    ds_list = datasets_from_name("name1", "name2", "name3")
-
-    assert isinstance(ds_list, list)
-    assert len(ds_list) == 3
-
-    # Check calls
-    assert mock_get_datasets.call_count == 3
-
-
-#
-# tests for datasets_from_fn
-#
-def test_datasets_from_fn_no_input():
-    """If no functions are provided, it should raise a ValueError."""
-    with pytest.raises(ValueError, match="No function provided to 'datasets_from_fn'"):
-        datasets_from_fn()
-
-
-@patch.object(LilypadClient, "get_datasets")
-@patch.object(Closure, "from_fn")
-def test_datasets_from_fn_single(mock_closure_from_fn, mock_get_datasets, mock_dataset):
-    """Test a single function -> returns a single Dataset."""
-    # Mock the closure hash
-    mock_closure_from_fn.return_value = MagicMock(hash="fn-hash-123")
-    mock_get_datasets.return_value = mock_dataset
-
-    def dummy():
+    def dummy_fn():
         pass
 
-    ds = datasets_from_fn(dummy, page_num=1, page_size=5)
+    result = datasets_from_fn(dummy_fn)
+    assert isinstance(result, Dataset), "Should return a single Dataset"
+    assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
 
-    # single dataset
-    assert isinstance(ds, Dataset)
+@patch("lilypad.ee.evals.datasets._get_client")
+def test_datasets_from_fn_multiple(mock_get_client, mock_client):
+    """Test retrieving multiple datasets from multiple function references."""
+    mock_get_client.return_value = mock_client
 
-    # from_fn should be called once
-    mock_closure_from_fn.assert_called_once_with(dummy)
-    # get_datasets should be called with generation_uuid = closure.hash
-    mock_get_datasets.assert_called_once_with(
-        generation_uuid="fn-hash-123",
-        page_num=1,
-        page_size=5,
-    )
-
-
-@patch.object(LilypadClient, "get_datasets")
-@patch.object(Closure, "from_fn")
-def test_datasets_from_fn_multiple(
-    mock_closure_from_fn, mock_get_datasets, mock_dataset
-):
-    """Test multiple functions -> returns a list of Datasets."""
-    # Suppose we have two closure hashes
-    mock_closure_from_fn.side_effect = [
-        MagicMock(hash="hash1"),
-        MagicMock(hash="hash2"),
-    ]
-    mock_get_datasets.side_effect = [mock_dataset, mock_dataset]
-
-    def fn1():
+    def dummy_fn1():
         pass
 
-    def fn2():
+    def dummy_fn2():
         pass
 
-    ds_list = datasets_from_fn(fn1, fn2)
-
-    assert isinstance(ds_list, list)
-    assert len(ds_list) == 2
-
-    # from_fn called for each function
-    assert mock_closure_from_fn.call_count == 2
-    # get_datasets called for each hash
-    assert mock_get_datasets.call_count == 2
+    result = datasets_from_fn(dummy_fn1, dummy_fn2)
+    assert isinstance(result, list), "Should return a list of Datasets"
+    assert len(result) == 2, "Should have 2 Datasets"
+    for ds in result:
+        assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"

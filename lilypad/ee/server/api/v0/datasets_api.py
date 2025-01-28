@@ -12,16 +12,15 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from oxen import DataFrame
 from pydantic import BaseModel
+from pydantic.v1.config import get_config
 from sqlmodel import Session
 
 from lilypad.server._utils import match_api_key_with_project
 from lilypad.server.db import get_session
 from lilypad.server.services import GenerationService
+from lilypad.server.settings import get_settings
 
 datasets_router = APIRouter()
-
-
-REPO_NAME = os.getenv("REPO_NAME", "lilypad/datasets")
 
 
 class _DatasetMetadata(BaseModel):
@@ -36,7 +35,6 @@ class _DatasetMetadata(BaseModel):
 def _get_oxen_dataset_metadata(
     project_uuid: UUID,
     generation_uuid: UUID,
-    branch: str = "main",
 ) -> _DatasetMetadata:
     """This function should return the dataset metadata needed to construct the Oxen DataFrame.
     It can consult the database or services to figure out:
@@ -47,8 +45,9 @@ def _get_oxen_dataset_metadata(
     depending on whether we received generation_uuid, generation_hash, or generation_name.
     """
     return _DatasetMetadata(
-        repo=REPO_NAME,
-        branch=branch,
+        repo=get_settings().oxen_repo_name,
+        branch=get_settings().oxen_branch,
+        host=get_settings().oxen_host,
         path=f"{str(project_uuid)}/{str(generation_uuid)}.csv",
     )
 
@@ -203,6 +202,8 @@ async def get_dataset_rows_by_name(
         generations = generation_service.find_generations_by_name(
             project_uuid, generation_name
         )
+        if not generations:
+            raise ValueError("No generations found by name.")
         metas = [
             _get_oxen_dataset_metadata(
                 project_uuid=project_uuid,
