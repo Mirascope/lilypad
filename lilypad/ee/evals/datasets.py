@@ -5,6 +5,7 @@ adjusted for the updated Oxen dataset API that returns an Oxen-style JSON.
 from __future__ import annotations
 
 from collections.abc import Callable
+from itertools import count
 from typing import TYPE_CHECKING, Any, overload
 from uuid import UUID
 
@@ -20,27 +21,27 @@ class DataFrame:
     """
 
     def __init__(
-        self, rows: list[dict[str, Any]], schema: dict[str, Any], size: dict[str, int]
+        self, rows: list[dict[str, Any]]
     ) -> None:
         self.rows = rows
-        self.schema = schema
-        self.size_info = size
-        # Add any other fields or logic needed
+        if rows:
+            keys = rows[0].keys()
+        else:
+            keys = []
+        self._key_size = len(keys)
+        self.row_keys = keys
 
-    def list_rows(self, page: int = 1) -> list[dict[str, Any]]:
-        """For demonstration, we simply return all rows.
-        Or you could implement pagination logic if desired.
-        """
-        # If you want, you can use `page` to slice self.rows
+    def list_rows(self) -> list[dict[str, Any]]:
+        """Return a list of all rows in this data frame."""
         return self.rows
 
     def get_row_count(self) -> int:
         """Return how many rows are in this data frame."""
-        return self.size_info.get("height", len(self.rows))
+        return len(self.rows)
 
     def get_column_count(self) -> int:
         """Return how many columns (width) are in this data frame schema."""
-        return self.size_info.get("width", 0)
+        return self._key_size
 
 
 class Dataset:
@@ -48,22 +49,15 @@ class Dataset:
 
     def __init__(
         self,
-        commit_info: dict[str, Any],
         data_frame: DataFrame,
-        status: str,
-        status_message: str,
     ) -> None:
-        self.commit_info = commit_info
         self.data_frame = data_frame
-        self.status = status
-        self.status_message = status_message
 
     def __repr__(self) -> str:
-        """Example string representation showing row/col counts + commit id."""
+        """Example string representation showing row/col counts."""
         row_ct = self.data_frame.get_row_count()
         col_ct = self.data_frame.get_column_count()
-        commit_id = self.commit_info.get("id", "unknown")
-        return f"<Dataset commit_id={commit_id} rows={row_ct} cols={col_ct}>"
+        return f"<Dataset rows={row_ct} cols={col_ct}>"
 
 
 def _get_client() -> LilypadClient:
@@ -75,18 +69,18 @@ def _get_client() -> LilypadClient:
 
 @overload
 def datasets(
-    __uuid: str | UUID, *, page_num: int = 1, page_size: int = 50
+    __uuid: str | UUID
 ) -> Dataset: ...
 
 
 @overload
 def datasets(
-    *__uuids: str | UUID, page_num: int = 1, page_size: int = 50
+    *__uuids: str | UUID
 ) -> list[Dataset]: ...
 
 
 def datasets(
-    *uuids: str | UUID, page_num: int = 1, page_size: int = 50
+    *uuids: str | UUID
 ) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets using generation UUIDs.
     If only one UUID is provided, returns a single Dataset.
@@ -101,30 +95,35 @@ def datasets(
     for gen_uuid in uuids:
         # Convert to string if user passed a UUID object
         uuid_str = str(gen_uuid)
-        ds_obj = client.get_datasets(
-            generation_uuid=uuid_str,
-            page_num=page_num,
-            page_size=page_size,
-        )
-        results.append(ds_obj)
+        dataset_rows = []
+        for page_num in count(start=1):
+            response = client.get_dataset_rows(
+                generation_uuid=uuid_str,
+                page_num=page_num,
+            )
+            if not response.rows:
+                break
+            dataset_rows.extend(response.rows)
+
+        results.append(Dataset(DataFrame(dataset_rows)))
 
     return results[0] if len(results) == 1 else results
 
 
 @overload
 def datasets_from_name(
-    __name: str, *, page_num: int = 1, page_size: int = 50
+    __name: str
 ) -> Dataset: ...
 
 
 @overload
 def datasets_from_name(
-    *__names: str, page_num: int = 1, page_size: int = 50
+    *__names: str
 ) -> list[Dataset]: ...
 
 
 def datasets_from_name(
-    *names: str, page_num: int = 1, page_size: int = 50
+    *names: str
 ) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets using generation names.
     If only one name is provided, returns a single Dataset.
@@ -136,31 +135,36 @@ def datasets_from_name(
     client = _get_client()
     results: list[Dataset] = []
 
-    for gen_name in names:
-        ds_obj = client.get_datasets(
-            generation_name=gen_name,
-            page_num=page_num,
-            page_size=page_size,
-        )
-        results.append(ds_obj)
+    for generation_name in names:
+        dataset_rows = []
+        for page_num in count(start=1):
+            response = client.get_dataset_rows(
+                generation_name=generation_name,
+                page_num=page_num,
+            )
+            if not response.rows:
+                break
+            dataset_rows.extend(response.rows)
+
+        results.append(Dataset(DataFrame(dataset_rows)))
 
     return results[0] if len(results) == 1 else results
 
 
 @overload
 def datasets_from_fn(
-    __fn: Callable[..., Any], *, page_num: int = 1, page_size: int = 50
+    __fn: Callable[..., Any]
 ) -> Dataset: ...
 
 
 @overload
 def datasets_from_fn(
-    *__fns: Callable[..., Any], page_num: int = 1, page_size: int = 50
+    *__fns: Callable[..., Any]
 ) -> list[Dataset]: ...
 
 
 def datasets_from_fn(
-    *fns: Callable[..., Any], page_num: int = 1, page_size: int = 50
+    *fns: Callable[..., Any]
 ) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets from function objects.
     Internally uses a Closure utility to extract a unique hash or signature
@@ -176,11 +180,16 @@ def datasets_from_fn(
 
     for fn in fns:
         closure_obj = Closure.from_fn(fn)
-        ds_obj = client.get_datasets(
-            generation_uuid=closure_obj.hash,
-            page_num=page_num,
-            page_size=page_size,
-        )
-        results.append(ds_obj)
+        dataset_rows = []
+        for page_num in count(start=1):
+            response = client.get_dataset_rows(
+                generation_hash=closure_obj.hash,
+                page_num=page_num,
+            )
+            if not response.rows:
+                break
+            dataset_rows.extend(response.rows)
+
+        results.append(Dataset(DataFrame(dataset_rows)))
 
     return results[0] if len(results) == 1 else results

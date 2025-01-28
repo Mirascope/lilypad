@@ -1,5 +1,10 @@
-"""API router for Oxen dataset retrieval."""
+"""API router for Oxen dataset retrieval with separate endpoints by UUID, hash, and name.
+We internally use `_get_oxen_dataset_metadata` to determine the dataset path,
+branch, and host. Each endpoint returns rows from an Oxen DataFrame.
+"""
+from __future__ import annotations
 
+import os
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -10,83 +15,191 @@ from sqlmodel import Session
 
 from lilypad.server._utils import match_api_key_with_project
 from lilypad.server.db import get_session
-from lilypad.server.services import DatasetsService
+from lilypad.server.services import GenerationService
 
 datasets_router = APIRouter()
 
 
+REPO_NAME = os.getenv("REPO_NAME", "lilypad/datasets")
+
 class _DatasetMetadata(BaseModel):
-    repo_url: str
+    """Metadata for constructing the Oxen DataFrame."""
+
+    repo: str
     branch: str
     path: str
     host: str = "hub.oxen.ai"
 
 
-def _get_oxen_dataset_metadata(generation_uuid: str | None) -> _DatasetMetadata:
-    ...
-    # This function should return the metadata for the given generation
-    # using the rules of path and branch, etc.
-
+def _get_oxen_dataset_metadata(
+    project_uuid: UUID,
+    generation_uuid: UUID,
+    branch: str = "main",
+) -> _DatasetMetadata:
+    """This function should return the dataset metadata needed to construct the Oxen DataFrame.
+    It can consult the database or services to figure out:
+      - repo
+      - branch
+      - path
+      - host
+    depending on whether we received generation_uuid, generation_hash, or generation_name.
+    """
+    return _DatasetMetadata(
+        repo=REPO_NAME,
+        branch=branch,
+        path=f"{str(project_uuid)}/{str(generation_uuid)}.csv",
+    )
 
 class DatasetRowsResponse(BaseModel):
     """Response model containing the rows from the Oxen DataFrame."""
 
     rows: list[dict[str, Any]]
 
-
-@datasets_router.get(
-    "/projects/{project_uuid}/datasets",
-    response_model=DatasetRowsResponse,
-    summary="Get Oxen dataset rows by generation",
-)
-async def get_dataset_rows(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
-    session: Annotated[Session, Depends(get_session)],
-    project_uuid: UUID,
-    datasets_service: Annotated[DatasetsService, Depends(DatasetsService)],
-    page_num: int = 1,
-    page_size: int = 50,
-    generation_uuid: str | None = None,
-    generation_name: str | None = None,
-) -> DatasetRowsResponse:
-    """Return actual rows from an Oxen DataFrame for a given generation.
-
-    Args:
-        match_api_key: Dependency to match the API key with the project.
-        session: The database session.
-        project_uuid: The UUID of the project.
-        datasets_service: The datasets service.
-        generation_uuid: The UUID of the generation to fetch.
-        generation_name: The name of the generation to fetch.
-        page_num: The page number to fetch.
-        page_size: The number of rows to fetch per page.
-
-    Returns:
-        A JSON response with `rows` as a list of dictionaries, each representing a row.
-    """
-    # Get the Oxen metadata for the generation
-    # TODO: Get generation_uuid from the query params or the path
-
-    if not generation_uuid and not generation_name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Must provide either 'generation_uuid' or 'generation_name'",
-        )
-
-    meta = _get_oxen_dataset_metadata(generation_uuid)
-    try:
+    @classmethod
+    def from_metadata(cls, meta: _DatasetMetadata, page_num: int = 1) -> DatasetRowsResponse:
         df = DataFrame(
-            remote=meta.repo_url,
+            remote=meta.repo,
             path=meta.path,
             branch=meta.branch,
             host=meta.host,
         )
+        # ignore the _oxen_id column
+        df.filter_keys.append("_oxen_id")
+        rows = df.list_page(page_num)
+        return DatasetRowsResponse(rows=rows)
+
+@datasets_router.get(
+    "/projects/{project_uuid}/datasets/{generation_uuid}",
+    response_model=DatasetRowsResponse,
+    summary="Get Oxen dataset rows by generation UUID",
+)
+async def get_dataset_rows_by_uuid(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    session: Annotated[Session, Depends(get_session)],
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    project_uuid: UUID,
+    generation_uuid: UUID,
+    page_num: int = 1,
+) -> DatasetRowsResponse:
+    """Return Oxen DataFrame rows by generation UUID.
+
+    Args:
+        project_uuid: The project UUID.
+        generation_uuid: The generation UUID for the dataset.
+        page_num: Which page to retrieve (default 1).
+
+    Returns:
+        A JSON response with `rows` as a list of dictionaries.
+    """
+    try:
+        generation = generation_service.find_record_by_uuid(generation_uuid, project_uuid=project_uuid)
+        meta = _get_oxen_dataset_metadata(
+            project_uuid=project_uuid,
+            generation_uuid=generation.uuid,
+        )
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not resolve metadata: {ex}",
+        )
+
+    try:
+        return DatasetRowsResponse.from_metadata(meta, page_num)
     except Exception as ex:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error initializing Oxen DataFrame: {ex}",
         )
 
-    rows = df.list_page(page_num)
 
-    return DatasetRowsResponse(rows=rows)
+@datasets_router.get(
+    "/projects/{project_uuid}/datasets/hash/{generation_hash}",
+    response_model=DatasetRowsResponse,
+    summary="Get Oxen dataset rows by generation hash",
+)
+async def get_dataset_rows_by_hash(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    session: Annotated[Session, Depends(get_session)],
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    project_uuid: UUID,
+    generation_hash: str,
+    page_num: int = 1,
+) -> DatasetRowsResponse:
+    """Return Oxen DataFrame rows by generation hash.
+
+    Args:
+        project_uuid: The project UUID.
+        generation_hash: The generation hash for the dataset.
+        page_num: Which page to retrieve (default 1).
+
+    Returns:
+        A JSON response with `rows` as a list of dictionaries.
+    """
+    try:
+        generation =  generation_service.find_record_by_hash(project_uuid, generation_hash)
+        meta = _get_oxen_dataset_metadata(
+            project_uuid=project_uuid,
+            generation_uuid=generation.uuid,
+        )
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not resolve metadata: {ex}",
+        )
+
+    try:
+        return DatasetRowsResponse.from_metadata(meta, page_num)
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error initializing Oxen DataFrame: {ex}",
+        )
+
+
+@datasets_router.get(
+    "/projects/{project_uuid}/datasets/names/{generation_name}",
+    response_model=DatasetRowsResponse,
+    summary="Get Oxen dataset rows by generation name",
+)
+async def get_dataset_rows_by_name(
+    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    session: Annotated[Session, Depends(get_session)],
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    project_uuid: UUID,
+    generation_name: str,
+    page_num: int = 1,
+) -> DatasetRowsResponse:
+    """Return Oxen DataFrame rows by generation name.
+
+    Args:
+        project_uuid: The project UUID.
+        generation_name: The generation name for the dataset.
+        page_num: Which page to retrieve (default 1).
+
+    Returns:
+        A JSON response with `rows` as a list of dictionaries.
+    """
+    try:
+        generations = generation_service.find_generations_by_name(project_uuid, generation_name)
+        metas =[_get_oxen_dataset_metadata(
+            project_uuid=project_uuid,
+            generation_uuid=generation.uuid,
+        ) for generation in generations]
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not resolve metadata: {ex}",
+        )
+
+    try:
+        rows = [
+            row
+            for meta in metas
+            for row in DatasetRowsResponse.from_metadata(meta, page_num).rows
+        ]
+        return DatasetRowsResponse(rows=rows)
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error initializing Oxen DataFrame: {ex}",
+        )

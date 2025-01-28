@@ -1,7 +1,6 @@
 """Services for the `lilypad` server."""
 
 from .api_keys import APIKeyService
-from .datasets import DatasetsService
 from .device_codes import DeviceCodeService
 from .generations import GenerationService
 from .projects import ProjectService
