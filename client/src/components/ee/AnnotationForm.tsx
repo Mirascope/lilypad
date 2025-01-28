@@ -4,30 +4,18 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { usersByOrganizationQueryOptions } from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 type AnnotationFormValues = {
   label: string;
   reasoning: string;
-  assignedTo?: string;
 };
 export const AnnotationForm = () => {
-  const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const methods = useForm<AnnotationFormValues>({
     defaultValues: {
       label: "",
@@ -82,33 +70,6 @@ export const AnnotationForm = () => {
                   placeholder='(Optional) Reason for label '
                   {...field}
                 />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          key='assignedTo'
-          control={methods.control}
-          name='assignedTo'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Assign To</FormLabel>
-              <FormDescription>
-                Leave empty to allow anyone to annotate
-              </FormDescription>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Assign user' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.uuid} value={user.uuid}>
-                        {user.first_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </FormControl>
             </FormItem>
           )}

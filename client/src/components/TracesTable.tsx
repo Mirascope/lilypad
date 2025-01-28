@@ -1,7 +1,7 @@
-import { AnnotationForm } from "@/components/AnnotationForm";
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import IconDialog from "@/components/IconDialog";
+import { AnnotationForm } from "@/components/ee/AnnotationForm";
+import { QueueForm } from "@/components/ee/QueueForm";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
@@ -169,25 +169,6 @@ export const TracesTable = ({
       ),
     },
     {
-      id: "annotations",
-      cell: ({ row }) => {
-        return (
-          <div onClick={(e) => e.stopPropagation()}>
-            <IconDialog
-              icon={<MessageSquareText />}
-              title='Annotations'
-              description='Annotations'
-              buttonProps={{
-                variant: "ghost",
-              }}
-            >
-              <AnnotationForm />
-            </IconDialog>
-          </div>
-        );
-      },
-    },
-    {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
@@ -235,11 +216,11 @@ export const TracesTable = ({
                     </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent className={"max-w-[425px] overflow-x-auto"}>
-                    <DialogTitle>{`Annotate`}</DialogTitle>
+                    <DialogTitle>{`Add to queue`}</DialogTitle>
                     <DialogDescription>
-                      {`Annotate this trace to add to your dataset.`}
+                      {`Annotate this trace to your queue.`}
                     </DialogDescription>
-                    <AnnotationForm />
+                    <QueueForm />
                   </DialogContent>
                 </Dialog>
               </div>

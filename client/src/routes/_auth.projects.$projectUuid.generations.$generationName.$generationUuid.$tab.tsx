@@ -28,7 +28,7 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
-import { DatasetTable } from "@/components/DatasetTable";
+import { DatasetTable } from "@/components/ee/DatasetTable";
 import IconDialog from "@/components/IconDialog";
 import {
   Select,
