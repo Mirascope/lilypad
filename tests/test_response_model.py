@@ -43,8 +43,10 @@ def mock_model_response() -> ResponseModelPublic:
 @pytest.fixture
 def mock_prompt_client(mock_model_response: ResponseModelPublic):
     """Fixture that mocks the prompt module's LilypadClient"""
-    with patch("lilypad.response_models.lilypad_client") as mock:
-        mock.get_response_model_active_version.return_value = mock_model_response
+    with patch("lilypad.response_models.LilypadClient") as mock:
+        mock.return_value.get_response_model_active_version.return_value = (
+            mock_model_response
+        )
         yield mock
 
 
