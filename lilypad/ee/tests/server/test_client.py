@@ -1,3 +1,5 @@
+"""Tests for the LilypadClient class in lilypad.ee.server.client."""
+
 from unittest.mock import patch
 
 import pytest
@@ -19,6 +21,7 @@ def test_get_dataset_rows_no_project_uuid():
     with pytest.raises(ValueError, match="No project_uuid is set in LilypadClient"):
         client.get_dataset_rows(generation_uuid="some-uuid")
 
+
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_with_generation_uuid(mock_request):
     """Test get_dataset_rows with a generation_uuid, ensuring the correct endpoint and response_model."""
@@ -30,16 +33,21 @@ def test_get_dataset_rows_with_generation_uuid(mock_request):
 
     response = client.get_dataset_rows(generation_uuid="test-uuid", page_num=2)
 
-    assert isinstance(response, DatasetRowsResponse), "Should return a DatasetRowsResponse object"
+    assert isinstance(
+        response, DatasetRowsResponse
+    ), "Should return a DatasetRowsResponse object"
     assert response.rows == [{"col1": "val1"}], "Should match the mocked rows"
 
     # Verify the _request call was made with correct arguments
     mock_request.assert_called_once()
     call_args, call_kwargs = mock_request.call_args
     assert call_kwargs["method"] == "GET", "Method should be GET"
-    assert call_kwargs["endpoint"] == "/v0/projects/test-project-uuid/datasets/test-uuid"
+    assert (
+        call_kwargs["endpoint"] == "/v0/projects/test-project-uuid/datasets/test-uuid"
+    )
     assert call_kwargs["response_model"] is DatasetRowsResponse
     assert call_kwargs["params"] == {"page_num": 2}, "Should pass page_num in params"
+
 
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_with_generation_name(mock_request):
@@ -55,8 +63,12 @@ def test_get_dataset_rows_with_generation_name(mock_request):
 
     mock_request.assert_called_once()
     call_args, call_kwargs = mock_request.call_args
-    assert call_kwargs["endpoint"] == "/v0/projects/test-project-uuid/datasets/names/my-gen-name"
+    assert (
+        call_kwargs["endpoint"]
+        == "/v0/projects/test-project-uuid/datasets/names/my-gen-name"
+    )
     assert call_kwargs["params"] == {"page_num": 3}, "Should pass page_num in params"
+
 
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_with_generation_hash(mock_request):
@@ -72,7 +84,11 @@ def test_get_dataset_rows_with_generation_hash(mock_request):
 
     mock_request.assert_called_once()
     call_args, call_kwargs = mock_request.call_args
-    assert call_kwargs["endpoint"] == "/v0/projects/test-project-uuid/datasets/hash/abcdef1234"
+    assert (
+        call_kwargs["endpoint"]
+        == "/v0/projects/test-project-uuid/datasets/hash/abcdef1234"
+    )
+
 
 def test_get_dataset_rows_no_params():
     """Test get_dataset_rows with no generation_uuid, generation_name, or generation_hash.
@@ -84,6 +100,7 @@ def test_get_dataset_rows_no_params():
     with pytest.raises(ValueError, match="Must provide either generation_uuid"):
         client.get_dataset_rows()
 
+
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_connection_error(mock_request):
     """Test get_dataset_rows handling an APIConnectionError from the underlying _request."""
@@ -94,6 +111,7 @@ def test_get_dataset_rows_connection_error(mock_request):
 
     with pytest.raises(APIConnectionError, match="Simulated connection error"):
         client.get_dataset_rows(generation_uuid="any-uuid")
+
 
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_not_found_error(mock_request):

@@ -1,3 +1,5 @@
+"""Tests for the Dataset and DataFrame classes, and the datasets(...) function."""
+
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
@@ -23,12 +25,14 @@ def test_data_frame_basic():
     assert df.get_column_count() == 2, "Should have 2 columns"
     assert df.list_rows() == rows, "The rows should match the original data"
 
+
 def test_data_frame_empty():
     """Test creating an empty DataFrame."""
     df = DataFrame([])
     assert df.get_row_count() == 0, "Should have 0 rows"
     assert df.get_column_count() == 0, "Should have 0 columns"
     assert df.list_rows() == [], "Should return an empty list for rows"
+
 
 def test_dataset_repr():
     """Test the string representation of a Dataset."""
@@ -39,6 +43,7 @@ def test_dataset_repr():
     df = DataFrame(rows)
     ds = Dataset(df)
     assert repr(ds) == "<Dataset rows=2 cols=2>", "Unexpected __repr__ output"
+
 
 @pytest.fixture
 def mock_client():
@@ -65,6 +70,7 @@ def mock_client():
     client.get_dataset_rows.side_effect = mock_get_dataset_rows
     return client
 
+
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_single_uuid(mock_get_client, mock_client):
     """Test retrieving a single dataset by UUID."""
@@ -76,6 +82,7 @@ def test_datasets_single_uuid(mock_get_client, mock_client):
     # Verify the internal data frame has 2 rows from our mocked pagination logic
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows total"
     assert result.data_frame.get_column_count() == 2, "Dataset should have 2 columns"
+
 
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_multiple_uuids(mock_get_client, mock_client):
@@ -93,6 +100,7 @@ def test_datasets_multiple_uuids(mock_get_client, mock_client):
         # Each dataset should have 2 rows from our mocked pagination logic
         assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"
 
+
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_from_name_single(mock_get_client, mock_client):
     """Test retrieving a single dataset from a generation name."""
@@ -101,6 +109,7 @@ def test_datasets_from_name_single(mock_get_client, mock_client):
     result = datasets_from_name("my_generation_name")
     assert isinstance(result, Dataset), "Should return a single Dataset"
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
+
 
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_from_name_multiple(mock_get_client, mock_client):
@@ -113,6 +122,7 @@ def test_datasets_from_name_multiple(mock_get_client, mock_client):
     for ds in result:
         assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"
 
+
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_from_fn_single(mock_get_client, mock_client):
     """Test retrieving a single dataset from a function reference."""
@@ -124,6 +134,7 @@ def test_datasets_from_fn_single(mock_get_client, mock_client):
     result = datasets_from_fn(dummy_fn)
     assert isinstance(result, Dataset), "Should return a single Dataset"
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
+
 
 @patch("lilypad.ee.evals.datasets._get_client")
 def test_datasets_from_fn_multiple(mock_get_client, mock_client):
