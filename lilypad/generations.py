@@ -25,13 +25,6 @@ from .server.settings import get_settings
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-config = load_config()
-settings = get_settings()
-lilypad_client = LilypadClient(
-    timeout=10,
-    token=config.get("token", None),
-)
-
 
 current_generation: ContextVar[GenerationPublic | None] = ContextVar(
     "current_generation", default=None
@@ -67,6 +60,7 @@ def _construct_trace_attributes(
     if isinstance(output, BaseModel):
         output = str(output.model_dump())
     jsonable_arg_values = {}
+    settings = get_settings()
     for arg_name, arg_value in arg_values.items():
         try:
             serialized_arg_value = jsonable_encoder(arg_value)
@@ -74,9 +68,7 @@ def _construct_trace_attributes(
             serialized_arg_value = "could not serialize"
         jsonable_arg_values[arg_name] = serialized_arg_value
     return {
-        "lilypad.project_uuid": str(lilypad_client.project_uuid)
-        if lilypad_client.project_uuid
-        else 0,
+        "lilypad.project_uuid": settings.project_id if settings.project_id else "",
         "lilypad.type": "generation",
         "lilypad.generation.uuid": str(generation.uuid),
         "lilypad.generation.name": generation.name,
@@ -174,6 +166,10 @@ def generation() -> GenerationDecorator:
         is_mirascope_call = hasattr(fn, "__mirascope_call__")
         prompt_template = (
             fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
+        )
+        config = load_config()
+        lilypad_client = LilypadClient(
+            token=config.get("token", None),
         )
         if inspect.iscoroutinefunction(fn):
 
