@@ -5,14 +5,12 @@ branch, and host. Each endpoint returns rows from an Oxen DataFrame.
 
 from __future__ import annotations
 
-import os
 from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from oxen import DataFrame
 from pydantic import BaseModel
-from pydantic.v1.config import get_config
 from sqlmodel import Session
 
 from lilypad.server._utils import match_api_key_with_project
