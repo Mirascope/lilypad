@@ -464,7 +464,7 @@ def test_mirascope_response_model_fn() -> None:
             ],
         },
         "pydantic": {
-            "extras": None,
+            "extras": ["timezone"],
             "version": "2.10.3",
         },
     }
