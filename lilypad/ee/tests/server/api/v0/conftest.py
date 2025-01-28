@@ -31,7 +31,7 @@ ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
 
 @pytest.fixture(scope="session", autouse=True)
-def create_test_database() -> None:
+def create_test_database() -> Generator[None, None, None]:
     """Create test database once for test session."""
     SQLModel.metadata.create_all(test_engine)
     yield

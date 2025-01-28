@@ -42,8 +42,11 @@ def _get_oxen_dataset_metadata(
       - host
     depending on whether we received generation_uuid, generation_hash, or generation_name.
     """
+    repo_name = get_settings().oxen_repo_name
+    if not repo_name:
+        raise ValueError("Oxen repo name not set in settings.")
     return _DatasetMetadata(
-        repo=get_settings().oxen_repo_name,
+        repo=repo_name,
         branch=get_settings().oxen_branch,
         host=get_settings().oxen_host,
         path=f"{str(project_uuid)}/{str(generation_uuid)}.csv",
@@ -104,7 +107,7 @@ async def get_dataset_rows_by_uuid(
         )
         meta = _get_oxen_dataset_metadata(
             project_uuid=project_uuid,
-            generation_uuid=generation.uuid,
+            generation_uuid=generation.uuid,  # pyright: ignore [reportArgumentType]
         )
     except Exception as ex:
         raise HTTPException(
@@ -153,7 +156,7 @@ async def get_dataset_rows_by_hash(
         )
         meta = _get_oxen_dataset_metadata(
             project_uuid=project_uuid,
-            generation_uuid=generation.uuid,
+            generation_uuid=generation.uuid,  # pyright: ignore [reportArgumentType]
         )
     except Exception as ex:
         raise HTTPException(
@@ -205,7 +208,7 @@ async def get_dataset_rows_by_name(
         metas = [
             _get_oxen_dataset_metadata(
                 project_uuid=project_uuid,
-                generation_uuid=generation.uuid,
+                generation_uuid=generation.uuid,  # pyright: ignore [reportArgumentType]
             )
             for generation in generations
         ]

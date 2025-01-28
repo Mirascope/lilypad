@@ -1,6 +1,6 @@
 """Test configuration and fixtures."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,14 +20,14 @@ engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": Fal
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
 
-def get_session() -> Session:
+def get_session() -> Generator[Session, None, None]:
     """Get database session."""
     with Session(engine) as session:
         yield session
 
 
 @pytest.fixture(autouse=True)
-def setup_test_db() -> None:
+def setup_test_db() -> Generator[None, None, None]:
     """Set up test database."""
     SQLModel.metadata.create_all(engine)
     yield
@@ -35,7 +35,7 @@ def setup_test_db() -> None:
 
 
 @pytest.fixture
-def db_session() -> Session:
+def db_session() -> Generator[Session, None, None]:
     """Get database session."""
     session = Session(engine)
     try:

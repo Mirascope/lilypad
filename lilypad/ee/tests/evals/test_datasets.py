@@ -77,7 +77,9 @@ def test_datasets_single_uuid(mock_get_client, mock_client):
     mock_get_client.return_value = mock_client
 
     # We pass a single UUID, expecting a single Dataset.
-    result = datasets("123e4567-e89b-12d3-a456-426655440000")
+    results = datasets("123e4567-e89b-12d3-a456-426655440000")
+    assert len(results) == 1, "Should return a single Dataset"
+    result = results[0]
     assert isinstance(result, Dataset), "Should return a single Dataset instance"
     # Verify the internal data frame has 2 rows from our mocked pagination logic
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows total"
@@ -106,7 +108,9 @@ def test_datasets_from_name_single(mock_get_client, mock_client):
     """Test retrieving a single dataset from a generation name."""
     mock_get_client.return_value = mock_client
 
-    result = datasets_from_name("my_generation_name")
+    results = datasets_from_name("my_generation_name")
+    assert len(results) == 1, "Should return a single Dataset"
+    result = results[0]
     assert isinstance(result, Dataset), "Should return a single Dataset"
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
 
@@ -131,7 +135,9 @@ def test_datasets_from_fn_single(mock_get_client, mock_client):
     def dummy_fn():
         pass
 
-    result = datasets_from_fn(dummy_fn)
+    results = datasets_from_fn(dummy_fn)
+    assert len(results) == 1, "Should return a single Dataset"
+    result = results[0]
     assert isinstance(result, Dataset), "Should return a single Dataset"
     assert result.data_frame.get_row_count() == 2, "Dataset should have 2 rows"
 

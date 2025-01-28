@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from itertools import count
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from lilypad._utils import Closure
@@ -62,18 +62,9 @@ def _get_client() -> LilypadClient:
     return LilypadClient()
 
 
-@overload
-def datasets(__uuid: str | UUID) -> Dataset: ...
-
-
-@overload
-def datasets(*__uuids: str | UUID) -> list[Dataset]: ...
-
-
-def datasets(*uuids: str | UUID) -> Dataset | list[Dataset]:
+def datasets(*uuids: str | UUID) -> list[Dataset]:
     """Retrieve one or more Datasets using generation UUIDs.
     If only one UUID is provided, returns a single Dataset.
-    If multiple are provided, returns a list of Datasets.
     """
     if not uuids:
         raise ValueError("No UUID provided to 'datasets'.")
@@ -96,21 +87,12 @@ def datasets(*uuids: str | UUID) -> Dataset | list[Dataset]:
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
-    return results[0] if len(results) == 1 else results
+    return results
 
 
-@overload
-def datasets_from_name(__name: str) -> Dataset: ...
-
-
-@overload
-def datasets_from_name(*__names: str) -> list[Dataset]: ...
-
-
-def datasets_from_name(*names: str) -> Dataset | list[Dataset]:
+def datasets_from_name(*names: str) -> list[Dataset]:
     """Retrieve one or more Datasets using generation names.
     If only one name is provided, returns a single Dataset.
-    If multiple are provided, returns a list of Datasets.
     """
     if not names:
         raise ValueError("No name provided to 'datasets_from_name'.")
@@ -131,23 +113,13 @@ def datasets_from_name(*names: str) -> Dataset | list[Dataset]:
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
-    return results[0] if len(results) == 1 else results
+    return results
 
 
-@overload
-def datasets_from_fn(__fn: Callable[..., Any]) -> Dataset: ...
-
-
-@overload
-def datasets_from_fn(*__fns: Callable[..., Any]) -> list[Dataset]: ...
-
-
-def datasets_from_fn(*fns: Callable[..., Any]) -> Dataset | list[Dataset]:
+def datasets_from_fn(*fns: Callable[..., Any]) -> list[Dataset]:
     """Retrieve one or more Datasets from function objects.
     Internally uses a Closure utility to extract a unique hash or signature
     and queries by that as a generation UUID or name.
-    If only one function is provided, returns a single Dataset.
-    If multiple are provided, returns a list of Datasets.
     """
     if not fns:
         raise ValueError("No function provided to 'datasets_from_fn'.")
@@ -169,4 +141,4 @@ def datasets_from_fn(*fns: Callable[..., Any]) -> Dataset | list[Dataset]:
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
-    return results[0] if len(results) == 1 else results
+    return results
