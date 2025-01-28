@@ -21,13 +21,6 @@ from .server.settings import get_settings
 
 _P = ParamSpec("_P")
 
-config = load_config()
-settings = get_settings()
-
-lilypad_client = LilypadClient(
-    timeout=10,
-    token=config.get("token", None),
-)
 
 if TYPE_CHECKING:
     try:
@@ -245,6 +238,7 @@ def _construct_trace_attributes(
     is_async: bool,
 ) -> dict[str, AttributeValue]:
     jsonable_arg_values = {}
+    settings = get_settings()
     for arg_name, arg_value in arg_values.items():
         try:
             serialized_arg_value = jsonable_encoder(arg_value)
@@ -252,9 +246,7 @@ def _construct_trace_attributes(
             serialized_arg_value = "could not serialize"
         jsonable_arg_values[arg_name] = serialized_arg_value
     return {
-        "lilypad.project_uuid": str(lilypad_client.project_uuid)
-        if lilypad_client.project_uuid
-        else 0,
+        "lilypad.project_uuid": settings.project_id if settings.project_id else "",
         "lilypad.type": "prompt",
         "lilypad.prompt.uuid": str(prompt.uuid),
         "lilypad.prompt.name": prompt.name,
@@ -367,6 +359,11 @@ def prompt() -> PromptDecorator:
     def decorator(
         fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]],
     ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
+        config = load_config()
+        lilypad_client = LilypadClient(
+            timeout=10,
+            token=config.get("token", None),
+        )
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)

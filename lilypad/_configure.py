@@ -27,7 +27,6 @@ class _JSONSpanExporter(SpanExporter):
         config = load_config()
 
         self.client = LilypadClient(
-            timeout=10,
             token=config.get("token", None),
         )
 
