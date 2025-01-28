@@ -49,7 +49,7 @@ class LilypadClient(_LilypadClient):
                 "No project_uuid is set in LilypadClient (cannot fetch dataset)."
             )
 
-        params = {"page_num": page_num},
+        params = {"page_num": page_num}
         if generation_uuid:
             return self._request(
                 method="GET",

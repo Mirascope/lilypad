@@ -58,14 +58,16 @@ class DatasetRowsResponse(BaseModel):
     @classmethod
     def from_metadata(cls, meta: _DatasetMetadata, page_num: int = 1) -> DatasetRowsResponse:
         df = DataFrame(
-            remote=meta.repo,
-            path=meta.path,
-            branch=meta.branch,
-            host=meta.host,
+        remote=meta.repo,
+        path=meta.path,
+        branch=meta.branch,
+        host=meta.host,
         )
         # ignore the _oxen_id column
         df.filter_keys.append("_oxen_id")
+        print(df)
         rows = df.list_page(page_num)
+        print(rows)
         return DatasetRowsResponse(rows=rows)
 
 @datasets_router.get(
