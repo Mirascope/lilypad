@@ -20,14 +20,9 @@ class DataFrame:
     It stores rows, schema info, etc., but does NOT rely on oxen.data_frame.DataFrame.
     """
 
-    def __init__(
-        self, rows: list[dict[str, Any]]
-    ) -> None:
+    def __init__(self, rows: list[dict[str, Any]]) -> None:
         self.rows = rows
-        if rows:
-            keys = rows[0].keys()
-        else:
-            keys = []
+        keys = rows[0].keys() if rows else []
         self._key_size = len(keys)
         self.row_keys = keys
 
@@ -68,20 +63,14 @@ def _get_client() -> LilypadClient:
 
 
 @overload
-def datasets(
-    __uuid: str | UUID
-) -> Dataset: ...
+def datasets(__uuid: str | UUID) -> Dataset: ...
 
 
 @overload
-def datasets(
-    *__uuids: str | UUID
-) -> list[Dataset]: ...
+def datasets(*__uuids: str | UUID) -> list[Dataset]: ...
 
 
-def datasets(
-    *uuids: str | UUID
-) -> Dataset | list[Dataset]:
+def datasets(*uuids: str | UUID) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets using generation UUIDs.
     If only one UUID is provided, returns a single Dataset.
     If multiple are provided, returns a list of Datasets.
@@ -111,20 +100,14 @@ def datasets(
 
 
 @overload
-def datasets_from_name(
-    __name: str
-) -> Dataset: ...
+def datasets_from_name(__name: str) -> Dataset: ...
 
 
 @overload
-def datasets_from_name(
-    *__names: str
-) -> list[Dataset]: ...
+def datasets_from_name(*__names: str) -> list[Dataset]: ...
 
 
-def datasets_from_name(
-    *names: str
-) -> Dataset | list[Dataset]:
+def datasets_from_name(*names: str) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets using generation names.
     If only one name is provided, returns a single Dataset.
     If multiple are provided, returns a list of Datasets.
@@ -152,20 +135,14 @@ def datasets_from_name(
 
 
 @overload
-def datasets_from_fn(
-    __fn: Callable[..., Any]
-) -> Dataset: ...
+def datasets_from_fn(__fn: Callable[..., Any]) -> Dataset: ...
 
 
 @overload
-def datasets_from_fn(
-    *__fns: Callable[..., Any]
-) -> list[Dataset]: ...
+def datasets_from_fn(*__fns: Callable[..., Any]) -> list[Dataset]: ...
 
 
-def datasets_from_fn(
-    *fns: Callable[..., Any]
-) -> Dataset | list[Dataset]:
+def datasets_from_fn(*fns: Callable[..., Any]) -> Dataset | list[Dataset]:
     """Retrieve one or more Datasets from function objects.
     Internally uses a Closure utility to extract a unique hash or signature
     and queries by that as a generation UUID or name.

@@ -5,7 +5,6 @@ from typing import Any, Literal, TypeVar
 from pydantic import BaseModel
 
 from ...server.client import LilypadClient as _LilypadClient
-from ..evals.datasets import Dataset
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -22,11 +21,11 @@ class APIConnectionError(Exception):
     ...
 
 
-
 class DatasetRowsResponse(BaseModel):
     """Response model containing the rows from the Oxen DataFrame."""
 
     rows: list[dict[str, Any]]
+
 
 class LilypadClient(_LilypadClient):
     """A client for the Lilypad ee API."""
@@ -72,5 +71,5 @@ class LilypadClient(_LilypadClient):
                 params=params,
             )
         raise ValueError(
-                "Must provide either generation_uuid, generation_name, or generation_hash."
+            "Must provide either generation_uuid, generation_name, or generation_hash."
         )
