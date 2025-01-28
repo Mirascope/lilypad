@@ -357,26 +357,42 @@ class LilypadClient:
             )
             return rm_new
 
-    def get_dataset_metadata(
+    def get_dataset_rows(
         self,
         generation_uuid: str | None = None,
         generation_name: str | None = None,
-    ) -> dict[str, str]:
+        page_num: int = 1,
+        page_size: int = 50
+    ) -> list[dict[str, Any]]:
         """
-        Fetch Oxen dataset metadata (repo_url, branch, path)
-        from the Lilypad server for a given generation.
+        Fetch rows from a dataset for a given generation UUID or name.
 
-        Raises a KeyError or requests exceptions if not found.
+        This calls the server's new endpoint that internally uses Oxen to fetch data.
+
+        Args:
+            generation_uuid: The generation UUID for the dataset.
+            generation_name: The generation name for the dataset.
+            page_num: (Optional) Page number (defaults to 1).
+            page_size: (Optional) Rows per page (depends on your server logic).
+
+        Returns:
+            A list of row dictionaries.
         """
+        if not self.project_uuid:
+            raise ValueError("No project_uuid is set in LilypadClient (cannot fetch dataset).")
+
         params = {}
         if generation_uuid:
             params["generation_uuid"] = generation_uuid
         if generation_name:
             params["generation_name"] = generation_name
+        params["page_num"] = page_num
+        params["page_size"] = page_size
 
-        return self._request(
+        data = self._request(
             method="GET",
             endpoint=f"/v0/projects/{self.project_uuid}/datasets",
-            response_model=None,  # We'll parse raw dict
+            response_model=None,  # We'll handle it as raw dict
             params=params
         )
+        return data.get("rows", [])
