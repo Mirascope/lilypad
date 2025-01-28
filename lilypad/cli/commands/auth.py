@@ -76,7 +76,7 @@ def _show_project_selection(projects: list[ProjectPublic]) -> ProjectPublic:
 
 def _create_or_switch_project(data: dict) -> bool:
     """Prompt the user to create a new project or switch to an existing one."""
-    lilypad_client = LilypadClient(timeout=10, token=data["token"])
+    lilypad_client = LilypadClient(token=data["token"])
     projects = lilypad_client.get_projects()
     if len(projects) == 0:
         typer.echo("You don't have any projects. Let's create one!")
