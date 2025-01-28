@@ -2,13 +2,19 @@
 using the updated Oxen dataset API code.
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
 
+from lilypad._utils import Closure
 from lilypad.ee.evals import Dataset
-from lilypad.ee.evals.datasets import DataFrame
+from lilypad.ee.evals.datasets import (
+    DataFrame,
+    datasets,
+    datasets_from_fn,
+    datasets_from_name,
+)
 from lilypad.ee.server.client import (
     CommitModel,
     DataFrameModel,
@@ -209,3 +215,179 @@ def test_lilypad_client_get_datasets_success(
         mock_gdr.assert_called_once_with(
             generation_uuid="test-gen", generation_name=None, page_num=1, page_size=50
         )
+
+
+@pytest.fixture
+def mock_dataset() -> Dataset:
+    """A simple fixture that returns a dummy Dataset object."""
+    return Dataset(
+        commit_info={"id": "fake-commit-id"},
+        data_frame=None,  # Normally this would be a DataFrame object
+        status="success",
+        status_message="OK",
+    )
+
+
+def dummy_fn():
+    """A dummy function for testing Closure.from_fn usage."""
+    return "hello"
+
+
+#
+# tests for datasets
+#
+def test_datasets_no_input():
+    """If no UUIDs are provided, it should raise a ValueError."""
+    with pytest.raises(ValueError, match="No UUID provided to 'datasets'"):
+        datasets()
+
+
+@patch.object(LilypadClient, "get_datasets")
+def test_datasets_single(mock_get_datasets, mock_dataset):
+    """Test a single UUID -> returns a single Dataset."""
+    mock_get_datasets.return_value = mock_dataset
+
+    test_uuid = str(uuid4())
+    ds = datasets(test_uuid)
+
+    # We expect a single Dataset, not a list
+    assert isinstance(ds, Dataset)
+    mock_get_datasets.assert_called_once_with(
+        generation_uuid=test_uuid,
+        page_num=1,
+        page_size=50,
+    )
+
+
+@patch.object(LilypadClient, "get_datasets")
+def test_datasets_multiple(mock_get_datasets, mock_dataset):
+    """Test multiple UUIDs -> returns a list of Datasets."""
+    # Suppose each call returns a distinct dataset object
+    mock_get_datasets.side_effect = [mock_dataset, mock_dataset]
+
+    uuid1 = str(uuid4())
+    uuid2 = str(uuid4())
+    ds_list = datasets(uuid1, uuid2, page_num=2, page_size=20)
+
+    # We expect a list of Dataset
+    assert isinstance(ds_list, list)
+    assert len(ds_list) == 2
+    for item in ds_list:
+        assert isinstance(item, Dataset)
+
+    # Check calls
+    assert mock_get_datasets.call_count == 2
+    mock_get_datasets.assert_any_call(
+        generation_uuid=uuid1,
+        page_num=2,
+        page_size=20,
+    )
+    mock_get_datasets.assert_any_call(
+        generation_uuid=uuid2,
+        page_num=2,
+        page_size=20,
+    )
+
+
+#
+# tests for datasets_from_name
+#
+def test_datasets_from_name_no_input():
+    """If no names are provided, it should raise a ValueError."""
+    with pytest.raises(ValueError, match="No name provided to 'datasets_from_name'"):
+        datasets_from_name()
+
+
+@patch.object(LilypadClient, "get_datasets")
+def test_datasets_from_name_single(mock_get_datasets, mock_dataset):
+    """Test a single name -> returns a single Dataset."""
+    mock_get_datasets.return_value = mock_dataset
+
+    gen_name = "my_generation"
+    ds = datasets_from_name(gen_name, page_num=3, page_size=10)
+
+    assert isinstance(ds, Dataset)
+    mock_get_datasets.assert_called_once_with(
+        generation_name=gen_name,
+        page_num=3,
+        page_size=10,
+    )
+
+
+@patch.object(LilypadClient, "get_datasets")
+def test_datasets_from_name_multiple(mock_get_datasets, mock_dataset):
+    """Test multiple names -> returns a list of Datasets."""
+    mock_get_datasets.side_effect = [mock_dataset, mock_dataset, mock_dataset]
+
+    ds_list = datasets_from_name("name1", "name2", "name3")
+
+    assert isinstance(ds_list, list)
+    assert len(ds_list) == 3
+
+    # Check calls
+    assert mock_get_datasets.call_count == 3
+
+
+#
+# tests for datasets_from_fn
+#
+def test_datasets_from_fn_no_input():
+    """If no functions are provided, it should raise a ValueError."""
+    with pytest.raises(ValueError, match="No function provided to 'datasets_from_fn'"):
+        datasets_from_fn()
+
+
+@patch.object(LilypadClient, "get_datasets")
+@patch.object(Closure, "from_fn")
+def test_datasets_from_fn_single(mock_closure_from_fn, mock_get_datasets, mock_dataset):
+    """Test a single function -> returns a single Dataset."""
+    # Mock the closure hash
+    mock_closure_from_fn.return_value = MagicMock(hash="fn-hash-123")
+    mock_get_datasets.return_value = mock_dataset
+
+    def dummy():
+        pass
+
+    ds = datasets_from_fn(dummy, page_num=1, page_size=5)
+
+    # single dataset
+    assert isinstance(ds, Dataset)
+
+    # from_fn should be called once
+    mock_closure_from_fn.assert_called_once_with(dummy)
+    # get_datasets should be called with generation_uuid = closure.hash
+    mock_get_datasets.assert_called_once_with(
+        generation_uuid="fn-hash-123",
+        page_num=1,
+        page_size=5,
+    )
+
+
+@patch.object(LilypadClient, "get_datasets")
+@patch.object(Closure, "from_fn")
+def test_datasets_from_fn_multiple(
+    mock_closure_from_fn, mock_get_datasets, mock_dataset
+):
+    """Test multiple functions -> returns a list of Datasets."""
+    # Suppose we have two closure hashes
+    mock_closure_from_fn.side_effect = [
+        MagicMock(hash="hash1"),
+        MagicMock(hash="hash2"),
+    ]
+    mock_get_datasets.side_effect = [mock_dataset, mock_dataset]
+
+    def fn1():
+        pass
+
+    def fn2():
+        pass
+
+    ds_list = datasets_from_fn(fn1, fn2)
+
+    assert isinstance(ds_list, list)
+    assert len(ds_list) == 2
+
+    # from_fn called for each function
+    assert mock_closure_from_fn.call_count == 2
+    # get_datasets called for each hash
+    assert mock_get_datasets.call_count == 2

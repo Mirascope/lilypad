@@ -13,7 +13,8 @@ from .response_models import response_model
 from .tools import tool
 
 with suppress(ImportError):
-    import evals as evals
+    import ee.evals as evals
+
 __version__ = importlib.metadata.version("python-lilypad")
 
 
