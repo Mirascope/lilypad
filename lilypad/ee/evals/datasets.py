@@ -1,20 +1,21 @@
 """Provides a high-level Lilypad interface (Dataset) that internally uses Oxen DataFrame."""
 
 from oxen.data_frame import DataFrame
+
 from lilypad.server.client import LilypadClient
 
 
 class Dataset:
-    """
-    A Lilypad dataset interface that wraps an Oxen DataFrame internally.
+    """A Lilypad dataset interface that wraps an Oxen DataFrame internally.
 
     This allows Lilypad to control the external API while delegating data operations
     to Oxen under the hood.
     """
 
-    def __init__(self, remote: str, path: str, branch: str, host: str = "hub.oxen.ai"):
-        """
-        Initialize the Dataset by creating an Oxen DataFrame internally.
+    def __init__(
+        self, remote: str, path: str, branch: str, host: str = "hub.oxen.ai"
+    ) -> None:
+        """Initialize the Dataset by creating an Oxen DataFrame internally.
 
         Args:
             remote: The remote repository URL for the Oxen dataset.
@@ -26,8 +27,7 @@ class Dataset:
         self._df = DataFrame(remote=remote, path=path, branch=branch, host=host)
 
     def insert(self, row: dict) -> str:
-        """
-        Insert a single row into the underlying DataFrame.
+        """Insert a single row into the underlying DataFrame.
 
         Args:
             row: A dictionary representing the columns and values to insert.
@@ -38,8 +38,7 @@ class Dataset:
         return self._df.insert_row(row)
 
     def list_page(self, page_num: int = 1) -> list[dict]:
-        """
-        List the rows of the DataFrame, paginated.
+        """List the rows of the DataFrame, paginated.
 
         Args:
             page_num: The page number to list.
@@ -50,8 +49,7 @@ class Dataset:
         return self._df.list_page(page_num)
 
     def update(self, row_id: str, new_data: dict) -> dict:
-        """
-        Update a row in the DataFrame by row identifier.
+        """Update a row in the DataFrame by row identifier.
 
         Args:
             row_id: The unique identifier of the row to update.
@@ -63,8 +61,7 @@ class Dataset:
         return self._df.update_row(row_id, new_data)
 
     def delete(self, row_id: str) -> None:
-        """
-        Delete a row in the DataFrame by row identifier.
+        """Delete a row in the DataFrame by row identifier.
 
         Args:
             row_id: The unique identifier of the row to delete.
@@ -72,14 +69,11 @@ class Dataset:
         self._df.delete_row(row_id)
 
     def restore(self) -> None:
-        """
-        Unstage any local (uncommitted) changes to the underlying DataFrame.
-        """
+        """Unstage any local (uncommitted) changes to the underlying DataFrame."""
         self._df.restore()
 
     def commit(self, message: str, branch: str | None = None) -> None:
-        """
-        Commit any staged changes to the underlying DataFrame.
+        """Commit any staged changes to the underlying DataFrame.
 
         Args:
             message: The commit message.
@@ -88,8 +82,7 @@ class Dataset:
         self._df.commit(message, branch)
 
     def size(self) -> tuple[int, int]:
-        """
-        Return the size of the DataFrame in terms of rows and columns.
+        """Return the size of the DataFrame in terms of rows and columns.
 
         Returns:
             A tuple (rows, columns).
@@ -97,8 +90,7 @@ class Dataset:
         return self._df.size()
 
     def __repr__(self) -> str:
-        """
-        Custom string representation for debugging.
+        """Custom string representation for debugging.
 
         Returns:
             A user-friendly string showing the size of the dataset.
@@ -108,8 +100,7 @@ class Dataset:
 
 
 def datasets(*identifiers: str, host: str = "hub.oxen.ai") -> Dataset:
-    """
-    Fetch a Lilypad Dataset object for the specified generation(s), using Oxen under the hood.
+    """Fetch a Lilypad Dataset object for the specified generation(s), using Oxen under the hood.
 
     We currently handle only the first identifier for simplicity.
 
@@ -143,8 +134,5 @@ def datasets(*identifiers: str, host: str = "hub.oxen.ai") -> Dataset:
 
     # meta should look like: {"repo_url": str, "branch": str, "path": str}
     return Dataset(
-        remote=meta["repo_url"],
-        path=meta["path"],
-        branch=meta["branch"],
-        host=host
+        remote=meta["repo_url"], path=meta["path"], branch=meta["branch"], host=host
     )

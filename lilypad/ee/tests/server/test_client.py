@@ -1,19 +1,19 @@
 """Test cases for the LilypadClient class related to Oxen dataset rows."""
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 from requests import Timeout
 
-from lilypad.ee.server.client import OxenDatasetResponse
+from lilypad.ee.server.client import LilypadClient, OxenDatasetResponse
 from lilypad.server.client import (
     NotFoundError,
 )
-from lilypad.ee.server.client import LilypadClient
 
 
 @pytest.fixture
-def client():
+def client() -> LilypadClient:
     """Test client fixture with a sample base_url and small timeout."""
     client = LilypadClient(base_url="http://testserver", timeout=1)
     client.project_uuid = "fake-project-uuid"
@@ -21,7 +21,7 @@ def client():
 
 
 @pytest.fixture
-def mock_oxen_dataset_response():
+def mock_oxen_dataset_response() -> dict[str, Any]:
     """Mock response that matches the OxenDatasetResponse schema.
     The nested fields (commit, data_frame, etc.) are partial stubs.
     Adjust as needed for your real use-case.
@@ -56,10 +56,7 @@ def mock_oxen_dataset_response():
                     "hash": "123abc",
                     "metadata": None,
                 },
-                "size": {
-                    "height": 3,
-                    "width": 2
-                },
+                "size": {"height": 3, "width": 2},
             },
             "view": {
                 "data": [
@@ -67,24 +64,24 @@ def mock_oxen_dataset_response():
                         "id": "101",
                         "text": "Hello world",
                         "title": "Greeting",
-                        "url": "https://example.com/hello"
+                        "url": "https://example.com/hello",
                     },
                     {
                         "id": "202",
                         "text": "Another row",
                         "title": "Row2",
-                        "url": "https://example.com/row2"
-                    }
+                        "url": "https://example.com/row2",
+                    },
                 ],
                 "opts": [
                     {"name": "filter", "value": None},
-                    {"name": "sort_by", "value": "id"}
+                    {"name": "sort_by", "value": "id"},
                 ],
                 "pagination": {
                     "page_number": 1,
                     "page_size": 50,
                     "total_entries": 100,
-                    "total_pages": 2
+                    "total_pages": 2,
                 },
                 "schema": {
                     "fields": [
@@ -116,10 +113,7 @@ def mock_oxen_dataset_response():
                     "hash": "456def",
                     "metadata": None,
                 },
-                "size": {
-                    "height": 2,
-                    "width": 4
-                }
+                "size": {"height": 2, "width": 4},
             },
         },
         "derived_resource": None,
@@ -127,18 +121,17 @@ def mock_oxen_dataset_response():
         "request_params": {
             "namespace": "ox",
             "repo_name": "TestRepo",
-            "resource": ["main", "my_data.parquet"]
+            "resource": ["main", "my_data.parquet"],
         },
-        "resource": {
-            "path": "my_data.parquet",
-            "version": "main"
-        },
+        "resource": {"path": "my_data.parquet", "version": "main"},
         "status": "success",
-        "status_message": "resource_found"
+        "status_message": "resource_found",
     }
 
 
-def test_get_dataset_rows_success(client, mock_oxen_dataset_response):
+def test_get_dataset_rows_success(
+    client: LilypadClient, mock_oxen_dataset_response: dict[str, Any]
+) -> None:
     """Test that get_dataset_rows() successfully returns
     OxenDatasetResponse and we can parse nested fields.
     """
@@ -166,9 +159,8 @@ def test_get_dataset_rows_success(client, mock_oxen_dataset_response):
         assert data_rows[0].text == "Hello world"
 
 
-def test_get_dataset_rows_404(client):
-    """Test that a 404 from the server raises NotFoundError
-    """
+def test_get_dataset_rows_404(client: LilypadClient) -> None:
+    """Test that a 404 from the server raises NotFoundError"""
     with patch("requests.Session.request") as mock_request:
         mock_request.return_value.status_code = 404
         # .raise_for_status() triggers an HTTPError
@@ -178,9 +170,8 @@ def test_get_dataset_rows_404(client):
             client.get_dataset_rows(generation_uuid="non-existent")
 
 
-def test_get_dataset_rows_timeout(client):
-    """Test that a timeout from the server is handled.
-    """
+def test_get_dataset_rows_timeout(client: LilypadClient) -> None:
+    """Test that a timeout from the server is handled."""
     with patch("requests.Session.request") as mock_request:
         # raise python's Timeout (or requests.exceptions.Timeout)
         mock_request.side_effect = Timeout()

@@ -21,12 +21,9 @@ class APIConnectionError(Exception):
     ...
 
 
-# -----------------------------------------------------
-# Pydantic models representing the Oxen-style response
-# -----------------------------------------------------
-
-# 1) The nested classes (similar to your server definitions).
 class CommitModel(BaseModel):
+    """Model for the commit in the response."""
+
     author: str
     email: str
     id: str
@@ -35,63 +32,98 @@ class CommitModel(BaseModel):
     root_hash: Any | None = None
     timestamp: str
 
+
 class DFSchemaField(BaseModel):
+    """Model for the DataFrame schema field in the response."""
+
     changes: Any | None = None
     dtype: str
     metadata: Any | None = None
     name: str
 
+
 class DFSchema(BaseModel):
+    """Model for the DataFrame schema in the response."""
+
     fields: list[DFSchemaField]
     hash: str
     metadata: Any | None = None
 
+
 class SizeModel(BaseModel):
+    """Model for the size in the response."""
+
     height: int
     width: int
 
+
 class SourceModel(BaseModel):
+    """Model for the source in the response."""
+
     schema: DFSchema
     size: SizeModel
 
+
 class PaginationModel(BaseModel):
+    """Model for the pagination in the response."""
+
     page_number: int
     page_size: int
     total_entries: int
     total_pages: int
 
+
 class RowDataModel(BaseModel):
+    """Model for the row data in the response."""
+
     id: str
     text: str
     title: str
     url: str
 
+
 class DataFrameViewOptsModel(BaseModel):
+    """Model for the view options in the response."""
+
     name: str
     value: Any | None = None  # could be bool, str, etc.
 
+
 class DataFrameViewModel(BaseModel):
+    """Model for the view in the response."""
+
     data: list[RowDataModel]
     opts: list[DataFrameViewOptsModel]
     pagination: PaginationModel
     schema: DFSchema
     size: SizeModel
 
+
 class DataFrameModel(BaseModel):
+    """Model for the data_frame in the response."""
+
     source: SourceModel
     view: DataFrameViewModel
 
+
 class RequestParamsModel(BaseModel):
+    """Model for the request params in the response."""
+
     namespace: str
     repo_name: str
     resource: list[str]
 
+
 class ResourceInfoModel(BaseModel):
+    """Model for the resource info in the response."""
+
     path: str
     version: str
 
-# 2) The top-level response for /datasets.
+
 class OxenDatasetResponse(BaseModel):
+    """Response model containing the rows from the Oxen DataFrame."""
+
     commit: CommitModel
     data_frame: DataFrameModel
     derived_resource: Any | None
@@ -119,7 +151,9 @@ class LilypadClient(_LilypadClient):
             The actual row data is in data_frame.view.data
         """
         if not self.project_uuid:
-            raise ValueError("No project_uuid is set in LilypadClient (cannot fetch dataset).")
+            raise ValueError(
+                "No project_uuid is set in LilypadClient (cannot fetch dataset)."
+            )
 
         params: dict[str, Any] = {}
         if generation_uuid:

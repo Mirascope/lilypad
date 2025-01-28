@@ -1,33 +1,28 @@
 """Tests for the DatasetsService class"""
 
-import pytest
-from sqlmodel import Session
 from uuid import uuid4
 
-from lilypad.server.services.datasets import DatasetsService
-from lilypad.server.services.generations import GenerationService
+import pytest
+from sqlmodel import Session
+
 from lilypad.server.models.generations import GenerationTable
 from lilypad.server.models.projects import ProjectTable
+from lilypad.server.services.datasets import DatasetsService
+from lilypad.server.services.generations import GenerationService
 
 
 @pytest.fixture
 def datasets_service(session: Session, test_project: ProjectTable):
-    """
-    Creates a DatasetsService instance with a GenerationService dependency.
-    """
+    """Creates a DatasetsService instance with a GenerationService dependency."""
     gen_service = GenerationService(session=session)
     ds_service = DatasetsService(session=session, generation_service=gen_service)
     return ds_service
 
 
 def test_find_oxen_metadata_by_uuid(
-    session: Session,
-    test_project: ProjectTable,
-    datasets_service: DatasetsService
+    session: Session, test_project: ProjectTable, datasets_service: DatasetsService
 ):
-    """
-    Tests fetching Oxen metadata by generation_uuid.
-    """
+    """Tests fetching Oxen metadata by generation_uuid."""
     # Create a Generation record with Oxen fields
     generation = GenerationTable(
         project_uuid=test_project.uuid,
@@ -48,7 +43,7 @@ def test_find_oxen_metadata_by_uuid(
     meta = datasets_service.find_oxen_metadata(
         project_uuid=test_project.uuid,
         generation_uuid=str(generation.uuid),
-        generation_name=None
+        generation_name=None,
     )
     assert meta is not None
     assert meta["repo_url"] == "https://hub.oxen.ai/my/repo"
@@ -57,13 +52,9 @@ def test_find_oxen_metadata_by_uuid(
 
 
 def test_find_oxen_metadata_by_name(
-    session: Session,
-    test_project: ProjectTable,
-    datasets_service: DatasetsService
+    session: Session, test_project: ProjectTable, datasets_service: DatasetsService
 ):
-    """
-    Tests fetching Oxen metadata by generation_name.
-    """
+    """Tests fetching Oxen metadata by generation_name."""
     generation = GenerationTable(
         project_uuid=test_project.uuid,
         organization_uuid=test_project.organization_uuid,
@@ -77,8 +68,7 @@ def test_find_oxen_metadata_by_name(
     session.refresh(generation)
 
     meta = datasets_service.find_oxen_metadata(
-        project_uuid=test_project.uuid,
-        generation_name="oxen_test_name"
+        project_uuid=test_project.uuid, generation_name="oxen_test_name"
     )
     assert meta is not None
     assert meta["repo_url"] == "https://hub.oxen.ai/my/another_repo"
@@ -86,18 +76,16 @@ def test_find_oxen_metadata_by_name(
     assert meta["path"] == "dataset/train.csv"
 
 
-def test_find_oxen_metadata_none(session: Session, test_project: ProjectTable, datasets_service: DatasetsService):
-    """
-    If no Generation matches or Oxen fields are missing, the service should return None.
-    """
+def test_find_oxen_metadata_none(
+    session: Session, test_project: ProjectTable, datasets_service: DatasetsService
+):
+    """If no Generation matches or Oxen fields are missing, the service should return None."""
     not_found = datasets_service.find_oxen_metadata(
-        project_uuid=test_project.uuid,
-        generation_uuid=str(uuid4())
+        project_uuid=test_project.uuid, generation_uuid=str(uuid4())
     )
     assert not_found is None
 
     none_name = datasets_service.find_oxen_metadata(
-        project_uuid=test_project.uuid,
-        generation_name="not_exist_name"
+        project_uuid=test_project.uuid, generation_name="not_exist_name"
     )
     assert none_name is None
