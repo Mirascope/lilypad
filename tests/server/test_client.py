@@ -109,7 +109,6 @@ def test_request_methods(client, method, args, mock_response):
             assert isinstance(result, list)
             assert all(isinstance(span, SpanPublic) for span in result)
             assert all(isinstance(span.scope, Scope) for span in result)
-            # 追加: scopeの値が正しいEnumであることを確認
             assert result[0].scope == Scope.LILYPAD
 
 
