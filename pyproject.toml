@@ -124,6 +124,7 @@ target-version = "py310"
 "lilypad/server/migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
+"lilypad/ee/tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = ["D212", "D402"]
 "tests/_utils/closure/closure_test_functions/other.py" = [
     "D101",

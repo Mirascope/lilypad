@@ -1,4 +1,6 @@
-"""Test cases for the LilypadClient class related to Oxen dataset rows."""
+"""Test cases for the LilypadClient class related to Oxen dataset rows, now including
+the get_datasets() method that returns a custom Dataset object.
+"""
 
 from typing import Any
 from unittest.mock import patch
@@ -6,18 +8,17 @@ from unittest.mock import patch
 import pytest
 from requests import Timeout
 
-from lilypad.ee.server.client import LilypadClient, OxenDatasetResponse
-from lilypad.server.client import (
-    NotFoundError,
-)
+from lilypad.ee.evals import Dataset
+from lilypad.ee.server.client import LilypadClient, NotFoundError, OxenDatasetResponse
 
 
 @pytest.fixture
 def client() -> LilypadClient:
     """Test client fixture with a sample base_url and small timeout."""
-    client = LilypadClient(base_url="http://testserver", timeout=1)
-    client.project_uuid = "fake-project-uuid"
-    return client
+    # We simulate that project_uuid is already set
+    c = LilypadClient(base_url="http://testserver", timeout=1)
+    c.project_uuid = "fake-project-uuid"
+    return c
 
 
 @pytest.fixture
@@ -133,7 +134,7 @@ def test_get_dataset_rows_success(
     client: LilypadClient, mock_oxen_dataset_response: dict[str, Any]
 ) -> None:
     """Test that get_dataset_rows() successfully returns
-    OxenDatasetResponse and we can parse nested fields.
+    an OxenDatasetResponse and we can parse nested fields.
     """
     with patch("requests.Session.request") as mock_request:
         mock_request.return_value.status_code = 200
@@ -160,11 +161,13 @@ def test_get_dataset_rows_success(
 
 
 def test_get_dataset_rows_404(client: LilypadClient) -> None:
-    """Test that a 404 from the server raises NotFoundError"""
+    """Test that a 404 from the server raises NotFoundError."""
     with patch("requests.Session.request") as mock_request:
         mock_request.return_value.status_code = 404
-        # .raise_for_status() triggers an HTTPError
-        mock_request.return_value.raise_for_status.side_effect = NotFoundError()
+        # .raise_for_status() triggers an HTTPError in requests
+        mock_request.return_value.raise_for_status.side_effect = NotFoundError(
+            "Resource not found"
+        )
 
         with pytest.raises(NotFoundError):
             client.get_dataset_rows(generation_uuid="non-existent")
@@ -173,8 +176,37 @@ def test_get_dataset_rows_404(client: LilypadClient) -> None:
 def test_get_dataset_rows_timeout(client: LilypadClient) -> None:
     """Test that a timeout from the server is handled."""
     with patch("requests.Session.request") as mock_request:
-        # raise python's Timeout (or requests.exceptions.Timeout)
         mock_request.side_effect = Timeout()
 
         with pytest.raises(Timeout):
             client.get_dataset_rows(generation_uuid="some-gen")
+
+
+def test_get_datasets_success(
+    client: LilypadClient, mock_oxen_dataset_response: dict[str, Any]
+) -> None:
+    """Test that get_datasets() calls get_dataset_rows internally
+    and returns a custom Dataset object.
+    """
+    # We'll convert the raw dictionary to an OxenDatasetResponse in the real code,
+    # so just mock the method get_dataset_rows -> OxenDatasetResponse
+    with patch.object(client, "get_dataset_rows") as mock_get_rows:
+        # Turn the dictionary into an actual OxenDatasetResponse model
+        # so we can simulate what get_dataset_rows would produce
+        from lilypad.ee.server.client import OxenDatasetResponse
+
+        model_instance = OxenDatasetResponse.model_validate(mock_oxen_dataset_response)
+        mock_get_rows.return_value = model_instance
+
+        ds_obj = client.get_datasets(
+            generation_uuid="test-uuid", page_num=2, page_size=5
+        )
+        mock_get_rows.assert_called_once_with(
+            generation_uuid="test-uuid", generation_name=None, page_num=2, page_size=5
+        )
+        assert isinstance(ds_obj, Dataset)
+        # Check some fields from ds_obj
+        assert ds_obj.status == "success"
+        assert ds_obj.data_frame.get_row_count() == 2
+        # commit id
+        assert ds_obj.commit_info["id"] == "abcd1234"

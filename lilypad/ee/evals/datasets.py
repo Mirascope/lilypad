@@ -1,138 +1,59 @@
-"""Provides a high-level Lilypad interface (Dataset) that internally uses Oxen DataFrame."""
+"""Provides a high-level Lilypad interface (Dataset) that internally uses Oxen DataFrame,
+adjusted for the updated Oxen dataset API that returns an Oxen-style JSON.
+"""
 
-from oxen.data_frame import DataFrame
+from __future__ import annotations
 
-from lilypad.server.client import LilypadClient
+from typing import Any
 
 
-class Dataset:
-    """A Lilypad dataset interface that wraps an Oxen DataFrame internally.
-
-    This allows Lilypad to control the external API while delegating data operations
-    to Oxen under the hood.
+class DataFrame:
+    """A custom, lightweight DataFrame-like class for Lilypad.
+    It stores rows, schema info, etc., but does NOT rely on oxen.data_frame.DataFrame.
     """
 
     def __init__(
-        self, remote: str, path: str, branch: str, host: str = "hub.oxen.ai"
+        self, rows: list[dict[str, Any]], schema: dict[str, Any], size: dict[str, int]
     ) -> None:
-        """Initialize the Dataset by creating an Oxen DataFrame internally.
+        self.rows = rows
+        self.schema = schema
+        self.size_info = size
+        # Add any other fields or logic needed
 
-        Args:
-            remote: The remote repository URL for the Oxen dataset.
-            path: The path of the DataFrame file within the repository.
-            branch: The branch name of the repository.
-            host: The Oxen server host (defaults to "hub.oxen.ai").
+    def list_rows(self, page: int = 1) -> list[dict[str, Any]]:
+        """For demonstration, we simply return all rows.
+        Or you could implement pagination logic if desired.
         """
-        # Store a reference to the internal Oxen DataFrame
-        self._df = DataFrame(remote=remote, path=path, branch=branch, host=host)
+        # If you want, you can use `page` to slice self.rows
+        return self.rows
 
-    def insert(self, row: dict) -> str:
-        """Insert a single row into the underlying DataFrame.
+    def get_row_count(self) -> int:
+        """Return how many rows are in this data frame."""
+        return self.size_info.get("height", len(self.rows))
 
-        Args:
-            row: A dictionary representing the columns and values to insert.
+    def get_column_count(self) -> int:
+        """Return how many columns (width) are in this data frame schema."""
+        return self.size_info.get("width", 0)
 
-        Returns:
-            The unique identifier of the newly inserted row.
-        """
-        return self._df.insert_row(row)
 
-    def list_page(self, page_num: int = 1) -> list[dict]:
-        """List the rows of the DataFrame, paginated.
+class Dataset:
+    """A custom 'Dataset' object that references commit info and a custom DataFrame."""
 
-        Args:
-            page_num: The page number to list.
-
-        Returns:
-            A list of rows for the specified page.
-        """
-        return self._df.list_page(page_num)
-
-    def update(self, row_id: str, new_data: dict) -> dict:
-        """Update a row in the DataFrame by row identifier.
-
-        Args:
-            row_id: The unique identifier of the row to update.
-            new_data: A dictionary containing the columns and updated values.
-
-        Returns:
-            The updated row as a dictionary.
-        """
-        return self._df.update_row(row_id, new_data)
-
-    def delete(self, row_id: str) -> None:
-        """Delete a row in the DataFrame by row identifier.
-
-        Args:
-            row_id: The unique identifier of the row to delete.
-        """
-        self._df.delete_row(row_id)
-
-    def restore(self) -> None:
-        """Unstage any local (uncommitted) changes to the underlying DataFrame."""
-        self._df.restore()
-
-    def commit(self, message: str, branch: str | None = None) -> None:
-        """Commit any staged changes to the underlying DataFrame.
-
-        Args:
-            message: The commit message.
-            branch: (Optional) The branch to commit the changes into.
-        """
-        self._df.commit(message, branch)
-
-    def size(self) -> tuple[int, int]:
-        """Return the size of the DataFrame in terms of rows and columns.
-
-        Returns:
-            A tuple (rows, columns).
-        """
-        return self._df.size()
+    def __init__(
+        self,
+        commit_info: dict[str, Any],
+        data_frame: DataFrame,
+        status: str,
+        status_message: str,
+    ) -> None:
+        self.commit_info = commit_info
+        self.data_frame = data_frame
+        self.status = status
+        self.status_message = status_message
 
     def __repr__(self) -> str:
-        """Custom string representation for debugging.
-
-        Returns:
-            A user-friendly string showing the size of the dataset.
-        """
-        rows, cols = self.size()
-        return f"<Dataset rows={rows} cols={cols}>"
-
-
-def datasets(*identifiers: str, host: str = "hub.oxen.ai") -> Dataset:
-    """Fetch a Lilypad Dataset object for the specified generation(s), using Oxen under the hood.
-
-    We currently handle only the first identifier for simplicity.
-
-    Usage:
-        ds = datasets("some_generation_uuid")
-        # or
-        ds = datasets("some_generation_name")
-
-    Then you can operate on `ds` using the Dataset API (insert, update, commit, etc.).
-
-    Args:
-        identifiers: One or more generation identifiers (UUIDs or names).
-        host: The Oxen server host (defaults to "hub.oxen.ai").
-
-    Returns:
-        A Dataset object that internally wraps an Oxen DataFrame.
-    """
-    if not identifiers:
-        raise ValueError("No generation identifier provided.")
-
-    # For demonstration, pick the first identifier
-    gen_id = identifiers[0]
-
-    # Attempt to interpret gen_id as a UUID or a name; the server logic will decide
-    client = LilypadClient()
-    try:
-        meta = client.get_dataset_metadata(generation_uuid=gen_id)
-    except Exception:
-        # If that fails, try generation_name
-        meta = client.get_dataset_metadata(generation_name=gen_id)
-
-    # meta should look like: {"repo_url": str, "branch": str, "path": str}
-    return Dataset(
-        remote=meta["repo_url"], path=meta["path"], branch=meta["branch"], host=host
-    )
+        """Example string representation showing row/col counts + commit id."""
+        row_ct = self.data_frame.get_row_count()
+        col_ct = self.data_frame.get_column_count()
+        commit_id = self.commit_info.get("id", "unknown")
+        return f"<Dataset commit_id={commit_id} rows={row_ct} cols={col_ct}>"

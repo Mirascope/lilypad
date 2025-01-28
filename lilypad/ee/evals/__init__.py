@@ -1,5 +1,5 @@
 """ee.evals module."""
 
-from .datasets import Dataset, datasets
+from .datasets import DataFrame, Dataset
 
-__all__ = ["Dataset", "datasets"]
+__all__ = ["Dataset", "DataFrame"]

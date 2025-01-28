@@ -5,6 +5,7 @@ from typing import Any, Literal, TypeVar
 from pydantic import BaseModel, Field
 
 from ...server.client import LilypadClient as _LilypadClient
+from ..evals.datasets import DataFrame, Dataset
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -134,6 +135,56 @@ class OxenDatasetResponse(BaseModel):
     status_message: str
 
 
+def _get_dataset_from_oxen_response(oxen_resp: OxenDatasetResponse) -> Dataset:
+    """Parse the OxenDatasetResponse pydantic model into our custom Dataset."""
+    # Extract commit info
+    commit = {
+        "author": oxen_resp.commit.author,
+        "email": oxen_resp.commit.email,
+        "id": oxen_resp.commit.id,
+        "message": oxen_resp.commit.message,
+        "timestamp": oxen_resp.commit.timestamp,
+        # etc. if needed
+    }
+
+    # Build a custom data_frame from the nested objects:
+    # We can parse row data from `oxen_resp.data_frame.view.data`
+    row_dicts = []
+    for row_model in oxen_resp.data_frame.view.data:
+        # row_model is a RowDataModel
+        row_dicts.append(
+            {
+                "id": row_model.id,
+                "text": row_model.text,
+                "title": row_model.title,
+                "url": row_model.url,
+            }
+        )
+
+    # For the "schema", we can store a minimal dict or some more structured data
+    schema_dict = {
+        "fields": [f.dict() for f in oxen_resp.data_frame.view.schema.fields],
+        "hash": oxen_resp.data_frame.view.schema.hash,
+        "metadata": oxen_resp.data_frame.view.schema.metadata,
+    }
+
+    # For size, let's store height/width
+    size_info = {
+        "height": oxen_resp.data_frame.view.size.height,
+        "width": oxen_resp.data_frame.view.size.width,
+    }
+
+    # Construct our custom LilypadDataFrame
+    data_frame_obj = DataFrame(rows=row_dicts, schema=schema_dict, size=size_info)
+
+    return Dataset(
+        commit_info=commit,
+        data_frame=data_frame_obj,
+        status=oxen_resp.status,
+        status_message=oxen_resp.status_message,
+    )
+
+
 class LilypadClient(_LilypadClient):
     """A client for the Lilypad ee API."""
 
@@ -172,3 +223,23 @@ class LilypadClient(_LilypadClient):
         )
         # now result is an OxenDatasetResponse pydantic object
         return result
+
+    def get_datasets(
+        self,
+        generation_uuid: str | None = None,
+        generation_name: str | None = None,
+        page_num: int = 1,
+        page_size: int = 50,
+    ) -> Dataset:
+        """Calls the get_dataset_rows method, obtains an OxenDatasetResponse,
+        and builds a custom LilypadDataset from it.
+        """
+        oxen_resp = self.get_dataset_rows(
+            generation_uuid=generation_uuid,
+            generation_name=generation_name,
+            page_num=page_num,
+            page_size=page_size,
+        )
+        # Convert that pydantic model to a LilypadDataset
+        lilypad_ds = _get_dataset_from_oxen_response(oxen_resp)
+        return lilypad_ds
