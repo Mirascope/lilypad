@@ -38,7 +38,7 @@ def _get_custom_context_manager(
         fn: Callable,
     ) -> Generator[Span, Any, None]:
         tracer = get_tracer("lilypad")
-        lilypad_client = LilypadClient(timeout=10)
+        lilypad_client = LilypadClient()
         new_project_uuid = project_uuid or lilypad_client.project_uuid
         jsonable_arg_values = {}
         for arg_name, arg_value in arg_values.items():

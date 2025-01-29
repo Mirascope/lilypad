@@ -11,13 +11,9 @@ from lilypad._utils import Closure
 from lilypad.generations import current_generation
 from lilypad.server.client import LilypadClient
 from lilypad.server.models.response_models import ResponseModelPublic
-from lilypad.server.settings import get_settings
 
 _P = ParamSpec("_P")
 _ResponseModelT = TypeVar("_ResponseModelT", bound=BaseModel)
-
-settings = get_settings()
-lilypad_client = LilypadClient(timeout=10, token=None)
 
 
 def _snake_to_pascal(snake: str) -> str:
@@ -185,6 +181,7 @@ def response_model() -> (
         def get_response_model_version(
             model: type[ResponseModel[_ResponseModelT]],
         ) -> ResponseModelPublic:
+            lilypad_client = LilypadClient()
             """Get or create the active version of this response model."""
             generation = current_generation.get()
             response_model_version = lilypad_client.get_response_model_active_version(

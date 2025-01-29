@@ -1,5 +1,7 @@
 export default {
-    index: "Overview",
-    generations: "Generations",
-    prompts: "Prompts"
-}
+  index: "Overview",
+  quickstart: "Quickstart",
+  generations: "Generations",
+  client: "Client",
+  prompts: "Prompts",
+};

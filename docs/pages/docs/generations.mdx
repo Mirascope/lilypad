@@ -1,4 +1,8 @@
-import { Tabs } from 'nextra/components';
+import { Caption } from "@/components/Caption";
+import Image from "next/image";
+import { Tabs } from "nextra/components";
+import generationImage from "../../public/answer_question_generation.png";
+import generationImageV2 from "../../public/answer_question_generation_v2.png";
 
 # Generations
 
@@ -30,8 +34,31 @@ if __name__ == "__main__":
 ```
 
 In the above example, `answer_question` will be versioned and traced when called.
-If you change anything inside of `answer_quesetion`, that will change the version.
-For example, if you change the model from `gpt-4o-mini` to `gpt-4o`, that will create a new version of `answer_question`.
+
+<Image
+  src={generationImage}
+  alt='answer_question_generation'
+  width='1000'
+  height='500'
+/>
+<Caption>
+  View this generation by navigating to `Generations` and clicking on the
+  `answer_question` card.
+</Caption>
+
+If you change anything inside of `answer_question`, that will change the version.
+For example, if you change the model from `gpt-4o-mini` to `gpt-4o`, that will create
+a new version of `answer_question`.
+
+<Image
+  src={generationImageV2}
+  alt='answer_question_generation_v2'
+  width='1000'
+  height='500'
+/>
+<Caption>
+  Notice that the version has changed to `v2` after changing the model.
+</Caption>
 
 Since Lilypad versions generations using their function closure, this means that even changes to functions or classes used within the generation are automatically tracked and versioned (so long as they are user-defined).
 
@@ -50,66 +77,65 @@ This means that you should structure your generations to make **at most one call
 Consider the following code:
 
 <Tabs items={["Good", "Bad"]}>
-<Tabs.Tab>
-```python {7-13,26}
-import lilypad
-from openai import OpenAI
+    <Tabs.Tab>
+    ```python {6-12,26}
+    import lilypad
+    from openai import OpenAI
 
-client = OpenAI()
+    client = OpenAI()
 
+    @lilypad.generation()
+    def recommend_author(genre: str) -> str:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+        )
+        return str(completion.choices[0].message.content)
 
-@lilypad.generation()
-def recommend_author(genre: str) -> str:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
-    )
-    return str(completion.choices[0].message.content)
+    @lilypad.generation()
+    def recommend_book(genre: str, author: str) -> str:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+        )
+        return str(completion.choices[0].message.content)
 
+    genre = "fantasy"
+    author = recommend_author(genre)
+    book = recommend_book(genre, author)
+    ```
+    </Tabs.Tab>
+    <Tabs.Tab>
+    ```python {9-12}
+    import lilypad
+    from openai import OpenAI
 
-@lilypad.generation()
-def recommend_book(genre: str, author: str) -> str:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
-    )
-    return str(completion.choices[0].message.content)
-
-
-genre = "fantasy"
-author = recommend_author(genre)
-book = recommend_book(genre, author)
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```python {9-12}
-import lilypad
-from openai import OpenAI
-
-client = OpenAI()
+    client = OpenAI()
 
 
-@lilypad.generation()
-def recommend_book(genre: str) -> str:
-    author = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
-    ).choices[0].message.content
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
-    )
-    return str(completion.choices[0].message.content)
+    @lilypad.generation()
+    def recommend_book(genre: str) -> str:
+        author = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} author"}],
+        ).choices[0].message.content
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": f"Recommend a {genre} book by {author}"}],
+        )
+        return str(completion.choices[0].message.content)
 
 
-genre = "fantasy"
-book = recommend_book(genre)
-```
-</Tabs.Tab>
+    genre = "fantasy"
+    book = recommend_book(genre)
+    ```
+    </Tabs.Tab>
+
 </Tabs>
 
 In the "Good" example, `recommend_author` and `recommend_book` are written as separate generations, each making a single call to the LLM.
 This structure enables:
+
 1. Evaluating the `recommend_author` generation individually
 2. Evaluating the `recommend_book` generation individually
 3. Evaluating both together by supplying `recommend_book` with an actual output from `recommend_author`
@@ -201,20 +227,19 @@ We have some features in the works for this type of generation, so it's a good i
 For example, we would recommend passing in a `Literal` or `Enum` type and selecting an object from that argument rather than directly passing in the argument:
 
 <Tabs items={["Good", "Bad"]}>
-<Tabs.Tab>
-```python
-from typing import Literal
+    <Tabs.Tab>
+    ```python
+    from typing import Literal
 
-from anthropic import Anthropic
-import lilypad
-from openai import OpenAI
+    from anthropic import Anthropic
+    import lilypad
+    from openai import OpenAI
 
-openai_client = OpenAI()
-anthropic_client = Anthropic()
+    openai_client = OpenAI()
+    anthropic_client = Anthropic()
 
-
-@lilypad.generation()
-def recommend_book(genre: str, provider: Literal["openai", "anthropic"]) -> str:
+    @lilypad.generation()
+    def recommend_book(genre: str, provider: Literal["openai", "anthropic"]) -> str:
     if provider == "openai":
         completion = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -228,32 +253,33 @@ def recommend_book(genre: str, provider: Literal["openai", "anthropic"]) -> str:
         )
         block = message.content[0]
         return block.text if block.type == "text" else ""
-```
-</Tabs.Tab>
-<Tabs.Tab>
-```python
-from anthropic import Anthropic
-import lilypad
-from openai import OpenAI
+    ```
+    </Tabs.Tab>
+    <Tabs.Tab>
+    ```python
+    from anthropic import Anthropic
+    import lilypad
+    from openai import OpenAI
 
 
-@lilypad.generation()
-def recommend_book(genre: str, client: OpenAI | Anthropic) -> str:
-    if isinstance(client, OpenAI):
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
-        )
-        return str(completion.choices[0].message.content)
-    else:
-        message = client.messages.create(
-            model="claude-3-5-sonnet-latest",
-            messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
-        )
-        block = message.content[0]
-        return block.text if block.type == "text" else ""
-```
-</Tabs.Tab>
+    @lilypad.generation()
+    def recommend_book(genre: str, client: OpenAI | Anthropic) -> str:
+        if isinstance(client, OpenAI):
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+            )
+            return str(completion.choices[0].message.content)
+        else:
+            message = client.messages.create(
+                model="claude-3-5-sonnet-latest",
+                messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+            )
+            block = message.content[0]
+            return block.text if block.type == "text" else ""
+    ```
+    </Tabs.Tab>
+
 </Tabs>
 
 In the "Bad" example, the `client` argument is not JSON serializable, which makes it difficult to generate synthetic data for the `recommend_book` generation.
