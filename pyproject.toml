@@ -68,6 +68,7 @@ bedrock = [
     "boto3-stubs[bedrock-runtime]>=1.35.82",
     "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
 ]
+evals = ["oxenai>=0.20.0"]
 mistral = ["mistralai>=1.0.0,<2"]
 outlines = ["outlines>=0.1.11"]
 vertex = ["google-cloud-aiplatform>=1.74.0"]
@@ -123,6 +124,7 @@ target-version = "py310"
 "lilypad/server/migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
+"lilypad/ee/tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = ["D212", "D402"]
 "tests/_utils/closure/closure_test_functions/other.py" = [
     "D101",
