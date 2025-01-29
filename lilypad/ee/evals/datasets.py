@@ -72,7 +72,6 @@ class Dataset:
 
         for row in self.data_frame.rows:
             if "input" not in row or not isinstance(row["input"], str):
-                print(row)
                 raise ValueError("Row does not contain 'input' key.")
             row_input = json.loads(row["input"])
             for closure in closures:
