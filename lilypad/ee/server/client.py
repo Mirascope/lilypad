@@ -5,6 +5,7 @@ from typing import Any, Literal, TypeVar
 from pydantic import BaseModel
 
 from ...server.client import LilypadClient as _LilypadClient
+from ...server.models import GenerationPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -29,6 +30,14 @@ class DatasetRowsResponse(BaseModel):
 
 class LilypadClient(_LilypadClient):
     """A client for the Lilypad ee API."""
+
+    def get_generations_by_name(self, generation_name: str) -> list[GenerationPublic]:
+        """Get generations by name."""
+        return self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{generation_name}",
+            response_model=list[GenerationPublic],
+        )
 
     def get_dataset_rows(
         self,

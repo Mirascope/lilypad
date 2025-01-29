@@ -4,6 +4,7 @@ adjusted for the updated Oxen dataset API that returns an Oxen-style JSON.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from itertools import count
 from typing import TYPE_CHECKING, Any
@@ -54,6 +55,33 @@ class Dataset:
         col_ct = self.data_frame.get_column_count()
         return f"<Dataset rows={row_ct} cols={col_ct}>"
 
+    def run(self, fn: Callable) -> None:
+        client = _get_client()  # Ensure client is initialized
+        current_closure = Closure.from_fn(fn)
+
+        closures: list[Closure] = [current_closure]
+
+        # Collect all closures with the same name.
+        for generation in client.get_generations_by_name(current_closure.name):
+            if generation.hash == current_closure.hash:
+                # We use current closure.
+                continue
+            closure = Closure(name=generation.name, hash=generation.hash, signature=generation.signature, code=generation.code,
+                              dependencies=generation.dependencies)
+            closures.append(closure)
+
+        for row in self.data_frame.rows:
+            if "input" not in row or not isinstance(row["input"], str):
+                print(row)
+                raise ValueError("Row does not contain 'input' key.")
+            row_input = json.loads(row["input"])
+            for closure in closures:
+                try:
+                    print(row_input)
+                    closure.run(**row_input)
+                except Exception as e:
+                    print(f"Error running closure {closure.name}: {e}")
+                    continue
 
 def _get_client() -> LilypadClient:
     """Helper function to create a LilypadClient instance."""
