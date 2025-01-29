@@ -230,10 +230,8 @@ def test_dataset_run_multiple_closures(sample_dataset: Dataset):
     mock_client.get_generations_by_name.return_value = [gen1, gen2]
 
     with (
-        (
-            patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
-            patch.object(Closure, "from_fn", wraps=Closure.from_fn),
-        ),
+        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch.object(Closure, "from_fn", wraps=Closure.from_fn),
         patch.object(Closure, "run", return_value=None) as mock_run,
     ):
         sample_dataset.run(sample_fn)
