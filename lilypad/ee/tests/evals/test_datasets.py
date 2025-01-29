@@ -1,10 +1,12 @@
 """Tests for the Dataset and DataFrame classes, and the datasets(...) function."""
 
+import json
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
 
+from lilypad._utils import Closure
 from lilypad.ee.evals import (
     DataFrame,
     Dataset,
@@ -158,3 +160,113 @@ def test_datasets_from_fn_multiple(mock_get_client, mock_client):
     assert len(result) == 2, "Should have 2 Datasets"
     for ds in result:
         assert ds.data_frame.get_row_count() == 2, "Each dataset should have 2 rows"
+
+
+def sample_fn(question: str) -> str:
+    """A sample function to test closures."""
+    return f"Answer: {question}"
+
+
+@pytest.fixture
+def sample_dataset() -> Dataset:
+    """Create a Dataset with a DataFrame that contains some rows.
+    Each row has an 'input' key containing JSON-encoded arguments.
+    """
+    rows = [
+        {"input": json.dumps({"question": "What is 2+2?"})},
+        {"input": json.dumps({"question": "What is the capital of France?"})},
+    ]
+    df = DataFrame(rows=rows)
+    return Dataset(data_frame=df)
+
+
+def test_dataset_run_success(sample_dataset: Dataset):
+    """Test that Dataset.run(fn) successfully calls closure.run() for each row."""
+    mock_client = MagicMock()
+    mock_client.get_generations_by_name.return_value = []
+
+    with (
+        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch.object(Closure, "from_fn", wraps=Closure.from_fn) as mock_closure,
+        patch.object(Closure, "run", return_value=None) as mock_run,
+    ):
+        sample_dataset.run(sample_fn)
+
+        assert mock_run.call_count == 2
+
+        mock_closure.assert_called_once_with(sample_fn)
+
+
+def test_dataset_run_missing_input_key():
+    """If a row does not contain 'input', run() should raise ValueError."""
+    df = DataFrame(rows=[{"not_input": "nope"}])
+    ds = Dataset(data_frame=df)
+
+    with pytest.raises(ValueError, match="Row does not contain 'input' key"):
+        ds.run(sample_fn)
+
+
+def test_dataset_run_input_not_json():
+    """If a row's 'input' is not valid JSON, run() should raise ValueError on json.loads()."""
+    df = DataFrame(rows=[{"input": "this-is-not-json"}])
+    ds = Dataset(data_frame=df)
+
+    with pytest.raises(ValueError, match="Expecting value: line 1 column 1"):
+        ds.run(sample_fn)
+
+
+def test_dataset_run_multiple_closures(sample_dataset: Dataset):
+    """If get_generations_by_name returns multiple generations,
+    we construct multiple closures and run them all on each row.
+    """
+    gen1 = MagicMock(
+        name="gen1", hash="123", signature="...", code="...", dependencies={}
+    )
+    gen2 = MagicMock(
+        name="gen1", hash="456", signature="...", code="...", dependencies={}
+    )
+
+    mock_client = MagicMock()
+    mock_client.get_generations_by_name.return_value = [gen1, gen2]
+
+    with (
+        (
+            patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+            patch.object(Closure, "from_fn", wraps=Closure.from_fn),
+        ),
+        patch.object(Closure, "run", return_value=None) as mock_run,
+    ):
+        sample_dataset.run(sample_fn)
+
+        calls = mock_run.call_count
+        assert calls in (4, 6), (
+            "Expected run calls to be either 4 or 6 depending on whether the client"
+            " returned a generation with the same hash as current closure or not. "
+            f"Got {calls}."
+        )
+
+
+def test_dataset_run_exception_in_closure(sample_dataset: Dataset, capsys):
+    """If closure.run() raises an exception, we catch it, print the error, and continue."""
+    mock_gen = MagicMock(hash="abc", signature="...", code="...", dependencies={})
+    mock_gen.name = "gen"
+    mock_client = MagicMock()
+    mock_client.get_generations_by_name.return_value = [mock_gen]
+
+    with (
+        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch.object(Closure, "from_fn", wraps=Closure.from_fn),
+    ):
+        call_counter = [0]
+
+        def side_effect_run(**kwargs):
+            call_counter[0] += 1
+            if call_counter[0] == 2:
+                raise RuntimeError("Simulated error")
+
+        with patch.object(Closure, "run", side_effect=side_effect_run):
+            sample_dataset.run(sample_fn)
+
+            captured = capsys.readouterr()
+            assert "Error running closure" in captured.out
+            assert "Simulated error" in captured.out
