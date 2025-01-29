@@ -75,7 +75,6 @@ export const DatasetTable = ({
       accessorKey: "label",
       header: "Label",
       cell: ({ row }) => {
-        console.log(row);
         return (
           <div
             className={

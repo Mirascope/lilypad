@@ -121,7 +121,7 @@ async def github_callback(
             user_organization = UserOrganizationTable(
                 user_uuid=user.uuid,
                 organization_uuid=organization_public.uuid,
-                role=UserRole.ADMIN,
+                role=UserRole.OWNER,
             )
             session.add(user_organization)
             session.flush()

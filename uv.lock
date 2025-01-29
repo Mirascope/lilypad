@@ -1593,15 +1593,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mypy-extensions"
-version = "1.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/98/a4/1ab47638b92648243faf97a5aeb6ea83059cc3624972ab6b8d2316078d3f/mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782", size = 4433 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d", size = 4695 },
-]
-
-[[package]]
 name = "multidict"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1683,6 +1674,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ec/c6/5667f6e1cd09103888f20e759a6e272a097c58010795318ce425439461bc/mypy_boto3_bedrock_runtime-1.35.75.tar.gz", hash = "sha256:9617fe2e655c0670957c9c98210d415102d11848dea69192b75caf8436570f75", size = 21480 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/82/de/a80c5e72b85f4b05623216bfabbbd5e79ad7f1abf54fd8d2b79909bad7a0/mypy_boto3_bedrock_runtime-1.35.75-py3-none-any.whl", hash = "sha256:a2ddd6733afa66e9797e0cd5973bb68a465a868f5eed549d401336c5ee25eddc", size = 30475 },
+]
+
+[[package]]
+name = "mypy-extensions"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/a4/1ab47638b92648243faf97a5aeb6ea83059cc3624972ab6b8d2316078d3f/mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782", size = 4433 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d", size = 4695 },
 ]
 
 [[package]]
@@ -2707,6 +2707,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-jose", extra = ["cryptography"] },
     { name = "requests" },
+    { name = "resend" },
     { name = "ruff" },
     { name = "sqlmodel" },
     { name = "typer" },
@@ -2775,6 +2776,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6.1" },
     { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0" },
     { name = "requests", specifier = ">=2.32.3" },
+    { name = "resend", specifier = ">=2.6.0" },
     { name = "ruff", specifier = ">=0.8.1" },
     { name = "sqlmodel", specifier = ">=0.0.22" },
     { name = "typer", specifier = ">=0.12.5" },
@@ -2878,6 +2880,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/63/70/2bf7780ad2d390a8d301ad0b550f1581eadbd9a20f896afe06353c2a2913/requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760", size = 131218 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6", size = 64928 },
+]
+
+[[package]]
+name = "resend"
+version = "2.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/46/ff/f4235a93533cb04199ab50ef250afa514ada55a4a4b86e32e0c763931926/resend-2.6.0.tar.gz", hash = "sha256:e714210b761febd02a067a1ee00106b6aeb79c0a6dda80b58588b089550f0184", size = 13120 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/67/c8b10fa620303affa2240e7f45221a3c103a2e7d4f96dd8b9da4ec6cc84a/resend-2.6.0-py2.py3-none-any.whl", hash = "sha256:53f21fdee6ef18b2c90319b79b38fee048b6d47336283c0a1818bebcaf93c401", size = 19635 },
 ]
 
 [[package]]

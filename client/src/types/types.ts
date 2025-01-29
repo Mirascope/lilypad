@@ -263,6 +263,66 @@ export interface MessageParam {
 }
 
 /**
+ * OrganizationInviteCreate
+ * OrganizationInvite create model
+ */
+export interface OrganizationInviteCreate {
+  /**
+   * Invited By
+   * @format uuid
+   */
+  invited_by: string;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /** Token */
+  token?: string | null;
+  /** Resend Email Id */
+  resend_email_id?: string | null;
+}
+
+/**
+ * OrganizationInvitePublic
+ * OrganizationInvite public model
+ */
+export interface OrganizationInvitePublic {
+  /**
+   * Invited By
+   * @format uuid
+   */
+  invited_by: string;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** User public model */
+  user: UserPublic;
+}
+
+/**
  * OrganizationPublic
  * Organization public model
  */
@@ -641,17 +701,21 @@ export enum SpanType {
 }
 
 /**
+ * UserOrganizationCreate
+ * UserOrganization create model
+ */
+export interface UserOrganizationCreate {
+  /** User role enum. */
+  role: UserRole;
+}
+
+/**
  * UserOrganizationPublic
  * UserOrganization public model
  */
 export interface UserOrganizationPublic {
   /** User role enum. */
   role: UserRole;
-  /**
-   * User Uuid
-   * @format uuid
-   */
-  user_uuid: string;
   /**
    * Uuid
    * @format uuid
@@ -665,6 +729,8 @@ export interface UserOrganizationPublic {
   /** Organization public model */
   organization: OrganizationPublic;
 }
+
+export type UserOrganizationTable = object;
 
 /**
  * UserPublic
@@ -703,6 +769,7 @@ export interface UserPublic {
  * User role enum.
  */
 export enum UserRole {
+  OWNER = "owner",
   ADMIN = "admin",
   MEMBER = "member",
 }

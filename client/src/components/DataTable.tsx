@@ -56,7 +56,7 @@ interface GenericDataTableProps<T> {
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
-  customControls?: React.ReactNode;
+  customControls?: (row: Row<T>[]) => React.ReactNode;
   defaultRowSelection?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
@@ -153,7 +153,6 @@ export const DataTable = <T extends { uuid: string }>({
       </>
     );
   };
-
   const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
   const paddingBottom =
     rowVirtualizer.getTotalSize() -
@@ -167,7 +166,7 @@ export const DataTable = <T extends { uuid: string }>({
         order={1}
         className='p-2 flex flex-col gap-2'
       >
-        <div className='flex items-center rounded-md'>
+        <div className='flex items-center rounded-md gap-2'>
           {filterColumn && (
             <Input
               placeholder='Filter...'
@@ -184,6 +183,7 @@ export const DataTable = <T extends { uuid: string }>({
               className='max-w-sm'
             />
           )}
+          {customControls?.(table.getSelectedRowModel().rows)}
           {!hideColumnButton && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -212,7 +212,6 @@ export const DataTable = <T extends { uuid: string }>({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {customControls}
         </div>
         <div ref={virtualizerRef} className='rounded-md border overflow-auto'>
           <Table>

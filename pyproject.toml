@@ -47,8 +47,9 @@ dependencies = [
     "requests>=2.32.3",
     "pillow>=10.4.0",
     "alembic>=1.14.0",
-    "posthog>=3.8.3",   
+    "posthog>=3.8.3",
     "oxenai>=0.19.0",
+    "resend>=2.6.0",
 ]
 
 [project.urls]

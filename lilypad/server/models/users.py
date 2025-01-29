@@ -12,6 +12,7 @@ from .user_organizations import UserOrganizationPublic
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
+    from .organization_invites import OrganizationInviteTable
     from .user_organizations import UserOrganizationTable
 
 
@@ -34,6 +35,9 @@ class UserTable(_UserBase, BaseSQLModel, table=True):
         back_populates="user", cascade_delete=True
     )
     api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
+    organization_invites: list["OrganizationInviteTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )
 

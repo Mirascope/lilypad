@@ -2,9 +2,11 @@ import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
 import { AnnotationForm } from "@/components/ee/AnnotationForm";
 import { QueueForm } from "@/components/ee/QueueForm";
+import IconDialog from "@/components/IconDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Scope, SpanPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
-import { ColumnDef, FilterFn } from "@tanstack/react-table";
+import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
@@ -82,6 +84,49 @@ export const TracesTable = ({
   const virtualizerRef = useRef<HTMLDivElement>(null);
 
   const columns: ColumnDef<SpanPublic>[] = [
+    {
+      id: "select",
+      header: ({ table }) => {
+        const topLevelRows = table
+          .getFilteredRowModel()
+          .rows.filter((row) => row.getValue("scope") === Scope.LILYPAD);
+        const allTopLevelSelected = topLevelRows.every((row) =>
+          row.getIsSelected()
+        );
+        const someTopLevelSelected = topLevelRows.some((row) =>
+          row.getIsSelected()
+        );
+
+        return (
+          <Checkbox
+            checked={
+              (topLevelRows.length > 0 && allTopLevelSelected) ||
+              (someTopLevelSelected && "indeterminate")
+            }
+            onCheckedChange={(value) => {
+              topLevelRows.forEach((row) => row.toggleSelected(!!value));
+            }}
+            aria-label='Select all top level rows'
+          />
+        );
+      },
+      cell: ({ row }) => {
+        const shouldShowCheckbox = row.getValue("scope") == Scope.LILYPAD;
+
+        if (!shouldShowCheckbox) return null;
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label='Select row'
+            />
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "display_name",
       header: "Name",
@@ -218,9 +263,11 @@ export const TracesTable = ({
                   <DialogContent className={"max-w-[425px] overflow-x-auto"}>
                     <DialogTitle>{`Add to queue`}</DialogTitle>
                     <DialogDescription>
-                      {`Annotate this trace to your queue.`}
+                      {`Add this trace to your queue.`}
                     </DialogDescription>
-                    <QueueForm />
+                    <Suspense fallback={<CardSkeleton items={1} />}>
+                      <QueueForm />
+                    </Suspense>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -273,6 +320,21 @@ export const TracesTable = ({
       </div>
     );
   };
+  const renderCustomControls = (rows: Row<SpanPublic>[]) => {
+    return (
+      <IconDialog
+        icon={<Users />}
+        title={"Annotate selected traces"}
+        description={`${rows.length} trace(s) selected.`}
+        buttonProps={{
+          disabled: rows.every((row) => !row.getIsSelected()),
+        }}
+        tooltipContent={"Add selected traces to your annotation queue."}
+      >
+        <QueueForm />
+      </IconDialog>
+    );
+  };
   return (
     <DataTable<SpanPublic>
       columns={columns}
@@ -292,6 +354,7 @@ export const TracesTable = ({
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}
+      customControls={renderCustomControls}
     />
   );
 };

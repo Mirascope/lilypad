@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     posthog_api_key: str | None = None
     posthog_host: str | None = None
 
+    # Resend
+    resend_api_key: str | None = None
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None

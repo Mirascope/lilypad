@@ -1,16 +1,24 @@
 import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 import { useDeviceCodeMutation } from "@/utils/auth";
 import { projectsQueryOptions } from "@/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
+
+type SearchParams = {
+  redirect?: string;
+  deviceCode?: string;
+  joined?: boolean;
+};
 export const Route = createFileRoute("/_auth/projects/")({
-  validateSearch: (search) => {
+  validateSearch: (search): SearchParams => {
     return {
-      redirect: (search.redirect as string) || undefined,
-      deviceCode: (search.deviceCode as string) || undefined,
+      redirect: (search.redirect as string) ?? undefined,
+      deviceCode: (search.deviceCode as string) ?? undefined,
+      joined: (search.joined as boolean) ?? undefined,
     };
   },
   component: () => (
@@ -21,7 +29,7 @@ export const Route = createFileRoute("/_auth/projects/")({
 });
 
 const Projects = () => {
-  const { deviceCode } = Route.useSearch();
+  const { deviceCode, joined } = Route.useSearch();
   const navigate = useNavigate();
   const addDeviceCodeMutation = useDeviceCodeMutation();
   const { setProject } = useAuth();
@@ -30,10 +38,15 @@ const Projects = () => {
     addDeviceCodeMutation.mutateAsync({ deviceCode });
     navigate({
       to: "/projects",
-      search: { redirect: undefined, deviceCode: undefined },
     });
   }, [deviceCode]);
-
+  useEffect(() => {
+    if (joined) {
+      toast({
+        title: "Successfully joined organization",
+      });
+    }
+  }, [joined]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   return (
     <div className='p-4 flex flex-col items-center gap-2'>

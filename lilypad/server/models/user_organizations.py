@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 class UserRole(str, Enum):
     """User role enum."""
 
+    OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
 
@@ -30,9 +31,6 @@ class _UserOrganizationBase(SQLModel):
     """Base UserOrganization Model."""
 
     role: UserRole = Field(nullable=False)
-    user_uuid: UUID = Field(
-        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
 
 
 class UserOrganizationTable(
@@ -45,6 +43,9 @@ class UserOrganizationTable(
     organization: "OrganizationTable" = Relationship(
         back_populates="user_organizations"
     )
+    user_uuid: UUID = Field(
+        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
     user: "UserTable" = Relationship(back_populates="user_organizations")
 
 
@@ -56,7 +57,7 @@ class UserOrganizationPublic(_UserOrganizationBase):
     organization: OrganizationPublic
 
 
-class UserOrganizationCreate(BaseModel):
+class UserOrganizationCreate(_UserOrganizationBase):
     """UserOrganization create model"""
 
-    role: UserRole
+    ...

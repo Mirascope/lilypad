@@ -15,6 +15,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
+import { Route as JoinTokenImport } from './routes/join.$token'
 import { Route as AuthLoginImport } from './routes/auth.login'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as AuthProjectsIndexImport } from './routes/_auth.projects.index'
@@ -44,6 +45,11 @@ const AuthRoute = AuthImport.update({
 
 const IndexRoute = IndexImport.update({
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const JoinTokenRoute = JoinTokenImport.update({
+  path: '/join/$token',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -141,6 +147,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login'
       preLoaderRoute: typeof AuthLoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/join/$token': {
+      id: '/join/$token'
+      path: '/join/$token'
+      fullPath: '/join/$token'
+      preLoaderRoute: typeof JoinTokenImport
       parentRoute: typeof rootRoute
     }
     '/_auth/projects/$projectUuid': {
@@ -251,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
+  '/join/$token': typeof JoinTokenRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
@@ -267,6 +281,7 @@ export interface FileRoutesByTo {
   '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
+  '/join/$token': typeof JoinTokenRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
@@ -284,6 +299,7 @@ export interface FileRoutesById {
   '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
+  '/join/$token': typeof JoinTokenRoute
   '/_auth/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/_auth/settings/$': typeof AuthSettingsSplatRoute
   '/_auth/projects/': typeof AuthProjectsIndexRoute
@@ -302,6 +318,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/auth/callback'
     | '/auth/login'
+    | '/join/$token'
     | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
@@ -317,6 +334,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/auth/callback'
     | '/auth/login'
+    | '/join/$token'
     | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
@@ -332,6 +350,7 @@ export interface FileRouteTypes {
     | '/diff'
     | '/auth/callback'
     | '/auth/login'
+    | '/join/$token'
     | '/_auth/projects/$projectUuid'
     | '/_auth/settings/$'
     | '/_auth/projects/'
@@ -349,6 +368,7 @@ export interface RootRouteChildren {
   DiffLazyRoute: typeof DiffLazyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthLoginRoute: typeof AuthLoginRoute
+  JoinTokenRoute: typeof JoinTokenRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -357,6 +377,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiffLazyRoute: DiffLazyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthLoginRoute: AuthLoginRoute,
+  JoinTokenRoute: JoinTokenRoute,
 }
 
 export const routeTree = rootRoute
@@ -375,7 +396,8 @@ export const routeTree = rootRoute
         "/_auth",
         "/diff",
         "/auth/callback",
-        "/auth/login"
+        "/auth/login",
+        "/join/$token"
       ]
     },
     "/": {
@@ -397,6 +419,9 @@ export const routeTree = rootRoute
     },
     "/auth/login": {
       "filePath": "auth.login.tsx"
+    },
+    "/join/$token": {
+      "filePath": "join.$token.tsx"
     },
     "/_auth/projects/$projectUuid": {
       "filePath": "_auth.projects.$projectUuid.tsx",
