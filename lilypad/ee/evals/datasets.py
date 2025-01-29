@@ -56,6 +56,7 @@ class Dataset:
         return f"<Dataset rows={row_ct} cols={col_ct}>"
 
     def run(self, fn: Callable) -> None:
+        """Run a function on each row of the dataset, passing in the row data as kwargs."""
         client = _get_client()  # Ensure client is initialized
         current_closure = Closure.from_fn(fn)
 
@@ -66,8 +67,13 @@ class Dataset:
             if generation.hash == current_closure.hash:
                 # We use current closure.
                 continue
-            closure = Closure(name=generation.name, hash=generation.hash, signature=generation.signature, code=generation.code,
-                              dependencies=generation.dependencies)
+            closure = Closure(
+                name=generation.name,
+                hash=generation.hash,
+                signature=generation.signature,
+                code=generation.code,
+                dependencies=generation.dependencies,
+            )
             closures.append(closure)
 
         for row in self.data_frame.rows:
@@ -76,11 +82,10 @@ class Dataset:
             row_input = json.loads(row["input"])
             for closure in closures:
                 try:
-                    print(row_input)
                     closure.run(**row_input)
-                except Exception as e:
-                    print(f"Error running closure {closure.name}: {e}")
+                except Exception:
                     continue
+
 
 def _get_client() -> LilypadClient:
     """Helper function to create a LilypadClient instance."""
