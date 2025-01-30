@@ -13,11 +13,13 @@ from oxen import DataFrame
 from pydantic import BaseModel
 from sqlmodel import Session
 
+from lilypad.ee import LicenseValidator
 from lilypad.server._utils import match_api_key_with_project
 from lilypad.server.db import get_session
 from lilypad.server.services import GenerationService
 from lilypad.server.settings import get_settings
 
+LicenseValidator().validate_license()
 datasets_router = APIRouter()
 
 
