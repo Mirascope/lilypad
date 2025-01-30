@@ -2,6 +2,7 @@
 Using function-based pytest style with mocking and FastAPI TestClient.
 """
 
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ from fastapi.testclient import TestClient
 from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
 from lilypad.server.models import GenerationTable, ProjectTable
 from lilypad.server.services import GenerationService
+from lilypad.server.settings import Settings
 
 
 @pytest.fixture
@@ -22,8 +24,21 @@ def mock_generation_service() -> MagicMock:
     return MagicMock(spec=GenerationService)
 
 
+@pytest.fixture
+def mock_get_settings() -> Generator[Settings, None, None]:
+    """Fixture that returns a mock for get_settings."""
+    settings = Settings(oxen_repo_name="dummy")
+    with patch(
+        "lilypad.ee.server.api.v0.datasets_api.get_settings", return_value=settings
+    ):
+        yield settings
+
+
 def test_get_dataset_rows_by_uuid_success(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """Test a successful request to get_dataset_rows_by_uuid."""
     with patch.object(
@@ -44,7 +59,10 @@ def test_get_dataset_rows_by_uuid_success(
 
 
 def test_get_dataset_rows_by_uuid_not_found(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """If generation_service.find_record_by_uuid raises an exception,
     we expect a 400 BAD REQUEST.
@@ -56,7 +74,10 @@ def test_get_dataset_rows_by_uuid_not_found(
 
 
 def test_get_dataset_rows_by_uuid_dataframe_error(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """If DataFrame.list_page raises an exception, we expect a 500 INTERNAL SERVER ERROR."""
     with patch.object(
@@ -70,7 +91,10 @@ def test_get_dataset_rows_by_uuid_dataframe_error(
 
 
 def test_get_dataset_rows_by_hash_success(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """Test retrieving rows via generation hash."""
     with patch.object(
@@ -89,7 +113,10 @@ def test_get_dataset_rows_by_hash_success(
 
 
 def test_get_dataset_rows_by_hash_error(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """If we cannot resolve the hash or the DataFrame fails, we expect a 400 or 500 error."""
     generation_hash = uuid4()
@@ -102,7 +129,10 @@ def test_get_dataset_rows_by_hash_error(
 
 
 def test_get_dataset_rows_by_name_success(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """Test retrieving dataset rows by generation name."""
     rows_gen1 = DatasetRowsResponse(rows=[{"id": "g1_r1"}, {"id": "g1_r2"}])
@@ -119,11 +149,17 @@ def test_get_dataset_rows_by_name_success(
     data = response.json()
     assert "rows" in data
     assert len(data["rows"]) == 3
-    assert data == {"rows": [{"id": "g1_r1"}, {"id": "g1_r2"}, {"id": "g2_r1"}]}
+    assert data == {
+        "next_page": None,
+        "rows": [{"id": "g1_r1"}, {"id": "g1_r2"}, {"id": "g2_r1"}],
+    }
 
 
 def test_get_dataset_rows_by_name_error(
-    client: TestClient, test_project: ProjectTable, test_generation: GenerationTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_generation: GenerationTable,
+    mock_get_settings: Settings,
 ):
     """If the generation_service fails to find the name, we expect a 400 error."""
     response = client.get(f"/projects/{test_project.uuid}/datasets/names/invalid-name")

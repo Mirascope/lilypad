@@ -75,8 +75,6 @@ class Dataset:
                 dependencies=generation.dependencies,
             )
             break
-        if not previous_closure:
-            raise ValueError("No previous closure found in the database.")
 
         for row in self.data_frame.rows:
             if "input" not in row or not isinstance(row["input"], str):
@@ -84,8 +82,9 @@ class Dataset:
             row_input = json.loads(row["input"])
             with contextlib.suppress(Exception):
                 current_closure.run(**row_input)
-            with contextlib.suppress(Exception):
-                previous_closure.run(**row_input)
+            if previous_closure:
+                with contextlib.suppress(Exception):
+                    previous_closure.run(**row_input)
 
 
 def _get_client() -> LilypadClient:
@@ -135,9 +134,9 @@ def datasets_from_name(*names: str) -> list[Dataset]:
 
     client = _get_client()
     results: list[Dataset] = []
-    page_num: int = 1
 
     for generation_name in names:
+        page_num: int = 1
         dataset_rows = []
         while True:
             response = client.get_dataset_rows(

@@ -145,7 +145,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                     self.table.name == name,
                     self.table.archived.is_(None),  # type: ignore
                 )
-                .order_by(desc(self.table.created_at), self.table.version_num.asc())
+                .order_by(desc(self.table.created_at), self.table.version_num.asc())  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue, reportArgumentType]
             )
         ).all()
 

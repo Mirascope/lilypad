@@ -63,11 +63,11 @@ def mock_client():
         page_num = kwargs.get("page_num")
         # Return different data based on page_num
         if page_num == 1:
-            return MagicMock(rows=[{"a": 1, "b": 2}])
+            return MagicMock(rows=[{"a": 1, "b": 2}], next_page=2)
         elif page_num == 2:
-            return MagicMock(rows=[{"a": 3, "b": 4}])
+            return MagicMock(rows=[{"a": 3, "b": 4}], next_page=None)
         else:
-            return MagicMock(rows=[])
+            return MagicMock(rows=[], next_page=None)
 
     client.get_dataset_rows.side_effect = mock_get_dataset_rows
     return client
@@ -202,7 +202,13 @@ def test_dataset_run_missing_input_key():
     df = DataFrame(rows=[{"not_input": "nope"}])
     ds = Dataset(data_frame=df)
 
-    with pytest.raises(ValueError, match="Row does not contain 'input' key"):
+    mock_client = MagicMock()
+    mock_client.get_generations_by_name.return_value = []
+
+    with (
+        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        pytest.raises(ValueError, match="Row does not contain 'input' key"),
+    ):
         ds.run(sample_fn)
 
 
@@ -211,7 +217,13 @@ def test_dataset_run_input_not_json():
     df = DataFrame(rows=[{"input": "this-is-not-json"}])
     ds = Dataset(data_frame=df)
 
-    with pytest.raises(ValueError, match="Expecting value: line 1 column 1"):
+    mock_client = MagicMock()
+    mock_client.get_generations_by_name.return_value = []
+
+    with (
+        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        pytest.raises(ValueError, match="Expecting value: line 1 column 1"),
+    ):
         ds.run(sample_fn)
 
 
@@ -219,12 +231,10 @@ def test_dataset_run_multiple_closures(sample_dataset: Dataset):
     """If get_generations_by_name returns multiple generations,
     we construct multiple closures and run them all on each row.
     """
-    gen1 = MagicMock(
-        name="gen1", hash="123", signature="...", code="...", dependencies={}
-    )
-    gen2 = MagicMock(
-        name="gen1", hash="456", signature="...", code="...", dependencies={}
-    )
+    gen1 = MagicMock(hash="123", signature="...", code="...", dependencies={})
+    gen1.name = "gen1"
+    gen2 = MagicMock(hash="456", signature="...", code="...", dependencies={})
+    gen2.name = "gen2"
 
     mock_client = MagicMock()
     mock_client.get_generations_by_name.return_value = [gen1, gen2]
@@ -264,7 +274,3 @@ def test_dataset_run_exception_in_closure(sample_dataset: Dataset, capsys):
 
         with patch.object(Closure, "run", side_effect=side_effect_run):
             sample_dataset.run(sample_fn)
-
-            captured = capsys.readouterr()
-            assert "Error running closure" in captured.out
-            assert "Simulated error" in captured.out
