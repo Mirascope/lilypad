@@ -749,7 +749,7 @@ class Closure(BaseModel):
             result = {name}(*{args}, **{kwargs})
             print(json.dumps(result))
         """).format(
-            dependencies="\n#   ".join(
+            dependencies=",\n#   ".join(
                 [
                     f'"{key}[{",".join(extras)}]=={value["version"]}"'
                     if (extras := value["extras"])

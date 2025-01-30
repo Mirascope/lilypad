@@ -4,8 +4,9 @@ adjusted for the updated Oxen dataset API that returns an Oxen-style JSON.
 
 from __future__ import annotations
 
+import contextlib
+import json
 from collections.abc import Callable
-from itertools import count
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -54,6 +55,37 @@ class Dataset:
         col_ct = self.data_frame.get_column_count()
         return f"<Dataset rows={row_ct} cols={col_ct}>"
 
+    def run(self, fn: Callable) -> None:
+        """Run a function on each row of the dataset, passing in the row data as kwargs."""
+        client = _get_client()  # Ensure client is initialized
+        current_closure = Closure.from_fn(fn)
+
+        previous_closure: Closure | None = None
+
+        # Collect all closures with the same name.
+        for generation in client.get_generations_by_name(current_closure.name):
+            if generation.hash == current_closure.hash:
+                # We use current closure.
+                continue
+            previous_closure = Closure(
+                name=generation.name,
+                hash=generation.hash,
+                signature=generation.signature,
+                code=generation.code,
+                dependencies=generation.dependencies,
+            )
+            break
+
+        for row in self.data_frame.rows:
+            if "input" not in row or not isinstance(row["input"], str):
+                raise ValueError("Row does not contain 'input' key.")
+            row_input = json.loads(row["input"])
+            with contextlib.suppress(Exception):
+                current_closure.run(**row_input)
+            if previous_closure:
+                with contextlib.suppress(Exception):
+                    previous_closure.run(**row_input)
+
 
 def _get_client() -> LilypadClient:
     """Helper function to create a LilypadClient instance."""
@@ -76,14 +108,17 @@ def datasets(*uuids: str | UUID) -> list[Dataset]:
         # Convert to string if user passed a UUID object
         uuid_str = str(gen_uuid)
         dataset_rows = []
-        for page_num in count(start=1):
+        page_num: int = 1
+
+        while True:
             response = client.get_dataset_rows(
                 generation_uuid=uuid_str,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
@@ -101,15 +136,17 @@ def datasets_from_name(*names: str) -> list[Dataset]:
     results: list[Dataset] = []
 
     for generation_name in names:
+        page_num: int = 1
         dataset_rows = []
-        for page_num in count(start=1):
+        while True:
             response = client.get_dataset_rows(
                 generation_name=generation_name,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
@@ -130,14 +167,17 @@ def datasets_from_fn(*fns: Callable[..., Any]) -> list[Dataset]:
     for fn in fns:
         closure_obj = Closure.from_fn(fn)
         dataset_rows = []
-        for page_num in count(start=1):
+
+        page_num: int = 1
+        while True:
             response = client.get_dataset_rows(
-                generation_hash=closure_obj.hash,
+                generation_name=closure_obj.name,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
