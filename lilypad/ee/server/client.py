@@ -26,6 +26,7 @@ class DatasetRowsResponse(BaseModel):
     """Response model containing the rows from the Oxen DataFrame."""
 
     rows: list[dict[str, Any]]
+    next_page: int | None = None
 
 
 class LilypadClient(_LilypadClient):

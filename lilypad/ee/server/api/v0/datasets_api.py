@@ -57,22 +57,30 @@ class DatasetRowsResponse(BaseModel):
     """Response model containing the rows from the Oxen DataFrame."""
 
     rows: list[dict[str, Any]]
+    next_page: int | None = None
 
     @classmethod
     def from_metadata(
         cls, meta: _DatasetMetadata, page_num: int = 1
-    ) -> DatasetRowsResponse:
+    ) -> DatasetRowsResponse | None:
         """Return a DatasetRowsResponse from the metadata."""
-        df = DataFrame(
-            remote=meta.repo,
-            path=meta.path,
-            branch=meta.branch,
-            host=meta.host,
-        )
+        try:
+            df = DataFrame(
+                remote=meta.repo,
+                path=meta.path,
+                branch=meta.branch,
+                host=meta.host,
+            )
+        except Exception:
+            return None
         # ignore the _oxen_id column
         df.filter_keys.append("_oxen_id")
         rows = df.list_page(page_num)
-        return DatasetRowsResponse(rows=rows)
+
+        response = DatasetRowsResponse(rows=rows)
+        if df.page_size() > page_num:
+            response.next_page = page_num + 1
+        return response
 
 
 @datasets_router.get(
@@ -116,7 +124,13 @@ async def get_dataset_rows_by_uuid(
         )
 
     try:
-        return DatasetRowsResponse.from_metadata(meta, page_num)
+        response = DatasetRowsResponse.from_metadata(meta, page_num)
+        if response:
+            return response
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Not Found dataset for generation_uuid: {generation_uuid}",
+        )
     except Exception as ex:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -165,7 +179,13 @@ async def get_dataset_rows_by_hash(
         )
 
     try:
-        return DatasetRowsResponse.from_metadata(meta, page_num)
+        response = DatasetRowsResponse.from_metadata(meta, page_num)
+        if response:
+            return response
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Not Found dataset for generation_hash: {generation_hash}",
+        )
     except Exception as ex:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -222,7 +242,8 @@ async def get_dataset_rows_by_name(
         rows = [
             row
             for meta in metas
-            for row in DatasetRowsResponse.from_metadata(meta, page_num).rows
+            if (datasets := DatasetRowsResponse.from_metadata(meta, page_num))
+            for row in datasets.rows
         ]
         return DatasetRowsResponse(rows=rows)
     except Exception as ex:

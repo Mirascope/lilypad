@@ -7,7 +7,6 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import Callable
-from itertools import count
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -75,6 +74,7 @@ class Dataset:
                 code=generation.code,
                 dependencies=generation.dependencies,
             )
+            break
         if not previous_closure:
             raise ValueError("No previous closure found in the database.")
 
@@ -109,14 +109,17 @@ def datasets(*uuids: str | UUID) -> list[Dataset]:
         # Convert to string if user passed a UUID object
         uuid_str = str(gen_uuid)
         dataset_rows = []
-        for page_num in count(start=1):
+        page_num: int = 1
+
+        while True:
             response = client.get_dataset_rows(
                 generation_uuid=uuid_str,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
@@ -132,17 +135,19 @@ def datasets_from_name(*names: str) -> list[Dataset]:
 
     client = _get_client()
     results: list[Dataset] = []
+    page_num: int = 1
 
     for generation_name in names:
         dataset_rows = []
-        for page_num in count(start=1):
+        while True:
             response = client.get_dataset_rows(
                 generation_name=generation_name,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
@@ -163,14 +168,17 @@ def datasets_from_fn(*fns: Callable[..., Any]) -> list[Dataset]:
     for fn in fns:
         closure_obj = Closure.from_fn(fn)
         dataset_rows = []
-        for page_num in count(start=1):
+
+        page_num: int = 1
+        while True:
             response = client.get_dataset_rows(
-                generation_hash=closure_obj.hash,
+                generation_name=closure_obj.name,
                 page_num=page_num,
             )
-            if not response.rows:
-                break
             dataset_rows.extend(response.rows)
+            if response.next_page is None:
+                break
+            page_num = response.next_page
 
         results.append(Dataset(DataFrame(dataset_rows)))
 
