@@ -4,6 +4,7 @@ adjusted for the updated Oxen dataset API that returns an Oxen-style JSON.
 
 from __future__ import annotations
 
+import contextlib
 import json
 from collections.abc import Callable
 from itertools import count
@@ -60,31 +61,31 @@ class Dataset:
         client = _get_client()  # Ensure client is initialized
         current_closure = Closure.from_fn(fn)
 
-        closures: list[Closure] = [current_closure]
+        previous_closure: Closure | None = None
 
         # Collect all closures with the same name.
         for generation in client.get_generations_by_name(current_closure.name):
             if generation.hash == current_closure.hash:
                 # We use current closure.
                 continue
-            closure = Closure(
+            previous_closure = Closure(
                 name=generation.name,
                 hash=generation.hash,
                 signature=generation.signature,
                 code=generation.code,
                 dependencies=generation.dependencies,
             )
-            closures.append(closure)
+        if not previous_closure:
+            raise ValueError("No previous closure found in the database.")
 
         for row in self.data_frame.rows:
             if "input" not in row or not isinstance(row["input"], str):
                 raise ValueError("Row does not contain 'input' key.")
             row_input = json.loads(row["input"])
-            for closure in closures:
-                try:
-                    closure.run(**row_input)
-                except Exception:
-                    continue
+            with contextlib.suppress(Exception):
+                current_closure.run(**row_input)
+            with contextlib.suppress(Exception):
+                previous_closure.run(**row_input)
 
 
 def _get_client() -> LilypadClient:

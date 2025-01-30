@@ -200,7 +200,7 @@ async def get_dataset_rows_by_name(
         A JSON response with `rows` as a list of dictionaries.
     """
     try:
-        generations = generation_service.find_generations_by_name(
+        generations = generation_service.get_generations_by_name_desc_created_at(
             project_uuid, generation_name
         )
         if not generations:

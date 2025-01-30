@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy import desc
 from sqlmodel import and_, func, select
 
 from ..models import GenerationCreate, GenerationTable
@@ -130,3 +131,22 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
         self.session.add(record_table)
         self.session.flush()
         return True
+
+    def get_generations_by_name_desc_created_at(
+        self, project_uuid: UUID, name: str
+    ) -> Sequence[GenerationTable]:
+        """Find record by name, ordered by created_at descending."""
+        record_tables = (
+            self.session.exec(
+                select(self.table)
+                .where(
+                    self.table.organization_uuid == self.user.active_organization_uuid,
+                    self.table.project_uuid == project_uuid,
+                    self.table.name == name,
+                    self.table.archived.is_(None),  # type: ignore
+                )
+                .order_by(desc(self.table.created_at), self.table.version_num.asc())
+            )
+        ).all()
+
+        return record_tables
