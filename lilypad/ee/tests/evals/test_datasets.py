@@ -75,7 +75,7 @@ def mock_client():
 
 def test_datasets_single_uuid(mock_client):
     """Test retrieving a single dataset by UUID."""
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         # We pass a single UUID, expecting a single Dataset.
         results = datasets("123e4567-e89b-12d3-a456-426655440000")
     assert len(results) == 1, "Should return a single Dataset"
@@ -90,7 +90,7 @@ def test_datasets_multiple_uuids(mock_client):
     """Test retrieving multiple datasets by passing multiple UUIDs."""
     uuid1 = "123e4567-e89b-12d3-a456-426655440000"
     uuid2 = UUID("123e4567-e89b-12d3-a456-426655440001")
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         result = datasets(uuid1, uuid2)
 
     assert isinstance(result, list), "Should return a list of Datasets"
@@ -103,7 +103,7 @@ def test_datasets_multiple_uuids(mock_client):
 
 def test_datasets_from_name_single(mock_client):
     """Test retrieving a single dataset from a generation name."""
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         results = datasets_from_name("my_generation_name")
     assert len(results) == 1, "Should return a single Dataset"
     result = results[0]
@@ -113,7 +113,7 @@ def test_datasets_from_name_single(mock_client):
 
 def test_datasets_from_name_multiple(mock_client):
     """Test retrieving multiple datasets by passing multiple generation names."""
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         result = datasets_from_name("gen_name_1", "gen_name_2")
     assert isinstance(result, list), "Should return a list of Datasets"
     assert len(result) == 2, "Should have 2 Datasets"
@@ -127,7 +127,7 @@ def test_datasets_from_fn_single(mock_client):
     def dummy_fn():
         pass
 
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         results = datasets_from_fn(dummy_fn)
     assert len(results) == 1, "Should return a single Dataset"
     result = results[0]
@@ -144,7 +144,7 @@ def test_datasets_from_fn_multiple(mock_client):
     def dummy_fn2():
         pass
 
-    with patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client):
+    with patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client):
         result = datasets_from_fn(dummy_fn1, dummy_fn2)
     assert isinstance(result, list), "Should return a list of Datasets"
     assert len(result) == 2, "Should have 2 Datasets"
@@ -176,7 +176,7 @@ def test_dataset_run_success(sample_dataset: Dataset):
     mock_client.get_generations_by_name.return_value = []
 
     with (
-        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         patch.object(Closure, "from_fn", wraps=Closure.from_fn) as mock_closure,
         patch.object(Closure, "run", return_value=None) as mock_run,
     ):
@@ -196,7 +196,7 @@ def test_dataset_run_missing_input_key():
     mock_client.get_generations_by_name.return_value = []
 
     with (
-        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         pytest.raises(ValueError, match="Row does not contain 'input' key"),
     ):
         ds.run(sample_fn)
@@ -211,7 +211,7 @@ def test_dataset_run_input_not_json():
     mock_client.get_generations_by_name.return_value = []
 
     with (
-        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         pytest.raises(ValueError, match="Expecting value: line 1 column 1"),
     ):
         ds.run(sample_fn)
@@ -230,7 +230,7 @@ def test_dataset_run_multiple_closures(sample_dataset: Dataset):
     mock_client.get_generations_by_name.return_value = [gen1, gen2]
 
     with (
-        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         patch.object(Closure, "from_fn", wraps=Closure.from_fn),
         patch.object(Closure, "run", return_value=None) as mock_run,
     ):
@@ -252,7 +252,7 @@ def test_dataset_run_exception_in_closure(sample_dataset: Dataset, capsys):
     mock_client.get_generations_by_name.return_value = [mock_gen]
 
     with (
-        patch("lilypad.ee.evals.datasets._get_client", return_value=mock_client),
+        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         patch.object(Closure, "from_fn", wraps=Closure.from_fn),
     ):
         call_counter = [0]
