@@ -1,5 +1,4 @@
-"""
-generate_free_tier_license.py
+"""generate_free_tier_license.py
 
 This script demonstrates how to generate a "free-tier" license key
 using the existing generate_license() function from the EE validate module.
@@ -17,12 +16,14 @@ Notes:
   - The script will print the generated license key to stdout.
 """
 
-import typer
 from datetime import datetime, timedelta
 
-from lilypad.ee.validate import generate_license, LicenseError
+import typer
+
+from lilypad.ee.validate import LicenseError, generate_license
 
 app = typer.Typer(help="Generate free-tier license keys for LilyPad EE features.")
+
 
 @app.command()
 def main(
@@ -33,7 +34,7 @@ def main(
         help="Path to the RSA private key PEM file.",
     ),
     password: str = typer.Option(
-        None,
+        ...,
         "--password",
         "-p",
         help="Password for the RSA private key if encrypted; leave blank if none.",
@@ -56,15 +57,13 @@ def main(
         "-d",
         help="Number of days until the license expires.",
     ),
-):
-    """
-    Generate a free-tier license key for LilyPad EE features.
-    """
+) -> None:
+    """Generate a free-tier license key for LilyPad EE features."""
     expires_at = datetime.now() + timedelta(days=duration_days)
     try:
         license_key = generate_license(
             private_key_path=private_key_path,
-            password=password.encode() if password else None,
+            password=password.encode(),
             customer=customer,
             license_id=license_id,
             expires_at=expires_at,
@@ -73,6 +72,7 @@ def main(
         typer.echo(license_key)
     except LicenseError as e:
         typer.echo(f"Failed to generate license: {e}")
+
 
 if __name__ == "__main__":
     app()
