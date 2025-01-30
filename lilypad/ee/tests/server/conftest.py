@@ -1,6 +1,7 @@
 """Test configuration and fixtures."""
 
 from collections.abc import Callable, Generator
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -24,6 +25,14 @@ def get_session() -> Generator[Session, None, None]:
     """Get database session."""
     with Session(engine) as session:
         yield session
+
+
+@pytest.fixture(autouse=True)
+def ignore_license_validation():
+    """Ignore license validation for tests."""
+    with patch("lilypad.ee.LicenseValidator.validate_license") as mock:
+        mock.return_value = True
+        yield
 
 
 @pytest.fixture(autouse=True)
