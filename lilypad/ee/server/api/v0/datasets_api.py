@@ -43,8 +43,6 @@ def _get_oxen_dataset_metadata(
     depending on whether we received generation_uuid, generation_hash, or generation_name.
     """
     repo_name = get_settings().oxen_repo_name
-    # if not repo_name:
-    #     raise ValueError("Oxen repo name not set in settings.")
     return _DatasetMetadata(
         repo=repo_name,  # pyright: ignore [reportArgumentType]
         branch=get_settings().oxen_branch,
