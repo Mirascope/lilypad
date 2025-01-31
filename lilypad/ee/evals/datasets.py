@@ -57,24 +57,7 @@ class Dataset:
 
     def run(self, fn: Callable) -> None:
         """Run a function on each row of the dataset, passing in the row data as kwargs."""
-        client = _get_client()  # Ensure client is initialized
         current_closure = Closure.from_fn(fn)
-
-        previous_closure: Closure | None = None
-
-        # Collect all closures with the same name.
-        for generation in client.get_generations_by_name(current_closure.name):
-            if generation.hash == current_closure.hash:
-                # We use current closure.
-                continue
-            previous_closure = Closure(
-                name=generation.name,
-                hash=generation.hash,
-                signature=generation.signature,
-                code=generation.code,
-                dependencies=generation.dependencies,
-            )
-            break
 
         for row in self.data_frame.rows:
             if "input" not in row or not isinstance(row["input"], str):
@@ -82,9 +65,6 @@ class Dataset:
             row_input = json.loads(row["input"])
             with contextlib.suppress(Exception):
                 current_closure.run(**row_input)
-            if previous_closure:
-                with contextlib.suppress(Exception):
-                    previous_closure.run(**row_input)
 
 
 def _get_client() -> LilypadClient:
