@@ -20,6 +20,20 @@ from ...settings import get_settings
 organization_invites_router = APIRouter()
 
 
+@organization_invites_router.get(
+    "/organizations/invites/{invite_token}",
+    response_model=OrganizationInvitePublic,
+)
+async def get_organization_invite(
+    invite_token: str,
+    organization_invite_service: Annotated[
+        OrganizationInviteService, Depends(OrganizationInviteService)
+    ],
+) -> OrganizationInviteTable:
+    """Get an organization invite."""
+    return organization_invite_service.find_record_by_token(invite_token)
+
+
 @organization_invites_router.post(
     "/organizations/invites",
     response_model=OrganizationInvitePublic,
@@ -35,6 +49,7 @@ async def create_organization_invite(
     """Create an organization invite."""
     invite_token = secrets.token_urlsafe(32)
     data.token = invite_token
+    data.organization_uuid = user.active_organization_uuid
     if not user.active_organization_uuid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

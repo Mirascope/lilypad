@@ -5,6 +5,14 @@ import {
 } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+export const getOrganizationInvite = async (inviteToken: string) => {
+  return (
+    await api.get<OrganizationInvitePublic>(
+      `/organizations/invites/${inviteToken}`
+    )
+  ).data;
+};
+
 export const createOrganizationInvite = async (
   data: OrganizationInviteCreate
 ) => {
@@ -13,6 +21,10 @@ export const createOrganizationInvite = async (
   ).data;
 };
 
+export const organizationInviteQueryOptions = (inviteToken: string) => ({
+  queryKey: ["organization-invites", inviteToken],
+  queryFn: () => getOrganizationInvite(inviteToken),
+});
 export const useCreateOrganizationInviteMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

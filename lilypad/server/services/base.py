@@ -51,9 +51,9 @@ class BaseService(Generic[_TableT, _CreateT]):
             )
         ).all()
 
-    def delete_record_by_uuid(self, uuid: UUID) -> bool:
+    def delete_record_by_uuid(self, uuid: UUID, **filters: Any) -> bool:
         """Delete record by uuid"""
-        record_table = self.find_record_by_uuid(uuid)
+        record_table = self.find_record_by_uuid(uuid, **filters)
         try:
             self.session.delete(record_table)
         except Exception:

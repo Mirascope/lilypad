@@ -52,3 +52,4 @@ class OrganizationInviteCreate(_OrganizationInviteBase):
 
     token: str | None = None
     resend_email_id: str | None = None
+    organization_uuid: UUID | None = None

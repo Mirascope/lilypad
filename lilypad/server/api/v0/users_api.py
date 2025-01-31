@@ -5,10 +5,13 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
+from ..._utils import create_jwt_token, get_current_user
 from ...models import (
     UserOrganizationCreate,
     UserOrganizationTable,
+    UserOrganizationUpdate,
     UserPublic,
     UserRole,
     UserTable,
@@ -41,6 +44,10 @@ async def get_user_organizations(
     return user_organization_service.get_users_by_active_organization()
 
 
+class CreateUserOrganizationToken(BaseModel):
+    token: str
+
+
 @users_router.post("/user-organizations", response_model=UserOrganizationTable)
 async def create_user_organization(
     user_organization_service: Annotated[
@@ -49,18 +56,38 @@ async def create_user_organization(
     organization_invites_service: Annotated[
         OrganizationInviteService, Depends(OrganizationInviteService)
     ],
+    create_user_organization_token: CreateUserOrganizationToken,
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> UserOrganizationTable:
     """Create user organization"""
-    data = UserOrganizationCreate(role=UserRole.MEMBER)
-    user_organization = user_organization_service.create_record(data)
+    org_invite = organization_invites_service.find_record_by_token(
+        create_user_organization_token.token
+    )
+    if not org_invite or not org_invite.uuid:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invite not found.",
+        )
+    invite_deleted = organization_invites_service.delete_record_by_uuid(
+        org_invite.uuid,
+    )
+    if not invite_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete invite.",
+        )
+    data = UserOrganizationCreate(
+        role=UserRole.MEMBER,
+        user_uuid=user.uuid,
+    )
+    user_organization = user_organization_service.create_record(
+        data, organization_uuid=org_invite.organization_uuid
+    )
     if not user_organization:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user organization.",
         )
-    organization_invites_service.delete_record_by_email(
-        user_organization.organization_uuid
-    )
     return user_organization
 
 
@@ -69,7 +96,7 @@ async def create_user_organization(
 )
 async def update_user_organization(
     user_organization_uuid: UUID,
-    data: UserOrganizationCreate,
+    data: UserOrganizationUpdate,
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
     ],
@@ -95,9 +122,12 @@ async def delete_user_organizations(
 async def update_user_active_organization_id(
     activeOrganizationUuid: UUID,
     user_service: Annotated[UserService, Depends(UserService)],
-) -> UserTable:
+) -> UserPublic:
     """Update users active organization uuid."""
-    return user_service.update_user_active_organization_uuid(activeOrganizationUuid)
+    user = user_service.update_user_active_organization_uuid(activeOrganizationUuid)
+    user_public = UserPublic.model_validate(user)
+    user_public.access_token = create_jwt_token(user_public)
+    return user_public
 
 
 @users_router.patch("/users", response_model=UserPublic)

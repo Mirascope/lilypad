@@ -2,6 +2,7 @@
 
 from typing import Annotated, Sequence
 
+import fsspec
 from fastapi import APIRouter, Depends
 from oxen import DataFrame, RemoteRepo, Workspace
 
@@ -21,10 +22,28 @@ def get_repo() -> RemoteRepo:
 
 @oxen_router.post("/projects/{project_uuid}/oxen")
 async def create_dataset(repo: Annotated[RemoteRepo, Depends(get_repo)]) -> bool:
-    data_frame = DataFrame("bkao/{active_organization_uuid}", "data.csv")
-    row_id = data_frame.insert_row({"category": "not spam", "message": "Github PR"})
-    row = data_frame.get_row_by_id(row_id)
-
+    status = repo.status()
+    fs = fsspec.filesystem(
+        "oxen",
+        namespace=repo._repo.namespace(),
+        repo=repo._repo.name(),
+        host=repo._repo.host,
+        scheme=repo._repo.scheme,
+    )
+    try:
+        with fs.open("generations/generationUuid/data.csv", mode="wb") as f:
+            f.commit_message = "Updated data"
+            f.write("spam, message\n")
+    except Exception as e:
+        print(e)
+        repo.add("data.csv", dst_dir="generations/generationUuid")
+        repo.commit("initial commit")
+    # repo.add("data.csv", dst_dir="generations/generationUuid")
+    # repo.commit("initial commit")
+    # workspace = Workspace(repo, "main", workspace_id="123")
+    # data_frame = DataFrame(workspace, "data.csv")
+    # row_id = data_frame.insert_row({"category": "not spam", "message": "..."})
+    # workspace.commit("commit workspace.")
     return True
 
 

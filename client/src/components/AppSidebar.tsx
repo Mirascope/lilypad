@@ -26,7 +26,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { projectsQueryOptions } from "@/utils/projects";
-import { useUpdateActiveOrganizationMutation } from "@/utils/users";
+import {
+  userQueryOptions,
+  useUpdateActiveOrganizationMutation,
+} from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
@@ -103,7 +106,8 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { user, activeProject, setProject } = useAuth();
+  const { activeProject, setProject } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
@@ -144,7 +148,6 @@ export const AppSidebar = () => {
       router.invalidate().finally(() => {
         navigate({
           to: "/auth/login",
-          search: { redirect: undefined },
         });
       });
     });

@@ -31,6 +31,7 @@ from .user_organizations import (
     UserOrganizationCreate,
     UserOrganizationPublic,
     UserOrganizationTable,
+    UserOrganizationUpdate,
     UserRole,
 )
 from .users import UserCreate, UserPublic, UserTable
@@ -75,5 +76,6 @@ __all__ = [
     "UserOrganizationCreate",
     "UserOrganizationPublic",
     "UserOrganizationTable",
+    "UserOrganizationUpdate",
     "get_json_column",
 ]

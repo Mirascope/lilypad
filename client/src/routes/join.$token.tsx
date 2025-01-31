@@ -1,66 +1,57 @@
+import { useAuth } from "@/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  useCreateUserOrganizationMutation,
-  userQueryOptions,
-} from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { organizationInviteQueryOptions } from "@/utils/organizations";
+import { useCreateUserOrganizationMutation } from "@/utils/users";
+import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
+  redirect,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/join/$token")({
+  beforeLoad: ({ params, context }) => {
+    const { token } = params;
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/auth/login",
+        search: {
+          redirect: `join/${token}`,
+        },
+      });
+    }
+  },
   component: () => <JoinPage />,
 });
 
 const JoinPage = () => {
   const { token } = useParams({ from: Route.id });
+  const {
+    data: organizationInvite,
+    isLoading,
+    isError,
+  } = useQuery(organizationInviteQueryOptions(token));
   const createUserOrganization = useCreateUserOrganizationMutation();
   const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(true);
-  const [error, setError] = useState("");
-
-  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { user } = useAuth();
 
   useEffect(() => {
     const processInvite = async () => {
-      try {
-        if (!token) {
-          setError("Invalid invite link");
-          return;
-        }
-
-        if (user) {
-          await createUserOrganization.mutateAsync();
-          navigate({
-            to: "/projects",
-            search: { joined: true },
-          });
-        } else {
-          navigate({
-            to: "/auth/login",
-            search: { redirect: Route.fullPath },
-          });
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else if (typeof err === "string") {
-          setError(err);
-        } else {
-          setError("Failed to process invite");
-        }
-      } finally {
-        setIsProcessing(false);
+      if (user && organizationInvite) {
+        await createUserOrganization.mutateAsync(token);
+        navigate({
+          to: "/projects",
+          search: { joined: true },
+        });
       }
     };
-
+    if (isLoading) return;
     processInvite();
-  }, [token, user, navigate]);
+  }, [organizationInvite, user, isLoading]);
 
-  if (isProcessing) {
+  if (isLoading) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center'>
@@ -71,11 +62,11 @@ const JoinPage = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className='p-4'>
         <Alert variant='destructive'>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>Invalid invite link</AlertDescription>
         </Alert>
       </div>
     );
@@ -83,5 +74,3 @@ const JoinPage = () => {
 
   return null;
 };
-
-export default JoinPage;

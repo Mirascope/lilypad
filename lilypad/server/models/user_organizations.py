@@ -1,11 +1,11 @@
 """Users organizations table and models."""
 
-from enum import Enum
+import enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Column, Enum, Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .organizations import OrganizationPublic
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .users import UserTable
 
 
-class UserRole(str, Enum):
+class UserRole(str, enum.Enum):
     """User role enum."""
 
     OWNER = "owner"
@@ -30,7 +30,10 @@ class UserRole(str, Enum):
 class _UserOrganizationBase(SQLModel):
     """Base UserOrganization Model."""
 
-    role: UserRole = Field(nullable=False)
+    role: UserRole = Field(sa_column=Column(Enum(UserRole), nullable=False))
+    user_uuid: UUID = Field(
+        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
 
 
 class UserOrganizationTable(
@@ -42,9 +45,6 @@ class UserOrganizationTable(
 
     organization: "OrganizationTable" = Relationship(
         back_populates="user_organizations"
-    )
-    user_uuid: UUID = Field(
-        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     user: "UserTable" = Relationship(back_populates="user_organizations")
 
@@ -60,4 +60,10 @@ class UserOrganizationPublic(_UserOrganizationBase):
 class UserOrganizationCreate(_UserOrganizationBase):
     """UserOrganization create model"""
 
-    ...
+    organization_uuid: UUID | None = None
+
+
+class UserOrganizationUpdate(BaseModel):
+    """UserOrganization update model"""
+
+    role: UserRole

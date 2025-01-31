@@ -2,6 +2,7 @@ import { DataTable } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -30,7 +31,9 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   OrganizationInviteCreate,
+  OrganizationPublic,
   UserOrganizationPublic,
+  UserOrganizationUpdate,
   UserPublic,
   UserRole,
 } from "@/types/types";
@@ -39,6 +42,7 @@ import {
   useDeleteUserOrganizationMutation,
   userQueryOptions,
   usersByOrganizationQueryOptions,
+  useUpdateUserOrganizationMutation,
 } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
@@ -50,6 +54,10 @@ export const UserOrgTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const userOrganization = user.user_organizations?.find(
+    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
+  );
+  if (!userOrganization) return null;
   const columns: ColumnDef<UserPublic>[] = [
     {
       accessorKey: "first_name",
@@ -74,7 +82,29 @@ export const UserOrgTable = () => {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        return <EditUserPermissions user={row.original} />;
+        const rowUserOrganization = row.original.user_organizations?.find(
+          (userOrg) =>
+            userOrg.organization_uuid === user.active_organization_uuid
+        ); // userOrganization is the user's role in the organization
+
+        if (
+          !rowUserOrganization ||
+          rowUserOrganization.user_uuid === user.uuid ||
+          userOrganization.role !== UserRole.OWNER
+        )
+          return null;
+        return (
+          <div className='flex gap-2'>
+            <EditUserPermissionsDialog
+              userOrganization={rowUserOrganization}
+              user={row.original}
+            />
+            <RemoveUserDialog
+              userOrganization={rowUserOrganization}
+              user={row.original}
+            />
+          </div>
+        );
       },
     },
   ];
@@ -94,8 +124,12 @@ export const UserOrgTable = () => {
         hideColumnButton
         customControls={() => (
           <>
-            <InviteUserButton />
-            <RemoveUserDialog />
+            {userOrganization.role !== UserRole.MEMBER && (
+              <InviteUserButton
+                organization={userOrganization.organization}
+                user={user}
+              />
+            )}
           </>
         )}
       />
@@ -103,30 +137,18 @@ export const UserOrgTable = () => {
   );
 };
 
-const InviteUserButton = () => {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>Invite user</Button>
-      </DialogTrigger>
-      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <InviteUserForm />
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const InviteUserForm = () => {
-  const { data: user } = useSuspenseQuery(userQueryOptions());
+const InviteUserButton = ({
+  organization,
+  user,
+}: {
+  organization: OrganizationPublic;
+  user: UserPublic;
+}) => {
   const methods = useForm<OrganizationInviteCreate>({
     defaultValues: { email: "", invited_by: user.uuid },
   });
   const { toast } = useToast();
   const createOrganizationInvite = useCreateOrganizationInviteMutation();
-  const organization = user.user_organizations?.find(
-    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
-  )?.organization;
-  if (!organization) return null;
   const onSubmit = async (data: OrganizationInviteCreate) => {
     const created = await createOrganizationInvite.mutateAsync(data);
     if (created) {
@@ -141,52 +163,92 @@ const InviteUserForm = () => {
     }
   };
   return (
-    <Form {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-        <DialogHeader className='flex-shrink-0'>
-          <DialogTitle>{`Invite user to ${organization.name}`}</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          An email will be sent to the user with an invitation to join the team.
-        </DialogDescription>
-        <FormField
-          key='email'
-          control={methods.control}
-          name='email'
-          rules={{
-            required: "Email is required",
-            pattern: {
-              value: /\S+@\S+\.\S+/,
-              message: "Invalid email",
-            },
-          }}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription />
-            </FormItem>
-          )}
-        />
-        <DialogFooter>
-          <Button
-            type='submit'
-            loading={methods.formState.isSubmitting}
-            className='w-full'
-          >
-            {methods.formState.isSubmitting
-              ? "Sending invite..."
-              : "Send invite"}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Invite user</Button>
+      </DialogTrigger>
+      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
+        <Form {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
+            <DialogHeader className='flex-shrink-0'>
+              <DialogTitle>{`Invite user to ${organization.name}`}</DialogTitle>
+            </DialogHeader>
+            <DialogDescription>
+              An email will be sent to the user with an invitation to join the
+              team.
+            </DialogDescription>
+            <FormField
+              key='email'
+              control={methods.control}
+              name='email'
+              rules={{
+                required: "Email is required",
+                pattern: {
+                  value: /\S+@\S+\.\S+/,
+                  message: "Invalid email",
+                },
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button
+                  type='submit'
+                  loading={methods.formState.isSubmitting}
+                  className='w-full'
+                >
+                  {methods.formState.isSubmitting
+                    ? "Sending invite..."
+                    : "Send invite"}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-const EditUserPermissions = ({ user }: { user: UserPublic }) => {
+const EditUserPermissionsDialog = ({
+  userOrganization,
+  user,
+}: {
+  userOrganization: UserOrganizationPublic;
+  user: UserPublic;
+}) => {
+  const updateUserOrganization = useUpdateUserOrganizationMutation();
+  const { toast } = useToast();
+  const methods = useForm<UserOrganizationUpdate>({
+    defaultValues: { role: userOrganization?.role },
+  });
+  const onSubmit = async (data: UserOrganizationUpdate) => {
+    const updated = await updateUserOrganization.mutateAsync({
+      userOrganizationUuid: userOrganization.uuid,
+      data,
+    });
+    if (updated) {
+      toast({
+        title: "Successfully updated user permissions",
+      });
+    } else {
+      toast({
+        title: "Failed to update user permissions",
+        variant: "destructive",
+      });
+    }
+  };
+  const roles = Object.values(UserRole).filter(
+    (role) => role !== UserRole.OWNER
+  );
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <Dialog>
@@ -196,85 +258,76 @@ const EditUserPermissions = ({ user }: { user: UserPublic }) => {
           </Button>
         </DialogTrigger>
         <DialogContent className='max-w-[425px] overflow-x-auto'>
-          <EditUserPermissionsForm editUser={user} />
+          <Form {...methods}>
+            <form
+              onSubmit={methods.handleSubmit(onSubmit)}
+              className='space-y-6'
+            >
+              <DialogHeader className='flex-shrink-0'>
+                <DialogTitle>{`Edit permissions for ${user.first_name}`}</DialogTitle>
+              </DialogHeader>
+              <DialogDescription>
+                Update <b>{user.first_name}'s</b> role within the organization.
+              </DialogDescription>
+              <FormField
+                key='role'
+                control={methods.control}
+                name='role'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className='w-full'>
+                          <SelectValue placeholder='Change role' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    type='submit'
+                    loading={methods.formState.isSubmitting}
+                    className='w-full'
+                  >
+                    {methods.formState.isSubmitting ? "Updating..." : "Update"}
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
   );
 };
 
-type EditUserPermissionsFormValues = {
-  role: string;
-};
-
-const EditUserPermissionsForm = ({ editUser }: { editUser: UserPublic }) => {
-  const { data: user } = useSuspenseQuery(userQueryOptions());
-  const userOrganization = editUser?.user_organizations?.find(
-    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
-  );
-  const methods = useForm<EditUserPermissionsFormValues>({
-    defaultValues: { role: userOrganization?.role },
-  });
-  const onSubmit = async (data: EditUserPermissionsFormValues) => {};
-  const roles = Object.values(UserRole);
-  return (
-    <Form {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-        <DialogHeader className='flex-shrink-0'>
-          <DialogTitle>{`Edit permissions for ${user.first_name}`}</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          Update the user's role within the organization.
-        </DialogDescription>
-        <FormField
-          key='role'
-          control={methods.control}
-          name='role'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Change role' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <DialogFooter>
-          <Button
-            type='submit'
-            loading={methods.formState.isSubmitting}
-            className='w-full'
-          >
-            {methods.formState.isSubmitting ? "Updating..." : "Update"}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
-};
-
 const RemoveUserDialog = ({
-  deleteUser,
+  userOrganization,
+  user,
 }: {
-  deleteUser: UserOrganizationPublic;
+  userOrganization: UserOrganizationPublic;
+  user: UserPublic;
 }) => {
   const methods = useForm();
   const deleteUserOrganization = useDeleteUserOrganizationMutation();
   const { toast } = useToast();
   const onSubmit = async () => {
     const successfullyDeleted = await deleteUserOrganization.mutateAsync(
-      deleteUser.uuid
+      userOrganization.uuid
     );
     let title = "Failed to remove user. Please try again.";
     if (successfullyDeleted) {
@@ -299,19 +352,25 @@ const RemoveUserDialog = ({
         <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
             <DialogHeader className='flex-shrink-0'>
-              <DialogTitle>{`Remove`}</DialogTitle>
+              <DialogTitle>{`Remove ${user.first_name}`}</DialogTitle>
             </DialogHeader>
-            <DialogDescription>{`Deleting ...`}</DialogDescription>
-            <p className='text-red-500'>WARNING: This action is final.</p>
+            <DialogDescription>
+              This action will remove <b>{user.first_name}</b> from{" "}
+              <b>{userOrganization.organization.name}</b>
+            </DialogDescription>
             <DialogFooter>
-              <Button
-                type='submit'
-                variant='destructive'
-                loading={methods.formState.isSubmitting}
-                className='w-full'
-              >
-                {methods.formState.isSubmitting ? "Removing..." : "Remove user"}
-              </Button>
+              <DialogClose asChild>
+                <Button
+                  type='submit'
+                  variant='destructive'
+                  loading={methods.formState.isSubmitting}
+                  className='w-full'
+                >
+                  {methods.formState.isSubmitting
+                    ? "Removing..."
+                    : "Remove user"}
+                </Button>
+              </DialogClose>
             </DialogFooter>
           </form>
         </Form>

@@ -185,6 +185,19 @@ wheels = [
 ]
 
 [[package]]
+name = "alembic-postgresql-enum"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alembic" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/0c/9dbd6bb20839fdab1f6ef3f157d284586785c0eb6fd36cf72fa9f1b1d598/alembic_postgresql_enum-1.6.0.tar.gz", hash = "sha256:1774bfa008fedef2db2199702497df6342488d35206ef7964e9ea4ea333d5662", size = 15232 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e6/d9/d5bd1e20320986b94513e80b13ccf8c27546e3f6736f5053fad08ea6cc48/alembic_postgresql_enum-1.6.0-py3-none-any.whl", hash = "sha256:3761a1fc695e86f8ea8e083fefb119c3bdb8709874d7eca4ec7736085d2e693a", size = 23231 },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2083,7 +2096,7 @@ wheels = [
 
 [[package]]
 name = "oxenai"
-version = "0.20.0"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pandas" },
@@ -2093,23 +2106,23 @@ dependencies = [
     { name = "toml" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/f3/d9d6957d4dd8a0f3028794f84664941562a0e88f0e55561cc8176761a263/oxenai-0.20.0.tar.gz", hash = "sha256:80d710a1b92cd11a88a0da94ffcdb4ccf0f346d4724f958963d10c9b8d3ae143", size = 5840475 }
+sdist = { url = "https://files.pythonhosted.org/packages/97/06/a56903a53e24a107c087a032165b1be4aec2c61c56af4c2b65008e5a281c/oxenai-0.21.0.tar.gz", hash = "sha256:a91d96ad350bd0dfd6ba194f1f2683d9b3cd8040ae09ecc4eef8bc540139c376", size = 5844229 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/97/d7ab0720650d78445ac217e0daf97d872c38d93a0e3fa455f62362b66526/oxenai-0.20.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c9f95bd60ba6b8f4c716dd9e34de8ca1fe13d8e4365b72144626f60b5b2e740e", size = 30493694 },
-    { url = "https://files.pythonhosted.org/packages/9a/34/0dbbc966cf46f85ae11f331ae8b73d66ed6848e2647a3702d09727b0f330/oxenai-0.20.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:63970c1828cde30aef130d346bb6e625d83a4f1b9de8d8828a1492e41b2dc099", size = 34077892 },
-    { url = "https://files.pythonhosted.org/packages/3f/94/650dd6bfe4091f8352183bb568ee08533aec0a7dcce9193640bd51a7ce19/oxenai-0.20.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:a1caecc58c85ae92c18f4ffe23d3419a11d0c7ba0396d61ffb663045c02c50fb", size = 37663962 },
-    { url = "https://files.pythonhosted.org/packages/09/69/3c400a3f48e225a9a599a4fd3cdea1341582ccef8b3865f7b780586a9432/oxenai-0.20.0-cp310-cp310-manylinux_2_39_x86_64.whl", hash = "sha256:3bb45f1693c7802ce98c9578f15eb908c25661f9545bf40d79a11dfa97a3af5b", size = 38627136 },
-    { url = "https://files.pythonhosted.org/packages/5a/49/218160144dd5bb2455e45162cd2f9904c800038e7d1933520d982fe2ead6/oxenai-0.20.0-cp310-cp310-win_amd64.whl", hash = "sha256:d8ffbbf6bdadfed15b0f849d14eb9541e6591176498f09cffd6494d76fce85a0", size = 30724718 },
-    { url = "https://files.pythonhosted.org/packages/cf/55/2311d9f5177c555c4b88d438eafdbdd4a8d25d1792cd5641e3373f34bd94/oxenai-0.20.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:36e2c432fda7e27639e86b387b7d53ebb24fdda209ec84f3771afdd6fa8d3ecb", size = 30483932 },
-    { url = "https://files.pythonhosted.org/packages/06/3b/43e3858758f9f171bbd21c6533ea100dbe8a5b62b3f0ba3708ec74e64280/oxenai-0.20.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:ec4dddbc330e59b0c13767320dc1df5ca55a72c1e840a5141987411f9399a826", size = 34081791 },
-    { url = "https://files.pythonhosted.org/packages/5e/a4/f33edbe219d1b3cd2f53c6c33f9d9b68760634569b05992e9c3ce7f1977f/oxenai-0.20.0-cp311-cp311-manylinux_2_31_x86_64.whl", hash = "sha256:eb9797b099c42366faf6b34367f2128a1ea1838e6d3b77c993762979f3461f60", size = 37646739 },
-    { url = "https://files.pythonhosted.org/packages/81/a3/e18527853295ef063a94a267e5b992d380e0bf21093819fa88cf6ae2c56f/oxenai-0.20.0-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:b5eab80f7e5350808e7475457be86a13d15365d0a44ab96c08c25f8e82477319", size = 38614805 },
-    { url = "https://files.pythonhosted.org/packages/3b/29/513078f435419819baca1376ed4dc7bf92de6b0cc67adfd72c9c8964814f/oxenai-0.20.0-cp311-cp311-win_amd64.whl", hash = "sha256:da702e45734e9eb008b2003778c4d2f7a0754b42751ef3ed8830fe02fd633baa", size = 30722710 },
-    { url = "https://files.pythonhosted.org/packages/db/f2/1a820d620c5c40ec0a47a979ba7164aed7f299f649ec0873283eff5fdfa6/oxenai-0.20.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:67fc6661ba2dc45e5e4352fa861616aabd8f9f136f6d4b64c80cc786e31f6177", size = 30499204 },
-    { url = "https://files.pythonhosted.org/packages/09/84/06293babf1345524f4153f3a5b3646fed9a24159633465233e91de0a571d/oxenai-0.20.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:422310386bab535bd3fb4c9025fd71e93135315d0f8f9602475f4d77bbd05df4", size = 34091500 },
-    { url = "https://files.pythonhosted.org/packages/ab/15/c34e51d05eeaf00bccda95e5acb1dfcc66e84580a274dbe6822a966234a7/oxenai-0.20.0-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:6b899df9b03dd82117f5bd22f3328f510bcaa5d7bfb75af86d157e5c2d27b253", size = 37639878 },
-    { url = "https://files.pythonhosted.org/packages/6a/a2/78e4814e019f07fb4fc43640eedfd9a9fbebe933e9db908b4e300d74ea04/oxenai-0.20.0-cp312-cp312-manylinux_2_39_x86_64.whl", hash = "sha256:ae76d4cb4bbc558aa23f04b4dec7399d2d8ce5c8a95653a523f553a9a2fa9fde", size = 38619120 },
-    { url = "https://files.pythonhosted.org/packages/bf/d5/e25477c9383085690c9c2c0e01eb1f3014212f7102ac0cbe91ac28af05e2/oxenai-0.20.0-cp312-cp312-win_amd64.whl", hash = "sha256:07ea2d841f6ee6693775b188846312dc701907960968c0917b11a2fbb8fd98f7", size = 30726127 },
+    { url = "https://files.pythonhosted.org/packages/53/9b/6c02c216abf62b19fd2ed02b3a5ecb3b47bc8f67290a1c0d408f8e176abe/oxenai-0.21.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d697c7c9461726d923d6a167c3d7a202d9d506fc3134127cc65ae3d3e351d31f", size = 30573096 },
+    { url = "https://files.pythonhosted.org/packages/7c/8b/e982cb6681ac48f3d9ee360374174da56d80c27153ad0b9a7d760976467a/oxenai-0.21.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:9bb55ab1dab7943a7f727d5d983175c18c998d0adaf69b7ff8cd0e326d06350c", size = 34165216 },
+    { url = "https://files.pythonhosted.org/packages/c4/62/2586aa955cf26c7542b777aa36c2f12d5a6a2bea08a7c8690927ba980fb7/oxenai-0.21.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:15001442ef03c65c785355b333b8653d966716d977784d3ea0a9cdb91f438eba", size = 37740339 },
+    { url = "https://files.pythonhosted.org/packages/9a/96/da1eb208cee62c3a26559d97a6925015f17883e39519661a1471cd35e118/oxenai-0.21.0-cp310-cp310-manylinux_2_39_x86_64.whl", hash = "sha256:310d467e1961c61b6466e8849e45e3b66add5809e87a2453246f9cd477e08cf2", size = 38726080 },
+    { url = "https://files.pythonhosted.org/packages/53/a4/10c49c66ac849b7f89ee3088b7aa518c6edff891a302248469c709f65933/oxenai-0.21.0-cp310-cp310-win_amd64.whl", hash = "sha256:4ef6d9e83e6d6db1cb98a749fdd557aeb1affa3fbe31d6597a593847d7cd24b1", size = 30814758 },
+    { url = "https://files.pythonhosted.org/packages/75/75/d75c49868d6d3f763869849e9f35a28e59052418d525b348ed40e18b1e3f/oxenai-0.21.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ed110e90a888f66750e30784640ac6387bccd8083a13f279f90562d652cd472c", size = 30574544 },
+    { url = "https://files.pythonhosted.org/packages/0c/d4/ddfb9189b133fd7fa3f616452ad47e6509839a4c88f424fcc1cd2a958375/oxenai-0.21.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:0f1fb68143445401c6735ecd77120833c4c5cd1d5918562f5d6271be3049be3b", size = 34156529 },
+    { url = "https://files.pythonhosted.org/packages/11/26/6181cb9b10e45fe88556b58cb84b2693d342395c8af4d52dac14133179fc/oxenai-0.21.0-cp311-cp311-manylinux_2_31_x86_64.whl", hash = "sha256:f5c694671738b72ecb7018e0a06a90aa32b6c4eb23b64081d16dab897da8964f", size = 37749092 },
+    { url = "https://files.pythonhosted.org/packages/e1/ba/d304c098e214c89232632ca093fdae7924654ddd99292473058273c5d622/oxenai-0.21.0-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:bc387c0e32f934e95076a141ec7c5a9b9d4ad0f7f56c8ac898dd82fed8139d15", size = 38714083 },
+    { url = "https://files.pythonhosted.org/packages/72/e7/dbacb75834781070fe24108df59541ba5fb49dd2eb6df7631ad145b196c1/oxenai-0.21.0-cp311-cp311-win_amd64.whl", hash = "sha256:4ef4d01c292dd8b6f9f97589c351af5049daa54a00b87ce95eb30385fcfbac86", size = 30812657 },
+    { url = "https://files.pythonhosted.org/packages/44/e7/f683aad0b541727a9831375c873d5de2936acc9f87d59f34d9a770fedce6/oxenai-0.21.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5feb24478361b96a80d52e0ec95e46564661d964e6084d031c13fb281dbcb3d5", size = 30559579 },
+    { url = "https://files.pythonhosted.org/packages/95/91/1e492f7bf2f15fe74b2ca127109ad66b01b00c92db9dc5388d18ca919f08/oxenai-0.21.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:785bcd258ad9dc38600836559149b114241f957a2be4aee247ed60591465047f", size = 34153256 },
+    { url = "https://files.pythonhosted.org/packages/ac/71/c289404e8713d077df71b70901f0fc82ad60172542e780a2895dba40f85d/oxenai-0.21.0-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:4925f2e17ee0e838baa21373a1e8ebcc1f43a2fe2a3e2d15c6457bde4eebeb95", size = 37746417 },
+    { url = "https://files.pythonhosted.org/packages/38/9f/cf980c1e338e86e463fa45381391a08b860761c84bebbc12d282b1a2e055/oxenai-0.21.0-cp312-cp312-manylinux_2_39_x86_64.whl", hash = "sha256:6c1b496c546c66e20bdccce6df88ea7ad099b5216b28f8974becbdeb60335e9f", size = 38711193 },
+    { url = "https://files.pythonhosted.org/packages/c1/ce/87b751616117c0cc856d6d05c00c69925dfa0edd8ecabfae8e1f9e717c4a/oxenai-0.21.0-cp312-cp312-win_amd64.whl", hash = "sha256:ed7ae317d02fabc7920a2b30a1321b065f560cd674217c58c18c3ecd90ba383e", size = 30797895 },
 ]
 
 [[package]]
@@ -2748,6 +2761,7 @@ version = "0.0.14"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "alembic-postgresql-enum" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "itsdangerous" },
@@ -2812,6 +2826,7 @@ dev = [
 requires-dist = [
     { name = "aioboto3", marker = "extra == 'bedrock'", specifier = ">=13.2.0" },
     { name = "alembic", specifier = ">=1.14.0" },
+    { name = "alembic-postgresql-enum", specifier = ">=1.6.0" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.36.0" },
     { name = "boto3", marker = "extra == 'bedrock'", specifier = ">=1.35.36" },
     { name = "boto3-stubs", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=1.35.82" },
@@ -2828,7 +2843,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation", specifier = ">=0.49b1" },
     { name = "opentelemetry-sdk", specifier = ">=1.29.0" },
     { name = "outlines", marker = "extra == 'outlines'", specifier = ">=0.1.11" },
-    { name = "oxenai", specifier = ">=0.19.0" },
+    { name = "oxenai", specifier = ">=0.21.0" },
     { name = "oxenai", marker = "extra == 'evals'", specifier = ">=0.20.0" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "pillow", marker = "extra == 'gemini'", specifier = ">=10.4.0,<11" },

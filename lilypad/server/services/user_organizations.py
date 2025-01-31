@@ -6,11 +6,11 @@ from fastapi import HTTPException, status
 from sqlmodel import select
 
 from ..models import UserOrganizationCreate, UserOrganizationTable
-from .base import BaseService
+from .base_organization import BaseOrganizationService
 
 
 class UserOrganizationService(
-    BaseService[UserOrganizationTable, UserOrganizationCreate]
+    BaseOrganizationService[UserOrganizationTable, UserOrganizationCreate]
 ):
     """The service class for user_organizations."""
 

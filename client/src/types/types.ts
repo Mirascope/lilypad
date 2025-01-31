@@ -136,6 +136,12 @@ export interface CommonCallParams {
   stop?: string | string[] | null;
 }
 
+/** CreateUserOrganizationToken */
+export interface CreateUserOrganizationToken {
+  /** Token */
+  token: string;
+}
+
 /** DependencyInfo */
 export interface DependencyInfo {
   /** Version */
@@ -286,6 +292,8 @@ export interface OrganizationInviteCreate {
   token?: string | null;
   /** Resend Email Id */
   resend_email_id?: string | null;
+  /** Organization Uuid */
+  organization_uuid?: string | null;
 }
 
 /**
@@ -701,21 +709,17 @@ export enum SpanType {
 }
 
 /**
- * UserOrganizationCreate
- * UserOrganization create model
- */
-export interface UserOrganizationCreate {
-  /** User role enum. */
-  role: UserRole;
-}
-
-/**
  * UserOrganizationPublic
  * UserOrganization public model
  */
 export interface UserOrganizationPublic {
   /** User role enum. */
   role: UserRole;
+  /**
+   * User Uuid
+   * @format uuid
+   */
+  user_uuid: string;
   /**
    * Uuid
    * @format uuid
@@ -731,6 +735,15 @@ export interface UserOrganizationPublic {
 }
 
 export type UserOrganizationTable = object;
+
+/**
+ * UserOrganizationUpdate
+ * UserOrganization update model
+ */
+export interface UserOrganizationUpdate {
+  /** User role enum. */
+  role: UserRole;
+}
 
 /**
  * UserPublic
