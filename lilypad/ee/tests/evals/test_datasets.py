@@ -226,19 +226,15 @@ def test_dataset_run_multiple_closures(sample_dataset: Dataset):
     gen2 = MagicMock(hash="456", signature="...", code="...", dependencies={})
     gen2.name = "gen2"
 
-    mock_client = MagicMock()
-    mock_client.get_generations_by_name.return_value = [gen1, gen2]
-
     with (
-        patch("lilypad.ee.server.client.LilypadClient", return_value=mock_client),
         patch.object(Closure, "from_fn", wraps=Closure.from_fn),
         patch.object(Closure, "run", return_value=None) as mock_run,
     ):
         sample_dataset.run(sample_fn)
 
         calls = mock_run.call_count
-        assert calls in (4, 6), (
-            "Expected run calls to be either 4 or 6 depending on whether the client"
+        assert calls == 2, (
+            "Expected run calls to be either 2 depending on whether the client"
             " returned a generation with the same hash as current closure or not. "
             f"Got {calls}."
         )
