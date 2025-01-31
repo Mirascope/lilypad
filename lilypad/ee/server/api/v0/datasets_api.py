@@ -18,6 +18,9 @@ from lilypad.server.db import get_session
 from lilypad.server.services import GenerationService
 from lilypad.server.settings import get_settings
 
+from ... import validate_license
+
+validate_license()
 datasets_router = APIRouter()
 
 

@@ -10,7 +10,6 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
 from lilypad.server.models import GenerationTable, ProjectTable
 from lilypad.server.services import GenerationService
 from lilypad.server.settings import Settings
@@ -41,6 +40,8 @@ def test_get_dataset_rows_by_uuid_success(
     mock_get_settings: Settings,
 ):
     """Test a successful request to get_dataset_rows_by_uuid."""
+    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
+
     with patch.object(
         DatasetRowsResponse,
         "from_metadata",
@@ -80,6 +81,8 @@ def test_get_dataset_rows_by_uuid_dataframe_error(
     mock_get_settings: Settings,
 ):
     """If DataFrame.list_page raises an exception, we expect a 500 INTERNAL SERVER ERROR."""
+    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
+
     with patch.object(
         DatasetRowsResponse, "from_metadata", side_effect=Exception("DataFrame error!")
     ):
@@ -97,6 +100,8 @@ def test_get_dataset_rows_by_hash_success(
     mock_get_settings: Settings,
 ):
     """Test retrieving rows via generation hash."""
+    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
+
     with patch.object(
         DatasetRowsResponse,
         "from_metadata",
@@ -135,6 +140,8 @@ def test_get_dataset_rows_by_name_success(
     mock_get_settings: Settings,
 ):
     """Test retrieving dataset rows by generation name."""
+    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
+
     rows_gen1 = DatasetRowsResponse(rows=[{"id": "g1_r1"}, {"id": "g1_r2"}])
     rows_gen2 = DatasetRowsResponse(rows=[{"id": "g2_r1"}])
 

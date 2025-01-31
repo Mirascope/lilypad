@@ -50,7 +50,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run Tests
-        run: uv run pytest tests/ --cov=./ --cov-report=xml
+        run: uv run pytest tests/ lilypad/ee/tests/ --cov=./ --cov-report=xml
 
       - name: Minimize uv cache
         run: uv cache prune --ci
