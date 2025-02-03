@@ -5,7 +5,7 @@ from typing import Any, Literal, TypeVar
 from pydantic import BaseModel
 
 from ...server.client import LilypadClient as _LilypadClient
-from ...server.models import GenerationPublic
+from ...server.schemas import GenerationPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 

@@ -1,4 +1,4 @@
-"""Generations table and models."""
+"""Generations models."""
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
@@ -9,8 +9,7 @@ from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
-from .prompts import PromptPublic
-from .response_models import ResponseModelPublic, ResponseModelTable
+from .response_models import ResponseModelTable
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
@@ -53,22 +52,10 @@ class _GenerationBase(SQLModel):
     archived: datetime | None = Field(default=None, index=True)
 
 
-class GenerationCreate(_GenerationBase):
-    """Generation create model."""
-
-
 class GenerationUpdate(SQLModel):
     """Generation update model."""
 
     prompt_uuid: UUID | None = None
-
-
-class GenerationPublic(_GenerationBase):
-    """Generation public model."""
-
-    uuid: UUID
-    prompt: PromptPublic | None = None
-    response_model: ResponseModelPublic | None = None
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):

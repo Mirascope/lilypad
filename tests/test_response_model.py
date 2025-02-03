@@ -7,7 +7,7 @@ import pytest
 from pydantic import BaseModel
 
 from lilypad.response_models import response_model
-from lilypad.server.models.response_models import ResponseModelPublic
+from lilypad.server.schemas.response_models import ResponseModelPublic
 
 
 @pytest.fixture

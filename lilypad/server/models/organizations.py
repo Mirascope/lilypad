@@ -1,7 +1,6 @@
-"""Users table and models."""
+"""Users models."""
 
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -34,15 +33,3 @@ class OrganizationTable(_OrganizationBase, BaseSQLModel, table=True):
     api_keys: list["APIKeyTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
-
-
-class OrganizationPublic(_OrganizationBase):
-    """Organization public model"""
-
-    uuid: UUID
-
-
-class OrganizationCreate(_OrganizationBase):
-    """Organization create model"""
-
-    ...

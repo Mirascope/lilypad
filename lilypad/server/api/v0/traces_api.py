@@ -17,7 +17,8 @@ from ..._utils import (
     match_api_key_with_project,
 )
 from ...db import get_session
-from ...models import Scope, SpanCreate, SpanPublic, SpanTable
+from ...models import Scope, SpanTable
+from ...schemas import SpanCreate, SpanPublic
 from ...services import SpanService
 
 traces_router = APIRouter()

@@ -10,21 +10,23 @@ from sqlmodel.pool import StaticPool
 
 from lilypad.server.models import (
     BaseSQLModel,
-    GenerationCreate,
-    GenerationPublic,
     GenerationTable,
-    ProjectCreate,
-    ProjectPublic,
     ProjectTable,
-    PromptCreate,
-    PromptPublic,
     PromptTable,
     Provider,
     Scope,
-    SpanCreate,
-    SpanPublic,
     SpanTable,
     SpanType,
+)
+from lilypad.server.schemas import (
+    GenerationCreate,
+    GenerationPublic,
+    ProjectCreate,
+    ProjectPublic,
+    PromptCreate,
+    PromptPublic,
+    SpanCreate,
+    SpanPublic,
 )
 
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")

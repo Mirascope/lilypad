@@ -6,7 +6,8 @@ from uuid import uuid4
 import pytest
 
 from lilypad.server.client import APIConnectionError, LilypadClient, NotFoundError
-from lilypad.server.models import ProjectPublic, Scope, SpanPublic
+from lilypad.server.models import Scope
+from lilypad.server.schemas import ProjectPublic, SpanPublic
 
 
 @pytest.fixture

@@ -15,7 +15,8 @@ from rich import print
 from rich.prompt import Confirm, IntPrompt
 
 from ...server.client import LilypadClient
-from ...server.models import DeviceCodeTable, ProjectPublic
+from ...server.models import DeviceCodeTable
+from ...server.schemas import ProjectPublic
 from ...server.settings import Settings, get_settings
 from ._utils import get_and_create_config
 

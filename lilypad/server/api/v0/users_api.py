@@ -9,13 +9,11 @@ from pydantic import BaseModel
 
 from ..._utils import create_jwt_token, get_current_user
 from ...models import (
-    UserOrganizationCreate,
     UserOrganizationTable,
-    UserOrganizationUpdate,
-    UserPublic,
     UserRole,
     UserTable,
 )
+from ...schemas import UserOrganizationCreate, UserOrganizationUpdate, UserPublic
 from ...services import OrganizationInviteService, UserOrganizationService, UserService
 
 users_router = APIRouter()

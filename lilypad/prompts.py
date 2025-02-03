@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from ._utils import inspect_arguments, load_config
 from .generations import current_generation
 from .server.client import LilypadClient
-from .server.models import PromptPublic
+from .server.schemas import PromptPublic
 from .server.settings import get_settings
 
 _P = ParamSpec("_P")

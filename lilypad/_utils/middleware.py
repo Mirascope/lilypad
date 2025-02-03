@@ -19,7 +19,7 @@ from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from ..server.client import LilypadClient
-from ..server.models import GenerationPublic
+from ..server.schemas import GenerationPublic
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

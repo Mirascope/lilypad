@@ -5,12 +5,11 @@ from uuid import uuid4
 from sqlmodel import Session
 
 from lilypad.server.models import (
-    ProjectPublic,
     ProjectTable,
     Scope,
     SpanTable,
-    UserPublic,
 )
+from lilypad.server.schemas import ProjectPublic, UserPublic
 from lilypad.server.services import SpanService
 
 

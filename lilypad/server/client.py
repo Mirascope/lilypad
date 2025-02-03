@@ -13,8 +13,8 @@ from lilypad._utils.functions import PromptPublic
 
 from .._utils import Closure, load_config
 from ..server.settings import get_settings
-from .models import GenerationPublic, ProjectPublic, SpanPublic
-from .models.response_models import ResponseModelPublic
+from .schemas import GenerationPublic, ProjectPublic, SpanPublic
+from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 

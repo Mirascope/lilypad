@@ -5,7 +5,8 @@ from uuid import UUID
 
 from sqlmodel import and_, delete, select
 
-from ..models import GenerationTable, SpanCreate, SpanTable
+from ..models import GenerationTable, SpanTable
+from ..schemas import SpanCreate
 from .base_organization import BaseOrganizationService
 
 
