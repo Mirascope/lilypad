@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
+from ....ee.server.api.v0 import annotations_router, datasets_router
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
@@ -32,6 +33,8 @@ api.include_router(auth_router)
 api.include_router(users_router)
 api.include_router(oxen_router)
 api.include_router(organization_invites_router)
+api.include_router(annotations_router)
+api.include_router(datasets_router)
 
 
 class SettingsPublic(BaseModel):

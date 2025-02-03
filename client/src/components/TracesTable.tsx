@@ -1,19 +1,10 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import { AnnotationForm } from "@/components/ee/AnnotationForm";
-import { QueueForm } from "@/components/ee/QueueForm";
 import IconDialog from "@/components/IconDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CreateAnnotationDialog } from "@/ee/components/AnnotationForm";
+import { QueueDialog } from "@/ee/components/QueueForm";
 import { Scope, SpanPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
@@ -30,7 +23,6 @@ import {
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
-  MessageSquareText,
   MoreHorizontal,
   Users,
 } from "lucide-react";
@@ -228,48 +220,10 @@ export const TracesTable = ({
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <div onClick={(e) => e.stopPropagation()}>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem
-                      className='flex items-center gap-2'
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      <MessageSquareText className='w-4 h-4' />
-                      <span className='font-medium'>Annotate</span>
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
-                    <DialogTitle>{`Annotate`}</DialogTitle>
-                    <DialogDescription>
-                      {`Annotate this trace to add to your dataset.`}
-                    </DialogDescription>
-                    <AnnotationForm />
-                  </DialogContent>
-                </Dialog>
+                <CreateAnnotationDialog span={row.original} />
               </div>
               <div onClick={(e) => e.stopPropagation()}>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem
-                      className='flex items-center gap-2'
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      <Users className='w-4 h-4' />
-                      <span className='font-medium'>
-                        Add to annotation queue
-                      </span>
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <DialogContent className={"max-w-[425px] overflow-x-auto"}>
-                    <DialogTitle>{`Add to queue`}</DialogTitle>
-                    <DialogDescription>
-                      {`Add this trace to your queue.`}
-                    </DialogDescription>
-                    <Suspense fallback={<CardSkeleton items={1} />}>
-                      <QueueForm />
-                    </Suspense>
-                  </DialogContent>
-                </Dialog>
+                <QueueDialog spans={[row.original]} />
               </div>
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
@@ -304,6 +258,13 @@ export const TracesTable = ({
         replace: true,
         params: { _splat: data.uuid },
       });
+      return () => {
+        navigate({
+          to: path,
+          replace: true,
+          params: { _splat: undefined },
+        });
+      };
     }, [data]);
     return (
       <div className='p-4 border rounded-md overflow-auto'>
@@ -321,6 +282,7 @@ export const TracesTable = ({
     );
   };
   const renderCustomControls = (rows: Row<SpanPublic>[]) => {
+    const spans = rows.map((row) => row.original);
     return (
       <IconDialog
         icon={<Users />}
@@ -331,7 +293,7 @@ export const TracesTable = ({
         }}
         tooltipContent={"Add selected traces to your annotation queue."}
       >
-        <QueueForm />
+        <QueueDialog spans={spans} />
       </IconDialog>
     );
   };

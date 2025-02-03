@@ -241,7 +241,7 @@ const CopyKeyButton = ({
       <DialogHeader className='flex-shrink-0'>
         <DialogTitle>API Key Created</DialogTitle>
         <DialogDescription className='space-y-4'>
-          <p>Copy your project ID and API key into your environment.</p>
+          Copy your project ID and API key into your environment
           <div className='bg-muted rounded-md p-4 font-mono text-sm'>
             LILYPAD_PROJECT_ID="..."
             {"\n"}

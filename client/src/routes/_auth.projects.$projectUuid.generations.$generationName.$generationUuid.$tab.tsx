@@ -28,7 +28,6 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
-import { DatasetTable } from "@/components/ee/DatasetTable";
 import IconDialog from "@/components/IconDialog";
 import {
   Select,
@@ -38,6 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
+import { DatasetTable } from "@/ee/components/DatasetTable";
+import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
 import { Trash } from "lucide-react";
 import { Suspense, useState } from "react";
@@ -118,6 +119,16 @@ const GenerationWorkbench = () => {
       value: GenerationTab.TRACES,
       component: (
         <GenerationSpans
+          projectUuid={projectUuid}
+          generationUuid={generation?.uuid}
+        />
+      ),
+    },
+    {
+      label: "Annotations",
+      value: GenerationTab.ANNOTATIONS,
+      component: (
+        <GenerationAnnotations
           projectUuid={projectUuid}
           generationUuid={generation?.uuid}
         />

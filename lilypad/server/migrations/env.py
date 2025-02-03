@@ -10,6 +10,7 @@ from alembic.runtime.migration import MigrationContext
 from sqlalchemy import MetaData, engine_from_config, pool
 from sqlmodel import SQLModel
 
+from lilypad.ee.server.models import *  # noqa: F403
 from lilypad.server.db.session import get_database_url
 from lilypad.server.models import *  # noqa: F403
 

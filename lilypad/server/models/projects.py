@@ -13,6 +13,7 @@ from .response_models import ResponseModelPublic
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
+    from ...ee.server.models.annotations import AnnotationTable
     from .api_keys import APIKeyTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
@@ -60,5 +61,8 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")
     api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+    annotations: list["AnnotationTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )

@@ -9,6 +9,7 @@ from pydantic import model_validator
 from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel, text
 
+from ...ee.server.models.annotations import AnnotationPublic
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
 from .generations import GenerationPublic
@@ -23,6 +24,7 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
+    from ...ee.server.models.annotations import AnnotationTable
     from .generations import GenerationTable
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
@@ -46,9 +48,6 @@ class _SpanBase(SQLModel):
     """Span base model"""
 
     span_id: str = Field(nullable=False, index=True, unique=True)
-    project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
     generation_uuid: UUID | None = Field(
         default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
@@ -75,17 +74,19 @@ class _SpanBase(SQLModel):
 class SpanCreate(_SpanBase):
     """Span create model"""
 
-    ...
+    project_uuid: UUID | None = None
 
 
 class SpanPublic(_SpanBase):
     """Span public model"""
 
     uuid: UUID
+    project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
     prompt: PromptPublic | None = None
     response_model: ResponseModelPublic | None = None
+    annotations: list["AnnotationPublic"]
     child_spans: list["SpanPublic"]
     created_at: datetime
     version: int | None = None
@@ -123,6 +124,7 @@ class SpanPublic(_SpanBase):
             "display_name": display_name,
             "child_spans": child_spans,
             "version": version,
+            "annotations": span.annotations,
             **span.model_dump(exclude={"child_spans", "data"}),
         }
 
@@ -140,10 +142,18 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
             postgresql_where=text("parent_span_id IS NULL"),
         ),
     )
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
     prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="spans"
+    )
+    annotations: list["AnnotationTable"] = Relationship(
+        back_populates="span",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
     )
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span",

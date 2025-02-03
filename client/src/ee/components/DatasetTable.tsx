@@ -14,7 +14,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AnnotationPublic, Label } from "@/types/types";
+import {
+  AnnotationPublic,
+  DatasetRow,
+  EvaluationType,
+  Label,
+} from "@/types/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Suspense, useRef } from "react";
@@ -25,24 +30,20 @@ export const DatasetTable = ({
   generationUuid?: string;
 }) => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const data: AnnotationPublic[] = [
+  const data: DatasetRow[] = [
     {
-      uuid: "1",
-      generation_uuid: "1",
-      span_uuid: "1",
       input: { a: "test" },
       output: "test",
       label: Label.PASS,
       reasoning: "test",
+      type: EvaluationType.MANUAL,
     },
     {
-      uuid: "2",
-      generation_uuid: "1",
-      span_uuid: "2",
       input: { a: "test", b: "1" },
       output: "test",
       label: Label.FAIL,
       reasoning: "test",
+      type: EvaluationType.MANUAL,
     },
   ];
   const columns: ColumnDef<AnnotationPublic>[] = [
