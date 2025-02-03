@@ -9,11 +9,10 @@ from posthog import Posthog
 
 from ..._utils import get_posthog, match_api_key_with_project
 from ...models import (
-    GenerationCreate,
-    GenerationPublic,
     GenerationTable,
     GenerationUpdate,
 )
+from ...schemas import GenerationCreate, GenerationPublic
 from ...services import GenerationService, SpanService
 
 generations_router = APIRouter()

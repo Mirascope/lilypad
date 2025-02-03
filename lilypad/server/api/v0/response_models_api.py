@@ -7,10 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..._utils import match_api_key_with_project
 from ...models.response_models import (
-    ResponseModelCreate,
-    ResponseModelPublic,
     ResponseModelTable,
 )
+from ...schemas.response_models import ResponseModelCreate, ResponseModelPublic
 from ...services.response_models import ResponseModelService
 
 response_models_router = APIRouter()

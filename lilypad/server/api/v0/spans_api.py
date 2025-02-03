@@ -17,7 +17,8 @@ from ..._utils import (
     convert_openai_messages,
 )
 from ...db import get_session
-from ...models import Provider, Scope, SpanPublic, SpanTable
+from ...models import Provider, Scope, SpanTable
+from ...schemas import SpanPublic
 from ...services import SpanService
 
 spans_router = APIRouter()

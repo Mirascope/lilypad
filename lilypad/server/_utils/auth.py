@@ -14,13 +14,12 @@ from sqlmodel import Session, select
 from ..db import get_session
 from ..models import (
     APIKeyTable,
-    OrganizationPublic,
     OrganizationTable,
     UserOrganizationTable,
-    UserPublic,
     UserRole,
     UserTable,
 )
+from ..schemas import OrganizationPublic, UserPublic
 from ..settings import Settings, get_settings
 
 LOCAL_TOKEN = "local-dev-token"

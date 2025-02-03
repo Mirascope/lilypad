@@ -7,7 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from ..._utils import create_api_key
-from ...models import APIKeyCreate, APIKeyPublic, APIKeyTable
+from ...models import APIKeyTable
+from ...schemas import APIKeyCreate, APIKeyPublic
 from ...services import APIKeyService
 
 api_keys_api = APIRouter()

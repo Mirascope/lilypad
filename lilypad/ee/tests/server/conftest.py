@@ -8,10 +8,12 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from lilypad.server.models import (
+    UserRole,
+)
+from lilypad.server.schemas import (
     OrganizationPublic,
     UserOrganizationPublic,
     UserPublic,
-    UserRole,
 )
 
 # In-memory SQLite for testing

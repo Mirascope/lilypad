@@ -4,7 +4,7 @@ from typing import Annotated, Any
 import posthog
 from fastapi import Depends, Request
 
-from ..models import UserPublic
+from ..schemas import UserPublic
 from ..settings import get_settings
 from .auth import get_current_user
 

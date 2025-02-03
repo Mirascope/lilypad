@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from ..models import APIKeyCreate, APIKeyTable
+from ..models import APIKeyTable
+from ..schemas import APIKeyCreate
 from .base_organization import BaseOrganizationService
 
 

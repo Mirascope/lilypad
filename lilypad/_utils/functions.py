@@ -22,7 +22,8 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
-from ..server.models import PromptCreate, PromptPublic, Provider
+from ..server.models import Provider
+from ..server.schemas import PromptCreate, PromptPublic
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

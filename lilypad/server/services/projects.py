@@ -1,6 +1,7 @@
 """The `ProjectService` class for projects."""
 
-from ..models import ProjectCreate, ProjectTable
+from ..models import ProjectTable
+from ..schemas import ProjectCreate
 from .base_organization import BaseOrganizationService
 
 
