@@ -18,13 +18,10 @@ from ..._utils import (
     match_api_key_with_project,
 )
 from ...models import (
-    PlaygroundParameters,
-    PromptCreate,
-    PromptPublic,
     PromptTable,
     PromptUpdate,
-    UserPublic,
 )
+from ...schemas import PlaygroundParameters, PromptCreate, PromptPublic, UserPublic
 from ...services import GenerationService, PromptService
 
 prompts_router = APIRouter()

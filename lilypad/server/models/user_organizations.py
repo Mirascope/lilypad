@@ -1,14 +1,12 @@
-"""Users organizations table and models."""
+"""Users organizations models."""
 
 from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
-from .organizations import OrganizationPublic
 from .table_names import (
     USER_ORGANIZATION_TABLE_NAME,
     USER_TABLE_NAME,
@@ -46,17 +44,3 @@ class UserOrganizationTable(
         back_populates="user_organizations"
     )
     user: "UserTable" = Relationship(back_populates="user_organizations")
-
-
-class UserOrganizationPublic(_UserOrganizationBase):
-    """UserOrganization public model"""
-
-    uuid: UUID
-    organization_uuid: UUID
-    organization: OrganizationPublic
-
-
-class UserOrganizationCreate(BaseModel):
-    """UserOrganization create model"""
-
-    role: UserRole

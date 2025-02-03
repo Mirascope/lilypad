@@ -5,7 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from ..._utils import create_jwt_token, get_current_user
-from ...models import DeviceCodeTable, UserPublic
+from ...models import DeviceCodeTable
+from ...schemas import UserPublic
 from ...services import DeviceCodeService
 
 device_codes_api = APIRouter()

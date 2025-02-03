@@ -8,7 +8,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import desc
 from sqlmodel import and_, func, select
 
-from ..models import GenerationCreate, GenerationTable
+from ..models import GenerationTable
+from ..schemas import GenerationCreate
 from .base_organization import BaseOrganizationService
 
 

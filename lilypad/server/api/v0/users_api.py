@@ -5,7 +5,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models import UserPublic, UserTable
+from ...models import UserTable
+from ...schemas import UserPublic
 from ...services import UserService
 
 users_router = APIRouter()

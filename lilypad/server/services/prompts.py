@@ -7,7 +7,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import and_, func, join, select
 
-from ..models import GenerationTable, PromptCreate, PromptTable
+from ..models import GenerationTable, PromptTable
+from ..schemas import PromptCreate
 from .base_organization import BaseOrganizationService
 
 

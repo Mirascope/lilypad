@@ -1,14 +1,12 @@
-"""Users table and models."""
+"""Users models."""
 
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_sql_model import BaseSQLModel, get_json_column
 from .table_names import USER_TABLE_NAME
-from .user_organizations import UserOrganizationPublic
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
@@ -36,20 +34,3 @@ class UserTable(_UserBase, BaseSQLModel, table=True):
     api_keys: list["APIKeyTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )
-
-
-class UserPublic(_UserBase):
-    """User public model"""
-
-    uuid: UUID
-    access_token: str | None = None
-    user_organizations: list[UserOrganizationPublic] | None = None
-
-
-class UserCreate(BaseModel):
-    """User create model"""
-
-    first_name: str
-    last_name: str | None = None
-    email: str
-    active_organization_uuid: UUID | None = None

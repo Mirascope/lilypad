@@ -3,7 +3,8 @@
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models import UserOrganizationCreate, UserOrganizationTable
+from ..models import UserOrganizationTable
+from ..schemas import UserOrganizationCreate
 from .base import BaseService
 
 

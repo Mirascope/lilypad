@@ -10,7 +10,7 @@ from typing_extensions import ParamSpec
 from lilypad._utils import Closure
 from lilypad.generations import current_generation
 from lilypad.server.client import LilypadClient
-from lilypad.server.models.response_models import ResponseModelPublic
+from lilypad.server.schemas.response_models import ResponseModelPublic
 
 _P = ParamSpec("_P")
 _ResponseModelT = TypeVar("_ResponseModelT", bound=BaseModel)

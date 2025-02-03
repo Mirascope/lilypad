@@ -5,7 +5,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models.response_models import ResponseModelCreate, ResponseModelTable
+from ..models.response_models import ResponseModelTable
+from ..schemas.response_models import ResponseModelCreate
 from .base_organization import BaseOrganizationService
 
 

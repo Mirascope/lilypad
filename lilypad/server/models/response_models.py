@@ -38,16 +38,6 @@ class _ResponseModelBase(SQLModel):
     is_active: bool = Field(default=False)
 
 
-class ResponseModelPublic(_ResponseModelBase):
-    """Public model for response models."""
-
-    uuid: UUID
-
-
-class ResponseModelCreate(_ResponseModelBase):
-    """Create model for response models."""
-
-
 class ResponseModelTable(_ResponseModelBase, BaseOrganizationSQLModel, table=True):
     """Table for response models."""
 
