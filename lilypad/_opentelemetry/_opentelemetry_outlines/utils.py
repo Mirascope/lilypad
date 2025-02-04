@@ -62,7 +62,6 @@ def set_choice_event(span: Span, result: Any) -> None:
         elif isinstance(result, BaseModel):
             message["message"] = result.model_dump_json()
 
-
         span.add_event("gen_ai.choice", attributes=message)
 
 

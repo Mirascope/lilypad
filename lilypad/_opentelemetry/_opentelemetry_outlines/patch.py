@@ -13,7 +13,7 @@ from .utils import (
     extract_generation_attributes,
     record_prompts,
     record_stop_sequences,
-    set_response_event,
+    set_choice_event,
 )
 
 P = ParamSpec("P")
@@ -50,7 +50,7 @@ def model_generate(
 
             try:
                 result = wrapped(*args, **kwargs)
-                set_response_event(span, result)
+                set_choice_event(span, result)
                 span.end()
                 return result
             except Exception as e:
@@ -153,7 +153,7 @@ def model_generate_async(
 
             try:
                 result = await wrapped(*args, **kwargs)
-                set_response_event(span, result)
+                set_choice_event(span, result)
                 span.end()
                 return result
             except Exception as e:

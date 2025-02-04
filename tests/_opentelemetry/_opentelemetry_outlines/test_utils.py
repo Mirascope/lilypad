@@ -51,15 +51,30 @@ def test_record_stop_sequences(mock_span):
 def test_set_response_event(mock_span):
     set_choice_event(mock_span, "some response")
     mock_span.add_event.assert_called_with(
-        "gen_ai.choice", attributes={'role': 'assistant', 'index': 0, 'finish_reason': 'none', 'message': 'some response'}
+        "gen_ai.choice",
+        attributes={
+            "role": "assistant",
+            "index": 0,
+            "finish_reason": "none",
+            "message": "some response",
+        },
     )
+
     class Response(BaseModel):
         genre: str
         author: str
+
     model_response = Response(genre="fantasy", author="John")
     set_choice_event(mock_span, model_response)
     mock_span.add_event.assert_called_with(
-        "gen_ai.choice", attributes={'role': 'assistant', 'index': 0, 'finish_reason': 'none', 'message': '{"genre":"fantasy","author":"John"}'})
+        "gen_ai.choice",
+        attributes={
+            "role": "assistant",
+            "index": 0,
+            "finish_reason": "none",
+            "message": '{"genre":"fantasy","author":"John"}',
+        },
+    )
 
 
 def test_extract_generation_attributes():
