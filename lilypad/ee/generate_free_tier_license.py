@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Free-Tier License Key Generator for LilyPad Enterprise Edition
 
 This module generates a free-tier license key for users who wish to self-host
@@ -8,7 +7,7 @@ the key is not considered sensitive and is only used to enable free-tier
 functionality.
 
 Usage:
-    python generate_free_tier_license.py --customer "Free User" --license-id "FREE-TIER-ABC" --duration-days 365
+    uv run lilypad/ee/generate_free_tier_license.py --customer "Free User" --license-id "FREE-TIER-ABC" --duration-days 365
 """
 
 import base64
