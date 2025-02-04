@@ -8,6 +8,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from importlib import resources
+from pathlib import Path
 from typing import ParamSpec, TypeVar
 
 from cryptography.hazmat.backends import default_backend
@@ -17,6 +18,8 @@ from pydantic import BaseModel, ValidationError, field_validator
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+
+FREE_TIER_PUBLIC_KEY_FILE_NAME = "free_tier_public_key.pem"
 
 
 class LicenseError(Exception):
@@ -38,6 +41,18 @@ class LicenseInfo(BaseModel):
         if expires_at <= datetime.now():
             raise ValueError("License has expired")
         return expires_at
+
+
+def get_free_tier_public_key() -> rsa.RSAPublicKey:
+    """Retrieve the free-tier RSA public key for license verification.
+    Replace the key contents below with your generated free-tier public key.
+    """
+    free_tier_public_key_pem = (
+        Path(__file__).parent.joinpath(FREE_TIER_PUBLIC_KEY_FILE_NAME).read_text()
+    )
+    return serialization.load_pem_public_key(
+        free_tier_public_key_pem.encode(), backend=default_backend()
+    )
 
 
 class LicenseValidator:
@@ -63,13 +78,41 @@ class LicenseValidator:
         self.cache_duration = 3600  # Cache duration in seconds
 
     def _verify_license(self, license_key: str) -> LicenseInfo:
-        """Verify the license signature and return decoded contents"""
+        """Verify the license signature and return decoded contents.
+
+        First, attempt verification using the enterprise public key.
+        If verification fails, attempt verification using the free-tier public key.
+        """
         try:
             data_b64, sig_b64 = license_key.split(".")
             data_bytes = base64.urlsafe_b64decode(data_b64 + "=" * (-len(data_b64) % 4))
             sig_bytes = base64.urlsafe_b64decode(sig_b64 + "=" * (-len(sig_b64) % 4))
+        except ValueError as e:
+            raise LicenseError(f"Invalid license key format: {str(e)}")
+
+        verified = False
+        errors = []
+
+        # Attempt verification using the enterprise public key.
+        try:
+            self.public_key.verify(
+                sig_bytes,
+                data_bytes,
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH,
+                ),
+                hashes.SHA256(),
+            )
+            verified = True
+        except Exception as e:
+            errors.append(f"Enterprise key verification failed: {str(e)}")
+
+        # If enterprise verification fails, attempt verification using the free-tier public key.
+        if not verified:
             try:
-                self.public_key.verify(
+                free_key = get_free_tier_public_key()
+                free_key.verify(
                     sig_bytes,
                     data_bytes,
                     padding.PSS(
@@ -78,23 +121,24 @@ class LicenseValidator:
                     ),
                     hashes.SHA256(),
                 )
+                verified = True
             except Exception as e:
-                raise LicenseError(f"Invalid license signature: {str(e)}")
+                errors.append(f"Free-tier key verification failed: {str(e)}")
 
-            try:
-                data = json.loads(data_bytes.decode("utf-8"))
+        if not verified:
+            raise LicenseError("Invalid license signature: " + " | ".join(errors))
 
-                # Convert timestamp to datetime
-                if "exp" in data:
-                    data["expires_at"] = datetime.fromtimestamp(data["exp"])
-                    del data["exp"]
-
-                return LicenseInfo(**data)
-
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
-                raise LicenseError(f"Invalid license format: {str(e)}")
-            except ValidationError as e:
-                raise LicenseError(f"Invalid license data: {str(e)}")
+        try:
+            data = json.loads(data_bytes.decode("utf-8"))
+            # Convert timestamp to datetime
+            if "exp" in data:
+                data["expires_at"] = datetime.fromtimestamp(data["exp"])
+                del data["exp"]
+            return LicenseInfo(**data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise LicenseError(f"Invalid license format: {str(e)}")
+        except ValidationError as e:
+            raise LicenseError(f"Invalid license data: {str(e)}")
 
         except ValueError as e:
             raise LicenseError(f"Invalid license key format: {str(e)}")
