@@ -10,16 +10,22 @@ RUN apt-get update && apt-get install -y \
     clang \
     libclang-dev \
     llvm-dev \
+    mold \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Limit Cargo’s parallel build jobs to reduce memory usage.
-ENV CARGO_BUILD_JOBS=1
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:$PATH"
 
 # Install the project into `/app
 WORKDIR /app
+
+# Create the .cargo directory and add the config.toml file with the specified content
+RUN mkdir -p .cargo
+COPY <<-EOF  .cargo/config.toml
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/ld.mold"]
+EOF
+
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
