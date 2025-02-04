@@ -1,6 +1,23 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 
+# Install Cargo and build tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    clang \
+    libclang-dev \
+    llvm-dev \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Limit Cargo’s parallel build jobs to reduce memory usage.
+ENV CARGO_BUILD_JOBS=1
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+
 # Install the project into `/app
 WORKDIR /app
 
@@ -23,7 +40,7 @@ ADD . /app
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
     uv sync --frozen --no-dev --all-extras
 
-WORKDIR /app/lilypad/server
+WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
