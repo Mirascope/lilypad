@@ -15,11 +15,12 @@ import base64
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import cast
 
 import typer
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 app = typer.Typer(
     help="Generate a free-tier license key for LilyPad Enterprise Edition features."
@@ -45,8 +46,11 @@ def generate_free_tier_license(
         str: The free-tier license key formatted as 'base64(data).base64(signature)'.
     """
     # Load the built-in free-tier private key. This key is unencrypted.
-    private_key = serialization.load_pem_private_key(
-        FREE_TIER_PRIVATE_KEY.encode(), password=None, backend=default_backend()
+    private_key = cast(
+        rsa.RSAPrivateKey,
+        serialization.load_pem_private_key(
+            FREE_TIER_PRIVATE_KEY.encode(), password=None, backend=default_backend()
+        ),
     )
 
     # Construct the license payload.

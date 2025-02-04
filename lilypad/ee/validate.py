@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import datetime
 from importlib import resources
 from pathlib import Path
-from typing import ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar, cast
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
@@ -50,8 +50,11 @@ def get_free_tier_public_key() -> rsa.RSAPublicKey:
     free_tier_public_key_pem = (
         Path(__file__).parent.joinpath(FREE_TIER_PUBLIC_KEY_FILE_NAME).read_text()
     )
-    return serialization.load_pem_public_key(
-        free_tier_public_key_pem.encode(), backend=default_backend()
+    return cast(
+        rsa.RSAPublicKey,
+        serialization.load_pem_public_key(
+            free_tier_public_key_pem.encode(), backend=default_backend()
+        ),
     )
 
 
