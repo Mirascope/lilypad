@@ -33,7 +33,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -57,7 +57,8 @@ interface GenericDataTableProps<T> {
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
   customControls?: (row: Row<T>[]) => React.ReactNode;
-  defaultRowSelection?: T | null;
+  defaultSelectedRow?: T | null;
+  selectRow?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
 }
@@ -77,7 +78,8 @@ export const DataTable = <T extends { uuid: string }>({
   defaultSorting = [],
   hideColumnButton,
   customControls,
-  defaultRowSelection = null,
+  defaultSelectedRow = null,
+  selectRow,
   customGetRowId = undefined,
   customExpanded = {},
 }: GenericDataTableProps<T>) => {
@@ -88,7 +90,9 @@ export const DataTable = <T extends { uuid: string }>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedRow, setSelectedRow] = useState<T | null>(defaultRowSelection);
+  const [selectedRow, setSelectedRow] = useState<T | null | undefined>(
+    defaultSelectedRow
+  );
   const table = useReactTable({
     data,
     columns,
@@ -113,7 +117,9 @@ export const DataTable = <T extends { uuid: string }>({
   });
 
   const { rows } = table.getRowModel();
-
+  useEffect(() => {
+    setSelectedRow(selectRow);
+  }, [selectRow]);
   const rowVirtualizer = useVirtualizer({
     count: virtualizerOptions.count,
     getScrollElement: () => virtualizerRef?.current || null,

@@ -15,6 +15,7 @@ from .._utils import (
     MessageParam,
     convert_anthropic_messages,
     convert_gemini_messages,
+    convert_mirascope_messages,
     convert_openai_messages,
 )
 from ..models.prompts import Provider
@@ -135,9 +136,10 @@ class SpanMoreDetails(BaseModel):
             )
             output = attributes.get(f"lilypad.{lilypad_type}.output", "")
             display_name = attributes.get(f"lilypad.{lilypad_type}.name", "unknown")
-            messages = attributes.get(f"lilypad.{lilypad_type}.messages", [])
+            messages = convert_mirascope_messages(
+                attributes.get(f"lilypad.{lilypad_type}.messages", [])
+            )
             template = attributes.get(f"lilypad.{lilypad_type}.template", "")
-
         return SpanMoreDetails(
             project_uuid=span.project_uuid,
             display_name=display_name,

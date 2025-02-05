@@ -13,8 +13,6 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 from sqlmodel.sql.sqltypes import AutoString
 
-from lilypad.server.models.base_sql_model import JSONTypeDecorator
-
 # revision identifiers, used by Alembic.
 revision: str = "0008"
 down_revision: str | None = "0007"

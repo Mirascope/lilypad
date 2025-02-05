@@ -70,8 +70,8 @@ export const TracesTable = ({
   traceUuid?: string;
   path?: string;
 }) => {
-  const defaultRowSelection = findRowWithUuid(data, traceUuid);
-  const isSubRow = defaultRowSelection?.parent_span_id;
+  const selectRow = findRowWithUuid(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const virtualizerRef = useRef<HTMLDivElement>(null);
 
@@ -309,10 +309,10 @@ export const TracesTable = ({
       }}
       customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
       customGetRowId={(row) => row.span_id}
-      defaultRowSelection={defaultRowSelection}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
       filterColumn='display_name'
+      selectRow={selectRow}
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}

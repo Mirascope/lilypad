@@ -1,3 +1,5 @@
+"""Organization invites schemas."""
+
 from uuid import UUID
 
 from ..models.organization_invites import OrganizationInviteBase
