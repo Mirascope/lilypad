@@ -58,15 +58,12 @@ export interface APIKeyPublic {
    * @format uuid
    */
   uuid: string;
+  /** Key Hash */
+  key_hash: string;
   /** User public model */
   user: UserPublic;
   /** Project Public Model. */
   project: ProjectPublic;
-  /**
-   * Prefix
-   * Return the first 8 characters of the key_hash.
-   */
-  prefix: string;
 }
 
 /**
@@ -93,7 +90,7 @@ export interface AnnotationCreate {
  * AnnotationPublic
  * Annotation public model.
  */
-export interface AnnotationPublicInput {
+export interface AnnotationPublic {
   label?: Label | null;
   /** Reasoning */
   reasoning?: string | null;
@@ -122,43 +119,7 @@ export interface AnnotationPublicInput {
    */
   generation_uuid: string;
   /** Span more details model. */
-  span: SpanMoreDetailsInput;
-}
-
-/**
- * AnnotationPublic
- * Annotation public model.
- */
-export interface AnnotationPublicOutput {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
-  /**
-   * Span Uuid
-   * @format uuid
-   */
-  span_uuid: string;
-  /**
-   * Generation Uuid
-   * @format uuid
-   */
-  generation_uuid: string;
-  /** Span more details model. */
-  span: SpanMoreDetailsOutput;
+  span: SpanMoreDetails;
 }
 
 /**
@@ -167,8 +128,11 @@ export interface AnnotationPublicOutput {
  */
 export interface AnnotationTable {
   /** Uuid */
-  uuid?: string;
-  /** Created At */
+  uuid?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
   created_at?: string;
   /**
    * Organization Uuid
@@ -248,10 +212,13 @@ export interface CreateUserOrganizationToken {
  * Dataset row model.
  */
 export interface DatasetRow {
-  /** Uuid */
+  /**
+   * Uuid
+   * @format uuid
+   */
   uuid: string;
   /** Input */
-  input: string | null;
+  input: Record<string, string> | null;
   /** Output */
   output: string;
   label: Label | null;
@@ -285,8 +252,11 @@ export interface DependencyInfo {
  */
 export interface DeviceCodeTable {
   /** Uuid */
-  uuid?: string;
-  /** Created At */
+  uuid?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
   created_at?: string;
   /**
    * Id
@@ -768,44 +738,7 @@ export interface SettingsPublic {
  * SpanMoreDetails
  * Span more details model.
  */
-export interface SpanMoreDetailsInput {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Display Name */
-  display_name: string;
-  /** Provider */
-  provider: string;
-  /** Model */
-  model: string;
-  /** Input Tokens */
-  input_tokens?: number | null;
-  /** Output Tokens */
-  output_tokens?: number | null;
-  /** Duration Ms */
-  duration_ms: number;
-  /** Signature */
-  signature?: string | null;
-  /** Code */
-  code?: string | null;
-  /** Arg Values */
-  arg_values?: object | null;
-  /** Output */
-  output?: string | null;
-  /** Messages */
-  messages: MessageParam[];
-  /** Data */
-  data: object;
-  /** Cost */
-  cost?: number | null;
-  /** Template */
-  template?: string | null;
-}
-
-/**
- * SpanMoreDetails
- * Span more details model.
- */
-export interface SpanMoreDetailsOutput {
+export interface SpanMoreDetails {
   /** Project Uuid */
   project_uuid?: string | null;
   /** Display Name */
@@ -929,8 +862,11 @@ export interface UserOrganizationPublic {
  */
 export interface UserOrganizationTable {
   /** Uuid */
-  uuid?: string;
-  /** Created At */
+  uuid?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
   created_at?: string;
   /**
    * Organization Uuid

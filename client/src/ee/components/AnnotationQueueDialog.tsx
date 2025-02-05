@@ -27,7 +27,7 @@ export const AnnotationQueueDialog = ({
         disabled: unannotatedRows.length === 0,
       }}
       dialogContentProps={{
-        className: "max-w-[800px] h-screen overflow-y-auto",
+        className: "max-w-[800px] max-h-screen overflow-y-auto",
       }}
     >
       <UpdateAnnotationForm

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -32,13 +31,13 @@ import {
   SpanMoreDetails,
   SpanPublic,
 } from "@/types/types";
+import { renderCardOutput } from "@/utils/panel-utils";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import JsonView from "@uiw/react-json-view";
 import { MessageSquareText } from "lucide-react";
 import { Dispatch, SetStateAction, useState } from "react";
 import { Path, SubmitHandler, useForm, UseFormReturn } from "react-hook-form";
-import ReactMarkdown from "react-markdown";
 interface BaseAnnotation {
   label?: Label | null;
   reasoning?: string | null;
@@ -71,14 +70,7 @@ const AnnotationFormFields = <T extends BaseAnnotation>({
               </CardContent>
             </Card>
           )}
-          <Card>
-            <CardHeader>
-              <CardTitle>{"Output"}</CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-col'>
-              <ReactMarkdown>{span.output}</ReactMarkdown>
-            </CardContent>
-          </Card>
+          {renderCardOutput(span.output)}
         </>
       )}
       <Form {...methods}>
@@ -156,26 +148,18 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
-      <DialogClose
-        asChild
-        onClick={async (e) => {
-          e.preventDefault();
-          if (await methods.trigger()) {
-            setOpen(false);
-          }
-        }}
-      >
-        <Button type='submit' loading={isLoading} className='w-full'>
-          {isLoading ? "Staging..." : "Annotate"}
-        </Button>
-      </DialogClose>
+      <Button type='submit' loading={isLoading} className='w-full'>
+        {isLoading ? "Staging..." : "Annotate"}
+      </Button>
     );
   };
   const onSubmit = async (data: AnnotationCreate) => {
     data.span_uuid = span.uuid;
     data.assigned_to = user.uuid;
+    data.generation_uuid = span.generation_uuid;
+    console.log(data);
     try {
-      await createAnnotation.mutateAsync({
+      const res = await createAnnotation.mutateAsync({
         projectUuid: span.project_uuid,
         annotationsCreate: [data],
       });
@@ -188,6 +172,7 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
         variant: "destructive",
       });
     }
+    setOpen(false);
   };
   return (
     <Dialog

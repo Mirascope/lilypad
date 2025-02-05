@@ -19,7 +19,7 @@ from .spans_api import spans_router
 from .traces_api import traces_router
 from .users_api import users_router
 
-api = FastAPI()
+api = FastAPI(separate_input_output_schemas=False)
 api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
