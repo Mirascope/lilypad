@@ -105,7 +105,7 @@ export const ProjectsTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={<CreateProjectButton />}
+        customControls={() => <CreateProjectButton />}
       />
     </>
   );

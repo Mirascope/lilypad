@@ -18,6 +18,7 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
+    from ...ee.server.models.annotations import AnnotationTable
     from .generations import GenerationTable
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
@@ -37,13 +38,10 @@ class SpanType(str, Enum):
     PROMPT = "prompt"
 
 
-class _SpanBase(SQLModel):
+class SpanBase(SQLModel):
     """Span base model"""
 
     span_id: str = Field(nullable=False, index=True, unique=True)
-    project_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
     generation_uuid: UUID | None = Field(
         default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
@@ -67,7 +65,7 @@ class _SpanBase(SQLModel):
     )
 
 
-class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
+class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     """Span table"""
 
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
@@ -80,10 +78,18 @@ class SpanTable(_SpanBase, BaseOrganizationSQLModel, table=True):
             postgresql_where=text("parent_span_id IS NULL"),
         ),
     )
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
     prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="spans"
+    )
+    annotations: list["AnnotationTable"] = Relationship(
+        back_populates="span",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
     )
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span",

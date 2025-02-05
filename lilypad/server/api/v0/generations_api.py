@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from posthog import Posthog
 
-from ..._utils import get_posthog, match_api_key_with_project
+from ..._utils import get_posthog, validate_api_key_project_strict
 from ...models import (
     GenerationTable,
     GenerationUpdate,
@@ -71,7 +71,7 @@ async def get_latest_version_unique_generation_names(
     response_model=GenerationPublic,
 )
 async def get_generation_by_hash(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     generation_hash: str,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
@@ -110,7 +110,7 @@ async def get_generation(
     "/projects/{project_uuid}/generations", response_model=GenerationPublic
 )
 async def create_new_generation(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     generation_create: GenerationCreate,
@@ -147,7 +147,7 @@ async def create_new_generation(
     response_model=GenerationPublic,
 )
 async def update_generation(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     generation_uuid: UUID,
     generation_update: GenerationUpdate,

@@ -48,7 +48,10 @@ dependencies = [
     "pillow>=10.4.0",
     "alembic>=1.14.0",
     "posthog>=3.8.3",
+    "oxenai>=0.21.0",
+    "resend>=2.6.0",
     "libcst>=1.6.0",
+    "alembic-postgresql-enum>=1.6.0",
 ]
 
 [project.urls]

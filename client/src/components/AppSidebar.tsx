@@ -25,10 +25,19 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
-import { useUpdateActiveOrganizationMutation } from "@/utils/users";
+import {
+  userQueryOptions,
+  useUpdateActiveOrganizationMutation,
+} from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouter,
+} from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -55,7 +64,6 @@ const RecursiveMenuContent = ({
   depth?: number;
 }) => {
   const hasChildren = item.children && item.children.length > 0;
-
   if (!hasChildren) {
     return (
       <SidebarMenuItem>
@@ -103,15 +111,17 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { user, activeProject, setProject } = useAuth();
+  const { activeProject, setProject } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
+  const params = useParams({ strict: false });
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   useEffect(() => {
-    if (!activeProject && projects.length > 0) {
-      setProject(projects[0]);
-    }
-  }, [activeProject, projects]);
+    if (!params?.projectUuid) return;
+    const project = projects?.find((p) => p.uuid === params?.projectUuid);
+    setProject(project);
+  }, [projects, params]);
   const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectItems: Item[] = activeProject
     ? [
@@ -144,9 +154,15 @@ export const AppSidebar = () => {
       router.invalidate().finally(() => {
         navigate({
           to: "/auth/login",
-          search: { redirect: undefined },
         });
       });
+    });
+  };
+  const handleProjectChange = (project: ProjectPublic) => {
+    setProject(project);
+    navigate({
+      to: `/projects/${project.uuid}/traces`,
+      replace: true,
     });
   };
   const renderProjectSelector = () => {
@@ -166,7 +182,7 @@ export const AppSidebar = () => {
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.uuid}
-                    onClick={() => setProject(project)}
+                    onClick={() => handleProjectChange(project)}
                   >
                     {project.name}
                   </DropdownMenuItem>

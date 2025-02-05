@@ -57,12 +57,11 @@ class LilypadClient(_LilypadClient):
             raise ValueError(
                 "No project_uuid is set in LilypadClient (cannot fetch dataset)."
             )
-
         params = {"page_num": page_num}
         if generation_uuid:
             return self._request(
                 method="GET",
-                endpoint=f"/v0/projects/{self.project_uuid}/datasets/{generation_uuid}",
+                endpoint=f"/v0/projects/{self.project_uuid}/generations/{generation_uuid}/datasets",
                 response_model=DatasetRowsResponse,
                 params=params,
             )

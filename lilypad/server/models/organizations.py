@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from .user_organizations import UserOrganizationTable
 
 
-class _OrganizationBase(SQLModel):
+class OrganizationBase(SQLModel):
     """Base Organization Model."""
 
     name: str = Field(nullable=False, min_length=1)
 
 
-class OrganizationTable(_OrganizationBase, BaseSQLModel, table=True):
+class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
     """Organization table."""
 
     __tablename__ = ORGANIZATION_TABLE_NAME  # type: ignore

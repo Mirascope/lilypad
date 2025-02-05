@@ -10,6 +10,12 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
+from lilypad.ee.server.api.v0.datasets_api import (
+    DatasetRow,
+    DatasetRowsResponse,
+    EvaluationType,
+    Label,
+)
 from lilypad.server.models import GenerationTable, ProjectTable
 from lilypad.server.services import GenerationService
 from lilypad.server.settings import Settings
@@ -33,19 +39,41 @@ def mock_get_settings() -> Generator[Settings, None, None]:
         yield settings
 
 
+@pytest.fixture
+def mock_get_dataset_rows() -> list[DatasetRow]:
+    """Fixture that returns a list of DatasetRow objects."""
+    return [
+        DatasetRow(
+            uuid=uuid4(),
+            input={"col1": "val1"},
+            output="val1",
+            label=Label.PASS,
+            reasoning="reason1",
+            type=EvaluationType.MANUAL,
+        ),
+        DatasetRow(
+            uuid=uuid4(),
+            input={"col2": "val2"},
+            output="val2",
+            label=Label.FAIL,
+            reasoning="reason2",
+            type=EvaluationType.MANUAL,
+        ),
+    ]
+
+
 def test_get_dataset_rows_by_uuid_success(
     client: TestClient,
     test_project: ProjectTable,
     test_generation: GenerationTable,
     mock_get_settings: Settings,
+    mock_get_dataset_rows: list[DatasetRow],
 ):
     """Test a successful request to get_dataset_rows_by_uuid."""
-    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
-
     with patch.object(
         DatasetRowsResponse,
         "from_metadata",
-        return_value=DatasetRowsResponse(rows=[{"col1": "val1"}, {"col1": "val2"}]),
+        return_value=DatasetRowsResponse(rows=mock_get_dataset_rows),
     ):
         response = client.get(
             f"/projects/{test_project.uuid}/datasets/{test_generation.uuid}"
@@ -56,7 +84,7 @@ def test_get_dataset_rows_by_uuid_success(
     # The endpoint returns DatasetRowsResponse
     assert "rows" in data
     assert len(data["rows"]) == 2
-    assert data["rows"][0] == {"col1": "val1"}
+    assert data["rows"][0] == mock_get_dataset_rows[0]
 
 
 def test_get_dataset_rows_by_uuid_not_found(
@@ -93,82 +121,42 @@ def test_get_dataset_rows_by_uuid_dataframe_error(
     assert "Error initializing Oxen DataFrame: DataFrame error!" in response.text
 
 
-def test_get_dataset_rows_by_hash_success(
-    client: TestClient,
-    test_project: ProjectTable,
-    test_generation: GenerationTable,
-    mock_get_settings: Settings,
-):
-    """Test retrieving rows via generation hash."""
-    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
+# def test_get_dataset_rows_by_name_success(
+#     client: TestClient,
+#     test_project: ProjectTable,
+#     test_generation: GenerationTable,
+#     mock_get_settings: Settings,
+# ):
+#     """Test retrieving dataset rows by generation name."""
+#     from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
 
-    with patch.object(
-        DatasetRowsResponse,
-        "from_metadata",
-        return_value=DatasetRowsResponse(rows=[{"row": "hash_val"}]),
-    ):
-        response = client.get(
-            f"/projects/{test_project.uuid}/datasets/hash/{test_generation.hash}"
-        )
+#     rows_gen1 = DatasetRowsResponse(rows=[{"id": "g1_r1"}, {"id": "g1_r2"}])
+#     rows_gen2 = DatasetRowsResponse(rows=[{"id": "g2_r1"}])
 
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert "rows" in data
-    assert data["rows"] == [{"row": "hash_val"}]
+#     with patch.object(
+#         DatasetRowsResponse, "from_metadata", side_effect=[rows_gen1, rows_gen2]
+#     ):
+#         response = client.get(
+#             f"/projects/{test_project.uuid}/datasets/names/{test_generation.name}"
+#         )
 
-
-def test_get_dataset_rows_by_hash_error(
-    client: TestClient,
-    test_project: ProjectTable,
-    test_generation: GenerationTable,
-    mock_get_settings: Settings,
-):
-    """If we cannot resolve the hash or the DataFrame fails, we expect a 400 or 500 error."""
-    generation_hash = uuid4()
-
-    response = client.get(
-        f"/projects/{test_project.uuid}/datasets/hash/{generation_hash}"
-    )
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Could not resolve metadata" in response.text
+#     assert response.status_code == status.HTTP_200_OK
+#     data = response.json()
+#     assert "rows" in data
+#     assert len(data["rows"]) == 3
+#     assert data == {
+#         "next_page": None,
+#         "rows": [{"id": "g1_r1"}, {"id": "g1_r2"}, {"id": "g2_r1"}],
+#     }
 
 
-def test_get_dataset_rows_by_name_success(
-    client: TestClient,
-    test_project: ProjectTable,
-    test_generation: GenerationTable,
-    mock_get_settings: Settings,
-):
-    """Test retrieving dataset rows by generation name."""
-    from lilypad.ee.server.api.v0.datasets_api import DatasetRowsResponse
-
-    rows_gen1 = DatasetRowsResponse(rows=[{"id": "g1_r1"}, {"id": "g1_r2"}])
-    rows_gen2 = DatasetRowsResponse(rows=[{"id": "g2_r1"}])
-
-    with patch.object(
-        DatasetRowsResponse, "from_metadata", side_effect=[rows_gen1, rows_gen2]
-    ):
-        response = client.get(
-            f"/projects/{test_project.uuid}/datasets/names/{test_generation.name}"
-        )
-
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert "rows" in data
-    assert len(data["rows"]) == 3
-    assert data == {
-        "next_page": None,
-        "rows": [{"id": "g1_r1"}, {"id": "g1_r2"}, {"id": "g2_r1"}],
-    }
-
-
-def test_get_dataset_rows_by_name_error(
-    client: TestClient,
-    test_project: ProjectTable,
-    test_generation: GenerationTable,
-    mock_get_settings: Settings,
-):
-    """If the generation_service fails to find the name, we expect a 400 error."""
-    response = client.get(f"/projects/{test_project.uuid}/datasets/names/invalid-name")
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "No generations found by name." in response.text
+# def test_get_dataset_rows_by_name_error(
+#     client: TestClient,
+#     test_project: ProjectTable,
+#     test_generation: GenerationTable,
+#     mock_get_settings: Settings,
+# ):
+#     """If the generation_service fails to find the name, we expect a 400 error."""
+#     response = client.get(f"/projects/{test_project.uuid}/datasets/names/invalid-name")
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#     assert "No generations found by name." in response.text

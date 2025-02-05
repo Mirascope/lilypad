@@ -19,7 +19,8 @@ from ..models import (
     UserRole,
     UserTable,
 )
-from ..schemas import OrganizationPublic, UserPublic
+from ..schemas.organizations import OrganizationPublic
+from ..schemas.users import UserPublic
 from ..settings import Settings, get_settings
 
 LOCAL_TOKEN = "local-dev-token"
@@ -58,25 +59,46 @@ else:
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-async def match_api_key_with_project(
+async def validate_api_key_project(
     project_uuid: UUID,
-    api_key: Annotated[str | None, Depends(api_key_header)],
-    session: Annotated[Session, Depends(get_session)],
+    api_key: str | None,
+    session: Session,
+    strict: bool = True,
 ) -> bool:
     """Checks if the API key matches the project UUID."""
     api_key_row = session.exec(
         select(APIKeyTable).where(APIKeyTable.key_hash == api_key)
     ).first()
     if not api_key_row:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
-        )
+        if strict:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
+            )
+        return False
     if project_uuid != api_key_row.project_uuid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Project ID for this API Key. Hint: Check your `LILYPAD_PROJECT_ID environment variable`",
-        )
+        if strict:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Project ID for this API Key. Hint: Check your `LILYPAD_PROJECT_ID environment variable`",
+            )
+        return False
     return True
+
+
+async def validate_api_key_project_no_strict(
+    project_uuid: UUID,
+    api_key: Annotated[str | None, Depends(api_key_header)],
+    session: Annotated[Session, Depends(get_session)],
+) -> bool:
+    return await validate_api_key_project(project_uuid, api_key, session, strict=False)
+
+
+async def validate_api_key_project_strict(
+    project_uuid: UUID,
+    api_key: Annotated[str | None, Depends(api_key_header)],
+    session: Annotated[Session, Depends(get_session)],
+) -> bool:
+    return await validate_api_key_project(project_uuid, api_key, session, strict=True)
 
 
 async def get_local_user(session: Session) -> UserPublic:

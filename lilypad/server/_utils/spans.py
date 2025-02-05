@@ -265,6 +265,23 @@ def convert_anthropic_messages(
     return structured_messages
 
 
+def convert_mirascope_messages(
+    messages: list[dict[str, Any]] | str,
+) -> list[MessageParam]:
+    new_messages: list[dict[str, Any]] = (
+        json.loads(messages) if isinstance(messages, str) else messages
+    )
+    structured_messages: list[MessageParam] = []
+    user_messages = []
+    for message in new_messages:
+        if isinstance(message.get("content"), str):
+            user_messages.append(_TextPart(type="text", text=message["content"]))
+    if user_messages:
+        structured_messages.append(MessageParam(role="user", content=user_messages))
+
+    return structured_messages
+
+
 def calculate_cost(
     input_tokens: int | float | None,
     output_tokens: int | float | None,

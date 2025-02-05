@@ -29,6 +29,7 @@ import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
 import IconDialog from "@/components/IconDialog";
+import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
   SelectContent,
@@ -37,11 +38,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
+import { DatasetTable } from "@/ee/components/DatasetTable";
+import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
+import { GenerationTab } from "@/types/generations";
 import { Trash } from "lucide-react";
 import { Suspense, useState } from "react";
+
+type GenerationRouteParams = {
+  projectUuid: string;
+  generationName: string;
+  generationUuid: string;
+  tab: GenerationTab;
+};
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName"
+  "/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab"
 )({
+  params: {
+    stringify(params: GenerationRouteParams) {
+      return {
+        projectUuid: params.projectUuid,
+        generationName: params.generationName,
+        generationUuid: params.generationUuid,
+        tab: params.tab,
+      };
+    },
+    parse(raw: Record<string, string>): GenerationRouteParams {
+      let tab = raw.tab;
+      if (!Object.values(GenerationTab).includes(tab as GenerationTab)) {
+        tab = GenerationTab.OVERVIEW;
+      }
+      return {
+        projectUuid: raw.projectUuid,
+        generationName: raw.generationName,
+        generationUuid: raw.generationUuid,
+        tab: tab as GenerationTab,
+      };
+    },
+  },
+  validateSearch: (search): search is { tab: GenerationTab } => {
+    const tab = search.tab;
+    return Object.values(GenerationTab).includes(tab as GenerationTab);
+  },
+
   component: () => (
     <Suspense fallback={<div>Loading...</div>}>
       <GenerationWorkbench />
@@ -56,30 +94,61 @@ type Tab = {
 };
 
 const GenerationWorkbench = () => {
-  const { projectUuid, generationName } = useParams({ from: Route.id });
+  const { projectUuid, generationName, generationUuid, tab } = useParams({
+    from: Route.id,
+  });
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
   const navigate = useNavigate();
   const [generation, setGeneration] = useState<
     GenerationPublic | null | undefined
-  >(generations.length > 0 ? generations.at(-1) : null);
-  console.log(generations);
+  >(
+    generations.length > 0
+      ? generations.find((generation) => generation.uuid === generationUuid)
+      : null
+  );
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
       label: "Overview",
-      value: "overview",
+      value: GenerationTab.OVERVIEW,
       component: <Generation generation={generation} />,
     },
     {
       label: "Traces",
-      value: "traces",
+      value: GenerationTab.TRACES,
       component: (
         <GenerationSpans
           projectUuid={projectUuid}
           generationUuid={generation?.uuid}
         />
+      ),
+    },
+    {
+      label: "Annotations",
+      value: GenerationTab.ANNOTATIONS,
+      component: (
+        <GenerationAnnotations
+          projectUuid={projectUuid}
+          generationUuid={generation?.uuid}
+        />
+      ),
+    },
+    {
+      label: "Dataset",
+      value: GenerationTab.DATASET,
+      component: (
+        <Suspense fallback={<TableSkeleton />}>
+          {generation ? (
+            <DatasetTable
+              projectUuid={projectUuid}
+              generationUuid={generation?.uuid}
+            />
+          ) : (
+            <div>No generation selected</div>
+          )}
+        </Suspense>
       ),
     },
   ];
@@ -143,7 +212,7 @@ const GenerationWorkbench = () => {
           </IconDialog>
         )}
       </div>
-      <Tabs defaultValue='overview' className='w-full'>
+      <Tabs defaultValue={tab} className='w-full'>
         <div className='flex justify-center w-full '>
           <TabsList className={`w-[${tabWidth}px]`}>
             {tabs.map((tab) => (
