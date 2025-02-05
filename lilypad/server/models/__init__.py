@@ -8,6 +8,9 @@ from .generations import (
     GenerationTable,
     GenerationUpdate,
 )
+from .organization_invites import (
+    OrganizationInviteTable,
+)
 from .organizations import OrganizationTable
 from .projects import ProjectTable
 from .prompts import (
@@ -30,6 +33,7 @@ __all__ = [
     "GenerationTable",
     "GenerationUpdate",
     "JSONTypeDecorator",
+    "OrganizationInviteTable",
     "OrganizationTable",
     "ProjectTable",
     "PromptTable",

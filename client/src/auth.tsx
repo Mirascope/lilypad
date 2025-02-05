@@ -12,8 +12,8 @@ export interface AuthContext {
   logout: () => Promise<void>;
   user: UserPublic | null;
   setSession: (user: UserPublic | null) => void;
-  setProject: (project: ProjectPublic | null) => void;
-  activeProject: ProjectPublic | null;
+  setProject: (project: ProjectPublic | null | undefined) => void;
+  activeProject: ProjectPublic | null | undefined;
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
@@ -46,9 +46,9 @@ const loadFromStorage = (): UserPublic | null => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
-  const [activeProject, setActiveProject] = useState<ProjectPublic | null>(
-    null
-  );
+  const [activeProject, setActiveProject] = useState<
+    ProjectPublic | null | undefined
+  >(null);
   const isAuthenticated = !!user;
 
   const setSession = useCallback((newSession: UserPublic | null) => {
@@ -56,9 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToStorage(newSession);
   }, []);
 
-  const setProject = useCallback((project: ProjectPublic | null) => {
-    setActiveProject(project);
-  }, []);
+  const setProject = useCallback(
+    (project: ProjectPublic | null | undefined) => {
+      setActiveProject(project);
+    },
+    []
+  );
 
   const logout = useCallback(async () => {
     setUser(null);

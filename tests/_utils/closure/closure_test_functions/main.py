@@ -673,6 +673,12 @@ def multi_joined_string_fn() -> str:
         )
     """
     return (
-        "Hello, -----------------------------------------------------------------"
-        "world!"
+        "Hello, -----------------------------------------------------------------world!"
     )
+
+
+
+def empty_body_fn_docstrings():
+    """
+    def empty_body_fn_docstrings(): ...
+    """ # noqa: D200

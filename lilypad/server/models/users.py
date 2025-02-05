@@ -10,10 +10,11 @@ from .table_names import USER_TABLE_NAME
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
+    from .organization_invites import OrganizationInviteTable
     from .user_organizations import UserOrganizationTable
 
 
-class _UserBase(SQLModel):
+class UserBase(SQLModel):
     """Base Function Model."""
 
     first_name: str = Field(nullable=False, min_length=1)
@@ -23,7 +24,7 @@ class _UserBase(SQLModel):
     keys: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
 
 
-class UserTable(_UserBase, BaseSQLModel, table=True):
+class UserTable(UserBase, BaseSQLModel, table=True):
     """Function table."""
 
     __tablename__ = USER_TABLE_NAME  # type: ignore
@@ -32,5 +33,8 @@ class UserTable(_UserBase, BaseSQLModel, table=True):
         back_populates="user", cascade_delete=True
     )
     api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
+    organization_invites: list["OrganizationInviteTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )

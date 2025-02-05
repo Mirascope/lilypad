@@ -14,21 +14,22 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
-from dataclasses import dataclass
 from functools import cached_property, lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 
 import libcst as cst
 import libcst.matchers as m
-from libcst import BaseSmallStatement, CSTVisitorT, MaybeSentinel, Semicolon
-from libcst._add_slots import add_slots
-from libcst._nodes.internal import CodegenState, visit_sentinel
+from libcst import MaybeSentinel
 from packaging.requirements import Requirement
 from pydantic import BaseModel
 from typing_extensions import TypedDict
+
+_BaseCompoundStatementT = TypeVar(
+    "_BaseCompoundStatementT", bound=cst.BaseCompoundStatement
+)
 
 
 class DependencyInfo(TypedDict):
@@ -49,37 +50,6 @@ def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     )
 
 
-@add_slots
-@dataclass(frozen=True)
-class _Ellipsis(BaseSmallStatement):
-    """Represents a ``...`` statement.
-
-    LibCST's Ellipsis node is not a statement, so we need to create a custom one.
-    """
-
-    #: Optional semicolon when this is used in a statement line. This semicolon
-    #: owns the whitespace on both sides of it when it is used.
-    semicolon: Semicolon | MaybeSentinel = MaybeSentinel.DEFAULT
-
-    def _visit_and_replace_children(self, visitor: CSTVisitorT) -> _Ellipsis:
-        return _Ellipsis(
-            semicolon=visit_sentinel(self, "semicolon", self.semicolon, visitor)
-        )
-
-    def _codegen_impl(
-        self, state: CodegenState, default_semicolon: bool = False
-    ) -> None:
-        with state.record_syntactic_position(self):
-            state.add_token("...")
-
-        semicolon = self.semicolon
-        if isinstance(semicolon, MaybeSentinel):
-            if default_semicolon:
-                state.add_token("; ")
-        elif isinstance(semicolon, Semicolon):
-            semicolon._codegen(state)
-
-
 class _RemoveDocstringTransformer(cst.CSTTransformer):
     """A LibCST transformer for removing docstrings from functions and classes.
 
@@ -95,8 +65,11 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
         self.exclude_fn_body = exclude_fn_body
 
     @staticmethod
-    def _remove_first_docstring(body: cst.BaseSuite) -> cst.BaseSuite:
+    def _remove_first_docstring(
+        node: _BaseCompoundStatementT,
+    ) -> _BaseCompoundStatementT:
         """Return the body without a docstring, inserting 'pass` if no docstring."""
+        body = node.body
         stmts = list(body.body)
         if stmts:
             first_stmt = stmts[0]
@@ -109,21 +82,34 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
 
         # If removing docstring leaves no statements, insert a single 'pass'
         if not stmts:
-            stmts = [cst.SimpleStatementLine([_Ellipsis()])]
-
-        return body.with_changes(body=stmts)
+            stmts = [
+                cst.Expr(
+                    value=cst.Ellipsis(
+                        lpar=[],
+                        rpar=[],
+                    ),
+                    semicolon=MaybeSentinel.DEFAULT,
+                )
+            ]
+            if m.matches(node.body, m.IndentedBlock()):
+                return node.with_changes(body=stmts[0])
+        new_body = body.with_changes(body=stmts)
+        return node.with_changes(body=new_body)
 
     def leave_FunctionDef(
         self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
         if self.exclude_fn_body:
-            # Replace entire body with a single 'pass'
-            pass_stmt = cst.SimpleStatementLine([_Ellipsis()])
-            new_body = updated_node.body.with_changes(body=[pass_stmt])
-            return updated_node.with_changes(body=new_body)
+            stmts = cst.Expr(
+                value=cst.Ellipsis(
+                    lpar=[],
+                    rpar=[],
+                ),
+                semicolon=MaybeSentinel.DEFAULT,
+            )
+            return updated_node.with_changes(body=stmts)
 
-        new_body = self._remove_first_docstring(updated_node.body)
-        return updated_node.with_changes(body=new_body)
+        return self._remove_first_docstring(updated_node)
 
     def leave_ClassDef(
         self, original_node: cst.ClassDef, updated_node: cst.ClassDef
@@ -134,8 +120,7 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
             new_body = updated_node.body.with_changes(body=[pass_stmt])
             return updated_node.with_changes(body=new_body)
 
-        new_body = self._remove_first_docstring(updated_node.body)
-        return updated_node.with_changes(body=new_body)
+        return self._remove_first_docstring(updated_node)
 
 
 def _clean_source_code(

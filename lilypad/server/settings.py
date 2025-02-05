@@ -1,6 +1,5 @@
 """Server settings"""
 
-from functools import lru_cache
 from typing import Any
 
 from pydantic import Field
@@ -30,6 +29,9 @@ class Settings(BaseSettings):
     posthog_api_key: str | None = None
     posthog_host: str | None = None
 
+    # Resend
+    resend_api_key: str | None = None
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
 
     # Oxen.ai settings
     oxen_repo_name: str | None = None
+    oxen_api_key: str | None = None
     oxen_host: str = "hub.oxen.ai"
     oxen_branch: str = "main"
 
@@ -74,7 +77,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 
 
-@lru_cache
 def get_settings() -> Settings:
     """Cached settings instance"""
     return Settings()

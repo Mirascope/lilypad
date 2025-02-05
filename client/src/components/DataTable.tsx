@@ -33,7 +33,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -56,8 +56,9 @@ interface GenericDataTableProps<T> {
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
-  customControls?: React.ReactNode;
-  defaultRowSelection?: T | null;
+  customControls?: (row: Row<T>[]) => React.ReactNode;
+  defaultSelectedRow?: T | null;
+  selectRow?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
 }
@@ -77,7 +78,8 @@ export const DataTable = <T extends { uuid: string }>({
   defaultSorting = [],
   hideColumnButton,
   customControls,
-  defaultRowSelection = null,
+  defaultSelectedRow = null,
+  selectRow,
   customGetRowId = undefined,
   customExpanded = {},
 }: GenericDataTableProps<T>) => {
@@ -88,7 +90,9 @@ export const DataTable = <T extends { uuid: string }>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedRow, setSelectedRow] = useState<T | null>(defaultRowSelection);
+  const [selectedRow, setSelectedRow] = useState<T | null | undefined>(
+    defaultSelectedRow
+  );
   const table = useReactTable({
     data,
     columns,
@@ -113,7 +117,9 @@ export const DataTable = <T extends { uuid: string }>({
   });
 
   const { rows } = table.getRowModel();
-
+  useEffect(() => {
+    setSelectedRow(selectRow);
+  }, [selectRow]);
   const rowVirtualizer = useVirtualizer({
     count: virtualizerOptions.count,
     getScrollElement: () => virtualizerRef?.current || null,
@@ -153,7 +159,6 @@ export const DataTable = <T extends { uuid: string }>({
       </>
     );
   };
-
   const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
   const paddingBottom =
     rowVirtualizer.getTotalSize() -
@@ -167,7 +172,7 @@ export const DataTable = <T extends { uuid: string }>({
         order={1}
         className='p-2 flex flex-col gap-2'
       >
-        <div className='flex items-center rounded-md'>
+        <div className='flex items-center rounded-md gap-2'>
           {filterColumn && (
             <Input
               placeholder='Filter...'
@@ -184,6 +189,7 @@ export const DataTable = <T extends { uuid: string }>({
               className='max-w-sm'
             />
           )}
+          {customControls?.(table.getSelectedRowModel().rows)}
           {!hideColumnButton && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -212,7 +218,6 @@ export const DataTable = <T extends { uuid: string }>({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {customControls}
         </div>
         <div ref={virtualizerRef} className='rounded-md border overflow-auto'>
           <Table>

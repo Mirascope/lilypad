@@ -2,16 +2,16 @@
 
 from uuid import UUID
 
-from ..models.organizations import _OrganizationBase
+from ..models.organizations import OrganizationBase
 
 
-class OrganizationPublic(_OrganizationBase):
+class OrganizationPublic(OrganizationBase):
     """Organization public model"""
 
     uuid: UUID
 
 
-class OrganizationCreate(_OrganizationBase):
+class OrganizationCreate(OrganizationBase):
     """Organization create model"""
 
     ...
