@@ -48,6 +48,7 @@ from .closure_test_functions import (
     user_defined_import_fn,
 )
 from .closure_test_functions.main import (
+    empty_body_fn_docstrings,
     multi_joined_string_fn,
     multiple_literal_fn,
     raw_string_fn,
@@ -490,4 +491,23 @@ def test_multi_joined_string_fn():
     """Test the `Closure` class with multiple joined strings."""
     closure = Closure.from_fn(multi_joined_string_fn)
     assert closure.code == _expected(multi_joined_string_fn)
+    assert closure.dependencies == {}
+
+
+def test_empty_body_fn():
+    """Test the `Closure` class with an empty function body."""
+
+    # Define an empty function body here.
+    # Because it difficult to define an empty function body in main.py with the expected result.
+    def empty_body_fn(): ...
+
+    closure = Closure.from_fn(empty_body_fn)
+    assert closure.code == "def empty_body_fn(): ...\n"
+    assert closure.dependencies == {}
+
+
+def test_empty_body_fn_docstrings():
+    """Test the `Closure` class with an empty function body and docstrings."""
+    closure = Closure.from_fn(empty_body_fn_docstrings)
+    assert closure.code == _expected(empty_body_fn_docstrings)
     assert closure.dependencies == {}
