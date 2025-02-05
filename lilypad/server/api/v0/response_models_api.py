@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..._utils import match_api_key_with_project
+from ..._utils import validate_api_key_project_strict
 from ...models.response_models import (
     ResponseModelTable,
 )
@@ -20,7 +20,7 @@ response_models_router = APIRouter()
     response_model=ResponseModelPublic,
 )
 async def get_response_model_active_version_by_hash(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     response_model_hash: str,
     response_model_service: Annotated[
@@ -56,7 +56,7 @@ async def set_active_version(
     response_model=ResponseModelPublic,
 )
 async def create_response_model_version(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     response_model_create: ResponseModelCreate,
     response_model_service: Annotated[

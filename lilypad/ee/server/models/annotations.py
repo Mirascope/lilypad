@@ -1,4 +1,4 @@
-"""EE Annotations table and models."""
+"""EE Annotation models."""
 
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -36,7 +36,7 @@ class EvaluationType(str, Enum):
     EDITED = "edited"
 
 
-class _AnnotationBase(SQLModel):
+class AnnotationBase(SQLModel):
     """Base Annotation Model."""
 
     label: Label | None = Field(default=None, index=True)
@@ -47,30 +47,7 @@ class _AnnotationBase(SQLModel):
     )
 
 
-class AnnotationPublic(_AnnotationBase):
-    """Annotation public model."""
-
-    uuid: UUID
-    project_uuid: UUID
-    span_uuid: UUID
-    generation_uuid: UUID
-
-
-class AnnotationCreate(_AnnotationBase):
-    """Annotation create model."""
-
-    span_uuid: UUID | None = None
-    project_uuid: UUID | None = None
-    generation_uuid: UUID | None = None
-
-
-class AnnotationUpdate(_AnnotationBase):
-    """Annotation update model."""
-
-    ...
-
-
-class AnnotationTable(_AnnotationBase, BaseOrganizationSQLModel, table=True):
+class AnnotationTable(AnnotationBase, BaseOrganizationSQLModel, table=True):
     """Annotation table."""
 
     __tablename__ = ANNOTATION_TABLE_NAME  # type: ignore

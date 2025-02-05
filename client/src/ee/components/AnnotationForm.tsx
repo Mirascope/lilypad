@@ -1,6 +1,7 @@
 import { FailButton } from "@/components/FailButton";
 import { SuccessButton } from "@/components/SuccessButton";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -28,102 +29,117 @@ import {
   AnnotationPublic,
   AnnotationUpdate,
   Label,
+  SpanMoreDetails,
   SpanPublic,
 } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import JsonView from "@uiw/react-json-view";
 import { MessageSquareText } from "lucide-react";
 import { Dispatch, SetStateAction, useState } from "react";
 import { Path, SubmitHandler, useForm, UseFormReturn } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
 interface BaseAnnotation {
   label?: Label | null;
   reasoning?: string | null;
 }
 
 interface AnnotationFormFieldsProps<T extends BaseAnnotation> {
+  span?: SpanMoreDetails;
   methods: UseFormReturn<T>;
-  submitButtonText: string;
-  isSubmitting: boolean;
   onSubmit: SubmitHandler<T>;
-  setOpen: Dispatch<SetStateAction<boolean>>;
+  renderButtons: () => React.ReactNode;
 }
 
 const AnnotationFormFields = <T extends BaseAnnotation>({
+  span,
   methods,
-  submitButtonText,
-  isSubmitting,
   onSubmit,
-  setOpen,
+  renderButtons,
 }: AnnotationFormFieldsProps<T>) => {
   return (
-    <Form {...methods}>
-      <form
-        className='flex flex-col gap-2'
-        onSubmit={methods.handleSubmit(onSubmit)}
-      >
-        <FormField
-          key='label'
-          control={methods.control}
-          name={"label" as Path<T>}
-          rules={{
-            required: "Label is required",
-          }}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Label</FormLabel>
-              <FormControl>
-                <div className='flex gap-4'>
-                  <SuccessButton
-                    onClick={() => field.onChange(Label.PASS)}
-                    variant={field.value === Label.PASS ? "success" : "outline"}
-                  >
-                    Pass
-                  </SuccessButton>
-                  <FailButton
-                    onClick={() => field.onChange(Label.FAIL)}
-                    variant={
-                      field.value === Label.FAIL ? "destructive" : "outline"
-                    }
-                  >
-                    Fail
-                  </FailButton>
-                </div>
-              </FormControl>
-            </FormItem>
+    <>
+      {span && (
+        <>
+          {span.arg_values && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{"Input"}</CardTitle>
+              </CardHeader>
+              <CardContent className='flex flex-col'>
+                <JsonView value={span.arg_values} />
+              </CardContent>
+            </Card>
           )}
-        />
-        <FormField
-          key='reasoning'
-          control={methods.control}
-          name={"reasoning" as Path<T>}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reason</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder='(Optional) Reason for label'
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <DialogClose
-          asChild
-          onClick={async (e) => {
-            e.preventDefault();
-            if (await methods.trigger()) {
-              setOpen(false);
-            }
-          }}
+          <Card>
+            <CardHeader>
+              <CardTitle>{"Output"}</CardTitle>
+            </CardHeader>
+            <CardContent className='flex flex-col'>
+              <ReactMarkdown>{span.output}</ReactMarkdown>
+            </CardContent>
+          </Card>
+        </>
+      )}
+      <Form {...methods}>
+        <form
+          className='flex flex-col gap-2'
+          onSubmit={methods.handleSubmit(onSubmit)}
         >
-          <Button type='submit' loading={isSubmitting} className='w-full'>
-            {isSubmitting ? "Staging..." : submitButtonText}
-          </Button>
-        </DialogClose>
-      </form>
-    </Form>
+          <FormField
+            key='label'
+            control={methods.control}
+            name={"label" as Path<T>}
+            rules={{
+              required: "Label is required",
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Label</FormLabel>
+                <FormControl>
+                  <div className='flex gap-4'>
+                    <SuccessButton
+                      onClick={() => field.onChange(Label.PASS)}
+                      variant={
+                        field.value === Label.PASS ? "success" : "outline"
+                      }
+                    >
+                      Pass
+                    </SuccessButton>
+                    <FailButton
+                      onClick={() => field.onChange(Label.FAIL)}
+                      variant={
+                        field.value === Label.FAIL ? "destructive" : "outline"
+                      }
+                    >
+                      Fail
+                    </FailButton>
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            key='reasoning'
+            control={methods.control}
+            name={"reasoning" as Path<T>}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reason</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder='(Optional) Reason for label'
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          {renderButtons()}
+        </form>
+      </Form>
+    </>
   );
 };
 
@@ -137,6 +153,24 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
   const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const createAnnotation = useCreateAnnotationsMutation();
+  const isLoading = methods.formState.isSubmitting;
+  const renderButtons = () => {
+    return (
+      <DialogClose
+        asChild
+        onClick={async (e) => {
+          e.preventDefault();
+          if (await methods.trigger()) {
+            setOpen(false);
+          }
+        }}
+      >
+        <Button type='submit' loading={isLoading} className='w-full'>
+          {isLoading ? "Staging..." : "Annotate"}
+        </Button>
+      </DialogClose>
+    );
+  };
   const onSubmit = async (data: AnnotationCreate) => {
     data.span_uuid = span.uuid;
     data.assigned_to = user.uuid;
@@ -179,23 +213,24 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
         </DialogDescription>
         <AnnotationFormFields<AnnotationCreate>
           methods={methods}
-          submitButtonText='Annotate'
-          isSubmitting={methods.formState.isSubmitting}
           onSubmit={onSubmit}
-          setOpen={setOpen}
+          renderButtons={renderButtons}
         />
       </DialogContent>
     </Dialog>
   );
 };
 
-// Update Form Component
 export const UpdateAnnotationForm = ({
-  span,
+  setOpen,
   annotation,
+  total,
+  onComplete,
 }: {
-  span: SpanPublic;
+  setOpen: Dispatch<SetStateAction<boolean>>;
   annotation: AnnotationPublic;
+  total: number;
+  onComplete: (isLastItem: boolean) => void;
 }) => {
   const methods = useForm<AnnotationUpdate>({
     defaultValues: {
@@ -203,13 +238,32 @@ export const UpdateAnnotationForm = ({
       label: annotation.label,
     },
   });
-  const [open, setOpen] = useState<boolean>(false);
   const { toast } = useToast();
+  const isLastItem = total === 1;
   const updateAnnotation = useUpdateAnnotationMutation();
-
+  const isLoading = methods.formState.isSubmitting;
+  const renderButtons = () => {
+    const buttonText = isLastItem ? "Save & Finish" : "Save & Next";
+    return (
+      <div className='flex gap-2 w-full'>
+        <Button
+          type='button'
+          variant='outline'
+          loading={isLoading}
+          onClick={() => setOpen(false)}
+          className='flex-1'
+        >
+          Cancel
+        </Button>
+        <Button type='submit' loading={isLoading} className='flex-1'>
+          {isLoading ? "Saving..." : buttonText}
+        </Button>
+      </div>
+    );
+  };
   const onSubmit = async (data: AnnotationUpdate) => {
     const res = await updateAnnotation.mutateAsync({
-      projectUuid: span.project_uuid,
+      projectUuid: annotation.project_uuid,
       annotationUuid: annotation.uuid,
       annotationUpdate: data,
     });
@@ -223,15 +277,19 @@ export const UpdateAnnotationForm = ({
         variant: "destructive",
       });
     }
+    methods.reset();
+    onComplete(isLastItem);
+    if (isLastItem) {
+      setOpen(false);
+    }
   };
 
   return (
     <AnnotationFormFields<AnnotationUpdate>
+      span={annotation.span}
       methods={methods}
-      submitButtonText='Update'
-      isSubmitting={methods.formState.isSubmitting}
       onSubmit={onSubmit}
-      setOpen={setOpen}
+      renderButtons={renderButtons}
     />
   );
 };

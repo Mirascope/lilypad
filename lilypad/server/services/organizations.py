@@ -1,6 +1,7 @@
 """The `OrganizationService` class for organizations."""
 
-from ..models import OrganizationCreate, OrganizationTable
+from ..models import OrganizationTable
+from ..schemas import OrganizationCreate
 from .base import BaseService
 
 

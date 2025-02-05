@@ -29,6 +29,7 @@ import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
 import IconDialog from "@/components/IconDialog";
+import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
   SelectContent,
@@ -137,7 +138,18 @@ const GenerationWorkbench = () => {
     {
       label: "Dataset",
       value: GenerationTab.DATASET,
-      component: <DatasetTable generationUuid={generation?.uuid} />,
+      component: (
+        <Suspense fallback={<TableSkeleton />}>
+          {generation ? (
+            <DatasetTable
+              projectUuid={projectUuid}
+              generationUuid={generation?.uuid}
+            />
+          ) : (
+            <div>No generation selected</div>
+          )}
+        </Suspense>
+      ),
     },
   ];
   const handleArchive = async () => {

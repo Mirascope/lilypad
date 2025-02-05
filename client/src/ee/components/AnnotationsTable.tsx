@@ -14,22 +14,46 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AnnotationQueueDialog } from "@/ee/components/AnnotationQueueDialog";
+import { useUploadDatasetMutation } from "@/ee/utils/datasets";
+import { useToast } from "@/hooks/use-toast";
 import { AnnotationPublic, Label } from "@/types/types";
-import { ColumnDef, Row } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
+import JsonView from "@uiw/react-json-view";
 import { MoreHorizontal } from "lucide-react";
 import { useRef } from "react";
+import ReactMarkdown from "react-markdown";
 
-export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
+export const AnnotationsTable = ({
+  projectUuid,
+  generationUuid,
+  data,
+}: {
+  projectUuid: string;
+  generationUuid: string;
+  data: AnnotationPublic[];
+}) => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
+  const uploadDataset = useUploadDatasetMutation();
+  const { toast } = useToast();
   const columns: ColumnDef<AnnotationPublic>[] = [
     {
-      accessorKey: "input",
       header: "Input",
       enableHiding: false,
       cell: ({ row }) => {
-        // Render json in table
-        return <div>Placeholder</div>;
+        if (!row.original.span.arg_values) return "N/A";
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='line-clamp-1'>
+                {JSON.stringify(row.original.span.arg_values)}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className='bg-white text-black'>
+              {<JsonView value={row.original.span.arg_values} />}
+            </TooltipContent>
+          </Tooltip>
+        );
       },
     },
     {
@@ -39,10 +63,12 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className='line-clamp-1'>{row.getValue("output")}</div>
+              <div className='line-clamp-1'>
+                {<ReactMarkdown>{row.original.span.output}</ReactMarkdown>}
+              </div>
             </TooltipTrigger>
             <TooltipContent className='bg-white text-black'>
-              <p className='max-w-xs break-words'>{row.getValue("output")}</p>
+              <ReactMarkdown>{row.original.span.output}</ReactMarkdown>
             </TooltipContent>
           </Tooltip>
         );
@@ -106,17 +132,35 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
     },
   ];
 
-  const renderCustomControls = (rows: Row<AnnotationPublic>[]) => {
-    const annotations = rows.map((row) => row.original);
+  const renderCustomControls = () => {
+    const unannotatedRows = data.filter((annotation) => !annotation.label);
+    const annotatedRows = data.filter((annotation) => annotation.label);
+    const onClick = async () => {
+      await uploadDataset.mutateAsync({
+        projectUuid,
+        generationUuid,
+        annotations: annotatedRows,
+      });
+      toast({
+        title: "Annotations added to dataset",
+      });
+    };
     return (
-      <IconDialog
-        text={"Add to Dataset"}
-        title={"Annotate selected traces"}
-        description={`${rows.length} trace(s) selected.`}
-        tooltipContent={"Add annotations to your dataset."}
-      >
-        <div>Dummy</div>
-      </IconDialog>
+      <>
+        <AnnotationQueueDialog unannotatedRows={unannotatedRows} />
+        <IconDialog
+          text={"Add to Dataset"}
+          title={"Annotate selected traces"}
+          description={`${annotatedRows.length} annotation(s) will be added.`}
+          tooltipContent={"Add labeled annotations to your dataset."}
+          buttonProps={{ disabled: annotatedRows.length === 0 }}
+          dialogButtons={[
+            <Button variant='default' onClick={onClick}>
+              Add
+            </Button>,
+          ]}
+        />
+      </>
     );
   };
   return (
@@ -130,7 +174,6 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
         overscan: 20,
       }}
       defaultPanelSize={50}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
       customControls={renderCustomControls}
     />
   );

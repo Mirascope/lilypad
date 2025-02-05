@@ -1,59 +1,47 @@
-import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  AnnotationPublic,
-  DatasetRow,
-  EvaluationType,
-  Label,
-} from "@/types/types";
+import { getDatasetByGenerationUuidQueryOptions } from "@/ee/utils/datasets";
+import { DatasetRow, Label } from "@/types/types";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Suspense, useRef } from "react";
+import JsonView from "@uiw/react-json-view";
+import { useRef } from "react";
 
 export const DatasetTable = ({
+  projectUuid,
   generationUuid,
 }: {
-  generationUuid?: string;
+  projectUuid: string;
+  generationUuid: string;
 }) => {
+  const { data: datasetResponse } = useSuspenseQuery(
+    getDatasetByGenerationUuidQueryOptions(projectUuid, generationUuid)
+  );
+  const data = datasetResponse?.rows || [];
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const data: DatasetRow[] = [
-    {
-      input: { a: "test" },
-      output: "test",
-      label: Label.PASS,
-      reasoning: "test",
-      type: EvaluationType.MANUAL,
-    },
-    {
-      input: { a: "test", b: "1" },
-      output: "test",
-      label: Label.FAIL,
-      reasoning: "test",
-      type: EvaluationType.MANUAL,
-    },
-  ];
-  const columns: ColumnDef<AnnotationPublic>[] = [
+  const passData = data.filter((row) => row.label === Label.PASS);
+  const columns: ColumnDef<DatasetRow>[] = [
     {
       accessorKey: "input",
       header: "Input",
       enableHiding: false,
       cell: ({ row }) => {
         // Render json in table
-        return <div>Placeholder</div>;
+        if (!row.original.input) return "N/A";
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='line-clamp-1'>{row.original.input}</div>
+            </TooltipTrigger>
+            <TooltipContent className='bg-white text-black'>
+              {<JsonView value={JSON.parse(row.original.input)} />}
+            </TooltipContent>
+          </Tooltip>
+        );
       },
     },
     {
@@ -107,43 +95,10 @@ export const DatasetTable = ({
         );
       },
     },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='ghost' className='h-8 w-8 p-0'>
-                <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>View more details</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
   ];
 
-  const DetailPanel = ({ data }: { data: AnnotationPublic }) => {
-    return (
-      <div className='p-4 border rounded-md overflow-auto'>
-        <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-        <Suspense
-          fallback={<CardSkeleton items={5} className='flex flex-col' />}
-        >
-          <div>Placeholder</div>
-        </Suspense>
-      </div>
-    );
-  };
   return (
-    <DataTable<AnnotationPublic>
+    <DataTable<DatasetRow>
       columns={columns}
       data={data}
       virtualizerRef={virtualizerRef}
@@ -152,10 +107,12 @@ export const DatasetTable = ({
         estimateSize: () => 45,
         overscan: 20,
       }}
-      DetailPanel={DetailPanel}
       defaultPanelSize={50}
-      //   filterColumn='display_name'
-      //   defaultSorting={[{ id: "timestamp", desc: true }]}
+      customControls={() => (
+        <div>
+          {passData.length} out of {data.length} passed.
+        </div>
+      )}
     />
   );
 };

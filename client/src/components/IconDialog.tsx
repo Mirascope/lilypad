@@ -27,6 +27,7 @@ export const IconDialog = ({
   tooltipContent,
   tooltipProps = {},
   dialogButtons,
+  open,
   onOpenChange,
   dialogContentProps = {},
 }: {
@@ -34,11 +35,12 @@ export const IconDialog = ({
   text?: string;
   title: string;
   description: string;
-  children: ReactNode;
+  children?: ReactNode;
   buttonProps?: ButtonProps;
   tooltipContent?: ReactNode;
   tooltipProps?: React.ComponentProps<typeof TooltipContent>;
   dialogButtons?: ReactNode[];
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
   dialogContentProps?: React.ComponentProps<typeof DialogContent>;
 }) => {
@@ -57,7 +59,7 @@ export const IconDialog = ({
   );
 
   return (
-    <Dialog onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       {tooltipContent ? (
         <Tooltip>
           <TooltipTrigger asChild>

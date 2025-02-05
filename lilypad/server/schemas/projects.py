@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from ..models.projects import _ProjectBase
-from . import GenerationPublic
+from .generations import GenerationPublic
 from .prompts import PromptPublic
 from .response_models import ResponseModelPublic
 

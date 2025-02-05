@@ -42,6 +42,7 @@ class Settings(BaseSettings):
 
     # Oxen.ai settings
     oxen_repo_name: str | None = None
+    oxen_api_key: str | None = None
     oxen_host: str = "hub.oxen.ai"
     oxen_branch: str = "main"
 

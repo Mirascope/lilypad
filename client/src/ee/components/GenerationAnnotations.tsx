@@ -15,5 +15,11 @@ export const GenerationAnnotations = ({
   const { data } = useSuspenseQuery(
     annotationsByGenerationQueryOptions(projectUuid, generationUuid)
   );
-  return <AnnotationsTable data={data} />;
+  return (
+    <AnnotationsTable
+      data={data}
+      projectUuid={projectUuid}
+      generationUuid={generationUuid}
+    />
+  );
 };

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .users import UserTable
 
 
-class _APIKeyBase(SQLModel):
+class APIKeyBase(SQLModel):
     """Base APIKey Model."""
 
     name: str = Field(nullable=False, min_length=1)
@@ -28,7 +28,7 @@ class _APIKeyBase(SQLModel):
     )
 
 
-class APIKeyTable(_APIKeyBase, BaseOrganizationSQLModel, table=True):
+class APIKeyTable(APIKeyBase, BaseOrganizationSQLModel, table=True):
     """APIKey table."""
 
     __tablename__ = API_KEY_TABLE_NAME  # type: ignore

@@ -134,11 +134,6 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/prompts`,
           icon: PencilLine,
         },
-        {
-          title: "Annotations",
-          url: `/projects/${activeProject.uuid}/annotations`,
-          icon: PencilLine,
-        },
       ]
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {

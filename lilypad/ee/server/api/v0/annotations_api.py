@@ -7,12 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 
-from ....server.models import (
-    AnnotationCreate,
-    AnnotationPublic,
-    AnnotationTable,
-    AnnotationUpdate,
-)
+from .....server.schemas.spans import SpanMoreDetails
+from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from ....server.services import AnnotationService
 from ... import validate_license
 
@@ -28,7 +24,7 @@ async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
     annotations_create: Sequence[AnnotationCreate],
-) -> Sequence[AnnotationTable]:
+) -> Sequence[AnnotationPublic]:
     """Create an annotation.
 
     Args:
@@ -37,7 +33,7 @@ async def create_annotations(
         annotations_create: The annotation create model.
 
     Returns:
-        AnnotationTable: The created annotation.
+        AnnotationPublic: The created annotation.
 
     Raises:
         HTTPException: If the span has already been assigned to a user and has
@@ -63,7 +59,15 @@ async def create_annotations(
         )
 
     # Create all records in bulk
-    return annotations_service.create_bulk_records(annotations_create, project_uuid)
+    annotations = annotations_service.create_bulk_records(
+        annotations_create, project_uuid
+    )
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations
+    ]
 
 
 @annotations_router.patch(
@@ -74,10 +78,13 @@ async def update_annotation(
     annotation_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
     annotation_update: AnnotationUpdate,
-) -> AnnotationTable:
+) -> AnnotationPublic:
     """Update an annotation."""
-    return annotations_service.update_record_by_uuid(
+    new_annotation = annotations_service.update_record_by_uuid(
         annotation_uuid, annotation_update.model_dump(exclude_unset=True)
+    )
+    return AnnotationPublic.model_validate(
+        new_annotation, update={"span": SpanMoreDetails.from_span(new_annotation.span)}
     )
 
 
@@ -89,6 +96,13 @@ async def get_annotations(
     project_uuid: UUID,
     generation_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
-) -> Sequence[AnnotationTable]:
+) -> Sequence[AnnotationPublic]:
     """Get annotations by generations."""
-    return annotations_service.find_records_by_generation_uuid(generation_uuid)
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations_service.find_records_by_generation_uuid(
+            generation_uuid
+        )
+    ]

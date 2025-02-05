@@ -3,10 +3,11 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlmodel import and_, or_, select
+from sqlmodel import and_, delete, or_, select
 
 from ....server.services.base_organization import BaseOrganizationService
-from ...server.models import AnnotationCreate, AnnotationTable
+from ...server.models import AnnotationTable
+from ...server.schemas import AnnotationCreate
 
 
 class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreate]):
@@ -98,3 +99,11 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
             self.session.refresh(annotation)
 
         return annotations
+
+    def delete_records_by_uuids(self, uuids: Sequence[UUID]) -> bool:
+        """Delete records by multiple UUIDs."""
+        try:
+            self.session.exec(delete(self.table).where(self.table.uuid.in_(uuids)))  # type: ignore
+            return True
+        except Exception:
+            return False

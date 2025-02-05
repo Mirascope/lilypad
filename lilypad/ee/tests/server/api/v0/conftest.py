@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
-from lilypad.server._utils import get_current_user, match_api_key_with_project
+from lilypad.server._utils import get_current_user, validate_api_key_project_strict
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     APIKeyTable,
@@ -98,9 +98,9 @@ def client(
     def _override() -> bool:
         return True
 
-    from lilypad.ee.server.api.v0.main import api
+    from lilypad.server.api.v0.main import api
 
-    api.dependency_overrides[match_api_key_with_project] = _override
+    api.dependency_overrides[validate_api_key_project_strict] = _override
     api.dependency_overrides[get_session] = get_test_session  # pyright: ignore [reportArgumentType]
     api.dependency_overrides[get_current_user] = get_test_current_user  # pyright: ignore [reportArgumentType]
 

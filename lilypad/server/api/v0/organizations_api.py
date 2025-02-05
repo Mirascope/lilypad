@@ -9,9 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..._utils import get_current_user
 from ...models import (
+    OrganizationInviteTable,
+)
+from ...schemas import (
     OrganizationInviteCreate,
     OrganizationInvitePublic,
-    OrganizationInviteTable,
     UserPublic,
 )
 from ...services import OrganizationInviteService, OrganizationService

@@ -93,7 +93,7 @@ export interface AnnotationCreate {
  * AnnotationPublic
  * Annotation public model.
  */
-export interface AnnotationPublic {
+export interface AnnotationPublicInput {
   label?: Label | null;
   /** Reasoning */
   reasoning?: string | null;
@@ -121,6 +121,73 @@ export interface AnnotationPublic {
    * @format uuid
    */
   generation_uuid: string;
+  /** Span more details model. */
+  span: SpanMoreDetailsInput;
+}
+
+/**
+ * AnnotationPublic
+ * Annotation public model.
+ */
+export interface AnnotationPublicOutput {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Assigned To */
+  assigned_to?: string | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /** Span more details model. */
+  span: SpanMoreDetailsOutput;
+}
+
+/**
+ * AnnotationTable
+ * Annotation table.
+ */
+export interface AnnotationTable {
+  /** Uuid */
+  uuid?: string;
+  /** Created At */
+  created_at?: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Assigned To */
+  assigned_to?: string | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Span Uuid */
+  span_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
 }
 
 /**
@@ -181,8 +248,10 @@ export interface CreateUserOrganizationToken {
  * Dataset row model.
  */
 export interface DatasetRow {
+  /** Uuid */
+  uuid: string;
   /** Input */
-  input: Record<string, string> | null;
+  input: string | null;
   /** Output */
   output: string;
   label: Label | null;
@@ -210,7 +279,23 @@ export interface DependencyInfo {
   extras: string[] | null;
 }
 
-export type DeviceCodeTable = object;
+/**
+ * DeviceCodeTable
+ * Device codes table.
+ */
+export interface DeviceCodeTable {
+  /** Uuid */
+  uuid?: string;
+  /** Created At */
+  created_at?: string;
+  /**
+   * Id
+   * Generated device code
+   */
+  id: string;
+  /** Token */
+  token: string;
+}
 
 /**
  * EvaluationType
@@ -683,7 +768,46 @@ export interface SettingsPublic {
  * SpanMoreDetails
  * Span more details model.
  */
-export interface SpanMoreDetails {
+export interface SpanMoreDetailsInput {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Display Name */
+  display_name: string;
+  /** Provider */
+  provider: string;
+  /** Model */
+  model: string;
+  /** Input Tokens */
+  input_tokens?: number | null;
+  /** Output Tokens */
+  output_tokens?: number | null;
+  /** Duration Ms */
+  duration_ms: number;
+  /** Signature */
+  signature?: string | null;
+  /** Code */
+  code?: string | null;
+  /** Arg Values */
+  arg_values?: object | null;
+  /** Output */
+  output?: string | null;
+  /** Messages */
+  messages: MessageParam[];
+  /** Data */
+  data: object;
+  /** Cost */
+  cost?: number | null;
+  /** Template */
+  template?: string | null;
+}
+
+/**
+ * SpanMoreDetails
+ * Span more details model.
+ */
+export interface SpanMoreDetailsOutput {
+  /** Project Uuid */
+  project_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -752,7 +876,7 @@ export interface SpanPublic {
   prompt?: PromptPublic | null;
   response_model?: ResponseModelPublic | null;
   /** Annotations */
-  annotations: AnnotationPublic[];
+  annotations: AnnotationTable[];
   /** Child Spans */
   child_spans: SpanPublic[];
   /**
@@ -799,7 +923,28 @@ export interface UserOrganizationPublic {
   organization: OrganizationPublic;
 }
 
-export type UserOrganizationTable = object;
+/**
+ * UserOrganizationTable
+ * UserOrganization table.
+ */
+export interface UserOrganizationTable {
+  /** Uuid */
+  uuid?: string;
+  /** Created At */
+  created_at?: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** User role enum. */
+  role: UserRole;
+  /**
+   * User Uuid
+   * @format uuid
+   */
+  user_uuid: string;
+}
 
 /**
  * UserOrganizationUpdate

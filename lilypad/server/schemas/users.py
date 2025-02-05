@@ -4,11 +4,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from ..models.users import _UserBase
-from . import UserOrganizationPublic
+from ..models.users import UserBase
+from .user_organizations import UserOrganizationPublic
 
 
-class UserPublic(_UserBase):
+class UserPublic(UserBase):
     """User public model"""
 
     uuid: UUID
