@@ -502,7 +502,7 @@ def test_empty_body_fn():
     def empty_body_fn(): ...
 
     closure = Closure.from_fn(empty_body_fn)
-    assert closure.code == _expected(empty_body_fn)
+    assert closure.code == "def empty_body_fn(): ...\n"
     assert closure.dependencies == {}
 
 
