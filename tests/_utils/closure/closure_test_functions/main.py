@@ -679,4 +679,4 @@ def multi_joined_string_fn() -> str:
 
 
 def empty_body_fn_docstrings():
-    """def empty_body_fn_docstrings(): ..."""
+    """Def empty_body_fn_docstrings(): ..."""

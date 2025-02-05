@@ -80,7 +80,6 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
                 # Remove the docstring
                 stmts.pop(0)
 
-
         # If removing docstring leaves no statements, insert a single 'pass'
         if not stmts:
             stmts = [
