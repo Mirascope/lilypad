@@ -80,7 +80,7 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
                 # Remove the docstring
                 stmts.pop(0)
 
-        should_be_remove_indent = False
+
         # If removing docstring leaves no statements, insert a single 'pass'
         if not stmts:
             stmts = [
@@ -93,10 +93,8 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
                 )
             ]
             if m.matches(node.body, m.IndentedBlock()):
-                should_be_remove_indent = True
+                return node.with_changes(body=stmts[0])
         new_body = body.with_changes(body=stmts)
-        if should_be_remove_indent:
-            return node.with_changes(body=new_body.body[0])
         return node.with_changes(body=new_body)
 
     def leave_FunctionDef(
