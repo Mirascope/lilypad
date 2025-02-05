@@ -159,7 +159,7 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
     data.generation_uuid = span.generation_uuid;
     console.log(data);
     try {
-      const res = await createAnnotation.mutateAsync({
+      await createAnnotation.mutateAsync({
         projectUuid: span.project_uuid,
         annotationsCreate: [data],
       });
