@@ -6,23 +6,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-export const fetchGenerations = async (projectUuid: string) => {
-  return (
-    await api.get<GenerationPublic[]>(`/projects/${projectUuid}/generations`)
-  ).data;
-};
-
-export const fetchGeneration = async (
-  projectUuid: string,
-  generationUuid: string
-) => {
-  return (
-    await api.get<GenerationPublic>(
-      `/projects/${projectUuid}/generations/${generationUuid}`
-    )
-  ).data;
-};
-
 export const fetchGenerationsByName = async (
   generationName: string,
   projectUuid?: string
@@ -81,24 +64,6 @@ export const archiveGenerationByName = async (
   ).data;
 };
 
-export const generationsQueryOptions = (projectUuid: string, options = {}) =>
-  queryOptions({
-    queryKey: ["projects", projectUuid, "generations"],
-    queryFn: () => fetchGenerations(projectUuid),
-    ...options,
-  });
-
-export const generationQueryOptions = (
-  projectUuid: string,
-  generationUuid: string,
-  options = {}
-) =>
-  queryOptions({
-    queryKey: ["projects", projectUuid, "generations", generationUuid],
-    queryFn: () => fetchGeneration(projectUuid, generationUuid),
-    ...options,
-  });
-
 export const usePatchGenerationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -150,7 +115,6 @@ export const useArchiveGenerationMutation = () => {
     mutationFn: async ({
       projectUuid,
       generationUuid,
-      generationName,
     }: {
       projectUuid: string;
       generationUuid: string;

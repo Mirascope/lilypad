@@ -18,6 +18,8 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
+    from lilypad.ee.server.models.annotations import AnnotationTable
+
     from .projects import ProjectTable
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
@@ -70,4 +72,9 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     prompt: Optional["PromptTable"] = Relationship(back_populates="generations")
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="generations"
+    )
+    annotations: list["AnnotationTable"] = Relationship(
+        back_populates="generation",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
     )

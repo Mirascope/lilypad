@@ -48,10 +48,10 @@ const CallbackPage = () => {
     if (auth.user) {
       navigate({
         to: stateJson?.redirect || "/projects",
-        search: { redirect: undefined, deviceCode: undefined },
+        from: "/",
       });
     }
-  }, [auth.user]);
+  }, [stateJson.redirect, auth.user]);
 
   return (
     <div className='min-h-screen flex items-center justify-center'>

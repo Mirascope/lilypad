@@ -20,7 +20,7 @@ interface ArgsCardsProps {
 
 export const ArgsCards = ({ args }: ArgsCardsProps) => {
   return (
-    <Card className='w-full max-w-4xl'>
+    <Card className='w-full max-w-full'>
       <CardHeader>
         <CardTitle>{"Function Arguments"}</CardTitle>
       </CardHeader>

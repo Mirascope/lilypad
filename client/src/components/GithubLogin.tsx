@@ -48,7 +48,7 @@ export const GithubLogin = ({
       scope: "read:user user:email",
       response_type: "code",
     });
-    if (deviceCode) {
+    if (deviceCode || redirect) {
       const stateObject = {
         deviceCode,
         redirect,
@@ -58,7 +58,6 @@ export const GithubLogin = ({
     }
     return `${githubAuthUrl}?${params.toString()}`;
   };
-
   return (
     <GithubButton
       onClick={() => {

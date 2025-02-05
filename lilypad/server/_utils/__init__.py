@@ -3,7 +3,8 @@ from .auth import (
     create_api_key,
     create_jwt_token,
     get_current_user,
-    match_api_key_with_project,
+    validate_api_key_project_no_strict,
+    validate_api_key_project_strict,
 )
 from .posthog import get_posthog
 from .spans import (
@@ -12,6 +13,7 @@ from .spans import (
     calculate_openrouter_cost,
     convert_anthropic_messages,
     convert_gemini_messages,
+    convert_mirascope_messages,
     convert_openai_messages,
 )
 from .versions import construct_function
@@ -23,11 +25,13 @@ __all__ = [
     "calculate_openrouter_cost",
     "convert_anthropic_messages",
     "convert_gemini_messages",
+    "convert_mirascope_messages",
     "convert_openai_messages",
     "construct_function",
     "create_api_key",
     "create_jwt_token",
     "get_current_user",
     "get_posthog",
-    "match_api_key_with_project",
+    "validate_api_key_project_no_strict",
+    "validate_api_key_project_strict",
 ]

@@ -14,7 +14,7 @@ from ..._utils import (
     calculate_cost,
     calculate_openrouter_cost,
     get_posthog,
-    match_api_key_with_project,
+    validate_api_key_project_strict,
 )
 from ...db import get_session
 from ...models import Scope, SpanTable
@@ -50,7 +50,7 @@ async def get_traces_by_project_uuid(
     "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
 )
 async def traces(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     request: Request,

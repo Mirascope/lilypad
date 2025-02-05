@@ -28,6 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
 import { useToast } from "@/hooks/use-toast";
+import { GenerationTab } from "@/types/generations";
 import { GenerationPublic } from "@/types/types";
 import {
   uniqueLatestVersionGenerationNamesQueryOptions,
@@ -71,7 +72,9 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
   const { toast } = useToast();
   const archiveGenerationName = useArchiveGenerationByNameMutation();
   const handleClick = () => {
-    navigate({ to: `/projects/${projectUuid}/generations/${generation.name}` });
+    navigate({
+      to: `/projects/${projectUuid}/generations/${generation.name}/${generation.uuid}/${GenerationTab.OVERVIEW}`,
+    });
   };
   const handleArchive = async () => {
     await archiveGenerationName.mutateAsync({

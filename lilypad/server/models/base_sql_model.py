@@ -1,11 +1,11 @@
 """Base SQLModel class from which all `lilypad` SQLModel classes inherit."""
 
-from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from __future__ import annotations
+
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, model_serializer
+from pydantic import ConfigDict, field_serializer
 from sqlalchemy import JSON, Column, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql.base import PGDialect
@@ -39,32 +39,23 @@ class BaseSQLModel(SQLModel):
         nullable=False,
         default_factory=uuid4,
         primary_key=True,
+        schema_extra={"format": "uuid"},
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
+        schema_extra={"format": "date-time"},
     )
 
-    @model_serializer(mode="wrap")
-    def serialize(
-        self, original_serializer: Callable[["BaseSQLModel"], dict[str, Any]]
-    ) -> dict[str, Any]:
-        """Serialize datetime and UUID fields to strings."""
-        for field_name, field_info in self.model_fields.items():
-            if field_info.annotation == datetime or field_info.annotation == UUID:
-                setattr(
-                    self,
-                    field_name,
-                    str(getattr(self, field_name)),
-                )
+    @field_serializer("uuid")
+    def serialize_uuid(self, uuid: UUID) -> str:
+        """Serialize the UUID."""
+        return str(uuid)
 
-        result = original_serializer(self)
-
-        for field_name, field_info in self.model_fields.items():
-            if field_info.annotation == timedelta:
-                result[field_name] = getattr(self, field_name).total_seconds()
-
-        return result
+    @field_serializer("created_at")
+    def serialize_created_at(self, created_at: datetime) -> str:
+        """Serialize the created_at datetime."""
+        return created_at.isoformat()
 
     model_config = ConfigDict(  # pyright: ignore [reportAssignmentType]
         populate_by_name=True,

@@ -1,8 +1,10 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
+import IconDialog from "@/components/IconDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CreateAnnotationDialog } from "@/ee/components/AnnotationForm";
+import { QueueDialog } from "@/ee/components/QueueForm";
 import { Scope, SpanPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
-import { ColumnDef, FilterFn } from "@tanstack/react-table";
+import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
   MoreHorizontal,
+  Users,
 } from "lucide-react";
 import { Suspense, useEffect, useRef } from "react";
 
@@ -65,12 +70,55 @@ export const TracesTable = ({
   traceUuid?: string;
   path?: string;
 }) => {
-  const defaultRowSelection = findRowWithUuid(data, traceUuid);
-  const isSubRow = defaultRowSelection?.parent_span_id;
+  const selectRow = findRowWithUuid(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const virtualizerRef = useRef<HTMLDivElement>(null);
 
   const columns: ColumnDef<SpanPublic>[] = [
+    {
+      id: "select",
+      header: ({ table }) => {
+        const topLevelRows = table
+          .getFilteredRowModel()
+          .rows.filter((row) => row.getValue("scope") === Scope.LILYPAD);
+        const allTopLevelSelected = topLevelRows.every((row) =>
+          row.getIsSelected()
+        );
+        const someTopLevelSelected = topLevelRows.some((row) =>
+          row.getIsSelected()
+        );
+
+        return (
+          <Checkbox
+            checked={
+              (topLevelRows.length > 0 && allTopLevelSelected) ||
+              (someTopLevelSelected && "indeterminate")
+            }
+            onCheckedChange={(value) => {
+              topLevelRows.forEach((row) => row.toggleSelected(!!value));
+            }}
+            aria-label='Select all top level rows'
+          />
+        );
+      },
+      cell: ({ row }) => {
+        const shouldShowCheckbox = row.getValue("scope") == Scope.LILYPAD;
+
+        if (!shouldShowCheckbox) return null;
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label='Select row'
+            />
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "display_name",
       header: "Name",
@@ -78,22 +126,26 @@ export const TracesTable = ({
       filterFn: onlyParentFilter,
       cell: ({ row }) => {
         const depth = row.depth;
-        const paddingLeft = `${depth * 1}rem`;
         const hasSubRows = row.subRows.length > 0;
         return (
-          <div style={{ paddingLeft }}>
-            {hasSubRows && (
-              <ChevronRight
-                onClick={(event) => {
-                  row.toggleExpanded();
-                  event.stopPropagation();
-                }}
-                className={`h-4 w-4 inline mr-2 ${
-                  row.getIsExpanded() ? "rotate-90" : ""
-                }`}
-              />
-            )}
-            {row.getValue("display_name")}
+          <div
+            className='flex items-center gap-2'
+            style={{ marginLeft: `${depth * 1}rem` }}
+          >
+            <div className='flex items-center gap-2'>
+              {hasSubRows && (
+                <ChevronRight
+                  onClick={(event) => {
+                    row.toggleExpanded();
+                    event.stopPropagation();
+                  }}
+                  className={`h-4 w-4 transition-transform ${
+                    row.getIsExpanded() ? "rotate-90" : ""
+                  }`}
+                />
+              )}
+              <span className='truncate'>{row.getValue("display_name")}</span>
+            </div>
           </div>
         );
       },
@@ -126,22 +178,6 @@ export const TracesTable = ({
         );
       },
     },
-    // {
-    //   accessorKey: "output",
-    //   header: "Output",
-    //   cell: ({ row }) => {
-    //     return (
-    //       <Tooltip>
-    //         <TooltipTrigger asChild>
-    //           <div className='line-clamp-1'>{row.getValue("output")}</div>
-    //         </TooltipTrigger>
-    //         <TooltipContent>
-    //           <p className='max-w-xs break-words'>{row.getValue("output")}</p>
-    //         </TooltipContent>
-    //       </Tooltip>
-    //     );
-    //   },
-    // },
     {
       accessorKey: "created_at",
       id: "timestamp",
@@ -183,6 +219,12 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <div onClick={(e) => e.stopPropagation()}>
+                <CreateAnnotationDialog span={row.original} />
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <QueueDialog spans={[row.original]} />
+              </div>
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
@@ -216,6 +258,13 @@ export const TracesTable = ({
         replace: true,
         params: { _splat: data.uuid },
       });
+      return () => {
+        navigate({
+          to: path,
+          replace: true,
+          params: { _splat: undefined },
+        });
+      };
     }, [data]);
     return (
       <div className='p-4 border rounded-md overflow-auto'>
@@ -232,6 +281,22 @@ export const TracesTable = ({
       </div>
     );
   };
+  const renderCustomControls = (rows: Row<SpanPublic>[]) => {
+    const spans = rows.map((row) => row.original);
+    return (
+      <IconDialog
+        icon={<Users />}
+        title={"Annotate selected traces"}
+        description={`${rows.length} trace(s) selected.`}
+        buttonProps={{
+          disabled: rows.every((row) => !row.getIsSelected()),
+        }}
+        tooltipContent={"Add selected traces to your annotation queue."}
+      >
+        <QueueDialog spans={spans} />
+      </IconDialog>
+    );
+  };
   return (
     <DataTable<SpanPublic>
       columns={columns}
@@ -244,13 +309,14 @@ export const TracesTable = ({
       }}
       customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
       customGetRowId={(row) => row.span_id}
-      defaultRowSelection={defaultRowSelection}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
       filterColumn='display_name'
+      selectRow={selectRow}
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}
+      customControls={renderCustomControls}
     />
   );
 };

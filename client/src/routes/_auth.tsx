@@ -9,10 +9,11 @@ import { Suspense, useEffect } from "react";
 export const Route = createFileRoute("/_auth")({
   beforeLoad: async ({ context }) => {
     if (!context.auth.isAuthenticated) {
+      const currentPath = window.location.pathname + window.location.search;
       throw redirect({
         to: "/auth/login",
         search: {
-          redirect: location.href,
+          redirect: currentPath,
         },
       });
     }
