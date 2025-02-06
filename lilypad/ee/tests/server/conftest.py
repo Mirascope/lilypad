@@ -1,12 +1,15 @@
 """Test configuration and fixtures."""
 
 from collections.abc import Callable, Generator
+from datetime import datetime, timedelta
 from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
+from lilypad.ee import LicenseInfo
+from lilypad.ee.validate import Tier
 from lilypad.server.models import (
     UserRole,
 )
@@ -27,14 +30,6 @@ def get_session() -> Generator[Session, None, None]:
     """Get database session."""
     with Session(engine) as session:
         yield session
-
-
-@pytest.fixture(autouse=True)
-def ignore_license_validation():
-    """Ignore license validation for tests."""
-    with patch("lilypad.ee.LicenseValidator.validate_license") as mock:
-        mock.return_value = True
-        yield
 
 
 @pytest.fixture(autouse=True)
@@ -90,3 +85,24 @@ def get_test_current_user(test_user: UserPublic) -> Callable[[], UserPublic]:
         return test_user
 
     return override_get_current_user
+
+
+@pytest.fixture(autouse=True)
+def mock_license_info() -> Generator[LicenseInfo, None, None]:
+    """Override the get_license_info dependency for FastAPI.
+
+    Returns:
+        LicenseInfo: Test license info
+    """
+    # patch LicenseValidator._verify_license method
+    with patch(
+        "lilypad.ee.validate.LicenseValidator.validate_license"
+    ) as mock_verify_license:
+        license_info = mock_verify_license.return_value = LicenseInfo(
+            organization_uuid=ORGANIZATION_UUID,
+            tier=Tier.ENTERPRISE,
+            expires_at=datetime.now() + timedelta(days=1),
+            customer="test",
+            license_id="test_id",
+        )
+        yield license_info
