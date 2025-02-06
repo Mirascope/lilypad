@@ -32,7 +32,7 @@ export const useCreateOrganizationInviteMutation = () => {
       await createOrganizationInvite(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["organization-invites"],
+        queryKey: [["organization-invites"], ["user"]],
       });
     },
   });
