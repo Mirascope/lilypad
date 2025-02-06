@@ -94,13 +94,9 @@ def client(
     Returns:
         TestClient: FastAPI test client
     """
-
-    def _override() -> bool:
-        return True
-
     from lilypad.server.api.v0.main import api
 
-    api.dependency_overrides[validate_api_key_project_strict] = _override
+    api.dependency_overrides[validate_api_key_project_strict] = lambda: True
     api.dependency_overrides[get_session] = get_test_session  # pyright: ignore [reportArgumentType]
     api.dependency_overrides[get_current_user] = get_test_current_user  # pyright: ignore [reportArgumentType]
 

@@ -1,5 +1,5 @@
 """The `/ee/server/api` app for the main FastAPI server."""
 
-from .v0 import annotations_router, datasets_router
+from .v0 import ee_api as v0_ee_api
 
-__all__ = ["annotations_router", "datasets_router"]
+__all__ = ["v0_ee_api"]

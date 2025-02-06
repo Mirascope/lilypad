@@ -71,7 +71,7 @@ def make_api_call_patch(
             return wrapped(*args, **kwargs)
         span_attrs = get_bedrock_llm_request_attributes(params, instance)
         if operation_name == "Converse":
-            span_name = f"chat {span_attrs.get('gen_ai.request.model','unknown')}"
+            span_name = f"chat {span_attrs.get('gen_ai.request.model', 'unknown')}"
             with tracer.start_as_current_span(
                 name=span_name,
                 kind=SpanKind.CLIENT,
@@ -97,7 +97,7 @@ def make_api_call_patch(
                     raise
         elif operation_name == "ConverseStream":
             span_name = (
-                f"chat_stream {span_attrs.get('gen_ai.request.model','unknown')}"
+                f"chat_stream {span_attrs.get('gen_ai.request.model', 'unknown')}"
             )
             with tracer.start_as_current_span(
                 name=span_name,
@@ -158,7 +158,7 @@ def make_api_call_async_patch(
             return await wrapped(*args, **kwargs)
         span_attrs = get_bedrock_llm_request_attributes(params, instance)
         if operation_name == "Converse":
-            span_name = f"chat {span_attrs.get('gen_ai.request.model','unknown')}"
+            span_name = f"chat {span_attrs.get('gen_ai.request.model', 'unknown')}"
             with tracer.start_as_current_span(
                 name=span_name,
                 kind=SpanKind.CLIENT,
@@ -184,7 +184,7 @@ def make_api_call_async_patch(
                     raise
         elif operation_name == "ConverseStream":
             span_name = (
-                f"chat_stream {span_attrs.get('gen_ai.request.model','unknown')}"
+                f"chat_stream {span_attrs.get('gen_ai.request.model', 'unknown')}"
             )
             with tracer.start_as_current_span(
                 name=span_name,

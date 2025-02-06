@@ -89,6 +89,7 @@ def test_client_initialization():
                     "display_name": "test_function",
                     "version": None,
                     "child_spans": [],
+                    "annotations": [],
                 }
             ],
         ),
