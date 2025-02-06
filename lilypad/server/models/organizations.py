@@ -33,3 +33,4 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
     api_keys: list["APIKeyTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
+    license: str | None = Field(default=None, nullable=True)

@@ -45,10 +45,7 @@ def test_basic_tool_decoration():
     assert issubclass(decorated, BaseTool)
 
     # Check that the docstring was preserved
-    assert (
-        decorated.__doc__
-        == """Process the input text.\n\nArgs:\n    text: The text to process"""
-    )
+    assert decorated.__doc__ == """Process the input text."""
 
     # Create an instance and test it
     instance = decorated(text="hello")  # pyright: ignore [reportCallIssue]

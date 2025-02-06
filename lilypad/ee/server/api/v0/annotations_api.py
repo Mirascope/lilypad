@@ -10,9 +10,9 @@ from fastapi.exceptions import HTTPException
 from .....server.schemas.spans import SpanMoreDetails
 from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from ....server.services import AnnotationService
-from ... import validate_license
+from ....validate import Tier
+from ...require_license import require_license
 
-validate_license()
 annotations_router = APIRouter()
 
 
@@ -20,6 +20,7 @@ annotations_router = APIRouter()
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -74,6 +75,7 @@ async def create_annotations(
     "/projects/{project_uuid}/annotations/{annotation_uuid}",
     response_model=AnnotationPublic,
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def update_annotation(
     annotation_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -92,6 +94,7 @@ async def update_annotation(
     "/projects/{project_uuid}/generations/{generation_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_annotations(
     project_uuid: UUID,
     generation_uuid: UUID,

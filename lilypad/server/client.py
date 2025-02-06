@@ -13,7 +13,7 @@ from lilypad._utils.functions import PromptPublic
 
 from .._utils import Closure, load_config
 from ..server.settings import get_settings
-from .schemas import GenerationPublic, ProjectPublic, SpanPublic
+from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
 from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
@@ -356,3 +356,22 @@ class LilypadClient:
                 json=create_data,
             )
             return rm_new
+
+    def patch_organization(
+        self, organization_uuid: UUID, data: dict[str, Any]
+    ) -> OrganizationPublic:
+        """Update an organization."""
+        return self._request(
+            "PATCH",
+            f"/v0/organizations/{organization_uuid}",
+            response_model=OrganizationPublic,
+            **data,
+        )
+
+    def get_organization(self, organization_uuid: UUID) -> OrganizationPublic:
+        """Get an organization."""
+        return self._request(
+            "GET",
+            f"/v0/organizations/{organization_uuid}",
+            response_model=OrganizationPublic,
+        )
