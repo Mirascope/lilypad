@@ -235,10 +235,7 @@ async def get_dataset_rows_by_uuid(
             detail=f"Not Found dataset for generation_uuid: {generation_uuid}",
         )
     except Exception as ex:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error initializing Oxen DataFrame: {ex}",
-        )
+        return DatasetRowsResponse(rows=[], next_page=None)
 
 
 @datasets_router.get(
