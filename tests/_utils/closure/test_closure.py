@@ -231,7 +231,10 @@ def test_aliased_module_import_fn() -> None:
     closure = Closure.from_fn(aliased_module_import_fn)
     assert closure.code == _expected(aliased_module_import_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -240,7 +243,10 @@ def test_aliased_import_fn() -> None:
     closure = Closure.from_fn(aliased_import_fn)
     assert closure.code == _expected(aliased_import_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -298,7 +304,10 @@ def test_annotated_assignment_fn() -> None:
     closure = Closure.from_fn(annotated_assignment_fn)
     assert closure.code == _expected(annotated_assignment_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -307,7 +316,10 @@ def test_internal_imports_fn() -> None:
     closure = Closure.from_fn(internal_imports_fn)
     assert closure.code == _expected(internal_imports_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -335,7 +347,10 @@ def test_global_var_fn() -> None:
                 "vertex",
             ],
         },
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']},
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        },
     }
 
 
@@ -343,20 +358,24 @@ def test_import_with_different_dist_name_fn() -> None:
     """Test the `Closure` class with an import with a different distribution name."""
     closure = Closure.from_fn(import_with_different_dist_name_fn)
     assert closure.code == _expected(import_with_different_dist_name_fn)
-    expected_dependencies = {'google-ai-generativelanguage': {'extras': None, 'version': '0.6.15'},
- 'google-api-core': {'extras': None, 'version': '2.24.1'},
- 'google-auth': {'extras': None, 'version': '2.38.0'},
- 'google-cloud-aiplatform': {'extras': None, 'version': '1.79.0'},
- 'google-cloud-bigquery': {'extras': None, 'version': '3.29.0'},
- 'google-cloud-core': {'extras': ['grpc'], 'version': '2.4.1'},
- 'google-cloud-resource-manager': {'extras': None, 'version': '1.14.0'},
- 'google-cloud-storage': {'extras': None, 'version': '2.19.0'},
- 'google-generativeai': {'extras': None, 'version': '0.8.4'},
- 'google-resumable-media': {'extras': ['aiohttp', 'requests'],
-                            'version': '2.7.2'},
- 'googleapis-common-protos': {'extras': None, 'version': '1.66.0'},
- 'grpc-google-iam-v1': {'extras': None, 'version': '0.14.0'},
- 'protobuf': {'extras': None, 'version': '5.29.3'}}
+    expected_dependencies = {
+        "google-ai-generativelanguage": {"extras": None, "version": "0.6.15"},
+        "google-api-core": {"extras": None, "version": "2.24.1"},
+        "google-auth": {"extras": None, "version": "2.38.0"},
+        "google-cloud-aiplatform": {"extras": None, "version": "1.79.0"},
+        "google-cloud-bigquery": {"extras": None, "version": "3.29.0"},
+        "google-cloud-core": {"extras": ["grpc"], "version": "2.4.1"},
+        "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
+        "google-cloud-storage": {"extras": None, "version": "2.19.0"},
+        "google-generativeai": {"extras": None, "version": "0.8.4"},
+        "google-resumable-media": {
+            "extras": ["aiohttp", "requests"],
+            "version": "2.7.2",
+        },
+        "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
+        "grpc-google-iam-v1": {"extras": None, "version": "0.14.0"},
+        "protobuf": {"extras": None, "version": "5.29.3"},
+    }
     if sys.version_info >= (3, 11):
         expected_dependencies["protobuf"] = {
             "version": importlib.metadata.version("protobuf"),
@@ -421,7 +440,10 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
         closure_with_long_function_name_that_wraps_around_fn
     )
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": ['realtime']}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
     assert closure.signature == inspect.cleandoc("""
         def closure_with_long_function_name_that_wraps_around_fn(

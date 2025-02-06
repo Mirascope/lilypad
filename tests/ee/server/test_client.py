@@ -33,9 +33,9 @@ def test_get_dataset_rows_with_generation_uuid(mock_request):
 
     response = client.get_dataset_rows(generation_uuid="test-uuid", page_num=2)
 
-    assert isinstance(
-        response, DatasetRowsResponse
-    ), "Should return a DatasetRowsResponse object"
+    assert isinstance(response, DatasetRowsResponse), (
+        "Should return a DatasetRowsResponse object"
+    )
     assert response.rows == [{"col1": "val1"}], "Should match the mocked rows"
 
     # Verify the _request call was made with correct arguments
@@ -43,7 +43,8 @@ def test_get_dataset_rows_with_generation_uuid(mock_request):
     call_args, call_kwargs = mock_request.call_args
     assert call_kwargs["method"] == "GET", "Method should be GET"
     assert (
-        call_kwargs["endpoint"] == "/v0/projects/test-project-uuid/datasets/test-uuid"
+        call_kwargs["endpoint"]
+        == "/v0/projects/test-project-uuid/generations/test-uuid/datasets"
     )
     assert call_kwargs["response_model"] is DatasetRowsResponse
     assert call_kwargs["params"] == {"page_num": 2}, "Should pass page_num in params"
