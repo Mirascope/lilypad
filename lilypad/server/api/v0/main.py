@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
-from ....ee.server.api.v0 import annotations_router, datasets_router
+from ....ee.server.api import v0_ee_api
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
@@ -19,13 +19,9 @@ from .spans_api import spans_router
 from .traces_api import traces_router
 from .users_api import users_router
 
-# The `/ee` FastAPI sub-app for `lilypad`.
-ee_router = APIRouter(prefix="/ee")
-# The EE-related routers (annotations, datasets) are grouped together.
-ee_router.include_router(annotations_router)
-ee_router.include_router(datasets_router)
-
 api = FastAPI(separate_input_output_schemas=False)
+# The `/ee` FastAPI sub-app for `lilypad`.
+api.mount("/ee", v0_ee_api)
 api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
@@ -37,12 +33,6 @@ api.include_router(traces_router)
 api.include_router(auth_router)
 api.include_router(users_router)
 api.include_router(organization_router)
-api.include_router(annotations_router)
-api.include_router(datasets_router)
-
-
-# Include the EE sub-router in the main API.
-api.include_router(ee_router)
 
 
 class SettingsPublic(BaseModel):

@@ -14,7 +14,7 @@ export const uploadDataset = async (
 ) => {
   return (
     await api.post<boolean>(
-      `/projects/${projectUuid}/generations/${generationUuid}/datasets`,
+      `/ee/projects/${projectUuid}/generations/${generationUuid}/datasets`,
       annotations
     )
   ).data;
@@ -26,7 +26,7 @@ export const fetchDatasetByGenerationUuid = async (
 ) => {
   return (
     await api.get<DatasetRowsResponse>(
-      `/projects/${projectUuid}/generations/${generationUuid}/datasets`
+      `/ee/projects/${projectUuid}/generations/${generationUuid}/datasets`
     )
   ).data;
 };

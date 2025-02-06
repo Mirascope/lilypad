@@ -20,6 +20,7 @@ from ...schemas import (
     OrganizationInvitePublic,
     OrganizationPublic,
     UserPublic,
+    UserRole,
 )
 from ...schemas.organizations import OrganizationUpdate
 from ...services import OrganizationInviteService, OrganizationService
@@ -110,13 +111,20 @@ async def update_organization(
 ) -> OrganizationTable:
     """Update an organization."""
     # Check if user is in organization
-    if not user.user_organizations or not any(
-        user_organizations.organization_uuid == organization_uuid
-        for user_organizations in user.user_organizations
-    ):
+    user_org = None
+    for org in user.user_organizations or []:
+        if org.organization_uuid == organization_uuid:
+            user_org = org
+            break
+    if not user_org:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only self organization can update license",
+            detail="User is not a member of this organization",
+        )
+    if not user_org.role == UserRole.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization owner can update organization",
         )
 
     # If updating license, validate it

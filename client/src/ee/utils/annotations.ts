@@ -19,7 +19,7 @@ export const updateAnnotation = async (
 ) => {
   return (
     await api.patch<AnnotationPublic>(
-      `/projects/${projectUuid}/annotations/${annotationUuid}`,
+      `/ee/projects/${projectUuid}/annotations/${annotationUuid}`,
       annotationUpdate
     )
   ).data;
@@ -31,7 +31,7 @@ export const fetchAnnotationsByGenerationUuid = async (
 ) => {
   return (
     await api.get<AnnotationPublic[]>(
-      `/projects/${projectUuid}/generations/${generationUuid}/annotations`
+      `/ee/projects/${projectUuid}/generations/${generationUuid}/annotations`
     )
   ).data;
 };
@@ -42,7 +42,7 @@ export const postAnnotations = async (
 ) => {
   return (
     await api.post<AnnotationPublic>(
-      `/projects/${projectUuid}/annotations`,
+      `/ee/projects/${projectUuid}/annotations`,
       annotationsCreate
     )
   ).data;

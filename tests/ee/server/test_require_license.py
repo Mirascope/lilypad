@@ -80,7 +80,10 @@ async def test_invalid_license_none():
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-        assert exc_info.value.detail == "Invalid License. Contact the team to get one."
+        assert (
+            exc_info.value.detail
+            == "Invalid License. Contact support@mirascope.com to get one."
+        )
 
 
 @pytest.mark.asyncio
@@ -143,7 +146,10 @@ async def test_wrong_license_tier():
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-        assert exc_info.value.detail == "Invalid License. Contact the team to get one."
+        assert (
+            exc_info.value.detail
+            == "Invalid License. Contact support@mirascope.com to get one."
+        )
 
 
 @pytest.mark.asyncio

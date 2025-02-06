@@ -105,7 +105,7 @@ class _RequireLicense:
             if not license_info:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Invalid License. Contact the team to get one.",
+                    detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             if license_info.organization_uuid != organization_uuid:
@@ -117,7 +117,7 @@ class _RequireLicense:
             if self.tier == Tier.ENTERPRISE and license_info.tier != Tier.ENTERPRISE:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Invalid License. Contact the team to get one.",
+                    detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             return license_info

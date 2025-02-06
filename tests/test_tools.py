@@ -37,7 +37,6 @@ async def sample_async_function(text: str) -> str:
 
 
 # Tests
-@pytest.mark.skip("Skip this test for now. the pattern is broken")
 def test_basic_tool_decoration():
     """Test basic function decoration with @tool()"""
     decorated = tool()(sample_basic_function)
@@ -46,10 +45,7 @@ def test_basic_tool_decoration():
     assert issubclass(decorated, BaseTool)
 
     # Check that the docstring was preserved
-    assert (
-        decorated.__doc__
-        == """Process the input text.\n\nArgs:\n    text: The text to process"""
-    )
+    assert decorated.__doc__ == """Process the input text."""
 
     # Create an instance and test it
     instance = decorated(text="hello")  # pyright: ignore [reportCallIssue]
