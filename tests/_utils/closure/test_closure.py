@@ -374,7 +374,6 @@ def test_import_with_different_dist_name_fn() -> None:
         },
         "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
         "grpc-google-iam-v1": {"extras": None, "version": "0.14.0"},
-        "protobuf": {"extras": None, "version": "5.29.3"},
     }
     if sys.version_info >= (3, 11):
         expected_dependencies["protobuf"] = {
