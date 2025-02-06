@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import {
+  renderCardOutput,
   renderData,
   renderMessagesContainer,
-  renderOutput,
 } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -78,7 +78,7 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
         </Card>
       )}
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
-      {renderOutput(span.output)}
+      {renderCardOutput(span.output)}
       {renderData(span.data)}
     </div>
   );

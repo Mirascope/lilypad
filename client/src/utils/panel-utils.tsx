@@ -68,17 +68,24 @@ export const renderOutput = (output: any) => {
   const jsonOutput = safelyParseJSON(output);
   return (
     <>
+      {jsonOutput ? (
+        <JsonView value={jsonOutput} />
+      ) : (
+        <ReactMarkdown>{output}</ReactMarkdown>
+      )}
+    </>
+  );
+};
+export const renderCardOutput = (output: any) => {
+  return (
+    <>
       {output && (
         <Card>
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col'>
-            {jsonOutput ? (
-              <JsonView value={jsonOutput} />
-            ) : (
-              <ReactMarkdown>{output}</ReactMarkdown>
-            )}
+            {renderOutput(output)}
           </CardContent>
         </Card>
       )}
