@@ -19,6 +19,7 @@ from .user_organizations import (
     UserOrganizationCreate,
     UserOrganizationPublic,
     UserOrganizationUpdate,
+    UserRole,
 )
 from .users import UserCreate, UserPublic
 
@@ -46,4 +47,5 @@ __all__ = [
     "UserOrganizationCreate",
     "UserOrganizationPublic",
     "UserOrganizationUpdate",
+    "UserRole",
 ]

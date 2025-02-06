@@ -78,13 +78,13 @@ class MockResponse(
         pass
 
     @property
-    def message_param(self) -> Any:
+    def message_param(self) -> Any:  # pyright: ignore [reportInvalidTypeVarUse, reportIncompatibleVariableOverride]
         """Returns the assistants's response as a message parameter."""
         pass
 
     @computed_field
     @property
-    def tools(self) -> list[BaseTool] | None:
+    def tools(self) -> list[BaseTool] | None:  # pyright: ignore [reportInvalidTypeVarUse, reportIncompatibleVariableOverride]
         """Returns any available tool calls as their `OpenAITool` definition.
 
         Raises:
@@ -111,12 +111,12 @@ class MockResponse(
         return extracted_tools
 
     @property
-    def tool(self) -> _BaseToolT | None:  # pyright: ignore [reportInvalidTypeVarUse]
+    def tool(self) -> _BaseToolT | None:  # pyright: ignore [reportInvalidTypeVarUse, reportIncompatibleVariableOverride]
         """Returns the tool that was used to generate the response."""
         pass
 
     @classmethod
-    def tool_message_params(
+    def tool_message_params(  # pyright: ignore [reportIncompatibleMethodOverride]
         cls, tools_and_outputs: list[tuple[BaseTool, str]]
     ) -> list[ChatCompletionToolMessageParam]:
         """Returns the tool message parameters for tool call results.
@@ -138,7 +138,15 @@ class MockResponse(
             for tool, output in tools_and_outputs
         ]
 
-    ...
+    @property
+    def common_finish_reasons(self) -> list[mb.types.FinishReason] | None:
+        """Provider-agnostic finish reasons."""
+        ...
+
+    @property
+    def common_message_param(self) -> list[mb.BaseMessageParam]:
+        """Provider-agnostic assistant message param."""
+        ...
 
 
 class MockBaseTool(BaseTool, ABC):
@@ -289,7 +297,7 @@ def test_message_sync_tools(mock_chat_completion):
         ),
     ]
 
-    response = MockResponse(
+    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
         metadata={},
         response=mock_chat_completion,
         tool_types=[FormatBook, FormatAuthor],
@@ -352,7 +360,7 @@ async def test_message_async_tools(mock_chat_completion):
         ),
     ]
 
-    response = MockResponse(
+    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
         metadata={},
         response=mock_chat_completion,
         tool_types=[AsyncFormatBook, AsyncFormatAuthor],
@@ -398,7 +406,7 @@ async def test_message_tool_error_handling(mock_chat_completion):
         )
     ]
 
-    response = MockResponse(
+    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
         metadata={},
         response=mock_chat_completion,
         tool_types=[AsyncErrorTool],
