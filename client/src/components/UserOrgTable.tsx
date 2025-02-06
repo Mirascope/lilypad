@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   OrganizationInviteCreate,
+  OrganizationInvitePublic,
   OrganizationPublic,
   UserOrganizationPublic,
   UserOrganizationUpdate,
@@ -47,7 +48,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { PencilLine, Trash } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 export const UserOrgTable = () => {
@@ -147,18 +148,16 @@ const InviteUserButton = ({
   const methods = useForm<OrganizationInviteCreate>({
     defaultValues: { email: "", invited_by: user.uuid },
   });
+  const [organizationInvite, setOrganizationInvite] =
+    useState<OrganizationInvitePublic | null>(null);
   const { toast } = useToast();
   const createOrganizationInvite = useCreateOrganizationInviteMutation();
   const onSubmit = async (data: OrganizationInviteCreate) => {
     const created = await createOrganizationInvite.mutateAsync(data);
-    if (created) {
+    setOrganizationInvite(created);
+    if (created.resend_email_id !== "n/a") {
       toast({
-        title: "Successfully sent email invite",
-      });
-    } else {
-      toast({
-        title: "Failed to send email invite",
-        variant: "destructive",
+        title: "Successfully sent email invite.",
       });
     }
   };
@@ -198,8 +197,29 @@ const InviteUserButton = ({
                 </FormItem>
               )}
             />
+            {organizationInvite && organizationInvite.invite_link && (
+              <>
+                <div>Alternatively, give the invited user this link:</div>
+                <div className='flex items-center space-x-2'>
+                  <Input value={organizationInvite.invite_link} readOnly />
+                  <Button
+                    type='button'
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        organizationInvite.invite_link || ""
+                      );
+                      toast({
+                        title: "Copied link to clipboard",
+                      });
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </>
+            )}
             <DialogFooter>
-              <DialogClose asChild>
+              {!organizationInvite ? (
                 <Button
                   type='submit'
                   loading={methods.formState.isSubmitting}
@@ -209,7 +229,17 @@ const InviteUserButton = ({
                     ? "Sending invite..."
                     : "Send invite"}
                 </Button>
-              </DialogClose>
+              ) : (
+                <DialogClose asChild>
+                  <Button
+                    variant='outline'
+                    onClick={() => setOrganizationInvite(null)}
+                    className='w-full'
+                  >
+                    Close
+                  </Button>
+                </DialogClose>
+              )}
             </DialogFooter>
           </form>
         </Form>

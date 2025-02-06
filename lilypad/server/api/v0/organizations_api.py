@@ -54,7 +54,7 @@ async def create_organization_invite(
     ],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     data: OrganizationInviteCreate,
-) -> OrganizationInviteTable:
+) -> OrganizationInvitePublic:
     """Create an organization invite."""
     invite_token = secrets.token_urlsafe(32)
     data.token = invite_token
@@ -69,34 +69,37 @@ async def create_organization_invite(
     )
     settings = get_settings()
     resend.api_key = settings.resend_api_key
-    if not settings.resend_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Resend API key not set.",
-        )
     invite_link = f"{settings.client_url}/join/{invite_token}"
-    params: resend.Emails.SendParams = {
-        "from": "Lilypad Team <team@lilypad.so>",
-        "to": [data.email],
-        "subject": f"You have been invited to join {organization.name} on Lilypad",
-        "html": f"""
-                <h1>Join {organization.name} on Lilypad</h1>
-                <p>You have been invited by {user.first_name} to join {organization.name}.</p>
-                <p>To accept the invite, click the link below.</p>
-                <a href="{invite_link}">Accept Invitation</a>
-            """,
-        "text": f"You have been invited by {user.first_name} to join {organization.name}. To accept the invite, copy the link: {invite_link}",
-    }
-    try:
-        email = resend.Emails.send(params)
-    except resend.exceptions.ResendError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send email.",
-        )
-    data.resend_email_id = email["id"]
+    if settings.resend_api_key:
+        params: resend.Emails.SendParams = {
+            "from": "Lilypad Team <team@lilypad.so>",
+            "to": [data.email],
+            "subject": f"You have been invited to join {organization.name} on Lilypad",
+            "html": f"""
+                    <h1>Join {organization.name} on Lilypad</h1>
+                    <p>You have been invited by {user.first_name} to join {organization.name}.</p>
+                    <p>To accept the invite, click the link below.</p>
+                    <a href="{invite_link}">Accept Invitation</a>
+                """,
+            "text": f"You have been invited by {user.first_name} to join {organization.name}. To accept the invite, copy the link: {invite_link}",
+        }
+        try:
+            email = resend.Emails.send(params)
+        except resend.exceptions.ResendError:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send email.",
+            )
+        data.resend_email_id = email["id"]
+    else:
+        data.resend_email_id = "n/a"
     organization_invite = organization_invite_service.create_record(data)
-    return organization_invite
+    return OrganizationInvitePublic.model_validate(
+        organization_invite,
+        update={
+            "invite_link": invite_link,
+        },
+    )
 
 
 @organization_router.patch(

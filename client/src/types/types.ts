@@ -443,6 +443,10 @@ export interface OrganizationInvitePublic {
   organization_uuid: string;
   /** User public model */
   user: UserPublic;
+  /** Resend Email Id */
+  resend_email_id: string;
+  /** Invite Link */
+  invite_link?: string | null;
 }
 
 /**
