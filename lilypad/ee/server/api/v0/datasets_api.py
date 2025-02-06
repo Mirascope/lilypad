@@ -14,11 +14,11 @@ from uuid import UUID
 
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, status
+from oxen import DataFrame, RemoteRepo, Workspace
+from oxen.auth import config_auth
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from lilypad.server.settings import get_settings
-from oxen import DataFrame, RemoteRepo, Workspace
-from oxen.auth import config_auth
 
 from .....server._utils import get_current_user, validate_api_key_project_no_strict
 from .....server.schemas.users import UserPublic
