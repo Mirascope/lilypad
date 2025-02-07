@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateAnnotationDialog } from "@/ee/components/AnnotationForm";
-import { QueueDialog } from "@/ee/components/QueueForm";
+import { QueueDialog, QueueForm } from "@/ee/components/QueueForm";
 import { Scope, SpanPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
@@ -26,7 +26,7 @@ import {
   MoreHorizontal,
   Users,
 } from "lucide-react";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -74,7 +74,7 @@ export const TracesTable = ({
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
+  const [open, setOpen] = useState(false);
   const columns: ColumnDef<SpanPublic>[] = [
     {
       id: "select",
@@ -285,6 +285,8 @@ export const TracesTable = ({
     const spans = rows.map((row) => row.original);
     return (
       <IconDialog
+        open={open}
+        onOpenChange={setOpen}
         icon={<Users />}
         title={"Annotate selected traces"}
         description={`${rows.length} trace(s) selected.`}
@@ -293,7 +295,7 @@ export const TracesTable = ({
         }}
         tooltipContent={"Add selected traces to your annotation queue."}
       >
-        <QueueDialog spans={spans} />
+        <QueueForm spans={spans} setOpen={setOpen} />
       </IconDialog>
     );
   };
