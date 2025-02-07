@@ -45,13 +45,9 @@ def _get_repo(
     user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> RemoteRepo:
     settings = get_settings()
-    if not settings.oxen_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing Oxen API key",
-        )
-    config_auth(settings.oxen_api_key, host=settings.oxen_host)
-    repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}")
+    if settings.oxen_api_key:
+        config_auth(settings.oxen_api_key, host=settings.oxen_host)
+    repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}", host=settings.oxen_host)
     if not repo.exists():
         repo.create()
     return repo
