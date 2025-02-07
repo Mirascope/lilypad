@@ -18,6 +18,7 @@ import { AnnotationQueueDialog } from "@/ee/components/AnnotationQueueDialog";
 import { useUploadDatasetMutation } from "@/ee/utils/datasets";
 import { useToast } from "@/hooks/use-toast";
 import { AnnotationPublic, Label } from "@/types/types";
+import { renderCardOutput } from "@/utils/panel-utils";
 import { ColumnDef } from "@tanstack/react-table";
 import JsonView from "@uiw/react-json-view";
 import { MoreHorizontal } from "lucide-react";
@@ -68,7 +69,7 @@ export const AnnotationsTable = ({
               </div>
             </TooltipTrigger>
             <TooltipContent className='bg-white text-black'>
-              <ReactMarkdown>{row.original.span.output}</ReactMarkdown>
+              {renderCardOutput(row.original.span.output)}
             </TooltipContent>
           </Tooltip>
         );

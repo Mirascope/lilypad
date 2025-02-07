@@ -15,3 +15,9 @@ class OrganizationCreate(OrganizationBase):
     """Organization create model"""
 
     ...
+
+
+class OrganizationUpdate(OrganizationBase):
+    """Organization update model"""
+
+    ...

@@ -22,12 +22,12 @@ from lilypad.server.settings import get_settings
 
 from .....server._utils import get_current_user, validate_api_key_project_no_strict
 from .....server.schemas.users import UserPublic
-from ... import validate_license
+from ....validate import Tier
 from ...models.annotations import EvaluationType, Label
+from ...require_license import require_license
 from ...schemas.annotations import AnnotationPublic
 from ...services.annotations_service import AnnotationService
 
-validate_license()
 datasets_router = APIRouter()
 
 
@@ -40,7 +40,7 @@ def _get_repo(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing Oxen API key",
         )
-    config_auth(settings.oxen_api_key)
+    config_auth(settings.oxen_api_key, host=settings.oxen_host)
     repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}")
     if not repo.exists():
         repo.create()
@@ -78,7 +78,7 @@ class _DatasetMetadata(BaseModel):
     branch: str
     src: str
     dist_dir: str
-    host: str = "hub.oxen.ai"
+    host: str
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -169,6 +169,7 @@ class DatasetRowsResponse(BaseModel):
 @datasets_router.post(
     "/projects/{project_uuid}/generations/{generation_uuid}/datasets",
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def create_dataset_rows_by_uuid(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_no_strict)],
     meta: Annotated[_DatasetMetadata, Depends(_get_oxen_dataset_metadata)],
@@ -209,6 +210,7 @@ async def create_dataset_rows_by_uuid(
     response_model=DatasetRowsResponse,
     summary="Get Oxen dataset rows by generation UUID",
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_dataset_rows_by_uuid(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_no_strict)],
     meta: Annotated[_DatasetMetadata, Depends(_get_oxen_dataset_metadata)],
@@ -234,11 +236,8 @@ async def get_dataset_rows_by_uuid(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Not Found dataset for generation_uuid: {generation_uuid}",
         )
-    except Exception as ex:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error initializing Oxen DataFrame: {ex}",
-        )
+    except Exception:
+        return DatasetRowsResponse(rows=[], next_page=None)
 
 
 @datasets_router.get(
@@ -246,6 +245,7 @@ async def get_dataset_rows_by_uuid(
     response_model=DatasetRowsResponse,
     summary="Get Oxen dataset rows by generation hash",
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_dataset_rows_by_hash(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_no_strict)],
     meta: Annotated[_DatasetMetadata, Depends(_get_oxen_dataset_metadata)],

@@ -102,10 +102,12 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-if settings.environment == "local":
-    app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
+if settings.environment == "local" or settings.serve_frontend:
+    app.mount(
+        "/", SPAStaticFiles(directory="lilypad/server/static", html=True), name="app"
+    )
     app.mount(
         "/assets",
-        SPAStaticFiles(directory="static/assets", html=True),
+        SPAStaticFiles(directory="lilypad/server/static/assets", html=True),
         name="app_assets",
     )
