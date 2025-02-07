@@ -52,6 +52,7 @@ dependencies = [
     "resend>=2.6.0",
     "libcst>=1.6.0",
     "alembic-postgresql-enum>=1.6.0",
+    "cachetools>=5.5.1",
 ]
 
 [project.urls]
