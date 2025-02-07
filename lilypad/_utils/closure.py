@@ -68,7 +68,7 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
     def _remove_first_docstring(
         node: _BaseCompoundStatementT,
     ) -> _BaseCompoundStatementT:
-        """Return the body without a docstring, inserting 'pass` if no docstring."""
+        """Return the body without a docstring, inserting 'pass' if no docstring."""
         body = node.body
         stmts = list(body.body)
         if stmts:
@@ -253,8 +253,11 @@ class _LocalAssignmentCollector(ast.NodeVisitor):
 
 
 class _GlobalAssignmentCollector(ast.NodeVisitor):
-    def __init__(self, used_names: list[str]) -> None:
+    def __init__(self, used_names: list[str], source: str) -> None:
         self.used_names = used_names
+        self.source = (
+            source  # Original module source code for preserving literal formatting
+        )
         self.assignments: list[str] = []
         self.current_function = None
         self.current_class = None  # Track class context
@@ -277,14 +280,18 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
             return
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.used_names:
-                self.assignments.append(ast.unparse(node))
+                code = ast.get_source_segment(self.source, node)
+                if code is not None:
+                    self.assignments.append(code)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         # Skip annotated assignments inside functions or classes
         if self.current_function is not None or self.current_class is not None:
             return
         if isinstance(node.target, ast.Name) and node.target.id in self.used_names:
-            self.assignments.append(ast.unparse(node))
+            code = ast.get_source_segment(self.source, node)
+            if code is not None:
+                self.assignments.append(code)
 
 
 def _extract_types(annotation: Any) -> set[type]:
@@ -488,12 +495,15 @@ class _DependencyCollector:
         fn_tree: ast.Module,
         module_tree: ast.Module,
         used_names: list[str],
+        module_source: str,
     ) -> None:
         local_assignment_collector = _LocalAssignmentCollector()
         local_assignment_collector.visit(fn_tree)
         local_assignments = local_assignment_collector.assignments
 
-        global_assignment_collector = _GlobalAssignmentCollector(used_names)
+        global_assignment_collector = _GlobalAssignmentCollector(
+            used_names, module_source
+        )
         global_assignment_collector.visit(module_tree)
 
         for global_assignment in global_assignment_collector.assignments:
@@ -562,7 +572,9 @@ class _DependencyCollector:
                     source = source.replace(user_defined_import, "")
                 self.source_code.insert(0, source)
 
-            self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
+            self._collect_assignments_and_imports(
+                fn_tree, module_tree, used_names, module_source
+            )
             definition_collector = _DefinitionCollector(
                 module, used_names, self.site_packages
             )
