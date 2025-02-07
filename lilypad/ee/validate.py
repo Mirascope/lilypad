@@ -21,7 +21,7 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
-class Tier(Enum):
+class Tier(str, Enum):
     """License tier enum."""
 
     FREE = "FREE"
@@ -152,6 +152,8 @@ def generate_license(
     customer: str,
     license_id: str,
     expires_at: datetime,
+    tier: Tier,
+    organization_uuid: str,
 ) -> str:
     """Generate a license key"""
     with open(private_key_path) as key_file:
@@ -165,6 +167,8 @@ def generate_license(
         "customer": customer,
         "license_id": license_id,
         "exp": expires_at.timestamp(),
+        "tier": tier,
+        "organization_uuid": organization_uuid,
     }
     data_bytes = json.dumps(data).encode("utf-8")
     signature = private_key.sign(
