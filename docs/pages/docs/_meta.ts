@@ -4,4 +4,5 @@ export default {
   generations: "Generations",
   client: "Client",
   prompts: "Prompts",
+  selfHost: "Self Host",
 };
