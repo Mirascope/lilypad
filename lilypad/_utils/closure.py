@@ -278,6 +278,22 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
             self.assignments.append(ast.unparse(node))
 
 
+def _extract_types(annotation: Any) -> set[type]:
+    """Recursively extract all type objects from a type annotation."""
+    types_found: set[type] = set()
+    origin = getattr(annotation, "__origin__", None)
+    if origin is not None:
+        if origin.__name__ == "Annotated":
+            # For Annotated, take the first argument as the actual type.
+            types_found |= _extract_types(annotation.__args__[0])
+        else:
+            for arg in annotation.__args__:
+                types_found |= _extract_types(arg)
+    elif isinstance(annotation, type):
+        types_found.add(annotation)
+    return types_found
+
+
 class _DefinitionCollector(ast.NodeVisitor):
     def __init__(
         self, module: ModuleType, used_names: list[str], site_packages: set[str]
@@ -316,6 +332,17 @@ class _DefinitionCollector(ast.NodeVisitor):
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         if class_def := getattr(self.module, node.name, None):
             self.definitions_to_analyze.append(class_def)
+            # Extract types from the class's __annotations__.
+            if hasattr(class_def, "__annotations__"):
+                for ann in class_def.__annotations__.values():
+                    for candidate in _extract_types(ann):
+                        if (
+                            isinstance(candidate, type)
+                            and candidate.__module__ == class_def.__module__
+                            and candidate.__module__ != "builtins"
+                        ) and candidate not in self.definitions_to_include:
+                            self.definitions_to_include.append(candidate)
+            # Process methods within the class.
             for item in node.body:
                 if isinstance(item, ast.FunctionDef) and (
                     definition := getattr(class_def, item.name, None)
@@ -708,12 +735,12 @@ class Closure(BaseModel):
             source_code="\n\n".join(source_code),
         )
         formatted_code = _run_ruff(code)
-        hash = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
+        hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
             name=fn.__name__,
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
-            hash=hash,
+            hash=hash_value,
             dependencies=dependencies,
         )
 

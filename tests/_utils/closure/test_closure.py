@@ -53,6 +53,7 @@ from .closure_test_functions.main import (
     empty_body_fn_docstrings,
     multi_joined_string_fn,
     multiple_literal_fn,
+    nested_base_model_definitions,
     raw_string_fn,
 )
 
@@ -532,3 +533,27 @@ def test_empty_body_fn_docstrings():
     closure = Closure.from_fn(empty_body_fn_docstrings)
     assert closure.code == _expected(empty_body_fn_docstrings)
     assert closure.dependencies == {}
+
+
+def test_nested_base_model_definitions() -> None:
+    """Test the `Closure` class with nested base model definitions."""
+    closure = Closure.from_fn(nested_base_model_definitions)
+    assert closure.code == _expected(nested_base_model_definitions)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
+        },
+        "pydantic": {
+            "extras": ["timezone"],
+            "version": "2.10.6",
+        },
+    }
