@@ -12,6 +12,8 @@ class OrganizationInvitePublic(OrganizationInviteBase):
     uuid: UUID
     organization_uuid: UUID
     user: UserPublic
+    resend_email_id: str
+    invite_link: str | None = None
 
 
 class OrganizationInviteCreate(OrganizationInviteBase):

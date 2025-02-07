@@ -79,7 +79,7 @@ export const useCreateUserOrganizationMutation = () => {
     mutationFn: async (token: string) => await createUserOrganization(token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["user-organizations"],
+        queryKey: ["usersByOrganization"],
       });
     },
   });
@@ -131,7 +131,7 @@ export const useDeleteUserOrganizationMutation = () => {
       await deleteUserOrganization(projectUuid),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["user-organizations"],
+        queryKey: ["usersByOrganization"],
       });
     },
   });
