@@ -4,8 +4,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DatasetRow } from "@/ee/types/types";
 import { getDatasetByGenerationUuidQueryOptions } from "@/ee/utils/datasets";
-import { DatasetRow, Label } from "@/types/types";
+import { Label } from "@/types/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import JsonView from "@uiw/react-json-view";
@@ -38,7 +39,7 @@ export const DatasetTable = ({
               <div className='line-clamp-1'>{row.original.input}</div>
             </TooltipTrigger>
             <TooltipContent className='bg-white text-black'>
-              {<JsonView value={JSON.parse(row.original.input)} />}
+              {<JsonView value={row.original.input} />}
             </TooltipContent>
           </Tooltip>
         );
@@ -64,6 +65,7 @@ export const DatasetTable = ({
       accessorKey: "label",
       header: "Label",
       cell: ({ row }) => {
+        const label: string = row.getValue("label") || "";
         return (
           <div
             className={
@@ -72,7 +74,7 @@ export const DatasetTable = ({
                 : "text-destructive"
             }
           >
-            {row.getValue("label")}
+            {label.toUpperCase()}
           </div>
         );
       },

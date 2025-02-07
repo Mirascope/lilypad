@@ -24,7 +24,7 @@ from ....validate import Tier
 from ...models.annotations import EvaluationType, Label
 from ...require_license import require_license
 from ...schemas.annotations import AnnotationPublic
-from ...services import AnnotationService
+from ...services.annotations_service import AnnotationService
 
 datasets_router = APIRouter()
 
