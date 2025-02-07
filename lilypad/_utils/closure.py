@@ -257,6 +257,7 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
         self.used_names = used_names
         self.assignments: list[str] = []
         self.current_function = None
+        self.current_class = None  # Track class context
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         old_function = self.current_function
@@ -264,15 +265,23 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        old_class = self.current_class
+        self.current_class = node  # Entering a class context
+        self.generic_visit(node)
+        self.current_class = old_class  # Exiting the class context
+
     def visit_Assign(self, node: ast.Assign) -> None:
-        if self.current_function is not None:
+        # Skip assignments inside functions or classes
+        if self.current_function is not None or self.current_class is not None:
             return
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.used_names:
                 self.assignments.append(ast.unparse(node))
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if self.current_function is not None:
+        # Skip annotated assignments inside functions or classes
+        if self.current_function is not None or self.current_class is not None:
             return
         if isinstance(node.target, ast.Name) and node.target.id in self.used_names:
             self.assignments.append(ast.unparse(node))
