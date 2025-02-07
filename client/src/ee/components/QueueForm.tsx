@@ -23,9 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AnnotationCreate } from "@/ee/types/types";
 import { useCreateAnnotationsMutation } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import { AnnotationCreate, SpanPublic } from "@/types/types";
+import { SpanPublic } from "@/types/types";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";

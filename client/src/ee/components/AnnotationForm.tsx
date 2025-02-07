@@ -19,18 +19,16 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AnnotationCreate,
+  AnnotationPublic,
+  AnnotationUpdate,
+} from "@/ee/types/types";
+import {
   useCreateAnnotationsMutation,
   useUpdateAnnotationMutation,
 } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import {
-  AnnotationCreate,
-  AnnotationPublic,
-  AnnotationUpdate,
-  Label,
-  SpanMoreDetails,
-  SpanPublic,
-} from "@/types/types";
+import { Label, SpanMoreDetails, SpanPublic } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";

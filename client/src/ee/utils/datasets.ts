@@ -1,5 +1,5 @@
 import api from "@/api";
-import { AnnotationPublic, DatasetRowsResponse } from "@/types/types";
+import { AnnotationPublic, DatasetRowsResponse } from "@/ee/types/types";
 import {
   queryOptions,
   useMutation,
