@@ -2757,11 +2757,12 @@ cryptography = [
 
 [[package]]
 name = "python-lilypad"
-version = "0.0.14"
+version = "0.0.15a1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "alembic-postgresql-enum" },
+    { name = "cachetools" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "itsdangerous" },
@@ -2830,6 +2831,7 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.36.0" },
     { name = "boto3", marker = "extra == 'bedrock'", specifier = ">=1.35.36" },
     { name = "boto3-stubs", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=1.35.82" },
+    { name = "cachetools", specifier = ">=5.5.1" },
     { name = "cryptography", specifier = ">=43.0.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.0" },
     { name = "google-cloud-aiplatform", marker = "extra == 'vertex'", specifier = ">=1.74.0" },
