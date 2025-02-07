@@ -294,6 +294,22 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
                 self.assignments.append(code)
 
 
+def _collect_parameter_names(tree: ast.Module) -> set[str]:
+    """Collect all parameter names from function definitions in the AST."""
+    params = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            for arg in node.args.args:
+                params.add(arg.arg)
+            for arg in node.args.kwonlyargs:
+                params.add(arg.arg)
+            if node.args.vararg:
+                params.add(node.args.vararg.arg)
+            if node.args.kwarg:
+                params.add(node.args.kwarg.arg)
+    return params
+
+
 def _extract_types(annotation: Any) -> set[type]:
     """Recursively extract all type objects from a type annotation."""
     types_found: set[type] = set()
@@ -501,6 +517,9 @@ class _DependencyCollector:
         local_assignment_collector.visit(fn_tree)
         local_assignments = local_assignment_collector.assignments
 
+        # Collect parameter names from dependency functions.
+        parameter_names = _collect_parameter_names(fn_tree)
+
         global_assignment_collector = _GlobalAssignmentCollector(
             used_names, module_source
         )
@@ -513,6 +532,10 @@ class _DependencyCollector:
                 var_name = cast(ast.Name, stmt.targets[0]).id
             else:
                 var_name = cast(ast.Name, stmt.target).id
+
+            # Skip global assignments that are used as function parameters.
+            if var_name in parameter_names:
+                continue
 
             if var_name not in used_names or var_name in local_assignments:
                 continue

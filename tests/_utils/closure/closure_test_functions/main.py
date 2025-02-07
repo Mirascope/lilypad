@@ -736,7 +736,6 @@ issue = inspect.cleandoc("")
 
 def handle_issue(issue: str) -> str:
     """
-    import inspect
     from collections.abc import Callable
     from enum import Enum
     from functools import wraps
@@ -744,8 +743,6 @@ def handle_issue(issue: str) -> str:
 
     from mirascope.core import FromCallArgs, openai
     from pydantic import BaseModel, Field
-
-    issue = inspect.cleandoc("")
 
 
     class TicketPriority(str, Enum):
