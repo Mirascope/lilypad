@@ -5,16 +5,15 @@ import inspect
 import os
 from collections.abc import Callable
 from datetime import datetime
-from enum import Enum
 from functools import cached_property, wraps
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 import openai as oai
 from google.generativeai.generative_models import GenerativeModel
-from mirascope.core import BaseMessageParam, FromCallArgs, openai, prompt_template
+from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 import tests._utils.closure.closure_test_functions.other
 import tests._utils.closure.closure_test_functions.other as cloth
@@ -27,6 +26,8 @@ from .other import (
     ImportedClass,
     SelfFnClass,
     SubFnInsideClass,
+    Ticket,
+    customer_support_bot,
     imported_fn,
 )
 from .other import ImportedClass as IC
@@ -685,28 +686,6 @@ def empty_body_fn_docstrings():
     """  # noqa: D200
 
 
-class TicketCategory(str, Enum):
-    BUG_REPORT = "Bug Report"
-    FEATURE_REQUEST = "Feature Request"
-
-
-class TicketPriority(str, Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
-    URGENT = "Urgent"
-
-
-class Ticket(BaseModel):
-    issue: Annotated[str, FromCallArgs()]
-    category: TicketCategory
-    priority: TicketPriority
-    summary: str = Field(
-        ...,
-        description="A highlight summary of the most important details of the ticket.",
-    )
-
-
 @openai.call(
     "gpt-4o-mini",
     response_model=Ticket,
@@ -752,45 +731,8 @@ def nested_base_model_definitions(issue: str) -> str:
     return "How can I help you today?"
 
 
-def mock_decorator_fn(model, response_model) -> Callable:
-    def inner(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
+issue = inspect.cleandoc("")
 
-        return wrapper
-    return inner
-
-@mock_decorator_fn(
-    "gpt-4o-mini",
-    response_model=Ticket,
-)
-def triage_issue(issue: str) -> str:
-    return "How can I help you today?"
-
-issue = inspect.cleandoc("""
-I tried using the new feature but it's not working as expected.
-Can you help me figure out what's going wrong?
-""")
-ticket = triage_issue(issue) # dummy value
-
-def request_assistance(question: str) -> str:
-    """Requests assistance from an expert.
-
-    Ensure `question` is as clear and concise as possible.
-    This will help the expert provide a more accurate response.
-    """
-    return input(f"[NEED ASSISTANCE] {question}\n[ANSWER] ")
-
-@openai.call(
-    "gpt-4o-mini",
-    tools=[request_assistance],
-)
-def customer_support_bot(
-    issue: str, history: list[openai.OpenAIMessageParam]
-) -> openai.OpenAIDynamicConfig:
-    ticket = triage_issue(issue)
-    return {"computed_fields": {"ticket": ticket}}
 
 def handle_issue(issue: str) -> str:
     """
@@ -803,10 +745,7 @@ def handle_issue(issue: str) -> str:
     from mirascope.core import FromCallArgs, openai
     from pydantic import BaseModel, Field
 
-    issue = inspect.cleandoc(\"\"\"
-    I tried using the new feature but it's not working as expected.
-    Can you help me figure out what's going wrong?
-    \"\"\")
+    issue = inspect.cleandoc("")
 
 
     class TicketPriority(str, Enum):
@@ -879,9 +818,3 @@ def handle_issue(issue: str) -> str:
         response = customer_support_bot("", history)
         history.append(response.message_param)
     return response.content
-
-
-issue = inspect.cleandoc("""
-I tried using the new feature but it's not working as expected.
-Can you help me figure out what's going wrong?
-""")

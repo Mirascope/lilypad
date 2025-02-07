@@ -559,6 +559,7 @@ def test_nested_base_model_definitions() -> None:
         },
     }
 
+
 def test_nested_handle_issue_method() -> None:
     """Test the `Closure` class with nested handle issue method."""
     closure = Closure.from_fn(handle_issue)
