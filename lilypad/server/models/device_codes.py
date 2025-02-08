@@ -1,4 +1,4 @@
-"""Device codes table and models."""
+"""Device codes models."""
 
 from sqlmodel import Field
 

@@ -1,12 +1,11 @@
-"""Prompts table and models."""
+"""Prompts models."""
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
-from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
@@ -51,16 +50,6 @@ class _PromptBase(SQLModel):
     archived: datetime | None = Field(default=None, index=True)
 
 
-class PromptPublic(_PromptBase):
-    """Prompt public model."""
-
-    uuid: UUID
-
-
-class PromptCreate(_PromptBase):
-    """Prompt create model."""
-
-
 class PromptUpdate(SQLModel):
     """Prompt update model"""
 
@@ -79,12 +68,3 @@ class PromptTable(_PromptBase, BaseOrganizationSQLModel, table=True):
     generations: list["GenerationTable"] = Relationship(
         back_populates="prompt", cascade_delete=True
     )
-
-
-class PlaygroundParameters(BaseModel):
-    """Playground parameters model."""
-
-    arg_values: dict[str, Any]
-    provider: Provider
-    model: str
-    prompt: PromptCreate | None = None

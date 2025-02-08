@@ -1,9 +1,13 @@
-"""The main FastAPI app for `lilypad`."""
+"""The main FastAPI app for `lilypad`.
+
+For development: Run fastapi dev lilypad/server/main.py
+"""
 
 import logging
 import subprocess
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -24,8 +28,13 @@ log = logging.getLogger("lilypad")
 def run_migrations() -> None:
     """Run the migrations in a separate process."""
     try:
+        BASE_DIR = Path(__file__).resolve().parent
         result = subprocess.run(
-            ["alembic", "upgrade", "head"], capture_output=True, text=True, check=True
+            ["alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=BASE_DIR,
         )
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
@@ -95,10 +104,12 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-if settings.environment == "local" or settings.environment == "development":
-    app.mount("/", SPAStaticFiles(directory="static", html=True), name="app")
+if settings.environment == "local" or settings.serve_frontend:
+    app.mount(
+        "/", SPAStaticFiles(directory="lilypad/server/static", html=True), name="app"
+    )
     app.mount(
         "/assets",
-        SPAStaticFiles(directory="static/assets", html=True),
+        SPAStaticFiles(directory="lilypad/server/static/assets", html=True),
         name="app_assets",
     )

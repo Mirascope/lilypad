@@ -9,6 +9,7 @@ from typing import Any, ParamSpec, cast
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.trace import Span
+from pydantic import BaseModel
 
 P = ParamSpec("P")
 
@@ -51,11 +52,17 @@ def record_stop_sequences(span: Span, stop_at: str | list[str] | None) -> None:
     span.set_attribute("outlines.request.stop_sequences", json.dumps(stops))
 
 
-def set_response_event(span: Span, result: Any) -> None:
-    """Record the final response as an event."""
+def set_choice_event(span: Span, result: Any) -> None:
+    """Record the final choice as an event."""
     # Consider truncation if `result` is very large
     if span.is_recording():
-        span.add_event("gen_ai.response", attributes={"response": str(result)})
+        message = {"role": "assistant", "index": 0, "finish_reason": "none"}
+        if isinstance(result, str):
+            message["message"] = result
+        elif isinstance(result, BaseModel):
+            message["message"] = result.model_dump_json()
+
+        span.add_event("gen_ai.choice", attributes=message)
 
 
 def extract_arguments(

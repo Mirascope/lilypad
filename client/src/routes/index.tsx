@@ -4,15 +4,10 @@ export const Route = createFileRoute("/")({
     if (!context.auth.isAuthenticated) {
       throw redirect({
         to: "/auth/login",
-        search: {
-          redirect: location.href,
-          deviceCode: "",
-        },
       });
     } else {
       throw redirect({
         to: "/projects",
-        search: { redirect: undefined, deviceCode: undefined },
       });
     }
   },

@@ -2,8 +2,6 @@ import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
 import { OrgSettings } from "@/components/OrgSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { userQueryOptions } from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,

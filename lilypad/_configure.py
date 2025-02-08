@@ -15,7 +15,7 @@ from rich import print
 
 from ._utils import load_config
 from .server.client import LilypadClient
-from .server.models import SpanPublic
+from .server.schemas import SpanPublic
 from .server.settings import get_settings
 
 

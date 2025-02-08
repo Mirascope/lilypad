@@ -3,13 +3,16 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
+import {
+  renderCardOutput,
+  renderData,
+  renderMessagesContainer,
+} from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import JsonView from "@uiw/react-json-view";
 import hljs from "highlight.js/lib/core";
 import markdown from "highlight.js/lib/languages/markdown";
 import python from "highlight.js/lib/languages/python";
-import ReactMarkdown from "react-markdown";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
@@ -23,14 +26,14 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const tabs: Tab[] = [
     {
-      label: "Signature",
-      value: "signature",
-      component: <CodeSnippet code={span.signature || ""} />,
-    },
-    {
       label: "Code",
       value: "code",
       component: <CodeSnippet code={span.code || ""} />,
+    },
+    {
+      label: "Signature",
+      value: "signature",
+      component: <CodeSnippet code={span.signature || ""} />,
     },
   ];
   return (
@@ -41,7 +44,7 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
           <CardTitle>{"Code"}</CardTitle>
         </CardHeader>
         <CardContent className='overflow-x-auto'>
-          <Tabs defaultValue='signature' className='w-full'>
+          <Tabs defaultValue='code' className='w-full'>
             <div className='flex w-full'>
               <TabsList className={`w-[160px]`}>
                 {tabs.map((tab) => (
@@ -74,26 +77,9 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
           </CardContent>
         </Card>
       )}
-      {span.output && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Output"}</CardTitle>
-          </CardHeader>
-          <CardContent className='flex flex-col'>
-            <ReactMarkdown>{span.output}</ReactMarkdown>
-          </CardContent>
-        </Card>
-      )}
-      <Card>
-        <CardHeader>
-          <CardTitle>{"Data"}</CardTitle>
-        </CardHeader>
-        {span.data && (
-          <CardContent className='overflow-x-auto'>
-            <JsonView value={span.data} />
-          </CardContent>
-        )}
-      </Card>
+      {span.messages.length > 0 && renderMessagesContainer(span.messages)}
+      {renderCardOutput(span.output)}
+      {renderData(span.data)}
     </div>
   );
 };

@@ -3,14 +3,22 @@
 from collections.abc import Iterable
 from logging.config import fileConfig
 
+import alembic_postgresql_enum
 from alembic import context, script
 from alembic.operations.ops import MigrationScript
 from alembic.runtime.migration import MigrationContext
 from sqlalchemy import MetaData, engine_from_config, pool
 from sqlmodel import SQLModel
 
+from lilypad.ee.server.models import *  # noqa: F403
 from lilypad.server.db.session import get_database_url
 from lilypad.server.models import *  # noqa: F403
+
+alembic_postgresql_enum.set_configuration(
+    alembic_postgresql_enum.Config(
+        add_type_ignore=True,
+    )
+)
 
 
 def process_revision_directives(

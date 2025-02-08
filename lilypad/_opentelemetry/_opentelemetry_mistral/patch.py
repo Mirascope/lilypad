@@ -27,7 +27,7 @@ def mistral_complete_patch(
         kwargs: dict[str, Any],
     ) -> Any:
         span_attributes = get_mistral_llm_request_attributes(kwargs)
-        span_name = f"chat {span_attributes.get('gen_ai.request.model','unknown')}"
+        span_name = f"chat {span_attributes.get('gen_ai.request.model', 'unknown')}"
         with tracer.start_as_current_span(span_name, end_on_exit=False) as span:
             try:
                 result = wrapped(*args, **kwargs)
@@ -56,7 +56,7 @@ def mistral_complete_async_patch(
         kwargs: dict[str, Any],
     ) -> Any:
         span_attributes = get_mistral_llm_request_attributes(kwargs)
-        span_name = f"chat {span_attributes.get('gen_ai.request.model','unknown')}"
+        span_name = f"chat {span_attributes.get('gen_ai.request.model', 'unknown')}"
         with tracer.start_as_current_span(span_name, end_on_exit=False) as span:
             try:
                 result = await wrapped(*args, **kwargs)
@@ -87,7 +87,7 @@ def mistral_stream_patch(
     ) -> Any:
         span_attributes = get_mistral_llm_request_attributes(kwargs)
         span_name = (
-            f"chat_stream {span_attributes.get('gen_ai.request.model','unknown')}"
+            f"chat_stream {span_attributes.get('gen_ai.request.model', 'unknown')}"
         )
         with tracer.start_as_current_span(
             name=span_name,
@@ -129,7 +129,7 @@ def mistral_stream_async_patch(
     ) -> Any:
         span_attributes = get_mistral_llm_request_attributes(kwargs)
         span_name = (
-            f"chat_stream {span_attributes.get('gen_ai.request.model','unknown')}"
+            f"chat_stream {span_attributes.get('gen_ai.request.model', 'unknown')}"
         )
         with tracer.start_as_current_span(
             name=span_name,

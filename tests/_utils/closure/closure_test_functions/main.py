@@ -4,15 +4,16 @@ import importlib.metadata
 import os
 from collections.abc import Callable
 from datetime import datetime
+from enum import Enum
 from functools import cached_property, wraps
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 import openai as oai
 from google.generativeai.generative_models import GenerativeModel
-from mirascope.core import BaseMessageParam, openai, prompt_template
+from mirascope.core import BaseMessageParam, FromCallArgs, openai, prompt_template
 from openai import OpenAI as OAI
 from openai.types.chat import ChatCompletionUserMessageParam
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import tests._utils.closure.closure_test_functions.other
 import tests._utils.closure.closure_test_functions.other as cloth
@@ -673,6 +674,78 @@ def multi_joined_string_fn() -> str:
         )
     """
     return (
-        "Hello, -----------------------------------------------------------------"
-        "world!"
+        "Hello, -----------------------------------------------------------------world!"
     )
+
+
+def empty_body_fn_docstrings():
+    """
+    def empty_body_fn_docstrings(): ...
+    """  # noqa: D200
+
+
+class TicketCategory(str, Enum):
+    BUG_REPORT = "Bug Report"
+    FEATURE_REQUEST = "Feature Request"
+
+
+class TicketPriority(str, Enum):
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
+    URGENT = "Urgent"
+
+
+class Ticket(BaseModel):
+    issue: Annotated[str, FromCallArgs()]
+    category: TicketCategory
+    priority: TicketPriority
+    summary: str = Field(
+        ...,
+        description="A highlight summary of the most important details of the ticket.",
+    )
+
+
+@openai.call(
+    "gpt-4o-mini",
+    response_model=Ticket,
+)
+def nested_base_model_definitions(issue: str) -> str:
+    """
+    from enum import Enum
+    from typing import Annotated
+
+    from mirascope.core import FromCallArgs, openai
+    from pydantic import BaseModel, Field
+
+
+    class TicketPriority(str, Enum):
+        LOW = "Low"
+        MEDIUM = "Medium"
+        HIGH = "High"
+        URGENT = "Urgent"
+
+
+    class TicketCategory(str, Enum):
+        BUG_REPORT = "Bug Report"
+        FEATURE_REQUEST = "Feature Request"
+
+
+    class Ticket(BaseModel):
+        issue: Annotated[str, FromCallArgs()]
+        category: TicketCategory
+        priority: TicketPriority
+        summary: str = Field(
+            ...,
+            description="A highlight summary of the most important details of the ticket.",
+        )
+
+
+    @openai.call(
+        "gpt-4o-mini",
+        response_model=Ticket,
+    )
+    def nested_base_model_definitions(issue: str) -> str:
+        return "How can I help you today?"
+    """
+    return "How can I help you today?"

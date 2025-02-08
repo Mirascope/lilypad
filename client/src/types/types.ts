@@ -58,15 +58,44 @@ export interface APIKeyPublic {
    * @format uuid
    */
   uuid: string;
+  /** Key Hash */
+  key_hash: string;
   /** User public model */
   user: UserPublic;
   /** Project Public Model. */
   project: ProjectPublic;
+}
+
+/**
+ * AnnotationTable
+ * Annotation table.
+ */
+export interface AnnotationTable {
+  /** Uuid */
+  uuid?: string | null;
   /**
-   * Prefix
-   * Return the first 8 characters of the key_hash.
+   * Created At
+   * @format date-time
    */
-  prefix: string;
+  created_at?: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Assigned To */
+  assigned_to?: string | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Span Uuid */
+  span_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
 }
 
 /**
@@ -102,6 +131,12 @@ export interface CommonCallParams {
   stop?: string | string[] | null;
 }
 
+/** CreateUserOrganizationToken */
+export interface CreateUserOrganizationToken {
+  /** Token */
+  token: string;
+}
+
 /** DependencyInfo */
 export interface DependencyInfo {
   /** Version */
@@ -110,7 +145,36 @@ export interface DependencyInfo {
   extras: string[] | null;
 }
 
-export type DeviceCodeTable = object;
+/**
+ * DeviceCodeTable
+ * Device codes table.
+ */
+export interface DeviceCodeTable {
+  /** Uuid */
+  uuid?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * Id
+   * Generated device code
+   */
+  id: string;
+  /** Token */
+  token: string;
+}
+
+/**
+ * EvaluationType
+ * Evaluation type enum
+ */
+export enum EvaluationType {
+  MANUAL = "manual",
+  VERIFIED = "verified",
+  EDITED = "edited",
+}
 
 /**
  * GenerationCreate
@@ -199,6 +263,15 @@ export interface HTTPValidationError {
 }
 
 /**
+ * Label
+ * Label enum
+ */
+export enum Label {
+  PASS = "pass",
+  FAIL = "fail",
+}
+
+/**
  * MessageParam
  * Message param model agnostic to providers.
  */
@@ -207,6 +280,72 @@ export interface MessageParam {
   role: string;
   /** Content */
   content: (AudioPart | TextPart | ImagePart | ToolCall)[];
+}
+
+/**
+ * OrganizationInviteCreate
+ * OrganizationInvite create model
+ */
+export interface OrganizationInviteCreate {
+  /**
+   * Invited By
+   * @format uuid
+   */
+  invited_by: string;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /** Token */
+  token?: string | null;
+  /** Resend Email Id */
+  resend_email_id?: string | null;
+  /** Organization Uuid */
+  organization_uuid?: string | null;
+}
+
+/**
+ * OrganizationInvitePublic
+ * OrganizationInvite public model
+ */
+export interface OrganizationInvitePublic {
+  /**
+   * Invited By
+   * @format uuid
+   */
+  invited_by: string;
+  /**
+   * Email
+   * @minLength 1
+   */
+  email: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** User public model */
+  user: UserPublic;
+  /** Resend Email Id */
+  resend_email_id: string;
+  /** Invite Link */
+  invite_link?: string | null;
 }
 
 /**
@@ -224,6 +363,18 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
+}
+
+/**
+ * OrganizationUpdate
+ * Organization update model
+ */
+export interface OrganizationUpdate {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
 }
 
 /**
@@ -503,6 +654,8 @@ export interface SettingsPublic {
  * Span more details model.
  */
 export interface SpanMoreDetails {
+  /** Project Uuid */
+  project_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -540,8 +693,6 @@ export interface SpanMoreDetails {
 export interface SpanPublic {
   /** Span Id */
   span_id: string;
-  /** Project Uuid */
-  project_uuid?: string | null;
   /** Generation Uuid */
   generation_uuid?: string | null;
   /** Prompt Uuid */
@@ -562,11 +713,18 @@ export interface SpanPublic {
    * @format uuid
    */
   uuid: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
   /** Display Name */
   display_name?: string | null;
   generation?: GenerationPublic | null;
   prompt?: PromptPublic | null;
   response_model?: ResponseModelPublic | null;
+  /** Annotations */
+  annotations: AnnotationTable[];
   /** Child Spans */
   child_spans: SpanPublic[];
   /**
@@ -614,6 +772,41 @@ export interface UserOrganizationPublic {
 }
 
 /**
+ * UserOrganizationTable
+ * UserOrganization table.
+ */
+export interface UserOrganizationTable {
+  /** Uuid */
+  uuid?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at?: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /** User role enum. */
+  role: UserRole;
+  /**
+   * User Uuid
+   * @format uuid
+   */
+  user_uuid: string;
+}
+
+/**
+ * UserOrganizationUpdate
+ * UserOrganization update model
+ */
+export interface UserOrganizationUpdate {
+  /** User role enum. */
+  role: UserRole;
+}
+
+/**
  * UserPublic
  * User public model
  */
@@ -650,6 +843,7 @@ export interface UserPublic {
  * User role enum.
  */
 export enum UserRole {
+  OWNER = "owner",
   ADMIN = "admin",
   MEMBER = "member",
 }

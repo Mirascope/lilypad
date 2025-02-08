@@ -40,3 +40,13 @@ export const FormattedText: React.FC<FormattedTextProps> = ({
     </p>
   );
 };
+
+export const safelyParseJSON = (json: string): object | undefined => {
+  let parsed = undefined;
+
+  try {
+    parsed = JSON.parse(json);
+  } catch (e) {}
+
+  return parsed;
+};

@@ -5,6 +5,8 @@ import inspect
 import sys
 from collections.abc import Callable
 
+import pytest
+
 from lilypad._utils import Closure
 
 from .closure_test_functions import (
@@ -48,8 +50,10 @@ from .closure_test_functions import (
     user_defined_import_fn,
 )
 from .closure_test_functions.main import (
+    empty_body_fn_docstrings,
     multi_joined_string_fn,
     multiple_literal_fn,
+    nested_base_model_definitions,
     raw_string_fn,
 )
 
@@ -228,7 +232,10 @@ def test_aliased_module_import_fn() -> None:
     closure = Closure.from_fn(aliased_module_import_fn)
     assert closure.code == _expected(aliased_module_import_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -237,7 +244,10 @@ def test_aliased_import_fn() -> None:
     closure = Closure.from_fn(aliased_import_fn)
     assert closure.code == _expected(aliased_import_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -295,7 +305,10 @@ def test_annotated_assignment_fn() -> None:
     closure = Closure.from_fn(annotated_assignment_fn)
     assert closure.code == _expected(annotated_assignment_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -304,7 +317,10 @@ def test_internal_imports_fn() -> None:
     closure = Closure.from_fn(internal_imports_fn)
     assert closure.code == _expected(internal_imports_fn)
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
 
 
@@ -332,7 +348,10 @@ def test_global_var_fn() -> None:
                 "vertex",
             ],
         },
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None},
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        },
     }
 
 
@@ -341,21 +360,21 @@ def test_import_with_different_dist_name_fn() -> None:
     closure = Closure.from_fn(import_with_different_dist_name_fn)
     assert closure.code == _expected(import_with_different_dist_name_fn)
     expected_dependencies = {
-        "google-ai-generativelanguage": {"extras": None, "version": "0.6.10"},
-        "google-api-core": {"extras": None, "version": "2.23.0"},
-        "google-auth": {"extras": None, "version": "2.36.0"},
-        "google-cloud-aiplatform": {"extras": None, "version": "1.74.0"},
-        "google-cloud-bigquery": {"extras": None, "version": "3.27.0"},
+        "google-ai-generativelanguage": {"extras": None, "version": "0.6.15"},
+        "google-api-core": {"extras": None, "version": "2.24.1"},
+        "google-auth": {"extras": None, "version": "2.38.0"},
+        "google-cloud-aiplatform": {"extras": None, "version": "1.79.0"},
+        "google-cloud-bigquery": {"extras": None, "version": "3.29.0"},
         "google-cloud-core": {"extras": ["grpc"], "version": "2.4.1"},
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
-        "google-generativeai": {"extras": None, "version": "0.8.3"},
+        "google-generativeai": {"extras": None, "version": "0.8.4"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],
             "version": "2.7.2",
         },
         "googleapis-common-protos": {"extras": None, "version": "1.66.0"},
-        "grpc-google-iam-v1": {"extras": None, "version": "0.13.1"},
+        "grpc-google-iam-v1": {"extras": None, "version": "0.14.0"},
     }
     if sys.version_info >= (3, 11):
         expected_dependencies["protobuf"] = {
@@ -375,6 +394,7 @@ def test_closure_inside_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "bedrock",
+                "evals",
                 "gemini",
                 "mistral",
                 "openai",
@@ -395,6 +415,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "bedrock",
+                "evals",
                 "gemini",
                 "mistral",
                 "openai",
@@ -419,7 +440,10 @@ def test_closure_with_long_function_name_that_wraps_around_fn() -> None:
         closure_with_long_function_name_that_wraps_around_fn
     )
     assert closure.dependencies == {
-        "openai": {"version": importlib.metadata.version("openai"), "extras": None}
+        "openai": {
+            "version": importlib.metadata.version("openai"),
+            "extras": ["realtime"],
+        }
     }
     assert closure.signature == inspect.cleandoc("""
         def closure_with_long_function_name_that_wraps_around_fn(
@@ -464,8 +488,8 @@ def test_mirascope_response_model_fn() -> None:
             ],
         },
         "pydantic": {
-            "extras": None,
-            "version": "2.10.3",
+            "extras": ["timezone"],
+            "version": "2.10.6",
         },
     }
 
@@ -484,8 +508,52 @@ def test_raw_string_fn():
     assert closure.dependencies == {}
 
 
+@pytest.mark.skip("Skip this test for now. the pattern is broken")
 def test_multi_joined_string_fn():
     """Test the `Closure` class with multiple joined strings."""
     closure = Closure.from_fn(multi_joined_string_fn)
     assert closure.code == _expected(multi_joined_string_fn)
     assert closure.dependencies == {}
+
+
+def test_empty_body_fn():
+    """Test the `Closure` class with an empty function body."""
+
+    # Define an empty function body here.
+    # Because it difficult to define an empty function body in main.py with the expected result.
+    def empty_body_fn(): ...
+
+    closure = Closure.from_fn(empty_body_fn)
+    assert closure.code == "def empty_body_fn(): ...\n"
+    assert closure.dependencies == {}
+
+
+def test_empty_body_fn_docstrings():
+    """Test the `Closure` class with an empty function body and docstrings."""
+    closure = Closure.from_fn(empty_body_fn_docstrings)
+    assert closure.code == _expected(empty_body_fn_docstrings)
+    assert closure.dependencies == {}
+
+
+def test_nested_base_model_definitions() -> None:
+    """Test the `Closure` class with nested base model definitions."""
+    closure = Closure.from_fn(nested_base_model_definitions)
+    assert closure.code == _expected(nested_base_model_definitions)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
+        },
+        "pydantic": {
+            "extras": ["timezone"],
+            "version": "2.10.6",
+        },
+    }

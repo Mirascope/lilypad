@@ -16,10 +16,10 @@ from lilypad.server.models import (
     OrganizationTable,
     ProjectTable,
     UserOrganizationTable,
-    UserPublic,
     UserRole,
     UserTable,
 )
+from lilypad.server.schemas import UserPublic
 
 # Create a single test engine for all tests
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -116,7 +116,9 @@ def test_user(session: Session) -> Generator[UserTable, None, None]:
         UserTable: Test user
     """
     user_uuid = uuid4()
-    organization = OrganizationTable(uuid=ORGANIZATION_UUID, name="Test Organization")
+    organization = OrganizationTable(
+        uuid=ORGANIZATION_UUID, name="Test Organization", license="123456"
+    )
     session.add(organization)
     user = UserTable(
         uuid=user_uuid,

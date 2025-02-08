@@ -9,13 +9,12 @@ from sqlmodel import Session, select
 from ...._utils import create_jwt_token
 from ....db import get_session
 from ....models import (
-    OrganizationPublic,
     OrganizationTable,
     UserOrganizationTable,
-    UserPublic,
     UserRole,
     UserTable,
 )
+from ....schemas import OrganizationPublic, UserPublic
 from ....services import DeviceCodeService
 from ....settings import Settings, get_settings
 
@@ -121,7 +120,7 @@ async def github_callback(
             user_organization = UserOrganizationTable(
                 user_uuid=user.uuid,
                 organization_uuid=organization_public.uuid,
-                role=UserRole.ADMIN,
+                role=UserRole.OWNER,
             )
             session.add(user_organization)
             session.flush()

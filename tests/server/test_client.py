@@ -6,7 +6,8 @@ from uuid import uuid4
 import pytest
 
 from lilypad.server.client import APIConnectionError, LilypadClient, NotFoundError
-from lilypad.server.models import ProjectPublic, Scope, SpanPublic
+from lilypad.server.models import Scope
+from lilypad.server.schemas import ProjectPublic, SpanPublic
 
 
 @pytest.fixture
@@ -88,6 +89,7 @@ def test_client_initialization():
                     "display_name": "test_function",
                     "version": None,
                     "child_spans": [],
+                    "annotations": [],
                 }
             ],
         ),
@@ -109,7 +111,6 @@ def test_request_methods(client, method, args, mock_response):
             assert isinstance(result, list)
             assert all(isinstance(span, SpanPublic) for span in result)
             assert all(isinstance(span.scope, Scope) for span in result)
-            # 追加: scopeの値が正しいEnumであることを確認
             assert result[0].scope == Scope.LILYPAD
 
 

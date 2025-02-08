@@ -1,0 +1,88 @@
+import { Callout } from "nextra/components";
+
+# Self Hosting Lilypad
+
+Lilypad is open source and can be self-hosted. This guide will walk you through the process of setting up Lilypad on your own infrastructure.
+
+<Callout type="warning" emoji="⚠️">
+    **Lilypad is currently in a closed beta.**
+
+    This guide is intended for teams that have been accepted into the beta program. If you're interested in joining the beta or need support for integrations, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message to William Bakst.
+
+</Callout>
+
+## Walkthrough
+
+Requirements:
+
+    - PostgreSQL
+    - Python 3.9+
+    - GitHub account (for authentication)
+    - [Oxen](https://www.oxen.ai/) (for Lilypad Evals EE only)
+
+1. First clone the repo
+
+```bash
+git clone git@github.com:Mirascope/lilypad.git
+cd lilypad
+```
+
+2. Install the dependencies
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh # install uv if you have not already
+uv sync --all-extras
+```
+
+3. Set environment variables
+
+```bash
+# PostgreSQL environment variables
+LILYPAD_DB_HOST=...
+LILYPAD_DB_NAME=...
+LILYPAD_DB_PASSWORD=...
+LILYPAD_DB_PORT=...
+LILYPAD_DB_USER=...
+
+# GitHub Authentication
+LILYPAD_GITHUB_CLIENT_ID=...
+LILYPAD_GITHUB_CLIENT_SECRET=...
+
+# Oxen environment variables
+LILYPAD_OXEN_API_KEY=... # (Optional) if self-hosting Oxen
+LILYPAD_OXEN_REPO_NAME=... # Oxen namespace
+LILYPAD_OXEN_HOST=... # (Optional) if self-hosting Oxen, defaults to hub.oxen.ai
+
+# Lilypad environment variables
+LILYPAD_SERVE_FRONTEND=true # unset to disable serving the frontend from the client
+LILYPAD_JWT_SECRET=... # generate a secret key
+LILYPAD_REMOTE_API_URL=... # the URL of your Lilypad API
+LILYPAD_REMOTE_CLIENT_URL=... # the URL of your Lilypad client (Can be the same as the API, if serving from the same server)
+
+```
+
+4. Run Lilypad
+
+   - In a local environment:
+
+     1. Build the client
+        ```
+        cd client
+        pnpm i # install client dependencies
+        pnpm run build:notypescript # build the client with no strict typescript
+        # this will build to client/dist
+        ```
+        Proceed to next step if you have `LILYPAD_SERVE_FRONTEND=true` set in your environment variables.
+        Otherwise, deploy the client to a static file server and point `LILYPAD_REMOTE_CLIENT_URL` to the DNS.
+     2. Run the server
+        ```
+        cd .. # go back to the root directory
+        fastapi run lilypad/server/main.py # run the server
+        ```
+
+   - In cloud:
+
+     ```bash
+     docker build -t lilypad .
+     docker run lilypad .
+     ```

@@ -10,7 +10,8 @@ from sqlmodel import Session, select
 
 from .._utils import get_current_user
 from ..db import get_session
-from ..models import BaseSQLModel, UserPublic
+from ..models import BaseSQLModel
+from ..schemas import UserPublic
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -51,9 +52,9 @@ class BaseService(Generic[_TableT, _CreateT]):
             )
         ).all()
 
-    def delete_record_by_uuid(self, uuid: UUID) -> bool:
+    def delete_record_by_uuid(self, uuid: UUID, **filters: Any) -> bool:
         """Delete record by uuid"""
-        record_table = self.find_record_by_uuid(uuid)
+        record_table = self.find_record_by_uuid(uuid, **filters)
         try:
             self.session.delete(record_table)
         except Exception:

@@ -168,7 +168,6 @@ const PromptsList = () => {
   const { data } = useSuspenseQuery(
     uniqueLatestVersionPromptNamesQueryOptions(projectUuid)
   );
-  console.log(data);
   if (data.length === 0) {
     return (
       <div className='p-4 flex flex-col md:items-center gap-2'>

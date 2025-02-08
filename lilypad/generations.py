@@ -19,7 +19,7 @@ from ._utils import (
     load_config,
 )
 from .server.client import LilypadClient
-from .server.models import GenerationPublic
+from .server.schemas import GenerationPublic
 from .server.settings import get_settings
 
 _P = ParamSpec("_P")

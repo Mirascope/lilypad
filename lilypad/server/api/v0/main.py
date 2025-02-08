@@ -5,11 +5,13 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
+from ....ee.server.api import v0_ee_api
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
 from .device_codes_api import device_codes_api
 from .generations_api import generations_router
+from .organizations_api import organization_router
 from .projects_api import projects_router
 from .prompts_api import prompts_router
 from .response_models_api import response_models_router
@@ -17,7 +19,9 @@ from .spans_api import spans_router
 from .traces_api import traces_router
 from .users_api import users_router
 
-api = FastAPI()
+api = FastAPI(separate_input_output_schemas=False)
+# The `/ee` FastAPI sub-app for `lilypad`.
+api.mount("/ee", v0_ee_api)
 api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
@@ -28,6 +32,7 @@ api.include_router(spans_router)
 api.include_router(traces_router)
 api.include_router(auth_router)
 api.include_router(users_router)
+api.include_router(organization_router)
 
 
 class SettingsPublic(BaseModel):

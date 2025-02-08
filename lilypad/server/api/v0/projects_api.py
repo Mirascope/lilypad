@@ -7,7 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.exc import IntegrityError
 
-from ...models import ProjectCreate, ProjectPublic, ProjectTable
+from ...models import ProjectTable
+from ...schemas import ProjectCreate, ProjectPublic
 from ...services import ProjectService
 
 projects_router = APIRouter()

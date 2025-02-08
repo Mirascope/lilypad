@@ -15,16 +15,13 @@ from ..._utils import (
     construct_function,
     get_current_user,
     get_posthog,
-    match_api_key_with_project,
+    validate_api_key_project_strict,
 )
 from ...models import (
-    PlaygroundParameters,
-    PromptCreate,
-    PromptPublic,
     PromptTable,
     PromptUpdate,
-    UserPublic,
 )
+from ...schemas import PlaygroundParameters, PromptCreate, PromptPublic, UserPublic
 from ...services import GenerationService, PromptService
 
 prompts_router = APIRouter()
@@ -60,7 +57,7 @@ async def get_prompts_by_signature(
     response_model=Sequence[PromptPublic],
 )
 async def get_prompts_by_signature_public(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
     signature: str = Query(...),
@@ -99,7 +96,7 @@ async def get_prompt_by_uuid(
     response_model=PromptPublic,
 )
 async def get_prompt_active_version_by_hash(
-    match_api_key: Annotated[bool, Depends(match_api_key_with_project)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     project_uuid: UUID,
     prompt_hash: str,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
