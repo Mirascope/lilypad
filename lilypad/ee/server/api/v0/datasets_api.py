@@ -47,7 +47,10 @@ def _get_repo(
     settings = get_settings()
     if settings.oxen_api_key:
         config_auth(settings.oxen_api_key, host=settings.oxen_host)
-    repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}", host=settings.oxen_host)
+    repo = RemoteRepo(
+        f"{settings.oxen_repo_name}/{user.active_organization_uuid}",
+        host=settings.oxen_host,
+    )
     if not repo.exists():
         repo.create()
     return repo

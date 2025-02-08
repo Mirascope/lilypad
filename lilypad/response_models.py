@@ -142,9 +142,9 @@ class ResponseModel(BaseModel, Generic[_ResponseModelT]):
         raise NotImplementedError("examples method not set")
 
 
-def response_model() -> (
-    Callable[[type[_ResponseModelT]], ResponseModel[_ResponseModelT]]
-):
+def response_model() -> Callable[
+    [type[_ResponseModelT]], ResponseModel[_ResponseModelT]
+]:
     """A decorator to create a versioned response model from a Pydantic model.
 
     This decorator can be used to create a versioned response model from a Pydantic model.

@@ -68,7 +68,7 @@ class _RemoveDocstringTransformer(cst.CSTTransformer):
     def _remove_first_docstring(
         node: _BaseCompoundStatementT,
     ) -> _BaseCompoundStatementT:
-        """Return the body without a docstring, inserting 'pass` if no docstring."""
+        """Return the body without a docstring, inserting 'pass' if no docstring."""
         body = node.body
         stmts = list(body.body)
         if stmts:
@@ -253,10 +253,14 @@ class _LocalAssignmentCollector(ast.NodeVisitor):
 
 
 class _GlobalAssignmentCollector(ast.NodeVisitor):
-    def __init__(self, used_names: list[str]) -> None:
+    def __init__(self, used_names: list[str], source: str) -> None:
         self.used_names = used_names
+        self.source = (
+            source  # Original module source code for preserving literal formatting
+        )
         self.assignments: list[str] = []
         self.current_function = None
+        self.current_class = None  # Track class context
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         old_function = self.current_function
@@ -264,18 +268,46 @@ class _GlobalAssignmentCollector(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        old_class = self.current_class
+        self.current_class = node  # Entering a class context
+        self.generic_visit(node)
+        self.current_class = old_class  # Exiting the class context
+
     def visit_Assign(self, node: ast.Assign) -> None:
-        if self.current_function is not None:
+        # Skip assignments inside functions or classes
+        if self.current_function is not None or self.current_class is not None:
             return
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.used_names:
-                self.assignments.append(ast.unparse(node))
+                code = ast.get_source_segment(self.source, node)
+                if code is not None:
+                    self.assignments.append(code)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if self.current_function is not None:
+        # Skip annotated assignments inside functions or classes
+        if self.current_function is not None or self.current_class is not None:
             return
         if isinstance(node.target, ast.Name) and node.target.id in self.used_names:
-            self.assignments.append(ast.unparse(node))
+            code = ast.get_source_segment(self.source, node)
+            if code is not None:
+                self.assignments.append(code)
+
+
+def _collect_parameter_names(tree: ast.Module) -> set[str]:
+    """Collect all parameter names from function definitions in the AST."""
+    params = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            for arg in node.args.args:
+                params.add(arg.arg)
+            for arg in node.args.kwonlyargs:
+                params.add(arg.arg)
+            if node.args.vararg:
+                params.add(node.args.vararg.arg)
+            if node.args.kwarg:
+                params.add(node.args.kwarg.arg)
+    return params
 
 
 def _extract_types(annotation: Any) -> set[type]:
@@ -479,12 +511,18 @@ class _DependencyCollector:
         fn_tree: ast.Module,
         module_tree: ast.Module,
         used_names: list[str],
+        module_source: str,
     ) -> None:
         local_assignment_collector = _LocalAssignmentCollector()
         local_assignment_collector.visit(fn_tree)
         local_assignments = local_assignment_collector.assignments
 
-        global_assignment_collector = _GlobalAssignmentCollector(used_names)
+        # Collect parameter names from dependency functions.
+        parameter_names = _collect_parameter_names(fn_tree)
+
+        global_assignment_collector = _GlobalAssignmentCollector(
+            used_names, module_source
+        )
         global_assignment_collector.visit(module_tree)
 
         for global_assignment in global_assignment_collector.assignments:
@@ -494,6 +532,10 @@ class _DependencyCollector:
                 var_name = cast(ast.Name, stmt.targets[0]).id
             else:
                 var_name = cast(ast.Name, stmt.target).id
+
+            # Skip global assignments that are used as function parameters.
+            if var_name in parameter_names:
+                continue
 
             if var_name not in used_names or var_name in local_assignments:
                 continue
@@ -553,7 +595,9 @@ class _DependencyCollector:
                     source = source.replace(user_defined_import, "")
                 self.source_code.insert(0, source)
 
-            self._collect_assignments_and_imports(fn_tree, module_tree, used_names)
+            self._collect_assignments_and_imports(
+                fn_tree, module_tree, used_names, module_source
+            )
             definition_collector = _DefinitionCollector(
                 module, used_names, self.site_packages
             )

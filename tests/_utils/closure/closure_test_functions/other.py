@@ -1,7 +1,12 @@
 """Other functions used in the main closure test functions."""
 
 from collections.abc import Callable
+from enum import Enum
 from functools import wraps
+from typing import Annotated
+
+from mirascope.core import FromCallArgs, openai
+from pydantic import BaseModel, Field
 
 from lilypad._utils import Closure
 
@@ -43,3 +48,64 @@ def imported_decorator(fn: Callable) -> Callable[[], Closure]:
         return Closure.from_fn(fn)
 
     return inner
+
+
+def mock_decorator_fn(model, response_model) -> Callable:
+    def inner(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return inner
+
+
+class TicketCategory(str, Enum):
+    BUG_REPORT = "Bug Report"
+    FEATURE_REQUEST = "Feature Request"
+
+
+class TicketPriority(str, Enum):
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
+    URGENT = "Urgent"
+
+
+class Ticket(BaseModel):
+    issue: Annotated[str, FromCallArgs()]
+    category: TicketCategory
+    priority: TicketPriority
+    summary: str = Field(
+        ...,
+        description="A highlight summary of the most important details of the ticket.",
+    )
+
+
+@mock_decorator_fn(
+    "gpt-4o-mini",
+    response_model=Ticket,
+)
+def triage_issue(issue: str) -> str:
+    return "How can I help you today?"
+
+
+def request_assistance(question: str) -> str:
+    """Requests assistance from an expert.
+
+    Ensure `question` is as clear and concise as possible.
+    This will help the expert provide a more accurate response.
+    """
+    return input(f"[NEED ASSISTANCE] {question}\n[ANSWER] ")
+
+
+@openai.call(
+    "gpt-4o-mini",
+    tools=[request_assistance],
+)
+def customer_support_bot(
+    issue: str, history: list[openai.OpenAIMessageParam]
+) -> openai.OpenAIDynamicConfig:
+    ticket = triage_issue(issue)
+    return {"computed_fields": {"ticket": ticket}}
