@@ -28,7 +28,7 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
@@ -184,7 +184,7 @@ const GenerationWorkbench = () => {
           </SelectContent>
         </Select>
         {generation && (
-          <IconDialog
+          <LilypadDialog
             icon={<Trash />}
             title={`Delete ${generation.name} v${generation.version_num}`}
             description=''
@@ -209,7 +209,7 @@ const GenerationWorkbench = () => {
             ]}
           >
             {`Are you sure you want to delete ${generation.name} v${generation.version_num}?`}
-          </IconDialog>
+          </LilypadDialog>
         )}
       </div>
       <Tabs defaultValue={tab} className='w-full'>
