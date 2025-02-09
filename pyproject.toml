@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.15-alpha.1"
+version = "0.0.15"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -43,7 +43,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.6.1",
     "cryptography>=43.0.3",
-    "ruff>=0.8.1",
+    "ruff>=0.9.5",
     "requests>=2.32.3",
     "pillow>=10.4.0",
     "alembic>=1.14.0",
@@ -52,6 +52,7 @@ dependencies = [
     "resend>=2.6.0",
     "libcst>=1.6.0",
     "alembic-postgresql-enum>=1.6.0",
+    "cachetools>=5.5.1",
 ]
 
 [project.urls]
@@ -127,7 +128,7 @@ target-version = "py310"
 "migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
-"tests/_utils/closure/closure_test_functions/main.py" = ["D212", "D402", "D403"]
+"tests/_utils/closure/closure_test_functions/main.py" = ["D101", "D212", "D402", "D403"]
 "tests/_utils/closure/closure_test_functions/other.py" = [
     "D101",
     "D102",

@@ -1,6 +1,7 @@
 """The main methods for testing the `Closure class."""
 
 import importlib.metadata
+import inspect
 import os
 from collections.abc import Callable
 from datetime import datetime
@@ -25,6 +26,8 @@ from .other import (
     ImportedClass,
     SelfFnClass,
     SubFnInsideClass,
+    Ticket,
+    customer_support_bot,
     imported_fn,
 )
 from .other import ImportedClass as IC
@@ -681,3 +684,134 @@ def empty_body_fn_docstrings():
     """
     def empty_body_fn_docstrings(): ...
     """  # noqa: D200
+
+
+@openai.call(
+    "gpt-4o-mini",
+    response_model=Ticket,
+)
+def nested_base_model_definitions(issue: str) -> str:
+    """
+    from enum import Enum
+    from typing import Annotated
+
+    from mirascope.core import FromCallArgs, openai
+    from pydantic import BaseModel, Field
+
+
+    class TicketPriority(str, Enum):
+        LOW = "Low"
+        MEDIUM = "Medium"
+        HIGH = "High"
+        URGENT = "Urgent"
+
+
+    class TicketCategory(str, Enum):
+        BUG_REPORT = "Bug Report"
+        FEATURE_REQUEST = "Feature Request"
+
+
+    class Ticket(BaseModel):
+        issue: Annotated[str, FromCallArgs()]
+        category: TicketCategory
+        priority: TicketPriority
+        summary: str = Field(
+            ...,
+            description="A highlight summary of the most important details of the ticket.",
+        )
+
+
+    @openai.call(
+        "gpt-4o-mini",
+        response_model=Ticket,
+    )
+    def nested_base_model_definitions(issue: str) -> str:
+        return "How can I help you today?"
+    """
+    return "How can I help you today?"
+
+
+issue = inspect.cleandoc("")
+
+
+def handle_issue(issue: str) -> str:
+    """
+    from collections.abc import Callable
+    from enum import Enum
+    from functools import wraps
+    from typing import Annotated
+
+    from mirascope.core import FromCallArgs, openai
+    from pydantic import BaseModel, Field
+
+
+    class TicketPriority(str, Enum):
+        LOW = "Low"
+        MEDIUM = "Medium"
+        HIGH = "High"
+        URGENT = "Urgent"
+
+
+    class TicketCategory(str, Enum):
+        BUG_REPORT = "Bug Report"
+        FEATURE_REQUEST = "Feature Request"
+
+
+    class Ticket(BaseModel):
+        issue: Annotated[str, FromCallArgs()]
+        category: TicketCategory
+        priority: TicketPriority
+        summary: str = Field(
+            ...,
+            description="A highlight summary of the most important details of the ticket.",
+        )
+
+
+    def mock_decorator_fn(model, response_model) -> Callable:
+        def inner(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return inner
+
+
+    @mock_decorator_fn(
+        "gpt-4o-mini",
+        response_model=Ticket,
+    )
+    def triage_issue(issue: str) -> str:
+        return "How can I help you today?"
+
+
+    @openai.call(
+        "gpt-4o-mini",
+        tools=[request_assistance],
+    )
+    def customer_support_bot(
+        issue: str, history: list[openai.OpenAIMessageParam]
+    ) -> openai.OpenAIDynamicConfig:
+        ticket = triage_issue(issue)
+        return {"computed_fields": {"ticket": ticket}}
+
+
+    def handle_issue(issue: str) -> str:
+        history = []
+        response = customer_support_bot(issue, history)
+        history += [response.user_message_param, response.message_param]
+        while tools := response.tools:
+            history += response.tool_message_params([(tool, tool.call()) for tool in tools])
+            response = customer_support_bot("", history)
+            history.append(response.message_param)
+        return response.content
+    """
+    history = []
+    response = customer_support_bot(issue, history)
+    history += [response.user_message_param, response.message_param]
+    while tools := response.tools:
+        history += response.tool_message_params([(tool, tool.call()) for tool in tools])
+        response = customer_support_bot("", history)
+        history.append(response.message_param)
+    return response.content

@@ -17,3 +17,14 @@ generateApi({
     },
   }),
 });
+generateApi({
+  name: "types.ts",
+  url: "http://127.0.0.1:8000/v0/ee/openapi.json",
+  output: path.resolve(__dirname, "../ee/types/"),
+  generateClient: false,
+  codeGenConstructs: () => ({
+    EnumField: (key, value) => {
+      return `${_.snakeCase(key).toUpperCase()} = ${value}`;
+    },
+  }),
+});

@@ -67,62 +67,6 @@ export interface APIKeyPublic {
 }
 
 /**
- * AnnotationCreate
- * Annotation create model.
- */
-export interface AnnotationCreate {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
-  /** Span Uuid */
-  span_uuid?: string | null;
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
-}
-
-/**
- * AnnotationPublic
- * Annotation public model.
- */
-export interface AnnotationPublic {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
-  /**
-   * Span Uuid
-   * @format uuid
-   */
-  span_uuid: string;
-  /**
-   * Generation Uuid
-   * @format uuid
-   */
-  generation_uuid: string;
-  /** Span more details model. */
-  span: SpanMoreDetails;
-}
-
-/**
  * AnnotationTable
  * Annotation table.
  */
@@ -152,20 +96,6 @@ export interface AnnotationTable {
   span_uuid?: string | null;
   /** Generation Uuid */
   generation_uuid?: string | null;
-}
-
-/**
- * AnnotationUpdate
- * Annotation update model.
- */
-export interface AnnotationUpdate {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
 }
 
 /**
@@ -205,37 +135,6 @@ export interface CommonCallParams {
 export interface CreateUserOrganizationToken {
   /** Token */
   token: string;
-}
-
-/**
- * DatasetRow
- * Dataset row model.
- */
-export interface DatasetRow {
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /** Input */
-  input: Record<string, string> | null;
-  /** Output */
-  output: string;
-  label: Label | null;
-  /** Reasoning */
-  reasoning: string | null;
-  type: EvaluationType | null;
-}
-
-/**
- * DatasetRowsResponse
- * Response model containing the rows from the Oxen DataFrame.
- */
-export interface DatasetRowsResponse {
-  /** Rows */
-  rows: DatasetRow[];
-  /** Next Page */
-  next_page?: number | null;
 }
 
 /** DependencyInfo */
@@ -464,6 +363,18 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
+}
+
+/**
+ * OrganizationUpdate
+ * Organization update model
+ */
+export interface OrganizationUpdate {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
 }
 
 /**

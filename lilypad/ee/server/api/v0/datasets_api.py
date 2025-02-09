@@ -3,13 +3,11 @@ We internally use `_get_oxen_dataset_metadata` to determine the dataset path,
 branch, and host. Each endpoint returns rows from an Oxen DataFrame.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import tempfile
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
 import pandas as pd
@@ -31,17 +29,28 @@ from ...services.annotations_service import AnnotationService
 datasets_router = APIRouter()
 
 
+class _DatasetMetadata(BaseModel):
+    """Metadata for constructing the Oxen DataFrame."""
+
+    repo: RemoteRepo | Workspace | str
+    branch: str
+    src: str
+    dist_dir: str
+    host: str
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 def _get_repo(
     user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> RemoteRepo:
     settings = get_settings()
-    if not settings.oxen_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing Oxen API key",
-        )
-    config_auth(settings.oxen_api_key, host=settings.oxen_host)
-    repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}")
+    if settings.oxen_api_key:
+        config_auth(settings.oxen_api_key, host=settings.oxen_host)
+    repo = RemoteRepo(
+        f"{settings.oxen_repo_name}/{user.active_organization_uuid}",
+        host=settings.oxen_host,
+    )
     if not repo.exists():
         repo.create()
     return repo
@@ -69,18 +78,6 @@ def _get_or_create_dataset(
         branch=meta.branch,
         host=meta.host,
     ), False
-
-
-class _DatasetMetadata(BaseModel):
-    """Metadata for constructing the Oxen DataFrame."""
-
-    repo: RemoteRepo | Workspace | str
-    branch: str
-    src: str
-    dist_dir: str
-    host: str
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def _get_oxen_dataset_metadata(
@@ -130,7 +127,7 @@ class DatasetRow(BaseModel):
         return None
 
     @classmethod
-    def from_annotation(cls, annotation: AnnotationPublic) -> DatasetRow:
+    def from_annotation(cls, annotation: AnnotationPublic) -> "DatasetRow":
         """Return a DatasetRow from an AnnotationPublic model."""
         return DatasetRow(
             uuid=annotation.uuid,
@@ -151,7 +148,7 @@ class DatasetRowsResponse(BaseModel):
     @classmethod
     def from_metadata(
         cls, meta: _DatasetMetadata, page_num: int = 1
-    ) -> DatasetRowsResponse | None:
+    ) -> Optional["DatasetRowsResponse"]:
         """Return a DatasetRowsResponse from the metadata."""
         df, _ = _get_or_create_dataset(meta)
         # ignore the _oxen_id column

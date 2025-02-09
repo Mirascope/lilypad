@@ -15,9 +15,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AnnotationQueueDialog } from "@/ee/components/AnnotationQueueDialog";
+import { AnnotationPublic } from "@/ee/types/types";
 import { useUploadDatasetMutation } from "@/ee/utils/datasets";
 import { useToast } from "@/hooks/use-toast";
-import { AnnotationPublic, Label } from "@/types/types";
+import { Label } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
 import { ColumnDef } from "@tanstack/react-table";
 import JsonView from "@uiw/react-json-view";
@@ -79,6 +80,7 @@ export const AnnotationsTable = ({
       accessorKey: "label",
       header: "Label",
       cell: ({ row }) => {
+        const label: string = row.getValue("label") || "";
         return (
           <div
             className={
@@ -87,7 +89,7 @@ export const AnnotationsTable = ({
                 : "text-destructive"
             }
           >
-            {row.getValue("label")}
+            {label.toUpperCase()}
           </div>
         );
       },

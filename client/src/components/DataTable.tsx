@@ -249,8 +249,9 @@ export const DataTable = <T extends { uuid: string }>({
                     </TableRow>
                   )}
                   {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const row = rows[virtualRow.index];
-                    return <CollapsibleRow key={row.id} row={row} />;
+                    const row = table.getRowModel().rows[virtualRow.index];
+                    if (!row) return null;
+                    return <CollapsibleRow key={row?.id} row={row} />;
                   })}
                   {paddingBottom > 0 && (
                     <TableRow>
