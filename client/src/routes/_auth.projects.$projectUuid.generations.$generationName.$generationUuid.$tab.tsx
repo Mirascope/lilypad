@@ -101,13 +101,16 @@ const GenerationWorkbench = () => {
     generationsByNameQueryOptions(generationName, projectUuid)
   );
   const navigate = useNavigate();
-  const [generation, setGeneration] = useState<
-    GenerationPublic | null | undefined
-  >(
+  const [version, setVersion] = useState<number | null | undefined>(
     generations.length > 0
       ? generations.find((generation) => generation.uuid === generationUuid)
+          ?.version_num
       : null
   );
+  const generation =
+    generations.length > 0
+      ? generations.find((generation) => generation.version_num === version)
+      : null;
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
@@ -169,7 +172,9 @@ const GenerationWorkbench = () => {
         <Select
           value={generation?.uuid}
           onValueChange={(uuid) =>
-            setGeneration(generations.find((g) => g.uuid === uuid) || null)
+            setVersion(
+              generations.find((g) => g.uuid === uuid)?.version_num || null
+            )
           }
         >
           <SelectTrigger className='w-[200px]'>
