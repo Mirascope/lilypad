@@ -19,6 +19,7 @@ from typing import Any, TypedDict
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from opentelemetry.trace import Span
 from opentelemetry.util.types import AttributeValue
+from pydantic import BaseModel
 
 from lilypad._opentelemetry._utils import ChoiceBuffer
 
@@ -116,28 +117,33 @@ def default_openai_cleanup(
         span.add_event("gen_ai.choice", attributes=event_attributes)
 
 
-def get_tool_calls(message: Any) -> list[dict[str, Any]] | None:
-    tool_calls = message.tool_calls
+def get_tool_calls(message: dict | BaseModel) -> list[dict[str, Any]] | None:
+    if isinstance(message, BaseModel):
+        tool_calls = message.tool_calls  # pyright: ignore[reportAttributeAccessIssue]
+    else:
+        tool_calls = message.get("tool_calls")
     if tool_calls is None:
         return None
     calls = []
     for tool_call in tool_calls:
         tool_call_dict = {}
-        if call_id := tool_call.id:
-            tool_call_dict["id"] = call_id
+        if isinstance(tool_call, BaseModel):
+            call_id = tool_call.id  # pyright: ignore[reportAttributeAccessIssue]
+            tool_type = tool_call.type  # pyright: ignore[reportAttributeAccessIssue]
+            tool_call_dict["function"] = tool_call.function.model_dump()  # pyright: ignore[reportAttributeAccessIssue]
+        else:
+            call_id = tool_call.get("id")
+            tool_type = tool_call.get("type")
+            if func := tool_call.get("function"):
+                tool_call_dict["function"] = {}
 
-        if tool_type := tool_call.type:
-            tool_call_dict["type"] = tool_type
+                if name := func.get("name"):
+                    tool_call_dict["function"]["name"] = name
 
-        if func := tool_call.function:
-            tool_call_dict["function"] = {}
-
-            if name := func.name:
-                tool_call_dict["function"]["name"] = name
-
-            if arguments := func.arguments:
-                tool_call_dict["function"]["arguments"] = arguments
-
+                if arguments := func.get("arguments"):
+                    tool_call_dict["function"]["arguments"] = arguments
+        tool_call_dict["id"] = call_id
+        tool_call_dict["type"] = tool_type
         calls.append(tool_call_dict)
     return calls
 
