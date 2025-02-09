@@ -219,12 +219,16 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <div onClick={(e) => e.stopPropagation()}>
-                <CreateAnnotationDialog span={row.original} />
-              </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <QueueDialog spans={[row.original]} />
-              </div>
+              {row.getValue("scope") === Scope.LILYPAD && (
+                <>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <CreateAnnotationDialog span={row.original} />
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <QueueDialog spans={[row.original]} />
+                  </div>
+                </>
+              )}
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
