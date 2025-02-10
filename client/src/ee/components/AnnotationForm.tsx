@@ -1,14 +1,8 @@
 import { FailButton } from "@/components/FailButton";
+import LilypadDialog from "@/components/LilypadDialog";
 import { SuccessButton } from "@/components/SuccessButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   Form,
@@ -30,6 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Label, SpanMoreDetails, SpanPublic } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
+import { spanQueryOptions } from "@/utils/spans";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import JsonView from "@uiw/react-json-view";
@@ -142,6 +137,7 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
   });
   const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { data: spanDetails } = useSuspenseQuery(spanQueryOptions(span.uuid));
   const createAnnotation = useCreateAnnotationsMutation();
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
@@ -173,14 +169,13 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
     setOpen(false);
   };
   return (
-    <Dialog
+    <LilypadDialog
       open={open}
       onOpenChange={(open) => {
         methods.reset();
         setOpen(open);
       }}
-    >
-      <DialogTrigger asChild>
+      customTrigger={
         <DropdownMenuItem
           className='flex items-center gap-2'
           onSelect={(e) => e.preventDefault()}
@@ -188,19 +183,24 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
           <MessageSquareText className='w-4 h-4' />
           <span className='font-medium'>Annotate</span>
         </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent className={"max-w-[425px] overflow-x-auto"}>
-        <DialogTitle>{`Annotate`}</DialogTitle>
-        <DialogDescription>
-          {`Annotate this trace to add to your dataset.`}
-        </DialogDescription>
-        <AnnotationFormFields<AnnotationCreate>
-          methods={methods}
-          onSubmit={onSubmit}
-          renderButtons={renderButtons}
-        />
-      </DialogContent>
-    </Dialog>
+      }
+      text={"Start Annotating"}
+      title={"Annotate trace"}
+      description={`Annotate this trace to add to your dataset.`}
+      buttonProps={{
+        variant: "default",
+      }}
+      dialogContentProps={{
+        className: "max-w-[800px] max-h-screen overflow-y-auto",
+      }}
+    >
+      <AnnotationFormFields<AnnotationCreate>
+        span={spanDetails}
+        methods={methods}
+        onSubmit={onSubmit}
+        renderButtons={renderButtons}
+      />
+    </LilypadDialog>
   );
 };
 
