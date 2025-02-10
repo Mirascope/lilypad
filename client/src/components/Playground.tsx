@@ -2,9 +2,9 @@ import { Editor } from "@/components/Editor";
 
 import { AddCardButton } from "@/components/AddCardButton";
 import { CodeSnippet } from "@/components/CodeSnippet";
-import IconDialog from "@/components/IconDialog";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
+import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -286,7 +286,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                 </Button>
               )}
               {version && (
-                <IconDialog
+                <LilypadDialog
                   text='Code'
                   title='Copy Code'
                   description='Copy this codeblock into your application.'
@@ -298,10 +298,10 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   }}
                 >
                   <CodeSnippet code={version.code} />
-                </IconDialog>
+                </LilypadDialog>
               )}
               {version && (
-                <IconDialog
+                <LilypadDialog
                   icon={<Trash />}
                   title={`Delete ${version.name} v${version.version_num}`}
                   description=''
@@ -325,7 +325,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   ]}
                 >
                   {`Are you sure you want to delete ${version.name} v${version.version_num}?`}
-                </IconDialog>
+                </LilypadDialog>
               )}
             </div>
             <div className='flex items-center gap-2'>

@@ -1,5 +1,5 @@
 import { DataTable } from "@/components/DataTable";
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -151,7 +151,7 @@ export const AnnotationsTable = ({
     return (
       <>
         <AnnotationQueueDialog unannotatedRows={unannotatedRows} />
-        <IconDialog
+        <LilypadDialog
           text={"Add to Dataset"}
           title={"Annotate selected traces"}
           description={`${annotatedRows.length} annotation(s) will be added.`}

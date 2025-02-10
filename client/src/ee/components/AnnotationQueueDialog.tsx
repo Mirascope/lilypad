@@ -1,6 +1,6 @@
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import { UpdateAnnotationForm } from "@/ee/components/AnnotationForm";
-import { AnnotationPublic } from "@/types/types";
+import { AnnotationPublic } from "@/ee/types/types";
 import { useState } from "react";
 
 export const AnnotationQueueDialog = ({
@@ -15,7 +15,7 @@ export const AnnotationQueueDialog = ({
     }
   };
   return (
-    <IconDialog
+    <LilypadDialog
       open={open}
       onOpenChange={setOpen}
       text={"Start Annotating"}
@@ -36,6 +36,6 @@ export const AnnotationQueueDialog = ({
         total={unannotatedRows.length}
         onComplete={onComplete}
       />
-    </IconDialog>
+    </LilypadDialog>
   );
 };
