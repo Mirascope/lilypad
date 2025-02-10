@@ -2,12 +2,14 @@
 
 import inspect
 import json
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Generator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
@@ -49,12 +51,44 @@ class GenerationDecorator(Protocol):
         ...
 
 
-def _force_flush() -> None:
+def _get_batch_span_processor() -> BatchSpanProcessor | None:
+    """Get the BatchSpanProcessor from the current TracerProvider.
+
+    Retrieve the BatchSpanProcessor from the current TracerProvider dynamically.
+    This avoids using a global variable by inspecting the provider's _active_span_processors.
+    """
     tracer_provider = get_tracer_provider()
-    # Check if the tracer provider has a force_flush method
-    if force_flush := getattr(tracer_provider, "force_flush", None):
-        force_flush()
-    return
+    processors = getattr(tracer_provider, "_active_span_processors", None)
+    if processors is not None:
+        for processor in processors:
+            if isinstance(processor, BatchSpanProcessor):
+                return processor
+    return None
+
+
+@contextmanager
+def manual_flush_context(flush: bool) -> Generator[None, None, None]:
+    """Disable automatic flush within the context if flush is True.
+
+    For the outermost generation (flush=True), when entering the context,
+    the BatchSpanProcessor's schedule_delay_millis is set to a very large value,
+    effectively disabling auto flush. Upon exiting the context, force_flush() is called
+    to export all buffered spans. For inner generations (flush=False), no change is made.
+    """
+    if not flush:
+        yield
+        return
+    processor = _get_batch_span_processor()
+    old_delay = None
+    if processor is not None:
+        old_delay = processor.schedule_delay_millis
+        processor.schedule_delay_millis = 10**12  # Effectively disable auto flush.
+    try:
+        yield
+    finally:
+        if processor is not None and old_delay is not None:
+            processor.force_flush()
+            processor.schedule_delay_millis = old_delay
 
 
 def _construct_trace_attributes(
@@ -189,25 +223,23 @@ def generation() -> GenerationDecorator:
                 )
                 token = current_generation.set(generation)
                 try:
-                    if not is_mirascope_call:
-                        decorator = _trace(
-                            generation=generation,
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            prompt_template="",
-                        )
-                        return await decorator(fn)(*args, **kwargs)
-                    decorator = create_mirascope_middleware(
-                        generation, arg_types, arg_values, True, prompt_template
-                    )
-                    return await decorator(fn)(*args, **kwargs)
-                finally:
                     # Check if this is the outermost generation (no previous generation)
                     is_outermost = token.old_value is None
+                    with manual_flush_context(is_outermost):
+                        if not is_mirascope_call:
+                            decorator_inner = _trace(
+                                generation=generation,
+                                arg_types=arg_types,
+                                arg_values=arg_values,
+                                prompt_template="",
+                            )
+                            return await decorator_inner(fn)(*args, **kwargs)
+                        decorator_inner = create_mirascope_middleware(
+                            generation, arg_types, arg_values, True, prompt_template
+                        )
+                        return await decorator_inner(fn)(*args, **kwargs)
+                finally:
                     current_generation.reset(token)
-                    if is_outermost:
-                        # Flush tracer provider to send all buffered spans
-                        _force_flush()
 
             return inner_async
 
@@ -221,25 +253,22 @@ def generation() -> GenerationDecorator:
                 )
                 token = current_generation.set(generation)
                 try:
-                    if not is_mirascope_call:
-                        decorator = _trace(
-                            generation=generation,
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            prompt_template="",
+                    is_outermost = token.old_value is None
+                    with manual_flush_context(is_outermost):
+                        if not is_mirascope_call:
+                            decorator_inner = _trace(
+                                generation=generation,
+                                arg_types=arg_types,
+                                arg_values=arg_values,
+                                prompt_template="",
+                            )
+                            return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                        decorator_inner = create_mirascope_middleware(
+                            generation, arg_types, arg_values, False, prompt_template
                         )
                         return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                    decorator = create_mirascope_middleware(
-                        generation, arg_types, arg_values, False, prompt_template
-                    )
-                    return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
-                    # Check if this is the outermost generation (no previous generation)
-                    is_outermost = token.old_value is None
                     current_generation.reset(token)
-                    if is_outermost:
-                        # Flush tracer provider to send all buffered spans
-                        _force_flush()
 
             return inner  # pyright: ignore [reportReturnType]
 
