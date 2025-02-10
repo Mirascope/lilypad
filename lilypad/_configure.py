@@ -19,6 +19,9 @@ from .server.client import LilypadClient
 from .server.schemas import SpanPublic
 from .server.settings import get_settings
 
+DEFAULT_LOG_LEVEL: int = logging.INFO
+DEFAULT_LOG_FORMAT: str = "%(asctime)s %(levelname)s: %(message)s"
+
 
 class _JSONSpanExporter(SpanExporter):
     """A custom span exporter that sends spans to a custom endpoint as JSON."""
@@ -121,12 +124,11 @@ class _JSONSpanExporter(SpanExporter):
 
 
 def configure(
-    log_level: int = logging.INFO,
-    log_format: str = "%(asctime)s %(levelname)s: %(message)s",
-    log_handler=None
+    log_level: int = DEFAULT_LOG_LEVEL,
+    log_format: str = DEFAULT_LOG_FORMAT,
+    log_handlers: list[logging.Handler] | None = None,
 ) -> None:
-    """
-    Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
+    """Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
 
     The user can configure log level, format, and output destination via the parameters.
     This allows adjusting log outputs for local runtimes or different environments.
@@ -134,10 +136,11 @@ def configure(
     # Configure logging for Lilypad.
     logger = logging.getLogger("lilypad")
     logger.setLevel(log_level)
-    if log_handler is None:
-        log_handler = logging.StreamHandler()
-    log_handler.setFormatter(logging.Formatter(log_format))
-    logger.addHandler(log_handler)
+    if not log_handlers:
+        log_handlers.append(logging.StreamHandler())
+    for log_handler in log_handlers:
+        log_handler.setFormatter(logging.Formatter(log_format))
+        logger.addHandler(log_handler)
 
     # Proceed with tracer provider configuration.
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
