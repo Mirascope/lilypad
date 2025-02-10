@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import logging
 from collections.abc import Sequence
 
 from opentelemetry import trace
@@ -119,8 +120,26 @@ class _JSONSpanExporter(SpanExporter):
         }
 
 
-def configure() -> None:
-    """Initialize the OpenTelemetry instrumentation for Lilypad."""
+def configure(
+    log_level: int = logging.INFO,
+    log_format: str = "%(asctime)s %(levelname)s: %(message)s",
+    log_handler=None
+) -> None:
+    """
+    Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
+
+    The user can configure log level, format, and output destination via the parameters.
+    This allows adjusting log outputs for local runtimes or different environments.
+    """
+    # Configure logging for Lilypad.
+    logger = logging.getLogger("lilypad")
+    logger.setLevel(log_level)
+    if log_handler is None:
+        log_handler = logging.StreamHandler()
+    log_handler.setFormatter(logging.Formatter(log_format))
+    logger.addHandler(log_handler)
+
+    # Proceed with tracer provider configuration.
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
         print("TracerProvider already initialized.")  # noqa: T201
         return
