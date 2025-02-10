@@ -8,7 +8,7 @@ from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
-from opentelemetry.trace import get_tracer
+from opentelemetry.trace import get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
@@ -47,6 +47,14 @@ class GenerationDecorator(Protocol):
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
         """Protocol `call` definition for `generation` decorator return type."""
         ...
+
+
+def _force_flush() -> None:
+    tracer_provider = get_tracer_provider()
+    # Check if the tracer provider has a force_flush method
+    if force_flush := getattr(tracer_provider, "force_flush", None):
+        force_flush()
+    return
 
 
 def _construct_trace_attributes(
@@ -194,7 +202,12 @@ def generation() -> GenerationDecorator:
                     )
                     return await decorator(fn)(*args, **kwargs)
                 finally:
+                    # Check if this is the outermost generation (no previous generation)
+                    is_outermost = token.old_value is None
                     current_generation.reset(token)
+                    if is_outermost:
+                        # Flush tracer provider to send all buffered spans
+                        _force_flush()
 
             return inner_async
 
@@ -221,7 +234,12 @@ def generation() -> GenerationDecorator:
                     )
                     return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
+                    # Check if this is the outermost generation (no previous generation)
+                    is_outermost = token.old_value is None
                     current_generation.reset(token)
+                    if is_outermost:
+                        # Flush tracer provider to send all buffered spans
+                        _force_flush()
 
             return inner  # pyright: ignore [reportReturnType]
 
