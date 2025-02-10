@@ -12,7 +12,7 @@ from opentelemetry.sdk.trace.export import (
     SpanExporter,
     SpanExportResult,
 )
-from rich import print
+from rich.logging import RichHandler
 
 from ._utils import load_config
 from .server.client import LilypadClient
@@ -20,7 +20,6 @@ from .server.schemas import SpanPublic
 from .server.settings import get_settings
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
-DEFAULT_LOG_FORMAT: str = "%(asctime)s %(levelname)s: %(message)s"
 
 
 class _JSONSpanExporter(SpanExporter):
@@ -33,12 +32,13 @@ class _JSONSpanExporter(SpanExporter):
         self.client = LilypadClient(
             token=config.get("token", None),
         )
+        self.logger = logging.getLogger(__name__)
 
     def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
         settings = get_settings()
         if len(spans) > 0:
-            print(
+            self.logger.error(
                 f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
             )
         for span in spans:
@@ -48,7 +48,7 @@ class _JSONSpanExporter(SpanExporter):
         """Recursively print a SpanNode and its children with indentation."""
         indent_str = "    " * indent  # 4 spaces per indent level
 
-        print(f"{indent_str}{span.display_name}")  # noqa: T201
+        self.logger.info(f"{indent_str}{span.display_name}")  # noqa: T201
 
         for child in span.child_spans:
             self._print_span_node(child, indent + 1)
@@ -66,7 +66,7 @@ class _JSONSpanExporter(SpanExporter):
             else:
                 return SpanExportResult.FAILURE
         except Exception as e:
-            print(f"Error sending spans: {e}")
+            self.logger.error(f"Error sending spans: {e}")
             return SpanExportResult.FAILURE
 
     def _span_to_dict(self, span: ReadableSpan) -> dict:
@@ -125,7 +125,7 @@ class _JSONSpanExporter(SpanExporter):
 
 def configure(
     log_level: int = DEFAULT_LOG_LEVEL,
-    log_format: str = DEFAULT_LOG_FORMAT,
+    log_format: str | None = None,
     log_handlers: list[logging.Handler] | None = None,
 ) -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
@@ -139,14 +139,14 @@ def configure(
     if not log_handlers:
         if log_handlers is None:
             log_handlers = []
-        log_handlers.append(logging.StreamHandler())
+        log_handlers.append(RichHandler())
     for log_handler in log_handlers:
         log_handler.setFormatter(logging.Formatter(log_format))
         logger.addHandler(log_handler)
 
     # Proceed with tracer provider configuration.
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
-        print("TracerProvider already initialized.")  # noqa: T201
+        logger.error("TracerProvider already initialized.")  # noqa: T201
         return
     otlp_exporter = _JSONSpanExporter()
     provider = TracerProvider()
