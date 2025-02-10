@@ -137,6 +137,8 @@ def configure(
     logger = logging.getLogger("lilypad")
     logger.setLevel(log_level)
     if not log_handlers:
+        if log_handlers is None:
+            log_handlers = []
         log_handlers.append(logging.StreamHandler())
     for log_handler in log_handlers:
         log_handler.setFormatter(logging.Formatter(log_format))
