@@ -32,13 +32,13 @@ class _JSONSpanExporter(SpanExporter):
         self.client = LilypadClient(
             token=config.get("token", None),
         )
-        self.logger = logging.getLogger(__name__)
+        self.log = logging.getLogger(__name__)
 
     def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
         settings = get_settings()
         if len(spans) > 0:
-            self.logger.error(
+            self.log.error(
                 f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
             )
         for span in spans:
@@ -48,7 +48,7 @@ class _JSONSpanExporter(SpanExporter):
         """Recursively print a SpanNode and its children with indentation."""
         indent_str = "    " * indent  # 4 spaces per indent level
 
-        self.logger.info(f"{indent_str}{span.display_name}")  # noqa: T201
+        self.log.info(f"{indent_str}{span.display_name}")  # noqa: T201
 
         for child in span.child_spans:
             self._print_span_node(child, indent + 1)
@@ -66,7 +66,7 @@ class _JSONSpanExporter(SpanExporter):
             else:
                 return SpanExportResult.FAILURE
         except Exception as e:
-            self.logger.error(f"Error sending spans: {e}")
+            self.log.error(f"Error sending spans: {e}")
             return SpanExportResult.FAILURE
 
     def _span_to_dict(self, span: ReadableSpan) -> dict:

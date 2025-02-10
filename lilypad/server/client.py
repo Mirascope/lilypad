@@ -1,5 +1,5 @@
 """The `lilypad` API client."""
-
+import logging
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, get_origin, overload
 from uuid import UUID
@@ -7,7 +7,6 @@ from uuid import UUID
 import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
-from rich import print
 
 from lilypad._utils.functions import PromptPublic
 
@@ -18,6 +17,7 @@ from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
+log = logging.getLogger(__name__)
 
 class NotFoundError(Exception):
     """Raised when an API response has a status code of 404."""
@@ -150,7 +150,7 @@ class LilypadClient:
             response = self.session.request(method, url, timeout=timeout, **kwargs)
             response.raise_for_status()
         except Timeout:
-            print(f"Request to {url} timed out.")
+            log.error(f"Request to {url} timed out.")
             raise
         except ConnectionError as conn_err:
             raise APIConnectionError(
@@ -173,7 +173,7 @@ class LilypadClient:
             else:
                 return response.json()
         except Exception as e:
-            print(f"Error parsing response into {response_model}: {e}")
+            log.error(f"Error parsing response into {response_model}: {e}")
             raise
 
     def get_health(self) -> dict[str, Any]:
