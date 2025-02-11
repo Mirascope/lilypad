@@ -82,16 +82,11 @@ def manual_flush_context(flush: bool) -> Generator[None, None, None]:
         yield
         return
     processor = _get_batch_span_processor()
-    old_delay = None
-    if processor is not None:
-        old_delay = processor.schedule_delay_millis
-        processor.schedule_delay_millis = 10**12  # Effectively disable auto flush.
-    try:
+    if not processor:
         yield
-    finally:
-        if processor is not None and old_delay is not None:
-            processor.force_flush()
-            processor.schedule_delay_millis = old_delay
+        return
+    with processor.condition:
+        yield
 
 
 def _construct_trace_attributes(
