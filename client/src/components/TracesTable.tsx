@@ -1,6 +1,6 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
@@ -288,7 +288,7 @@ export const TracesTable = ({
   const renderCustomControls = (rows: Row<SpanPublic>[]) => {
     const spans = rows.map((row) => row.original);
     return (
-      <IconDialog
+      <LilypadDialog
         open={open}
         onOpenChange={setOpen}
         icon={<Users />}
@@ -300,7 +300,7 @@ export const TracesTable = ({
         tooltipContent={"Add selected traces to your annotation queue."}
       >
         <QueueForm spans={spans} setOpen={setOpen} />
-      </IconDialog>
+      </LilypadDialog>
     );
   };
   return (
