@@ -70,15 +70,16 @@ def _get_batch_span_processor() -> BatchSpanProcessor | None:
 
 
 @contextmanager
-def manual_flush_context(flush: bool) -> Generator[None, None, None]:
-    """Disable automatic flush within the context if flush is True.
+def outermost_lock_context(enable_lock: bool) -> Generator[None, None, None]:
+    """Acquire the BatchSpanProcessor's condition lock if enable_lock is True.
 
-    For the outermost generation (flush=True), when entering the context,
-    the BatchSpanProcessor's schedule_delay_millis is set to a very large value,
-    effectively disabling auto flush. Upon exiting the context, force_flush() is called
-    to export all buffered spans. For inner generations (flush=False), no change is made.
+    This context manager is intended for use in the outermost generation.
+    When enable_lock is True, it retrieves the current BatchSpanProcessor and acquires its
+    condition lock. This ensures that flush operations are synchronized and only executed
+    at the outermost generation level.
+    For inner generations (enable_lock is False), no lock is acquired.
     """
-    if not flush:
+    if not enable_lock:
         yield
         return
     processor = _get_batch_span_processor()
@@ -223,7 +224,7 @@ def generation() -> GenerationDecorator:
                 try:
                     # Check if this is the outermost generation (no previous generation)
                     is_outermost = token.old_value is None
-                    with manual_flush_context(is_outermost):
+                    with outermost_lock_context(is_outermost):
                         if not is_mirascope_call:
                             decorator_inner = _trace(
                                 generation=generation,
@@ -252,7 +253,7 @@ def generation() -> GenerationDecorator:
                 token = current_generation.set(generation)
                 try:
                     is_outermost = token.old_value == Token.MISSING
-                    with manual_flush_context(is_outermost):
+                    with outermost_lock_context(is_outermost):
                         if not is_mirascope_call:
                             decorator_inner = _trace(
                                 generation=generation,
