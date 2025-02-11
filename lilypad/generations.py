@@ -4,7 +4,7 @@ import inspect
 import json
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
@@ -58,9 +58,12 @@ def _get_batch_span_processor() -> BatchSpanProcessor | None:
     This avoids using a global variable by inspecting the provider's _active_span_processors.
     """
     tracer_provider = get_tracer_provider()
-    processors = getattr(tracer_provider, "_active_span_processors", None)
-    if processors is not None:
-        for processor in processors:
+    processor = getattr(tracer_provider, "_active_span_processor", None)
+    if not processor:
+        return None
+    _span_processors = getattr(processor, "_span_processors", None)
+    if _span_processors:
+        for processor in _span_processors:
             if isinstance(processor, BatchSpanProcessor):
                 return processor
     return None
@@ -253,7 +256,7 @@ def generation() -> GenerationDecorator:
                 )
                 token = current_generation.set(generation)
                 try:
-                    is_outermost = token.old_value is None
+                    is_outermost = token.old_value == Token.MISSING
                     with manual_flush_context(is_outermost):
                         if not is_mirascope_call:
                             decorator_inner = _trace(
