@@ -17,6 +17,7 @@ from oxen.auth import config_auth
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from lilypad.server.settings import get_settings
+from ....._utils.repo_utils import create_repo_if_not_exists, change_repo_branch
 
 from .....server._utils import get_current_user, validate_api_key_project_no_strict
 from .....server.schemas.users import UserPublic
@@ -51,8 +52,7 @@ def _get_repo(
         f"{settings.oxen_repo_name}/{user.active_organization_uuid}",
         host=settings.oxen_host,
     )
-    if not repo.exists():
-        repo.create()
+    repo = create_repo_if_not_exists(repo, is_public=False, empty=False)
     return repo
 
 
@@ -95,10 +95,12 @@ def _get_oxen_dataset_metadata(
     """
     dist_dir = f"{str(project_uuid)}/{str(generation_uuid)}"
     src = "data.parquet"
+    settings = get_settings()
+    change_repo_branch(repo, settings.oxen_branch, create=True)
     return _DatasetMetadata(
         repo=repo,
-        branch=get_settings().oxen_branch,
-        host=get_settings().oxen_host,
+        branch=settings.oxen_branch,
+        host=settings.oxen_host,
         dist_dir=dist_dir,
         src=src,
     )
