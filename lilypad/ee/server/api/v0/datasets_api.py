@@ -17,12 +17,12 @@ from oxen.auth import config_auth
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from lilypad.server.settings import get_settings
-from ....._utils.repo_utils import create_repo_if_not_exists, change_repo_branch
 
 from .....server._utils import get_current_user, validate_api_key_project_no_strict
 from .....server.schemas.users import UserPublic
 from ....validate import Tier
 from ...models.annotations import EvaluationType, Label
+from ...repo_utils import change_repo_branch, create_repo_if_not_exists
 from ...require_license import require_license
 from ...schemas.annotations import AnnotationPublic
 from ...services.annotations_service import AnnotationService
