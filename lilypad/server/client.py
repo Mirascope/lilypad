@@ -1,4 +1,5 @@
 """The `lilypad` API client."""
+
 import logging
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, get_origin, overload
@@ -221,13 +222,17 @@ class LilypadClient:
         )
 
     def get_or_create_generation_version(
-        self, fn: Callable[..., Any], arg_types: dict[str, str]
+        self,
+        fn: Callable[..., Any],
+        arg_types: dict[str, str],
+        custom_id: str | None = None,
     ) -> GenerationPublic:
         """Get the matching version for a generation or create it if non-existent.
 
         Args:
             fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
+            custom_id (str, optional): Custom ID for the generation. Defaults to None.
 
         Returns:
             GenerationPublic: The matching (or created) version for the generation.
@@ -251,6 +256,7 @@ class LilypadClient:
                     "hash": closure.hash,
                     "dependencies": closure.dependencies,
                     "arg_types": arg_types,
+                    "custom_id": custom_id,
                 },
             )
 

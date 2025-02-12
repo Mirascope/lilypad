@@ -50,6 +50,7 @@ class _GenerationBase(SQLModel):
     )
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
     archived: datetime | None = Field(default=None, index=True)
+    custom_id: str | None = Field(default=None, index=True)
 
 
 class GenerationUpdate(SQLModel):

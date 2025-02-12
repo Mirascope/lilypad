@@ -183,7 +183,7 @@ def _trace(
     return decorator
 
 
-def generation() -> GenerationDecorator:
+def generation(custom_id: str | None = None) -> GenerationDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,
@@ -218,7 +218,7 @@ def generation() -> GenerationDecorator:
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types
+                    fn, arg_types, custom_id=custom_id
                 )
                 token = current_generation.set(generation)
                 try:
@@ -248,7 +248,7 @@ def generation() -> GenerationDecorator:
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types
+                    fn, arg_types, custom_id=custom_id
                 )
                 token = current_generation.set(generation)
                 try:
