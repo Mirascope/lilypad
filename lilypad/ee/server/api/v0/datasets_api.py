@@ -3,16 +3,18 @@ We internally use `_get_oxen_dataset_metadata` to determine the dataset path,
 branch, and host. Each endpoint returns rows from an Oxen DataFrame.
 """
 
+import io
 import json
+import math
 import os
-import tempfile
 from collections.abc import Sequence
-from typing import Annotated, Optional
+from typing import Annotated, Optional, cast
 from uuid import UUID
 
+import oxen
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, status
-from oxen import DataFrame, RemoteRepo, Workspace
+from oxen import RemoteRepo, Workspace
 from oxen.auth import config_auth
 from pydantic import BaseModel, ConfigDict, field_serializer
 
@@ -28,6 +30,8 @@ from ...services.annotations_service import AnnotationService
 
 datasets_router = APIRouter()
 
+PAGE_SIZE: int = 100
+
 
 class _DatasetMetadata(BaseModel):
     """Metadata for constructing the Oxen DataFrame."""
@@ -39,6 +43,31 @@ class _DatasetMetadata(BaseModel):
     host: str
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def namespace(self) -> str:
+        """Return the namespace for the dataset."""
+        return self.identifier.split(":")[0]
+
+    @property
+    def repo_id(self) -> str:
+        """Return the repo_id for the dataset."""
+        return self.identifier.split(":")[1]
+
+    @property
+    def identifier(self) -> str:
+        """Return the identifier for the dataset."""
+        if isinstance(self.repo, RemoteRepo):
+            return self.repo.identifier
+        elif isinstance(self.repo, Workspace):
+            return self.repo._repo.identifier
+        else:
+            return self.repo.replace("/", ":")
+
+    @property
+    def url(self) -> str:
+        """Return the URL for the dataset."""
+        return f"oxen://{self.identifier}@{self.branch}/{self.dist_dir}/{self.src}"
 
 
 def _get_repo(
@@ -56,28 +85,18 @@ def _get_repo(
     return repo
 
 
-def _get_or_create_dataset(
-    meta: _DatasetMetadata, src: str | None = None
-) -> tuple[DataFrame, bool]:
+def _get_dataset(meta: _DatasetMetadata, src: str | None = None) -> pd.DataFrame | None:
     """Get or create the Oxen DataFrame."""
+    fs = oxen.OxenFS(meta.namespace, meta.repo_id)
     try:
-        # Eventually replace this with df.exists() once it's implemented
-        return DataFrame(
-            remote=meta.repo,
-            path=os.path.join(meta.dist_dir, meta.src),
-            branch=meta.branch,
-            host=meta.host,
-        ), True
-    except Exception:
-        if isinstance(meta.repo, RemoteRepo):
-            meta.repo.add(src or meta.src, dst_dir=meta.dist_dir)
-            meta.repo.commit("initial commit")
-    return DataFrame(
-        remote=meta.repo,
-        path=os.path.join(meta.dist_dir, meta.src),
-        branch=meta.branch,
-        host=meta.host,
-    ), False
+        with fs.open(os.path.join(meta.dist_dir, meta.src), "rb") as f:
+            parquet_data = cast(bytes, f.read())
+    except AttributeError:
+        # file not found
+        return None
+    buffer = io.BytesIO(parquet_data)
+    df = pd.read_parquet(buffer)
+    return df
 
 
 def _get_oxen_dataset_metadata(
@@ -150,16 +169,29 @@ class DatasetRowsResponse(BaseModel):
         cls, meta: _DatasetMetadata, page_num: int = 1
     ) -> Optional["DatasetRowsResponse"]:
         """Return a DatasetRowsResponse from the metadata."""
-        df, _ = _get_or_create_dataset(meta)
-        # ignore the _oxen_id column
-        df.filter_keys.append("_oxen_id")
-        rows = df.list_page(page_num)
+        df = _get_dataset(meta)
+
+        if df is None:
+            return None
+
+        if "_oxen_id" in df.columns:
+            df = df.drop(columns=["_oxen_id"])
+
+        # Calculate the start and end index for the page
+        start_index = (page_num - 1) * PAGE_SIZE
+        end_index = start_index + PAGE_SIZE
+
+        rows = df.iloc[start_index:end_index].to_dict(orient="records")
+
         dataset_rows = [
             DatasetRow(**{**row, "input": json.loads(row["input"])}) for row in rows
         ]
         response = DatasetRowsResponse(rows=dataset_rows)
-        if df.page_size() > page_num:
+
+        total_pages = math.ceil(len(df) / PAGE_SIZE)
+        if page_num < total_pages:
             response.next_page = page_num + 1
+
         return response
 
 
@@ -184,22 +216,16 @@ async def create_dataset_rows_by_uuid(
     Returns:
         A boolean indicating success.
     """
-    data_dicts = [DatasetRow.from_annotation(row).model_dump() for row in data]
-    df = pd.DataFrame(data_dicts)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create file path in temporary directory
-        temp_file_path = os.path.join(temp_dir, meta.src)
+    df = _get_dataset(meta)
 
-        # Save DataFrame to Parquet in temporary directory
-        df.to_parquet(temp_file_path, index=False)
+    if df is None:
+        df = pd.DataFrame(columns=pd.Index(list(DatasetRow.model_fields.keys())))
 
-        oxen_df, exists = _get_or_create_dataset(meta, temp_file_path)
-        if exists:
-            for row in data:
-                oxen_df.insert_row(DatasetRow.from_annotation(row).model_dump())
-            oxen_df.commit("add row(s)")
-        annotation_service.delete_records_by_uuids([row.uuid for row in data])
-        return True
+    for row in data:
+        df.loc[len(df)] = DatasetRow.from_annotation(row).model_dump()
+    df.to_parquet(meta.url, index=False)
+    annotation_service.delete_records_by_uuids([row.uuid for row in data])
+    return True
 
 
 @datasets_router.get(
