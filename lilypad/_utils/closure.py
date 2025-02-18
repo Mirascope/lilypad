@@ -36,11 +36,13 @@ class DependencyInfo(TypedDict):
     version: str
     extras: list[str] | None
 
+
 def get_qualified_name(fn: Callable) -> str:
     qualified_name = fn.__qualname__.split("<locals>.")
     if len(qualified_name) > 1:
         return qualified_name[1]
     return qualified_name[0]
+
 
 def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     module_file = getattr(module, "__file__", None)

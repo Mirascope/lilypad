@@ -126,6 +126,7 @@ def _construct_trace_attributes(
         "lilypad.is_async": is_async,
     }
 
+
 def _trace(
     generation: GenerationPublic,
     arg_types: dict[str, str],
@@ -148,7 +149,7 @@ def _trace(
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                        get_qualified_name(fn)
+                    get_qualified_name(fn)
                 ) as span:
                     output = await fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
@@ -164,7 +165,7 @@ def _trace(
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                      get_qualified_name(fn)
+                    get_qualified_name(fn)
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
