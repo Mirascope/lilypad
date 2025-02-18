@@ -23,19 +23,6 @@ if TYPE_CHECKING:
     from ....server.models.projects import ProjectTable
     from ....server.models.spans import SpanTable
 
-JsonableType: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | bytes
-    # | list["JsonableType"]
-    # | set["JsonableType"]
-    # | tuple["JsonableType", ...]
-    # | dict[str, "JsonableType"]
-    | BaseModel
-)
-
 
 class Label(str, Enum):
     """Label enum"""
