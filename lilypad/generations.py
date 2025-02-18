@@ -148,7 +148,7 @@ def _trace(
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__name__}"
+                    f"{fn.__qualname__}"
                 ) as span:
                     output = await fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
@@ -164,7 +164,7 @@ def _trace(
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__name__}"
+                    f"{fn.__qualname__}"
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(

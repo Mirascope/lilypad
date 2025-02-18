@@ -781,7 +781,7 @@ class Closure(BaseModel):
         formatted_code = _run_ruff(code)
         hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
-            name=fn.__name__,
+            name=fn.__qualname__,
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
             hash=hash_value,
