@@ -1,4 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
+import { FormCombobox } from "@/components/FormCombobox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,13 +17,6 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { AnnotationCreate } from "@/ee/types/types";
 import { useCreateAnnotationsMutation } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +25,7 @@ import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { Dispatch, SetStateAction, Suspense, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 
 export const QueueDialog = ({ spans }: { spans: SpanPublic[] }) => {
   const [open, setOpen] = useState<boolean>(false);
@@ -56,6 +50,9 @@ export const QueueDialog = ({ spans }: { spans: SpanPublic[] }) => {
     </Dialog>
   );
 };
+interface UserMap {
+  [key: string]: string;
+}
 export const QueueForm = ({
   spans,
   setOpen,
@@ -68,7 +65,16 @@ export const QueueForm = ({
   const methods = useForm<AnnotationCreate>();
   const createAnnotation = useCreateAnnotationsMutation();
   const onSubmit = async (data: AnnotationCreate) => {
-    const assignedTo = users.find((user) => user.uuid === data.assigned_to);
+    const mappedUsers: UserMap = users.reduce(
+      (acc, user) => ({
+        ...acc,
+        [user.uuid]: user.first_name,
+      }),
+      {}
+    );
+    const assignedToNames = data.assigned_to?.map(
+      (assignedTo) => mappedUsers[assignedTo]
+    );
     const annotationsCreate: AnnotationCreate[] = spans.map((span) => ({
       ...data,
       span_uuid: span.uuid,
@@ -79,13 +85,14 @@ export const QueueForm = ({
         projectUuid: spans[0].project_uuid,
         annotationsCreate,
       });
-      if (!assignedTo) {
+      if (!assignedToNames) {
         toast({
           title: "Annotation created",
         });
       } else {
+        const assignedToNamesStr = assignedToNames.join(", ");
         toast({
-          title: `Assigned annotation to ${assignedTo.first_name}`,
+          title: `Assigned annotation(s) to ${assignedToNamesStr}.`,
         });
       }
       setOpen(false);
@@ -120,36 +127,7 @@ export const QueueForm = ({
         className='flex flex-col gap-2'
         onSubmit={methods.handleSubmit(onSubmit)}
       >
-        <FormField
-          key='assignedTo'
-          control={methods.control}
-          name='assigned_to'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Assign To</FormLabel>
-              <FormDescription>
-                Leave empty to allow anyone to annotate
-              </FormDescription>
-              <FormControl>
-                <Select
-                  value={field.value || undefined}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Assign user' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.uuid} value={user.uuid}>
-                        {user.first_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <SelectUsers />
         <Button
           type='submit'
           loading={methods.formState.isSubmitting}
@@ -161,5 +139,39 @@ export const QueueForm = ({
         </Button>
       </form>
     </Form>
+  );
+};
+
+export const SelectUsers = () => {
+  const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
+  const methods = useFormContext<AnnotationCreate>();
+  return (
+    <FormField
+      key='assignedTo'
+      control={methods.control}
+      name={"assigned_to"}
+      render={() => (
+        <FormItem>
+          <FormLabel className='flex items-center gap-2'>Assign To</FormLabel>
+          <FormDescription>
+            Leave empty to allow anyone to annotate
+          </FormDescription>
+          <FormControl>
+            <FormCombobox<AnnotationCreate>
+              items={users.map((user) => ({
+                value: user.uuid,
+                label: user.first_name,
+              }))}
+              disableAdd
+              popoverText='Select users...'
+              emptyText='No user found.'
+              control={methods.control}
+              name={"assigned_to"}
+              helperText='Assign users'
+            />
+          </FormControl>
+        </FormItem>
+      )}
+    />
   );
 };

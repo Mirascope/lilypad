@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageParam } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView from "@uiw/react-json-view";
+import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
 export const renderMessagesCard = (messages: MessageParam[]) => {
@@ -93,15 +93,15 @@ export const renderCardOutput = (output: any) => {
   );
 };
 
-export const renderData = (data?: object) => {
+export const renderData = ({ ...props }: JsonViewProps<object>) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>{"Data"}</CardTitle>
       </CardHeader>
-      {data && (
+      {props.value && (
         <CardContent>
-          <JsonView value={data} />
+          <JsonView value={props.value} collapsed={props.collapsed} />
         </CardContent>
       )}
     </Card>
