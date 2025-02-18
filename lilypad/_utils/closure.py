@@ -36,6 +36,11 @@ class DependencyInfo(TypedDict):
     version: str
     extras: list[str] | None
 
+def get_qualified_name(fn: Callable) -> str:
+    qualified_name = fn.__qualname__.split("<locals>.")
+    if len(qualified_name) > 1:
+        return qualified_name[1]
+    return qualified_name[0]
 
 def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
     module_file = getattr(module, "__file__", None)
@@ -781,7 +786,7 @@ class Closure(BaseModel):
         formatted_code = _run_ruff(code)
         hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
-            name=fn.__qualname__,
+            name=get_qualified_name(fn),
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
             hash=hash_value,

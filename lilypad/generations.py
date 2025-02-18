@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from ._utils import (
     call_safely,
     create_mirascope_middleware,
+    get_qualified_name,
     inspect_arguments,
     load_config,
 )
@@ -125,7 +126,6 @@ def _construct_trace_attributes(
         "lilypad.is_async": is_async,
     }
 
-
 def _trace(
     generation: GenerationPublic,
     arg_types: dict[str, str],
@@ -148,7 +148,7 @@ def _trace(
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__qualname__}"
+                        get_qualified_name(fn)
                 ) as span:
                     output = await fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
@@ -164,7 +164,7 @@ def _trace(
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__qualname__}"
+                      get_qualified_name(fn)
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
