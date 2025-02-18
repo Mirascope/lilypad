@@ -86,7 +86,9 @@ class SpanPublic(SpanBase):
 class SpanMoreDetails(BaseModel):
     """Span more details model."""
 
+    uuid: UUID
     project_uuid: UUID | None = None
+    generation_uuid: UUID | None = None
     display_name: str
     provider: str
     model: str
@@ -140,8 +142,12 @@ class SpanMoreDetails(BaseModel):
                 attributes.get(f"lilypad.{lilypad_type}.messages", [])
             )
             template = attributes.get(f"lilypad.{lilypad_type}.template", "")
+        if not span.uuid:
+            raise ValueError("UUID does not exist.")
         return SpanMoreDetails(
+            uuid=span.uuid,
             project_uuid=span.project_uuid,
+            generation_uuid=span.generation_uuid,
             display_name=display_name,
             model=attributes.get(gen_ai_attributes.GEN_AI_REQUEST_MODEL, "unknown"),
             provider=attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown"),

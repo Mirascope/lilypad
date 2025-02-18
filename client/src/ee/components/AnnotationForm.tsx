@@ -1,8 +1,7 @@
-import { FailButton } from "@/components/FailButton";
+import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
-import { SuccessButton } from "@/components/SuccessButton";
+import { LilypadPanel } from "@/components/LilypadPanel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   Form,
@@ -10,8 +9,9 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { labelNodeDefinition } from "@/ee/components/LabelNode";
 import {
   AnnotationCreate,
   AnnotationPublic,
@@ -22,105 +22,56 @@ import {
   useUpdateAnnotationMutation,
 } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import { Label, SpanMoreDetails, SpanPublic } from "@/types/types";
-import { renderCardOutput } from "@/utils/panel-utils";
+import { Label } from "@/types/types";
 import { spanQueryOptions } from "@/utils/spans";
+import { safelyParseJSON } from "@/utils/strings";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import JsonView from "@uiw/react-json-view";
+import { JsonData, JsonEditor } from "json-edit-react";
 import { MessageSquareText } from "lucide-react";
-import { Dispatch, SetStateAction, useState } from "react";
-import { Path, SubmitHandler, useForm, UseFormReturn } from "react-hook-form";
+import { Dispatch, SetStateAction, Suspense, useState } from "react";
+import {
+  SubmitHandler,
+  useForm,
+  useFormContext,
+  UseFormReturn,
+} from "react-hook-form";
 interface BaseAnnotation {
   label?: Label | null;
   reasoning?: string | null;
+  data?: Record<string, any> | null;
 }
 
 interface AnnotationFormFieldsProps<T extends BaseAnnotation> {
-  span?: SpanMoreDetails;
+  spanUuid: string;
   methods: UseFormReturn<T>;
   onSubmit: SubmitHandler<T>;
   renderButtons: () => React.ReactNode;
 }
 
 const AnnotationFormFields = <T extends BaseAnnotation>({
-  span,
+  spanUuid,
   methods,
   onSubmit,
   renderButtons,
 }: AnnotationFormFieldsProps<T>) => {
   return (
     <>
-      {span && (
-        <>
-          {span.arg_values && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{"Input"}</CardTitle>
-              </CardHeader>
-              <CardContent className='flex flex-col'>
-                <JsonView value={span.arg_values} />
-              </CardContent>
-            </Card>
-          )}
-          {renderCardOutput(span.output)}
-        </>
-      )}
+      <Suspense fallback={<CardSkeleton />}>
+        <LilypadPanel
+          spanUuid={spanUuid}
+          showJsonArgs
+          dataProps={{ collapsed: true }}
+        />
+      </Suspense>
       <Form {...methods}>
         <form
           className='flex flex-col gap-2'
           onSubmit={methods.handleSubmit(onSubmit)}
         >
-          <FormField
-            key='label'
-            control={methods.control}
-            name={"label" as Path<T>}
-            rules={{
-              required: "Label is required",
-            }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Label</FormLabel>
-                <FormControl>
-                  <div className='flex gap-4'>
-                    <SuccessButton
-                      onClick={() => field.onChange(Label.PASS)}
-                      variant={
-                        field.value === Label.PASS ? "success" : "outline"
-                      }
-                    >
-                      Pass
-                    </SuccessButton>
-                    <FailButton
-                      onClick={() => field.onChange(Label.FAIL)}
-                      variant={
-                        field.value === Label.FAIL ? "destructive" : "outline"
-                      }
-                    >
-                      Fail
-                    </FailButton>
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            key='reasoning'
-            control={methods.control}
-            name={"reasoning" as Path<T>}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reason</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder='(Optional) Reason for label'
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          <Suspense fallback={<CardSkeleton />}>
+            <AnnotationFields spanUuid={spanUuid} />
+          </Suspense>
           {renderButtons()}
         </form>
       </Form>
@@ -128,30 +79,178 @@ const AnnotationFormFields = <T extends BaseAnnotation>({
   );
 };
 
-export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
+const AnnotationFields = ({ spanUuid }: { spanUuid: string }) => {
+  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
+  const output = safelyParseJSON(span.output ?? "") || span.output;
+  const methods = useFormContext<AnnotationCreate>();
+  return (
+    <FormField
+      key='data'
+      control={methods.control}
+      rules={{
+        validate: (value) => {
+          if (!value) {
+            return "Annotation is required";
+          }
+          if (Object.values(value).some((val) => val.label === null)) {
+            return "All fields must be annotated with a label";
+          }
+          return true;
+        },
+      }}
+      name='data'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Annotation</FormLabel>
+          <FormControl>
+            <JsonEditor
+              data={field.value as JsonData}
+              rootName=''
+              restrictEdit={({ key, parentData }) => {
+                if (
+                  (parentData as { exact: boolean })?.exact === true &&
+                  key === "label"
+                ) {
+                  return true;
+                }
+                return false;
+              }}
+              restrictDelete={({ key }) => {
+                if (
+                  ["label", "exact", "reasoning", "idealOutput"].includes(
+                    key as string
+                  )
+                ) {
+                  return true;
+                }
+                return false;
+              }}
+              restrictTypeSelection={({ key }) => {
+                if (["label", "exact", "reasoning"].includes(key as string)) {
+                  return true;
+                }
+                return false;
+              }}
+              onUpdate={({ newData }) => {
+                field.onChange(newData);
+              }}
+              onEdit={({ newValue, name, currentData, newData, path }) => {
+                if (["exact", "idealOutput"].includes(name as string)) {
+                  // Get the parent object that contains both exact and idealOutput
+                  const parentPath = path.slice(0, -1);
+                  const parentObj = parentPath.reduce(
+                    (obj, key) => (obj as any)[key],
+                    currentData
+                  );
+                  const originalOutput = parentPath.reduce(
+                    (obj, key) => (obj as Record<string, any>)?.[key],
+                    output
+                  );
+
+                  // Check conditions based on which field is being edited
+                  const shouldUpdateLabelToPass =
+                    (name === "exact" &&
+                      newValue === true &&
+                      (parentObj as { idealOutput: any }).idealOutput ===
+                        originalOutput) ||
+                    (name === "idealOutput" &&
+                      (parentObj as { exact: boolean }).exact === true &&
+                      newValue === originalOutput);
+
+                  const shouldUpdateLabelToFail =
+                    (name === "exact" &&
+                      newValue === true &&
+                      (parentObj as { idealOutput: any }).idealOutput !==
+                        originalOutput) ||
+                    (name === "idealOutput" &&
+                      (parentObj as { exact: boolean }).exact === true &&
+                      newValue !== originalOutput);
+
+                  if (shouldUpdateLabelToPass || shouldUpdateLabelToFail) {
+                    // Create a new data object with the updated label
+                    const labelPath = [...parentPath, "label"];
+                    let current = newData;
+                    // iterate through the path except for the last key
+                    for (let i = 0; i < labelPath.length - 1; i++) {
+                      if (
+                        !(current as Record<string, JsonData>)[labelPath[i]]
+                      ) {
+                        (current as Record<string, JsonData>)[labelPath[i]] =
+                          {};
+                      }
+                      current = (current as Record<string, JsonData>)[
+                        labelPath[i]
+                      ];
+                    }
+                    // set the value at the final key based on the condition
+                    (current as Record<string, JsonData>)[
+                      labelPath[labelPath.length - 1]
+                    ] = shouldUpdateLabelToPass ? Label.PASS : Label.FAIL;
+                    field.onChange(newData);
+                    return ["value", newData];
+                  }
+                }
+                field.onChange(newData);
+                return true;
+              }}
+              customNodeDefinitions={[labelNodeDefinition]}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+export const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
+  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const [open, setOpen] = useState<boolean>(false);
+  const output = safelyParseJSON(span.output ?? "") || span.output;
+  const jsonOutput = typeof output === "string" ? { output } : output;
+  const transformedOutput = Object.entries(jsonOutput ?? {}).reduce<
+    Record<string, any>
+  >((acc, [key, value]) => {
+    acc[key] = {
+      idealOutput: value,
+      reasoning: "",
+      exact: false,
+      label: null,
+    };
+    return acc;
+  }, {});
   const methods = useForm<AnnotationCreate>({
     defaultValues: {
-      reasoning: "",
+      data: transformedOutput,
     },
   });
   const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const { data: spanDetails } = useSuspenseQuery(spanQueryOptions(span.uuid));
   const createAnnotation = useCreateAnnotationsMutation();
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
-      <Button type='submit' loading={isLoading} className='w-full'>
-        {isLoading ? "Staging..." : "Annotate"}
+      <Button type='submit' loading={isLoading}>
+        {isLoading ? "Adding annotation..." : "Annotate"}
       </Button>
     );
   };
   const onSubmit = async (data: AnnotationCreate) => {
     data.span_uuid = span.uuid;
-    data.assigned_to = user.uuid;
+    data.assigned_to = [user.uuid];
     data.generation_uuid = span.generation_uuid;
-    console.log(data);
+    if (data.data) {
+      const values = Object.values(data.data);
+      data.label = values.every((value) => value.label === Label.PASS)
+        ? Label.PASS
+        : Label.FAIL;
+    }
+    if (!span.project_uuid) {
+      toast({
+        title: "Failed to create annotation, unknown project",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await createAnnotation.mutateAsync({
         projectUuid: span.project_uuid,
@@ -192,10 +291,12 @@ export const CreateAnnotationDialog = ({ span }: { span: SpanPublic }) => {
       }}
       dialogContentProps={{
         className: "max-w-[800px] max-h-screen overflow-y-auto",
+        onEscapeKeyDown: (e) => e.preventDefault(),
+        onPointerDownOutside: (e) => e.preventDefault(),
       }}
     >
       <AnnotationFormFields<AnnotationCreate>
-        span={spanDetails}
+        spanUuid={span.uuid}
         methods={methods}
         onSubmit={onSubmit}
         renderButtons={renderButtons}
@@ -215,10 +316,28 @@ export const UpdateAnnotationForm = ({
   total: number;
   onComplete: (isLastItem: boolean) => void;
 }) => {
+  const { data: span } = useSuspenseQuery(
+    spanQueryOptions(annotation.span.uuid)
+  );
+  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const output = safelyParseJSON(span.output ?? "") || span.output;
+  const jsonOutput = typeof output === "string" ? { output } : output;
+  const transformedOutput = Object.entries(jsonOutput ?? {}).reduce<
+    Record<string, any>
+  >((acc, [key, value]) => {
+    acc[key] = {
+      idealOutput: value,
+      reasoning: "",
+      exact: false,
+      label: null,
+    };
+    return acc;
+  }, {});
   const methods = useForm<AnnotationUpdate>({
     defaultValues: {
       reasoning: annotation.reasoning || "",
       label: annotation.label,
+      data: transformedOutput,
     },
   });
   const { toast } = useToast();
@@ -245,6 +364,13 @@ export const UpdateAnnotationForm = ({
     );
   };
   const onSubmit = async (data: AnnotationUpdate) => {
+    if (data.data) {
+      const values = Object.values(data.data);
+      data.label = values.every((value) => value.label === Label.PASS)
+        ? Label.PASS
+        : Label.FAIL;
+    }
+    data.assigned_to = user.uuid;
     const res = await updateAnnotation.mutateAsync({
       projectUuid: annotation.project_uuid,
       annotationUuid: annotation.uuid,
@@ -269,7 +395,7 @@ export const UpdateAnnotationForm = ({
 
   return (
     <AnnotationFormFields<AnnotationUpdate>
-      span={annotation.span}
+      spanUuid={annotation.span.uuid}
       methods={methods}
       onSubmit={onSubmit}
       renderButtons={renderButtons}
