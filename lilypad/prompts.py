@@ -373,6 +373,8 @@ def prompt() -> PromptDecorator:
                     fn, current_generation.get()
                 )
                 if not prompt:
+                    prompt = lilypad_client.get_prompt_active_version(fn, None)
+                if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"
                     )
@@ -388,6 +390,8 @@ def prompt() -> PromptDecorator:
                 prompt = lilypad_client.get_prompt_active_version(
                     fn, current_generation.get()
                 )
+                if not prompt:
+                    prompt = lilypad_client.get_prompt_active_version(fn, None)
                 if not prompt:
                     raise ValueError(
                         f"Prompt active version not found for function: {fn.__name__}"

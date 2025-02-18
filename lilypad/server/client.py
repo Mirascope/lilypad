@@ -20,6 +20,7 @@ _R = TypeVar("_R", bound=BaseModel)
 
 log = logging.getLogger(__name__)
 
+
 class NotFoundError(Exception):
     """Raised when an API response has a status code of 404."""
 
@@ -271,33 +272,27 @@ class LilypadClient:
                 version of the prompt linked.
 
         Returns:
-            PromptPublic | None: The matching version for the prompt, or `None`.
+            PromptPublic | None: The matching version for the prompt, or creates one if not found.
         """
         closure = Closure.from_fn(fn)
-        if (
-            generation
-            and generation.prompt
-            and generation.prompt.signature == closure.signature
-        ):
-            return generation.prompt
-        elif generation and not generation.prompt:
-            prompts = self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
-                params={"signature": closure.signature},
-                response_model=list[PromptPublic],
-            )
-            if not prompts:
-                return None
-
-            self._request(
-                "PATCH",
-                f"v0/projects/{self.project_uuid}/generations/{generation.uuid}",
-                json={"prompt_uuid": str(prompts[0].uuid)},
-                response_model=GenerationPublic,
-            )
-
-            return prompts[0]
+        if generation:
+            if generation.prompt and generation.prompt.signature == closure.signature:
+                return generation.prompt
+            elif not generation.prompt:
+                prompts = self._request(
+                    "GET",
+                    f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
+                    params={"signature": closure.signature},
+                    response_model=list[PromptPublic],
+                )
+                if prompts:
+                    self._request(
+                        "PATCH",
+                        f"v0/projects/{self.project_uuid}/generations/{generation.uuid}",
+                        json={"prompt_uuid": str(prompts[0].uuid)},
+                        response_model=GenerationPublic,
+                    )
+                    return prompts[0]
         try:
             return self._request(
                 "GET",
@@ -305,7 +300,30 @@ class LilypadClient:
                 response_model=PromptPublic,
             )
         except NotFoundError:
-            return None
+            prompts = self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
+                params={"signature": closure.signature},
+                response_model=list[PromptPublic],
+            )
+            if prompts:
+                return prompts[0]
+            else:
+                new_prompt = self._request(
+                    "POST",
+                    f"v0/projects/{self.project_uuid}/prompts",
+                    response_model=PromptPublic,
+                    json={
+                        "name": closure.name,
+                        "signature": closure.signature,
+                        "code": closure.code,
+                        "hash": closure.hash,
+                        "dependencies": closure.dependencies,
+                        "template": "",
+                        "call_params": {},
+                    },
+                )
+                return new_prompt
 
     def get_response_model_active_version(
         self, cls: type[BaseModel], generation: GenerationPublic | None
