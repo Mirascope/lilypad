@@ -96,7 +96,6 @@ def _get_oxen_dataset_metadata(
     dist_dir = f"{str(project_uuid)}/{str(generation_uuid)}"
     src = "data.parquet"
     settings = get_settings()
-    change_repo_branch(repo, settings.oxen_branch, create=True)
     return _DatasetMetadata(
         repo=repo,
         branch=settings.oxen_branch,
