@@ -1,10 +1,9 @@
 """EE Annotation models."""
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel
 
 from lilypad.server.models.base_sql_model import get_json_column
