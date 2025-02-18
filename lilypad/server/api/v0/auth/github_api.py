@@ -107,7 +107,9 @@ async def github_callback(
             organization_public = OrganizationPublic.model_validate(organization)
             user = UserTable(
                 email=email,
-                first_name=user_data.get("first_name") or user_data.get("name", ""),
+                first_name=user_data.get("first_name")
+                or user_data.get("name", "")
+                or email,
                 last_name=user_data.get("last_name", ""),
                 active_organization_uuid=organization_public.uuid,
             )
