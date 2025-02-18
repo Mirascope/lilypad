@@ -7,7 +7,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from posthog import Posthog
 
-from ..._utils import get_posthog, validate_api_key_project_strict
+from ..._utils import (
+    get_posthog,
+    validate_api_key_project_no_strict,
+    validate_api_key_project_strict,
+)
 from ...models import (
     GenerationTable,
     GenerationUpdate,
@@ -147,7 +151,7 @@ async def create_new_generation(
     response_model=GenerationPublic,
 )
 async def update_generation(
-    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_no_strict)],
     project_uuid: UUID,
     generation_uuid: UUID,
     generation_update: GenerationUpdate,

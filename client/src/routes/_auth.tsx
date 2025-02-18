@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { AppSidebar } from "@/components/AppSidebar";
+import { LayoutSkeleton } from "@/components/LayoutSkeleton";
 import SidebarSkeleton from "@/components/SidebarSkeleton";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
@@ -18,7 +19,11 @@ export const Route = createFileRoute("/_auth")({
       });
     }
   },
-  component: AuthLayout,
+  component: () => (
+    <Suspense fallback={<LayoutSkeleton />}>
+      <AuthLayout />
+    </Suspense>
+  ),
 });
 
 function AuthLayout() {
@@ -32,7 +37,6 @@ function AuthLayout() {
       });
     }
   }, [posthog, user?.uuid, user?.email]);
-
   return (
     <div className='flex h-screen border-collapse overflow-hidden'>
       <SidebarProvider>

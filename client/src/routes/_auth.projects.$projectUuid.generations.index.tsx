@@ -46,7 +46,11 @@ import { Suspense, useState } from "react";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
-  component: () => <GenerationsList />,
+  component: () => (
+    <Suspense fallback={<div>Loading ...</div>}>
+      <GenerationsList />
+    </Suspense>
+  ),
 });
 
 const GenerationCards = () => {

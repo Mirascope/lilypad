@@ -17,9 +17,10 @@ import {
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
-export const IconDialog = ({
+export const LilypadDialog = ({
   icon,
   text,
+  customTrigger,
   title,
   description,
   children,
@@ -33,6 +34,7 @@ export const IconDialog = ({
 }: {
   icon?: ReactNode;
   text?: string;
+  customTrigger?: ReactNode;
   title: string;
   description: string;
   children?: ReactNode;
@@ -55,7 +57,7 @@ export const IconDialog = ({
   );
 
   const TriggerButton = (
-    <DialogTrigger asChild>{ButtonComponent}</DialogTrigger>
+    <DialogTrigger asChild>{customTrigger || ButtonComponent}</DialogTrigger>
   );
 
   return (
@@ -94,4 +96,4 @@ export const IconDialog = ({
   );
 };
 
-export default IconDialog;
+export default LilypadDialog;

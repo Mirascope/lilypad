@@ -28,7 +28,7 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
@@ -101,13 +101,16 @@ const GenerationWorkbench = () => {
     generationsByNameQueryOptions(generationName, projectUuid)
   );
   const navigate = useNavigate();
-  const [generation, setGeneration] = useState<
-    GenerationPublic | null | undefined
-  >(
+  const [version, setVersion] = useState<number | null | undefined>(
     generations.length > 0
       ? generations.find((generation) => generation.uuid === generationUuid)
+          ?.version_num
       : null
   );
+  const generation =
+    generations.length > 0
+      ? generations.find((generation) => generation.version_num === version)
+      : null;
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
@@ -169,7 +172,9 @@ const GenerationWorkbench = () => {
         <Select
           value={generation?.uuid}
           onValueChange={(uuid) =>
-            setGeneration(generations.find((g) => g.uuid === uuid) || null)
+            setVersion(
+              generations.find((g) => g.uuid === uuid)?.version_num || null
+            )
           }
         >
           <SelectTrigger className='w-[200px]'>
@@ -184,7 +189,7 @@ const GenerationWorkbench = () => {
           </SelectContent>
         </Select>
         {generation && (
-          <IconDialog
+          <LilypadDialog
             icon={<Trash />}
             title={`Delete ${generation.name} v${generation.version_num}`}
             description=''
@@ -209,7 +214,7 @@ const GenerationWorkbench = () => {
             ]}
           >
             {`Are you sure you want to delete ${generation.name} v${generation.version_num}?`}
-          </IconDialog>
+          </LilypadDialog>
         )}
       </div>
       <Tabs defaultValue={tab} className='w-full'>
