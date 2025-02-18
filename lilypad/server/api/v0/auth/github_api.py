@@ -99,17 +99,21 @@ async def github_callback(
                 if device_code:
                     device_code_service.create_record(device_code, lilypad_token)
                 return user_public
+            name = (
+                user_data.get("first_name")
+                or user_data.get("name")
+                or user_data.get("login")
+                or email
+            )
             organization = OrganizationTable(
-                name=f"{user_data['name']}'s Workspace",
+                name=f"{name}'s Workspace",
             )
             session.add(organization)
             session.flush()
             organization_public = OrganizationPublic.model_validate(organization)
             user = UserTable(
                 email=email,
-                first_name=user_data.get("first_name")
-                or user_data.get("name", "")
-                or email,
+                first_name=name,
                 last_name=user_data.get("last_name", ""),
                 active_organization_uuid=organization_public.uuid,
             )
