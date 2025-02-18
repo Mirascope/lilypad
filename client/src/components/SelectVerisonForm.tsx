@@ -1,4 +1,4 @@
-import { IconDialog } from "@/components/IconDialog";
+import { LilypadDialog } from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -109,7 +109,7 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
   return (
     <Form {...method}>
       <div className='flex gap-2'>
-        <IconDialog
+        <LilypadDialog
           onOpenChange={handleOpenChange}
           icon={<Plus />}
           title='Add a new prompt'
@@ -124,7 +124,7 @@ export const SelectVersionForm = ({ promptUuid }: { promptUuid?: string }) => {
           dialogButtons={buttons}
         >
           <NewPromptDialog />
-        </IconDialog>
+        </LilypadDialog>
         <Controller
           control={method.control}
           name='promptName'

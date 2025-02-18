@@ -2,19 +2,22 @@
 
 import inspect
 import json
-from collections.abc import Callable, Coroutine
-from contextvars import ContextVar
+from collections.abc import Callable, Coroutine, Generator
+from contextlib import contextmanager
+from contextvars import ContextVar, Token
 from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
-from opentelemetry.trace import get_tracer
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from ._utils import (
     call_safely,
     create_mirascope_middleware,
+    get_qualified_name,
     inspect_arguments,
     load_config,
 )
@@ -47,6 +50,45 @@ class GenerationDecorator(Protocol):
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
         """Protocol `call` definition for `generation` decorator return type."""
         ...
+
+
+def _get_batch_span_processor() -> BatchSpanProcessor | None:
+    """Get the BatchSpanProcessor from the current TracerProvider.
+
+    Retrieve the BatchSpanProcessor from the current TracerProvider dynamically.
+    This avoids using a global variable by inspecting the provider's _active_span_processors.
+    """
+    tracer_provider = get_tracer_provider()
+    processor = getattr(tracer_provider, "_active_span_processor", None)
+    if not processor:
+        return None
+    _span_processors = getattr(processor, "_span_processors", None)
+    if _span_processors:
+        for processor in _span_processors:
+            if isinstance(processor, BatchSpanProcessor):
+                return processor
+    return None
+
+
+@contextmanager
+def outermost_lock_context(enable_lock: bool) -> Generator[None, None, None]:
+    """Acquire the BatchSpanProcessor's condition lock if enable_lock is True.
+
+    This context manager is intended for use in the outermost generation.
+    When enable_lock is True, it retrieves the current BatchSpanProcessor and acquires its
+    condition lock. This ensures that flush operations are synchronized and only executed
+    at the outermost generation level.
+    For inner generations (enable_lock is False), no lock is acquired.
+    """
+    if not enable_lock:
+        yield
+        return
+    processor = _get_batch_span_processor()
+    if not processor:
+        yield
+        return
+    with processor.condition:
+        yield
 
 
 def _construct_trace_attributes(
@@ -107,7 +149,7 @@ def _trace(
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__name__}"
+                    get_qualified_name(fn)
                 ) as span:
                     output = await fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
@@ -123,7 +165,7 @@ def _trace(
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with get_tracer("lilypad").start_as_current_span(
-                    f"{fn.__name__}"
+                    get_qualified_name(fn)
                 ) as span:
                     output = fn(*args, **kwargs)
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
@@ -142,7 +184,7 @@ def _trace(
     return decorator
 
 
-def generation() -> GenerationDecorator:
+def generation(custom_id: str | None = None) -> GenerationDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,
@@ -177,22 +219,25 @@ def generation() -> GenerationDecorator:
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types
+                    fn, arg_types, custom_id=custom_id
                 )
                 token = current_generation.set(generation)
                 try:
-                    if not is_mirascope_call:
-                        decorator = _trace(
-                            generation=generation,
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            prompt_template="",
+                    # Check if this is the outermost generation (no previous generation)
+                    is_outermost = token.old_value is None
+                    with outermost_lock_context(is_outermost):
+                        if not is_mirascope_call:
+                            decorator_inner = _trace(
+                                generation=generation,
+                                arg_types=arg_types,
+                                arg_values=arg_values,
+                                prompt_template="",
+                            )
+                            return await decorator_inner(fn)(*args, **kwargs)
+                        decorator_inner = create_mirascope_middleware(
+                            generation, arg_types, arg_values, True, prompt_template
                         )
-                        return await decorator(fn)(*args, **kwargs)
-                    decorator = create_mirascope_middleware(
-                        generation, arg_types, arg_values, True, prompt_template
-                    )
-                    return await decorator(fn)(*args, **kwargs)
+                        return await decorator_inner(fn)(*args, **kwargs)
                 finally:
                     current_generation.reset(token)
 
@@ -204,22 +249,24 @@ def generation() -> GenerationDecorator:
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                 generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types
+                    fn, arg_types, custom_id=custom_id
                 )
                 token = current_generation.set(generation)
                 try:
-                    if not is_mirascope_call:
-                        decorator = _trace(
-                            generation=generation,
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            prompt_template="",
+                    is_outermost = token.old_value == Token.MISSING
+                    with outermost_lock_context(is_outermost):
+                        if not is_mirascope_call:
+                            decorator_inner = _trace(
+                                generation=generation,
+                                arg_types=arg_types,
+                                arg_values=arg_values,
+                                prompt_template="",
+                            )
+                            return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                        decorator_inner = create_mirascope_middleware(
+                            generation, arg_types, arg_values, False, prompt_template
                         )
                         return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                    decorator = create_mirascope_middleware(
-                        generation, arg_types, arg_values, False, prompt_template
-                    )
-                    return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
                     current_generation.reset(token)
 

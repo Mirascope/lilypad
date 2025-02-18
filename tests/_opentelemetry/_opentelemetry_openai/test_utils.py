@@ -4,6 +4,8 @@ import json
 from unittest.mock import Mock
 
 import pytest
+from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_message_tool_call import Function
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from lilypad._opentelemetry._opentelemetry_openai.utils import (
@@ -75,18 +77,31 @@ def test_openai_chunk_handler(mock_chunk):
 
 def test_get_tool_calls():
     # Create a mock that behaves like a dict with attribute access
-    message = DictLikeMock(
+    message = {
+        "tool_calls": [
+            {
+                "id": "call_123",
+                "type": "function",
+                "function": {"name": "test_function", "arguments": '{"arg": "value"}'},
+            }
+        ]
+    }
+    tool_calls = get_tool_calls(message)
+    assert len(tool_calls) == 1  # pyright: ignore [reportArgumentType]
+    assert tool_calls[0]["id"] == "call_123"  # pyright: ignore [reportOptionalSubscript]
+    assert tool_calls[0]["type"] == "function"  # pyright: ignore [reportOptionalSubscript]
+    assert tool_calls[0]["function"]["name"] == "test_function"  # pyright: ignore [reportOptionalSubscript]
+    message = ChatCompletionMessage(
+        role="assistant",
+        content=None,
         tool_calls=[
-            DictLikeMock(
+            ChatCompletionMessageToolCall(
                 id="call_123",
                 type="function",
-                function=DictLikeMock(
-                    name="test_function", arguments='{"arg": "value"}'
-                ),
+                function=Function(name="test_function", arguments='{"arg": "value"}'),
             )
-        ]
+        ],
     )
-
     tool_calls = get_tool_calls(message)
     assert len(tool_calls) == 1  # pyright: ignore [reportArgumentType]
     assert tool_calls[0]["id"] == "call_123"  # pyright: ignore [reportOptionalSubscript]
@@ -94,7 +109,7 @@ def test_get_tool_calls():
     assert tool_calls[0]["function"]["name"] == "test_function"  # pyright: ignore [reportOptionalSubscript]
 
     # Test without tool calls
-    message = DictLikeMock(tool_calls=None)
+    message = {"tool_calls": None}
     assert get_tool_calls(message) is None
 
 

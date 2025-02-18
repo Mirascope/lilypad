@@ -272,12 +272,79 @@ def convert_mirascope_messages(
         json.loads(messages) if isinstance(messages, str) else messages
     )
     structured_messages: list[MessageParam] = []
-    user_messages = []
     for message in new_messages:
-        if isinstance(message.get("content"), str):
-            user_messages.append(_TextPart(type="text", text=message["content"]))
-    if user_messages:
-        structured_messages.append(MessageParam(role="user", content=user_messages))
+        if message.get("role") == "user":
+            if isinstance(message.get("content"), str):
+                structured_messages.append(
+                    MessageParam(
+                        role="user",
+                        content=[_TextPart(type="text", text=message["content"])],
+                    )
+                )
+            elif isinstance(message.get("content"), dict):
+                if message["content"].get("type") == "image":
+                    structured_messages.append(
+                        MessageParam(
+                            role="user",
+                            content=[
+                                _ImagePart(
+                                    type="image",
+                                    media_type=message["content"]["media_type"],
+                                    image=message["content"]["image"],
+                                    detail=message["content"].get("detail"),
+                                )
+                            ],
+                        )
+                    )
+                elif message["content"].get("type") == "audio":
+                    structured_messages.append(
+                        MessageParam(
+                            role="user",
+                            content=[
+                                _AudioPart(
+                                    type="audio",
+                                    media_type=message["content"]["media_type"],
+                                    audio=message["content"]["audio"],
+                                )
+                            ],
+                        )
+                    )
+        elif message.get("role") == "system":
+            if isinstance(message.get("content"), str):
+                structured_messages.append(
+                    MessageParam(
+                        role="system",
+                        content=[_TextPart(type="text", text=message["content"])],
+                    )
+                )
+            elif isinstance(message.get("content"), dict):
+                if message["content"].get("type") == "image":
+                    structured_messages.append(
+                        MessageParam(
+                            role="system",
+                            content=[
+                                _ImagePart(
+                                    type="image",
+                                    media_type=message["content"]["media_type"],
+                                    image=message["content"]["image"],
+                                    detail=message["content"].get("detail"),
+                                )
+                            ],
+                        )
+                    )
+                elif message["content"].get("type") == "audio":
+                    structured_messages.append(
+                        MessageParam(
+                            role="system",
+                            content=[
+                                _AudioPart(
+                                    type="audio",
+                                    media_type=message["content"]["media_type"],
+                                    audio=message["content"]["audio"],
+                                )
+                            ],
+                        )
+                    )
 
     return structured_messages
 
