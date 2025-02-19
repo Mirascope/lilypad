@@ -9,19 +9,23 @@ from functools import wraps
 from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
+from mirascope import llm
+from mirascope.core import prompt_template
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
+from . import tool
 from ._utils import (
+    Closure,
     call_safely,
     create_mirascope_middleware,
     get_qualified_name,
     inspect_arguments,
     load_config,
 )
-from .server.client import LilypadClient
+from .server.client import LilypadClient, NotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
 
@@ -184,7 +188,33 @@ def _trace(
     return decorator
 
 
-def generation(custom_id: str | None = None) -> GenerationDecorator:
+def _build_mirascope_call(generator: GenerationPublic, fn: Callable) -> dict[str, Any]:
+    """Build a Mirascope call object."""
+    # TODO: Implement `generator.prompt_template` on DB
+    generator_prompt_template = (
+        "Answer this question: {question}"  # fake prompt template
+    )
+    mirascope_prompt = prompt_template(generator_prompt_template)(fn)
+
+    # TODO: Implement `generation.call_params` on DB
+    call_params = {"provider": "openai", "model": "gpt-4o-mini"}  # fake call params
+
+    # TODO: Implement `generation.tools` on DB
+    # We need to implement a way to store and retrieve tools from the DB
+    # generation_tools = {"code": "def tool(): return 'Hello, World!'", "name": "tool"} # fake tool
+    generation_tools = []
+    if generation_tools:
+        call_params["tools"] = [
+            tool()(generation_tool) for generation_tool in generation_tools
+        ]
+
+    mirascope_call = llm.call(**call_params)(mirascope_prompt)
+    return mirascope_call
+
+
+def generation(
+    custom_id: str | None = None, managed: bool = False
+) -> GenerationDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,
@@ -205,7 +235,7 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        is_mirascope_call = hasattr(fn, "__mirascope_call__")
+        is_mirascope_call = hasattr(fn, "__mirascope_call__") or managed
         prompt_template = (
             fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
         )
@@ -218,9 +248,19 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
             @call_safely(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types, custom_id=custom_id
-                )
+                try:
+                    generation = lilypad_client.get_generation_version(
+                        fn,
+                        arg_types,
+                        custom_id=custom_id,
+                        create_new_generation=not managed,
+                    )
+                except NotFoundError:
+                    ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
+                    raise ValueError(
+                        f"No generation found for function '{Closure.from_fn(fn).name}'. "
+                        f"Please create a new generation at: {ui_link}"
+                    )
                 token = current_generation.set(generation)
                 try:
                     # Check if this is the outermost generation (no previous generation)
@@ -234,10 +274,20 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                                 prompt_template="",
                             )
                             return await decorator_inner(fn)(*args, **kwargs)
-                        decorator_inner = create_mirascope_middleware(
-                            generation, arg_types, arg_values, True, prompt_template
+                        # managed_prompt_template = generation.prompt_template
+                        managed_prompt_template = (
+                            "Answer this question: {question}"  # fake prompt template
                         )
-                        return await decorator_inner(fn)(*args, **kwargs)
+                        decorator_inner = create_mirascope_middleware(
+                            generation,
+                            arg_types,
+                            arg_values,
+                            True,
+                            managed_prompt_template if managed else prompt_template,
+                        )
+                        return await decorator_inner(
+                            _build_mirascope_call(generation, fn) if managed else fn
+                        )(*args, **kwargs)
                 finally:
                     current_generation.reset(token)
 
@@ -248,9 +298,16 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
             @call_safely(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types, custom_id=custom_id
-                )
+                try:
+                    generation = lilypad_client.get_generation_version(
+                        fn, arg_types, custom_id=custom_id, create_new_generation=True
+                    )
+                except NotFoundError:
+                    ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
+                    raise ValueError(
+                        f"No generation found for function '{Closure.from_fn(fn).name}'. "
+                        f"Please create a new generation at: {ui_link}"
+                    )
                 token = current_generation.set(generation)
                 try:
                     is_outermost = token.old_value == Token.MISSING
@@ -263,10 +320,20 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                                 prompt_template="",
                             )
                             return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                        decorator_inner = create_mirascope_middleware(
-                            generation, arg_types, arg_values, False, prompt_template
+                        # managed_prompt_template = generation.prompt_template
+                        managed_prompt_template = (
+                            "Answer this question: {question}"  # fake prompt template
                         )
-                        return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                        decorator_inner = create_mirascope_middleware(
+                            generation,
+                            arg_types,
+                            arg_values,
+                            False,
+                            managed_prompt_template if managed else prompt_template,
+                        )
+                        return decorator_inner(
+                            _build_mirascope_call(generation, fn) if managed else fn
+                        )(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
                     current_generation.reset(token)
 
