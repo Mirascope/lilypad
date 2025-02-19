@@ -7,7 +7,7 @@ import json
 import os
 import tempfile
 from collections.abc import Sequence
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 from uuid import UUID
 
 import pandas as pd
@@ -47,7 +47,10 @@ def _get_repo(
     settings = get_settings()
     if settings.oxen_api_key:
         config_auth(settings.oxen_api_key, host=settings.oxen_host)
-    repo = RemoteRepo(f"{settings.oxen_repo_name}/{user.active_organization_uuid}", host=settings.oxen_host)
+    repo = RemoteRepo(
+        f"{settings.oxen_repo_name}/{user.active_organization_uuid}",
+        host=settings.oxen_host,
+    )
     if not repo.exists():
         repo.create()
     return repo
@@ -101,15 +104,26 @@ def _get_oxen_dataset_metadata(
     )
 
 
-class DatasetRow(BaseModel):
-    """Dataset row model."""
+class DatasetRowBase(BaseModel):
+    """Dataset row base model."""
 
     uuid: UUID
     input: dict[str, str] | None
     output: str
     label: Label | None
-    reasoning: str | None
     type: EvaluationType | None
+    data: dict[str, Any] | None
+    annotated_by: UUID | str | None
+
+
+class DatasetRowPublic(DatasetRowBase):
+    """Dataset row public model."""
+
+    ...
+
+
+class DatasetRow(DatasetRowBase):
+    """Dataset row model."""
 
     @field_serializer("uuid")
     def serialize_uuid(self, uuid: UUID) -> str:
@@ -123,6 +137,18 @@ class DatasetRow(BaseModel):
             return json.dumps(input)
         return None
 
+    @field_serializer("annotated_by")
+    def serialize_annotated_by(self, annotated_by: UUID) -> str:
+        """Serialize annotated_by."""
+        return str(annotated_by)
+
+    @field_serializer("data")
+    def serialize_data(self, data: dict[str, Any] | None) -> str | None:
+        """Serialize data."""
+        if data:
+            return json.dumps(data)
+        return None
+
     @classmethod
     def from_annotation(cls, annotation: AnnotationPublic) -> "DatasetRow":
         """Return a DatasetRow from an AnnotationPublic model."""
@@ -131,9 +157,17 @@ class DatasetRow(BaseModel):
             input=annotation.span.arg_values,
             output=annotation.span.output or "",
             label=annotation.label,
-            reasoning=annotation.reasoning,
             type=annotation.type,
+            annotated_by=annotation.assigned_to,
+            data=annotation.data,
         )
+
+
+class DatasetRowsResponsePublic(BaseModel):
+    """Response public model containing the rows from the Oxen DataFrame."""
+
+    rows: list[DatasetRowPublic]
+    next_page: int | None = None
 
 
 class DatasetRowsResponse(BaseModel):
@@ -152,7 +186,14 @@ class DatasetRowsResponse(BaseModel):
         df.filter_keys.append("_oxen_id")
         rows = df.list_page(page_num)
         dataset_rows = [
-            DatasetRow(**{**row, "input": json.loads(row["input"])}) for row in rows
+            DatasetRow(
+                **{
+                    **row,
+                    "input": json.loads(row["input"]),
+                    "data": json.loads(row["data"]),
+                }
+            )
+            for row in rows
         ]
         response = DatasetRowsResponse(rows=dataset_rows)
         if df.page_size() > page_num:
@@ -192,16 +233,17 @@ async def create_dataset_rows_by_uuid(
 
         oxen_df, exists = _get_or_create_dataset(meta, temp_file_path)
         if exists:
+            # TODO: Follow up with Oxen team to support append mode, appending does not work
             for row in data:
                 oxen_df.insert_row(DatasetRow.from_annotation(row).model_dump())
             oxen_df.commit("add row(s)")
-        annotation_service.delete_records_by_uuids([row.uuid for row in data])
-        return True
+    annotation_service.delete_records_by_uuids([row.uuid for row in data])
+    return True
 
 
 @datasets_router.get(
     "/projects/{project_uuid}/generations/{generation_uuid}/datasets",
-    response_model=DatasetRowsResponse,
+    response_model=DatasetRowsResponsePublic,
     summary="Get Oxen dataset rows by generation UUID",
 )
 @require_license(tier=Tier.ENTERPRISE)

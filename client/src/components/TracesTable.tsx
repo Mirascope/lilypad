@@ -1,6 +1,6 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
@@ -219,12 +219,18 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <div onClick={(e) => e.stopPropagation()}>
-                <CreateAnnotationDialog span={row.original} />
-              </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <QueueDialog spans={[row.original]} />
-              </div>
+              {row.getValue("scope") === Scope.LILYPAD && (
+                <>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <CreateAnnotationDialog spanUuid={row.original.uuid} />
+                    </Suspense>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <QueueDialog spans={[row.original]} />
+                  </div>
+                </>
+              )}
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {
@@ -284,7 +290,7 @@ export const TracesTable = ({
   const renderCustomControls = (rows: Row<SpanPublic>[]) => {
     const spans = rows.map((row) => row.original);
     return (
-      <IconDialog
+      <LilypadDialog
         open={open}
         onOpenChange={setOpen}
         icon={<Users />}
@@ -296,7 +302,7 @@ export const TracesTable = ({
         tooltipContent={"Add selected traces to your annotation queue."}
       >
         <QueueForm spans={spans} setOpen={setOpen} />
-      </IconDialog>
+      </LilypadDialog>
     );
   };
   return (

@@ -48,16 +48,18 @@ def mock_get_dataset_rows() -> list[DatasetRow]:
             input={"col1": "val1"},
             output="val1",
             label=Label.PASS,
-            reasoning="reason1",
             type=EvaluationType.MANUAL,
+            annotated_by=uuid4(),
+            data={"val1": {"idealOutput": "val1", "label": Label.PASS}},
         ),
         DatasetRow(
             uuid=uuid4(),
             input={"col2": "val2"},
             output="val2",
             label=Label.FAIL,
-            reasoning="reason2",
             type=EvaluationType.MANUAL,
+            annotated_by=uuid4(),
+            data={"val2": {"idealOutput": "val1", "label": Label.FAIL}},
         ),
     ]
 

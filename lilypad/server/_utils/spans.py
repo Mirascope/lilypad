@@ -1,6 +1,7 @@
 """Utility functions for working with spans."""
 
 import json
+from datetime import datetime
 from typing import Any, Literal
 
 import httpx
@@ -46,6 +47,15 @@ class MessageParam(BaseModel):
 
     role: str
     content: list[_AudioPart | _TextPart | _ImagePart | _ToolCall]
+
+
+class Event(BaseModel):
+    """Event model."""
+
+    name: str
+    type: str
+    message: str
+    timestamp: datetime
 
 
 def convert_gemini_messages(
@@ -272,14 +282,109 @@ def convert_mirascope_messages(
         json.loads(messages) if isinstance(messages, str) else messages
     )
     structured_messages: list[MessageParam] = []
-    user_messages = []
     for message in new_messages:
-        if isinstance(message.get("content"), str):
-            user_messages.append(_TextPart(type="text", text=message["content"]))
-    if user_messages:
-        structured_messages.append(MessageParam(role="user", content=user_messages))
+        if message.get("role") == "user":
+            if isinstance(message.get("content"), str):
+                structured_messages.append(
+                    MessageParam(
+                        role="user",
+                        content=[_TextPart(type="text", text=message["content"])],
+                    )
+                )
+            elif isinstance(message.get("content"), dict):
+                if message["content"].get("type") == "image":
+                    structured_messages.append(
+                        MessageParam(
+                            role="user",
+                            content=[
+                                _ImagePart(
+                                    type="image",
+                                    media_type=message["content"]["media_type"],
+                                    image=message["content"]["image"],
+                                    detail=message["content"].get("detail"),
+                                )
+                            ],
+                        )
+                    )
+                elif message["content"].get("type") == "audio":
+                    structured_messages.append(
+                        MessageParam(
+                            role="user",
+                            content=[
+                                _AudioPart(
+                                    type="audio",
+                                    media_type=message["content"]["media_type"],
+                                    audio=message["content"]["audio"],
+                                )
+                            ],
+                        )
+                    )
+        elif message.get("role") == "system":
+            if isinstance(message.get("content"), str):
+                structured_messages.append(
+                    MessageParam(
+                        role="system",
+                        content=[_TextPart(type="text", text=message["content"])],
+                    )
+                )
+            elif isinstance(message.get("content"), dict):
+                if message["content"].get("type") == "image":
+                    structured_messages.append(
+                        MessageParam(
+                            role="system",
+                            content=[
+                                _ImagePart(
+                                    type="image",
+                                    media_type=message["content"]["media_type"],
+                                    image=message["content"]["image"],
+                                    detail=message["content"].get("detail"),
+                                )
+                            ],
+                        )
+                    )
+                elif message["content"].get("type") == "audio":
+                    structured_messages.append(
+                        MessageParam(
+                            role="system",
+                            content=[
+                                _AudioPart(
+                                    type="audio",
+                                    media_type=message["content"]["media_type"],
+                                    audio=message["content"]["audio"],
+                                )
+                            ],
+                        )
+                    )
 
     return structured_messages
+
+
+def _convert_timestamp(ns_timestamp: int) -> datetime:
+    """Convert nanosecond timestamp to datetime."""
+    # Convert nanoseconds to seconds and maintain microsecond precision
+    seconds = ns_timestamp // 1_000_000_000
+    microseconds = (ns_timestamp % 1_000_000_000) // 1000
+    return datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
+
+
+def _extract_event_attribute(event: dict, field: str) -> str:
+    """Extract an attribute from an event using its name as prefix."""
+    event_name = event.get("name", "unknown")
+    attributes = event.get("attributes", {})
+    return attributes.get(f"{event_name}.{field}", "")
+
+
+def convert_events(events: list[dict[str, Any]]) -> list[Event]:
+    """Convert events to Event model."""
+    return [
+        Event(
+            name=event.get("name", "unknown"),
+            timestamp=_convert_timestamp(event.get("timestamp", 0)),
+            type=_extract_event_attribute(event, "type") or "unknown",
+            message=_extract_event_attribute(event, "message"),
+        )
+        for event in events
+    ]
 
 
 def calculate_cost(

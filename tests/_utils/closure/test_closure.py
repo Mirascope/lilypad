@@ -51,6 +51,7 @@ from .closure_test_functions import (
 )
 from .closure_test_functions.main import (
     empty_body_fn_docstrings,
+    handle_issue,
     multi_joined_string_fn,
     multiple_literal_fn,
     nested_base_model_definitions,
@@ -539,6 +540,30 @@ def test_nested_base_model_definitions() -> None:
     """Test the `Closure` class with nested base model definitions."""
     closure = Closure.from_fn(nested_base_model_definitions)
     assert closure.code == _expected(nested_base_model_definitions)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
+        },
+        "pydantic": {
+            "extras": ["timezone"],
+            "version": "2.10.6",
+        },
+    }
+
+
+def test_nested_handle_issue_method() -> None:
+    """Test the `Closure` class with nested handle issue method."""
+    closure = Closure.from_fn(handle_issue)
+    assert closure.code == _expected(handle_issue)
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),

@@ -2096,9 +2096,10 @@ wheels = [
 
 [[package]]
 name = "oxenai"
-version = "0.21.0"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "fsspec" },
     { name = "pandas" },
     { name = "polars" },
     { name = "pyarrow" },
@@ -2106,23 +2107,28 @@ dependencies = [
     { name = "toml" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/06/a56903a53e24a107c087a032165b1be4aec2c61c56af4c2b65008e5a281c/oxenai-0.21.0.tar.gz", hash = "sha256:a91d96ad350bd0dfd6ba194f1f2683d9b3cd8040ae09ecc4eef8bc540139c376", size = 5844229 }
+sdist = { url = "https://files.pythonhosted.org/packages/91/d2/a2ca18e2416b8d71e94a45de4faf7a52ebe1ab60fbd1dc38487a7e6f62d8/oxenai-0.26.0.tar.gz", hash = "sha256:142fbb2f4c412f6114ccdf0b6dd4c5936dde4c70dc339c91f5115bd6bf4dff1a", size = 5847450 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/9b/6c02c216abf62b19fd2ed02b3a5ecb3b47bc8f67290a1c0d408f8e176abe/oxenai-0.21.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d697c7c9461726d923d6a167c3d7a202d9d506fc3134127cc65ae3d3e351d31f", size = 30573096 },
-    { url = "https://files.pythonhosted.org/packages/7c/8b/e982cb6681ac48f3d9ee360374174da56d80c27153ad0b9a7d760976467a/oxenai-0.21.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:9bb55ab1dab7943a7f727d5d983175c18c998d0adaf69b7ff8cd0e326d06350c", size = 34165216 },
-    { url = "https://files.pythonhosted.org/packages/c4/62/2586aa955cf26c7542b777aa36c2f12d5a6a2bea08a7c8690927ba980fb7/oxenai-0.21.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:15001442ef03c65c785355b333b8653d966716d977784d3ea0a9cdb91f438eba", size = 37740339 },
-    { url = "https://files.pythonhosted.org/packages/9a/96/da1eb208cee62c3a26559d97a6925015f17883e39519661a1471cd35e118/oxenai-0.21.0-cp310-cp310-manylinux_2_39_x86_64.whl", hash = "sha256:310d467e1961c61b6466e8849e45e3b66add5809e87a2453246f9cd477e08cf2", size = 38726080 },
-    { url = "https://files.pythonhosted.org/packages/53/a4/10c49c66ac849b7f89ee3088b7aa518c6edff891a302248469c709f65933/oxenai-0.21.0-cp310-cp310-win_amd64.whl", hash = "sha256:4ef6d9e83e6d6db1cb98a749fdd557aeb1affa3fbe31d6597a593847d7cd24b1", size = 30814758 },
-    { url = "https://files.pythonhosted.org/packages/75/75/d75c49868d6d3f763869849e9f35a28e59052418d525b348ed40e18b1e3f/oxenai-0.21.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ed110e90a888f66750e30784640ac6387bccd8083a13f279f90562d652cd472c", size = 30574544 },
-    { url = "https://files.pythonhosted.org/packages/0c/d4/ddfb9189b133fd7fa3f616452ad47e6509839a4c88f424fcc1cd2a958375/oxenai-0.21.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:0f1fb68143445401c6735ecd77120833c4c5cd1d5918562f5d6271be3049be3b", size = 34156529 },
-    { url = "https://files.pythonhosted.org/packages/11/26/6181cb9b10e45fe88556b58cb84b2693d342395c8af4d52dac14133179fc/oxenai-0.21.0-cp311-cp311-manylinux_2_31_x86_64.whl", hash = "sha256:f5c694671738b72ecb7018e0a06a90aa32b6c4eb23b64081d16dab897da8964f", size = 37749092 },
-    { url = "https://files.pythonhosted.org/packages/e1/ba/d304c098e214c89232632ca093fdae7924654ddd99292473058273c5d622/oxenai-0.21.0-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:bc387c0e32f934e95076a141ec7c5a9b9d4ad0f7f56c8ac898dd82fed8139d15", size = 38714083 },
-    { url = "https://files.pythonhosted.org/packages/72/e7/dbacb75834781070fe24108df59541ba5fb49dd2eb6df7631ad145b196c1/oxenai-0.21.0-cp311-cp311-win_amd64.whl", hash = "sha256:4ef4d01c292dd8b6f9f97589c351af5049daa54a00b87ce95eb30385fcfbac86", size = 30812657 },
-    { url = "https://files.pythonhosted.org/packages/44/e7/f683aad0b541727a9831375c873d5de2936acc9f87d59f34d9a770fedce6/oxenai-0.21.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5feb24478361b96a80d52e0ec95e46564661d964e6084d031c13fb281dbcb3d5", size = 30559579 },
-    { url = "https://files.pythonhosted.org/packages/95/91/1e492f7bf2f15fe74b2ca127109ad66b01b00c92db9dc5388d18ca919f08/oxenai-0.21.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:785bcd258ad9dc38600836559149b114241f957a2be4aee247ed60591465047f", size = 34153256 },
-    { url = "https://files.pythonhosted.org/packages/ac/71/c289404e8713d077df71b70901f0fc82ad60172542e780a2895dba40f85d/oxenai-0.21.0-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:4925f2e17ee0e838baa21373a1e8ebcc1f43a2fe2a3e2d15c6457bde4eebeb95", size = 37746417 },
-    { url = "https://files.pythonhosted.org/packages/38/9f/cf980c1e338e86e463fa45381391a08b860761c84bebbc12d282b1a2e055/oxenai-0.21.0-cp312-cp312-manylinux_2_39_x86_64.whl", hash = "sha256:6c1b496c546c66e20bdccce6df88ea7ad099b5216b28f8974becbdeb60335e9f", size = 38711193 },
-    { url = "https://files.pythonhosted.org/packages/c1/ce/87b751616117c0cc856d6d05c00c69925dfa0edd8ecabfae8e1f9e717c4a/oxenai-0.21.0-cp312-cp312-win_amd64.whl", hash = "sha256:ed7ae317d02fabc7920a2b30a1321b065f560cd674217c58c18c3ecd90ba383e", size = 30797895 },
+    { url = "https://files.pythonhosted.org/packages/e4/aa/7b4888523e734289bcd03bc7cd248ba9d0a577c53a8682040e141dd44ced/oxenai-0.26.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e938cf9dc75acca42aa1d4568ce297bc38072e22cb5743bb2d39db6fcc4e2015", size = 30618555 },
+    { url = "https://files.pythonhosted.org/packages/a1/f6/b3201c4d94f4f52b443a12fae949385761e80f645b519456fdde749e0c9b/oxenai-0.26.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:6f85a2101cb9c89b05dfa60d5523b93c4acd2a3b3c26a237cdbd6d64dcc1fd9c", size = 34200369 },
+    { url = "https://files.pythonhosted.org/packages/0f/ce/2c236a12fbdbd95d46ba569bdd43fb0d4f25a61629ad792559d4d0ec3b4f/oxenai-0.26.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:ea85ac6e52ca0d5ea7cb53db134f894c961861a06e87233f495d11d247794274", size = 37790372 },
+    { url = "https://files.pythonhosted.org/packages/f1/78/0a40759510cd6172bd56c380a33982bdd4135ee95c3b86ab8a77819a950d/oxenai-0.26.0-cp310-cp310-manylinux_2_39_x86_64.whl", hash = "sha256:2ff630e5248b591c79f839ea543b3b69ab4dcb94422209f940e3c16e3a8e0507", size = 38780778 },
+    { url = "https://files.pythonhosted.org/packages/75/42/958230ec4270d42f7b91a94c38e32eb844ecfdde5c391af22c2d60a10bf7/oxenai-0.26.0-cp310-cp310-win_amd64.whl", hash = "sha256:22f3a2e016780ef38439a30e59b510931f911144726c7df8a2cfbbca9cfcdbe7", size = 30858433 },
+    { url = "https://files.pythonhosted.org/packages/50/8d/eb65ea33241e5b26a4df9726f2c60ebe3709cc1c876718a899cee1f86564/oxenai-0.26.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:e6ed80374c218e4463a677509ddd9613c15a92fe21e6286cd87fa0c5c7f041ca", size = 30616535 },
+    { url = "https://files.pythonhosted.org/packages/ed/8c/44ae15d78155ff5694f8e2eabe23b589eb6b36149ac7b2254261aea6bf39/oxenai-0.26.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:ceeae3754776b1abd46858b5fbadd97d8ac6abec667510893fc81e097541d5ac", size = 34214609 },
+    { url = "https://files.pythonhosted.org/packages/cd/31/3a60d35cc68dfda418a63f9b307d4b2ac7d450ddd1e59039b6eed5008759/oxenai-0.26.0-cp311-cp311-manylinux_2_31_x86_64.whl", hash = "sha256:2f002ff5ed50f5c4c3b47adfd862f9eb6282028f68790cc365d5bfbcef12d9a9", size = 37802332 },
+    { url = "https://files.pythonhosted.org/packages/3e/0c/0f923fe89c17164cad93e496a5f39c876ac65a471a415de61d1e660e4b34/oxenai-0.26.0-cp311-cp311-manylinux_2_39_x86_64.whl", hash = "sha256:c2262b1dfdd21ac05317ecef81cf12267c7516794d882fd9a878f802951032bf", size = 38764541 },
+    { url = "https://files.pythonhosted.org/packages/50/b3/31111177105b0ed570b4b96c4a653e8fac18c2cb55c7b701d47375f958ff/oxenai-0.26.0-cp311-cp311-win_amd64.whl", hash = "sha256:5e691924b0516c0a6f83214d4f695c5edd5d2bccd3b9e22f5e6af1f9ad16f295", size = 30859530 },
+    { url = "https://files.pythonhosted.org/packages/f9/9d/01d6f22a61eb32d4b7b05c0c3b0825983b0a5b3065016449f417c479d4a3/oxenai-0.26.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:59c964531d6ad0b64d91a9f3ae17a3c39cba2f97aa3d42d6fced6d35a24d901c", size = 30617963 },
+    { url = "https://files.pythonhosted.org/packages/ba/22/a93c1490e08ae857702dfb562ae9e4f0f56d98d902f59daa35cf671587c1/oxenai-0.26.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:9858e3ac4d65604fb8f744b5fb8068bef4104644437c5e9bfcca9a81c5520ef6", size = 34204490 },
+    { url = "https://files.pythonhosted.org/packages/d5/86/e52abf597937e1dc6ea6f122a815648185666114572e8829e9bbca5f30a8/oxenai-0.26.0-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:3f9da05c9cd2b18df959b43798276281c992daf354448639124d8a87e7361ae3", size = 37807140 },
+    { url = "https://files.pythonhosted.org/packages/28/a0/943b01c325bb7c24ecd9ea5a88cb9f47f650c99f77d06b68401819ba7d41/oxenai-0.26.0-cp312-cp312-manylinux_2_39_x86_64.whl", hash = "sha256:d8cc2c3478440c6efc443eb35df71a03d683c80d6def150f9391c56ba6fe2cf2", size = 38783405 },
+    { url = "https://files.pythonhosted.org/packages/07/88/e7f59dec26329208d6af73cd66a2f7b0af35a8c20076e24e9feb0324ab20/oxenai-0.26.0-cp312-cp312-win_amd64.whl", hash = "sha256:6aff5f319836d836d46df5dc3bc3e09d1d98eed68ea667250fb3b9f77fcf3858", size = 30853165 },
+    { url = "https://files.pythonhosted.org/packages/24/01/5c81ea6e61829e49bdaa94ca99efccdeb693f8c17e9e057e4961f23c3232/oxenai-0.26.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:331edec1841ae4f520ba73bae17b4d5604764aed2227643ca938136875930c6d", size = 30619629 },
+    { url = "https://files.pythonhosted.org/packages/88/cd/e42e79647c1fb03c4a6abe0928c25a3419ec64e2a7b619b996e159dbbb1a/oxenai-0.26.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:a67e20d33902bd4bfeab29134286ada34f62b3311b965ed59d1804de022b2f02", size = 34203182 },
+    { url = "https://files.pythonhosted.org/packages/3c/3d/0e0c09afa1013376794927ffb7024a6de1a7fb60bdc33ed02e7fdf32870b/oxenai-0.26.0-cp313-cp313-manylinux_2_31_x86_64.whl", hash = "sha256:8d5681e83918f1174ff5cf945248f349de4a4ec96a90377b7474d9429dff9854", size = 37805957 },
+    { url = "https://files.pythonhosted.org/packages/20/c6/1f3c698938926f242427f17a5123f59dcce9912302249045be8b00012eb1/oxenai-0.26.0-cp313-cp313-manylinux_2_39_x86_64.whl", hash = "sha256:aa4994d72c339fc3864a465b072e8fc6f4fb3d976deaaf46caf6abd278fa9592", size = 38784084 },
+    { url = "https://files.pythonhosted.org/packages/61/a8/e0997b7e6394d26fc877409d680759d8acfe04ccb52a781e3d5b3c07a40e/oxenai-0.26.0-cp313-cp313-win_amd64.whl", hash = "sha256:ea5bf9c2b001e46cd0a2cf2e059e3859dd2981f9d0e22d9254b80d3f3a09eef5", size = 30857569 },
 ]
 
 [[package]]
@@ -2662,15 +2668,15 @@ wheels = [
 
 [[package]]
 name = "pyright"
-version = "1.1.393"
+version = "1.1.394"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodeenv" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/c1/aede6c74e664ab103673e4f1b7fd3d058fef32276be5c43572f4067d4a8e/pyright-1.1.393.tar.gz", hash = "sha256:aeeb7ff4e0364775ef416a80111613f91a05c8e01e58ecfefc370ca0db7aed9c", size = 3790430 }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/e4/79f4d8a342eed6790fdebdb500e95062f319ee3d7d75ae27304ff995ae8c/pyright-1.1.394.tar.gz", hash = "sha256:56f2a3ab88c5214a451eb71d8f2792b7700434f841ea219119ade7f42ca93608", size = 3809348 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/47/f0dd0f8afce13d92e406421ecac6df0990daee84335fc36717678577d3e0/pyright-1.1.393-py3-none-any.whl", hash = "sha256:8320629bb7a44ca90944ba599390162bf59307f3d9fb6e27da3b7011b8c17ae5", size = 5646057 },
+    { url = "https://files.pythonhosted.org/packages/d6/4c/50c74e3d589517a9712a61a26143b587dba6285434a17aebf2ce6b82d2c3/pyright-1.1.394-py3-none-any.whl", hash = "sha256:5f74cce0a795a295fb768759bbeeec62561215dea657edcaab48a932b031ddbb", size = 5679540 },
 ]
 
 [[package]]
@@ -2757,7 +2763,7 @@ cryptography = [
 
 [[package]]
 name = "python-lilypad"
-version = "0.0.15a1"
+version = "0.0.15"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -2845,7 +2851,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation", specifier = ">=0.49b1" },
     { name = "opentelemetry-sdk", specifier = ">=1.29.0" },
     { name = "outlines", marker = "extra == 'outlines'", specifier = ">=0.1.11" },
-    { name = "oxenai", specifier = ">=0.21.0" },
+    { name = "oxenai", specifier = ">=0.26.0" },
     { name = "oxenai", marker = "extra == 'evals'", specifier = ">=0.20.0" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "pillow", marker = "extra == 'gemini'", specifier = ">=10.4.0,<11" },
@@ -2864,7 +2870,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pyright", specifier = ">=1.1.392" },
+    { name = "pyright", specifier = ">=1.1.394" },
     { name = "pytest", specifier = ">=8.3.2" },
     { name = "pytest-asyncio", specifier = ">=0.23.8" },
     { name = "pytest-cov", specifier = ">=5.0.0" },

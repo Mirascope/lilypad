@@ -1,5 +1,5 @@
 import { DataTable } from "@/components/DataTable";
-import IconDialog from "@/components/IconDialog";
+import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Typography } from "@/components/ui/typography";
 import { AnnotationQueueDialog } from "@/ee/components/AnnotationQueueDialog";
 import { AnnotationPublic } from "@/ee/types/types";
 import { useUploadDatasetMutation } from "@/ee/utils/datasets";
@@ -22,6 +23,7 @@ import { Label } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
 import { ColumnDef } from "@tanstack/react-table";
 import JsonView from "@uiw/react-json-view";
+import { JsonData, JsonEditor } from "json-edit-react";
 import { MoreHorizontal } from "lucide-react";
 import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
@@ -95,24 +97,6 @@ export const AnnotationsTable = ({
       },
     },
     {
-      accessorKey: "reasoning",
-      header: "Reasoning",
-      cell: ({ row }) => {
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className='line-clamp-1'>{row.getValue("reasoning")}</div>
-            </TooltipTrigger>
-            <TooltipContent className='bg-white text-black'>
-              <p className='max-w-xs break-words'>
-                {row.getValue("reasoning")}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
-    },
-    {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
@@ -151,7 +135,7 @@ export const AnnotationsTable = ({
     return (
       <>
         <AnnotationQueueDialog unannotatedRows={unannotatedRows} />
-        <IconDialog
+        <LilypadDialog
           text={"Add to Dataset"}
           title={"Annotate selected traces"}
           description={`${annotatedRows.length} annotation(s) will be added.`}
@@ -176,8 +160,23 @@ export const AnnotationsTable = ({
         estimateSize: () => 45,
         overscan: 20,
       }}
+      DetailPanel={AnnotationMoreDetails}
       defaultPanelSize={50}
       customControls={renderCustomControls}
     />
+  );
+};
+
+const AnnotationMoreDetails = ({ data }: { data: AnnotationPublic }) => {
+  return (
+    <>
+      <Typography variant='h3'>Data</Typography>
+      <JsonEditor
+        data={data.data as JsonData}
+        restrictDelete={true}
+        restrictAdd={true}
+        restrictEdit={true}
+      />
+    </>
   );
 };

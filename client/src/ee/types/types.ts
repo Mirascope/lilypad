@@ -19,14 +19,16 @@ export interface AnnotationCreate {
   reasoning?: string | null;
   /** @default "manual" */
   type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
+  /** Data */
+  data?: object | null;
   /** Span Uuid */
   span_uuid?: string | null;
   /** Project Uuid */
   project_uuid?: string | null;
   /** Generation Uuid */
   generation_uuid?: string | null;
+  /** Assigned To */
+  assigned_to?: string[] | null;
 }
 
 /**
@@ -39,8 +41,8 @@ export interface AnnotationPublic {
   reasoning?: string | null;
   /** @default "manual" */
   type?: EvaluationType | null;
-  /** Assigned To */
-  assigned_to?: string | null;
+  /** Data */
+  data?: object | null;
   /**
    * Uuid
    * @format uuid
@@ -63,6 +65,8 @@ export interface AnnotationPublic {
   generation_uuid: string;
   /** Span more details model. */
   span: SpanMoreDetails;
+  /** Assigned To */
+  assigned_to: string | null;
 }
 
 /**
@@ -75,6 +79,8 @@ export interface AnnotationUpdate {
   reasoning?: string | null;
   /** @default "manual" */
   type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
   /** Assigned To */
   assigned_to?: string | null;
 }
@@ -94,9 +100,33 @@ export interface DatasetRow {
   /** Output */
   output: string;
   label: Label | null;
-  /** Reasoning */
-  reasoning: string | null;
   type: EvaluationType | null;
+  /** Data */
+  data: object | null;
+  /** Annotated By */
+  annotated_by: string | null;
+}
+
+/**
+ * DatasetRowPublic
+ * Dataset row public model.
+ */
+export interface DatasetRowPublic {
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /** Input */
+  input: Record<string, string> | null;
+  /** Output */
+  output: string;
+  label: Label | null;
+  type: EvaluationType | null;
+  /** Data */
+  data: object | null;
+  /** Annotated By */
+  annotated_by: string | null;
 }
 
 /**
@@ -111,6 +141,17 @@ export interface DatasetRowsResponse {
 }
 
 /**
+ * DatasetRowsResponsePublic
+ * Response public model containing the rows from the Oxen DataFrame.
+ */
+export interface DatasetRowsResponsePublic {
+  /** Rows */
+  rows: DatasetRowPublic[];
+  /** Next Page */
+  next_page?: number | null;
+}
+
+/**
  * EvaluationType
  * Evaluation type enum
  */
@@ -118,6 +159,24 @@ export enum EvaluationType {
   MANUAL = "manual",
   VERIFIED = "verified",
   EDITED = "edited",
+}
+
+/**
+ * Event
+ * Event model.
+ */
+export interface Event {
+  /** Name */
+  name: string;
+  /** Type */
+  type: string;
+  /** Message */
+  message: string;
+  /**
+   * Timestamp
+   * @format date-time
+   */
+  timestamp: string;
 }
 
 /** HTTPValidationError */
@@ -151,8 +210,15 @@ export interface MessageParam {
  * Span more details model.
  */
 export interface SpanMoreDetails {
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -181,6 +247,10 @@ export interface SpanMoreDetails {
   cost?: number | null;
   /** Template */
   template?: string | null;
+  /** Status */
+  status?: string | null;
+  /** Events */
+  events?: Event[] | null;
 }
 
 /** ValidationError */

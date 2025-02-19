@@ -1,6 +1,3 @@
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -15,6 +12,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
@@ -24,7 +24,9 @@ type ComboboxProps<T extends FieldValues> = {
   control: Control<T>;
   popoverText?: string;
   helperText?: string;
+  emptyText?: string;
   disabled?: boolean;
+  disableAdd?: boolean;
 };
 
 export const FormCombobox = <T extends FieldValues>({
@@ -33,7 +35,9 @@ export const FormCombobox = <T extends FieldValues>({
   control,
   popoverText = "Select items...",
   helperText = "Search item...",
+  emptyText = "No item found.",
   disabled,
+  disableAdd,
 }: ComboboxProps<T>) => {
   const [open, setOpen] = useState(false);
   return (
@@ -44,7 +48,7 @@ export const FormCombobox = <T extends FieldValues>({
         const [inputValue, setInputValue] = useState("");
 
         const handleSelect = (currentValue: string) => {
-          const newValue = field.value || [];
+          const newValue: string[] = field.value || [];
           if (newValue.includes(currentValue)) {
             field.onChange(
               newValue.filter((value: string) => value !== currentValue)
@@ -93,7 +97,7 @@ export const FormCombobox = <T extends FieldValues>({
                     className='h-9'
                   />
                   <CommandList>
-                    <CommandEmpty>No item found.</CommandEmpty>
+                    <CommandEmpty>{emptyText}</CommandEmpty>
                     <CommandGroup>
                       {items
                         .filter((item) =>
@@ -119,6 +123,7 @@ export const FormCombobox = <T extends FieldValues>({
                           </CommandItem>
                         ))}
                       {inputValue &&
+                        !disableAdd &&
                         !items.some(
                           (item) =>
                             item.label.toLowerCase() ===
