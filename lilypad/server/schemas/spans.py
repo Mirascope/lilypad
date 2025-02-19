@@ -12,8 +12,10 @@ from pydantic import BaseModel, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from .._utils import (
+    Event,
     MessageParam,
     convert_anthropic_messages,
+    convert_events,
     convert_gemini_messages,
     convert_mirascope_messages,
     convert_openai_messages,
@@ -44,6 +46,7 @@ class SpanPublic(SpanBase):
     child_spans: list[SpanPublic]
     created_at: datetime
     version: int | None = None
+    status: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -64,7 +67,7 @@ class SpanPublic(SpanBase):
         if span.scope == Scope.LILYPAD:
             attributes: dict[str, Any] = span.data.get("attributes", {})
             span_type: str = attributes.get("lilypad.type", "unknown")
-            display_name = attributes.get(f"lilypad.{span_type}.name", None)
+            display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
             data = span.data
@@ -79,6 +82,7 @@ class SpanPublic(SpanBase):
             "child_spans": child_spans,
             "version": version,
             "annotations": span.annotations,
+            "status": span.data.get("status"),
             **span.model_dump(exclude={"child_spans", "data"}),
         }
 
@@ -103,20 +107,24 @@ class SpanMoreDetails(BaseModel):
     data: dict[str, Any]
     cost: float | None = None
     template: str | None = None
+    status: str | None = None
+    events: list[Event] | None = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:
         """Create a SpanMoreDetails object from a SpanTable object."""
         data = span.data
         messages = []
+        signature = None
+        code = None
+        arg_values = None
+        output = None
+        template = None
+        status = data.get("status")
         attributes: dict = data["attributes"]
+        display_name = data["name"]
+        events = convert_events(data.get("events", []))
         if span.scope == Scope.LLM:
-            display_name = data["name"]
-            signature = None
-            code = None
-            arg_values = None
-            output = None
-            template = None
             provider = attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown")
             if provider == Provider.GEMINI.value:
                 messages = convert_gemini_messages(data["events"])
@@ -129,19 +137,17 @@ class SpanMoreDetails(BaseModel):
                 messages = convert_anthropic_messages(data["events"])
         else:
             lilypad_type = attributes.get("lilypad.type")
-            if not lilypad_type:
-                raise ValueError("Span type is unknown. Please set `lilypad.type`.")
-            signature = attributes.get(f"lilypad.{lilypad_type}.signature", "")
-            code = attributes.get(f"lilypad.{lilypad_type}.code", "")
-            arg_values = json.loads(
-                attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
-            )
-            output = attributes.get(f"lilypad.{lilypad_type}.output", "")
-            display_name = attributes.get(f"lilypad.{lilypad_type}.name", "unknown")
-            messages = convert_mirascope_messages(
-                attributes.get(f"lilypad.{lilypad_type}.messages", [])
-            )
-            template = attributes.get(f"lilypad.{lilypad_type}.template", "")
+            if lilypad_type:
+                signature = attributes.get(f"lilypad.{lilypad_type}.signature", None)
+                code = attributes.get(f"lilypad.{lilypad_type}.code", None)
+                arg_values = json.loads(
+                    attributes.get(f"lilypad.{lilypad_type}.arg_values", None)
+                )
+                output = attributes.get(f"lilypad.{lilypad_type}.output", None)
+                messages = convert_mirascope_messages(
+                    attributes.get(f"lilypad.{lilypad_type}.messages", [])
+                )
+                template = attributes.get(f"lilypad.{lilypad_type}.template", None)
         if not span.uuid:
             raise ValueError("UUID does not exist.")
         return SpanMoreDetails(
@@ -162,4 +168,6 @@ class SpanMoreDetails(BaseModel):
             template=template,
             data=data,
             cost=span.cost,
+            status=status,
+            events=events,
         )

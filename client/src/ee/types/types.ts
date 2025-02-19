@@ -161,6 +161,24 @@ export enum EvaluationType {
   EDITED = "edited",
 }
 
+/**
+ * Event
+ * Event model.
+ */
+export interface Event {
+  /** Name */
+  name: string;
+  /** Type */
+  type: string;
+  /** Message */
+  message: string;
+  /**
+   * Timestamp
+   * @format date-time
+   */
+  timestamp: string;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
@@ -229,6 +247,10 @@ export interface SpanMoreDetails {
   cost?: number | null;
   /** Template */
   template?: string | null;
+  /** Status */
+  status?: string | null;
+  /** Events */
+  events?: Event[] | null;
 }
 
 /** ValidationError */

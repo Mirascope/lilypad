@@ -6,6 +6,7 @@ import { Typography } from "@/components/ui/typography";
 import {
   renderCardOutput,
   renderData,
+  renderEventsContainer,
   renderMessagesContainer,
 } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
@@ -49,33 +50,36 @@ export const LilypadPanel = ({
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{span.display_name}</Typography>
-      <Card>
-        <CardHeader>
-          <CardTitle>{"Code"}</CardTitle>
-        </CardHeader>
-        <CardContent className='overflow-x-auto'>
-          <Tabs defaultValue='code' className='w-full'>
-            <div className='flex w-full'>
-              <TabsList className={`w-[160px]`}>
-                {tabs.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value}>
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            {tabs.map((tab) => (
-              <TabsContent
-                key={tab.value}
-                value={tab.value}
-                className='w-full bg-gray-50'
-              >
-                {tab.component}
-              </TabsContent>
-            ))}
-          </Tabs>
-        </CardContent>
-      </Card>
+      {(span.code || span.signature) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{"Code"}</CardTitle>
+          </CardHeader>
+          <CardContent className='overflow-x-auto'>
+            <Tabs defaultValue='code' className='w-full'>
+              <div className='flex w-full'>
+                <TabsList className={`w-[160px]`}>
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value}>
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {tabs.map((tab) => (
+                <TabsContent
+                  key={tab.value}
+                  value={tab.value}
+                  className='w-full bg-gray-50'
+                >
+                  {tab.component}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+      {span.events && renderEventsContainer(span.events)}
       {span.arg_values &&
         (showJsonArgs ? (
           <Card>
