@@ -344,7 +344,7 @@ def _trace(
 
             return inner
 
-    return decorator
+    return decorator  # pyright: ignore [reportReturnType]
 
 
 def prompt() -> PromptDecorator:
@@ -415,7 +415,7 @@ def prompt() -> PromptDecorator:
 
                 return inner_version_async
 
-            inner_async.version = version_async
+            inner_async.version = version_async  # pyright: ignore [reportAttributeAccessIssue]
             return inner_async
         else:
 
@@ -432,7 +432,7 @@ def prompt() -> PromptDecorator:
                         f"Prompt active version not found for function: {fn.__name__}"
                     )
                 decorator = _trace(prompt, arg_types, arg_values)
-                return decorator(fn)(*args, **kwargs)
+                return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
             def version(forced_version: str) -> Callable[_P, Prompt]:
                 @wraps(fn)
@@ -446,14 +446,14 @@ def prompt() -> PromptDecorator:
                             f"Prompt version {forced_version} not found for function: {fn.__name__}"
                         )
                     decorator_fn = _trace(forced_prompt, arg_types, arg_values)
-                    return decorator_fn(fn)(*args, **kwargs)
+                    return decorator_fn(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
 
                 return inner_version
 
-            inner.version = version
+            inner.version = version  # pyright: ignore [reportAttributeAccessIssue]
             return inner
 
-    return decorator
+    return decorator  # pyright: ignore [reportReturnType]
 
 
 __all__ = ["prompt"]
