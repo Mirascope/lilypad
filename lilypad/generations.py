@@ -266,7 +266,7 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                         decorator_inner = create_mirascope_middleware(
                             generation, arg_types, arg_values, False, prompt_template
                         )
-                        return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                        return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
                     current_generation.reset(token)
 

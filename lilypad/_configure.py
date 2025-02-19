@@ -38,7 +38,7 @@ class _JSONSpanExporter(SpanExporter):
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
         settings = get_settings()
         if len(spans) > 0:
-            self.log.error(
+            self.log.info(
                 f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
             )
         for span in spans:
