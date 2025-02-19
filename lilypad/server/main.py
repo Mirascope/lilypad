@@ -7,7 +7,6 @@ import logging
 import subprocess
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -28,13 +27,11 @@ log = logging.getLogger("lilypad")
 def run_migrations() -> None:
     """Run the migrations in a separate process."""
     try:
-        BASE_DIR = Path(__file__).resolve().parent
         result = subprocess.run(
             ["alembic", "upgrade", "head"],
             capture_output=True,
             text=True,
             check=True,
-            cwd=BASE_DIR,
         )
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
