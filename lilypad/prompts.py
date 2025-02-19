@@ -278,6 +278,18 @@ class PromptDecorator(Protocol):
         """Protocol `call` definition for `prompt` decorator return type."""
         ...
 
+    @property
+    def version(
+        self,
+    ) -> Callable[
+        [str], Callable[..., Prompt] | Callable[..., Coroutine[Any, Any, Prompt]]
+    ]:
+        """A method to force the use of a specific prompt version.
+        Accepts a version identifier (e.g. UUID or version string) and returns a
+        callable that behaves like the original decorated function but forces the specified prompt version.
+        """
+        ...
+
 
 def _trace(
     prompt: PromptPublic, arg_types: dict[str, str], arg_values: dict[str, Any]
@@ -343,6 +355,8 @@ def prompt() -> PromptDecorator:
     will be the corresponding `Prompt` instance.
 
     Functions decorated with `prompt` will be versioned and traced automatically.
+    Additionally, a .version(forced_version: str) method is attached to the decorated function
+    to force the use of a specific prompt version.
 
     Returns:
         PromptDecorator: The `prompt` decorator.
@@ -381,6 +395,27 @@ def prompt() -> PromptDecorator:
                 decorator = _trace(prompt, arg_types, arg_values)
                 return await decorator(fn)(*args, **kwargs)
 
+            def version_async(
+                forced_version: str,
+            ) -> Callable[_P, Coroutine[Any, Any, Prompt]]:
+                @wraps(fn)
+                async def inner_version_async(
+                    *args: _P.args, **kwargs: _P.kwargs
+                ) -> Prompt:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    forced_prompt = lilypad_client.get_prompt_active_version(
+                        fn, current_generation.get(), forced_version=forced_version
+                    )
+                    if not forced_prompt:
+                        raise ValueError(
+                            f"Prompt version {forced_version} not found for function: {fn.__name__}"
+                        )
+                    decorator_fn = _trace(forced_prompt, arg_types, arg_values)
+                    return await decorator_fn(fn)(*args, **kwargs)
+
+                return inner_version_async
+
+            inner_async.version = version_async
             return inner_async
         else:
 
@@ -397,8 +432,25 @@ def prompt() -> PromptDecorator:
                         f"Prompt active version not found for function: {fn.__name__}"
                     )
                 decorator = _trace(prompt, arg_types, arg_values)
-                return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                return decorator(fn)(*args, **kwargs)
 
+            def version(forced_version: str) -> Callable[_P, Prompt]:
+                @wraps(fn)
+                def inner_version(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    forced_prompt = lilypad_client.get_prompt_active_version(
+                        fn, current_generation.get(), forced_version=forced_version
+                    )
+                    if not forced_prompt:
+                        raise ValueError(
+                            f"Prompt version {forced_version} not found for function: {fn.__name__}"
+                        )
+                    decorator_fn = _trace(forced_prompt, arg_types, arg_values)
+                    return decorator_fn(fn)(*args, **kwargs)
+
+                return inner_version
+
+            inner.version = version
             return inner
 
     return decorator
