@@ -341,30 +341,11 @@ class LilypadClient:
                 response_model=PromptPublic,
             )
         except NotFoundError:
-            prompts = self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
-                params={"signature": closure.signature},
-                response_model=list[PromptPublic],
+            ui_link = f"{get_settings().remote_client_url}/projects/{self.project_uuid}"
+            raise NotFoundError(
+                f"No generation found for function '{closure.name}'. "
+                f"Please create a new generation at: {ui_link}"
             )
-            if prompts:
-                return prompts[0]
-            else:
-                new_prompt = self._request(
-                    "POST",
-                    f"v0/projects/{self.project_uuid}/prompts",
-                    response_model=PromptPublic,
-                    json={
-                        "name": closure.name,
-                        "signature": closure.signature,
-                        "code": closure.code,
-                        "hash": closure.hash,
-                        "dependencies": closure.dependencies,
-                        "template": "",
-                        "call_params": {},
-                    },
-                )
-                return new_prompt
 
     def get_response_model_active_version(
         self, cls: type[BaseModel], generation: GenerationPublic | None
