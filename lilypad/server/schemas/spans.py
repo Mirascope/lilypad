@@ -141,7 +141,7 @@ class SpanMoreDetails(BaseModel):
                 signature = attributes.get(f"lilypad.{lilypad_type}.signature", None)
                 code = attributes.get(f"lilypad.{lilypad_type}.code", None)
                 arg_values = json.loads(
-                    attributes.get(f"lilypad.{lilypad_type}.arg_values", None)
+                    attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
                 )
                 output = attributes.get(f"lilypad.{lilypad_type}.output", None)
                 messages = convert_mirascope_messages(

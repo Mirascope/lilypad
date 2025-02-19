@@ -376,7 +376,6 @@ def _extract_event_attribute(event: dict, field: str) -> str:
 
 def convert_events(events: list[dict[str, Any]]) -> list[Event]:
     """Convert events to Event model."""
-
     return [
         Event(
             name=event.get("name", "unknown"),
