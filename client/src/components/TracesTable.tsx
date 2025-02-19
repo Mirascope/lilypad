@@ -222,7 +222,9 @@ export const TracesTable = ({
               {row.getValue("scope") === Scope.LILYPAD && (
                 <>
                   <div onClick={(e) => e.stopPropagation()}>
-                    <CreateAnnotationDialog span={row.original} />
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <CreateAnnotationDialog spanUuid={row.original.uuid} />
+                    </Suspense>
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
                     <QueueDialog spans={[row.original]} />

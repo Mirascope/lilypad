@@ -3,7 +3,7 @@ import {
   AnnotationCreate,
   AnnotationPublic,
   AnnotationUpdate,
-} from "@/types/types";
+} from "@/ee/types/types";
 
 import {
   queryOptions,

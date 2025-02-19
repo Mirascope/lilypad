@@ -16,6 +16,7 @@ class AnnotationPublic(AnnotationBase):
     span_uuid: UUID
     generation_uuid: UUID
     span: SpanMoreDetails
+    assigned_to: UUID | None
 
 
 class AnnotationCreate(AnnotationBase):
@@ -24,9 +25,10 @@ class AnnotationCreate(AnnotationBase):
     span_uuid: UUID | None = None
     project_uuid: UUID | None = None
     generation_uuid: UUID | None = None
+    assigned_to: list[UUID] | None = None
 
 
 class AnnotationUpdate(AnnotationBase):
     """Annotation update model."""
 
-    ...
+    assigned_to: UUID | None = None
