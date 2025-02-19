@@ -203,7 +203,8 @@ import os
 import google.generativeai as genai
 
 from lilypad._utils import create_mirascope_call
-from lilypad.server.models import PromptCreate, Provider
+from lilypad.server.models import Provider
+from lilypad.server.schemas import PromptCreate
 
 genai.configure(api_key="{user.keys.get("gemini", "")}")
 os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
@@ -221,7 +222,10 @@ prompt = PromptCreate(
     hash = "{prompt.hash}",
     version_num = {prompt.version_num}
 )
+# Python 3.10
 provider = Provider("{playground_parameters.provider}")
+# Python 3.11
+# provider = {playground_parameters.provider}
 model = "{playground_parameters.model}"
 arg_values = {playground_parameters.arg_values}
 print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
