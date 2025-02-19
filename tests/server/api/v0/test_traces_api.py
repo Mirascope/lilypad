@@ -73,7 +73,7 @@ def test_span(
                 "lilypad.generation.signature": "def test(): pass",
                 "lilypad.generation.code": "def test(): pass",
             },
-            "name": "test_function",
+            "name": "test_span",
         },
     )
     session.add(span)
@@ -161,7 +161,7 @@ def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
     response = client.get(f"/spans/{test_span.uuid}")
     assert response.status_code == 200
     span = response.json()
-    assert span["display_name"] == "test_function"
+    assert span["display_name"] == "test_span"
     assert span["duration_ms"] == 100
 
 

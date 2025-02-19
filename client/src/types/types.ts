@@ -179,6 +179,24 @@ export enum EvaluationType {
 }
 
 /**
+ * Event
+ * Event model.
+ */
+export interface Event {
+  /** Name */
+  name: string;
+  /** Type */
+  type: string;
+  /** Message */
+  message: string;
+  /**
+   * Timestamp
+   * @format date-time
+   */
+  timestamp: string;
+}
+
+/**
  * GenerationCreate
  * Generation create model.
  */
@@ -697,6 +715,10 @@ export interface SpanMoreDetails {
   cost?: number | null;
   /** Template */
   template?: string | null;
+  /** Status */
+  status?: string | null;
+  /** Events */
+  events?: Event[] | null;
 }
 
 /**
@@ -747,6 +769,8 @@ export interface SpanPublic {
   created_at: string;
   /** Version */
   version?: number | null;
+  /** Status */
+  status?: string | null;
 }
 
 /**
