@@ -231,11 +231,12 @@ class LilypadClient:
             **kwargs,
         )
 
-    def get_or_create_generation_version(
+    def get_generation_version(
         self,
         fn: Callable[..., Any],
         arg_types: dict[str, str],
         custom_id: str | None = None,
+        create_new_generation: bool = False,
     ) -> GenerationPublic:
         """Get the matching version for a generation or create it if non-existent.
 
@@ -243,6 +244,7 @@ class LilypadClient:
             fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
             custom_id (str, optional): Custom ID for the generation. Defaults to None.
+            create_new_generation (bool, optional): If True, create a new generation if not found. Defaults to False.
 
         Returns:
             GenerationPublic: The matching (or created) version for the generation.
@@ -255,6 +257,8 @@ class LilypadClient:
                 response_model=GenerationPublic,
             )
         except NotFoundError:
+            if not create_new_generation:
+                raise
             return self._request(
                 "POST",
                 f"v0/projects/{self.project_uuid}/generations",
