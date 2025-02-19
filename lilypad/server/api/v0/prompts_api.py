@@ -222,7 +222,10 @@ prompt = PromptCreate(
     hash = "{prompt.hash}",
     version_num = {prompt.version_num}
 )
-provider = {playground_parameters.provider}
+# Python 3.10
+provider = Provider("{playground_parameters.provider}")
+# Python 3.11
+# provider = {playground_parameters.provider}
 model = "{playground_parameters.model}"
 arg_values = {playground_parameters.arg_values}
 print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
