@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, select
 
 from ..models import GenerationTable, SpanTable
@@ -15,6 +16,19 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
+
+    def find_all_no_parent_spans(self, project_uuid: UUID) -> Sequence[SpanTable]:
+        """Get all spans.
+        Child spans are not lazy loaded to avoid N+1 queries.
+        """
+        return self.session.exec(
+            select(SpanTable)
+            .where(
+                SpanTable.project_uuid == project_uuid,
+                SpanTable.parent_span_id.is_(None),  # type: ignore
+            )
+            .options(selectinload(SpanTable.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
+        ).all()
 
     def find_records_by_generation_uuid(
         self, project_uuid: UUID, generation_uuid: UUID

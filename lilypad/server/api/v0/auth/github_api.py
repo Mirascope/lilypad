@@ -3,10 +3,12 @@
 from typing import Annotated
 
 import httpx
+import posthog
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, select
 
 from ...._utils import create_jwt_token
+from ...._utils.posthog import get_posthog_client
 from ....db import get_session
 from ....models import (
     OrganizationTable,
@@ -24,6 +26,7 @@ github_router = APIRouter()
 @github_router.get("/github/callback", response_model=UserPublic)
 async def github_callback(
     code: str,
+    posthog: Annotated[posthog.Posthog, Depends(get_posthog_client)],
     settings: Annotated[Settings, Depends(get_settings)],
     session: Annotated[Session, Depends(get_session)],
     device_code_service: Annotated[DeviceCodeService, Depends(DeviceCodeService)],
@@ -136,6 +139,10 @@ async def github_callback(
             user_public = user_public.model_copy(update={"access_token": lilypad_token})
             if device_code:
                 device_code_service.create_record(device_code, lilypad_token)
+            posthog.capture(
+                distinct_id=user_public.email,
+                event="sign_up",
+            )
             return user_public
 
         except httpx.RequestError as exc:

@@ -6,7 +6,6 @@ from .auth import (
     validate_api_key_project_no_strict,
     validate_api_key_project_strict,
 )
-from .posthog import get_posthog
 from .spans import (
     Event,
     MessageParam,
@@ -35,7 +34,6 @@ __all__ = [
     "create_api_key",
     "create_jwt_token",
     "get_current_user",
-    "get_posthog",
     "validate_api_key_project_no_strict",
     "validate_api_key_project_strict",
 ]
