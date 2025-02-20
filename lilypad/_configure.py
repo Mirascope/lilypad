@@ -55,7 +55,11 @@ class _JSONSpanExporter(SpanExporter):
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries"""
-        span_data = [self._span_to_dict(span) for span in spans]
+        span_data = sorted(
+            [self._span_to_dict(span) for span in spans],
+            key=lambda span: span.get("attributes", {}).get("lilypad.span.order", 0),
+            reverse=True,
+        )
         json_data = json.dumps(span_data)
 
         try:
