@@ -13,6 +13,7 @@ import site
 import subprocess
 import sys
 import tempfile
+import types
 from collections.abc import Callable
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -757,7 +758,6 @@ def _run_ruff(code: str) -> str:
     finally:
         tmp_path.unlink()
 
-
 class Closure(BaseModel):
     """Represents the closure of a function."""
 
@@ -842,5 +842,90 @@ class Closure(BaseModel):
         finally:
             tmp_path.unlink()
 
+    def create_module(
+            self,
+            module_name: str | None = None,
+    ) -> types.ModuleType:
+        """Create a module from the closure's code.
+
+        Args:
+            module_name: Optional name for the module
+
+        Returns:
+            Created module
+        """
+        name = module_name or f"dynamic_module_{self.hash[:8]}"
+
+        # Create a new module
+        spec = importlib.util.spec_from_loader(name, loader=None)
+        if spec is None:
+            raise ImportError(f"Could not create module spec for {name}")
+
+        module = importlib.util.module_from_spec(spec)
+
+        # Add module to sys.modules while executing
+        sys.modules[name] = module
+
+        # Setup module environment
+        module.__dict__.update({
+            '__builtins__': __builtins__,
+            '__name__': name,
+            '__file__': None,
+            '__loader__': None,
+            '__package__': None,
+            '__spec__': None,
+        })
+
+        # Execute code in module context
+        try:
+            exec(self.code, module.__dict__)
+        except Exception as e:
+            del sys.modules[name]
+            raise ImportError(f"Failed to execute module code: {str(e)}") from e
+
+        return module
+
+    def build_object(self) -> Any:
+        """Build an object (function, class, or variable) from the closure's code.
+
+        Returns:
+            The built object
+
+        Raises:
+            AttributeError: If object not found in module
+        """
+        module = self.create_module()
+
+        if not hasattr(module, self.name):
+            raise AttributeError(f"Object {self.name} not found in module")
+
+        return getattr(module, self.name)
+
+    @classmethod
+    def from_code(
+            cls,
+            code: str,
+            name: str,
+            dependencies: dict[str, DependencyInfo] | None = None
+    ) -> Closure:
+        """Create a closure from source code.
+
+        Args:
+            code: Source code
+            name: Name of the function or class
+            dependencies: Optional dependencies information
+
+        Returns:
+            Created closure
+        """
+        formatted_code = _run_ruff(code)
+        hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
+        return cls(
+            name=name,
+            signature=formatted_code,  # For now, using full code as signature
+            code=formatted_code,
+            hash=hash_value,
+            dependencies=dependencies or {}
+        )
 
 __all__ = ["Closure"]
