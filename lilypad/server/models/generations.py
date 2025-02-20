@@ -1,7 +1,7 @@
 """Generations models."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
     from .spans import SpanTable
+    from .tools import ToolsTable
 
 
 class _GenerationBase(SQLModel):
@@ -51,6 +52,12 @@ class _GenerationBase(SQLModel):
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
     archived: datetime | None = Field(default=None, index=True)
     custom_id: str | None = Field(default=None, index=True)
+    prompt_template: str | None = Field(default=None)
+
+    # There may be objects in the dictionary that cannot be serialized?
+    call_params: dict[str, Any] = Field(
+        sa_column=get_json_column(), default_factory=dict
+    )
 
 
 class GenerationUpdate(SQLModel):
@@ -70,11 +77,19 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     spans: list["SpanTable"] = Relationship(
         back_populates="generation", cascade_delete=True
     )
+
+    # TODO: delete this relationship
     prompt: Optional["PromptTable"] = Relationship(back_populates="generations")
+
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="generations"
     )
     annotations: list["AnnotationTable"] = Relationship(
+        back_populates="generation",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
+    )
+    tools: list["ToolsTable"] = Relationship(
         back_populates="generation",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,

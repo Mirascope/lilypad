@@ -758,6 +758,7 @@ def _run_ruff(code: str) -> str:
     finally:
         tmp_path.unlink()
 
+
 class Closure(BaseModel):
     """Represents the closure of a function."""
 
@@ -843,8 +844,8 @@ class Closure(BaseModel):
             tmp_path.unlink()
 
     def create_module(
-            self,
-            module_name: str | None = None,
+        self,
+        module_name: str | None = None,
     ) -> types.ModuleType:
         """Create a module from the closure's code.
 
@@ -867,14 +868,16 @@ class Closure(BaseModel):
         sys.modules[name] = module
 
         # Setup module environment
-        module.__dict__.update({
-            '__builtins__': __builtins__,
-            '__name__': name,
-            '__file__': None,
-            '__loader__': None,
-            '__package__': None,
-            '__spec__': None,
-        })
+        module.__dict__.update(
+            {
+                "__builtins__": __builtins__,
+                "__name__": name,
+                "__file__": None,
+                "__loader__": None,
+                "__package__": None,
+                "__spec__": None,
+            }
+        )
 
         # Execute code in module context
         try:
@@ -903,10 +906,7 @@ class Closure(BaseModel):
 
     @classmethod
     def from_code(
-            cls,
-            code: str,
-            name: str,
-            dependencies: dict[str, DependencyInfo] | None = None
+        cls, code: str, name: str, dependencies: dict[str, DependencyInfo] | None = None
     ) -> Closure:
         """Create a closure from source code.
 
@@ -925,7 +925,8 @@ class Closure(BaseModel):
             signature=formatted_code,  # For now, using full code as signature
             code=formatted_code,
             hash=hash_value,
-            dependencies=dependencies or {}
+            dependencies=dependencies or {},
         )
+
 
 __all__ = ["Closure"]

@@ -16,7 +16,6 @@ from opentelemetry.trace import get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from . import tool
 from ._utils import (
     Closure,
     call_safely,
@@ -188,26 +187,23 @@ def _trace(
     return decorator
 
 
-def _build_mirascope_call(generator: GenerationPublic, fn: Callable) -> dict[str, Any]:
+def _build_mirascope_call(
+    generation_public: GenerationPublic, fn: Callable
+) -> Callable:
     """Build a Mirascope call object."""
-    # TODO: Implement `generator.prompt_template` on DB
-    generator_prompt_template = (
-        "Answer this question: {question}"  # fake prompt template
-    )
-    mirascope_prompt = prompt_template(generator_prompt_template)(fn)
+    mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)
 
-    # TODO: Implement `generation.call_params` on DB
-    call_params = {"provider": "openai", "model": "gpt-4o-mini"}  # fake call params
+    call_params = generation_public.call_params
 
-    # TODO: Implement `generation.tools` on DB
-    # We need to implement a way to store and retrieve tools from the DB
-    # generation_tools = {"code": "def tool(): return 'Hello, World!'", "name": "tool"} # fake tool
-    generation_tools = []
-    if generation_tools:
+    if generation_public.tools:
         call_params["tools"] = [
-            tool()(generation_tool) for generation_tool in generation_tools
+            Closure.from_code(tool.code, tool.name).build_object()
+            for tool in generation_public.tools
         ]
-
+    elif response_model := generation_public.response_model:
+        call_params["response_model"] = Closure.from_code(
+            response_model.code, response_model.name
+        ).build_object()
     mirascope_call = llm.call(**call_params)(mirascope_prompt)
     return mirascope_call
 
