@@ -60,8 +60,6 @@ class SpanBase(SQLModel):
     parent_span_id: str | None = Field(
         default=None,
         index=True,
-        foreign_key=f"{SPAN_TABLE_NAME}.span_id",
-        ondelete="CASCADE",
     )
 
 
@@ -93,10 +91,16 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     )
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span",
-        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        sa_relationship_kwargs={
+            "lazy": "selectin",  # codespell:ignore selectin
+            "primaryjoin": "foreign(SpanTable.parent_span_id) == SpanTable.span_id",
+        },
         cascade_delete=True,
     )
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",
-        sa_relationship_kwargs={"remote_side": "SpanTable.span_id"},
+        sa_relationship_kwargs={
+            "remote_side": "SpanTable.span_id",
+            "primaryjoin": "foreign(SpanTable.parent_span_id) == remote(SpanTable.span_id)",
+        },
     )
