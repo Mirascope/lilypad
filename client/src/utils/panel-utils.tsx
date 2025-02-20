@@ -1,9 +1,15 @@
 import { MessageCard } from "@/components/MessageCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageParam } from "@/types/types";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Event, MessageParam } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView from "@uiw/react-json-view";
+import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
 export const renderMessagesCard = (messages: MessageParam[]) => {
@@ -52,6 +58,29 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
   }
 };
 
+export const renderEventsContainer = (messages: Event[]) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{"Events"}</CardTitle>
+      </CardHeader>
+      <CardContent className='flex flex-col gap-4'>
+        {messages.map((event: Event, index: number) => (
+          <Card key={`events-${index}`}>
+            <CardHeader>
+              <CardTitle>
+                {event.name} {`[${event.type}]`}
+              </CardTitle>
+              <CardDescription>{event.timestamp}</CardDescription>
+            </CardHeader>
+            <CardContent>{event.message}</CardContent>
+          </Card>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const renderMessagesContainer = (messages: MessageParam[]) => {
   return (
     <Card>
@@ -93,15 +122,15 @@ export const renderCardOutput = (output: any) => {
   );
 };
 
-export const renderData = (data?: object) => {
+export const renderData = ({ ...props }: JsonViewProps<object>) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>{"Data"}</CardTitle>
       </CardHeader>
-      {data && (
+      {props.value && (
         <CardContent>
-          <JsonView value={data} />
+          <JsonView value={props.value} collapsed={props.collapsed} />
         </CardContent>
       )}
     </Card>

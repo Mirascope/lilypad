@@ -88,6 +88,8 @@ export interface AnnotationTable {
   reasoning?: string | null;
   /** @default "manual" */
   type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
   /** Assigned To */
   assigned_to?: string | null;
   /** Project Uuid */
@@ -177,6 +179,24 @@ export enum EvaluationType {
 }
 
 /**
+ * Event
+ * Event model.
+ */
+export interface Event {
+  /** Name */
+  name: string;
+  /** Type */
+  type: string;
+  /** Message */
+  message: string;
+  /**
+   * Timestamp
+   * @format date-time
+   */
+  timestamp: string;
+}
+
+/**
  * GenerationCreate
  * Generation create model.
  */
@@ -206,6 +226,8 @@ export interface GenerationCreate {
   arg_types?: Record<string, string>;
   /** Archived */
   archived?: string | null;
+  /** Custom Id */
+  custom_id?: string | null;
 }
 
 /**
@@ -238,6 +260,8 @@ export interface GenerationPublic {
   arg_types?: Record<string, string>;
   /** Archived */
   archived?: string | null;
+  /** Custom Id */
+  custom_id?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -654,8 +678,15 @@ export interface SettingsPublic {
  * Span more details model.
  */
 export interface SpanMoreDetails {
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
   /** Project Uuid */
   project_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -684,6 +715,10 @@ export interface SpanMoreDetails {
   cost?: number | null;
   /** Template */
   template?: string | null;
+  /** Status */
+  status?: string | null;
+  /** Events */
+  events?: Event[] | null;
 }
 
 /**
@@ -734,6 +769,8 @@ export interface SpanPublic {
   created_at: string;
   /** Version */
   version?: number | null;
+  /** Status */
+  status?: string | null;
 }
 
 /**

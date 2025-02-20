@@ -3,6 +3,7 @@
 import pytest
 
 from lilypad._utils.call_safely import call_safely
+from lilypad.exceptions import LilypadException
 
 
 def test_call_safely() -> None:
@@ -13,7 +14,7 @@ def test_call_safely() -> None:
 
     @call_safely(fn)
     def error() -> str:
-        raise ValueError("Error")
+        raise LilypadException("Error")
 
     assert error() == "Hello, world!"
 
@@ -22,6 +23,13 @@ def test_call_safely() -> None:
         return "No error"
 
     assert no_error() == "No error"
+
+    @call_safely(fn)
+    def user_error() -> str:
+        raise ValueError("User error")
+
+    with pytest.raises(ValueError):
+        user_error()
 
 
 @pytest.mark.asyncio
@@ -33,7 +41,7 @@ async def test_call_safely_async() -> None:
 
     @call_safely(fn)
     async def error() -> str:
-        raise ValueError("Error")
+        raise LilypadException("Error")
 
     assert await error() == "Hello, world!"
 
@@ -42,3 +50,10 @@ async def test_call_safely_async() -> None:
         return "No error"
 
     assert await no_error() == "No error"
+
+    @call_safely(fn)
+    async def user_error() -> str:
+        raise ValueError("User error")
+
+    with pytest.raises(ValueError):
+        await user_error()

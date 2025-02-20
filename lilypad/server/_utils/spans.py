@@ -1,6 +1,7 @@
 """Utility functions for working with spans."""
 
 import json
+from datetime import datetime
 from typing import Any, Literal
 
 import httpx
@@ -46,6 +47,15 @@ class MessageParam(BaseModel):
 
     role: str
     content: list[_AudioPart | _TextPart | _ImagePart | _ToolCall]
+
+
+class Event(BaseModel):
+    """Event model."""
+
+    name: str
+    type: str
+    message: str
+    timestamp: datetime
 
 
 def convert_gemini_messages(
@@ -347,6 +357,34 @@ def convert_mirascope_messages(
                     )
 
     return structured_messages
+
+
+def _convert_timestamp(ns_timestamp: int) -> datetime:
+    """Convert nanosecond timestamp to datetime."""
+    # Convert nanoseconds to seconds and maintain microsecond precision
+    seconds = ns_timestamp // 1_000_000_000
+    microseconds = (ns_timestamp % 1_000_000_000) // 1000
+    return datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
+
+
+def _extract_event_attribute(event: dict, field: str) -> str:
+    """Extract an attribute from an event using its name as prefix."""
+    event_name = event.get("name", "unknown")
+    attributes = event.get("attributes", {})
+    return attributes.get(f"{event_name}.{field}", "")
+
+
+def convert_events(events: list[dict[str, Any]]) -> list[Event]:
+    """Convert events to Event model."""
+    return [
+        Event(
+            name=event.get("name", "unknown"),
+            timestamp=_convert_timestamp(event.get("timestamp", 0)),
+            type=_extract_event_attribute(event, "type") or "unknown",
+            message=_extract_event_attribute(event, "message"),
+        )
+        for event in events
+    ]
 
 
 def calculate_cost(

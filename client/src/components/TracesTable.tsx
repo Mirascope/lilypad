@@ -3,6 +3,7 @@ import { DataTable } from "@/components/DataTable";
 import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,6 +17,7 @@ import {
 import { CreateAnnotationDialog } from "@/ee/components/AnnotationForm";
 import { QueueDialog, QueueForm } from "@/ee/components/QueueForm";
 import { Scope, SpanPublic } from "@/types/types";
+import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
 import {
@@ -179,6 +181,27 @@ export const TracesTable = ({
       },
     },
     {
+      accessorKey: "status",
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status: string = row.getValue("status");
+        if (status === "UNSET") return null;
+        else if (status === "ERROR") {
+          return (
+            <Badge variant='destructive' size='sm'>
+              {status}
+            </Badge>
+          );
+        } else
+          return (
+            <Badge variant='destructive' size='sm'>
+              {status}
+            </Badge>
+          );
+      },
+    },
+    {
       accessorKey: "created_at",
       id: "timestamp",
       header: ({ column }) => {
@@ -201,9 +224,10 @@ export const TracesTable = ({
           </Button>
         );
       },
-      cell: ({ row }) => (
-        <div className='lowercase'>{row.getValue("timestamp")}</div>
-      ),
+      cell: ({ row }) => {
+        const timestamp = new Date(row.getValue("timestamp"));
+        return <div>{formatDate(timestamp)}</div>;
+      },
     },
     {
       id: "actions",
@@ -222,7 +246,9 @@ export const TracesTable = ({
               {row.getValue("scope") === Scope.LILYPAD && (
                 <>
                   <div onClick={(e) => e.stopPropagation()}>
-                    <CreateAnnotationDialog span={row.original} />
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <CreateAnnotationDialog spanUuid={row.original.uuid} />
+                    </Suspense>
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
                     <QueueDialog spans={[row.original]} />

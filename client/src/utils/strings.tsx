@@ -50,3 +50,14 @@ export const safelyParseJSON = (json: string): object | undefined => {
 
   return parsed;
 };
+export const formatDate = (date: Date): string => {
+  return new Intl.DateTimeFormat(navigator.language, {
+    year: "numeric",
+    month: "2-digit",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+    timeZoneName: "short",
+  }).format(date);
+};

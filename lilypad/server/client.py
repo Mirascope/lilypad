@@ -2,34 +2,23 @@
 
 import logging
 from collections.abc import Callable
-from typing import Any, Literal, TypeVar, get_origin, overload
+from typing import Any, TypeVar, get_origin, overload
 from uuid import UUID
 
 import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
-from lilypad._utils.functions import PromptPublic
-
 from .._utils import Closure, load_config
+from ..exceptions import LilypadAPIConnectionError, LilypadNotFoundError
 from ..server.settings import get_settings
 from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
+from .schemas.prompts import PromptPublic
 from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
 log = logging.getLogger(__name__)
-
-class NotFoundError(Exception):
-    """Raised when an API response has a status code of 404."""
-
-    status_code: Literal[404] = 404
-
-
-class APIConnectionError(Exception):
-    """Raised when an API connection error occurs."""
-
-    ...
 
 
 class LilypadClient:
@@ -154,12 +143,12 @@ class LilypadClient:
             log.error(f"Request to {url} timed out.")
             raise
         except ConnectionError as conn_err:
-            raise APIConnectionError(
+            raise LilypadAPIConnectionError(
                 f"Connection error during request to {url}: {conn_err}"
             )
         except HTTPError as http_err:
             if http_err.response.status_code == 404:
-                raise NotFoundError(f"Resource not found: {url}")
+                raise LilypadNotFoundError(f"Resource not found: {url}")
             raise HTTPError(
                 f"HTTP error during request to {url}: {http_err.response.text}"
             )
@@ -244,7 +233,7 @@ class LilypadClient:
                 f"v0/projects/{self.project_uuid}/generations/hash/{closure.hash}",
                 response_model=GenerationPublic,
             )
-        except NotFoundError:
+        except LilypadNotFoundError:
             return self._request(
                 "POST",
                 f"v0/projects/{self.project_uuid}/generations",
@@ -304,7 +293,7 @@ class LilypadClient:
                 f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
                 response_model=PromptPublic,
             )
-        except NotFoundError:
+        except LilypadNotFoundError:
             return None
 
     def get_response_model_active_version(
@@ -324,7 +313,7 @@ class LilypadClient:
                 f"v0/projects/{self.project_uuid}/response_models/hash/{closure.hash}/active",
                 response_model=ResponseModelPublic,
             )
-        except NotFoundError:
+        except LilypadNotFoundError:
             return None
 
     def get_or_create_response_model_version(
@@ -345,7 +334,7 @@ class LilypadClient:
                 response_model=ResponseModelPublic,
             )
             return rm
-        except NotFoundError:
+        except LilypadNotFoundError:
             create_data = {
                 "name": closure.name,
                 "signature": closure.signature,

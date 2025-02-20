@@ -29,6 +29,7 @@ import {
   useDeleteProjectMutation,
   useUpdateProjectMutation,
 } from "@/utils/projects";
+import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
@@ -55,16 +56,8 @@ export const ProjectsTable = () => {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => {
-        const createdDate = new Date(row.getValue("created_at"));
-        const formattedCreatedDate = new Intl.DateTimeFormat("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          hour12: true,
-        }).format(createdDate);
-        return <div>{formattedCreatedDate}</div>;
+        const createdAt = new Date(row.getValue("created_at"));
+        return <div>{formatDate(createdAt)}</div>;
       },
     },
     {
