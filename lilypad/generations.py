@@ -167,7 +167,7 @@ def _trace(
                     ) as span,
                     span_order_context(span),
                 ):
-                    attributes = _construct_trace_attributes(
+                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
@@ -189,7 +189,7 @@ def _trace(
                     ) as span,
                     span_order_context(span),
                 ):
-                    attributes = _construct_trace_attributes(
+                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
                         generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
