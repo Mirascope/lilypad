@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import threading
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
@@ -10,7 +11,7 @@ from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.trace import get_tracer, get_tracer_provider
+from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
@@ -91,6 +92,22 @@ def outermost_lock_context(enable_lock: bool) -> Generator[None, None, None]:
         yield
 
 
+# Global counter and lock for span order.
+_span_counter_lock = threading.Lock()
+_span_counter = 0
+
+
+@contextmanager
+def span_order_context(span: Span) -> Generator[None, None, None]:
+    """Assign an explicit order to a span using a global counter."""
+    global _span_counter
+    with _span_counter_lock:
+        _span_counter += 1
+        order = _span_counter
+    span.set_attribute("lilypad.span.order", order)
+    yield
+
+
 def _construct_trace_attributes(
     generation: GenerationPublic,
     arg_types: dict[str, str],
@@ -144,10 +161,13 @@ def _trace(
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                with get_tracer("lilypad").start_as_current_span(
-                    get_qualified_name(fn)
-                ) as span:
-                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
+                with (
+                    get_tracer("lilypad").start_as_current_span(
+                        get_qualified_name(fn)
+                    ) as span,
+                    span_order_context(span),
+                ):
+                    attributes = _construct_trace_attributes(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
@@ -163,15 +183,14 @@ def _trace(
 
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                with get_tracer("lilypad").start_as_current_span(
-                    get_qualified_name(fn)
-                ) as span:
-                    attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        generation,
-                        arg_types,
-                        arg_values,
-                        prompt_template,
-                        False,
+                with (
+                    get_tracer("lilypad").start_as_current_span(
+                        get_qualified_name(fn)
+                    ) as span,
+                    span_order_context(span),
+                ):
+                    attributes = _construct_trace_attributes(
+                        generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
                     output = fn(*args, **kwargs)
@@ -271,6 +290,6 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                 finally:
                     current_generation.reset(token)
 
-            return inner  # pyright: ignore [reportReturnType]
+            return inner
 
     return decorator
