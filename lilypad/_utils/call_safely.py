@@ -7,6 +7,8 @@ from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import Any, ParamSpec, TypeVar, overload
 
+from ..exceptions import LilypadException
+
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
@@ -63,7 +65,7 @@ def call_safely(
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 try:
                     return await fn(*args, **kwargs)
-                except Exception as e:
+                except LilypadException as e:
                     logger = _default_logger()
                     logger.error(
                         "Error in wrapped function '%s': %s", fn.__name__, str(e)
@@ -88,7 +90,7 @@ def call_safely(
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 try:
                     return fn(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                except Exception as e:
+                except LilypadException as e:
                     logger = _default_logger()
                     logger.error(
                         "Error in wrapped function '%s': %s", fn.__name__, str(e)
