@@ -52,41 +52,32 @@ class PosthogMiddleware:
     async def __call__(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        # Skip if path is excluded
         path = request.url.path
         if path in self.exclude_paths:
             return await call_next(request)
 
-        # Skip if should_capture returns False
         if not self.should_capture(request):
             return await call_next(request)
 
-        # Capture request start time
         start_time = time.time()
 
-        # Process the request
         response = await call_next(request)
 
-        # Calculate request duration
         duration = time.time() - start_time
 
         try:
-            # Try to get authenticated user from request state
             user = request.state.user
             distinct_id = user.email if user else "anonymous"
         except AttributeError:
             distinct_id = "anonymous"
 
-        # Get the route and function name
         route = request.scope.get("route")
         event_name = (
             route.endpoint.__name__ if isinstance(route, APIRoute) else "api_request"
         )
 
-        # Get base properties
         properties = self.get_base_properties(request)
 
-        # Add response properties
         properties.update(
             {
                 "status_code": response.status_code,
@@ -94,7 +85,6 @@ class PosthogMiddleware:
             }
         )
 
-        # Capture the event
         self.posthog.capture(
             distinct_id=distinct_id,
             event=event_name,
@@ -123,14 +113,12 @@ def setup_posthog_middleware(
         from fastapi import FastAPI
 
         app = FastAPI()
-        settings = get_settings()  # Your settings function
 
         # Exclude health check and metrics endpoints
         exclude_paths = ["/health", "/metrics"]
 
         setup_posthog_middleware(
             app,
-            settings,
             exclude_paths=exclude_paths
         )
         ```
