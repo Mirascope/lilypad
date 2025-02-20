@@ -59,6 +59,9 @@ class PosthogMiddleware:
         if not self.should_capture(request):
             return await call_next(request)
 
+        if not self.should_capture(request) or request.method in ["OPTIONS", "GET"]:
+            return await call_next(request)
+
         start_time = time.time()
 
         response = await call_next(request)
