@@ -25,8 +25,8 @@ def get_posthog_client() -> posthog.Posthog:
 class PosthogMiddleware:
     def __init__(
         self,
-        exclude_paths: list[str] | None = None,
-        should_capture: Callable[[Request], bool] | None = None,
+        exclude_paths: list[str],
+        should_capture: Callable[[Request], bool],
     ) -> None:
         """Initialize the PostHog middleware.
 
@@ -37,8 +37,8 @@ class PosthogMiddleware:
                           whether the event should be captured
         """
         self.posthog = get_posthog_client()
-        self.exclude_paths = exclude_paths or []
-        self.should_capture = should_capture or (lambda _: True)
+        self.exclude_paths = exclude_paths
+        self.should_capture = should_capture
 
     def get_base_properties(self, request: Request) -> dict[str, Any]:
         """Get base properties for PostHog events."""
@@ -56,9 +56,6 @@ class PosthogMiddleware:
         if path in self.exclude_paths:
             return await call_next(request)
 
-        if not self.should_capture(request):
-            return await call_next(request)
-
         if not self.should_capture(request) or request.method in ["OPTIONS", "GET"]:
             return await call_next(request)
 
@@ -67,7 +64,6 @@ class PosthogMiddleware:
         response = await call_next(request)
 
         duration = time.time() - start_time
-
         try:
             user = request.state.user
             distinct_id = user.email if user else "anonymous"
@@ -99,8 +95,8 @@ class PosthogMiddleware:
 
 def setup_posthog_middleware(
     app: FastAPI,
-    exclude_paths: list[str] | None = None,
-    should_capture: Callable[[Request], bool] | None = None,
+    exclude_paths: list[str],
+    should_capture: Callable[[Request], bool],
 ) -> None:
     """Setup PostHog middleware for a FastAPI application.
 

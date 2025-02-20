@@ -70,7 +70,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-setup_posthog_middleware(app, exclude_paths=[])
+setup_posthog_middleware(app, exclude_paths=[], should_capture=lambda _: True)
 
 app.mount("/v0", v0_api)
 
