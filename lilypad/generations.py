@@ -199,7 +199,7 @@ def _trace(
                     span.set_attribute("lilypad.generation.output", str(output))
                 return output  # pyright: ignore [reportReturnType]
 
-            return inner  # pyright: ignore [reportReturnType]
+            return inner
 
     return decorator
 
@@ -290,6 +290,6 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                 finally:
                     current_generation.reset(token)
 
-            return inner
+            return inner  # pyright: ignore [reportReturnType]
 
     return decorator
