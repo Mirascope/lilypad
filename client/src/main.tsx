@@ -48,6 +48,7 @@ if (!rootElement.innerHTML) {
         options={{
           api_host: import.meta.env.VITE_POSTHOG_HOST,
           autocapture: false,
+          capture_performance: false,
         }}
       >
         <QueryClientProvider client={queryClient}>
