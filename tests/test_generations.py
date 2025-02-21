@@ -11,6 +11,22 @@ from lilypad.server.schemas.generations import GenerationPublic
 dummy_spans = []
 
 
+@pytest.fixture
+def dummy_generation_instance() -> GenerationPublic:
+    """Return a dummy GenerationPublic instance."""
+    return GenerationPublic(
+        uuid=uuid4(),
+        name="dummy_generation",
+        signature="dummy_signature",
+        code="def dummy(): pass",
+        hash="dummy_hash",
+        dependencies={},
+        arg_types={},
+        version_num=1,
+        call_params={"provider": "openai", "model": "gpt-4o-mini"},
+    )
+
+
 class DummySpan:
     """A dummy span that records its name and attributes."""
 
@@ -50,26 +66,10 @@ def reset_dummies(monkeypatch):
     monkeypatch.setattr("lilypad.generations._span_counter", 0)
 
 
-# Fixture to patch get_tracer so that our decorated functions use DummyTracer.
 @pytest.fixture(autouse=True)
 def patch_get_tracer(monkeypatch):
     """Patch the get_tracer method to return a DummyTracer instance."""
     monkeypatch.setattr("lilypad.generations.get_tracer", lambda _: DummyTracer())
-
-
-@pytest.fixture
-def dummy_generation_instance() -> GenerationPublic:
-    """Fixture that returns a dummy GenerationPublic instance."""
-    return GenerationPublic(
-        uuid=uuid4(),
-        name="dummy_generation",
-        signature="dummy_signature",
-        code="def dummy(): pass",
-        hash="dummy_hash",
-        dependencies={},
-        arg_types={},
-        version_num=1,
-    )
 
 
 @generation()
@@ -194,3 +194,145 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
         # In our simple test, async_outer returns "async outer".
         assert result == "async outer"
         mock_get_ver.assert_called_once()
+
+
+def fake_mirascope_middleware_sync(
+    generation, arg_types, arg_values, is_async, prompt_template
+):
+    """Simulate a synchronous mirascope middleware returning a dummy result."""
+
+    def middleware(fn):
+        def wrapped(*args, **kwargs):
+            return "managed sync result"
+
+        return wrapped
+
+    return middleware
+
+
+def fake_mirascope_middleware_async(
+    generation, arg_types, arg_values, is_async, prompt_template
+):
+    """Simulate an asynchronous mirascope middleware returning a dummy result."""
+
+    def middleware(fn):
+        async def wrapped(*args, **kwargs):
+            return "managed async result"
+
+        return wrapped
+
+    return middleware
+
+
+def fake_llm_call(**kwargs):
+    """Fake llm.call which ignores its arguments and returns a dummy callable."""
+
+    def inner(mirascope_prompt):
+        return lambda *args, **kwargs: "managed sync result"
+
+    return inner
+
+
+def fake_llm_call_async(**kwargs):
+    """Fake llm.call which ignores its arguments and returns a dummy callable."""
+
+    def inner(mirascope_prompt):
+        return lambda *args, **kwargs: "managed async result"
+
+    return inner
+
+
+def test_sync_managed_generation(dummy_generation_instance: GenerationPublic):
+    """Test that a synchronous function decorated with @generation(managed=True)
+    follows the mirascope branch.
+    """
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_sync,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+
+        @generation(managed=True)
+        def managed_sync(param: str) -> str:
+            return "should not be used"
+
+        result = managed_sync("dummy")
+        assert result == "managed sync result"
+
+
+@pytest.mark.asyncio
+async def test_async_managed_generation(dummy_generation_instance: GenerationPublic):
+    """Test that an asynchronous function decorated with @generation(managed=True)
+    follows the mirascope branch.
+    """
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_async,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+
+        @generation(managed=True)
+        async def managed_async(param: str) -> str:
+            return "should not be used"
+
+        result = await managed_async("dummy")
+        assert result == "managed async result"
+
+
+def test_sync_mirascope_attr(dummy_generation_instance: GenerationPublic):
+    """Test that a synchronous function with __mirascope_call__ set follows the mirascope branch."""
+
+    def base_sync(param: str) -> str:
+        return "should not be used"
+
+    base_sync.__mirascope_call__ = True
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_sync,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+        decorated = generation()(base_sync)
+        result = decorated("dummy")
+        assert result == "managed sync result"
+
+
+@pytest.mark.asyncio
+async def test_async_mirascope_attr(dummy_generation_instance: GenerationPublic):
+    """Test that an asynchronous function with __mirascope_call__ set follows the mirascope branch."""
+
+    async def base_async(param: str) -> str:
+        return "should not be used"
+
+    base_async.__mirascope_call__ = True
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_async,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+        decorated = generation()(base_async)
+        result = await decorated("dummy")
+        assert result == "managed async result"
