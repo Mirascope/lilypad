@@ -42,31 +42,31 @@ export const ArgsCards = ({ args }: ArgsCardsProps) => {
 
 const ArgCard = ({ title, value }: { title: string; value: any }) => {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Card className='p-4 max-w-[200px] hover:shadow-lg transition-all duration-200 cursor-pointer'>
+    <Card className='p-4 max-w-[200px] hover:shadow-lg transition-all duration-200 cursor-pointer'>
+      <Dialog>
+        <DialogTrigger asChild>
           <CardHeader className='p-0'>
             <CardTitle>{title}</CardTitle>
           </CardHeader>
-          <CardContent className='p-0 truncate'>
-            {typeof value === "object" && value ? (
-              <JsonView collapsed={true} value={value} />
-            ) : (
-              <span className='text-base'>{String(value)}</span>
-            )}
-          </CardContent>
-        </Card>
-      </DialogTrigger>
-      <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
+        </DialogTrigger>
+        <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
+          <DialogHeader className='flex-shrink-0'>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {typeof value === "object" && value ? (
+            <JsonView collapsed={true} value={value} />
+          ) : (
+            <span className='text-base'>{String(value)}</span>
+          )}
+        </DialogContent>
+      </Dialog>
+      <CardContent className='p-0 truncate'>
         {typeof value === "object" && value ? (
           <JsonView collapsed={true} value={value} />
         ) : (
           <span className='text-base'>{String(value)}</span>
         )}
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 };
