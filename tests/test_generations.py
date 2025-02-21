@@ -203,7 +203,7 @@ def test_sync_managed_generation(dummy_generation_instance: GenerationPublic):
             side_effect=fake_mirascope_middleware_sync,
         ),
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_generation_by_args_types",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
@@ -228,7 +228,7 @@ async def test_async_managed_generation(dummy_generation_instance: GenerationPub
             side_effect=fake_mirascope_middleware_async,
         ),
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_generation_by_args_types",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
@@ -255,7 +255,7 @@ def test_sync_mirascope_attr(dummy_generation_instance: GenerationPublic):
             side_effect=fake_mirascope_middleware_sync,
         ),
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
@@ -279,7 +279,7 @@ async def test_async_mirascope_attr(dummy_generation_instance: GenerationPublic)
             side_effect=fake_mirascope_middleware_async,
         ),
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
@@ -309,7 +309,7 @@ def test_nested_order_sync(dummy_generation_instance: GenerationPublic):
         return f"outer {a} {b}"
 
     with patch(
-        "lilypad.generations.LilypadClient.get_generation_version",
+        "lilypad.generations.LilypadClient.get_or_create_generation_version",
         return_value=dummy_generation_instance,
     ):
         result = outer("dummy")
@@ -339,7 +339,7 @@ async def test_nested_order_async(dummy_generation_instance: GenerationPublic):
         return f"async outer {a} {b}"
 
     with patch(
-        "lilypad.generations.LilypadClient.get_generation_version",
+        "lilypad.generations.LilypadClient.get_or_create_generation_version",
         return_value=dummy_generation_instance,
     ):
         result = await async_outer("dummy")
@@ -359,7 +359,7 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ) as mock_get_ver,
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
     ):
@@ -381,7 +381,7 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ) as mock_get_ver,
         patch(
-            "lilypad.generations.LilypadClient.get_generation_version",
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
     ):
