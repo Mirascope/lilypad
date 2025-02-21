@@ -12,6 +12,22 @@ import { ReactNode } from "@tanstack/react-router";
 import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
+export interface MessageCardProps {
+  role: string;
+  sanitizedHtml?: string;
+  content?: ReactNode;
+}
+const MessageCard = ({ role, content }: MessageCardProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{role}</CardTitle>
+      </CardHeader>
+      <CardContent className='overflow-x-auto'>{content}</CardContent>
+    </Card>
+  );
+};
+
 export const renderMessagesCard = (messages: MessageParam[]) => {
   try {
     return messages.map((message: MessageParam, index: number) => {
@@ -73,7 +89,9 @@ export const renderEventsContainer = (messages: Event[]) => {
               </CardTitle>
               <CardDescription>{event.timestamp}</CardDescription>
             </CardHeader>
-            <CardContent>{event.message}</CardContent>
+            <CardContent className='overflow-x-auto'>
+              {event.message}
+            </CardContent>
           </Card>
         ))}
       </CardContent>
@@ -113,7 +131,7 @@ export const renderCardOutput = (output: any) => {
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col'>
+          <CardContent className='flex flex-col overflow-x-auto'>
             {renderOutput(output)}
           </CardContent>
         </Card>
@@ -129,7 +147,7 @@ export const renderData = ({ ...props }: JsonViewProps<object>) => {
         <CardTitle>{"Data"}</CardTitle>
       </CardHeader>
       {props.value && (
-        <CardContent>
+        <CardContent className='overflow-x-auto'>
           <JsonView value={props.value} collapsed={props.collapsed} />
         </CardContent>
       )}
