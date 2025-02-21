@@ -647,3 +647,31 @@ def add(a, b):
     assert closure.dependencies == {}
     add_fn = closure.build_object()
     assert add_fn(2, 3) == 5
+
+
+def test_build_object_not_found():
+    """Test that Closure.build_object raises an AttributeError if the target object is not found in the module."""
+    code = """
+def my_func(x):
+    return x * 2
+"""
+    name = "my_func"
+    closure = Closure.from_code(code, name)
+    closure.name = "nonexistent_function"
+    with pytest.raises(AttributeError):
+        closure.build_object()
+
+
+def test_from_fn_failure(monkeypatch):
+    """Test that Closure.from_fn propagates exceptions from _run_ruff."""
+
+    def fake_run_ruff(code: str) -> str:
+        raise RuntimeError("Ruff failed")
+
+    monkeypatch.setattr("lilypad._utils.closure._run_ruff", fake_run_ruff)
+
+    def dummy_func(x):
+        return x
+
+    with pytest.raises(RuntimeError, match="Ruff failed"):
+        Closure.from_fn(dummy_func)
