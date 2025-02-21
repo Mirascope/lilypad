@@ -363,7 +363,7 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
     ):
-        versioned_func = sync_outer.version(forced_version)  # pyright: ignore [reportFunctionMemberAccess]
+        versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
@@ -385,7 +385,7 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
     ):
-        versioned_func = async_outer.version(forced_version)  # pyright: ignore [reportFunctionMemberAccess]
+        versioned_func = await async_outer.version(forced_version)
         result = await versioned_func("dummy")
         assert result == "async outer"
         mock_get_ver.assert_called_once()

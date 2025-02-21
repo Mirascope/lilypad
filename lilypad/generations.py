@@ -32,11 +32,60 @@ from .server.settings import get_settings
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+_R_CO = TypeVar("_R_CO", covariant=True)
 
 
 current_generation: ContextVar[GenerationPublic | None] = ContextVar(
     "current_generation", default=None
 )
+
+
+class SyncGenerationFunction(Protocol[_P, _R_CO]):
+    """Protocol for the `generation` decorator return type."""
+
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_CO:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(self, forced_version: int) -> Callable[_P, _R_CO]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class AsyncGenerationFunction(Protocol[_P, _R_CO]):
+    """Protocol for the `generation` decorator return type."""
+
+    def __call__(
+        self, *args: _P.args, **kwargs: _P.kwargs
+    ) -> Coroutine[Any, Any, _R_CO]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(
+        self, forced_version: int
+    ) -> Coroutine[Any, Any, Callable[_P, Coroutine[Any, Any, _R_CO]]]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class GenerationVersioningDecorator(Protocol):
+    """Protocol for the `generation` decorator return type."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R_CO]]
+    ) -> AsyncGenerationFunction[_P, _R_CO]: ...
+
+    @overload
+    def __call__(
+        self, fn: Callable[_P, _R_CO]
+    ) -> SyncGenerationFunction[_P, _R_CO]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R_CO] | Callable[_P, Coroutine[Any, Any, _R_CO]]
+    ) -> SyncGenerationFunction[_P, _R_CO] | AsyncGenerationFunction[_P, _R_CO]:
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
 
 
 class GenerationDecorator(Protocol):
@@ -234,7 +283,7 @@ _ArgTypes: typing.TypeAlias = dict[str, str]
 
 def generation(
     custom_id: str | None = None, managed: bool = False
-) -> GenerationDecorator:
+) -> GenerationVersioningDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,
@@ -319,7 +368,7 @@ def generation(
 
             inner_async = _create_inner_async(_get_active_version)
 
-            def version_async(
+            async def version_async(
                 forced_version: int,
             ) -> Callable[_P, Coroutine[Any, Any, _R]]:
                 specific_version_generation = lilypad_client.get_generation_by_version(
@@ -411,6 +460,6 @@ def generation(
 
             inner.version = version_sync  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
-            return inner  # pyright: ignore [reportReturnType]
+            return inner
 
-    return decorator
+    return decorator  # pyright: ignore [reportReturnType]
