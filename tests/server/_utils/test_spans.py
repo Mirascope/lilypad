@@ -2,6 +2,7 @@
 
 from lilypad.server._utils.spans import (
     convert_anthropic_messages,
+    convert_events,
     convert_gemini_messages,
     convert_openai_messages,
 )
@@ -94,3 +95,22 @@ def test_invalid_message_content():
 
     result = convert_gemini_messages(messages)
     assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_convert_events():
+    """Test converting events."""
+    events = [
+        {
+            "name": "event1",
+            "attributes": {"event1.type": "value1"},
+        },
+        {
+            "name": "event2",
+            "attributes": {"event2.message": "value2"},
+        },
+    ]
+    results = convert_events(events)
+    assert results[0].type == "value1"
+    assert results[0].name == "event1"
+    assert results[1].message == "value2"
+    assert results[1].name == "event2"

@@ -1,12 +1,14 @@
+import time
+from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import Annotated, Any
+from typing import Any
 
 import posthog
-from fastapi import Depends, Request
+from fastapi import Request, Response
+from fastapi.applications import FastAPI
+from fastapi.routing import APIRoute
 
-from ..schemas.users import UserPublic
 from ..settings import get_settings
-from .auth import get_current_user
 
 
 @lru_cache
@@ -20,43 +22,107 @@ def get_posthog_client() -> posthog.Posthog:
     )
 
 
-class PostHog:
+class PosthogMiddleware:
     def __init__(
         self,
-        request: Request,
-        posthog: posthog.Posthog,
-        user: UserPublic,
+        exclude_paths: list[str],
+        should_capture: Callable[[Request], bool],
     ) -> None:
-        """PostHog analytics class."""
-        self.request = request
-        self.posthog = posthog
-        self.user = user
+        """Initialize the PostHog middleware.
 
-    def get_base_properties(self) -> dict[str, Any]:
-        properties = {
-            "path": str(self.request.url),
-            "method": self.request.method,
+        Args:
+            settings: Application settings
+            exclude_paths: List of paths to exclude from tracking
+            should_capture: Optional function that takes a request and returns
+                          whether the event should be captured
+        """
+        self.posthog = get_posthog_client()
+        self.exclude_paths = exclude_paths
+        self.should_capture = should_capture
+
+    def get_base_properties(self, request: Request) -> dict[str, Any]:
+        """Get base properties for PostHog events."""
+        return {
+            "path": str(request.url),
+            "method": request.method,
+            "user_agent": request.headers.get("user-agent"),
+            "referer": request.headers.get("referer"),
         }
-        return properties
 
-    def capture(
-        self, event_name: str, additional_properties: dict | None = None
-    ) -> None:
-        properties = self.get_base_properties()
+    async def __call__(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        path = request.url.path
+        if path in self.exclude_paths:
+            return await call_next(request)
 
-        if additional_properties:
-            properties.update(additional_properties)
+        if not self.should_capture(request) or request.method in ["OPTIONS", "GET"]:
+            return await call_next(request)
+
+        start_time = time.time()
+
+        response = await call_next(request)
+
+        duration = time.time() - start_time
+        try:
+            user = request.state.user
+            distinct_id = user.email if user else "anonymous"
+        except AttributeError:
+            distinct_id = "anonymous"
+
+        route = request.scope.get("route")
+        event_name = (
+            route.endpoint.__name__ if isinstance(route, APIRoute) else "api_request"
+        )
+
+        properties = self.get_base_properties(request)
+
+        properties.update(
+            {
+                "status_code": response.status_code,
+                "duration": duration,
+            }
+        )
 
         self.posthog.capture(
-            distinct_id=self.user.email,
+            distinct_id=distinct_id,
             event=event_name,
             properties=properties,
         )
 
+        return response
 
-def get_posthog(
-    request: Request,
-    posthog: Annotated[posthog.Posthog, Depends(get_posthog_client)],
-    user: Annotated[UserPublic, Depends(get_current_user)],
-) -> PostHog:
-    return PostHog(request, posthog, user)
+
+def setup_posthog_middleware(
+    app: FastAPI,
+    exclude_paths: list[str],
+    should_capture: Callable[[Request], bool],
+) -> None:
+    """Setup PostHog middleware for a FastAPI application.
+
+    Args:
+        app: FastAPI application instance
+        settings: Application settings containing PostHog configuration
+        exclude_paths: List of paths to exclude from tracking
+        should_capture: Optional function that takes a request and returns
+                       whether the event should be captured
+
+    Example:
+        ```python
+        from fastapi import FastAPI
+
+        app = FastAPI()
+
+        # Exclude health check and metrics endpoints
+        exclude_paths = ["/health", "/metrics"]
+
+        setup_posthog_middleware(
+            app,
+            exclude_paths=exclude_paths
+        )
+        ```
+    """
+    middleware = PosthogMiddleware(
+        exclude_paths=exclude_paths, should_capture=should_capture
+    )
+    app.middleware("http")(middleware)

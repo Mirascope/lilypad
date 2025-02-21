@@ -5,7 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from lilypad.server.client import APIConnectionError, LilypadClient, NotFoundError
+from lilypad.exceptions import LilypadAPIConnectionError, LilypadNotFoundError
+from lilypad.server.client import LilypadClient
 from lilypad.server.models import Scope
 from lilypad.server.schemas import ProjectPublic, SpanPublic
 
@@ -127,9 +128,9 @@ def test_request_not_found(client):
     """Test 404 handling"""
     with patch("requests.Session.request") as mock_request:
         mock_request.return_value.status_code = 404
-        mock_request.return_value.raise_for_status.side_effect = NotFoundError()
+        mock_request.return_value.raise_for_status.side_effect = LilypadNotFoundError()
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(LilypadNotFoundError):
             client._request("GET", "/test")
 
 
@@ -138,5 +139,5 @@ def test_request_connection_error(client):
     with patch("requests.Session.request") as mock_request:
         mock_request.side_effect = ConnectionError()
 
-        with pytest.raises(APIConnectionError):
+        with pytest.raises(LilypadAPIConnectionError):
             client._request("GET", "/test")

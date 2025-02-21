@@ -38,6 +38,7 @@ import {
   useDeleteApiKeyMutation,
 } from "@/utils/api-keys";
 import { projectsQueryOptions } from "@/utils/projects";
+import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Check, Copy, Trash } from "lucide-react";
@@ -72,15 +73,7 @@ export const APIKeysTable = () => {
       header: "Expires",
       cell: ({ row }) => {
         const expireDate = new Date(row.getValue("expires_at"));
-        const formattedExpireDate = new Intl.DateTimeFormat("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          hour12: true,
-        }).format(expireDate);
-        return <div>{formattedExpireDate}</div>;
+        return <div>{formatDate(expireDate)}</div>;
       },
     },
     {
