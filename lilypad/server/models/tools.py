@@ -8,7 +8,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
-from .table_names import PROJECT_TABLE_NAME, TOOL_TABLE_NAME
+from .table_names import PROJECT_TABLE_NAME, TOOL_TABLE_NAME, GENERATION_TABLE_NAME, SPAN_TABLE_NAME
 
 if TYPE_CHECKING:
     from .generations import GenerationTable
@@ -37,8 +37,15 @@ class ToolTable(_ToolBase, BaseOrganizationSQLModel, table=True):
 
     __tablename__ = TOOL_TABLE_NAME  # pyright: ignore [reportAssignmentType]
 
-    project: "ProjectTable" = Relationship(back_populates="tools")
-    spans: list["SpanTable"] = Relationship(back_populates="tool", cascade_delete=True)
-    generations: list["GenerationTable"] = Relationship(
-        back_populates="tool", cascade_delete=True
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+    span_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
+    generation_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
+    project: "ProjectTable" = Relationship(back_populates="tools")
+    span: "SpanTable" = Relationship(back_populates="tools")
+    generation: "GenerationTable" = Relationship(back_populates="tools")

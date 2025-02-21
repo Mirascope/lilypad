@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .organizations import OrganizationTable
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
-
+    from .tools import ToolTable
 
 class _ProjectBase(SQLModel):
     """Base Project Model."""
@@ -43,5 +43,8 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     annotations: list["AnnotationTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+    tools: list["ToolTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
