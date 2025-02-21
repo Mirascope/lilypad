@@ -274,8 +274,7 @@ def _build_mirascope_call(
         call_params["response_model"] = Closure.from_code(
             response_model.code, response_model.name
         ).build_object()
-    mirascope_call = llm.call(**call_params)(mirascope_prompt)
-    return mirascope_call
+    return llm.call(**call_params)(mirascope_prompt)
 
 
 _ArgTypes: typing.TypeAlias = dict[str, str]
@@ -352,12 +351,16 @@ def generation(
                 return _inner_async
 
             def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
-                try:
-                    return lilypad_client.get_generation_version(
+                if not managed:
+                    return lilypad_client.get_or_create_generation_version(
                         fn,
                         arg_types,
                         custom_id=custom_id,
-                        create_new_generation=not managed,
+                    )
+                try:
+                    return lilypad_client.get_generation_by_args_types(
+                        fn,
+                        arg_types,
                     )
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
@@ -428,10 +431,12 @@ def generation(
                 return _inner  # pyright: ignore [reportReturnType]
 
             def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
-                try:
-                    return lilypad_client.get_generation_version(
-                        fn, arg_types, custom_id=custom_id, create_new_generation=True
+                if not managed:
+                    return lilypad_client.get_or_create_generation_version(
+                        fn, arg_types, custom_id=custom_id
                     )
+                try:
+                    return lilypad_client.get_generation_by_args_types(fn, arg_types)
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(

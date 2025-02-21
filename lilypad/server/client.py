@@ -219,12 +219,11 @@ class LilypadClient:
             **kwargs,
         )
 
-    def get_generation_version(
+    def get_or_create_generation_version(
         self,
         fn: Callable[..., Any],
         arg_types: dict[str, str],
         custom_id: str | None = None,
-        create_new_generation: bool = False,
     ) -> GenerationPublic:
         """Get the matching version for a generation or create it if non-existent.
 
@@ -232,7 +231,6 @@ class LilypadClient:
             fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
             custom_id (str, optional): Custom ID for the generation. Defaults to None.
-            create_new_generation (bool, optional): If True, create a new generation if not found. Defaults to False.
 
         Returns:
             GenerationPublic: The matching (or created) version for the generation.
@@ -245,8 +243,6 @@ class LilypadClient:
                 response_model=GenerationPublic,
             )
         except LilypadNotFoundError:
-            if not create_new_generation:
-                raise
             return self._request(
                 "POST",
                 f"v0/projects/{self.project_uuid}/generations",
@@ -294,6 +290,35 @@ class LilypadClient:
                 return generation
         raise LilypadNotFoundError(
             f"Generation version '{version}' not found for signature {closure.signature}"
+        )
+
+    def get_generation_by_args_types(
+        self,
+        fn: Callable[..., Any],
+        args_types: dict[str, str],
+    ) -> GenerationPublic:
+        """Get the matching name for a generation.
+
+        Args:
+            fn (Callable): The generation for which to get the version.
+            args_types (dict): If provided, force the retrieval of the generation with this arg_types.
+
+        Returns:
+            GenerationPublic: The matching (or created) version for the generation.
+        """
+        closure = Closure.from_fn(fn)
+        generations = self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            response_model=list[GenerationPublic],
+        )
+        # Check only args count for now
+        args_count = len(args_types)
+        for generation in generations:
+            if len(generation.arg_types) == args_count:
+                return generation
+        raise LilypadNotFoundError(
+            f"Generation args_types '{args_types}' not found for signature {closure.signature}"
         )
 
     def get_prompt_active_version(
