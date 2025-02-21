@@ -5,10 +5,11 @@ import inspect
 import sys
 import types
 from collections.abc import Callable
+from uuid import UUID
 
 import pytest
 
-from lilypad._utils import Closure, DependencyInfo
+from lilypad._utils import Closure, DependencyInfo, get_qualified_name
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -675,3 +676,72 @@ def test_from_fn_failure(monkeypatch):
 
     with pytest.raises(RuntimeError, match="Ruff failed"):
         Closure.from_fn(dummy_func)
+
+
+def sample_function(x: int) -> int:
+    """A sample function that multiplies input by 2."""
+    return x * 2
+
+
+@pytest.fixture()
+def fixed_uuid(monkeypatch):
+    """Fixture that replaces uuid.uuid4 with a fixed UUID."""
+    fixed = UUID("12345678123456781234567812345678")
+    monkeypatch.setattr("uuid.uuid4", lambda: fixed)
+    return fixed
+
+
+def test_create_module_and_build_object(fixed_uuid: UUID):
+    """Test that create_module returns a module containing the expected object and
+    build_object returns a callable, and that the module is removed from sys.modules.
+    """
+    closure = Closure.from_fn(sample_function)
+
+    expected_module_name = f"dynamic_module_{closure.hash[:8]}_{fixed_uuid.hex}"
+
+    # Call build_object(), which internally calls create_module() and then removes it.
+    func_obj = closure.build_object()
+    assert callable(func_obj)
+    assert func_obj(3) == 6
+
+    # Check that the module used by build_object() has been removed from sys.modules.
+    assert expected_module_name not in sys.modules
+
+
+def test_from_code_valid():
+    """Test that from_code creates a valid closure from provided source code."""
+    code = "def test_func(x): return x + 1"
+    closure = Closure.from_code(code, "test_func")
+    assert closure.name == "test_func"
+    # build_object should return a callable that behaves as expected.
+    func = closure.build_object()
+    assert callable(func)
+    assert func(1) == 2
+
+
+def test_get_qualified_name_handles_locals():
+    """Test that get_qualified_name returns a simplified name for a function defined in a local scope."""
+
+    def outer():
+        def inner():
+            pass
+
+        return inner
+
+    inner_fn = outer()
+    simple_name = get_qualified_name(inner_fn)
+    # Expected simple name is "inner"
+    assert simple_name == "inner"
+
+
+def test_multiple_module_creation():
+    """Test that multiple calls to create_module for the same closure generate unique module names and do not interfere."""
+    closure = Closure.from_fn(sample_function)
+    module1 = closure.create_module()
+    module2 = closure.create_module()
+    # The module names should be unique.
+    assert module1.__name__ != module2.__name__
+    # Clean up manually.
+    for mod in (module1, module2):
+        if mod.__name__ in sys.modules:
+            del sys.modules[mod.__name__]
