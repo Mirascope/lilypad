@@ -3,11 +3,12 @@
 import importlib.metadata
 import inspect
 import sys
+import types
 from collections.abc import Callable
 
 import pytest
 
-from lilypad._utils import Closure
+from lilypad._utils import Closure, DependencyInfo
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -582,3 +583,67 @@ def test_nested_handle_issue_method() -> None:
             "version": "2.10.6",
         },
     }
+
+
+def test_from_code_returns_closure_instance():
+    """Test that Closure.from_code returns a Closure instance with the expected attributes."""
+    code = """
+def my_function(x):
+    return x + 1
+"""
+    name = "my_function"
+    dependencies: dict[str, DependencyInfo] = {
+        "dummy": {"version": "1.0", "extras": None}
+    }
+    closure = Closure.from_code(code, name, dependencies)
+    assert closure.name == name
+    assert closure.signature
+    assert "def my_function(x):" in closure.code
+    assert closure.dependencies == dependencies
+    assert isinstance(closure.hash, str)
+    assert len(closure.hash) == 64
+
+
+def test_create_module_creates_module_with_object():
+    """Test that Closure.create_module creates a module that contains the target object."""
+    code = """
+def double(x):
+    return x * 2
+"""
+    name = "double"
+    closure = Closure.from_code(code, name)
+    module = closure.create_module("test_module_double")
+    assert isinstance(module, types.ModuleType)
+    assert hasattr(module, "double")
+    double_fn = module.double
+    assert double_fn(3) == 6
+
+
+def test_build_object_returns_callable():
+    """Test that Closure.build_object returns a callable object (function, class, etc.)
+    and that it behaves as expected.
+    """
+    code = """
+def greet(name):
+    return f"Hello, {name}"
+"""
+    name = "greet"
+    closure = Closure.from_code(code, name)
+    built_obj = closure.build_object()
+    assert callable(built_obj)
+    assert built_obj("Alice") == "Hello, Alice"
+
+
+def test_from_code_without_dependencies():
+    """Test that Closure.from_code correctly defaults dependencies to an empty dict
+    when none are provided.
+    """
+    code = """
+def add(a, b):
+    return a + b
+"""
+    name = "add"
+    closure = Closure.from_code(code, name)
+    assert closure.dependencies == {}
+    add_fn = closure.build_object()
+    assert add_fn(2, 3) == 5
