@@ -8,7 +8,12 @@ from sqlmodel import Field, Relationship, SQLModel
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
-from .table_names import PROJECT_TABLE_NAME, TOOL_TABLE_NAME, GENERATION_TABLE_NAME, SPAN_TABLE_NAME
+from .table_names import (
+    GENERATION_TABLE_NAME,
+    PROJECT_TABLE_NAME,
+    SPAN_TABLE_NAME,
+    TOOL_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
     from .generations import GenerationTable
