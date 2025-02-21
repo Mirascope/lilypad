@@ -1,10 +1,32 @@
 import { MessageCard } from "@/components/MessageCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageParam } from "@/types/types";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Event, MessageParam } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView from "@uiw/react-json-view";
+import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
+
+export interface MessageCardProps {
+  role: string;
+  sanitizedHtml?: string;
+  content?: ReactNode;
+}
+const MessageCard = ({ role, content }: MessageCardProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{role}</CardTitle>
+      </CardHeader>
+      <CardContent className='overflow-x-auto'>{content}</CardContent>
+    </Card>
+  );
+};
 
 export const renderMessagesCard = (messages: MessageParam[]) => {
   try {
@@ -52,6 +74,31 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
   }
 };
 
+export const renderEventsContainer = (messages: Event[]) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{"Events"}</CardTitle>
+      </CardHeader>
+      <CardContent className='flex flex-col gap-4'>
+        {messages.map((event: Event, index: number) => (
+          <Card key={`events-${index}`}>
+            <CardHeader>
+              <CardTitle>
+                {event.name} {`[${event.type}]`}
+              </CardTitle>
+              <CardDescription>{event.timestamp}</CardDescription>
+            </CardHeader>
+            <CardContent className='overflow-x-auto'>
+              {event.message}
+            </CardContent>
+          </Card>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const renderMessagesContainer = (messages: MessageParam[]) => {
   return (
     <Card>
@@ -84,7 +131,7 @@ export const renderCardOutput = (output: any) => {
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col'>
+          <CardContent className='flex flex-col overflow-x-auto'>
             {renderOutput(output)}
           </CardContent>
         </Card>
@@ -93,15 +140,15 @@ export const renderCardOutput = (output: any) => {
   );
 };
 
-export const renderData = (data?: object) => {
+export const renderData = ({ ...props }: JsonViewProps<object>) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>{"Data"}</CardTitle>
       </CardHeader>
-      {data && (
-        <CardContent>
-          <JsonView value={data} />
+      {props.value && (
+        <CardContent className='overflow-x-auto'>
+          <JsonView value={props.value} collapsed={props.collapsed} />
         </CardContent>
       )}
     </Card>

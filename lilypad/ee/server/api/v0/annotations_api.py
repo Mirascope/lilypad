@@ -43,10 +43,17 @@ async def create_annotations(
     duplicate_checks = []
     for annotation in annotations_create:
         annotation.project_uuid = project_uuid
-        if annotation.span_uuid:
+        if annotation.span_uuid and annotation.assigned_to:
+            for assigned_to in annotation.assigned_to:
+                duplicate_checks.append(
+                    {
+                        "assigned_to": assigned_to,
+                        "span_uuid": annotation.span_uuid,
+                    }
+                )
+        else:
             duplicate_checks.append(
                 {
-                    "assigned_to": annotation.assigned_to,
                     "span_uuid": annotation.span_uuid,
                 }
             )

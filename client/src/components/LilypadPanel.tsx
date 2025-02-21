@@ -6,13 +6,16 @@ import { Typography } from "@/components/ui/typography";
 import {
   renderCardOutput,
   renderData,
+  renderEventsContainer,
   renderMessagesContainer,
 } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import hljs from "highlight.js/lib/core";
 import markdown from "highlight.js/lib/languages/markdown";
 import python from "highlight.js/lib/languages/python";
+import { JSX } from "react";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
@@ -22,7 +25,15 @@ type Tab = {
   component?: JSX.Element | null;
 };
 
-export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
+export const LilypadPanel = ({
+  spanUuid,
+  showJsonArgs,
+  dataProps,
+}: {
+  spanUuid: string;
+  showJsonArgs?: boolean;
+  dataProps?: JsonViewProps<object>;
+}) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const tabs: Tab[] = [
     {
@@ -39,34 +50,51 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{span.display_name}</Typography>
-      <Card>
-        <CardHeader>
-          <CardTitle>{"Code"}</CardTitle>
-        </CardHeader>
-        <CardContent className='overflow-x-auto'>
-          <Tabs defaultValue='code' className='w-full'>
-            <div className='flex w-full'>
-              <TabsList className={`w-[160px]`}>
-                {tabs.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value}>
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            {tabs.map((tab) => (
-              <TabsContent
-                key={tab.value}
-                value={tab.value}
-                className='w-full bg-gray-50'
-              >
-                {tab.component}
-              </TabsContent>
-            ))}
-          </Tabs>
-        </CardContent>
-      </Card>
-      {span.arg_values && <ArgsCards args={span.arg_values} />}
+      {(span.code || span.signature) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{"Code"}</CardTitle>
+          </CardHeader>
+          <CardContent className='overflow-x-auto'>
+            <Tabs defaultValue='code' className='w-full'>
+              <div className='flex w-full'>
+                <TabsList className={`w-[160px]`}>
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value}>
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              {tabs.map((tab) => (
+                <TabsContent
+                  key={tab.value}
+                  value={tab.value}
+                  className='w-full bg-gray-50'
+                >
+                  {tab.component}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+      {span.events &&
+        span.events.length > 0 &&
+        renderEventsContainer(span.events)}
+      {span.arg_values &&
+        (showJsonArgs ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{"Input"}</CardTitle>
+            </CardHeader>
+            <CardContent className='flex flex-col'>
+              <JsonView value={span.arg_values} />
+            </CardContent>
+          </Card>
+        ) : (
+          <ArgsCards args={span.arg_values} />
+        ))}
       {span.template && (
         <Card>
           <CardHeader>
@@ -79,7 +107,10 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
       )}
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
       {renderCardOutput(span.output)}
-      {renderData(span.data)}
+      {renderData({
+        value: span.data,
+        ...dataProps,
+      })}
     </div>
   );
 };

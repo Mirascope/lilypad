@@ -38,7 +38,7 @@ class _JSONSpanExporter(SpanExporter):
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
         settings = get_settings()
         if len(spans) > 0:
-            self.log.error(
+            self.log.info(
                 f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
             )
         for span in spans:
@@ -55,7 +55,11 @@ class _JSONSpanExporter(SpanExporter):
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries"""
-        span_data = [self._span_to_dict(span) for span in spans]
+        span_data = sorted(
+            [self._span_to_dict(span) for span in spans],
+            key=lambda span: span.get("attributes", {}).get("lilypad.span.order", 0),
+            reverse=True,
+        )
         json_data = json.dumps(span_data)
 
         try:

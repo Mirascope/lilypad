@@ -30,12 +30,14 @@ export const AnnotationQueueDialog = ({
         className: "max-w-[800px] max-h-screen overflow-y-auto",
       }}
     >
-      <UpdateAnnotationForm
-        setOpen={setOpen}
-        annotation={unannotatedRows[0]}
-        total={unannotatedRows.length}
-        onComplete={onComplete}
-      />
+      {unannotatedRows.length > 0 && (
+        <UpdateAnnotationForm
+          setOpen={setOpen}
+          annotation={unannotatedRows[0]}
+          total={unannotatedRows.length}
+          onComplete={onComplete}
+        />
+      )}
     </LilypadDialog>
   );
 };

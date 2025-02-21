@@ -21,7 +21,13 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
     ) -> Sequence[AnnotationTable]:
         """Find records by generation UUID."""
         return self.session.exec(
-            select(self.table).where(self.table.generation_uuid == generation_uuid)
+            select(self.table).where(
+                self.table.generation_uuid == generation_uuid,
+                or_(
+                    self.table.assigned_to == self.user.uuid,
+                    self.table.assigned_to.is_(None),  # type: ignore
+                ),
+            )
         ).all()
 
     def check_bulk_duplicates(self, checks: list[dict]) -> list[UUID]:
@@ -82,14 +88,17 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
         """Create multiple annotation records in bulk."""
         annotations = []
         for annotation in annotations_create:
-            db_annotation = AnnotationTable.model_validate(
-                annotation,
-                update={
-                    "organization_uuid": self.user.active_organization_uuid,
-                },
-            )
-            db_annotation.project_uuid = project_uuid
-            annotations.append(db_annotation)
+            assigned_to = annotation.assigned_to if annotation.assigned_to else [None]
+            for user_uuid in assigned_to:
+                db_annotation = AnnotationTable.model_validate(
+                    annotation,
+                    update={
+                        "organization_uuid": self.user.active_organization_uuid,
+                        "project_uuid": project_uuid,
+                        "assigned_to": user_uuid,
+                    },
+                )
+                annotations.append(db_annotation)
 
         self.session.add_all(annotations)
         self.session.commit()

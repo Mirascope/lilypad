@@ -51,7 +51,7 @@ interface GenericDataTableProps<T> {
   DetailPanel?: React.ComponentType<{ data: T }>;
   onRowClick?: (row: T) => void;
   defaultPanelSize?: number;
-  virtualizerRef?: React.RefObject<HTMLDivElement>;
+  virtualizerRef?: React.RefObject<HTMLDivElement | null>;
   virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
@@ -143,7 +143,9 @@ export const DataTable = <T extends { uuid: string }>({
         <TableRow
           key={row.id}
           data-state={row.getIsSelected() && "selected"}
-          className='cursor-pointer hover:bg-gray-100'
+          className={`cursor-pointer hover:bg-primary/10 ${
+            selectedRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
+          }`}
           onClick={() => toggleRowSelection(row.original)}
         >
           {row.getVisibleCells().map((cell) => (

@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import threading
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
@@ -10,7 +11,7 @@ from typing import Any, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.trace import get_tracer, get_tracer_provider
+from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
@@ -91,16 +92,29 @@ def outermost_lock_context(enable_lock: bool) -> Generator[None, None, None]:
         yield
 
 
+# Global counter and lock for span order.
+_span_counter_lock = threading.Lock()
+_span_counter = 0
+
+
+@contextmanager
+def span_order_context(span: Span) -> Generator[None, None, None]:
+    """Assign an explicit order to a span using a global counter."""
+    global _span_counter
+    with _span_counter_lock:
+        _span_counter += 1
+        order = _span_counter
+    span.set_attribute("lilypad.span.order", order)
+    yield
+
+
 def _construct_trace_attributes(
     generation: GenerationPublic,
     arg_types: dict[str, str],
     arg_values: dict[str, Any],
     prompt_template: str,
-    output: Any,
     is_async: bool,
 ) -> dict[str, AttributeValue]:
-    if isinstance(output, BaseModel):
-        output = str(output.model_dump())
     jsonable_arg_values = {}
     settings = get_settings()
     for arg_name, arg_value in arg_values.items():
@@ -119,7 +133,6 @@ def _construct_trace_attributes(
         "lilypad.generation.arg_types": json.dumps(arg_types),
         "lilypad.generation.arg_values": json.dumps(jsonable_arg_values),
         "lilypad.generation.prompt_template": prompt_template,
-        "lilypad.generation.output": str(output),
         "lilypad.generation.version": generation.version_num
         if generation.version_num
         else -1,
@@ -148,14 +161,20 @@ def _trace(
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                with get_tracer("lilypad").start_as_current_span(
-                    get_qualified_name(fn)
-                ) as span:
-                    output = await fn(*args, **kwargs)
+                with (
+                    get_tracer("lilypad").start_as_current_span(
+                        get_qualified_name(fn)
+                    ) as span,
+                    span_order_context(span),
+                ):
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        generation, arg_types, arg_values, prompt_template, output, True
+                        generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
+                    output = await fn(*args, **kwargs)
+                    if isinstance(output, BaseModel):
+                        output = str(output.model_dump())
+                    span.set_attribute("lilypad.generation.output", str(output))
                 return output  # pyright: ignore [reportReturnType]
 
             return inner_async
@@ -164,19 +183,20 @@ def _trace(
 
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                with get_tracer("lilypad").start_as_current_span(
-                    get_qualified_name(fn)
-                ) as span:
-                    output = fn(*args, **kwargs)
+                with (
+                    get_tracer("lilypad").start_as_current_span(
+                        get_qualified_name(fn)
+                    ) as span,
+                    span_order_context(span),
+                ):
                     attributes: dict[str, AttributeValue] = _construct_trace_attributes(
-                        generation,
-                        arg_types,
-                        arg_values,
-                        prompt_template,
-                        output,
-                        False,
+                        generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
+                    output = fn(*args, **kwargs)
+                    if isinstance(output, BaseModel):
+                        output = str(output.model_dump())
+                    span.set_attribute("lilypad.generation.output", str(output))
                 return output  # pyright: ignore [reportReturnType]
 
             return inner
@@ -266,7 +286,7 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                         decorator_inner = create_mirascope_middleware(
                             generation, arg_types, arg_values, False, prompt_template
                         )
-                        return decorator(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                        return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
                 finally:
                     current_generation.reset(token)
 

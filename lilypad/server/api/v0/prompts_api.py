@@ -9,12 +9,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from posthog import Posthog
 
 from ..._utils import (
     construct_function,
     get_current_user,
-    get_posthog,
     validate_api_key_project_strict,
 )
 from ...models import (
@@ -124,7 +122,6 @@ async def set_active_version(
     response_model=PromptPublic,
 )
 async def create_prompt(
-    posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     prompt_create: PromptCreate,
     prompt_service: Annotated[PromptService, Depends(PromptService)],
@@ -153,14 +150,6 @@ async def create_prompt(
         prompt_create.is_default = True
 
     new_prompt = prompt_service.create_record(prompt_create, project_uuid=project_uuid)
-    posthog.capture(
-        "prompt_created",
-        {
-            "prompt_uuid": str(new_prompt.uuid),
-            "prompt_name": new_prompt.name,
-            "prompt_hash": new_prompt.hash,
-        },
-    )
     return new_prompt
 
 
@@ -203,7 +192,8 @@ import os
 import google.generativeai as genai
 
 from lilypad._utils import create_mirascope_call
-from lilypad.server.models import PromptCreate, Provider
+from lilypad.server.models import Provider
+from lilypad.server.schemas import PromptCreate
 
 genai.configure(api_key="{user.keys.get("gemini", "")}")
 os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
@@ -221,7 +211,10 @@ prompt = PromptCreate(
     hash = "{prompt.hash}",
     version_num = {prompt.version_num}
 )
+# Python 3.10
 provider = Provider("{playground_parameters.provider}")
+# Python 3.11
+# provider = {playground_parameters.provider}
 model = "{playground_parameters.model}"
 arg_values = {playground_parameters.arg_values}
 print(create_mirascope_call({name}, prompt, provider, model, None)(**arg_values))
