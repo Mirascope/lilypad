@@ -8,7 +8,6 @@ from uuid import UUID
 from mirascope.core.base import CommonCallParams
 from sqlmodel import Field, Relationship, SQLModel
 
-from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
 from .table_names import PROJECT_TABLE_NAME, PROMPT_TABLE_NAME
@@ -39,7 +38,7 @@ class _PromptBase(SQLModel):
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
-    dependencies: dict[str, DependencyInfo] = Field(
+    dependencies: dict[str, str] = Field(
         sa_column=get_json_column(), default_factory=dict
     )
     template: str

@@ -262,6 +262,40 @@ class LilypadClient:
                 },
             )
 
+    def get_generation_by_version(
+        self,
+        fn: Callable[..., Any],
+        version: int | None = None,
+    ) -> GenerationPublic:
+        """Get the matching version for a generation.
+
+        Args:
+            fn (Callable): The generation for which to get the version.
+            version (int): If provided, force the retrieval of the generation with this version.
+
+        Returns:
+            GenerationPublic: The matching (or created) version for the generation.
+        """
+        closure = Closure.from_fn(fn)
+        try:
+            forced_version_num = int(version)
+        except ValueError:
+            raise ValueError(
+                f"Version must be an integer. Received: '{version}' (type: {type(version).__name__})"
+            )
+        generations = self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            response_model=list[GenerationPublic],
+        )
+
+        for generation in generations:
+            if generation.version_num == forced_version_num:
+                return generation
+        raise NotFoundError(
+            f"Generation version '{version}' not found for signature {closure.signature}"
+        )
+
     def get_prompt_active_version(
         self,
         fn: Callable[..., Any],
