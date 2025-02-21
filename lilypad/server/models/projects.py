@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .response_models import ResponseModelTable
     from .tools import ToolTable
 
+
 class _ProjectBase(SQLModel):
     """Base Project Model."""
 

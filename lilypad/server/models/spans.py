@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from .response_models import ResponseModelTable
     from .tools import ToolTable
 
+
 class Scope(str, Enum):
     """Instrumentation Scope name of the span"""
 

@@ -322,11 +322,9 @@ def generation(
             def version_async(
                 forced_version: int,
             ) -> Callable[_P, Coroutine[Any, Any, _R]]:
-                specific_version_generation = (
-                    lilypad_client.get_generation_by_version(
-                        fn,
-                        version=forced_version,
-                    )
+                specific_version_generation = lilypad_client.get_generation_by_version(
+                    fn,
+                    version=forced_version,
                 )
                 if not specific_version_generation:
                     raise ValueError(
@@ -397,11 +395,9 @@ def generation(
             def version_sync(
                 forced_version: int,
             ) -> Callable[_P, _R]:
-                specific_version_generation = (
-                    lilypad_client.get_generation_by_version(
-                        fn,
-                        version=forced_version,
-                    )
+                specific_version_generation = lilypad_client.get_generation_by_version(
+                    fn,
+                    version=forced_version,
                 )
                 if not specific_version_generation:
                     raise ValueError(
@@ -410,6 +406,7 @@ def generation(
 
                 def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
                     return specific_version_generation
+
                 return _create_inner_sync(_get_specific_version)
 
             inner.version = version_sync  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]

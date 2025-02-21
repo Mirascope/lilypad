@@ -9,10 +9,10 @@ Create Date: 2025-02-21 12:49:01.245594
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-import sqlmodel
 from alembic import op
+from sqlmodel import AutoString
 
-import lilypad
+from lilypad.server.models import JSONTypeDecorator
 
 # revision identifiers, used by Alembic.
 revision: str = "0013"
@@ -28,13 +28,13 @@ def upgrade() -> None:
         sa.Column("uuid", sa.Uuid(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("organization_uuid", sa.Uuid(), nullable=False),
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("signature", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("hash", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("name", AutoString(), nullable=False),
+        sa.Column("signature", AutoString(), nullable=False),
+        sa.Column("code", AutoString(), nullable=False),
+        sa.Column("hash", AutoString(), nullable=False),
         sa.Column(
             "dependencies",
-            lilypad.server.models.base_sql_model.JSONTypeDecorator(),
+            JSONTypeDecorator(),
             nullable=True,
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False),
@@ -77,15 +77,11 @@ def upgrade() -> None:
         )
 
     with op.batch_alter_table("generations", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "prompt_template", sqlmodel.sql.sqltypes.AutoString(), nullable=True
-            )
-        )
+        batch_op.add_column(sa.Column("prompt_template", AutoString(), nullable=True))
         batch_op.add_column(
             sa.Column(
                 "call_params",
-                lilypad.server.models.base_sql_model.JSONTypeDecorator(),
+                JSONTypeDecorator(),
                 nullable=True,
             )
         )
