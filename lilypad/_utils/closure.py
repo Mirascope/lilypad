@@ -849,25 +849,24 @@ class Closure(BaseModel):
     ) -> types.ModuleType:
         """Create a module from the closure's code.
 
+        A unique module name is generated using the closure hash and a UUID if no module_name is provided.
+
         Args:
-            module_name: Optional name for the module
+            module_name: Optional name for the module.
 
         Returns:
-            Created module
+            The created module.
         """
-        name = module_name or f"dynamic_module_{self.hash[:8]}"
+        import uuid
 
-        # Create a new module
+        unique_suffix = uuid.uuid4().hex
+        name = module_name or f"dynamic_module_{self.hash[:8]}_{unique_suffix}"
         spec = importlib.util.spec_from_loader(name, loader=None)
         if spec is None:
             raise ImportError(f"Could not create module spec for {name}")
-
         module = importlib.util.module_from_spec(spec)
-
-        # Add module to sys.modules while executing
+        # Register the module in sys.modules so that exec can work.
         sys.modules[name] = module
-
-        # Setup module environment
         module.__dict__.update(
             {
                 "__builtins__": __builtins__,
@@ -878,31 +877,33 @@ class Closure(BaseModel):
                 "__spec__": None,
             }
         )
-
-        # Execute code in module context
         try:
             exec(self.code, module.__dict__)
         except Exception as e:
+            # On failure, remove the module from sys.modules.
             del sys.modules[name]
             raise ImportError(f"Failed to execute module code: {str(e)}") from e
-
         return module
 
     def build_object(self) -> Any:
         """Build an object (function, class, or variable) from the closure's code.
 
         Returns:
-            The built object
+            The built object.
 
         Raises:
-            AttributeError: If object not found in module
+            AttributeError: If the expected object is not found in the module.
         """
         module = self.create_module()
-
-        if not hasattr(module, self.name):
-            raise AttributeError(f"Object {self.name} not found in module")
-
-        return getattr(module, self.name)
+        try:
+            obj = getattr(module, self.name)
+        except AttributeError as e:
+            raise AttributeError(f"Object {self.name} not found in module") from e
+        finally:
+            # Clean up: Remove the module from sys.modules to avoid interference between requests.
+            if module.__name__ in sys.modules:
+                del sys.modules[module.__name__]
+        return obj
 
     @classmethod
     def from_code(
