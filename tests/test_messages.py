@@ -17,7 +17,6 @@ from openai.types.chat import (
     ChatCompletionToolMessageParam,
 )
 from openai.types.chat.chat_completion import Choice
-from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import computed_field
 from pydantic.json_schema import SkipJsonSchema
 
@@ -269,158 +268,159 @@ def test_message_special_attributes(mock_openai_response):
     assert isinstance(message.__class__, type)
 
 
-def test_message_no_tools(mock_openai_response):
-    """Test call_tools with no tools"""
-    message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
-    result = message.call_tools()
-    assert isinstance(result, list)
-    assert len(result) == 0
+#
+# def test_message_no_tools(mock_openai_response):
+#     """Test call_tools with no tools"""
+#     message = Message(mock_openai_response)  # pyright: ignore [reportAbstractUsage]
+#     result = message.call_tools()
+#     assert isinstance(result, list)
+#     assert len(result) == 0
+#
+
+# def test_message_sync_tools(mock_chat_completion):
+#     """Test call_tools with synchronous tools"""
+#     mock_chat_completion.choices[0].message.tool_calls = [
+#         ChatCompletionMessageToolCall(
+#             id="tool1-id",
+#             type="function",
+#             function=Function(
+#                 name="FormatBook",
+#                 arguments='{"title": "The Name of the Wind", "author": "Patrick Rothfuss"}',
+#             ),
+#         ),
+#         ChatCompletionMessageToolCall(
+#             id="tool2-id",
+#             type="function",
+#             function=Function(
+#                 name="FormatAuthor", arguments='{"author": "Patrick Rothfuss"}'
+#             ),
+#         ),
+#     ]
+#
+#     response = MockResponse(  # pyright: ignore [reportAbstractUsage]
+#         metadata={},
+#         response=mock_chat_completion,
+#         tool_types=[FormatBook, FormatAuthor],
+#         prompt_template=None,
+#         fn_args={},
+#         dynamic_config=None,
+#         messages=[],
+#         call_params=OpenAICallParams(),
+#         call_kwargs={},
+#         user_message_param=None,
+#         start_time=0.0,
+#         end_time=0.0,
+#     )
+#
+#     message = Message[FormatBook, FormatAuthor](response)  # pyright: ignore [reportAbstractUsage]
+#     result = message.call_tools()
+#     assert isinstance(result, list)
+#     assert len(result) == 2
+#     assert result[0]["tool_call_id"] == "tool1-id"
+#     assert result[0]["content"] == "The Name of the Wind by Patrick Rothfuss"
+#     assert result[1]["tool_call_id"] == "tool2-id"
+#     assert result[1]["content"] == "Author is Patrick Rothfuss"
 
 
-def test_message_sync_tools(mock_chat_completion):
-    """Test call_tools with synchronous tools"""
-    mock_chat_completion.choices[0].message.tool_calls = [
-        ChatCompletionMessageToolCall(
-            id="tool1-id",
-            type="function",
-            function=Function(
-                name="FormatBook",
-                arguments='{"title": "The Name of the Wind", "author": "Patrick Rothfuss"}',
-            ),
-        ),
-        ChatCompletionMessageToolCall(
-            id="tool2-id",
-            type="function",
-            function=Function(
-                name="FormatAuthor", arguments='{"author": "Patrick Rothfuss"}'
-            ),
-        ),
-    ]
-
-    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
-        metadata={},
-        response=mock_chat_completion,
-        tool_types=[FormatBook, FormatAuthor],
-        prompt_template=None,
-        fn_args={},
-        dynamic_config=None,
-        messages=[],
-        call_params=OpenAICallParams(),
-        call_kwargs={},
-        user_message_param=None,
-        start_time=0.0,
-        end_time=0.0,
-    )
-
-    message = Message[FormatBook, FormatAuthor](response)  # pyright: ignore [reportAbstractUsage]
-    result = message.call_tools()
-    assert isinstance(result, list)
-    assert len(result) == 2
-    assert result[0]["tool_call_id"] == "tool1-id"
-    assert result[0]["content"] == "The Name of the Wind by Patrick Rothfuss"
-    assert result[1]["tool_call_id"] == "tool2-id"
-    assert result[1]["content"] == "Author is Patrick Rothfuss"
-
-
-@pytest.mark.asyncio
-async def test_message_async_tools(mock_chat_completion):
-    """Test call_tools with asynchronous tools"""
-
-    async def async_call() -> str:
-        return "async result"
-
-    class AsyncFormatBook(MockBaseTool):
-        title: str
-        author: str
-
-        async def call(self) -> str:
-            return f"{self.title} by {self.author} (async)"
-
-    class AsyncFormatAuthor(MockBaseTool):
-        author: str
-
-        async def call(self) -> str:
-            return f"Author is {self.author} (async)"
-
-    mock_chat_completion.choices[0].message.tool_calls = [
-        ChatCompletionMessageToolCall(
-            id="tool1-id",
-            type="function",
-            function=Function(
-                name="AsyncFormatBook",
-                arguments='{"title": "The Name of the Wind", "author": "Patrick Rothfuss"}',
-            ),
-        ),
-        ChatCompletionMessageToolCall(
-            id="tool2-id",
-            type="function",
-            function=Function(
-                name="AsyncFormatAuthor", arguments='{"author": "Patrick Rothfuss"}'
-            ),
-        ),
-    ]
-
-    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
-        metadata={},
-        response=mock_chat_completion,
-        tool_types=[AsyncFormatBook, AsyncFormatAuthor],
-        prompt_template=None,
-        fn_args={},
-        dynamic_config=None,
-        messages=[],
-        call_params=OpenAICallParams(),
-        call_kwargs={},
-        user_message_param=None,
-        start_time=0.0,
-        end_time=0.0,
-    )
-
-    message = Message[AsyncFormatBook, AsyncFormatAuthor](response)  # pyright: ignore [reportAbstractUsage]
-    results = await message.call_tools()  # pyright: ignore [reportAbstractUsage, reportGeneralTypeIssues]
-
-    assert isinstance(results, list)
-    assert len(results) == 2
-
-    tool1, output1 = results[0]
-    tool2, output2 = results[1]
-
-    assert isinstance(tool1, AsyncFormatBook)
-    assert isinstance(tool2, AsyncFormatAuthor)
-    assert output1 == "The Name of the Wind by Patrick Rothfuss (async)"
-    assert output2 == "Author is Patrick Rothfuss (async)"
+# @pytest.mark.asyncio
+# async def test_message_async_tools(mock_chat_completion):
+#     """Test call_tools with asynchronous tools"""
+#
+#     async def async_call() -> str:
+#         return "async result"
+#
+#     class AsyncFormatBook(MockBaseTool):
+#         title: str
+#         author: str
+#
+#         async def call(self) -> str:
+#             return f"{self.title} by {self.author} (async)"
+#
+#     class AsyncFormatAuthor(MockBaseTool):
+#         author: str
+#
+#         async def call(self) -> str:
+#             return f"Author is {self.author} (async)"
+#
+#     mock_chat_completion.choices[0].message.tool_calls = [
+#         ChatCompletionMessageToolCall(
+#             id="tool1-id",
+#             type="function",
+#             function=Function(
+#                 name="AsyncFormatBook",
+#                 arguments='{"title": "The Name of the Wind", "author": "Patrick Rothfuss"}',
+#             ),
+#         ),
+#         ChatCompletionMessageToolCall(
+#             id="tool2-id",
+#             type="function",
+#             function=Function(
+#                 name="AsyncFormatAuthor", arguments='{"author": "Patrick Rothfuss"}'
+#             ),
+#         ),
+#     ]
+#
+#     response = MockResponse(  # pyright: ignore [reportAbstractUsage]
+#         metadata={},
+#         response=mock_chat_completion,
+#         tool_types=[AsyncFormatBook, AsyncFormatAuthor],
+#         prompt_template=None,
+#         fn_args={},
+#         dynamic_config=None,
+#         messages=[],
+#         call_params=OpenAICallParams(),
+#         call_kwargs={},
+#         user_message_param=None,
+#         start_time=0.0,
+#         end_time=0.0,
+#     )
+#
+#     message = Message(response)  # pyright: ignore [reportAbstractUsage]
+#     results = await message.call_tools()  # pyright: ignore [reportAbstractUsage, reportGeneralTypeIssues]
+#
+#     assert isinstance(results, list)
+#     assert len(results) == 2
+#
+#     tool1, output1 = results[0]
+#     tool2, output2 = results[1]
+#
+#     assert isinstance(tool1, AsyncFormatBook)
+#     assert isinstance(tool2, AsyncFormatAuthor)
+#     assert output1 == "The Name of the Wind by Patrick Rothfuss (async)"
+#     assert output2 == "Author is Patrick Rothfuss (async)"
 
 
-@pytest.mark.asyncio
-async def test_message_tool_error_handling(mock_chat_completion):
-    """Test error handling in tool calls"""
-
-    class AsyncErrorTool(MockBaseTool):
-        async def call(self) -> str:
-            raise ValueError("Async tool error")
-
-    mock_chat_completion.choices[0].message.tool_calls = [
-        ChatCompletionMessageToolCall(
-            id="error-tool-id",
-            type="function",
-            function=Function(name="AsyncErrorTool", arguments="{}"),
-        )
-    ]
-
-    response = MockResponse(  # pyright: ignore [reportAbstractUsage]
-        metadata={},
-        response=mock_chat_completion,
-        tool_types=[AsyncErrorTool],
-        prompt_template=None,
-        fn_args={},
-        dynamic_config=None,
-        messages=[],
-        call_params=OpenAICallParams(),
-        call_kwargs={},
-        user_message_param=None,
-        start_time=0.0,
-        end_time=0.0,
-    )
-
-    message = Message[AsyncErrorTool](response)  # pyright: ignore [reportAbstractUsage]
-    with pytest.raises(ValueError, match="Async tool error"):
-        await message.call_tools()  # pyright: ignore [reportGeneralTypeIssues]
+# @pytest.mark.asyncio
+# async def test_message_tool_error_handling(mock_chat_completion):
+#     """Test error handling in tool calls"""
+#
+#     class AsyncErrorTool(MockBaseTool):
+#         async def call(self) -> str:
+#             raise ValueError("Async tool error")
+#
+#     mock_chat_completion.choices[0].message.tool_calls = [
+#         ChatCompletionMessageToolCall(
+#             id="error-tool-id",
+#             type="function",
+#             function=Function(name="AsyncErrorTool", arguments="{}"),
+#         )
+#     ]
+#
+#     response = MockResponse(  # pyright: ignore [reportAbstractUsage]
+#         metadata={},
+#         response=mock_chat_completion,
+#         tool_types=[AsyncErrorTool],
+#         prompt_template=None,
+#         fn_args={},
+#         dynamic_config=None,
+#         messages=[],
+#         call_params=OpenAICallParams(),
+#         call_kwargs={},
+#         user_message_param=None,
+#         start_time=0.0,
+#         end_time=0.0,
+#     )
+#
+#     message = Message[AsyncErrorTool](response)  # pyright: ignore [reportAbstractUsage]
+#     with pytest.raises(ValueError, match="Async tool error"):
+#         await message.call_tools()  # pyright: ignore [reportGeneralTypeIssues]

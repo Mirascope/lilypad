@@ -1,11 +1,20 @@
 """Unit tests for the generations module."""
 
-from unittest.mock import patch
+from functools import cached_property
+from textwrap import dedent
+from typing import Any, cast
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from mirascope import llm
+from mirascope.core import BaseDynamicConfig, BaseMessageParam, BaseTool
+from mirascope.core.base import BaseCallParams, BaseCallResponse, Metadata
+from mirascope.core.base.types import FinishReason
+from mirascope.llm.call_response import CallResponse
+from pydantic import BaseModel, computed_field
 
+from lilypad._utils import Closure
 from lilypad.generations import _build_mirascope_call, generation
 from lilypad.server.schemas.generations import GenerationPublic
 from lilypad.server.schemas.response_models import ResponseModelPublic
@@ -104,12 +113,12 @@ def patched_closure(fake_closure_fixture, monkeypatch):
 
 
 @pytest.fixture
-def fake_llm_call_fixture():
+def fake_llm_call_fixture(dummy_call_response_instance):
     """Fixture that returns a fake llm.call function for sync branch."""
 
     def fake_llm_call(**kwargs):
         def inner(mirascope_prompt):
-            return lambda *args, **kwargs: "result with tools"
+            return lambda *args, **kwargs: dummy_call_response_instance
 
         return inner
 
@@ -122,13 +131,169 @@ def patched_llm_call(patched_closure, fake_llm_call_fixture, monkeypatch):
     monkeypatch.setattr(llm, "call", fake_llm_call_fixture)
 
 
+class DummyCallParams(BaseCallParams):
+    """A dummy call params class."""
+
+    pass
+
+
+class DummyMessageParam(BaseMessageParam):
+    """A dummy message param class."""
+
+    role: str
+    content: Any
+
+
+class DummyTool(BaseTool):
+    """A dummy tool class."""
+
+    def call(self):
+        """Call the tool."""
+        ...
+
+    @property
+    def model_fields(self):  # pyright: ignore [reportIncompatibleVariableOverride]
+        """Return a list of model fields."""
+        return ["field1"]
+
+    field1: str = "tool_field"
+
+
+class DummyProviderCallResponse(
+    BaseCallResponse[
+        Any,
+        DummyTool,
+        Any,
+        BaseDynamicConfig,
+        DummyMessageParam,
+        DummyCallParams,
+        DummyMessageParam,
+    ]
+):
+    """A dummy provider call response class."""
+
+    @property
+    def content(self) -> str:
+        """Return the content of the response."""
+        return "dummy_content"
+
+    @property
+    def finish_reasons(self) -> list[str] | None:
+        """Return a list of finish reasons."""
+        return ["finish"]
+
+    @property
+    def model(self) -> str | None:
+        """Return the model of the response."""
+        ...
+
+    @property
+    def id(self) -> str | None:
+        """Return the ID of the response."""
+        ...
+
+    @property
+    def usage(self) -> Any:
+        """Return a dummy usage instance."""
+        ...
+
+    @property
+    def input_tokens(self) -> int | float | None:
+        """Should return the number of input tokens."""
+        ...
+
+    @property
+    def output_tokens(self) -> int | float | None:
+        """Should return the number of output tokens."""
+        ...
+
+    @property
+    def cost(self) -> float | None:
+        """Should return the cost of the response in dollars."""
+
+    @computed_field
+    @cached_property
+    def message_param(self) -> Any:
+        """Return a dummy message param."""
+        return BaseMessageParam(role="assistant", content="dummy_content")
+
+    @computed_field
+    @cached_property
+    def tools(self) -> list[DummyTool] | None:
+        """Return a list of dummy tools."""
+        return [DummyTool()]
+
+    @computed_field
+    @cached_property
+    def tool(self) -> DummyTool | None:
+        """Return a dummy tool."""
+        return DummyTool()
+
+    @classmethod
+    def tool_message_params(  # pyright: ignore [reportIncompatibleMethodOverride]
+        cls, tools_and_outputs: list[tuple[DummyTool, str]]
+    ) -> list[Any]:
+        """Return a list of tool message params."""
+        ...
+
+    @property
+    def common_finish_reasons(self) -> list[FinishReason] | None:
+        """Return a list of finish reasons."""
+        return cast(list[FinishReason], self.finish_reasons)
+
+    @property
+    def common_message_param(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        """Return a dummy message param."""
+        return BaseMessageParam(role="assistant", content="common_message")
+
+    @property
+    def common_user_message_param(self):
+        """Return a dummy user message param."""
+        return BaseMessageParam(role="user", content="common_user_message")
+
+    @property
+    def common_usage(self):
+        """Return a dummy usage instance."""
+        ...
+
+    def common_construct_call_response(self):
+        """Return a dummy CallResponse instance."""
+        ...
+
+    def common_construct_message_param(
+        self, tool_calls: list[Any] | None, content: str | None
+    ):
+        """Return a dummy CallResponse instance."""
+        ...
+
+
 @pytest.fixture
-def fake_llm_call_async_fixture():
+def dummy_call_response_instance():
+    """Return a dummy CallResponse instance."""
+    dummy_response = DummyProviderCallResponse(
+        metadata=Metadata(),
+        response={},
+        tool_types=None,
+        prompt_template=None,
+        fn_args={},
+        dynamic_config={},
+        messages=[],
+        call_params=DummyCallParams(),
+        call_kwargs={},
+        user_message_param=None,
+        start_time=0,
+        end_time=0,
+    )
+    return CallResponse(response=dummy_response)  # pyright: ignore [reportAbstractUsage]
+
+
+@pytest.fixture
+def fake_llm_call_async_fixture(dummy_call_response_instance: CallResponse):
     """Fixture that returns a fake llm.call function for async branch."""
 
     def fake_llm_call_async(**kwargs):
         def inner(mirascope_prompt):
-            return lambda *args, **kwargs: "result with response model"
+            return lambda *args, **kwargs: dummy_call_response_instance
 
         return inner
 
@@ -136,7 +301,7 @@ def fake_llm_call_async_fixture():
 
 
 @pytest.fixture
-def patched_llm_call_async(patched_closure, fake_llm_call_async_fixture, monkeypatch):
+def patched_llm_call_async(fake_llm_call_async_fixture, monkeypatch):
     """Fixture that patches llm.call with fake_llm_call_async_fixture for async branch."""
     monkeypatch.setattr(llm, "call", fake_llm_call_async_fixture)
 
@@ -179,7 +344,7 @@ def fake_llm_call(**kwargs):
     """Fake llm.call which ignores its arguments and returns a dummy callable."""
 
     def inner(mirascope_prompt):
-        return lambda *args, **kwargs: "managed sync result"
+        return lambda *args, **kwargs: dummy_call_response_instance
 
     return inner
 
@@ -193,53 +358,65 @@ def fake_llm_call_async(**kwargs):
     return inner
 
 
-def test_sync_managed_generation(dummy_generation_instance: GenerationPublic):
+def test_sync_managed_generation(
+    dummy_generation_instance: GenerationPublic, dummy_call_response_instance
+):
     """Test that a synchronous function decorated with @generation(managed=True)
     follows the mirascope branch.
     """
     with (
         patch(
-            "lilypad.generations.create_mirascope_middleware",
-            side_effect=fake_mirascope_middleware_sync,
-        ),
-        patch(
             "lilypad.generations.LilypadClient.get_generation_by_args_types",
             return_value=dummy_generation_instance,
         ),
-        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+        patch("lilypad.generations.llm.call") as mock_llm_call,
     ):
+        mock_mirascope_call = MagicMock()
+        mock_inner = MagicMock()
+        mock_llm_call.return_value = mock_mirascope_call
+        mock_mirascope_call.return_value = mock_inner
+        mock_inner.return_value = dummy_call_response_instance
 
         @generation(managed=True)
         def managed_sync(param: str) -> str:
             return "should not be used"
 
-        result = managed_sync("dummy")
-        assert result == "managed sync result"
+        result = managed_sync("dummy").content
+        assert result == "dummy_content"
+        assert mock_llm_call.call_count == 1
+        assert mock_mirascope_call.call_count == 1
+        assert mock_inner.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_async_managed_generation(dummy_generation_instance: GenerationPublic):
-    """Test that an asynchronous function decorated with @generation(managed=True)
+async def test_async_managed_generation(
+    dummy_generation_instance: GenerationPublic, dummy_call_response_instance
+):
+    """Test that a asynchronous function decorated with @generation(managed=True)
     follows the mirascope branch.
     """
     with (
         patch(
-            "lilypad.generations.create_mirascope_middleware",
-            side_effect=fake_mirascope_middleware_async,
-        ),
-        patch(
             "lilypad.generations.LilypadClient.get_generation_by_args_types",
             return_value=dummy_generation_instance,
         ),
-        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+        patch("lilypad.generations.llm.call") as mock_llm_call,
     ):
+        mock_mirascope_call = MagicMock()
+        mock_inner = AsyncMock()
+        mock_llm_call.return_value = mock_mirascope_call
+        mock_mirascope_call.return_value = mock_inner
+        mock_inner.return_value = dummy_call_response_instance
 
         @generation(managed=True)
-        async def managed_async(param: str) -> str:
+        async def managed_sync(param: str) -> str:
             return "should not be used"
 
-        result = await managed_async("dummy")
-        assert result == "managed async result"
+        result = await managed_sync("dummy")
+        assert result.content == "dummy_content"
+        assert mock_llm_call.call_count == 1
+        assert mock_mirascope_call.call_count == 1
+        assert mock_inner.call_count == 1
 
 
 def test_sync_mirascope_attr(dummy_generation_instance: GenerationPublic):
@@ -391,29 +568,67 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
         mock_get_ver.assert_called_once()
 
 
-def test_build_mirascope_call_tools(
-    dummy_generation_instance: GenerationPublic, patched_llm_call
-):
+def test_build_mirascope_call_tools(dummy_generation_instance: GenerationPublic):
     """Test _build_mirascope_call branch when generation_public.tools is set."""
+
     # Create a dummy tool using the actual ToolPublic schema.
-    dummy_tool = ToolPublic(
+    def dummy_tool():
+        return "dummy tool"
+
+    closure = Closure.from_fn(dummy_tool)
+    dummy_tool = ToolPublic(  # pyright: ignore [reportAssignmentType]
         uuid=uuid4(),
-        name="dummy_tool",
-        signature="tool_sig",
-        code="tool_code",
-        hash="tool_hash",
+        name=closure.name,
+        signature=closure.signature,
+        code=closure.code,
+        hash=closure.hash,
         dependencies={},
     )
-    dummy_generation_instance.tools = [dummy_tool]
+    dummy_generation_instance.tools = [dummy_tool]  # pyright: ignore [reportAttributeAccessIssue]
     dummy_generation_instance.response_model = None
     dummy_generation_instance.prompt_template = "dummy_template"
 
     def dummy_fn():
         return None
 
+    with patch("lilypad.generations.llm.call") as patched_llm_call:
+        _build_mirascope_call(dummy_generation_instance, dummy_fn)
+        tools = patched_llm_call.call_args.kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]() == "dummy tool"
+        patched_llm_call.assert_called_once_with(
+            provider="openai", model="gpt-4o-mini", tools=tools
+        )
+
+
+def test_build_mirascope_call_async(
+    dummy_generation_instance: GenerationPublic, patched_llm_call_async
+):
+    """Test _build_mirascope_call branch async call."""
+    dummy_generation_instance.response_model = None
+    dummy_generation_instance.tools = None
+    dummy_generation_instance.prompt_template = "dummy_template"
+
+    async def dummy_fn():
+        return None
+
     result = _build_mirascope_call(dummy_generation_instance, dummy_fn)
-    # Expect that the tools branch was taken and the fake llm.call returned "result with tools".
-    assert result() == "result with tools"
+    assert result().content == "dummy_content"  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_build_mirascope_call_sync(
+    dummy_generation_instance: GenerationPublic, patched_llm_call
+):
+    """Test _build_mirascope_call branch sync call."""
+    dummy_generation_instance.response_model = None
+    dummy_generation_instance.tools = None
+    dummy_generation_instance.prompt_template = "dummy_template"
+
+    def dummy_fn():
+        return None
+
+    result = _build_mirascope_call(dummy_generation_instance, dummy_fn)
+    assert result().content == "dummy_content"
 
 
 def test_build_mirascope_call_response_model(
@@ -421,13 +636,23 @@ def test_build_mirascope_call_response_model(
 ):
     """Test _build_mirascope_call branch when generation_public.response_model is set."""
     # Create a dummy response model using the actual ResponseModelPublic schema.
+    closure = Closure.from_code(
+        dedent("""
+    from pydantic import BaseModel
+    
+    class DummyResponse(BaseModel):
+        name: str
+        age: int
+    """),
+        "DummyResponse",
+    )
     dummy_response_model = ResponseModelPublic(
         uuid=uuid4(),
-        name="dummy_response",
-        signature="resp_sig",
-        code="resp_code",
-        hash="resp_hash",
-        dependencies={},
+        name=closure.name,
+        signature=closure.signature,
+        code=closure.code,
+        hash=closure.hash,
+        dependencies=closure.dependencies,
         schema_data={},
         examples=[],
         is_active=False,
@@ -439,6 +664,19 @@ def test_build_mirascope_call_response_model(
     def dummy_fn():
         return None
 
-    result = _build_mirascope_call(dummy_generation_instance, dummy_fn)
-    # Expect that the response_model branch was taken and the fake llm.call returned "result with response model".
-    assert result() == "result with response model"
+    with patch("lilypad.generations.llm.call") as patched_llm_call:
+        _build_mirascope_call(dummy_generation_instance, dummy_fn)
+        response_model = patched_llm_call.call_args.kwargs["response_model"]
+        assert issubclass(response_model, BaseModel)
+        assert response_model.model_json_schema() == {
+            "properties": {
+                "age": {"title": "Age", "type": "integer"},
+                "name": {"title": "Name", "type": "string"},
+            },
+            "required": ["name", "age"],
+            "title": "DummyResponse",
+            "type": "object",
+        }
+        patched_llm_call.assert_called_once_with(
+            provider="openai", model="gpt-4o-mini", response_model=response_model
+        )

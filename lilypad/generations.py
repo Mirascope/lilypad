@@ -8,11 +8,13 @@ from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from functools import wraps
-from typing import Any, ParamSpec, Protocol, TypeVar, overload
+from typing import Any, Literal, ParamSpec, Protocol, TypeVar, overload
 
 from fastapi.encoders import jsonable_encoder
 from mirascope import llm
 from mirascope.core import prompt_template
+from mirascope.core.base._utils import fn_is_async
+from mirascope.llm.call_response import CallResponse
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
@@ -26,9 +28,11 @@ from ._utils import (
     inspect_arguments,
     load_config,
 )
+from .messages import Message
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
+from .stream import Stream
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -73,17 +77,38 @@ class GenerationVersioningDecorator(Protocol):
 
     @overload
     def __call__(  # pyright: ignore [reportOverlappingOverload]
-        self, fn: Callable[_P, Coroutine[Any, Any, _R_CO]]
-    ) -> AsyncGenerationFunction[_P, _R_CO]: ...
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationFunction[_P, _R]: ...
+
+    @overload
+    def __call__(self, fn: Callable[_P, _R]) -> SyncGenerationFunction[_P, _R]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> SyncGenerationFunction[_P, _R] | AsyncGenerationFunction[_P, _R]:
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
+
+
+class GenerationVersioningManagedDecorator(Protocol):
+    """Protocol for the `generation` decorator return type."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationFunction[_P, Message | Stream]: ...
 
     @overload
     def __call__(
-        self, fn: Callable[_P, _R_CO]
-    ) -> SyncGenerationFunction[_P, _R_CO]: ...
+        self, fn: Callable[_P, _R]
+    ) -> SyncGenerationFunction[_P, Message | Stream]: ...
 
     def __call__(
-        self, fn: Callable[_P, _R_CO] | Callable[_P, Coroutine[Any, Any, _R_CO]]
-    ) -> SyncGenerationFunction[_P, _R_CO] | AsyncGenerationFunction[_P, _R_CO]:
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> (
+        SyncGenerationFunction[_P, Message | Stream]
+        | AsyncGenerationFunction[_P, Message | Stream]
+    ):
         """Protocol `call` definition for `generation` decorator return type."""
         ...
 
@@ -257,11 +282,22 @@ def _trace(
     return decorator
 
 
+@overload
+def _build_mirascope_call(  # pyright: ignore [reportOverlappingOverload]
+    generation_public: GenerationPublic, fn: Callable[_P, Coroutine[Any, Any, _R]]
+) -> Callable[_P, Coroutine[Any, Any, Message | Stream]]: ...
+@overload
 def _build_mirascope_call(
-    generation_public: GenerationPublic, fn: Callable
-) -> Callable:
+    generation_public: GenerationPublic, fn: Callable[_P, _R]
+) -> Callable[_P, Message | Stream]: ...
+def _build_mirascope_call(
+    generation_public: GenerationPublic,
+    fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+) -> (
+    Callable[_P, Message | Stream] | Callable[_P, Coroutine[Any, Any, Message | Stream]]
+):
     """Build a Mirascope call object."""
-    mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)
+    mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
     call_params = generation_public.call_params
 
@@ -274,15 +310,50 @@ def _build_mirascope_call(
         call_params["response_model"] = Closure.from_code(
             response_model.code, response_model.name
         ).build_object()
-    return llm.call(**call_params)(mirascope_prompt)
+    mirascope_call = llm.call(**call_params)(mirascope_prompt)
+
+    @wraps(mirascope_call)
+    def inner(
+        *args: _P.args, **kwargs: _P.kwargs
+    ) -> Message | Coroutine[Any, Any, Message | Stream] | Stream:
+        result = mirascope_call(*args, **kwargs)
+        if fn_is_async(mirascope_call):
+
+            async def async_wrapper() -> Message | Stream:
+                final = await result
+                if isinstance(final, CallResponse):
+                    return Message(final)  # pyright: ignore [reportAbstractUsage]
+                return Stream(stream=final)
+
+            return async_wrapper()
+        else:
+
+            def sync_wrapper() -> Message | Stream:
+                final = result
+                if isinstance(final, CallResponse):
+                    return Message(final)  # pyright: ignore [reportAbstractUsage]
+
+                return Stream(stream=final)
+
+            return sync_wrapper()
+
+    return inner  # pyright: ignore [reportReturnType]
 
 
 _ArgTypes: typing.TypeAlias = dict[str, str]
 
 
+@overload
+def generation(  # pyright: ignore [reportOverlappingOverload]
+    custom_id: str | None = ..., managed: Literal[True] = ...
+) -> GenerationVersioningManagedDecorator: ...
+@overload
+def generation(
+    custom_id: str | None = None, managed: Literal[False] = ...
+) -> GenerationVersioningDecorator: ...
 def generation(
     custom_id: str | None = None, managed: bool = False
-) -> GenerationVersioningDecorator:
+) -> GenerationVersioningDecorator | GenerationVersioningManagedDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,
@@ -342,7 +413,7 @@ def generation(
                                 if managed
                                 else prompt_template,
                             )
-                            return await decorator_inner(
+                            return await decorator_inner(  # pyright: ignore [reportReturnType]
                                 _build_mirascope_call(generation, fn) if managed else fn
                             )(*args, **kwargs)
                     finally:
