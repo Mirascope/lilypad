@@ -79,7 +79,9 @@ export const LilypadPanel = ({
           </CardContent>
         </Card>
       )}
-      {span.events && renderEventsContainer(span.events)}
+      {span.events &&
+        span.events.length > 0 &&
+        renderEventsContainer(span.events)}
       {span.arg_values &&
         (showJsonArgs ? (
           <Card>

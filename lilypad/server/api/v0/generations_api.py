@@ -5,10 +5,8 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from posthog import Posthog
 
 from ..._utils import (
-    get_posthog,
     validate_api_key_project_no_strict,
     validate_api_key_project_strict,
 )
@@ -115,7 +113,6 @@ async def get_generation(
 )
 async def create_new_generation(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
-    posthog: Annotated[Posthog, Depends(get_posthog)],
     project_uuid: UUID,
     generation_create: GenerationCreate,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
@@ -135,14 +132,6 @@ async def create_new_generation(
         )
     except HTTPException:
         new_generation = generation_service.create_record(generation_create)
-        posthog.capture(
-            "generation_created",
-            {
-                "generation_uuid": str(new_generation.uuid),
-                "generation_name": new_generation.name,
-                "generation_hash": new_generation.hash,
-            },
-        )
         return new_generation
 
 
