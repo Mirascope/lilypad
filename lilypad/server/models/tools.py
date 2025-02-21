@@ -32,7 +32,7 @@ class _ToolBase(SQLModel):
     is_active: bool = Field(default=False)
 
 
-class ResponseModelTable(_ToolBase, BaseOrganizationSQLModel, table=True):
+class ToolTable(_ToolBase, BaseOrganizationSQLModel, table=True):
     """Table for response models."""
 
     __tablename__ = TOOL_TABLE_NAME  # pyright: ignore [reportAssignmentType]

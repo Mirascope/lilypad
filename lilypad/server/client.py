@@ -265,7 +265,7 @@ class LilypadClient:
     def get_generation_by_version(
         self,
         fn: Callable[..., Any],
-        version: int | None = None,
+        version: int,
     ) -> GenerationPublic:
         """Get the matching version for a generation.
 
@@ -292,7 +292,7 @@ class LilypadClient:
         for generation in generations:
             if generation.version_num == forced_version_num:
                 return generation
-        raise NotFoundError(
+        raise LilypadNotFoundError(
             f"Generation version '{version}' not found for signature {closure.signature}"
         )
 
@@ -338,8 +338,8 @@ class LilypadClient:
                 for p in prompts:
                     if p.version_num == forced_version_num:
                         return p
-                raise NotFoundError(
-                    f"Prompt version '{forced_version}' not found for signature {closure.signature}"
+                raise LilypadNotFoundError(
+                    f"Generation version '{forced_version}' not found for signature {closure.signature}"
                 )
 
         if generation:

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
     from .spans import SpanTable
-    from .tools import ToolsTable
+    from .tools import ToolTable
 
 
 class _GenerationBase(SQLModel):
@@ -89,7 +89,7 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,
     )
-    tools: list["ToolsTable"] = Relationship(
+    tools: list["ToolTable"] = Relationship(
         back_populates="generation",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,

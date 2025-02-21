@@ -3,6 +3,7 @@
 import inspect
 import json
 import threading
+import typing
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
@@ -25,7 +26,7 @@ from ._utils import (
     inspect_arguments,
     load_config,
 )
-from .server.client import LilypadClient, NotFoundError
+from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
 
@@ -228,6 +229,9 @@ def _build_mirascope_call(
     return mirascope_call
 
 
+_ArgTypes: typing.TypeAlias = dict[str, str]
+
+
 def generation(
     custom_id: str | None = None, managed: bool = False
 ) -> GenerationDecorator:
@@ -261,97 +265,153 @@ def generation(
         )
         if inspect.iscoroutinefunction(fn):
 
-            @call_safely(fn)
-            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+            def _create_inner_async(
+                get_generation: Callable[[_ArgTypes], GenerationPublic],
+            ) -> Callable[_P, Coroutine[Any, Any, _R]]:
+                @call_safely(fn)
+                async def _inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    generation = get_generation(arg_types)
+                    token = current_generation.set(generation)
+                    try:
+                        # Check if this is the outermost generation (no previous generation)
+                        is_outermost = token.old_value is None
+                        with outermost_lock_context(is_outermost):
+                            if not is_mirascope_call:
+                                decorator_inner = _trace(
+                                    generation=generation,
+                                    arg_types=arg_types,
+                                    arg_values=arg_values,
+                                    prompt_template="",
+                                )
+                                return await decorator_inner(fn)(*args, **kwargs)
+                            decorator_inner = create_mirascope_middleware(
+                                generation,
+                                arg_types,
+                                arg_values,
+                                True,
+                                generation.prompt_template
+                                if managed
+                                else prompt_template,
+                            )
+                            return await decorator_inner(
+                                _build_mirascope_call(generation, fn) if managed else fn
+                            )(*args, **kwargs)
+                    finally:
+                        current_generation.reset(token)
+
+                return _inner_async
+
+            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
                 try:
-                    generation = lilypad_client.get_generation_version(
+                    return lilypad_client.get_generation_version(
                         fn,
                         arg_types,
                         custom_id=custom_id,
                         create_new_generation=not managed,
                     )
-                except NotFoundError:
+                except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(
                         f"No generation found for function '{Closure.from_fn(fn).name}'. "
                         f"Please create a new generation at: {ui_link}"
                     )
-                token = current_generation.set(generation)
-                try:
-                    # Check if this is the outermost generation (no previous generation)
-                    is_outermost = token.old_value is None
-                    with outermost_lock_context(is_outermost):
-                        if not is_mirascope_call:
-                            decorator_inner = _trace(
-                                generation=generation,
-                                arg_types=arg_types,
-                                arg_values=arg_values,
-                                prompt_template="",
-                            )
-                            return await decorator_inner(fn)(*args, **kwargs)
-                        # managed_prompt_template = generation.prompt_template
-                        managed_prompt_template = (
-                            "Answer this question: {question}"  # fake prompt template
+
+            inner_async = _create_inner_async(_get_active_version)
+
+            def version_async(
+                forced_version: int,
+            ) -> Callable[_P, Coroutine[Any, Any, _R]]:
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
+                    specific_version_generation = (
+                        lilypad_client.get_generation_by_version(
+                            fn,
+                            version=forced_version,
                         )
-                        decorator_inner = create_mirascope_middleware(
-                            generation,
-                            arg_types,
-                            arg_values,
-                            True,
-                            managed_prompt_template if managed else prompt_template,
+                    )
+                    if not specific_version_generation:
+                        raise ValueError(
+                            f"Generation version {forced_version} not found for function: {fn.__name__}"
                         )
-                        return await decorator_inner(
-                            _build_mirascope_call(generation, fn) if managed else fn
-                        )(*args, **kwargs)
-                finally:
-                    current_generation.reset(token)
+                    return specific_version_generation
+
+                return _create_inner_async(_get_specific_version)
+
+            inner_async.version = version_async  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
             return inner_async
 
         else:
 
-            @call_safely(fn)
-            def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+            def _create_inner_sync(
+                get_generation: Callable[[_ArgTypes], GenerationPublic],
+            ) -> Callable[_P, _R]:
+                @call_safely(fn)
+                def _inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    generation = get_generation(arg_types)
+                    token = current_generation.set(generation)
+                    try:
+                        is_outermost = token.old_value == Token.MISSING
+                        with outermost_lock_context(is_outermost):
+                            if not is_mirascope_call:
+                                decorator_inner = _trace(
+                                    generation=generation,
+                                    arg_types=arg_types,
+                                    arg_values=arg_values,
+                                    prompt_template="",
+                                )
+                                return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                            decorator_inner = create_mirascope_middleware(
+                                generation,
+                                arg_types,
+                                arg_values,
+                                False,
+                                generation.prompt_template
+                                if managed
+                                else prompt_template,
+                            )
+                            return decorator_inner(
+                                _build_mirascope_call(generation, fn) if managed else fn
+                            )(*args, **kwargs)  # pyright: ignore [reportReturnType]
+                    finally:
+                        current_generation.reset(token)
+
+                return _inner  # pyright: ignore [reportReturnType]
+
+            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
                 try:
-                    generation = lilypad_client.get_generation_version(
+                    return lilypad_client.get_generation_version(
                         fn, arg_types, custom_id=custom_id, create_new_generation=True
                     )
-                except NotFoundError:
+                except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(
                         f"No generation found for function '{Closure.from_fn(fn).name}'. "
                         f"Please create a new generation at: {ui_link}"
                     )
-                token = current_generation.set(generation)
-                try:
-                    is_outermost = token.old_value == Token.MISSING
-                    with outermost_lock_context(is_outermost):
-                        if not is_mirascope_call:
-                            decorator_inner = _trace(
-                                generation=generation,
-                                arg_types=arg_types,
-                                arg_values=arg_values,
-                                prompt_template="",
-                            )
-                            return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                        # managed_prompt_template = generation.prompt_template
-                        managed_prompt_template = (
-                            "Answer this question: {question}"  # fake prompt template
+
+            inner = _create_inner_sync(_get_active_version)
+
+            def version_sync(
+                forced_version: int,
+            ) -> Callable[_P, _R]:
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
+                    specific_version_generation = (
+                        lilypad_client.get_generation_by_version(
+                            fn,
+                            version=forced_version,
                         )
-                        decorator_inner = create_mirascope_middleware(
-                            generation,
-                            arg_types,
-                            arg_values,
-                            False,
-                            managed_prompt_template if managed else prompt_template,
+                    )
+                    if not specific_version_generation:
+                        raise ValueError(
+                            f"Generation version {forced_version} not found for function: {fn.__name__}"
                         )
-                        return decorator_inner(
-                            _build_mirascope_call(generation, fn) if managed else fn
-                        )(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                finally:
-                    current_generation.reset(token)
+                    return specific_version_generation
+
+                return _create_inner_sync(_get_specific_version)
+
+            inner.version = version_sync  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
             return inner  # pyright: ignore [reportReturnType]
 
