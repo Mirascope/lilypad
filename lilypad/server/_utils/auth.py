@@ -5,7 +5,7 @@ import secrets
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
@@ -136,6 +136,7 @@ async def get_local_user(session: Session) -> UserPublic:
 
 
 async def get_current_user(
+    request: Request,
     token: Annotated[str, Depends(oauth2_scheme)],
     api_key: Annotated[str | None, Depends(api_key_header)],
     session: Annotated[Session, Depends(get_session)],
@@ -153,7 +154,9 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
-        return UserPublic.model_validate(api_key_row.user)
+        user_public = UserPublic.model_validate(api_key_row.user)
+        request.state.user = user_public
+        return user_public
 
     if not token:
         raise HTTPException(
@@ -167,7 +170,9 @@ async def get_current_user(
         if uuid := payload.get("uuid"):
             user = session.exec(select(UserTable).where(UserTable.uuid == uuid)).first()
             if user:
-                return UserPublic.model_validate(user)
+                user_public = UserPublic.model_validate(user)
+                request.state.user = user_public
+                return user_public
     except (JWTError, KeyError, ValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

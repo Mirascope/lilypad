@@ -5,9 +5,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
 
-from ...db import get_session
 from ...models import SpanTable
 from ...schemas import SpanMoreDetails, SpanPublic
 from ...services import SpanService
@@ -18,10 +16,10 @@ spans_router = APIRouter()
 @spans_router.get("/spans/{span_uuid}", response_model=SpanMoreDetails)
 async def get_span(
     span_uuid: UUID,
-    session: Annotated[Session, Depends(get_session)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> SpanMoreDetails:
     """Get span by uuid."""
-    span = session.exec(select(SpanTable).where(SpanTable.uuid == span_uuid)).first()
+    span = span_service.find_record_by_uuid(span_uuid)
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
     return SpanMoreDetails.from_span(span)

@@ -19,6 +19,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
+from lilypad.server._utils.posthog import setup_posthog_middleware
+
 from .api import v0_api
 from .settings import get_settings
 
@@ -68,6 +70,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+setup_posthog_middleware(app, exclude_paths=[], should_capture=lambda _: True)
 
 app.mount("/v0", v0_api)
 
