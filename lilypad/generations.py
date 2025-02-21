@@ -322,17 +322,18 @@ def generation(
             def version_async(
                 forced_version: int,
             ) -> Callable[_P, Coroutine[Any, Any, _R]]:
-                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
-                    specific_version_generation = (
-                        lilypad_client.get_generation_by_version(
-                            fn,
-                            version=forced_version,
-                        )
+                specific_version_generation = (
+                    lilypad_client.get_generation_by_version(
+                        fn,
+                        version=forced_version,
                     )
-                    if not specific_version_generation:
-                        raise ValueError(
-                            f"Generation version {forced_version} not found for function: {fn.__name__}"
-                        )
+                )
+                if not specific_version_generation:
+                    raise ValueError(
+                        f"Generation version {forced_version} not found for function: {fn.__name__}"
+                    )
+
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
                     return specific_version_generation
 
                 return _create_inner_async(_get_specific_version)
@@ -396,19 +397,19 @@ def generation(
             def version_sync(
                 forced_version: int,
             ) -> Callable[_P, _R]:
-                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
-                    specific_version_generation = (
-                        lilypad_client.get_generation_by_version(
-                            fn,
-                            version=forced_version,
-                        )
+                specific_version_generation = (
+                    lilypad_client.get_generation_by_version(
+                        fn,
+                        version=forced_version,
                     )
-                    if not specific_version_generation:
-                        raise ValueError(
-                            f"Generation version {forced_version} not found for function: {fn.__name__}"
-                        )
-                    return specific_version_generation
+                )
+                if not specific_version_generation:
+                    raise ValueError(
+                        f"Generation version {forced_version} not found for function: {fn.__name__}"
+                    )
 
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
+                    return specific_version_generation
                 return _create_inner_sync(_get_specific_version)
 
             inner.version = version_sync  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
