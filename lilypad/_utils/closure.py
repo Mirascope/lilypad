@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
@@ -599,6 +599,9 @@ class _DependencyCollector:
                 if definition.fget is None:
                     return
                 definition = definition.fget
+
+            elif isinstance(definition, cached_property):
+                definition = definition.func
             elif (
                 hasattr(definition, "func")
                 and getattr(definition, "__name__", None) is None
@@ -817,8 +820,6 @@ class Closure(BaseModel):
     code: str
     hash: str
     dependencies: dict[str, DependencyInfo]
-    is_method: bool = False
-    class_name: str | None = None
 
     @classmethod
     @lru_cache(maxsize=128)
@@ -855,7 +856,7 @@ class Closure(BaseModel):
         _init_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run the closure.
+        """Run the closure instance method.
 
         Args:
             *args: Positional arguments to pass to the closure.

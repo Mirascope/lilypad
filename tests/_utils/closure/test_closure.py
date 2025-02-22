@@ -615,7 +615,7 @@ def test_instance_method_on_local() -> None:
 
         @openai.call("gpt-4o-mini")
         def instance_method(self) -> str:
-            """From mirascope.core import openai
+            """from mirascope.core import openai
 
 
             class LocalChatbot:
@@ -625,7 +625,7 @@ def test_instance_method_on_local() -> None:
                 @openai.call("gpt-4o-mini")
                 def instance_method(self) -> str:
                     return f"Hello, {self.name}!"
-            """
+            """  # noqa: D403
             return f"Hello, {self.name}!"
 
     closure = Closure.from_fn(LocalChatbot.instance_method)
