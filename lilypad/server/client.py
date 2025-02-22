@@ -279,18 +279,16 @@ class LilypadClient:
             raise ValueError(
                 f"Version must be an integer. Received: '{version}' (type: {type(version).__name__})"
             )
-        generations = self._request(
-            "GET",
-            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
-            response_model=list[GenerationPublic],
-        )
-
-        for generation in generations:
-            if generation.version_num == forced_version_num:
-                return generation
-        raise LilypadNotFoundError(
-            f"Generation version '{version}' not found for signature {closure.signature}"
-        )
+        try:
+            return self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/generations/name/{closure.name}/version/{forced_version_num}",
+                response_model=GenerationPublic,
+            )
+        except LilypadNotFoundError:
+            raise LilypadNotFoundError(
+                f"Generation version '{version}' not found for signature {closure.signature}"
+            )
 
     def get_generation_by_args_types(
         self,

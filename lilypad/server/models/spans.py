@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from .generations import GenerationTable
     from .prompts import PromptTable
     from .response_models import ResponseModelTable
-    from .tools import ToolTable
 
 
 class Scope(str, Enum):
@@ -86,11 +85,6 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="spans"
     )
     annotations: list["AnnotationTable"] = Relationship(
-        back_populates="span",
-        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
-        cascade_delete=True,
-    )
-    tools: list["ToolTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,

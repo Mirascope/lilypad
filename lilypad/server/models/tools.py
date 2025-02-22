@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .generations import GenerationTable
     from .projects import ProjectTable
 
+
 class _ToolBase(SQLModel):
     """Base Response Model."""
 
