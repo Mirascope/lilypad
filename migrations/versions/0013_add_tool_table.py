@@ -39,7 +39,6 @@ def upgrade() -> None:
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("project_uuid", sa.Uuid(), nullable=True),
-        sa.Column("span_uuid", sa.Uuid(), nullable=True),
         sa.Column("generation_uuid", sa.Uuid(), nullable=True),
         sa.ForeignKeyConstraint(
             ["generation_uuid"],
@@ -57,12 +56,6 @@ def upgrade() -> None:
             ["project_uuid"],
             ["projects.uuid"],
             name=op.f("tools_project_uuid_projects_fkey"),
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["span_uuid"],
-            ["spans.uuid"],
-            name=op.f("tools_span_uuid_spans_fkey"),
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("uuid", name=op.f("tools_pkey")),

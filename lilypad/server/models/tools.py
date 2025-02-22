@@ -11,15 +11,12 @@ from .base_sql_model import get_json_column
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
-    SPAN_TABLE_NAME,
     TOOL_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from .generations import GenerationTable
     from .projects import ProjectTable
-    from .spans import SpanTable
-
 
 class _ToolBase(SQLModel):
     """Base Response Model."""
@@ -45,12 +42,8 @@ class ToolTable(_ToolBase, BaseOrganizationSQLModel, table=True):
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    span_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
     generation_uuid: UUID | None = Field(
         default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     project: "ProjectTable" = Relationship(back_populates="tools")
-    span: "SpanTable" = Relationship(back_populates="tools")
     generation: "GenerationTable" = Relationship(back_populates="tools")
