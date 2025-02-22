@@ -244,7 +244,7 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
                 token = current_generation.set(generation)
                 try:
                     # Check if this is the outermost generation (no previous generation)
-                    is_outermost = token.old_value is None
+                    is_outermost = token.old_value == Token.MISSING
                     with outermost_lock_context(is_outermost):
                         if not is_mirascope_call:
                             decorator_inner = _trace(

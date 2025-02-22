@@ -34,21 +34,19 @@ class _JSONSpanExporter(SpanExporter):
         )
         self.log = logging.getLogger(__name__)
 
-    def pretty_print_display_names(self, spans: Sequence[SpanPublic]) -> None:
+    def pretty_print_display_names(self, span: SpanPublic) -> None:
         """Extract and pretty print the display_name attribute from each span, handling nested spans."""
         settings = get_settings()
-        if len(spans) > 0:
-            self.log.info(
-                f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{spans[0].uuid}"
-            )
-        for span in spans:
-            self._print_span_node(span, indent=0)
+        self.log.info(
+            f"View the trace at: {settings.remote_client_url}/projects/{settings.project_id}/traces/{span.uuid}"
+        )
+        self._print_span_node(span, indent=0)
 
     def _print_span_node(self, span: SpanPublic, indent: int) -> None:
         """Recursively print a SpanNode and its children with indentation."""
         indent_str = "    " * indent  # 4 spaces per indent level
 
-        self.log.info(f"{indent_str}{span.display_name}")  # noqa: T201
+        self.log.info(f"{indent_str}{span.display_name}")
 
         for child in span.child_spans:
             self._print_span_node(child, indent + 1)

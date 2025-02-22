@@ -76,23 +76,22 @@ def test_client_initialization():
         (
             "post_traces",
             [],
-            [
-                {
-                    "uuid": uuid4(),
-                    "span_id": "span-1",
-                    "project_uuid": uuid4(),
-                    "version_uuid": uuid4(),
-                    "version_num": 1,
-                    "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
-                    "data": {},
-                    "parent_span_id": None,
-                    "created_at": "2024-01-01T00:00:00",
-                    "display_name": "test_function",
-                    "version": None,
-                    "child_spans": [],
-                    "annotations": [],
-                }
-            ],
+            {
+                "uuid": uuid4(),
+                "span_id": "span-1",
+                "project_uuid": uuid4(),
+                "version_uuid": uuid4(),
+                "version_num": 1,
+                "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
+                "data": {},
+                "parent_span_id": None,
+                "created_at": "2024-01-01T00:00:00",
+                "display_name": "test_function",
+                "version": None,
+                "child_spans": [],
+                "annotations": [],
+                "duration_ms": 100,
+            },
         ),
     ],
 )
@@ -109,10 +108,9 @@ def test_request_methods(client, method, args, mock_response):
         if method == "post_project":
             assert isinstance(result, ProjectPublic)
         elif method == "post_traces":
-            assert isinstance(result, list)
-            assert all(isinstance(span, SpanPublic) for span in result)
-            assert all(isinstance(span.scope, Scope) for span in result)
-            assert result[0].scope == Scope.LILYPAD
+            assert isinstance(result, SpanPublic)
+            assert isinstance(result.scope, Scope)
+            assert result.scope == Scope.LILYPAD
 
 
 def test_request_timeout(client):

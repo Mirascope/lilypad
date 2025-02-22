@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from .._utils import (
@@ -63,15 +63,15 @@ class SpanPublic(SpanBase):
         span: SpanTable,
     ) -> dict[str, Any]:
         """Set the display name based on the scope."""
-        # TODO: Handle error cases where spans dont have attributes
+        data = span.data
+        attributes = data.get("attributes", {})
         if span.scope == Scope.LILYPAD:
             attributes: dict[str, Any] = span.data.get("attributes", {})
             span_type: str = attributes.get("lilypad.type", "unknown")
             display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
-            data = span.data
-            display_name = f"{data['attributes']['gen_ai.system']} with '{data['attributes']['gen_ai.request.model']}'"
+            display_name = f"{attributes.get('gen_ai.system')} with '{data['attributes']['gen_ai.request.model']}'"
             version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
@@ -150,24 +150,22 @@ class SpanMoreDetails(BaseModel):
                 template = attributes.get(f"lilypad.{lilypad_type}.template", None)
         if not span.uuid:
             raise ValueError("UUID does not exist.")
-        return SpanMoreDetails(
-            uuid=span.uuid,
-            project_uuid=span.project_uuid,
-            generation_uuid=span.generation_uuid,
-            display_name=display_name,
-            model=attributes.get(gen_ai_attributes.GEN_AI_REQUEST_MODEL, "unknown"),
-            provider=attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown"),
-            input_tokens=attributes.get(gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS),
-            output_tokens=attributes.get(gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS),
-            duration_ms=data["end_time"] - data["start_time"],
-            signature=signature,
-            code=code,
-            arg_values=arg_values,
-            output=output,
-            messages=messages,
-            template=template,
-            data=data,
-            cost=span.cost,
-            status=status,
-            events=events,
+        return SpanMoreDetails.model_validate(
+            {
+                **span.model_dump(),
+                "display_name": display_name,
+                "model": attributes.get(
+                    gen_ai_attributes.GEN_AI_REQUEST_MODEL, "unknown"
+                ),
+                "provider": attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown"),
+                "signature": signature,
+                "code": code,
+                "arg_values": arg_values,
+                "output": output,
+                "messages": messages,
+                "template": template,
+                "data": data,
+                "status": status,
+                "events": events,
+            },
         )
