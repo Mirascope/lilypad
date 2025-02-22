@@ -603,15 +603,64 @@ def test_instance_method() -> None:
     }
 
 
+def test_instance_method_on_local() -> None:
+    """Test the `Closure` class with instance method."""
+    from mirascope.core import openai
+
+    class LocalChatbot:
+        """A chatbot class."""
+
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        @openai.call("gpt-4o-mini")
+        def instance_method(self) -> str:
+            """From mirascope.core import openai
+
+
+            class LocalChatbot:
+                def __init__(self, name: str) -> None:
+                    self.name = name
+
+                @openai.call("gpt-4o-mini")
+                def instance_method(self) -> str:
+                    return f"Hello, {self.name}!"
+            """
+            return f"Hello, {self.name}!"
+
+    closure = Closure.from_fn(LocalChatbot.instance_method)
+    assert closure.code == _expected(LocalChatbot.instance_method)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
+        },
+    }
+
+
 def test_closure_run_with_instance_method() -> None:
     """Tests the `Closure.run` method."""
 
-    class Chatbot:
+    class DummyChatbot:
         def __init__(self, name: str) -> None:
             self.name = name
 
         def greet(self, comment) -> str:
             return f"Hello, {comment}! I'm {self.name}."
 
-    closure = Closure.from_fn(Chatbot)
-    assert closure.run(name="world").greet("nice")
+    closure = Closure.from_fn(DummyChatbot.greet)
+    assert (
+        closure.run(
+            "nice",
+            init_args=("hellow",),
+        )
+        == "Hello, nice! I'm hellow."
+    )

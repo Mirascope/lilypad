@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
@@ -498,6 +498,39 @@ class _QualifiedNameRewriter(cst.CSTTransformer):
         return updated_node
 
 
+def _get_class_from_unbound_method(method: Callable[..., Any]) -> type | None:
+    qualname = method.__qualname__
+    parts = qualname.split(".")
+    if len(parts) < 2:
+        return None
+    class_qualname = ".".join(parts[:-1])
+    import gc
+
+    for obj in gc.get_objects():
+        if (
+            isinstance(obj, type)
+            and getattr(obj, "__qualname__", None) == class_qualname
+        ):
+            return obj
+    return None
+
+
+def _clean_source_from_string(source: str, exclude_fn_body: bool = False) -> str:
+    source = dedent(source)
+    module = cst.parse_module(source)
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
+    new_module = module.visit(transformer)
+    return new_module.code.rstrip()
+
+
+def get_class_source_from_method(method: Callable[..., Any]) -> str:
+    cls = _get_class_from_unbound_method(method)
+    if cls is None:
+        raise ValueError("Cannot determine class from method via gc")
+    source = inspect.getsource(cls)
+    return _clean_source_from_string(source)
+
+
 class _DependencyCollector:
     """Collects all dependencies for a function."""
 
@@ -566,18 +599,36 @@ class _DependencyCollector:
                 if definition.fget is None:
                     return
                 definition = definition.fget
-
-            elif isinstance(definition, cached_property):
+            elif (
+                hasattr(definition, "func")
+                and getattr(definition, "__name__", None) is None
+            ):
                 definition = definition.func
-            if definition.__name__ in self.visited_functions:
-                return
-            self.visited_functions.add(definition.__name__)
+
+            # For methods, if __qualname__ contains a dot, does not include "<locals>" (global)
+            # or if it is local (contains "<locals>"), capture the entire class.
+            if (
+                "." in definition.__qualname__
+                and inspect.getmodule(definition) is not None
+            ):
+                try:
+                    source = get_class_source_from_method(definition)
+                except ValueError:
+                    # Fallback: clean only the function source.
+                    source = _clean_source_code(definition)
+                if definition.__qualname__ in self.visited_functions:
+                    return
+                self.visited_functions.add(definition.__qualname__)
+            else:
+                if definition.__qualname__ in self.visited_functions:
+                    return
+                self.visited_functions.add(definition.__qualname__)
+                source = _clean_source_code(definition)
 
             module = inspect.getmodule(definition)
             if not module or _is_third_party(module, self.site_packages):
                 return
 
-            source = _clean_source_code(definition)
             module_source = inspect.getsource(module)
             module_tree = ast.parse(module_source)
             fn_tree = ast.parse(source)
@@ -780,52 +831,42 @@ class Closure(BaseModel):
         Returns:
             Closure: The closure of the function.
         """
-        qualname = fn.__qualname__
-        if "<locals>" in qualname:
-            is_method = False
-            class_name = None
-            full_name = get_qualified_name(fn)
-        elif "." in qualname:
-            parts = qualname.split(".")
-            class_name = parts[0]
-            is_method = True
-            full_name = f"{class_name}.{fn.__name__}"
-        else:
-            is_method = False
-            class_name = None
-            full_name = get_qualified_name(fn)
-
         collector = _DependencyCollector()
         imports, assignments, source_code, dependencies = collector.collect(fn)
-        if is_method and fn.__module__ is not None:
-            module = inspect.getmodule(fn)
-            if module is not None and class_name and hasattr(module, class_name):
-                source_code_combined = _clean_source_code(getattr(module, class_name))
-            else:
-                source_code_combined = "\n\n".join(source_code)
-        else:
-            source_code_combined = "\n\n".join(source_code)
-
-        formatted_code = _run_ruff(
-            "{imports}\n\n{assignments}\n\n{source_code}".format(
-                imports="\n".join(imports),
-                assignments="\n".join(assignments),
-                source_code=source_code_combined,
-            )
+        code = "{imports}\n\n{assignments}\n\n{source_code}".format(
+            imports="\n".join(imports),
+            assignments="\n".join(assignments),
+            source_code="\n\n".join(source_code),
         )
+        formatted_code = _run_ruff(code)
         hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
-            name=full_name,
+            name=get_qualified_name(fn),
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
             hash=hash_value,
             dependencies=dependencies,
-            is_method=is_method,
-            class_name=class_name,
         )
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
+    def run(
+        self,
+        *args: Any,
+        init_args: tuple[Any, ...] = (),
+        init_kwargs: dict[str, Any] = None,
+        **kwargs: Any,
+    ) -> Any:
         """Run the closure."""
+        if init_kwargs is None:
+            init_kwargs = {}
+        if init_args or init_kwargs:
+            class_and_method = self.name.split(".", 1)
+            if not len(class_and_method) == 2:
+                raise ValueError(
+                    "init_args and init_kwargs can only be used with methods."
+                )
+            name = f"{class_and_method[0]}(*{init_args}, **{init_kwargs}).{class_and_method[1]}"
+        else:
+            name = self.name
         script = inspect.cleandoc("""
         # /// script
         # dependencies = [
@@ -850,7 +891,7 @@ class Closure(BaseModel):
                 ]
             ),
             code=self.code,
-            name=self.name,
+            name=name,
             args=args,
             kwargs=kwargs,
         )
