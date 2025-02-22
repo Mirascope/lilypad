@@ -603,7 +603,7 @@ class _DependencyCollector:
                 hasattr(definition, "func")
                 and getattr(definition, "__name__", None) is None
             ):
-                definition = definition.func
+                definition = definition.func  # pyright: ignore [reportFunctionMemberAccess]
 
             # For methods, if __qualname__ contains a dot, does not include "<locals>" (global)
             # or if it is local (contains "<locals>"), capture the entire class.
@@ -851,20 +851,29 @@ class Closure(BaseModel):
     def run(
         self,
         *args: Any,
-        init_args: tuple[Any, ...] = (),
-        init_kwargs: dict[str, Any] = None,
+        _init_args: tuple[Any, ...] | None = None,
+        _init_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run the closure."""
-        if init_kwargs is None:
-            init_kwargs = {}
-        if init_args or init_kwargs:
+        """Run the closure.
+
+        Args:
+            *args: Positional arguments to pass to the closure.
+            _init_args: Positional arguments to pass to the closure class constructor.
+            _init_kwargs: Keyword arguments to pass to the closure class constructor.
+            **kwargs: Keyword arguments to pass to the closure.
+        """
+        if _init_args is None:
+            _init_args = ()
+        if _init_kwargs is None:
+            _init_kwargs = {}
+        if _init_kwargs or _init_kwargs:
             class_and_method = self.name.split(".", 1)
             if not len(class_and_method) == 2:
                 raise ValueError(
                     "init_args and init_kwargs can only be used with methods."
                 )
-            name = f"{class_and_method[0]}(*{init_args}, **{init_kwargs}).{class_and_method[1]}"
+            name = f"{class_and_method[0]}(*{_init_args}, **{_init_kwargs}).{class_and_method[1]}"
         else:
             name = self.name
         script = inspect.cleandoc("""

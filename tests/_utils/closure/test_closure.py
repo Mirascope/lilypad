@@ -650,17 +650,61 @@ def test_closure_run_with_instance_method() -> None:
     """Tests the `Closure.run` method."""
 
     class DummyChatbot:
-        def __init__(self, name: str) -> None:
+        def __init__(self, name: str, age: int) -> None:
             self.name = name
+            self.age = age
 
-        def greet(self, comment) -> str:
-            return f"Hello, {comment}! I'm {self.name}."
+        def greet(self, greet_message: str, comment: str) -> str:
+            return f"{greet_message.title()}, {comment}! I'm {self.name}, and I'm {self.age} years old."
 
     closure = Closure.from_fn(DummyChatbot.greet)
     assert (
         closure.run(
-            "nice",
-            init_args=("hellow",),
+            "hello",
+            comment="nice",
+            _init_args=("Chatbot",),
+            _init_kwargs={"age": 10},
         )
-        == "Hello, nice! I'm hellow."
+        == "Hello, nice! I'm Chatbot, and I'm 10 years old."
+    )
+
+
+def test_closure_run_with_empty_constractor() -> None:
+    """Tests the `Closure.run` method."""
+
+    class DummyChatbot:
+        def __init__(self) -> None:
+            self.name = "Chatbot"
+            self.age = 10
+
+        def greet(self, greet_message: str, comment: str) -> str:
+            return f"{greet_message.title()}, {comment}! I'm {self.name}, and I'm {self.age} years old."
+
+    closure = Closure.from_fn(DummyChatbot.greet)
+    assert (
+        closure.run(
+            "hello",
+            comment="nice",
+            _init_args=(),
+            _init_kwargs={},
+        )
+        == "Hello, nice! I'm Chatbot, and I'm 10 years old."
+    )
+
+
+def test_closure_run_with_class_method() -> None:
+    """Tests the `Closure.run` method."""
+
+    class DummyChatbot:
+        @classmethod
+        def greet(cls, greet_message: str, comment: str) -> str:
+            return f"{greet_message.title()}, {comment}!"
+
+    closure = Closure.from_fn(DummyChatbot.greet)
+    assert (
+        closure.run(
+            "hello",
+            comment="nice",
+        )
+        == "Hello, nice!"
     )
