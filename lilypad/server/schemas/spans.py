@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from .._utils import (
