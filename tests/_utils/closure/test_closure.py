@@ -659,7 +659,7 @@ def test_closure_run_with_instance_method() -> None:
 
     closure = Closure.from_fn(DummyChatbot.greet)
     assert (
-        closure.run(
+        closure.run_instance_method(
             "hello",
             comment="nice",
             _init_args=("Chatbot",),
@@ -682,11 +682,9 @@ def test_closure_run_with_empty_constractor() -> None:
 
     closure = Closure.from_fn(DummyChatbot.greet)
     assert (
-        closure.run(
+        closure.run_instance_method(
             "hello",
             comment="nice",
-            _init_args=(),
-            _init_kwargs={},
         )
         == "Hello, nice! I'm Chatbot, and I'm 10 years old."
     )

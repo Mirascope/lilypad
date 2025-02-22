@@ -848,7 +848,7 @@ class Closure(BaseModel):
             dependencies=dependencies,
         )
 
-    def run(
+    def run_instance_method(
         self,
         *args: Any,
         _init_args: tuple[Any, ...] | None = None,
@@ -867,15 +867,26 @@ class Closure(BaseModel):
             _init_args = ()
         if _init_kwargs is None:
             _init_kwargs = {}
+        class_and_method = self.name.split(".", 1)
+        if not len(class_and_method) == 2:
+            raise ValueError(f"Closure must be a instance method. Got: {self.name}")
+
         if _init_kwargs or _init_kwargs:
-            class_and_method = self.name.split(".", 1)
-            if not len(class_and_method) == 2:
-                raise ValueError(
-                    "init_args and init_kwargs can only be used with methods."
-                )
             name = f"{class_and_method[0]}(*{_init_args}, **{_init_kwargs}).{class_and_method[1]}"
         else:
-            name = self.name
+            name = f"{class_and_method[0]}().{class_and_method[1]}"
+        return self._run(name, *args, **kwargs)
+
+    def run(self, *args: Any, **kwargs: Any) -> Any:
+        """Run the closure.
+
+        Args:
+            *args: Positional arguments to pass to the closure.
+            **kwargs: Keyword arguments to pass to the closure.
+        """
+        return self._run(self.name, *args, **kwargs)
+
+    def _run(self, name: str, *args: Any, **kwargs: Any) -> Any:
         script = inspect.cleandoc("""
         # /// script
         # dependencies = [
