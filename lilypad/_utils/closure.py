@@ -781,21 +781,25 @@ class Closure(BaseModel):
             Closure: The closure of the function.
         """
         qualname = fn.__qualname__
-        is_method = False
-        class_name = None
-        if "." in qualname:
+        if "<locals>" in qualname:
+            is_method = False
+            class_name = None
+            full_name = get_qualified_name(fn)
+        elif "." in qualname:
             parts = qualname.split(".")
             class_name = parts[0]
             is_method = True
             full_name = f"{class_name}.{fn.__name__}"
         else:
+            is_method = False
+            class_name = None
             full_name = get_qualified_name(fn)
 
         collector = _DependencyCollector()
         imports, assignments, source_code, dependencies = collector.collect(fn)
         if is_method and fn.__module__ is not None:
             module = inspect.getmodule(fn)
-            if module is not None and hasattr(module, class_name):
+            if module is not None and class_name and hasattr(module, class_name):
                 source_code_combined = _clean_source_code(getattr(module, class_name))
             else:
                 source_code_combined = "\n\n".join(source_code)
