@@ -125,7 +125,7 @@ line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
-"lilypad/server/migrations/versions/*.py" = ["D103"]
+"migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = ["D101", "D212", "D402", "D403"]
