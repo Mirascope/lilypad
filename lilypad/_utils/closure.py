@@ -766,6 +766,8 @@ class Closure(BaseModel):
     code: str
     hash: str
     dependencies: dict[str, DependencyInfo]
+    is_method: bool = False
+    class_name: str | None = None
 
     @classmethod
     @lru_cache(maxsize=128)
@@ -778,21 +780,44 @@ class Closure(BaseModel):
         Returns:
             Closure: The closure of the function.
         """
+        qualname = fn.__qualname__
+        is_method = False
+        class_name = None
+        if "." in qualname:
+            parts = qualname.split(".")
+            class_name = parts[0]
+            is_method = True
+            full_name = f"{class_name}.{fn.__name__}"
+        else:
+            full_name = get_qualified_name(fn)
+
         collector = _DependencyCollector()
         imports, assignments, source_code, dependencies = collector.collect(fn)
-        code = "{imports}\n\n{assignments}\n\n{source_code}".format(
-            imports="\n".join(imports),
-            assignments="\n".join(assignments),
-            source_code="\n\n".join(source_code),
+        if is_method and fn.__module__ is not None:
+            module = inspect.getmodule(fn)
+            if module is not None and hasattr(module, class_name):
+                source_code_combined = _clean_source_code(getattr(module, class_name))
+            else:
+                source_code_combined = "\n\n".join(source_code)
+        else:
+            source_code_combined = "\n\n".join(source_code)
+
+        formatted_code = _run_ruff(
+            "{imports}\n\n{assignments}\n\n{source_code}".format(
+                imports="\n".join(imports),
+                assignments="\n".join(assignments),
+                source_code=source_code_combined,
+            )
         )
-        formatted_code = _run_ruff(code)
         hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
-            name=get_qualified_name(fn),
+            name=full_name,
             signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
             hash=hash_value,
             dependencies=dependencies,
+            is_method=is_method,
+            class_name=class_name,
         )
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
