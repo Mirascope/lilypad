@@ -32,13 +32,7 @@ const GithubButton = ({
   );
 };
 
-export const GithubLogin = ({
-  deviceCode,
-  redirect,
-}: {
-  deviceCode?: string;
-  redirect?: string;
-}) => {
+export const GithubLogin = ({ redirect }: { redirect?: string }) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const getAuthUrl = () => {
     const githubAuthUrl = "https://github.com/login/oauth/authorize";
@@ -48,14 +42,13 @@ export const GithubLogin = ({
       scope: "read:user user:email",
       response_type: "code",
     });
-    if (deviceCode || redirect) {
-      const stateObject = {
-        deviceCode,
-        redirect,
-      };
-      const state = btoa(JSON.stringify(stateObject));
-      params.append("state", state);
-    }
+    const stateObject = {
+      provider: "github",
+      ...(redirect && { redirect }),
+    };
+
+    const state = btoa(JSON.stringify(stateObject));
+    params.append("state", state);
     return `${githubAuthUrl}?${params.toString()}`;
   };
   return (

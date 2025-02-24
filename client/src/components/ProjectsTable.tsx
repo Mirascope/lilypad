@@ -128,7 +128,7 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
     });
     navigate({
       to: "/projects",
-      search: { redirect: undefined, deviceCode: undefined },
+      search: { redirect: undefined },
     });
   };
 
