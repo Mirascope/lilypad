@@ -4,13 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
-from lilypad.ee.server.client import (
-    APIConnectionError,
-    DatasetRowsResponse,
-    LilypadClient,
-    NotFoundError,
-)
+from lilypad.ee.server.client import DatasetRowsResponse, LilypadClient
 from lilypad.ee.server.client import LilypadClient as BaseLilypadClient
+from lilypad.exceptions import (
+    LilypadAPIConnectionError,
+    LilypadHTTPError,
+    LilypadValueError,
+)
 
 
 def test_get_dataset_rows_no_project_uuid():
@@ -18,7 +18,9 @@ def test_get_dataset_rows_no_project_uuid():
     client = LilypadClient()
     client.project_uuid = None  # Explicitly ensure it's not set
 
-    with pytest.raises(ValueError, match="No project_uuid is set in LilypadClient"):
+    with pytest.raises(
+        LilypadValueError, match="No project_uuid is set in LilypadClient"
+    ):
         client.get_dataset_rows(generation_uuid="some-uuid")
 
 
@@ -98,29 +100,29 @@ def test_get_dataset_rows_no_params():
     client = LilypadClient()
     client.project_uuid = "test-project-uuid"
 
-    with pytest.raises(ValueError, match="Must provide either generation_uuid"):
+    with pytest.raises(LilypadValueError, match="Must provide either generation_uuid"):
         client.get_dataset_rows()
 
 
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_connection_error(mock_request):
     """Test get_dataset_rows handling an APIConnectionError from the underlying _request."""
-    mock_request.side_effect = APIConnectionError("Simulated connection error")
+    mock_request.side_effect = LilypadAPIConnectionError("Simulated connection error")
 
     client = LilypadClient()
     client.project_uuid = "test-project-uuid"
 
-    with pytest.raises(APIConnectionError, match="Simulated connection error"):
+    with pytest.raises(LilypadAPIConnectionError, match="Simulated connection error"):
         client.get_dataset_rows(generation_uuid="any-uuid")
 
 
 @patch.object(BaseLilypadClient, "_request")
 def test_get_dataset_rows_not_found_error(mock_request):
     """Test get_dataset_rows handling a NotFoundError from the underlying _request."""
-    mock_request.side_effect = NotFoundError("Resource not found")
+    mock_request.side_effect = LilypadHTTPError("Resource not found")
 
     client = LilypadClient()
     client.project_uuid = "test-project-uuid"
 
-    with pytest.raises(NotFoundError, match="Resource not found"):
+    with pytest.raises(LilypadHTTPError, match="Resource not found"):
         client.get_dataset_rows(generation_name="missing-gen-name")
