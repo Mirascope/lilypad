@@ -1,25 +1,16 @@
 """The `lilypad` API client."""
 
-from typing import Any, Literal, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from ...exceptions import (
+    LilypadValueError,
+)
 from ...server.client import LilypadClient as _LilypadClient
 from ...server.schemas import GenerationPublic
 
 _R = TypeVar("_R", bound=BaseModel)
-
-
-class NotFoundError(Exception):
-    """Raised when an API response has a status code of 404."""
-
-    status_code: Literal[404] = 404
-
-
-class APIConnectionError(Exception):
-    """Raised when an API connection error occurs."""
-
-    ...
 
 
 class DatasetRowsResponse(BaseModel):
@@ -54,7 +45,7 @@ class LilypadClient(_LilypadClient):
             The actual row data is in data_frame.view.data
         """
         if not self.project_uuid:
-            raise ValueError(
+            raise LilypadValueError(
                 "No project_uuid is set in LilypadClient (cannot fetch dataset)."
             )
         params = {"page_num": page_num}
@@ -79,6 +70,6 @@ class LilypadClient(_LilypadClient):
                 response_model=DatasetRowsResponse,
                 params=params,
             )
-        raise ValueError(
+        raise LilypadValueError(
             "Must provide either generation_uuid, generation_name, or generation_hash."
         )

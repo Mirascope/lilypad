@@ -2,6 +2,8 @@
 
 from typing import Literal
 
+from requests.exceptions import HTTPError, RequestException, Timeout
+
 
 class LilypadException(Exception):
     """Base class for all Lilypad exceptions."""
@@ -16,4 +18,22 @@ class LilypadNotFoundError(LilypadException):
 class LilypadAPIConnectionError(LilypadException):
     """Raised when an API connection error occurs."""
 
-    ...
+
+class LilypadValueError(LilypadException):
+    """Inappropriate argument value (of correct type)."""
+
+
+class LilypadFileNotFoundError(LilypadException):
+    """Raised when a file or directory is requested but doesn't exist."""
+
+
+class LilypadHTTPError(LilypadException, HTTPError):
+    """An HTTP error occurred."""
+
+
+class LilypadRequestException(LilypadException, RequestException):
+    """There was an ambiguous exception that occurred while handling your request."""
+
+
+class LilypadTimeout(LilypadException, Timeout):
+    """The request timed out."""
