@@ -669,6 +669,8 @@ export interface SettingsPublic {
   remote_api_url: string;
   /** Github Client Id */
   github_client_id: string;
+  /** Google Client Id */
+  google_client_id: string;
   /** Environment */
   environment: string;
 }

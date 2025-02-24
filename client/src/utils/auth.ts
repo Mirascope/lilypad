@@ -1,33 +1,37 @@
 import api from "@/api";
-import { DeviceCodeTable, UserPublic } from "@/types/types";
-import { queryOptions, useMutation } from "@tanstack/react-query";
-export const fetchCallbackCode = async (code?: string, deviceCode?: string) => {
+import { UserPublic } from "@/types/types";
+import { queryOptions } from "@tanstack/react-query";
+export const fetchGitHubCallbackCode = async (code?: string) => {
   if (!code) {
     return null;
   }
   const params = new URLSearchParams({ code });
-  if (deviceCode) {
-    params.append("deviceCode", deviceCode);
-  }
   return (
     await api.get<UserPublic>(`/auth/github/callback?${params.toString()}`)
   ).data;
 };
 
-export const postDeviceCode = async (deviceCode: string) => {
-  return (await api.post<DeviceCodeTable>(`/device-codes/${deviceCode}`)).data;
+export const fetchGoogleCallbackCode = async (code?: string) => {
+  if (!code) {
+    return null;
+  }
+  const params = new URLSearchParams({ code });
+  return (
+    await api.get<UserPublic>(`/auth/google/callback?${params.toString()}`)
+  ).data;
 };
 
-export const useDeviceCodeMutation = () => {
-  return useMutation({
-    mutationFn: async ({ deviceCode }: { deviceCode: string }) =>
-      await postDeviceCode(deviceCode),
-  });
-};
-
-export const callbackCodeQueryOptions = (code?: string, deviceCode?: string) =>
+export const callbackCodeQueryOptions = (provider: string, code?: string) =>
   queryOptions({
     queryKey: ["user"],
-    queryFn: () => fetchCallbackCode(code, deviceCode),
+    queryFn: async () => {
+      if (provider === "github") {
+        return await fetchGitHubCallbackCode(code);
+      } else if (provider === "google") {
+        return await fetchGoogleCallbackCode(code);
+      } else {
+        return null;
+      }
+    },
     enabled: Boolean(code),
   });

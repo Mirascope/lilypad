@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     github_client_id: str = Field(default="my_client_id")
     github_client_secret: str = Field(default="my_client_secret")
 
+    # Google OAuth settings
+    google_client_id: str = Field(default="my_client_id")
+    google_client_secret: str = Field(default="my_client_secret")
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
