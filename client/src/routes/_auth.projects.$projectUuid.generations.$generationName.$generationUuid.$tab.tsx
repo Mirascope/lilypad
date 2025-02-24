@@ -12,7 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GenerationPublic, PromptPublic } from "@/types/types";
+import { GenerationPublic, PromptPublic, TimeFrame } from "@/types/types";
 import {
   generationsByNameQueryOptions,
   useArchiveGenerationMutation,
@@ -28,7 +28,9 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
+import { CostAndTokensChart } from "@/components/CostAndTokensChart";
 import LilypadDialog from "@/components/LilypadDialog";
+import { ResponseTimeChart } from "@/components/ResponseTimeChart";
 import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
@@ -41,8 +43,9 @@ import { Typography } from "@/components/ui/typography";
 import { DatasetTable } from "@/ee/components/DatasetTable";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
+import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
 import { Trash } from "lucide-react";
-import { Suspense, useState } from "react";
+import { JSX, Suspense } from "react";
 
 type GenerationRouteParams = {
   projectUuid: string;
@@ -100,17 +103,14 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
+
   const navigate = useNavigate();
-  const [version, setVersion] = useState<number | null | undefined>(
-    generations.length > 0
-      ? generations.find((generation) => generation.uuid === generationUuid)
-          ?.version_num
-      : null
+  const generation = generations.find(
+    (generation) => generation.uuid === generationUuid
   );
-  const generation =
-    generations.length > 0
-      ? generations.find((generation) => generation.version_num === version)
-      : null;
+  if (!generation) {
+    return <div>No generation found.</div>;
+  }
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
@@ -143,14 +143,10 @@ const GenerationWorkbench = () => {
       value: GenerationTab.DATASET,
       component: (
         <Suspense fallback={<TableSkeleton />}>
-          {generation ? (
-            <DatasetTable
-              projectUuid={projectUuid}
-              generationUuid={generation?.uuid}
-            />
-          ) : (
-            <div>No generation selected</div>
-          )}
+          <DatasetTable
+            projectUuid={projectUuid}
+            generationUuid={generation?.uuid}
+          />
         </Suspense>
       ),
     },
@@ -172,9 +168,9 @@ const GenerationWorkbench = () => {
         <Select
           value={generation?.uuid}
           onValueChange={(uuid) =>
-            setVersion(
-              generations.find((g) => g.uuid === uuid)?.version_num || null
-            )
+            navigate({
+              to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
+            })
           }
         >
           <SelectTrigger className='w-[200px]'>
@@ -285,15 +281,18 @@ const PromptCard = ({
     </Card>
   );
 };
-const Generation = ({
-  generation,
-}: {
-  generation?: GenerationPublic | null;
-}) => {
+const Generation = ({ generation }: { generation: GenerationPublic }) => {
   const { projectUuid } = useParams({ from: Route.id });
 
   const { data: prompts } = useSuspenseQuery(
     promptsBySignature(projectUuid, generation?.prompt?.signature)
+  );
+  const { data: aggregateMetrics } = useSuspenseQuery(
+    aggregatesByGenerationQueryOptions(
+      projectUuid,
+      generation.uuid,
+      TimeFrame.DAY
+    )
   );
 
   if (!generation) {
@@ -303,6 +302,8 @@ const Generation = ({
     <>
       {generation && (
         <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
+          <CostAndTokensChart aggregateMetrics={aggregateMetrics} />
+          <ResponseTimeChart aggregateMetrics={aggregateMetrics} />
           <div className='text-left'>
             <Label>Code</Label>
             <CodeSnippet code={generation.code} />

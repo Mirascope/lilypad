@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ...models import SpanTable
 from ...schemas import SpanMoreDetails, SpanPublic
-from ...services import SpanService
+from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()
 
@@ -36,6 +36,22 @@ async def get_span_by_generation_uuid(
 ) -> Sequence[SpanTable]:
     """Get span by uuid."""
     return span_service.find_records_by_generation_uuid(project_uuid, generation_uuid)
+
+
+@spans_router.get(
+    "/projects/{project_uuid}/generations/{generation_uuid}/spans/metadata",
+    response_model=Sequence[AggregateMetrics],
+)
+async def get_aggregates_by_generation_uuid(
+    project_uuid: UUID,
+    generation_uuid: UUID,
+    time_frame: TimeFrame,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> Sequence[AggregateMetrics]:
+    """Get aggregated span by generation uuid."""
+    return span_service.get_aggregated_metrics(
+        project_uuid, generation_uuid, time_frame
+    )
 
 
 __all__ = ["spans_router"]
