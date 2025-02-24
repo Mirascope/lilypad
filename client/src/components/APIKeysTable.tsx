@@ -106,6 +106,7 @@ export const APIKeysTable = () => {
 
 const CreateKeyButton = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [projectUuid, setProjectUuid] = useState<string | null>(null);
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -113,9 +114,17 @@ const CreateKeyButton = () => {
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         {apiKey ? (
-          <CopyKeyButton apiKey={apiKey} setApiKey={setApiKey} />
+          <CopyKeyButton
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+            projectUuid={projectUuid}
+            setProjectUuid={setProjectUuid}
+          />
         ) : (
-          <GenerateAPIKeyForm setApiKey={setApiKey} />
+          <GenerateAPIKeyForm
+            setApiKey={setApiKey}
+            setProjectUuid={setProjectUuid}
+          />
         )}
       </DialogContent>
     </Dialog>
@@ -124,8 +133,10 @@ const CreateKeyButton = () => {
 
 const GenerateAPIKeyForm = ({
   setApiKey,
+  setProjectUuid,
 }: {
   setApiKey: Dispatch<SetStateAction<string | null>>;
+  setProjectUuid: Dispatch<SetStateAction<string | null>>;
 }) => {
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   const { activeProject } = useAuth();
@@ -136,6 +147,7 @@ const GenerateAPIKeyForm = ({
   const onSubmit = async (data: APIKeyCreate) => {
     const generatedKey = await createApiKey.mutateAsync(data);
     setApiKey(generatedKey);
+    setProjectUuid(data.project_uuid);
   };
   return (
     <Form {...methods}>
@@ -200,12 +212,15 @@ const GenerateAPIKeyForm = ({
 const CopyKeyButton = ({
   apiKey,
   setApiKey,
+  projectUuid,
+  setProjectUuid,
 }: {
   apiKey: string;
   setApiKey: Dispatch<SetStateAction<string | null>>;
+  projectUuid: string | null;
+  setProjectUuid: Dispatch<SetStateAction<string | null>>;
 }) => {
   const { toast } = useToast();
-  const { activeProject } = useAuth();
   const [projectCopied, setProjectCopied] = useState<boolean>(false);
   const [apiCopied, setApiCopied] = useState<boolean>(false);
   const copyToClipboard = async (mode: string) => {
@@ -214,8 +229,8 @@ const CopyKeyButton = ({
       await navigator.clipboard.writeText(apiKey);
       setApiCopied(true);
       title = "Successfully copied API key to clipboard";
-    } else if (activeProject && mode === PROJECT_MODE) {
-      await navigator.clipboard.writeText(activeProject.uuid);
+    } else if (projectUuid && mode === PROJECT_MODE) {
+      await navigator.clipboard.writeText(projectUuid);
       setProjectCopied(true);
       title = "Successfully copied project ID to clipboard";
     }
@@ -227,8 +242,10 @@ const CopyKeyButton = ({
   };
   const handleCleanup = () => {
     setApiKey(null);
+    setProjectUuid(null);
   };
-  if (!activeProject) return <NotFound />;
+
+  if (!projectUuid) return <NotFound />;
   return (
     <div className='space-y-6'>
       <DialogHeader className='flex-shrink-0'>
@@ -248,7 +265,7 @@ const CopyKeyButton = ({
       <Alert>
         <AlertTitle>LILYPAD_PROJECT ID</AlertTitle>
         <AlertDescription className='flex items-center justify-between break-all font-mono text-sm'>
-          {activeProject.uuid}
+          {projectUuid}
           <Button
             size='icon'
             variant='ghost'
