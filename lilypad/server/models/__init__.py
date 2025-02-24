@@ -3,7 +3,6 @@
 from .api_keys import APIKeyTable
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
-from .device_codes import DeviceCodeTable
 from .generations import (
     GenerationTable,
     GenerationUpdate,
@@ -29,7 +28,6 @@ __all__ = [
     "APIKeyTable",
     "BaseOrganizationSQLModel",
     "BaseSQLModel",
-    "DeviceCodeTable",
     "GenerationTable",
     "GenerationUpdate",
     "JSONTypeDecorator",
