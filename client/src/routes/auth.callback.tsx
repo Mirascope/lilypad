@@ -16,7 +16,6 @@ export const Route = createFileRoute("/auth/callback")({
         to: "/auth/login",
         search: {
           redirect: location.href,
-          deviceCode: search.deviceCode as string,
         },
       });
     }
@@ -26,20 +25,29 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 type State = {
-  deviceCode?: string;
   redirect?: string;
+  provider?: string;
 };
+
 const CallbackPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
   const { code, state } = Route.useSearch();
   let stateJson: State = {};
+
   if (state) {
-    stateJson = JSON.parse(atob(state));
+    try {
+      stateJson = JSON.parse(atob(state));
+    } catch (e) {
+      console.error("Failed to parse state:", e);
+    }
   }
+  const activeProvider = stateJson.provider || "github";
+
   const { data: session } = useSuspenseQuery(
-    callbackCodeQueryOptions(code, stateJson?.deviceCode)
+    callbackCodeQueryOptions(activeProvider, code)
   );
+
   useEffect(() => {
     auth.setSession(session);
   }, [session]);
@@ -57,6 +65,9 @@ const CallbackPage = () => {
     <div className='min-h-screen flex items-center justify-center'>
       <div className='text-center'>
         <h2 className='text-xl'>Processing login...</h2>
+        <p className='text-gray-500 mt-2'>
+          Authenticating with {activeProvider}...
+        </p>
       </div>
     </div>
   );

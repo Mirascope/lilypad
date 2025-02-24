@@ -1,4 +1,4 @@
-"""The `/device_codes` API router."""
+"""The `/api-keys` API router."""
 
 from collections.abc import Sequence
 from typing import Annotated
