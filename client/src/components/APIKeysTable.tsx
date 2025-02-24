@@ -72,8 +72,7 @@ export const APIKeysTable = () => {
       accessorKey: "expires_at",
       header: "Expires",
       cell: ({ row }) => {
-        const expireDate = new Date(row.getValue("expires_at"));
-        return <div>{formatDate(expireDate)}</div>;
+        return <div>{formatDate(row.getValue("expires_at"))}</div>;
       },
     },
     {
