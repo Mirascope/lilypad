@@ -225,8 +225,7 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        const timestamp = new Date(row.getValue("timestamp"));
-        return <div>{formatDate(timestamp)}</div>;
+        return <div>{formatDate(row.getValue("timestamp"))}</div>;
       },
     },
     {

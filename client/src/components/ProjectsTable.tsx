@@ -56,8 +56,7 @@ export const ProjectsTable = () => {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => {
-        const createdAt = new Date(row.getValue("created_at"));
-        return <div>{formatDate(createdAt)}</div>;
+        return <div>{formatDate(row.getValue("created_at"))}</div>;
       },
     },
     {
