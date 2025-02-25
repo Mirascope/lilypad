@@ -63,6 +63,30 @@ const findRowWithUuid = (
   return undefined;
 };
 
+const Spacer = () => <div className='w-4 h-4' />;
+const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
+  return (
+    <ChevronRight
+      onClick={(event) => {
+        row.toggleExpanded();
+        event.stopPropagation();
+      }}
+      className={`h-4 w-4 transition-transform ${
+        row.getIsExpanded() ? "rotate-90" : ""
+      }`}
+    />
+  );
+};
+
+const RowSelection = ({ row }: { row: Row<SpanPublic> }) => (
+  <Checkbox
+    onClick={(e) => e.stopPropagation()}
+    checked={row.getIsSelected()}
+    onCheckedChange={(value) => row.toggleSelected(!!value)}
+    aria-label='Select row'
+  />
+);
+
 export const TracesTable = ({
   data,
   traceUuid,
@@ -79,7 +103,9 @@ export const TracesTable = ({
   const [open, setOpen] = useState(false);
   const columns: ColumnDef<SpanPublic>[] = [
     {
-      id: "select",
+      accessorKey: "display_name",
+      enableHiding: false,
+      filterFn: onlyParentFilter,
       header: ({ table }) => {
         const topLevelRows = table
           .getFilteredRowModel()
@@ -92,60 +118,33 @@ export const TracesTable = ({
         );
 
         return (
-          <Checkbox
-            checked={
-              (topLevelRows.length > 0 && allTopLevelSelected) ||
-              (someTopLevelSelected && "indeterminate")
-            }
-            onCheckedChange={(value) => {
-              topLevelRows.forEach((row) => row.toggleSelected(!!value));
-            }}
-            aria-label='Select all top level rows'
-          />
-        );
-      },
-      cell: ({ row }) => {
-        const shouldShowCheckbox = row.getValue("scope") == Scope.LILYPAD;
-
-        if (!shouldShowCheckbox) return null;
-        return (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className='flex items-center gap-2'>
             <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label='Select row'
+              checked={
+                (topLevelRows.length > 0 && allTopLevelSelected) ||
+                (someTopLevelSelected && "indeterminate")
+              }
+              onCheckedChange={(value) => {
+                topLevelRows.forEach((row) => row.toggleSelected(!!value));
+              }}
+              aria-label='Select all top level rows'
             />
+            Name
           </div>
         );
       },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "display_name",
-      header: "Name",
-      enableHiding: false,
-      filterFn: onlyParentFilter,
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
+        const shouldShowCheckbox = row.getValue("scope") == Scope.LILYPAD;
+
         return (
-          <div
-            className='flex items-center gap-2'
-            style={{ marginLeft: `${depth * 1}rem` }}
-          >
+          <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
-              {hasSubRows && (
-                <ChevronRight
-                  onClick={(event) => {
-                    row.toggleExpanded();
-                    event.stopPropagation();
-                  }}
-                  className={`h-4 w-4 transition-transform ${
-                    row.getIsExpanded() ? "rotate-90" : ""
-                  }`}
-                />
-              )}
+              {!shouldShowCheckbox && <Spacer />}
+              {!hasSubRows && <Spacer />}
+              {shouldShowCheckbox && <RowSelection row={row} />}
+              {hasSubRows && <ExpandRowButton row={row} />}
               <span className='truncate'>{row.getValue("display_name")}</span>
             </div>
           </div>
