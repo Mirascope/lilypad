@@ -29,7 +29,6 @@ import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
 import LilypadDialog from "@/components/LilypadDialog";
-import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
   SelectContent,
@@ -38,7 +37,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { DatasetTable } from "@/ee/components/DatasetTable";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
 import { Trash } from "lucide-react";
@@ -136,22 +134,6 @@ const GenerationWorkbench = () => {
           projectUuid={projectUuid}
           generationUuid={generation?.uuid}
         />
-      ),
-    },
-    {
-      label: "Dataset",
-      value: GenerationTab.DATASET,
-      component: (
-        <Suspense fallback={<TableSkeleton />}>
-          {generation ? (
-            <DatasetTable
-              projectUuid={projectUuid}
-              generationUuid={generation?.uuid}
-            />
-          ) : (
-            <div>No generation selected</div>
-          )}
-        </Suspense>
       ),
     },
   ];

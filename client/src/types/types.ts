@@ -148,27 +148,6 @@ export interface DependencyInfo {
 }
 
 /**
- * DeviceCodeTable
- * Device codes table.
- */
-export interface DeviceCodeTable {
-  /** Uuid */
-  uuid?: string | null;
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /**
-   * Id
-   * Generated device code
-   */
-  id: string;
-  /** Token */
-  token: string;
-}
-
-/**
  * EvaluationType
  * Evaluation type enum
  */
