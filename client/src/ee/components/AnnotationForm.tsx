@@ -428,7 +428,6 @@ export const AnnotationDialog = ({
   spanUuid: string;
   annotation?: AnnotationTable;
 }) => {
-  console.log(annotation);
   if (annotation) {
     return (
       <UpdateAnnotationDialog annotation={annotation} spanUuid={spanUuid} />
