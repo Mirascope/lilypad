@@ -171,11 +171,16 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
-                    output = await fn(*args, **kwargs)
-                    if isinstance(output, BaseModel):
-                        output = str(output.model_dump())
-                    span.set_attribute("lilypad.generation.output", str(output))
-                return output  # pyright: ignore [reportReturnType]
+                    original_output = await fn(*args, **kwargs)
+                    output_for_span = (
+                        original_output.model_dump()
+                        if isinstance(original_output, BaseModel)
+                        else original_output
+                    )
+                    span.set_attribute(
+                        "lilypad.generation.output", str(output_for_span)
+                    )
+                return original_output  # pyright: ignore [reportReturnType]
 
             return inner_async
 
@@ -193,11 +198,16 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
-                    output = fn(*args, **kwargs)
-                    if isinstance(output, BaseModel):
-                        output = str(output.model_dump())
-                    span.set_attribute("lilypad.generation.output", str(output))
-                return output  # pyright: ignore [reportReturnType]
+                    original_output = fn(*args, **kwargs)
+                    output_for_span = (
+                        original_output.model_dump()
+                        if isinstance(original_output, BaseModel)
+                        else original_output
+                    )
+                    span.set_attribute(
+                        "lilypad.generation.output", str(output_for_span)
+                    )
+                return original_output  # pyright: ignore [reportReturnType]
 
             return inner
 
