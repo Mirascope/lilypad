@@ -98,7 +98,7 @@ class SpanMoreDetails(BaseModel):
     model: str
     input_tokens: float | None = None
     output_tokens: float | None = None
-    duration_ms: float
+    duration_ms: float | None = None
     signature: str | None = None
     code: str | None = None
     arg_values: dict[str, Any] | None = None
