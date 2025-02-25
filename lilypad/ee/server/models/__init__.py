@@ -4,3 +4,5 @@ from .annotations import (
     AnnotationBase,
     AnnotationTable,
 )
+
+__all__ = ["AnnotationBase", "AnnotationTable"]

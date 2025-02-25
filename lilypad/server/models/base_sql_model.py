@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, field_serializer
+from pydantic.types import AwareDatetime
 from sqlalchemy import JSON, Column, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql.base import PGDialect
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.types import TypeEngine
-from sqlmodel import Field, SQLModel
+from sqlmodel import DateTime, Field, SQLModel
 
 
 class JSONTypeDecorator(TypeDecorator):
@@ -41,7 +43,8 @@ class BaseSQLModel(SQLModel):
         primary_key=True,
         schema_extra={"format": "uuid"},
     )
-    created_at: datetime = Field(
+    created_at: Annotated[datetime, AwareDatetime] = Field(
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
         schema_extra={"format": "date-time"},

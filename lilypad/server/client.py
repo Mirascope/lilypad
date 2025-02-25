@@ -10,7 +10,15 @@ from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
 from .._utils import Closure, load_config
-from ..exceptions import LilypadAPIConnectionError, LilypadNotFoundError
+from ..exceptions import (
+    LilypadAPIConnectionError,
+    LilypadException,
+    LilypadFileNotFoundError,
+    LilypadHTTPError,
+    LilypadNotFoundError,
+    LilypadRequestException,
+    LilypadTimeout,
+)
 from ..server.settings import get_settings
 from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
 from .schemas.prompts import PromptPublic
@@ -56,7 +64,7 @@ class LilypadClient:
                     if config.get("project_uuid", None)
                     else None
                 )
-            except FileNotFoundError:
+            except LilypadFileNotFoundError:
                 self.project_uuid = None
         if settings.api_key:
             self.session.headers.update({"X-API-Key": settings.api_key})
@@ -129,9 +137,10 @@ class LilypadClient:
             Union[T, str]: Parsed Pydantic model if response_model is provided; otherwise, raw text.
 
         Raises:
-            Timeout: If the request times out.
-            HTTPError: For bad HTTP responses.
-            RequestException: For other request-related errors.
+            LilypadTimeout: If the request times out.
+            LilypadHTTPError: For bad HTTP responses.
+            LilypadRequestException: For other request-related errors.
+            LilypadException: For other unknown errors.
         """
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         timeout = kwargs.pop("timeout", self.timeout)
@@ -141,7 +150,7 @@ class LilypadClient:
             response.raise_for_status()
         except Timeout:
             log.error(f"Request to {url} timed out.")
-            raise
+            raise LilypadTimeout(f"Request to {url} timed out.")
         except ConnectionError as conn_err:
             raise LilypadAPIConnectionError(
                 f"Connection error during request to {url}: {conn_err}"
@@ -149,12 +158,11 @@ class LilypadClient:
         except HTTPError as http_err:
             if http_err.response.status_code == 404:
                 raise LilypadNotFoundError(f"Resource not found: {url}")
-            raise HTTPError(
+            raise LilypadHTTPError(
                 f"HTTP error during request to {url}: {http_err.response.text}"
             )
         except RequestException:
-            raise
-
+            raise LilypadRequestException("Unknown error during request.")
         try:
             if get_origin(response_model) is list:
                 return TypeAdapter(response_model).validate_python(response.json())
@@ -164,7 +172,7 @@ class LilypadClient:
                 return response.json()
         except Exception as e:
             log.error(f"Error parsing response into {response_model}: {e}")
-            raise
+            raise LilypadException
 
     def get_health(self) -> dict[str, Any]:
         """Get the health status of the server."""
