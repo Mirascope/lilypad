@@ -13,7 +13,6 @@ from .._utils import Closure, load_config
 from ..exceptions import LilypadAPIConnectionError, LilypadNotFoundError
 from ..server.settings import get_settings
 from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
-from .schemas.prompts import PromptPublic
 from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
@@ -314,79 +313,6 @@ class LilypadClient:
         raise LilypadNotFoundError(
             f"Generation with signature '{closure.signature}' not found. Available signatures: {[g.signature for g in generations]}"
         )
-
-    def get_prompt_active_version(
-        self,
-        fn: Callable[..., Any],
-        generation: GenerationPublic | None,
-        forced_version: str | None = None,
-    ) -> PromptPublic | None:
-        """Get the matching version for a prompt.
-
-        Args:
-            fn (Callable): The prompt for which to get the version.
-            generation (GenerationPublic | None): A generation that may have a specific
-                version of the prompt linked.
-            forced_version (str | None): If provided, force the retrieval of the prompt with
-                this version. Can be either a valid prompt UUID or a version number as a string.
-
-        Returns:
-            PromptPublic | None: The matching version for the prompt, or creates one if not found.
-        """
-        closure = Closure.from_fn(fn)
-
-        if forced_version is not None:
-            if _is_valid_uuid(forced_version):
-                return self._request(
-                    "GET",
-                    f"v0/projects/{self.project_uuid}/prompts/{forced_version}",
-                    response_model=PromptPublic,
-                )
-            else:
-                prompts = self._request(
-                    "GET",
-                    f"v0/projects/{self.project_uuid}/prompts/name/{closure.name}",
-                    response_model=list[PromptPublic],
-                )
-                try:
-                    forced_version_num = int(forced_version)
-                except ValueError:
-                    raise ValueError(
-                        f"Forced version '{forced_version}' is neither a valid UUID nor an integer version number."
-                    )
-                for p in prompts:
-                    if p.version_num == forced_version_num:
-                        return p
-                raise LilypadNotFoundError(
-                    f"Generation version '{forced_version}' not found for signature {closure.signature}"
-                )
-
-        if generation:
-            if generation.prompt and generation.prompt.signature == closure.signature:
-                return generation.prompt
-            elif not generation.prompt:
-                prompts = self._request(
-                    "GET",
-                    f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
-                    params={"signature": closure.signature},
-                    response_model=list[PromptPublic],
-                )
-                if prompts:
-                    self._request(
-                        "PATCH",
-                        f"v0/projects/{self.project_uuid}/generations/{generation.uuid}",
-                        json={"prompt_uuid": str(prompts[0].uuid)},
-                        response_model=GenerationPublic,
-                    )
-                    return prompts[0]
-        try:
-            return self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
-                response_model=PromptPublic,
-            )
-        except LilypadNotFoundError:
-            return None
 
     def get_response_model_active_version(
         self, cls: type[BaseModel], generation: GenerationPublic | None

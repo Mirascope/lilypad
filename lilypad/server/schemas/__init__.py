@@ -8,12 +8,6 @@ from .generations import (
 from .organization_invites import OrganizationInviteCreate, OrganizationInvitePublic
 from .organizations import OrganizationCreate, OrganizationPublic
 from .projects import ProjectCreate, ProjectPublic
-from .prompts import (
-    PlaygroundParameters,
-    PromptCreate,
-    PromptPublic,
-    Provider,
-)
 from .spans import SpanCreate, SpanMoreDetails, SpanPublic, SpanTable
 from .user_organizations import (
     UserOrganizationCreate,
@@ -32,12 +26,8 @@ __all__ = [
     "OrganizationPublic",
     "OrganizationInviteCreate",
     "OrganizationInvitePublic",
-    "PlaygroundParameters",
     "ProjectCreate",
     "ProjectPublic",
-    "PromptCreate",
-    "PromptPublic",
-    "Provider",
     "SpanCreate",
     "SpanPublic",
     "SpanMoreDetails",

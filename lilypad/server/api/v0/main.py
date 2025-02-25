@@ -13,7 +13,6 @@ from .device_codes_api import device_codes_api
 from .generations_api import generations_router
 from .organizations_api import organization_router
 from .projects_api import projects_router
-from .prompts_api import prompts_router
 from .response_models_api import response_models_router
 from .spans_api import spans_router
 from .traces_api import traces_router
@@ -26,7 +25,6 @@ api.include_router(api_keys_api)
 api.include_router(device_codes_api)
 api.include_router(generations_router)
 api.include_router(projects_router)
-api.include_router(prompts_router)
 api.include_router(response_models_router)
 api.include_router(spans_router)
 api.include_router(traces_router)

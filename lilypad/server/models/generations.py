@@ -13,7 +13,6 @@ from .response_models import ResponseModelTable
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
-    PROMPT_TABLE_NAME,
     RESPONSE_MODEL_TABLE_NAME,
 )
 
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
     from lilypad.ee.server.models.annotations import AnnotationTable
 
     from .projects import ProjectTable
-    from .prompts import PromptTable
     from .response_models import ResponseModelTable
     from .spans import SpanTable
     from .tools import ToolTable
@@ -32,9 +30,6 @@ class _GenerationBase(SQLModel):
 
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
-    prompt_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     response_model_uuid: UUID | None = Field(
         default=None,
@@ -63,7 +58,7 @@ class _GenerationBase(SQLModel):
 class GenerationUpdate(SQLModel):
     """Generation update model."""
 
-    prompt_uuid: UUID | None = None
+    ...
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
@@ -77,9 +72,6 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     spans: list["SpanTable"] = Relationship(
         back_populates="generation", cascade_delete=True
     )
-
-    # TODO: delete this relationship
-    prompt: Optional["PromptTable"] = Relationship(back_populates="generations")
 
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="generations"
