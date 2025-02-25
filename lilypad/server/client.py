@@ -293,13 +293,11 @@ class LilypadClient:
     def get_generation_by_signature(
         self,
         fn: Callable[..., Any],
-        args_types: dict[str, str],
     ) -> GenerationPublic:
         """Get the matching name for a generation.
 
         Args:
             fn (Callable): The generation for which to get the version.
-            args_types (dict): If provided, force the retrieval of the generation with this arg_types.
 
         Returns:
             GenerationPublic: The matching (or created) version for the generation.
@@ -310,7 +308,6 @@ class LilypadClient:
             f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
             response_model=list[GenerationPublic],
         )
-        # Check only args count for now
         for generation in generations:
             if generation.signature == closure.signature:
                 return generation
