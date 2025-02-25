@@ -10,13 +10,6 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Create the .config/oxen directory in the user's home
-RUN mkdir -p /root/.config/oxen
-
-# Copy the Oxen configuration file
-COPY user_config.toml /root/.config/oxen/user_config.toml
-
-
 COPY . /app
 
 

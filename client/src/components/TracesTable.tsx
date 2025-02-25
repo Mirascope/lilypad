@@ -1,11 +1,9 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { DataTable } from "@/components/DataTable";
-import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreateAnnotationDialog } from "@/ee/components/AnnotationForm";
-import { QueueDialog, QueueForm } from "@/ee/components/QueueForm";
+import { AnnotationDialog } from "@/ee/components/AnnotationForm";
 import { Scope, SpanPublic } from "@/types/types";
 import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
@@ -26,9 +23,8 @@ import {
   ArrowUpDown,
   ChevronRight,
   MoreHorizontal,
-  Users,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -78,15 +74,6 @@ const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   );
 };
 
-const RowSelection = ({ row }: { row: Row<SpanPublic> }) => (
-  <Checkbox
-    onClick={(e) => e.stopPropagation()}
-    checked={row.getIsSelected()}
-    onCheckedChange={(value) => row.toggleSelected(!!value)}
-    aria-label='Select row'
-  />
-);
-
 export const TracesTable = ({
   data,
   traceUuid,
@@ -100,51 +87,20 @@ export const TracesTable = ({
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
       enableHiding: false,
       filterFn: onlyParentFilter,
-      header: ({ table }) => {
-        const topLevelRows = table
-          .getFilteredRowModel()
-          .rows.filter((row) => row.getValue("scope") === Scope.LILYPAD);
-        const allTopLevelSelected = topLevelRows.every((row) =>
-          row.getIsSelected()
-        );
-        const someTopLevelSelected = topLevelRows.some((row) =>
-          row.getIsSelected()
-        );
-
-        return (
-          <div className='flex items-center gap-2'>
-            <Checkbox
-              checked={
-                (topLevelRows.length > 0 && allTopLevelSelected) ||
-                (someTopLevelSelected && "indeterminate")
-              }
-              onCheckedChange={(value) => {
-                topLevelRows.forEach((row) => row.toggleSelected(!!value));
-              }}
-              aria-label='Select all top level rows'
-            />
-            Name
-          </div>
-        );
-      },
+      header: "Name",
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
-        const shouldShowCheckbox = row.getValue("scope") == Scope.LILYPAD;
 
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
-              {!shouldShowCheckbox && <Spacer />}
-              {!hasSubRows && <Spacer />}
-              {shouldShowCheckbox && <RowSelection row={row} />}
-              {hasSubRows && <ExpandRowButton row={row} />}
+              {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
               <span className='truncate'>{row.getValue("display_name")}</span>
             </div>
           </div>
@@ -231,6 +187,7 @@ export const TracesTable = ({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
+        const annotation = row.original.annotations[0];
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -242,16 +199,14 @@ export const TracesTable = ({
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               {row.getValue("scope") === Scope.LILYPAD && (
-                <>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<div>Loading ...</div>}>
-                      <CreateAnnotationDialog spanUuid={row.original.uuid} />
-                    </Suspense>
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <QueueDialog spans={[row.original]} />
-                  </div>
-                </>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Suspense fallback={<div>Loading ...</div>}>
+                    <AnnotationDialog
+                      spanUuid={row.original.uuid}
+                      annotation={annotation}
+                    />
+                  </Suspense>
+                </div>
               )}
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
@@ -309,24 +264,6 @@ export const TracesTable = ({
       </div>
     );
   };
-  const renderCustomControls = (rows: Row<SpanPublic>[]) => {
-    const spans = rows.map((row) => row.original);
-    return (
-      <LilypadDialog
-        open={open}
-        onOpenChange={setOpen}
-        icon={<Users />}
-        title={"Annotate selected traces"}
-        description={`${rows.length} trace(s) selected.`}
-        buttonProps={{
-          disabled: rows.every((row) => !row.getIsSelected()),
-        }}
-        tooltipContent={"Add selected traces to your annotation queue."}
-      >
-        <QueueForm spans={spans} setOpen={setOpen} />
-      </LilypadDialog>
-    );
-  };
   return (
     <DataTable<SpanPublic>
       columns={columns}
@@ -346,7 +283,6 @@ export const TracesTable = ({
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}
-      customControls={renderCustomControls}
     />
   );
 };
