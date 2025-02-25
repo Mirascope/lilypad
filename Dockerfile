@@ -30,7 +30,7 @@ ADD . /app
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
     uv sync --frozen --no-dev --all-extras
 
-WORKDIR /app/lilypad/server
+WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
@@ -38,4 +38,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # Run the FastAPI application by default
-CMD ["fastapi", "run"]
+CMD ["fastapi", "run", "lilypad/server/main.py"]
