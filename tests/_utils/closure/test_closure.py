@@ -395,7 +395,6 @@ def test_closure_inside_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "bedrock",
-                "evals",
                 "gemini",
                 "mistral",
                 "openai",
@@ -416,7 +415,6 @@ def test_closure_inside_imported_decorator_fn() -> None:
             "extras": [
                 "anthropic",
                 "bedrock",
-                "evals",
                 "gemini",
                 "mistral",
                 "openai",
