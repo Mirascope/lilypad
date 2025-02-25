@@ -7,8 +7,6 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import inspect
-import json
-import os
 import site
 import subprocess
 import sys
@@ -848,90 +846,6 @@ class Closure(BaseModel):
             hash=hash_value,
             dependencies=dependencies,
         )
-
-    def run_instance_method(
-        self,
-        *args: Any,
-        _init_args: tuple[Any, ...] | None = None,
-        _init_kwargs: dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Run the closure instance method.
-
-        Args:
-            *args: Positional arguments to pass to the closure.
-            _init_args: Positional arguments to pass to the closure class constructor.
-            _init_kwargs: Keyword arguments to pass to the closure class constructor.
-            **kwargs: Keyword arguments to pass to the closure.
-        """
-        if _init_args is None:
-            _init_args = ()
-        if _init_kwargs is None:
-            _init_kwargs = {}
-        class_and_method = self.name.split(".", 1)
-        if not len(class_and_method) == 2:
-            raise ValueError(f"Closure must be a instance method. Got: {self.name}")
-
-        if _init_kwargs or _init_kwargs:
-            name = f"{class_and_method[0]}(*{_init_args}, **{_init_kwargs}).{class_and_method[1]}"
-        else:
-            name = f"{class_and_method[0]}().{class_and_method[1]}"
-        return self._run(name, *args, **kwargs)
-
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        """Run the closure.
-
-        Args:
-            *args: Positional arguments to pass to the closure.
-            **kwargs: Keyword arguments to pass to the closure.
-        """
-        return self._run(self.name, *args, **kwargs)
-
-    def _run(self, name: str, *args: Any, **kwargs: Any) -> Any:
-        script = inspect.cleandoc("""
-        # /// script
-        # dependencies = [
-        #   {dependencies}
-        # ]
-        # ///
-
-        {code}
-
-
-        if __name__ == "__main__":
-            import json
-            result = {name}(*{args}, **{kwargs})
-            print(json.dumps(result))
-        """).format(
-            dependencies=",\n#   ".join(
-                [
-                    f'"{key}[{",".join(extras)}]=={value["version"]}"'
-                    if (extras := value["extras"])
-                    else f'"{key}=={value["version"]}"'
-                    for key, value in self.dependencies.items()
-                ]
-            ),
-            code=self.code,
-            name=name,
-            args=args,
-            kwargs=kwargs,
-        )
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp_file:
-            tmp_file.write(script)
-            tmp_path = Path(tmp_file.name)
-        try:
-            result = subprocess.run(
-                ["uv", "run", str(tmp_path)],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=os.environ,
-            )
-            return json.loads(result.stdout.strip())
-        finally:
-            tmp_path.unlink()
 
 
 __all__ = ["Closure"]

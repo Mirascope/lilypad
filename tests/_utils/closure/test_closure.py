@@ -460,16 +460,6 @@ def test_datetime() -> None:
     assert closure.dependencies == {}
 
 
-def test_closure_run() -> None:
-    """Tests the `Closure.run` method."""
-
-    def fn(arg: str) -> str:
-        return arg
-
-    closure = Closure.from_fn(fn)
-    assert closure.run("Hello, world!") == "Hello, world!"
-
-
 def test_mirascope_response_model_fn() -> None:
     """Test the `Closure` class with a Mirascope response model."""
     closure = Closure.from_fn(mirascope_response_model_fn)
@@ -644,65 +634,3 @@ def test_instance_method_on_local() -> None:
             ],
         },
     }
-
-
-def test_closure_run_with_instance_method() -> None:
-    """Tests the `Closure.run` method."""
-
-    class DummyChatbot:
-        def __init__(self, name: str, age: int) -> None:
-            self.name = name
-            self.age = age
-
-        def greet(self, greet_message: str, comment: str) -> str:
-            return f"{greet_message.title()}, {comment}! I'm {self.name}, and I'm {self.age} years old."
-
-    closure = Closure.from_fn(DummyChatbot.greet)
-    assert (
-        closure.run_instance_method(
-            "hello",
-            comment="nice",
-            _init_args=("Chatbot",),
-            _init_kwargs={"age": 10},
-        )
-        == "Hello, nice! I'm Chatbot, and I'm 10 years old."
-    )
-
-
-def test_closure_run_with_empty_constractor() -> None:
-    """Tests the `Closure.run` method."""
-
-    class DummyChatbot:
-        def __init__(self) -> None:
-            self.name = "Chatbot"
-            self.age = 10
-
-        def greet(self, greet_message: str, comment: str) -> str:
-            return f"{greet_message.title()}, {comment}! I'm {self.name}, and I'm {self.age} years old."
-
-    closure = Closure.from_fn(DummyChatbot.greet)
-    assert (
-        closure.run_instance_method(
-            "hello",
-            comment="nice",
-        )
-        == "Hello, nice! I'm Chatbot, and I'm 10 years old."
-    )
-
-
-def test_closure_run_with_class_method() -> None:
-    """Tests the `Closure.run` method."""
-
-    class DummyChatbot:
-        @classmethod
-        def greet(cls, greet_message: str, comment: str) -> str:
-            return f"{greet_message.title()}, {comment}!"
-
-    closure = Closure.from_fn(DummyChatbot.greet)
-    assert (
-        closure.run(
-            "hello",
-            comment="nice",
-        )
-        == "Hello, nice!"
-    )
