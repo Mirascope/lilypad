@@ -62,6 +62,26 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.flush()
         return True
 
+    def create_bulk_records(
+        self, spans_create: Sequence[SpanCreate], project_uuid: UUID
+    ) -> list[SpanTable]:
+        """Create multiple annotation records in bulk."""
+        spans = []
+        for span_create in spans_create:
+            span = self.table.model_validate(
+                span_create,
+                update={
+                    "organization_uuid": self.user.active_organization_uuid,
+                    "user_uuid": self.user.uuid,
+                    "project_uuid": project_uuid,
+                },
+            )
+            spans.append(span)
+
+        self.session.add_all(spans)
+        self.session.commit()
+        return spans
+
     def delete_records_by_generation_uuid(
         self, project_uuid: UUID, generation_uuid: UUID
     ) -> bool:

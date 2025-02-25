@@ -56,10 +56,15 @@ class SpanBase(SQLModel):
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
+    input_tokens: float | None = Field(default=None)
+    output_tokens: float | None = Field(default=None)
+    duration_ms: float | None = Field(default=None)
     data: dict = Field(sa_column=get_json_column(), default_factory=dict)
     parent_span_id: str | None = Field(
         default=None,
         index=True,
+        foreign_key=f"{SPAN_TABLE_NAME}.span_id",
+        ondelete="CASCADE",
     )
 
 
@@ -93,7 +98,6 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="parent_span",
         sa_relationship_kwargs={
             "lazy": "selectin",  # codespell:ignore selectin
-            "primaryjoin": "foreign(SpanTable.parent_span_id) == SpanTable.span_id",
         },
         cascade_delete=True,
     )
@@ -101,6 +105,5 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="child_spans",
         sa_relationship_kwargs={
             "remote_side": "SpanTable.span_id",
-            "primaryjoin": "foreign(SpanTable.parent_span_id) == remote(SpanTable.span_id)",
         },
     )
