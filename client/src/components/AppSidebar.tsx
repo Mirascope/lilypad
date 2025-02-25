@@ -160,8 +160,15 @@ export const AppSidebar = () => {
   };
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
+    const currentPath = window.location.pathname;
+    const projectPathMatch = currentPath.match(/\/projects\/[^\/]+\/([^\/]+)/);
+    const currentSection = projectPathMatch ? projectPathMatch[1] : currentPath;
+
     navigate({
-      to: `/projects/${project.uuid}/traces`,
+      to:
+        currentSection === currentPath
+          ? currentPath
+          : `/projects/${project.uuid}/${currentSection}`,
       replace: true,
     });
   };

@@ -1,10 +1,11 @@
 """API key models."""
 
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from sqlmodel import Field, Relationship, SQLModel
+from pydantic.types import AwareDatetime
+from sqlmodel import DateTime, Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import API_KEY_TABLE_NAME, PROJECT_TABLE_NAME, USER_TABLE_NAME
@@ -19,9 +20,11 @@ class APIKeyBase(SQLModel):
     """Base APIKey Model."""
 
     name: str = Field(nullable=False, min_length=1)
-    expires_at: datetime = Field(
+    expires_at: Annotated[datetime, AwareDatetime] = Field(
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
         default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=365),
         nullable=False,
+        schema_extra={"format": "date-time"},
     )
     project_uuid: UUID = Field(
         index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"

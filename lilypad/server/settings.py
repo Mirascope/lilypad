@@ -45,12 +45,6 @@ class Settings(BaseSettings):
     db_password: str | None = None
     db_port: int | None = None
 
-    # Oxen.ai settings
-    oxen_repo_name: str | None = None
-    oxen_api_key: str | None = None
-    oxen_host: str = "hub.oxen.ai"
-    oxen_branch: str = "main"
-
     @property
     def config(self) -> dict[str, Any]:
         """Get the configuration for the current environment"""

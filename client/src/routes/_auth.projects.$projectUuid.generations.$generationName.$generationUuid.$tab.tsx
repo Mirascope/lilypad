@@ -31,7 +31,6 @@ import ReactMarkdown from "react-markdown";
 import { CostAndTokensChart } from "@/components/CostAndTokensChart";
 import LilypadDialog from "@/components/LilypadDialog";
 import { ResponseTimeChart } from "@/components/ResponseTimeChart";
-import TableSkeleton from "@/components/TableSkeleton";
 import {
   Select,
   SelectContent,
@@ -40,7 +39,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { DatasetTable } from "@/ee/components/DatasetTable";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
 import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
@@ -136,18 +134,6 @@ const GenerationWorkbench = () => {
           projectUuid={projectUuid}
           generationUuid={generation?.uuid}
         />
-      ),
-    },
-    {
-      label: "Dataset",
-      value: GenerationTab.DATASET,
-      component: (
-        <Suspense fallback={<TableSkeleton />}>
-          <DatasetTable
-            projectUuid={projectUuid}
-            generationUuid={generation?.uuid}
-          />
-        </Suspense>
       ),
     },
   ];

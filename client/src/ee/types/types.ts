@@ -86,72 +86,6 @@ export interface AnnotationUpdate {
 }
 
 /**
- * DatasetRow
- * Dataset row model.
- */
-export interface DatasetRow {
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /** Input */
-  input: Record<string, string> | null;
-  /** Output */
-  output: string;
-  label: Label | null;
-  type: EvaluationType | null;
-  /** Data */
-  data: object | null;
-  /** Annotated By */
-  annotated_by: string | null;
-}
-
-/**
- * DatasetRowPublic
- * Dataset row public model.
- */
-export interface DatasetRowPublic {
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-  /** Input */
-  input: Record<string, string> | null;
-  /** Output */
-  output: string;
-  label: Label | null;
-  type: EvaluationType | null;
-  /** Data */
-  data: object | null;
-  /** Annotated By */
-  annotated_by: string | null;
-}
-
-/**
- * DatasetRowsResponse
- * Response model containing the rows from the Oxen DataFrame.
- */
-export interface DatasetRowsResponse {
-  /** Rows */
-  rows: DatasetRow[];
-  /** Next Page */
-  next_page?: number | null;
-}
-
-/**
- * DatasetRowsResponsePublic
- * Response public model containing the rows from the Oxen DataFrame.
- */
-export interface DatasetRowsResponsePublic {
-  /** Rows */
-  rows: DatasetRowPublic[];
-  /** Next Page */
-  next_page?: number | null;
-}
-
-/**
  * EvaluationType
  * Evaluation type enum
  */
@@ -230,7 +164,7 @@ export interface SpanMoreDetails {
   /** Output Tokens */
   output_tokens?: number | null;
   /** Duration Ms */
-  duration_ms: number;
+  duration_ms?: number | null;
   /** Signature */
   signature?: string | null;
   /** Code */
