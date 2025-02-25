@@ -290,7 +290,7 @@ class LilypadClient:
                 f"Generation version '{version}' not found for signature {closure.signature}"
             )
 
-    def get_generation_by_args_types(
+    def get_generation_by_signature(
         self,
         fn: Callable[..., Any],
         args_types: dict[str, str],
@@ -311,12 +311,11 @@ class LilypadClient:
             response_model=list[GenerationPublic],
         )
         # Check only args count for now
-        args_count = len(args_types)
         for generation in generations:
-            if len(generation.arg_types) == args_count:
+            if generation.signature == closure.signature:
                 return generation
         raise LilypadNotFoundError(
-            f"Generation args_types '{args_types}' not found for signature {closure.signature}"
+            f"Generation with signature '{closure.signature}' not found. Available signatures: {[g.signature for g in generations]}"
         )
 
     def get_prompt_active_version(
