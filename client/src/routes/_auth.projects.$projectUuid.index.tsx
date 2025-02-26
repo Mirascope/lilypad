@@ -106,9 +106,9 @@ const ProjectDashboard = () => {
 
   // Sort by date
   chartData.sort((a, b) => {
-    const dateA = a.start_date ? new Date(a.start_date).getTime() : 0; // codespell:ignore dateA
+    const dateA = a.start_date ? new Date(a.start_date).getTime() : 0; // codespell:disable-line
     const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
-    return dateA - dateB; // codespell:ignore dateA
+    return dateA - dateB; // codespell:disable-line
   });
 
   // Calculate totals
