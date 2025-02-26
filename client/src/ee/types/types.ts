@@ -164,7 +164,7 @@ export interface SpanMoreDetails {
   /** Output Tokens */
   output_tokens?: number | null;
   /** Duration Ms */
-  duration_ms: number;
+  duration_ms?: number | null;
   /** Signature */
   signature?: string | null;
   /** Code */

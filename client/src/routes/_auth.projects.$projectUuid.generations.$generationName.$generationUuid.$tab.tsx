@@ -28,7 +28,9 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
+import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
+import { MetricCharts } from "@/components/MetricsCharts";
 import {
   Select,
   SelectContent,
@@ -40,7 +42,7 @@ import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
 import { Trash } from "lucide-react";
-import { Suspense, useState } from "react";
+import { JSX, Suspense } from "react";
 
 type GenerationRouteParams = {
   projectUuid: string;
@@ -98,17 +100,14 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
+
   const navigate = useNavigate();
-  const [version, setVersion] = useState<number | null | undefined>(
-    generations.length > 0
-      ? generations.find((generation) => generation.uuid === generationUuid)
-          ?.version_num
-      : null
+  const generation = generations.find(
+    (generation) => generation.uuid === generationUuid
   );
-  const generation =
-    generations.length > 0
-      ? generations.find((generation) => generation.version_num === version)
-      : null;
+  if (!generation) {
+    return <div>No generation found.</div>;
+  }
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
@@ -154,9 +153,9 @@ const GenerationWorkbench = () => {
         <Select
           value={generation?.uuid}
           onValueChange={(uuid) =>
-            setVersion(
-              generations.find((g) => g.uuid === uuid)?.version_num || null
-            )
+            navigate({
+              to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
+            })
           }
         >
           <SelectTrigger className='w-[200px]'>
@@ -267,11 +266,7 @@ const PromptCard = ({
     </Card>
   );
 };
-const Generation = ({
-  generation,
-}: {
-  generation?: GenerationPublic | null;
-}) => {
+const Generation = ({ generation }: { generation: GenerationPublic }) => {
   const { projectUuid } = useParams({ from: Route.id });
 
   const { data: prompts } = useSuspenseQuery(
@@ -285,6 +280,12 @@ const Generation = ({
     <>
       {generation && (
         <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
+          <Suspense fallback={<CardSkeleton />}>
+            <MetricCharts
+              generationUuid={generation.uuid}
+              projectUuid={projectUuid}
+            />
+          </Suspense>
           <div className='text-left'>
             <Label>Code</Label>
             <CodeSnippet code={generation.code} />
