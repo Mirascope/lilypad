@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AggregateMetrics } from "@/types/types";
+import { Typography } from "@/components/ui/typography";
+import { TimeFrame } from "@/types/types";
+import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
+import { formatDate } from "@/utils/strings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
-  Area,
   CartesianGrid,
   ComposedChart,
   Legend,
@@ -13,64 +16,77 @@ import {
 } from "recharts";
 
 export const ResponseTimeChart = ({
-  aggregateMetrics,
+  projectUuid,
+  generationUuid,
+  timeFrame,
+  title,
 }: {
-  aggregateMetrics: AggregateMetrics[];
+  projectUuid: string;
+  generationUuid: string;
+  timeFrame: TimeFrame;
+  title: string;
 }) => {
-  // Normalize dates for display
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString();
-  };
-
+  const { data: aggregateMetrics } = useSuspenseQuery(
+    aggregatesByGenerationQueryOptions(projectUuid, generationUuid, timeFrame)
+  );
   return (
     <Card className='w-full'>
       <CardHeader>
-        <CardTitle>Performance Metrics</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className='h-96'>
-          <ResponsiveContainer width='100%' height='100%'>
-            <ComposedChart data={aggregateMetrics}>
-              <CartesianGrid strokeDasharray='3 3' />
-              <XAxis dataKey='start_date' tickFormatter={formatDate} />
-              <YAxis
-                yAxisId='duration'
-                orientation='left'
-                label={{
-                  value: "Duration (ms)",
-                  angle: -90,
-                  position: "insideLeft",
-                }}
-              />
-              <YAxis
-                yAxisId='count'
-                orientation='right'
-                label={{
-                  value: "Request Count",
-                  angle: 90,
-                  position: "insideRight",
-                }}
-              />
-              <Tooltip formatter={(value, name) => [value.toFixed(2), name]} />
-              <Legend />
-              <Line
-                yAxisId='duration'
-                type='monotone'
-                dataKey='total_duration_ms'
-                stroke='#8884d8'
-                name='Avg Duration'
-              />
-              <Area
-                yAxisId='count'
-                type='monotone'
-                dataKey='span_count'
-                fill='#82ca9d'
-                stroke='#82ca9d'
-                name='Request Volume'
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className='h-64'>
+          {aggregateMetrics.length > 0 ? (
+            <ResponsiveContainer width='100%' height='100%'>
+              <ComposedChart data={aggregateMetrics} margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray='3 3' />
+                <XAxis
+                  dataKey='start_date'
+                  tickFormatter={(value) => formatDate(value, false)}
+                />
+                <YAxis
+                  yAxisId='duration'
+                  orientation='left'
+                  label={{
+                    value: "Duration (ms)",
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: -10,
+                    style: { textAnchor: "middle" },
+                  }}
+                  tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
+                />
+                <Tooltip
+                  labelFormatter={(label) => formatDate(label, false)}
+                  formatter={(
+                    value: number | string | Array<any>,
+                    name: string
+                  ) => {
+                    if (name === "Avg Duration" && typeof value === "number") {
+                      return [
+                        (value / 1_000_000_000).toFixed(2) + " ms",
+                        "Avg Duration (s)",
+                      ];
+                    }
+                    return [
+                      typeof value === "number" ? value.toFixed(2) : value,
+                      name,
+                    ];
+                  }}
+                />
+                <Legend />
+                <Line
+                  yAxisId='duration'
+                  type='monotone'
+                  dataKey='average_duration_ms'
+                  stroke='#6366f1'
+                  name='Avg Duration'
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <Typography variant='muted'>No Data</Typography>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -63,6 +63,7 @@ export const aggregatesByGenerationQueryOptions = (
       generationUuid,
       "spans",
       "metadata",
+      timeFrame,
     ],
     queryFn: () =>
       fetchAggregatesByGenerationUuid(projectUuid, generationUuid, timeFrame),

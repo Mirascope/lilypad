@@ -75,7 +75,7 @@ export interface AggregateMetrics {
   /** Total Output Tokens */
   total_output_tokens: number;
   /** Total Duration Ms */
-  total_duration_ms: number;
+  average_duration_ms: number;
   /** Span Count */
   span_count: number;
   /** Start Date */

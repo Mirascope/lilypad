@@ -25,10 +25,12 @@ class TimeFrame(str, Enum):
 
 
 class AggregateMetrics(BaseModel):
+    """Aggregated metrics for spans"""
+
     total_cost: float
     total_input_tokens: float
     total_output_tokens: float
-    total_duration_ms: float
+    average_duration_ms: float
     span_count: int
     start_date: datetime | None
     end_date: datetime | None
@@ -92,9 +94,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             func.sum(self.table.cost).label("total_cost"),
             func.sum(self.table.input_tokens).label("total_input_tokens"),
             func.sum(self.table.output_tokens).label("total_output_tokens"),
-            func.sum(self.table.duration_ms).label("total_duration_ms"),
+            func.avg(self.table.duration_ms).label("average_duration_ms"),
             func.count().label("span_count"),
-        ).where(
+        ).where(  # pyright: ignore[reportCallIssue]
             self.table.organization_uuid == self.user.active_organization_uuid,
             self.table.project_uuid == project_uuid,
             self.table.generation_uuid == generation_uuid,
@@ -128,7 +130,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 total_cost=float(row.total_cost or 0),
                 total_input_tokens=float(row.total_input_tokens or 0),
                 total_output_tokens=float(row.total_output_tokens or 0),
-                total_duration_ms=float(row.total_duration_ms or 0),
+                average_duration_ms=float(row.average_duration_ms or 0),
                 span_count=row.span_count,
                 start_date=getattr(row, "period_start", None),
                 end_date=None,  # Can be calculated if needed based on timeframe

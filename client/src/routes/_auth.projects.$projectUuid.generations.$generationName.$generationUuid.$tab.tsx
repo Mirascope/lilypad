@@ -12,7 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GenerationPublic, PromptPublic, TimeFrame } from "@/types/types";
+import { GenerationPublic, PromptPublic } from "@/types/types";
 import {
   generationsByNameQueryOptions,
   useArchiveGenerationMutation,
@@ -28,9 +28,9 @@ import {
 import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 
-import { CostAndTokensChart } from "@/components/CostAndTokensChart";
+import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
-import { ResponseTimeChart } from "@/components/ResponseTimeChart";
+import { MetricCharts } from "@/components/MetricsCharts";
 import {
   Select,
   SelectContent,
@@ -41,7 +41,6 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
-import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
 import { Trash } from "lucide-react";
 import { JSX, Suspense } from "react";
 
@@ -273,13 +272,6 @@ const Generation = ({ generation }: { generation: GenerationPublic }) => {
   const { data: prompts } = useSuspenseQuery(
     promptsBySignature(projectUuid, generation?.prompt?.signature)
   );
-  const { data: aggregateMetrics } = useSuspenseQuery(
-    aggregatesByGenerationQueryOptions(
-      projectUuid,
-      generation.uuid,
-      TimeFrame.DAY
-    )
-  );
 
   if (!generation) {
     return <div>No generation selected.</div>;
@@ -288,8 +280,12 @@ const Generation = ({ generation }: { generation: GenerationPublic }) => {
     <>
       {generation && (
         <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
-          <CostAndTokensChart aggregateMetrics={aggregateMetrics} />
-          <ResponseTimeChart aggregateMetrics={aggregateMetrics} />
+          <Suspense fallback={<CardSkeleton />}>
+            <MetricCharts
+              generationUuid={generation.uuid}
+              projectUuid={projectUuid}
+            />
+          </Suspense>
           <div className='text-left'>
             <Label>Code</Label>
             <CodeSnippet code={generation.code} />
