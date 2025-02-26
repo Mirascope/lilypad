@@ -106,9 +106,9 @@ const ProjectDashboard = () => {
 
   // Sort by date
   chartData.sort((a, b) => {
-    const dateA = a.start_date ? new Date(a.start_date).getTime() : 0; // codespell-ignore
-    const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
-    return dateA - dateB; // codespell-ignore
+    const firstStartDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+    const secondStartDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+    return firstStartDate - secondStartDate;
   });
 
   // Calculate totals
