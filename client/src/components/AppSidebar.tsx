@@ -25,6 +25,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Route as ProjectRoute } from "@/routes/_auth.projects.$projectUuid";
 import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import {
@@ -49,7 +50,6 @@ import {
   Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
-
 type Item = {
   title: string;
   url: string;
@@ -161,16 +161,20 @@ export const AppSidebar = () => {
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
     const currentPath = window.location.pathname;
-    const projectPathMatch = currentPath.match(/\/projects\/[^\/]+\/([^\/]+)/);
-    const currentSection = projectPathMatch ? projectPathMatch[1] : currentPath;
 
-    navigate({
-      to:
-        currentSection === currentPath
-          ? currentPath
-          : `/projects/${project.uuid}/${currentSection}`,
-      replace: true,
-    });
+    const projectPathMatch = currentPath.match(
+      /\/projects\/[^\/]+(?:\/([^\/]+))?/
+    );
+    if (projectPathMatch) {
+      const currentSection = projectPathMatch[1] || "";
+      const newPath = currentSection
+        ? `/projects/${project.uuid}/${currentSection}`
+        : `/projects/${project.uuid}`;
+
+      navigate({ to: newPath, replace: true });
+    } else {
+      navigate({ to: currentPath, replace: true });
+    }
   };
   const renderProjectSelector = () => {
     return (
@@ -229,8 +233,17 @@ export const AppSidebar = () => {
   return (
     <Sidebar collapsible='icon' className='lilypad-sidebar'>
       <SidebarHeader>
-        <SidebarMenuButton>
-          <LilypadIcon /> Lilypad
+        <SidebarMenuButton asChild>
+          <Link
+            {...(activeProject
+              ? {
+                  to: ProjectRoute.fullPath,
+                  params: { projectUuid: activeProject.uuid },
+                }
+              : { to: "/" })}
+          >
+            <LilypadIcon /> Lilypad
+          </Link>
         </SidebarMenuButton>
       </SidebarHeader>
       <SidebarContent>{renderProjectSelector()}</SidebarContent>

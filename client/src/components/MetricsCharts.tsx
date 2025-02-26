@@ -1,5 +1,5 @@
 import { ChartSkeleton } from "@/components/ChartSkeleton";
-import { CostAndTokensChart } from "@/components/CostAndTokensChart";
+import { GenerationCostAndTokensChart } from "@/components/CostAndTokensChart";
 import { ResponseTimeChart } from "@/components/ResponseTimeChart";
 import { Button } from "@/components/ui/button";
 import { TimeFrame } from "@/types/types";
@@ -51,7 +51,7 @@ export const MetricCharts = ({
 
       <div className='flex gap-2'>
         <Suspense fallback={<ChartSkeleton title={costTitle} />}>
-          <CostAndTokensChart
+          <GenerationCostAndTokensChart
             generationUuid={generationUuid}
             projectUuid={projectUuid}
             timeFrame={timeFrame}

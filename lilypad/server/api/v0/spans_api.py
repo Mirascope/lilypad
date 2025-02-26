@@ -54,4 +54,17 @@ async def get_aggregates_by_generation_uuid(
     )
 
 
+@spans_router.get(
+    "/projects/{project_uuid}/spans/metadata",
+    response_model=Sequence[AggregateMetrics],
+)
+async def get_aggregates_by_project_uuid(
+    project_uuid: UUID,
+    time_frame: TimeFrame,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> Sequence[AggregateMetrics]:
+    """Get aggregated span by project uuid."""
+    return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
+
+
 __all__ = ["spans_router"]
