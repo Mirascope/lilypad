@@ -50,6 +50,7 @@ from .closure_test_functions import (
     user_defined_import_fn,
 )
 from .closure_test_functions.main import (
+    Chatbot,
     empty_body_fn_docstrings,
     handle_issue,
     multi_joined_string_fn,
@@ -459,16 +460,6 @@ def test_datetime() -> None:
     assert closure.dependencies == {}
 
 
-def test_closure_run() -> None:
-    """Tests the `Closure.run` method."""
-
-    def fn(arg: str) -> str:
-        return arg
-
-    closure = Closure.from_fn(fn)
-    assert closure.run("Hello, world!") == "Hello, world!"
-
-
 def test_mirascope_response_model_fn() -> None:
     """Test the `Closure` class with a Mirascope response model."""
     closure = Closure.from_fn(mirascope_response_model_fn)
@@ -578,5 +569,68 @@ def test_nested_handle_issue_method() -> None:
         "pydantic": {
             "extras": None,
             "version": "2.10.6",
+        },
+    }
+
+
+def test_instance_method() -> None:
+    """Test the `Closure` class with instance method."""
+    closure = Closure.from_fn(Chatbot.instance_method)
+    assert closure.code == _expected(Chatbot.instance_method)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
+        },
+    }
+
+
+def test_instance_method_on_local() -> None:
+    """Test the `Closure` class with instance method."""
+    from mirascope.core import openai
+
+    class LocalChatbot:
+        """A chatbot class."""
+
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        @openai.call("gpt-4o-mini")
+        def instance_method(self) -> str:
+            """from mirascope.core import openai
+
+
+            class LocalChatbot:
+                def __init__(self, name: str) -> None:
+                    self.name = name
+
+                @openai.call("gpt-4o-mini")
+                def instance_method(self) -> str:
+                    return f"Hello, {self.name}!"
+            """  # noqa: D403
+            return f"Hello, {self.name}!"
+
+    closure = Closure.from_fn(LocalChatbot.instance_method)
+    assert closure.code == _expected(LocalChatbot.instance_method)
+    assert closure.dependencies == {
+        "mirascope": {
+            "version": importlib.metadata.version("mirascope"),
+            "extras": [
+                "anthropic",
+                "bedrock",
+                "gemini",
+                "mistral",
+                "openai",
+                "opentelemetry",
+                "vertex",
+            ],
         },
     }
