@@ -29,6 +29,7 @@ from ._utils import (
     load_config,
 )
 from .messages import Message
+from .response_models import _create_model_from_json_schema
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
@@ -300,16 +301,14 @@ def _build_mirascope_call(
     mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
     call_params = generation_public.call_params
-
     if generation_public.tools:
-        call_params["tools"] = [
-            Closure.from_code(tool.code, tool.name).build_object()
-            for tool in generation_public.tools
-        ]
+        pass
+        # TODO: tools are not yet supported in managed mode
+        # Skip tools in managed mode to avoid unexpected behavior
     elif response_model := generation_public.response_model:
-        call_params["response_model"] = Closure.from_code(
-            response_model.code, response_model.name
-        ).build_object()
+        call_params["response_model"] = _create_model_from_json_schema(
+            response_model.schema_data, response_model.name
+        )
     mirascope_call = llm.call(**call_params)(mirascope_prompt)
 
     @wraps(mirascope_call)

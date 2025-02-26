@@ -1,7 +1,6 @@
 """Unit tests for the generations module."""
 
 from functools import cached_property
-from textwrap import dedent
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -10,6 +9,7 @@ import pytest
 from mirascope import llm
 from mirascope.core import BaseDynamicConfig, BaseMessageParam, BaseTool
 from mirascope.core.base import BaseCallParams, BaseCallResponse, Metadata
+from mirascope.core.base._utils import convert_base_model_to_base_tool
 from mirascope.core.base.types import FinishReason
 from mirascope.llm.call_response import CallResponse
 from pydantic import BaseModel, computed_field
@@ -18,7 +18,6 @@ from lilypad._utils import Closure
 from lilypad.generations import _build_mirascope_call, generation
 from lilypad.server.schemas.generations import GenerationPublic
 from lilypad.server.schemas.response_models import ResponseModelPublic
-from lilypad.server.schemas.tool import ToolPublic
 
 dummy_spans = []
 
@@ -105,14 +104,6 @@ def fake_closure_fixture():
 
 
 @pytest.fixture
-def patched_closure(fake_closure_fixture, monkeypatch):
-    """Fixture that patches Closure.from_code with fake_closure_fixture."""
-    from lilypad._utils.closure import Closure
-
-    monkeypatch.setattr(Closure, "from_code", fake_closure_fixture)
-
-
-@pytest.fixture
 def fake_llm_call_fixture(dummy_call_response_instance):
     """Fixture that returns a fake llm.call function for sync branch."""
 
@@ -126,7 +117,7 @@ def fake_llm_call_fixture(dummy_call_response_instance):
 
 
 @pytest.fixture
-def patched_llm_call(patched_closure, fake_llm_call_fixture, monkeypatch):
+def patched_llm_call(fake_llm_call_fixture, monkeypatch):
     """Fixture that patches llm.call with fake_llm_call_fixture for sync branch."""
     monkeypatch.setattr(llm, "call", fake_llm_call_fixture)
 
@@ -568,39 +559,6 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
         mock_get_ver.assert_called_once()
 
 
-def test_build_mirascope_call_tools(dummy_generation_instance: GenerationPublic):
-    """Test _build_mirascope_call branch when generation_public.tools is set."""
-
-    # Create a dummy tool using the actual ToolPublic schema.
-    def dummy_tool():
-        return "dummy tool"
-
-    closure = Closure.from_fn(dummy_tool)
-    dummy_tool = ToolPublic(  # pyright: ignore [reportAssignmentType]
-        uuid=uuid4(),
-        name=closure.name,
-        signature=closure.signature,
-        code=closure.code,
-        hash=closure.hash,
-        dependencies={},
-    )
-    dummy_generation_instance.tools = [dummy_tool]  # pyright: ignore [reportAttributeAccessIssue]
-    dummy_generation_instance.response_model = None
-    dummy_generation_instance.prompt_template = "dummy_template"
-
-    def dummy_fn():
-        return None
-
-    with patch("lilypad.generations.llm.call") as patched_llm_call:
-        _build_mirascope_call(dummy_generation_instance, dummy_fn)
-        tools = patched_llm_call.call_args.kwargs["tools"]
-        assert len(tools) == 1
-        assert tools[0]() == "dummy tool"
-        patched_llm_call.assert_called_once_with(
-            provider="openai", model="gpt-4o-mini", tools=tools
-        )
-
-
 def test_build_mirascope_call_async(
     dummy_generation_instance: GenerationPublic, patched_llm_call_async
 ):
@@ -636,16 +594,13 @@ def test_build_mirascope_call_response_model(
 ):
     """Test _build_mirascope_call branch when generation_public.response_model is set."""
     # Create a dummy response model using the actual ResponseModelPublic schema.
-    closure = Closure.from_code(
-        dedent("""
-    from pydantic import BaseModel
-    
+
     class DummyResponse(BaseModel):
         name: str
         age: int
-    """),
-        "DummyResponse",
-    )
+
+    closure = Closure.from_fn(DummyResponse)
+    converted_tool = convert_base_model_to_base_tool(DummyResponse, BaseTool)
     dummy_response_model = ResponseModelPublic(
         uuid=uuid4(),
         name=closure.name,
@@ -653,7 +608,7 @@ def test_build_mirascope_call_response_model(
         code=closure.code,
         hash=closure.hash,
         dependencies=closure.dependencies,
-        schema_data={},
+        schema_data=converted_tool.model_json_schema(),
         examples=[],
         is_active=False,
     )
@@ -668,14 +623,9 @@ def test_build_mirascope_call_response_model(
         _build_mirascope_call(dummy_generation_instance, dummy_fn)
         response_model = patched_llm_call.call_args.kwargs["response_model"]
         assert issubclass(response_model, BaseModel)
-        assert response_model.model_json_schema() == {
-            "properties": {
-                "age": {"title": "Age", "type": "integer"},
-                "name": {"title": "Name", "type": "string"},
-            },
-            "required": ["name", "age"],
-            "title": "DummyResponse",
-            "type": "object",
+        assert response_model(name="name", age=3).model_dump() == {
+            "age": 3,
+            "name": "name",
         }
         patched_llm_call.assert_called_once_with(
             provider="openai", model="gpt-4o-mini", response_model=response_model

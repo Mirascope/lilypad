@@ -891,48 +891,5 @@ class Closure(BaseModel):
             raise ImportError(f"Failed to execute module code: {str(e)}") from e
         return module
 
-    def build_object(self) -> Any:
-        """Build an object (function, class, or variable) from the closure's code.
-
-        Returns:
-            The built object.
-
-        Raises:
-            AttributeError: If the expected object is not found in the module.
-        """
-        module = self.create_module()
-        try:
-            obj = getattr(module, self.name)
-        except AttributeError as e:
-            raise AttributeError(f"Object {self.name} not found in module") from e
-        finally:
-            # Clean up: Remove the module from sys.modules to avoid interference between requests.
-            sys.modules.pop(module.__name__, None)
-        return obj
-
-    @classmethod
-    def from_code(
-        cls, code: str, name: str, dependencies: dict[str, DependencyInfo] | None = None
-    ) -> Closure:
-        """Create a closure from source code.
-
-        Args:
-            code: Source code
-            name: Name of the function or class
-            dependencies: Optional dependencies information
-
-        Returns:
-            Created closure
-        """
-        formatted_code = _run_ruff(code)
-        hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
-        return cls(
-            name=name,
-            signature=formatted_code,  # For now, using full code as signature
-            code=formatted_code,
-            hash=hash_value,
-            dependencies=dependencies or {},
-        )
-
 
 __all__ = ["Closure"]

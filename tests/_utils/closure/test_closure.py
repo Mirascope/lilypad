@@ -3,13 +3,12 @@
 import importlib.metadata
 import inspect
 import sys
-import types
 from collections.abc import Callable
 from uuid import UUID
 
 import pytest
 
-from lilypad._utils import Closure, DependencyInfo, get_qualified_name
+from lilypad._utils import Closure, get_qualified_name
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -586,83 +585,6 @@ def test_nested_handle_issue_method() -> None:
     }
 
 
-def test_from_code_returns_closure_instance():
-    """Test that Closure.from_code returns a Closure instance with the expected attributes."""
-    code = """
-def my_function(x):
-    return x + 1
-"""
-    name = "my_function"
-    dependencies: dict[str, DependencyInfo] = {
-        "dummy": {"version": "1.0", "extras": None}
-    }
-    closure = Closure.from_code(code, name, dependencies)
-    assert closure.name == name
-    assert closure.signature
-    assert "def my_function(x):" in closure.code
-    assert closure.dependencies == dependencies
-    assert isinstance(closure.hash, str)
-    assert len(closure.hash) == 64
-
-
-def test_create_module_creates_module_with_object():
-    """Test that Closure.create_module creates a module that contains the target object."""
-    code = """
-def double(x):
-    return x * 2
-"""
-    name = "double"
-    closure = Closure.from_code(code, name)
-    module = closure.create_module("test_module_double")
-    assert isinstance(module, types.ModuleType)
-    assert hasattr(module, "double")
-    double_fn = module.double
-    assert double_fn(3) == 6
-
-
-def test_build_object_returns_callable():
-    """Test that Closure.build_object returns a callable object (function, class, etc.)
-    and that it behaves as expected.
-    """
-    code = """
-def greet(name):
-    return f"Hello, {name}"
-"""
-    name = "greet"
-    closure = Closure.from_code(code, name)
-    built_obj = closure.build_object()
-    assert callable(built_obj)
-    assert built_obj("Alice") == "Hello, Alice"
-
-
-def test_from_code_without_dependencies():
-    """Test that Closure.from_code correctly defaults dependencies to an empty dict
-    when none are provided.
-    """
-    code = """
-def add(a, b):
-    return a + b
-"""
-    name = "add"
-    closure = Closure.from_code(code, name)
-    assert closure.dependencies == {}
-    add_fn = closure.build_object()
-    assert add_fn(2, 3) == 5
-
-
-def test_build_object_not_found():
-    """Test that Closure.build_object raises an AttributeError if the target object is not found in the module."""
-    code = """
-def my_func(x):
-    return x * 2
-"""
-    name = "my_func"
-    closure = Closure.from_code(code, name)
-    closure.name = "nonexistent_function"
-    with pytest.raises(AttributeError):
-        closure.build_object()
-
-
 def test_from_fn_failure(monkeypatch):
     """Test that Closure.from_fn propagates exceptions from _run_ruff."""
 
@@ -689,34 +611,6 @@ def fixed_uuid(monkeypatch):
     fixed = UUID("12345678123456781234567812345678")
     monkeypatch.setattr("uuid.uuid4", lambda: fixed)
     return fixed
-
-
-def test_create_module_and_build_object(fixed_uuid: UUID):
-    """Test that create_module returns a module containing the expected object and
-    build_object returns a callable, and that the module is removed from sys.modules.
-    """
-    closure = Closure.from_fn(sample_function)
-
-    expected_module_name = f"dynamic_module_{closure.hash[:8]}_{fixed_uuid.hex}"
-
-    # Call build_object(), which internally calls create_module() and then removes it.
-    func_obj = closure.build_object()
-    assert callable(func_obj)
-    assert func_obj(3) == 6
-
-    # Check that the module used by build_object() has been removed from sys.modules.
-    assert expected_module_name not in sys.modules
-
-
-def test_from_code_valid():
-    """Test that from_code creates a valid closure from provided source code."""
-    code = "def test_func(x): return x + 1"
-    closure = Closure.from_code(code, "test_func")
-    assert closure.name == "test_func"
-    # build_object should return a callable that behaves as expected.
-    func = closure.build_object()
-    assert callable(func)
-    assert func(1) == 2
 
 
 def test_get_qualified_name_handles_locals():
