@@ -25,6 +25,12 @@ export const fetchGenerationsByName = async (
   ).data;
 };
 
+export const fetchGenerations = async (projectUuid: string) => {
+  return (
+    await api.get<GenerationPublic[]>(`/projects/${projectUuid}/generations/`)
+  ).data;
+};
+
 export const fetchLatestVersionUniqueGenerationNames = async (
   projectUuid?: string
 ) => {
@@ -98,6 +104,12 @@ export const uniqueLatestVersionGenerationNamesQueryOptions = (
     queryKey: generationKeys.list("unique"),
     queryFn: async () =>
       await fetchLatestVersionUniqueGenerationNames(projectUuid),
+  });
+
+export const generationsQueryOptions = (projectUuid: string) =>
+  queryOptions({
+    queryKey: generationKeys.all,
+    queryFn: async () => await fetchGenerations(projectUuid),
   });
 
 export const generationsByNameQueryOptions = (

@@ -28,6 +28,17 @@ export const fetchSpansByGenerationUuid = async (
   ).data;
 };
 
+export const fetchAggregatesByProjectUuid = async (
+  projectUuid: string,
+  timeFrame: TimeFrame
+) => {
+  return (
+    await api.get<AggregateMetrics[]>(
+      `/projects/${projectUuid}/spans/metadata?time_frame=${timeFrame}`
+    )
+  ).data;
+};
+
 export const fetchAggregatesByGenerationUuid = async (
   projectUuid: string,
   generationUuid: string,
@@ -48,6 +59,15 @@ export const spansByGenerationQueryOptions = (
     queryKey: ["projects", projectUuid, "generations", generationUuid, "spans"],
     queryFn: () => fetchSpansByGenerationUuid(projectUuid, generationUuid),
     refetchInterval: 1000,
+  });
+
+export const aggregatesByProjectQueryOptions = (
+  projectUuid: string,
+  timeFrame: TimeFrame
+) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "spans", "metadata", timeFrame],
+    queryFn: () => fetchAggregatesByProjectUuid(projectUuid, timeFrame),
   });
 
 export const aggregatesByGenerationQueryOptions = (

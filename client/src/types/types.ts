@@ -66,7 +66,10 @@ export interface APIKeyPublic {
   project: ProjectPublic;
 }
 
-/** AggregateMetrics */
+/**
+ * AggregateMetrics
+ * Aggregated metrics for spans
+ */
 export interface AggregateMetrics {
   /** Total Cost */
   total_cost: number;
@@ -74,7 +77,7 @@ export interface AggregateMetrics {
   total_input_tokens: number;
   /** Total Output Tokens */
   total_output_tokens: number;
-  /** Total Duration Ms */
+  /** Average Duration Ms */
   average_duration_ms: number;
   /** Span Count */
   span_count: number;
@@ -82,6 +85,8 @@ export interface AggregateMetrics {
   start_date: string | null;
   /** End Date */
   end_date: string | null;
+  /** Generation Uuid */
+  generation_uuid: string | null;
 }
 
 /**

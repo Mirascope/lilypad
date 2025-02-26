@@ -2,6 +2,7 @@ import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { Route as GenerationsRoute } from "@/routes/_auth.projects.$projectUuid.generations.index";
 import { projectsQueryOptions } from "@/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -47,7 +48,8 @@ const Projects = () => {
           projects.map((project) => (
             <Link
               key={project.uuid}
-              to={`/projects/${project.uuid}/generations`}
+              to={GenerationsRoute.fullPath}
+              params={{ projectUuid: project.uuid }}
             >
               <Card
                 key={project.uuid}

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { TimeFrame } from "@/types/types";
+import { AggregateMetrics, TimeFrame } from "@/types/types";
 import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts";
 
-export const CostAndTokensChart = ({
+export const GenerationCostAndTokensChart = ({
   projectUuid,
   generationUuid,
   timeFrame,
@@ -29,6 +29,17 @@ export const CostAndTokensChart = ({
   const { data: aggregateMetrics } = useSuspenseQuery(
     aggregatesByGenerationQueryOptions(projectUuid, generationUuid, timeFrame)
   );
+  return (
+    <CostAndTokensChart aggregateMetrics={aggregateMetrics} title={title} />
+  );
+};
+export const CostAndTokensChart = ({
+  aggregateMetrics,
+  title,
+}: {
+  aggregateMetrics: AggregateMetrics[];
+  title: string;
+}) => {
   // Custom tooltip to show input and output token details
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
