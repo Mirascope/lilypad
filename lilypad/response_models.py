@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from typing_extensions import ParamSpec
 
 from lilypad._utils import Closure
-from lilypad.generations import current_generation
 from lilypad.server.client import LilypadClient
 from lilypad.server.schemas.response_models import ResponseModelPublic
 
@@ -68,7 +67,9 @@ def _json_schema_to_python_type(schema: dict[str, Any], name: str = "Model") -> 
         return Any
 
 
-def _create_model_from_json_schema(json_schema: dict[str, Any]) -> type[BaseModel]:
+def _create_model_from_json_schema(
+    json_schema: dict[str, Any], title: str
+) -> type[BaseModel]:
     """Create a Pydantic model from a JSON schema."""
     properties = json_schema.get("properties", {})
     required_fields = json_schema.get("required", [])
@@ -87,7 +88,7 @@ def _create_model_from_json_schema(json_schema: dict[str, Any]) -> type[BaseMode
         fields[field_name] = (annotation, default)
 
     return create_model(
-        _snake_to_pascal(json_schema["title"]),
+        _snake_to_pascal(title),
         __config__=ConfigDict(extra="allow"),
         **fields,
     )
@@ -183,6 +184,8 @@ def response_model() -> Callable[
         ) -> ResponseModelPublic:
             lilypad_client = LilypadClient()
             """Get or create the active version of this response model."""
+            from lilypad.generations import current_generation
+
             generation = current_generation.get()
             response_model_version = lilypad_client.get_response_model_active_version(
                 cls, generation
@@ -211,7 +214,9 @@ def response_model() -> Callable[
         ) -> type[BaseModel]:
             """Return the class associated with the current response model version."""
             model_version = get_response_model_version(cls_)
-            return _create_model_from_json_schema(model_version.schema_data)
+            return _create_model_from_json_schema(
+                model_version.schema_data, cls.__name__
+            )
 
         @classmethod
         def examples_method(

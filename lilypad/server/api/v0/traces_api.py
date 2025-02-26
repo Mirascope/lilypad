@@ -89,9 +89,6 @@ async def traces(
             generation_uuid=UUID(generation_uuid_str)
             if (generation_uuid_str := attributes.get("lilypad.generation.uuid", None))
             else None,
-            prompt_uuid=UUID(prompt_uuid_str)
-            if (prompt_uuid_str := attributes.get("lilypad.prompt.uuid", None))
-            else None,
             scope=scope,
             data=lilypad_trace,
             parent_span_id=parent_span_id,

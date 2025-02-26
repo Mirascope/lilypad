@@ -1,12 +1,21 @@
 """The lilypad `tool` decorator."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 
 from mirascope.core import BaseTool
+from mirascope.llm.tool import Tool as _Tool
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+
+
+class Tool(_Tool):
+    """The lilypad `Tool` class."""
+
+    ...
 
 
 def tool() -> Callable[[Callable[_P, Any]], type[BaseTool]]:

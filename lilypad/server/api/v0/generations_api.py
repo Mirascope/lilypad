@@ -57,6 +57,22 @@ async def get_generations_by_name(
 
 
 @generations_router.get(
+    "/projects/{project_uuid}/generations/name/{generation_name}/version/{version_num}",
+    response_model=GenerationPublic,
+)
+async def get_generations_by_version(
+    project_uuid: UUID,
+    generation_name: str,
+    version_num: int,
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+) -> GenerationTable:
+    """Get generation by name."""
+    return generation_service.find_generations_by_version(
+        project_uuid, generation_name, version_num
+    )
+
+
+@generations_router.get(
     "/projects/{project_uuid}/generations/metadata/names/versions",
     response_model=Sequence[GenerationPublic],
 )

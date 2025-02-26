@@ -1,7 +1,7 @@
 """Generations models."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
@@ -13,7 +13,6 @@ from .response_models import ResponseModelTable
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
-    PROMPT_TABLE_NAME,
     RESPONSE_MODEL_TABLE_NAME,
 )
 
@@ -21,9 +20,9 @@ if TYPE_CHECKING:
     from lilypad.ee.server.models.annotations import AnnotationTable
 
     from .projects import ProjectTable
-    from .prompts import PromptTable
     from .response_models import ResponseModelTable
     from .spans import SpanTable
+    from .tools import ToolTable
 
 
 class _GenerationBase(SQLModel):
@@ -31,9 +30,6 @@ class _GenerationBase(SQLModel):
 
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
-    prompt_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     response_model_uuid: UUID | None = Field(
         default=None,
@@ -51,12 +47,18 @@ class _GenerationBase(SQLModel):
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
     archived: datetime | None = Field(default=None, index=True)
     custom_id: str | None = Field(default=None, index=True)
+    prompt_template: str | None = Field(default=None)
+
+    # There may be objects in the dictionary that cannot be serialized?
+    call_params: dict[str, Any] = Field(
+        sa_column=get_json_column(), default_factory=dict
+    )
 
 
 class GenerationUpdate(SQLModel):
     """Generation update model."""
 
-    prompt_uuid: UUID | None = None
+    ...
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
@@ -70,11 +72,16 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     spans: list["SpanTable"] = Relationship(
         back_populates="generation", cascade_delete=True
     )
-    prompt: Optional["PromptTable"] = Relationship(back_populates="generations")
+
     response_model: Optional["ResponseModelTable"] = Relationship(
         back_populates="generations"
     )
     annotations: list["AnnotationTable"] = Relationship(
+        back_populates="generation",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
+    )
+    tools: list["ToolTable"] = Relationship(
         back_populates="generation",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,

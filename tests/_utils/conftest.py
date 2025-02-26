@@ -16,7 +16,7 @@ from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel, computed_field
 from pydantic.json_schema import SkipJsonSchema
 
-from lilypad.server.models import Provider
+from lilypad.server.models.spans import Provider
 
 # Type variable for generic tool type
 T = TypeVar("T")
