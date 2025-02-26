@@ -21,6 +21,7 @@ import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as AuthProjectsIndexImport } from './routes/_auth.projects.index'
 import { Route as AuthSettingsSplatImport } from './routes/_auth.settings.$'
 import { Route as AuthProjectsProjectUuidImport } from './routes/_auth.projects.$projectUuid'
+import { Route as AuthProjectsProjectUuidIndexImport } from './routes/_auth.projects.$projectUuid.index'
 import { Route as AuthProjectsProjectUuidPromptsIndexImport } from './routes/_auth.projects.$projectUuid.prompts.index'
 import { Route as AuthProjectsProjectUuidGenerationsIndexImport } from './routes/_auth.projects.$projectUuid.generations.index'
 import { Route as AuthProjectsProjectUuidTracesSplatImport } from './routes/_auth.projects.$projectUuid.traces.$'
@@ -85,6 +86,13 @@ const AuthProjectsProjectUuidRoute = AuthProjectsProjectUuidImport.update({
   path: '/projects/$projectUuid',
   getParentRoute: () => AuthRoute,
 } as any)
+
+const AuthProjectsProjectUuidIndexRoute =
+  AuthProjectsProjectUuidIndexImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthProjectsProjectUuidRoute,
+  } as any)
 
 const AuthProjectsProjectUuidPromptsIndexRoute =
   AuthProjectsProjectUuidPromptsIndexImport.update({
@@ -190,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsIndexImport
       parentRoute: typeof AuthImport
     }
+    '/_auth/projects/$projectUuid/': {
+      id: '/_auth/projects/$projectUuid/'
+      path: '/'
+      fullPath: '/projects/$projectUuid/'
+      preLoaderRoute: typeof AuthProjectsProjectUuidIndexImport
+      parentRoute: typeof AuthProjectsProjectUuidImport
+    }
     '/_auth/projects/$projectUuid/traces/$': {
       id: '/_auth/projects/$projectUuid/traces/$'
       path: '/traces/$'
@@ -231,6 +246,7 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AuthProjectsProjectUuidRouteChildren {
+  AuthProjectsProjectUuidIndexRoute: typeof AuthProjectsProjectUuidIndexRoute
   AuthProjectsProjectUuidTracesSplatRoute: typeof AuthProjectsProjectUuidTracesSplatRoute
   AuthProjectsProjectUuidGenerationsIndexRoute: typeof AuthProjectsProjectUuidGenerationsIndexRoute
   AuthProjectsProjectUuidPromptsIndexRoute: typeof AuthProjectsProjectUuidPromptsIndexRoute
@@ -240,6 +256,7 @@ interface AuthProjectsProjectUuidRouteChildren {
 
 const AuthProjectsProjectUuidRouteChildren: AuthProjectsProjectUuidRouteChildren =
   {
+    AuthProjectsProjectUuidIndexRoute: AuthProjectsProjectUuidIndexRoute,
     AuthProjectsProjectUuidTracesSplatRoute:
       AuthProjectsProjectUuidTracesSplatRoute,
     AuthProjectsProjectUuidGenerationsIndexRoute:
@@ -281,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
+  '/projects/$projectUuid/': typeof AuthProjectsProjectUuidIndexRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/projects/$projectUuid/generations': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/projects/$projectUuid/prompts': typeof AuthProjectsProjectUuidPromptsIndexRoute
@@ -295,9 +313,9 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/join/$token': typeof JoinTokenRoute
-  '/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/settings/$': typeof AuthSettingsSplatRoute
   '/projects': typeof AuthProjectsIndexRoute
+  '/projects/$projectUuid': typeof AuthProjectsProjectUuidIndexRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/projects/$projectUuid/generations': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/projects/$projectUuid/prompts': typeof AuthProjectsProjectUuidPromptsIndexRoute
@@ -316,6 +334,7 @@ export interface FileRoutesById {
   '/_auth/projects/$projectUuid': typeof AuthProjectsProjectUuidRouteWithChildren
   '/_auth/settings/$': typeof AuthSettingsSplatRoute
   '/_auth/projects/': typeof AuthProjectsIndexRoute
+  '/_auth/projects/$projectUuid/': typeof AuthProjectsProjectUuidIndexRoute
   '/_auth/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
   '/_auth/projects/$projectUuid/generations/': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/_auth/projects/$projectUuid/prompts/': typeof AuthProjectsProjectUuidPromptsIndexRoute
@@ -335,6 +354,7 @@ export interface FileRouteTypes {
     | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
+    | '/projects/$projectUuid/'
     | '/projects/$projectUuid/traces/$'
     | '/projects/$projectUuid/generations'
     | '/projects/$projectUuid/prompts'
@@ -348,9 +368,9 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/login'
     | '/join/$token'
-    | '/projects/$projectUuid'
     | '/settings/$'
     | '/projects'
+    | '/projects/$projectUuid'
     | '/projects/$projectUuid/traces/$'
     | '/projects/$projectUuid/generations'
     | '/projects/$projectUuid/prompts'
@@ -367,6 +387,7 @@ export interface FileRouteTypes {
     | '/_auth/projects/$projectUuid'
     | '/_auth/settings/$'
     | '/_auth/projects/'
+    | '/_auth/projects/$projectUuid/'
     | '/_auth/projects/$projectUuid/traces/$'
     | '/_auth/projects/$projectUuid/generations/'
     | '/_auth/projects/$projectUuid/prompts/'
@@ -438,6 +459,7 @@ export const routeTree = rootRoute
       "filePath": "_auth.projects.$projectUuid.tsx",
       "parent": "/_auth",
       "children": [
+        "/_auth/projects/$projectUuid/",
         "/_auth/projects/$projectUuid/traces/$",
         "/_auth/projects/$projectUuid/generations/",
         "/_auth/projects/$projectUuid/prompts/",
@@ -452,6 +474,10 @@ export const routeTree = rootRoute
     "/_auth/projects/": {
       "filePath": "_auth.projects.index.tsx",
       "parent": "/_auth"
+    },
+    "/_auth/projects/$projectUuid/": {
+      "filePath": "_auth.projects.$projectUuid.index.tsx",
+      "parent": "/_auth/projects/$projectUuid"
     },
     "/_auth/projects/$projectUuid/traces/$": {
       "filePath": "_auth.projects.$projectUuid.traces.$.tsx",
