@@ -505,10 +505,12 @@ def _get_class_from_unbound_method(method: Callable[..., Any]) -> type | None:
     import gc
 
     for obj in gc.get_objects():
-        if (
-            isinstance(obj, type)
-            and getattr(obj, "__qualname__", None) == class_qualname
-        ):
+        try:
+            object_is_type = isinstance(obj, type)
+        except:  # noqa: E722
+            # Skip objects that don't support isinstance() check (e.g. OpenAI's pandas proxy)
+            continue
+        if object_is_type and getattr(obj, "__qualname__", None) == class_qualname:
             return obj
     return None
 
