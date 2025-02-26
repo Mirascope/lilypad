@@ -52,16 +52,19 @@ export const LilypadPanel = ({
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{span.display_name}</Typography>
       <div className='flex gap-1 flex-wrap'>
-        {span.input_tokens && span.output_tokens && (
-          <Badge className='text-xs font-medium m-0'>
-            <span>{span.input_tokens}</span>
-            <span className='mx-1'>&#8594;</span>
-            <span>{span.output_tokens}</span>
-            <span className='mx-1'>=</span>
-            <span>{span.input_tokens + span.output_tokens}</span>
-          </Badge>
-        )}
-        {span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
+        {span.input_tokens != 0 &&
+          span.input_tokens &&
+          span.output_tokens != 0 &&
+          span.output_tokens && (
+            <Badge className='text-xs font-medium m-0'>
+              <span>{span.input_tokens}</span>
+              <span className='mx-1'>&#8594;</span>
+              <span>{span.output_tokens}</span>
+              <span className='mx-1'>=</span>
+              <span>{span.input_tokens + span.output_tokens}</span>
+            </Badge>
+          )}
+        {span.cost != 0 && span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
         {span.duration_ms && (
           <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
         )}

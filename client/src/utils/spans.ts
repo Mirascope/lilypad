@@ -1,5 +1,10 @@
 import api from "@/api";
-import { SpanMoreDetails, SpanPublic } from "@/types/types";
+import {
+  AggregateMetrics,
+  SpanMoreDetails,
+  SpanPublic,
+  TimeFrame,
+} from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 
 export const fetchSpan = async (spanUuid: string) => {
@@ -23,6 +28,18 @@ export const fetchSpansByGenerationUuid = async (
   ).data;
 };
 
+export const fetchAggregatesByGenerationUuid = async (
+  projectUuid: string,
+  generationUuid: string,
+  timeFrame: TimeFrame
+) => {
+  return (
+    await api.get<AggregateMetrics[]>(
+      `/projects/${projectUuid}/generations/${generationUuid}/spans/metadata?time_frame=${timeFrame}`
+    )
+  ).data;
+};
+
 export const spansByGenerationQueryOptions = (
   projectUuid: string,
   generationUuid: string
@@ -31,4 +48,23 @@ export const spansByGenerationQueryOptions = (
     queryKey: ["projects", projectUuid, "generations", generationUuid, "spans"],
     queryFn: () => fetchSpansByGenerationUuid(projectUuid, generationUuid),
     refetchInterval: 1000,
+  });
+
+export const aggregatesByGenerationQueryOptions = (
+  projectUuid: string,
+  generationUuid: string,
+  timeFrame: TimeFrame
+) =>
+  queryOptions({
+    queryKey: [
+      "projects",
+      projectUuid,
+      "generations",
+      generationUuid,
+      "spans",
+      "metadata",
+      timeFrame,
+    ],
+    queryFn: () =>
+      fetchAggregatesByGenerationUuid(projectUuid, generationUuid, timeFrame),
   });

@@ -38,12 +38,12 @@ function AuthLayout() {
     }
   }, [posthog, user?.uuid, user?.email]);
   return (
-    <div className='flex h-screen border-collapse overflow-hidden'>
+    <div className='flex min-h-screen border-collapse overflow-hidden'>
       <SidebarProvider>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
-        <main className='flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-secondary/10 pb-1'>
+        <main className='flex-1 overflow-hidden pt-4 bg-secondary/10 pb-1'>
           <Outlet />
         </main>
       </SidebarProvider>
