@@ -12,16 +12,21 @@ from .base_sql_model import get_json_column
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
-    PROMPT_TABLE_NAME,
-    RESPONSE_MODEL_TABLE_NAME,
     SPAN_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .generations import GenerationTable
-    from .prompts import PromptTable
-    from .response_models import ResponseModelTable
+
+
+class Provider(str, Enum):
+    """Provider name enum"""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    OPENROUTER = "openrouter"
+    GEMINI = "gemini"
 
 
 class Scope(str, Enum):
@@ -35,7 +40,6 @@ class SpanType(str, Enum):
     """Span type"""
 
     GENERATION = "generation"
-    PROMPT = "prompt"
 
 
 class SpanBase(SQLModel):
@@ -44,14 +48,6 @@ class SpanBase(SQLModel):
     span_id: str = Field(nullable=False, index=True, unique=True)
     generation_uuid: UUID | None = Field(
         default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
-    prompt_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{PROMPT_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
-    response_model_uuid: UUID | None = Field(
-        default=None,
-        foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid",
-        ondelete="CASCADE",
     )
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
@@ -80,10 +76,6 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
-    prompt: Optional["PromptTable"] = Relationship(back_populates="spans")
-    response_model: Optional["ResponseModelTable"] = Relationship(
-        back_populates="spans"
-    )
     annotations: list["AnnotationTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin

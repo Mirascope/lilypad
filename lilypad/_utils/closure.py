@@ -38,10 +38,18 @@ class DependencyInfo(TypedDict):
 
 
 def get_qualified_name(fn: Callable) -> str:
-    qualified_name = fn.__qualname__.split("<locals>.")
-    if len(qualified_name) > 1:
-        return qualified_name[1]
-    return qualified_name[0]
+    """Return the simplified qualified name of a function.
+
+    If the function is defined locally, return the name after '<locals>.'; otherwise,
+    return the last non-empty part after splitting by '.'.
+    """
+    qualified_name = fn.__qualname__
+    if "<locals>." in qualified_name:
+        # For local functions, return the part after "<locals>."
+        return qualified_name.split("<locals>.")[-1]
+    else:
+        parts = [part for part in qualified_name.split(".") if part]
+        return parts[-1] if parts else qualified_name
 
 
 def _is_third_party(module: ModuleType, site_packages: set[str]) -> bool:
@@ -135,13 +143,12 @@ def _clean_source_code(
     *,
     exclude_fn_body: bool = False,
 ) -> str:
-    """Returns a function's source code cleaned of that which has no impact on behavior.
-
+    """Returns a function's source code cleaned of elements that have no impact on behavior.
     Uses LibCST to:
-        1. Remove the first docstring from any function/class in `fn`'s code.
-        2. If removing leaves the body empty, insert 'pass'.
-        3. If exclude_fn_body=True, replace the body with a single 'pass'.
-        4. Convert multi-line strings to triple-quoted strings.
+      1. Remove the first docstring from any function/class in the code.
+      2. Insert 'pass' if removal leaves the body empty.
+      3. Optionally replace the body with 'pass' if exclude_fn_body is True.
+      4. Convert multi-line strings to triple-quoted strings.
     """
     source = dedent(inspect.getsource(fn))
     module = cst.parse_module(source)

@@ -20,11 +20,8 @@ from .._utils import (
     convert_mirascope_messages,
     convert_openai_messages,
 )
-from ..models.prompts import Provider
-from ..models.spans import Scope, SpanBase, SpanTable
+from ..models.spans import Provider, Scope, SpanBase, SpanTable
 from .generations import GenerationPublic
-from .prompts import PromptPublic
-from .response_models import ResponseModelPublic
 
 
 class SpanCreate(SpanBase):
@@ -40,8 +37,6 @@ class SpanPublic(SpanBase):
     project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
-    prompt: PromptPublic | None = None
-    response_model: ResponseModelPublic | None = None
     annotations: list[AnnotationTable]
     child_spans: list[SpanPublic]
     created_at: datetime
