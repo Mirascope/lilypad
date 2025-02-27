@@ -287,10 +287,14 @@ def _trace(
 def _build_mirascope_call(  # pyright: ignore [reportOverlappingOverload]
     generation_public: GenerationPublic, fn: Callable[_P, Coroutine[Any, Any, _R]]
 ) -> Callable[_P, Coroutine[Any, Any, Message | Stream]]: ...
+
+
 @overload
 def _build_mirascope_call(
     generation_public: GenerationPublic, fn: Callable[_P, _R]
 ) -> Callable[_P, Message | Stream]: ...
+
+
 def _build_mirascope_call(
     generation_public: GenerationPublic,
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
