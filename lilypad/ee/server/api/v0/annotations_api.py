@@ -1,11 +1,13 @@
 """The EE `/annotations` API router."""
 
+import asyncio
 from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
+from fastapi.responses import StreamingResponse
 
 from .....server.schemas.spans import SpanMoreDetails
 from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
@@ -116,3 +118,25 @@ async def get_annotations(
             generation_uuid
         )
     ]
+
+
+async def event_generator():
+    count = 0
+    while True:
+        count += 1
+        yield f"data: {{'count': {count}}}\n\n"
+        await asyncio.sleep(1)
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/annotations/{annotation_uuid}/generate"
+)
+async def stream_events():
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
