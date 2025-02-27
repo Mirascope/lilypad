@@ -19,13 +19,5 @@ class Message(CallResponse):
             return [Tool(tool) for tool in tools]  # pyright: ignore [reportAbstractUsage]
         return None
 
-    @computed_field
-    @cached_property
-    def tool(self) -> Tool | None:  # pyright: ignore [reportIncompatibleVariableOverride]
-        """The tool used in the response."""
-        if tool := super().tool:
-            return Tool(tool)  # pyright: ignore [reportAbstractUsage]
-        return None
-
 
 __all__ = ["Message"]

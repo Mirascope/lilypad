@@ -1,9 +1,10 @@
 """Generations models."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from mirascope.core.base import CommonCallParams
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from ..._utils import DependencyInfo
@@ -49,8 +50,7 @@ class _GenerationBase(SQLModel):
     custom_id: str | None = Field(default=None, index=True)
     prompt_template: str | None = Field(default=None)
 
-    # There may be objects in the dictionary that cannot be serialized?
-    call_params: dict[str, Any] = Field(
+    call_params: CommonCallParams = Field(
         sa_column=get_json_column(), default_factory=dict
     )
 

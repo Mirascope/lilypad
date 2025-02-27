@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 from mirascope import llm
 from mirascope.core import BaseDynamicConfig, BaseMessageParam, BaseTool
-from mirascope.core.base import BaseCallParams, BaseCallResponse, Metadata
+from mirascope.core.base import BaseCallParams, BaseCallResponse, Metadata, CommonCallParams
 from mirascope.core.base._utils import convert_base_model_to_base_tool
 from mirascope.core.base.types import FinishReason
 from mirascope.llm.call_response import CallResponse
@@ -34,7 +34,7 @@ def dummy_generation_instance() -> GenerationPublic:
         dependencies={},
         arg_types={},
         version_num=1,
-        call_params={"provider": "openai", "model": "gpt-4o-mini"},
+        call_params={}
     )
 
 

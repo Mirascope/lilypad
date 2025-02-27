@@ -626,16 +626,3 @@ def test_get_qualified_name_handles_locals():
     simple_name = get_qualified_name(inner_fn)
     # Expected simple name is "inner"
     assert simple_name == "inner"
-
-
-def test_multiple_module_creation():
-    """Test that multiple calls to create_module for the same closure generate unique module names and do not interfere."""
-    closure = Closure.from_fn(sample_function)
-    module1 = closure.create_module()
-    module2 = closure.create_module()
-    # The module names should be unique.
-    assert module1.__name__ != module2.__name__
-    # Clean up manually.
-    for mod in (module1, module2):
-        if mod.__name__ in sys.modules:
-            del sys.modules[mod.__name__]

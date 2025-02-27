@@ -91,7 +91,7 @@ class GenerationVersioningDecorator(Protocol):
         ...
 
 
-class GenerationVersioningManagedDecorator(Protocol):
+class ManagedGenerationVersioningDecorator(Protocol):
     """Protocol for the `generation` decorator return type."""
 
     @overload
@@ -345,14 +345,18 @@ _ArgTypes: typing.TypeAlias = dict[str, str]
 @overload
 def generation(  # pyright: ignore [reportOverlappingOverload]
     custom_id: str | None = ..., managed: Literal[True] = ...
-) -> GenerationVersioningManagedDecorator: ...
+) -> ManagedGenerationVersioningDecorator: ...
+
+
 @overload
 def generation(
     custom_id: str | None = None, managed: Literal[False] = ...
 ) -> GenerationVersioningDecorator: ...
+
+
 def generation(
     custom_id: str | None = None, managed: bool = False
-) -> GenerationVersioningDecorator | GenerationVersioningManagedDecorator:
+) -> GenerationVersioningDecorator | ManagedGenerationVersioningDecorator:
     """The `generation` decorator for versioning and tracing LLM generations.\
 
     The decorated function will be versioned according to it's runnable lexical closure,

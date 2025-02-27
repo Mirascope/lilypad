@@ -1,4 +1,4 @@
-"""The lilypad `CallResponseChunk` class."""
+"""The lilypad `MessageChunk` class."""
 
 from mirascope.llm.call_response_chunk import CallResponseChunk
 

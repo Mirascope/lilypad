@@ -13,7 +13,6 @@ import site
 import subprocess
 import sys
 import tempfile
-import types
 from collections.abc import Callable
 from functools import cached_property, lru_cache
 from pathlib import Path
@@ -40,6 +39,7 @@ class DependencyInfo(TypedDict):
 
 def get_qualified_name(fn: Callable) -> str:
     """Return the simplified qualified name of a function.
+
     If the function is defined locally, return the name after '<locals>.'; otherwise,
     return the last non-empty part after splitting by '.'.
     """
@@ -848,48 +848,6 @@ class Closure(BaseModel):
             return json.loads(result.stdout.strip())
         finally:
             tmp_path.unlink()
-
-    def create_module(
-        self,
-        module_name: str | None = None,
-    ) -> types.ModuleType:
-        """Create a module from the closure's code.
-
-        A unique module name is generated using the closure hash and a UUID if no module_name is provided.
-
-        Args:
-            module_name: Optional name for the module.
-
-        Returns:
-            The created module.
-        """
-        import uuid
-
-        unique_suffix = uuid.uuid4().hex
-        name = module_name or f"dynamic_module_{self.hash[:8]}_{unique_suffix}"
-        spec = importlib.util.spec_from_loader(name, loader=None)
-        if spec is None:
-            raise ImportError(f"Could not create module spec for {name}")
-        module = importlib.util.module_from_spec(spec)
-        # Register the module in sys.modules so that exec can work.
-        sys.modules[name] = module
-        module.__dict__.update(
-            {
-                "__builtins__": __builtins__,
-                "__name__": name,
-                "__file__": None,
-                "__loader__": None,
-                "__package__": None,
-                "__spec__": None,
-            }
-        )
-        try:
-            exec(self.code, module.__dict__)
-        except Exception as e:
-            # On failure, remove the module from sys.modules.
-            sys.modules.pop(name, None)
-            raise ImportError(f"Failed to execute module code: {str(e)}") from e
-        return module
 
 
 __all__ = ["Closure"]

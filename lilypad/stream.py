@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from mirascope.llm.stream import Stream as _Stream
 
-from .call_response_chunk import CallResponseChunk
+from .message_chunk import MessageChunk
 from .tools import Tool
 
 if TYPE_CHECKING:
@@ -20,27 +20,27 @@ class Stream(_Stream):
     def __iter__(
         self,
     ) -> Generator[
-        tuple[CallResponseChunk, Tool | None],
+        tuple[MessageChunk, Tool | None],
         None,
         None,
     ]:
         """Iterate over the stream."""
         for chunk, tool in super().__iter__():
             yield (
-                CallResponseChunk(response=chunk),  # pyright: ignore [reportAbstractUsage]
+                MessageChunk(response=chunk),  # pyright: ignore [reportAbstractUsage]
                 Tool(tool=tool) if tool is not None else None,  # pyright: ignore [reportAbstractUsage]
             )
 
     async def __aiter__(
         self,
     ) -> AsyncGenerator[
-        tuple[CallResponseChunk, Tool | None],
+        tuple[MessageChunk, Tool | None],
         None,
     ]:
         """Iterates over the stream and stores useful information."""
         async for chunk, tool in super().__aiter__():
             yield (
-                CallResponseChunk(response=chunk),  # pyright: ignore [reportAbstractUsage]
+                MessageChunk(response=chunk),  # pyright: ignore [reportAbstractUsage]
                 Tool(tool=tool) if tool is not None else None,  # pyright: ignore [reportAbstractUsage]
             )
 

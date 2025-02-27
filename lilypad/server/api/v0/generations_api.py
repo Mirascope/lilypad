@@ -60,7 +60,7 @@ async def get_generations_by_name(
     "/projects/{project_uuid}/generations/name/{generation_name}/version/{version_num}",
     response_model=GenerationPublic,
 )
-async def get_generations_by_version(
+async def get_generation_by_version(
     project_uuid: UUID,
     generation_name: str,
     version_num: int,
