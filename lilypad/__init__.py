@@ -8,7 +8,6 @@ from . import server as server
 from ._configure import configure
 from .generations import generation
 from .messages import Message
-from .response_models import response_model
 from .tools import tool
 
 with suppress(ImportError):
@@ -25,5 +24,4 @@ __all__ = [
     "Message",
     "server",
     "tool",
-    "response_model",
 ]

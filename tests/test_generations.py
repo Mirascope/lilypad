@@ -8,16 +8,17 @@ from uuid import uuid4
 import pytest
 from mirascope import llm
 from mirascope.core import BaseDynamicConfig, BaseMessageParam, BaseTool
-from mirascope.core.base import BaseCallParams, BaseCallResponse, Metadata, CommonCallParams
-from mirascope.core.base._utils import convert_base_model_to_base_tool
+from mirascope.core.base import (
+    BaseCallParams,
+    BaseCallResponse,
+    Metadata,
+)
 from mirascope.core.base.types import FinishReason
 from mirascope.llm.call_response import CallResponse
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 
-from lilypad._utils import Closure
 from lilypad.generations import _build_mirascope_call, generation
 from lilypad.server.schemas.generations import GenerationPublic
-from lilypad.server.schemas.response_models import ResponseModelPublic
 
 dummy_spans = []
 
@@ -34,7 +35,9 @@ def dummy_generation_instance() -> GenerationPublic:
         dependencies={},
         arg_types={},
         version_num=1,
-        call_params={}
+        call_params={},
+        provider="openai",
+        model="gpt-4o-mini",
     )
 
 
@@ -563,8 +566,6 @@ def test_build_mirascope_call_async(
     dummy_generation_instance: GenerationPublic, patched_llm_call_async
 ):
     """Test _build_mirascope_call branch async call."""
-    dummy_generation_instance.response_model = None
-    dummy_generation_instance.tools = None
     dummy_generation_instance.prompt_template = "dummy_template"
 
     async def dummy_fn():
@@ -578,8 +579,6 @@ def test_build_mirascope_call_sync(
     dummy_generation_instance: GenerationPublic, patched_llm_call
 ):
     """Test _build_mirascope_call branch sync call."""
-    dummy_generation_instance.response_model = None
-    dummy_generation_instance.tools = None
     dummy_generation_instance.prompt_template = "dummy_template"
 
     def dummy_fn():
@@ -587,46 +586,3 @@ def test_build_mirascope_call_sync(
 
     result = _build_mirascope_call(dummy_generation_instance, dummy_fn)
     assert result().content == "dummy_content"
-
-
-def test_build_mirascope_call_response_model(
-    dummy_generation_instance: GenerationPublic, patched_llm_call_async
-):
-    """Test _build_mirascope_call branch when generation_public.response_model is set."""
-    # Create a dummy response model using the actual ResponseModelPublic schema.
-
-    class DummyResponse(BaseModel):
-        name: str
-        age: int
-
-    closure = Closure.from_fn(DummyResponse)
-    converted_tool = convert_base_model_to_base_tool(DummyResponse, BaseTool)
-    dummy_response_model = ResponseModelPublic(
-        uuid=uuid4(),
-        name=closure.name,
-        signature=closure.signature,
-        code=closure.code,
-        hash=closure.hash,
-        dependencies=closure.dependencies,
-        schema_data=converted_tool.model_json_schema(),
-        examples=[],
-        is_active=False,
-    )
-    dummy_generation_instance.response_model = dummy_response_model
-    dummy_generation_instance.tools = None
-    dummy_generation_instance.prompt_template = "dummy_template"
-
-    def dummy_fn():
-        return None
-
-    with patch("lilypad.generations.llm.call") as patched_llm_call:
-        _build_mirascope_call(dummy_generation_instance, dummy_fn)
-        response_model = patched_llm_call.call_args.kwargs["response_model"]
-        assert issubclass(response_model, BaseModel)
-        assert response_model(name="name", age=3).model_dump() == {
-            "age": 3,
-            "name": "name",
-        }
-        patched_llm_call.assert_called_once_with(
-            provider="openai", model="gpt-4o-mini", response_model=response_model
-        )

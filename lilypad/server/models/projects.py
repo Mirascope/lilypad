@@ -12,8 +12,6 @@ if TYPE_CHECKING:
     from .api_keys import APIKeyTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
-    from .response_models import ResponseModelTable
-    from .tools import ToolTable
 
 
 class _ProjectBase(SQLModel):
@@ -32,16 +30,10 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     generations: list["GenerationTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
-    response_models: list["ResponseModelTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
     organization: "OrganizationTable" = Relationship(back_populates="projects")
     api_keys: list["APIKeyTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     annotations: list["AnnotationTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
-    tools: list["ToolTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )

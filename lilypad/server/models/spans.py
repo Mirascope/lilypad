@@ -12,14 +12,12 @@ from .base_sql_model import get_json_column
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
-    RESPONSE_MODEL_TABLE_NAME,
     SPAN_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .generations import GenerationTable
-    from .response_models import ResponseModelTable
 
 
 class Provider(str, Enum):
@@ -51,11 +49,6 @@ class SpanBase(SQLModel):
     generation_uuid: UUID | None = Field(
         default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    response_model_uuid: UUID | None = Field(
-        default=None,
-        foreign_key=f"{RESPONSE_MODEL_TABLE_NAME}.uuid",
-        ondelete="CASCADE",
-    )
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
     scope: Scope = Field(nullable=False)
@@ -83,9 +76,6 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
-    response_model: Optional["ResponseModelTable"] = Relationship(
-        back_populates="spans"
-    )
     annotations: list["AnnotationTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin

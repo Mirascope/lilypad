@@ -8,12 +8,13 @@ from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from functools import wraps
-from typing import Any, Literal, ParamSpec, Protocol, TypeVar, overload
+from typing import Any, Literal, ParamSpec, Protocol, TypeVar, cast, overload
 
 from fastapi.encoders import jsonable_encoder
 from mirascope import llm
 from mirascope.core import prompt_template
 from mirascope.core.base._utils import fn_is_async
+from mirascope.llm._protocols import Provider
 from mirascope.llm.call_response import CallResponse
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider
@@ -29,7 +30,6 @@ from ._utils import (
     load_config,
 )
 from .messages import Message
-from .response_models import _create_model_from_json_schema
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
@@ -300,16 +300,15 @@ def _build_mirascope_call(
     """Build a Mirascope call object."""
     mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
-    call_params = generation_public.call_params
-    if generation_public.tools:
-        pass
-        # TODO: tools are not yet supported in managed mode
-        # Skip tools in managed mode to avoid unexpected behavior
-    elif response_model := generation_public.response_model:
-        call_params["response_model"] = _create_model_from_json_schema(
-            response_model.schema_data, response_model.name
-        )
-    mirascope_call = llm.call(**call_params)(mirascope_prompt)
+    if not generation_public.model:
+        raise ValueError("Managed generation requires `model`")
+    if not generation_public.provider:
+        raise ValueError("Managed generation requires `provider`")
+    mirascope_call = llm.call(
+        provider=cast(Provider, generation_public.provider),
+        model=generation_public.model,
+        call_params=generation_public.call_params,
+    )(mirascope_prompt)
 
     @wraps(mirascope_call)
     def inner(

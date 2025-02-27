@@ -22,7 +22,6 @@ from .._utils import (
 )
 from ..models.spans import Provider, Scope, SpanBase, SpanTable
 from .generations import GenerationPublic
-from .response_models import ResponseModelPublic
 
 
 class SpanCreate(SpanBase):
@@ -38,7 +37,6 @@ class SpanPublic(SpanBase):
     project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
-    response_model: ResponseModelPublic | None = None
     annotations: list[AnnotationTable]
     child_spans: list[SpanPublic]
     created_at: datetime
