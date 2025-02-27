@@ -34,6 +34,7 @@ class AggregateMetrics(BaseModel):
     span_count: int
     start_date: datetime | None
     end_date: datetime | None
+    generation_uuid: UUID | None
 
 
 class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
@@ -86,44 +87,75 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         ).all()
 
     def get_aggregated_metrics(
-        self, project_uuid: UUID, generation_uuid: UUID, timeframe: TimeFrame
+        self,
+        project_uuid: UUID,
+        generation_uuid: UUID | None = None,
+        time_frame: TimeFrame = TimeFrame.LIFETIME,
     ) -> list[AggregateMetrics]:
-        """Get aggregated metrics for spans grouped by the specified timeframe"""
+        """Get aggregated metrics for spans grouped by the specified timeframe
+
+        Parameters:
+        - project_uuid: Project to get metrics for
+        - generation_uuid: Optional specific generation to filter by
+        - time_frame: Time period to group by (DAY, WEEK, MONTH, LIFETIME)
+
+        Returns:
+        - List of aggregated metrics, optionally grouped by generation
+        """
         # Base query with common filters
-        query = select(
+        base_filters = [
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+        ]
+
+        columns = [
             func.sum(self.table.cost).label("total_cost"),
             func.sum(self.table.input_tokens).label("total_input_tokens"),
             func.sum(self.table.output_tokens).label("total_output_tokens"),
             func.avg(self.table.duration_ms).label("average_duration_ms"),
             func.count().label("span_count"),
-        ).where(  # pyright: ignore[reportCallIssue]
-            self.table.organization_uuid == self.user.active_organization_uuid,
-            self.table.project_uuid == project_uuid,
-            self.table.generation_uuid == generation_uuid,
-        )
-        # Add time-based grouping if not lifetime
-        date_trunc = self._get_date_trunc(timeframe)
-        if date_trunc is not None:
-            if timeframe == TimeFrame.DAY:
-                # For daily grouping, we can use DATE(created_at)
-                date_group = func.date(self.table.created_at).label("period_start")
-            else:
-                # For week and month, we need to extract the relevant parts
-                if timeframe == TimeFrame.WEEK:
-                    date_group = func.date_trunc("week", self.table.created_at).label(
-                        "period_start"
-                    )
-                else:  # month
-                    date_group = func.date_trunc("month", self.table.created_at).label(
-                        "period_start"
-                    )
+        ]
 
-            query = query.add_columns(date_group)
-            query = query.group_by(date_group)
+        group_by_columns = []
+        date_group = None
+
+        if generation_uuid is not None:
+            base_filters.append(self.table.generation_uuid == generation_uuid)
+        else:
+            columns.append(self.table.generation_uuid.label("generation_uuid"))  # type: ignore
+            group_by_columns.append(self.table.generation_uuid)
+            base_filters.append(self.table.parent_span_id.is_(None))  # type: ignore
+
+        # Add time-based grouping if not lifetime
+        date_trunc = self._get_date_trunc(time_frame)
+
+        if date_trunc is not None:
+            if time_frame == TimeFrame.DAY:
+                date_group = func.date(self.table.created_at).label("period_start")
+            elif time_frame == TimeFrame.WEEK:
+                date_group = func.date_trunc("week", self.table.created_at).label(
+                    "period_start"
+                )
+            elif time_frame == TimeFrame.MONTH:
+                date_group = func.date_trunc("month", self.table.created_at).label(
+                    "period_start"
+                )
+
+            if date_group is not None:
+                columns.append(date_group)
+                group_by_columns.append(date_group)
+
+        # Build the final query
+        query = select(*columns).where(*base_filters)
+
+        if group_by_columns:
+            query = query.group_by(*group_by_columns)
+
+        if date_group is not None:
             query = query.order_by(date_group)
 
         results = self.session.exec(query).all()
-        # Transform results into the expected format
+
         metrics: list[AggregateMetrics] = []
         for row in results:
             metric = AggregateMetrics(
@@ -134,8 +166,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 span_count=row.span_count,
                 start_date=getattr(row, "period_start", None),
                 end_date=None,  # Can be calculated if needed based on timeframe
+                generation_uuid=generation_uuid
+                or getattr(row, "generation_uuid", None),
             )
             metrics.append(metric)
+
         return metrics
 
     def delete_records_by_generation_name(
