@@ -17,7 +17,13 @@ from mirascope.core.base.types import FinishReason
 from mirascope.llm.call_response import CallResponse
 from pydantic import computed_field
 
-from lilypad.generations import _build_mirascope_call, generation
+from lilypad import Message
+from lilypad.generations import (
+    Generation,
+    GenerationMode,
+    _build_mirascope_call,
+    generation,
+)
 from lilypad.server.schemas.generations import GenerationPublic
 
 dummy_spans = []
@@ -375,8 +381,9 @@ def test_sync_managed_generation(
         def managed_sync(param: str) -> str:
             return "should not be used"
 
-        result = managed_sync("dummy").content
-        assert result == "dummy_content"
+        result = managed_sync("dummy")
+        assert isinstance(result, Message)
+        assert result.content == "dummy_content"
         assert mock_llm_call.call_count == 1
         assert mock_mirascope_call.call_count == 1
         assert mock_inner.call_count == 1
@@ -407,6 +414,7 @@ async def test_async_managed_generation(
             return "should not be used"
 
         result = await managed_sync("dummy")
+        assert isinstance(result, Message)
         assert result.content == "dummy_content"
         assert mock_llm_call.call_count == 1
         assert mock_mirascope_call.call_count == 1
@@ -586,3 +594,104 @@ def test_build_mirascope_call_sync(
 
     result = _build_mirascope_call(dummy_generation_instance, dummy_fn)
     assert result().content == "dummy_content"
+
+
+def test_wrap_mode_sync_non_managed(
+    dummy_generation_instance: GenerationPublic, dummy_call_response_instance
+):
+    """Test that a synchronous function decorated with @generation(mode=GenerationMode.WRAP, managed=False)
+    returns a Generation object wrapping the original output.
+    """
+
+    @generation(mode=GenerationMode.WRAP)
+    def wrap_sync(param: str) -> str:
+        return "sync wrap test"
+
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_sync,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+        result = wrap_sync("test")
+
+    assert isinstance(result, Generation)
+    assert result.output == "sync wrap test"
+
+
+@pytest.mark.asyncio
+async def test_wrap_mode_async_non_managed(
+    dummy_generation_instance: GenerationPublic, dummy_call_response_instance
+):
+    """Test that an asynchronous function decorated with @generation(mode=GenerationMode.WRAP, managed=False)
+    returns a Generation object wrapping the original output.
+    """
+
+    @generation(mode=GenerationMode.WRAP)
+    async def wrap_async(param: str) -> str:
+        return "async wrap test"
+
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_async,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+        result = await wrap_async("test")
+
+    assert isinstance(result, Generation)
+    assert result.output == "async wrap test"
+
+
+def test_build_mirascope_call_invalid_model(
+    dummy_generation_instance: GenerationPublic,
+):
+    """Test that _build_mirascope_call raises ValueError when the GenerationPublic instance is missing model or provider."""
+    invalid_gen = dummy_generation_instance.model_copy()
+    invalid_gen.model = None
+    with pytest.raises(ValueError, match="Managed generation requires `model`"):
+        _build_mirascope_call(invalid_gen, lambda: None)
+
+    # Now test with a missing provider.
+    invalid_gen = dummy_generation_instance.model_copy()
+    invalid_gen.provider = None
+    with pytest.raises(ValueError, match="Managed generation requires `provider`"):
+        _build_mirascope_call(invalid_gen, lambda: None)
+
+
+def test_trace_with_base_model(dummy_generation_instance: GenerationPublic):
+    """Test that if a function returns a Pydantic BaseModel, the generation decorator converts it to a string."""
+    from pydantic import BaseModel
+
+    class DummyModel(BaseModel):
+        value: str
+
+    @generation()
+    def model_sync(param: str) -> DummyModel:
+        return DummyModel(value="model output")
+
+    with (
+        patch(
+            "lilypad.generations.create_mirascope_middleware",
+            side_effect=fake_mirascope_middleware_sync,
+        ),
+        patch(
+            "lilypad.generations.LilypadClient.get_or_create_generation_version",
+            return_value=dummy_generation_instance,
+        ),
+        patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
+    ):
+        result = model_sync("test")
+    # The decorator should convert the BaseModel to its string representation (using model_dump).
+    expected = str(DummyModel(value="model output").model_dump())
+    assert result == expected
