@@ -40,6 +40,7 @@ from ._utils import (
     inspect_arguments,
     load_config,
 )
+from ._utils.middleware import SpanContextHolder
 from .messages import Message
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
@@ -393,7 +394,7 @@ def _trace(
                     span.set_attribute(
                         "lilypad.generation.output", str(output_for_span)
                     )
-                span_context = span.get_span_context()
+                    span_context = span.get_span_context()
                 return (
                     original_output,
                     span_context.trace_id,
@@ -425,7 +426,7 @@ def _trace(
                     span.set_attribute(
                         "lilypad.generation.output", str(output_for_span)
                     )
-                span_context = span.get_span_context()
+                    span_context = span.get_span_context()
                 return (
                     original_output,
                     span_context.trace_id,
@@ -612,6 +613,7 @@ def generation(
                                     else (result, None, None)
                                 )
                             else:
+                                span_context_holder = SpanContextHolder()
                                 decorator_inner = create_mirascope_middleware(
                                     generation,
                                     arg_types,
@@ -620,13 +622,18 @@ def generation(
                                     generation.prompt_template
                                     if managed
                                     else prompt_template_value,
+                                    span_context_holder=span_context_holder,
                                 )
                                 output = await decorator_inner(  # pyright: ignore [reportReturnType]
                                     _build_mirascope_call(generation, fn)
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-                                trace_id = span_id = None
+                                if span_context := span_context_holder.span_context:
+                                    span_id = span_context.span_id
+                                    trace_id = span_context.trace_id
+                                else:
+                                    trace_id = span_id = None
                             # Wrap output if in wrap mode
                             if mode == GenerationMode.WRAP:
                                 return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
@@ -707,6 +714,7 @@ def generation(
                                     else (result, None, None)
                                 )
                             else:
+                                span_context_holder = SpanContextHolder()
                                 decorator_inner = create_mirascope_middleware(
                                     generation,
                                     arg_types,
@@ -715,13 +723,18 @@ def generation(
                                     generation.prompt_template
                                     if managed
                                     else prompt_template_value,
+                                    span_context_holder=span_context_holder,
                                 )
                                 output = decorator_inner(
                                     _build_mirascope_call(generation, fn)
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-                                trace_id = span_id = None
+                                if span_context := span_context_holder.span_context:
+                                    span_id = span_context.span_id
+                                    trace_id = span_context.trace_id
+                                else:
+                                    trace_id = span_id = None
                             if mode == GenerationMode.WRAP:
                                 return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
                             return output  # pyright: ignore [reportReturnType]
