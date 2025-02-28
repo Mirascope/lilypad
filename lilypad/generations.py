@@ -355,7 +355,7 @@ def _trace(
     prompt_template: str = "",
 ) -> GenerationDecorator:
     @overload
-    def decorator(
+    def decorator(  # pyright: ignore [reportOverlappingOverload]
         fn: Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, Coroutine[Any, Any, tuple[_R, int, int]]]: ...
 
@@ -384,10 +384,15 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
-                    output = await fn(*args, **kwargs)
-                    if isinstance(output, BaseModel):
-                        output = str(output.model_dump())
-                    span.set_attribute("lilypad.generation.output", str(output))
+                    output = cast(_R, await fn(*args, **kwargs))
+                    span.set_attribute(
+                        "lilypad.generation.output",
+                        str(
+                            output.model_dump()
+                            if isinstance(output, BaseModel)
+                            else output
+                        ),
+                    )
                 return (
                     output,
                     span.get_span_context().trace_id,
@@ -410,10 +415,15 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
-                    output = fn(*args, **kwargs)
-                    if isinstance(output, BaseModel):
-                        output = str(output.model_dump())
-                    span.set_attribute("lilypad.generation.output", str(output))
+                    output = cast(_R, fn(*args, **kwargs))
+                    span.set_attribute(
+                        "lilypad.generation.output",
+                        str(
+                            output.model_dump()
+                            if isinstance(output, BaseModel)
+                            else output
+                        ),
+                    )
                 return (
                     output,
                     span.get_span_context().trace_id,
@@ -422,7 +432,7 @@ def _trace(
 
             return inner
 
-    return decorator
+    return decorator  # pyright: ignore [reportReturnType]
 
 
 @overload
@@ -597,7 +607,7 @@ def generation(
                                 output, trace_id, span_id = (
                                     result
                                     if isinstance(result, tuple)
-                                    else (result, None)
+                                    else (result, None, None)
                                 )
                             else:
                                 decorator_inner = create_mirascope_middleware(
@@ -692,7 +702,7 @@ def generation(
                                 output, trace_id, span_id = (
                                     result
                                     if isinstance(result, tuple)
-                                    else (result, None)
+                                    else (result, None, None)
                                 )
                             else:
                                 decorator_inner = create_mirascope_middleware(
