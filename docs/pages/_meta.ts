@@ -8,8 +8,16 @@ export default {
       },
     },
     docs: {
-      title: 'Docs',
-      type: 'page'
+      type: 'page',
+      title: 'Docs'
+    },
+    guides: {
+      type: 'page',
+      title: 'Guides'
+    },
+    "self-hosting": {
+      type: 'page',
+      title: 'Self Hosting'
     },
     newsletter: {
         title: 'Newsletter',
