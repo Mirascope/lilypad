@@ -12,17 +12,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { labelNodeDefinition } from "@/ee/components/LabelNode";
-import {
-  AnnotationCreate,
-  AnnotationPublic,
-  AnnotationUpdate,
-} from "@/ee/types/types";
+import { AnnotationCreate, AnnotationUpdate } from "@/ee/types/types";
 import {
   useCreateAnnotationsMutation,
   useUpdateAnnotationMutation,
 } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import { Label } from "@/types/types";
+import { AnnotationTable, Label } from "@/types/types";
 import { spanQueryOptions } from "@/utils/spans";
 import { safelyParseJSON } from "@/utils/strings";
 import { userQueryOptions } from "@/utils/users";
@@ -202,7 +198,7 @@ const AnnotationFields = ({ spanUuid }: { spanUuid: string }) => {
     />
   );
 };
-export const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
+const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const [open, setOpen] = useState<boolean>(false);
   const output = safelyParseJSON(span.output ?? "") || span.output;
@@ -285,7 +281,7 @@ export const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
       }
       text={"Start Annotating"}
       title={"Annotate trace"}
-      description={`Annotate this trace to add to your dataset.`}
+      description={`Annotate this trace.`}
       buttonProps={{
         variant: "default",
       }}
@@ -305,47 +301,65 @@ export const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
   );
 };
 
-export const UpdateAnnotationForm = ({
+const UpdateAnnotationDialog = ({
+  annotation,
+  spanUuid,
+}: {
+  annotation: AnnotationTable;
+  spanUuid: string;
+}) => {
+  const [open, setOpen] = useState<boolean>(false);
+  return (
+    <LilypadDialog
+      open={open}
+      onOpenChange={setOpen}
+      customTrigger={
+        <DropdownMenuItem
+          className='flex items-center gap-2'
+          onSelect={(e) => e.preventDefault()}
+        >
+          <MessageSquareText className='w-4 h-4' />
+          <span className='font-medium'>Annotate</span>
+        </DropdownMenuItem>
+      }
+      text={"Update Annotation"}
+      title={"Annotate trace"}
+      description={`Annotate this trace.`}
+      tooltipContent={"Annotate trace."}
+      dialogContentProps={{
+        className: "max-w-[800px] max-h-screen overflow-y-auto",
+      }}
+    >
+      <UpdateAnnotationForm
+        setOpen={setOpen}
+        annotation={annotation}
+        spanUuid={spanUuid}
+      />
+    </LilypadDialog>
+  );
+};
+
+const UpdateAnnotationForm = ({
   setOpen,
   annotation,
-  total,
-  onComplete,
+  spanUuid,
 }: {
   setOpen: Dispatch<SetStateAction<boolean>>;
-  annotation: AnnotationPublic;
-  total: number;
-  onComplete: (isLastItem: boolean) => void;
+  annotation: AnnotationTable;
+  spanUuid: string;
 }) => {
-  const { data: span } = useSuspenseQuery(
-    spanQueryOptions(annotation.span.uuid)
-  );
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const output = safelyParseJSON(span.output ?? "") || span.output;
-  const jsonOutput = typeof output === "string" ? { output } : output;
-  const transformedOutput = Object.entries(jsonOutput ?? {}).reduce<
-    Record<string, any>
-  >((acc, [key, value]) => {
-    acc[key] = {
-      idealOutput: value,
-      reasoning: "",
-      exact: false,
-      label: null,
-    };
-    return acc;
-  }, {});
   const methods = useForm<AnnotationUpdate>({
     defaultValues: {
       reasoning: annotation.reasoning || "",
       label: annotation.label,
-      data: transformedOutput,
+      data: annotation.data,
     },
   });
   const { toast } = useToast();
-  const isLastItem = total === 1;
   const updateAnnotation = useUpdateAnnotationMutation();
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
-    const buttonText = isLastItem ? "Save & Finish" : "Save & Next";
     return (
       <div className='flex gap-2 w-full'>
         <Button
@@ -358,7 +372,7 @@ export const UpdateAnnotationForm = ({
           Cancel
         </Button>
         <Button type='submit' loading={isLoading} className='flex-1'>
-          {isLoading ? "Saving..." : buttonText}
+          {isLoading ? "Updating..." : "Update"}
         </Button>
       </div>
     );
@@ -371,6 +385,13 @@ export const UpdateAnnotationForm = ({
         : Label.FAIL;
     }
     data.assigned_to = user.uuid;
+    if (!annotation.project_uuid || !annotation.uuid) {
+      toast({
+        title: "Failed to update annotation.",
+        variant: "destructive",
+      });
+      return;
+    }
     const res = await updateAnnotation.mutateAsync({
       projectUuid: annotation.project_uuid,
       annotationUuid: annotation.uuid,
@@ -387,18 +408,30 @@ export const UpdateAnnotationForm = ({
       });
     }
     methods.reset();
-    onComplete(isLastItem);
-    if (isLastItem) {
-      setOpen(false);
-    }
+    setOpen(false);
   };
 
   return (
     <AnnotationFormFields<AnnotationUpdate>
-      spanUuid={annotation.span.uuid}
+      spanUuid={spanUuid}
       methods={methods}
       onSubmit={onSubmit}
       renderButtons={renderButtons}
     />
   );
+};
+
+export const AnnotationDialog = ({
+  spanUuid,
+  annotation,
+}: {
+  spanUuid: string;
+  annotation?: AnnotationTable;
+}) => {
+  if (annotation) {
+    return (
+      <UpdateAnnotationDialog annotation={annotation} spanUuid={spanUuid} />
+    );
+  }
+  return <CreateAnnotationDialog spanUuid={spanUuid} />;
 };

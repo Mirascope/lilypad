@@ -398,6 +398,13 @@ def calculate_cost(
     https://openai.com/pricing
 
     Model                   Input               Output
+    o1                      $15.00 / 1M tokens  $7.50 / 1M tokens   $60.00 / 1M tokens
+    o1-2024-12-17           $15.00 / 1M tokens  $7.50 / 1M tokens   $60.00 / 1M tokens
+    o1-preview-2024-09-12   $15.00 / 1M tokens  $7.50 / 1M tokens   $60.00 / 1M tokens
+    o3-mini                 $1.10  / 1M tokens  $0.55 / 1M tokens   $4.40  / 1M tokens
+    o3-mini-2025-01-31      $1.10  / 1M tokens  $0.55 / 1M tokens   $4.40  / 1M tokens
+    o1-mini                 $1.10  / 1M tokens  $0.55 / 1M tokens   $4.40  / 1M tokens
+    o1-mini-2024-09-12      $1.10  / 1M tokens  $0.55 / 1M tokens   $4.40  / 1M tokens
     gpt-4o-mini             $0.15 / 1M tokens   $0.60  / 1M tokens
     gpt-4o-mini-2024-07-18  $0.15 / 1M tokens   $0.60  / 1M tokens
     gpt-4o                  $2.50 / 1M tokens   $10.00 / 1M tokens
@@ -415,17 +422,52 @@ def calculate_cost(
 
     https://www.anthropic.com/api
 
-    claude-instant-1.2        $0.80 / 1M tokens   $2.40 / 1M tokens
-    claude-2.0                $8.00 / 1M tokens   $24.00 / 1M tokens
-    claude-2.1                $8.00 / 1M tokens   $24.00 / 1M tokens
-    claude-3-haiku            $0.25 / 1M tokens   $1.25 / 1M tokens
-    claude-3-sonnet           $3.00 / 1M tokens   $15.00 / 1M tokens
-    claude-3-opus             $15.00 / 1M tokens   $75.00 / 1M tokens
-    claude-3-5-haiku          $0.80 / 1M tokens   $4.00 / 1M tokens
-    claude-3-5-sonnet         $3.00 / 1M tokens   $15.00 / 1M tokens
+    claude-instant-1.2          $0.80 / 1M tokens   $2.40 / 1M tokens
+    claude-2.0                  $8.00 / 1M tokens   $24.00 / 1M tokens
+    claude-2.1                  $8.00 / 1M tokens   $24.00 / 1M tokens
+    claude-3-haiku              $0.25 / 1M tokens   $1.25 / 1M tokens
+    claude-3-sonnet             $3.00 / 1M tokens   $15.00 / 1M tokens
+    claude-3-opus               $15.00 / 1M tokens   $75.00 / 1M tokens
+    claude-3-5-haiku            $0.80 / 1M tokens   $4.00 / 1M tokens
+    claude-3-5-sonnet           $3.00 / 1M tokens   $15.00 / 1M tokens
     """
     pricing = {
         "openai": {
+            "o1": {
+                "prompt": 0.000_015,
+                "cached": 0.000_007_5,
+                "completion": 0.000_06,
+            },
+            "o1-2024-12-17": {
+                "prompt": 0.000_015,
+                "cached": 0.000_007_5,
+                "completion": 0.000_06,
+            },
+            "o1-preview-2024-09-12": {
+                "prompt": 0.000_015,
+                "cached": 0.000_007_5,
+                "completion": 0.000_06,
+            },
+            "o3-mini": {
+                "prompt": 0.000_001_1,
+                "cached": 0.000_000_55,
+                "completion": 0.000_004_4,
+            },
+            "o3-mini-2025-01-31": {
+                "prompt": 0.000_001_1,
+                "cached": 0.000_000_55,
+                "completion": 0.000_004_4,
+            },
+            "o1-mini": {
+                "prompt": 0.000_001_1,
+                "cached": 0.000_000_55,
+                "completion": 0.000_004_4,
+            },
+            "o1-mini-2024-09-12": {
+                "prompt": 0.000_001_1,
+                "cached": 0.000_000_55,
+                "completion": 0.000_004_4,
+            },
             "gpt-4o-mini": {
                 "prompt": 0.000_000_15,
                 "completion": 0.000_000_6,
