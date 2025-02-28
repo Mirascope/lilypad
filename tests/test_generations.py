@@ -47,6 +47,20 @@ def dummy_generation_instance() -> GenerationPublic:
     )
 
 
+class DummySpanContext:
+    """A dummy span context."""
+
+    @property
+    def trace_id(self) -> int:
+        """Return a dummy trace ID."""
+        return 1234567890
+
+    @property
+    def span_id(self) -> int:
+        """Return a dummy span ID."""
+        return 9876543210
+
+
 class DummySpan:
     """A dummy span that records its name and attributes."""
 
@@ -62,6 +76,10 @@ class DummySpan:
     def set_attributes(self, attrs: dict) -> None:
         """Set multiple attributes at once."""
         self.attributes.update(attrs)
+
+    def get_span_context(self) -> DummySpanContext:
+        """Return a dummy span context."""
+        return DummySpanContext()
 
     def __enter__(self):
         return self
@@ -692,6 +710,4 @@ def test_trace_with_base_model(dummy_generation_instance: GenerationPublic):
         patch("lilypad.generations.llm.call", side_effect=fake_llm_call),
     ):
         result = model_sync("test")
-    # The decorator should convert the BaseModel to its string representation (using model_dump).
-    expected = str(DummyModel(value="model output").model_dump())
-    assert result == expected
+    assert result == DummyModel(value="model output")

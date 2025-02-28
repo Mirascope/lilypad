@@ -393,10 +393,11 @@ def _trace(
                             else output
                         ),
                     )
+                span_context = span.get_span_context()
                 return (
                     output,
-                    span.get_span_context().trace_id,
-                    span.get_span_context().span_id,
+                    span_context.trace_id,
+                    span_context.span_id,
                 )
 
             return inner_async
@@ -424,10 +425,11 @@ def _trace(
                             else output
                         ),
                     )
+                span_context = span.get_span_context()
                 return (
                     output,
-                    span.get_span_context().trace_id,
-                    span.get_span_context().span_id,
+                    span_context.trace_id,
+                    span_context.span_id,
                 )
 
             return inner
