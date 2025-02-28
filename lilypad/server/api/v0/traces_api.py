@@ -85,7 +85,6 @@ async def _process_span(
     # Process attributes and create span
     attributes = trace.get("attributes", {})
     generation_uuid_str = attributes.get("lilypad.generation.uuid")
-    prompt_uuid_str = attributes.get("lilypad.prompt.uuid")
 
     span_create = SpanCreate(
         span_id=trace["span_id"],
