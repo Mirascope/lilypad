@@ -1602,7 +1602,7 @@ wheels = [
 
 [[package]]
 name = "mirascope"
-version = "1.16.3"
+version = "1.20.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -1610,9 +1610,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/ab/05026e2e82b275fea8b7c720d287e83d5d545c5d8696db356f53a654cd87/mirascope-1.16.3.tar.gz", hash = "sha256:7fc857024d3b1979dedd10881bc96fc055a58716a7a75ee17a40a9a657c69f7d", size = 66188725 }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/d0/620c861e324520311e054febc2802ad4345562ac3e375d08e0e1251b69ad/mirascope-1.20.1.tar.gz", hash = "sha256:d4c420a0244bab5a19d90b28c022637cf7eb499ced67b12da5b9f067f80655f2", size = 66441038 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/5d/4c9d23cfcc4f9a08b230a2f0aaf5b053fb1b46ad501c835662b51de6bbd3/mirascope-1.16.3-py3-none-any.whl", hash = "sha256:dc944b1be3c1dcb8fa2a484a5a35c3646a5c15578fb28d5a8adf847e64901e3c", size = 308070 },
+    { url = "https://files.pythonhosted.org/packages/b5/53/0e345f358d0c27d598925e3f832ccd8a7e98e18227c35bf8a54a65e15d58/mirascope-1.20.1-py3-none-any.whl", hash = "sha256:642934b8d3f262fd7edd658249855559f8af2651bc9c7ed4893353e4282e9977", size = 351891 },
 ]
 
 [[package]]
@@ -2699,7 +2699,7 @@ requires-dist = [
     { name = "google-generativeai", marker = "extra == 'gemini'", specifier = ">=0.4.0,<1" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "libcst", specifier = ">=1.6.0" },
-    { name = "mirascope", specifier = ">=1.9.5" },
+    { name = "mirascope", specifier = ">=1.20.1" },
     { name = "mistralai", marker = "extra == 'mistral'", specifier = ">=1.0.0,<2" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.0" },
     { name = "opentelemetry-api", specifier = ">=1.29.0" },

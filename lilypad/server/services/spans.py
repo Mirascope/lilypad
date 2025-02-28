@@ -48,12 +48,12 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         Child spans are not lazy loaded to avoid N+1 queries.
         """
         return self.session.exec(
-            select(SpanTable)
+            select(self.table)
             .where(
-                SpanTable.project_uuid == project_uuid,
-                SpanTable.parent_span_id.is_(None),  # type: ignore
+                self.table.project_uuid == project_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
             )
-            .options(selectinload(SpanTable.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
+            .options(selectinload(self.table.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
         ).all()
 
     def find_records_by_generation_uuid(
@@ -65,6 +65,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.generation_uuid == generation_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
             )
         ).all()
 
