@@ -2,22 +2,20 @@ import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { useDeviceCodeMutation } from "@/utils/auth";
+import { Route as GenerationsRoute } from "@/routes/_auth.projects.$projectUuid.generations.index";
 import { projectsQueryOptions } from "@/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 
 type SearchParams = {
   redirect?: string;
-  deviceCode?: string;
   joined?: boolean;
 };
 export const Route = createFileRoute("/_auth/projects/")({
   validateSearch: (search): SearchParams => {
     return {
       redirect: (search.redirect as string) ?? undefined,
-      deviceCode: (search.deviceCode as string) ?? undefined,
       joined: (search.joined as boolean) ?? undefined,
     };
   },
@@ -29,17 +27,10 @@ export const Route = createFileRoute("/_auth/projects/")({
 });
 
 const Projects = () => {
-  const { deviceCode, joined } = Route.useSearch();
-  const navigate = useNavigate();
-  const addDeviceCodeMutation = useDeviceCodeMutation();
+  const { joined } = Route.useSearch();
+
   const { setProject } = useAuth();
-  useEffect(() => {
-    if (!deviceCode) return;
-    addDeviceCodeMutation.mutateAsync({ deviceCode });
-    navigate({
-      to: "/projects",
-    });
-  }, [deviceCode]);
+
   useEffect(() => {
     if (joined) {
       toast({
@@ -57,7 +48,8 @@ const Projects = () => {
           projects.map((project) => (
             <Link
               key={project.uuid}
-              to={`/projects/${project.uuid}/generations`}
+              to={GenerationsRoute.fullPath}
+              params={{ projectUuid: project.uuid }}
             >
               <Card
                 key={project.uuid}

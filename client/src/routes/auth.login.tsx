@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 import { useAuth } from "@/auth";
 import { GithubLogin } from "@/components/GithubLogin";
+import { GoogleLogin } from "@/components/GoogleLogin";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +17,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 type LoginSearchParam = {
   redirect?: string;
-  deviceCode?: string;
 };
 
 const fallback = "/projects" as const;
@@ -24,14 +24,12 @@ export const Route = createFileRoute("/auth/login")({
   validateSearch: (search): LoginSearchParam => {
     return {
       redirect: (search.redirect as string) || undefined,
-      deviceCode: search.deviceCode as string,
     };
   },
   beforeLoad: ({ context, search }) => {
     if (context.auth.isAuthenticated) {
       throw redirect({
         to: search.redirect || fallback,
-        search: { deviceCode: search.deviceCode },
       });
     }
   },
@@ -39,7 +37,7 @@ export const Route = createFileRoute("/auth/login")({
 });
 
 const LoginComponent = () => {
-  const { deviceCode, redirect } = Route.useSearch();
+  const { redirect } = Route.useSearch();
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const isLocal = settings.environment === "local";
 
@@ -56,7 +54,10 @@ const LoginComponent = () => {
           {isLocal ? (
             <LocalLogin />
           ) : (
-            <GithubLogin deviceCode={deviceCode} redirect={redirect} />
+            <>
+              <GithubLogin redirect={redirect} />
+              <GoogleLogin redirect={redirect} />
+            </>
           )}
         </CardContent>
       </Card>
@@ -72,7 +73,6 @@ const LocalLogin = () => {
     setSession(data);
     navigate({
       to: "/projects",
-      search: { deviceCode: undefined, redirect: undefined },
     });
   };
   return <Button onClick={handleLocalLogin}>Sign in with Local</Button>;

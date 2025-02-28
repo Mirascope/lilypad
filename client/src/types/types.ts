@@ -67,6 +67,29 @@ export interface APIKeyPublic {
 }
 
 /**
+ * AggregateMetrics
+ * Aggregated metrics for spans
+ */
+export interface AggregateMetrics {
+  /** Total Cost */
+  total_cost: number;
+  /** Total Input Tokens */
+  total_input_tokens: number;
+  /** Total Output Tokens */
+  total_output_tokens: number;
+  /** Average Duration Ms */
+  average_duration_ms: number;
+  /** Span Count */
+  span_count: number;
+  /** Start Date */
+  start_date: string | null;
+  /** End Date */
+  end_date: string | null;
+  /** Generation Uuid */
+  generation_uuid: string | null;
+}
+
+/**
  * AnnotationTable
  * Annotation table.
  */
@@ -145,27 +168,6 @@ export interface DependencyInfo {
   version: string;
   /** Extras */
   extras: string[] | null;
-}
-
-/**
- * DeviceCodeTable
- * Device codes table.
- */
-export interface DeviceCodeTable {
-  /** Uuid */
-  uuid?: string | null;
-  /**
-   * Created At
-   * @format date-time
-   */
-  created_at?: string;
-  /**
-   * Id
-   * Generated device code
-   */
-  id: string;
-  /** Token */
-  token: string;
 }
 
 /**
@@ -669,6 +671,8 @@ export interface SettingsPublic {
   remote_api_url: string;
   /** Github Client Id */
   github_client_id: string;
+  /** Google Client Id */
+  google_client_id: string;
   /** Environment */
   environment: string;
 }
@@ -698,7 +702,7 @@ export interface SpanMoreDetails {
   /** Output Tokens */
   output_tokens?: number | null;
   /** Duration Ms */
-  duration_ms: number;
+  duration_ms?: number | null;
   /** Signature */
   signature?: string | null;
   /** Code */
@@ -739,6 +743,12 @@ export interface SpanPublic {
   cost?: number | null;
   /** Instrumentation Scope name of the span */
   scope: Scope;
+  /** Input Tokens */
+  input_tokens?: number | null;
+  /** Output Tokens */
+  output_tokens?: number | null;
+  /** Duration Ms */
+  duration_ms?: number | null;
   /** Data */
   data?: object;
   /** Parent Span Id */
@@ -780,6 +790,17 @@ export interface SpanPublic {
 export enum SpanType {
   GENERATION = "generation",
   PROMPT = "prompt",
+}
+
+/**
+ * TimeFrame
+ * Timeframe for aggregation
+ */
+export enum TimeFrame {
+  DAY = "day",
+  WEEK = "week",
+  MONTH = "month",
+  LIFETIME = "lifetime",
 }
 
 /**

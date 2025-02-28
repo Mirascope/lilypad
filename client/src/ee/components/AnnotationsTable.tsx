@@ -1,5 +1,4 @@
 import { DataTable } from "@/components/DataTable";
-import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,12 +14,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
-import { AnnotationQueueDialog } from "@/ee/components/AnnotationQueueDialog";
+import { labelNodeDefinition } from "@/ee/components/LabelNode";
 import { AnnotationPublic } from "@/ee/types/types";
-import { useUploadDatasetMutation } from "@/ee/utils/datasets";
-import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
+import { usersByOrganizationQueryOptions } from "@/utils/users";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import JsonView from "@uiw/react-json-view";
 import { JsonData, JsonEditor } from "json-edit-react";
@@ -28,18 +27,18 @@ import { MoreHorizontal } from "lucide-react";
 import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 
-export const AnnotationsTable = ({
-  projectUuid,
-  generationUuid,
-  data,
-}: {
-  projectUuid: string;
-  generationUuid: string;
-  data: AnnotationPublic[];
-}) => {
+export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const uploadDataset = useUploadDatasetMutation();
-  const { toast } = useToast();
+  const { data: usersInOrg } = useSuspenseQuery(
+    usersByOrganizationQueryOptions()
+  );
+  const mappedUsers: { [key: string]: string } = usersInOrg.reduce(
+    (acc, user) => ({
+      ...acc,
+      [user.uuid]: user.first_name,
+    }),
+    {}
+  );
   const columns: ColumnDef<AnnotationPublic>[] = [
     {
       header: "Input",
@@ -97,9 +96,17 @@ export const AnnotationsTable = ({
       },
     },
     {
+      accessorKey: "assigned_to",
+      header: "Annotated By",
+      cell: ({ row }) => {
+        const annotatedBy: string = row.getValue("assigned_to");
+        return mappedUsers[annotatedBy] || "N/A";
+      },
+    },
+    {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => {
+      cell: () => {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -119,37 +126,6 @@ export const AnnotationsTable = ({
     },
   ];
 
-  const renderCustomControls = () => {
-    const unannotatedRows = data.filter((annotation) => !annotation.label);
-    const annotatedRows = data.filter((annotation) => annotation.label);
-    const onClick = async () => {
-      await uploadDataset.mutateAsync({
-        projectUuid,
-        generationUuid,
-        annotations: annotatedRows,
-      });
-      toast({
-        title: "Annotations added to dataset",
-      });
-    };
-    return (
-      <>
-        <AnnotationQueueDialog unannotatedRows={unannotatedRows} />
-        <LilypadDialog
-          text={"Add to Dataset"}
-          title={"Annotate selected traces"}
-          description={`${annotatedRows.length} annotation(s) will be added.`}
-          tooltipContent={"Add labeled annotations to your dataset."}
-          buttonProps={{ disabled: annotatedRows.length === 0 }}
-          dialogButtons={[
-            <Button variant='default' onClick={onClick}>
-              Add
-            </Button>,
-          ]}
-        />
-      </>
-    );
-  };
   return (
     <DataTable<AnnotationPublic>
       columns={columns}
@@ -162,7 +138,6 @@ export const AnnotationsTable = ({
       }}
       DetailPanel={AnnotationMoreDetails}
       defaultPanelSize={50}
-      customControls={renderCustomControls}
     />
   );
 };
@@ -176,6 +151,7 @@ const AnnotationMoreDetails = ({ data }: { data: AnnotationPublic }) => {
         restrictDelete={true}
         restrictAdd={true}
         restrictEdit={true}
+        customNodeDefinitions={[labelNodeDefinition]}
       />
     </>
   );

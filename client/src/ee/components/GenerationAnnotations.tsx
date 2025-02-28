@@ -1,6 +1,8 @@
+import TableSkeleton from "@/components/TableSkeleton";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { annotationsByGenerationQueryOptions } from "@/ee/utils/annotations";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 export const GenerationAnnotations = ({
   projectUuid,
@@ -16,10 +18,8 @@ export const GenerationAnnotations = ({
     annotationsByGenerationQueryOptions(projectUuid, generationUuid)
   );
   return (
-    <AnnotationsTable
-      data={data}
-      projectUuid={projectUuid}
-      generationUuid={generationUuid}
-    />
+    <Suspense fallback={<TableSkeleton />}>
+      <AnnotationsTable data={data} />
+    </Suspense>
   );
 };

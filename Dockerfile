@@ -10,13 +10,6 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Create the .config/oxen directory in the user's home
-RUN mkdir -p /root/.config/oxen
-
-# Copy the Oxen configuration file
-COPY user_config.toml /root/.config/oxen/user_config.toml
-
-
 COPY . /app
 
 
@@ -30,7 +23,7 @@ ADD . /app
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
     uv sync --frozen --no-dev --all-extras
 
-WORKDIR /app/lilypad/server
+WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
@@ -38,4 +31,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # Run the FastAPI application by default
-CMD ["fastapi", "run"]
+CMD ["fastapi", "run", "lilypad/server/main.py"]
