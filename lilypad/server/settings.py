@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     github_client_id: str = Field(default="my_client_id")
     github_client_secret: str = Field(default="my_client_secret")
 
+    # Google OAuth settings
+    google_client_id: str = Field(default="my_client_id")
+    google_client_secret: str = Field(default="my_client_secret")
     # JWT settings
     jwt_secret: str = Field(default="my_secret_key", description="JWT secret key")
     jwt_algorithm: str = "HS256"
@@ -41,12 +44,6 @@ class Settings(BaseSettings):
     db_user: str | None = None
     db_password: str | None = None
     db_port: int | None = None
-
-    # Oxen.ai settings
-    oxen_repo_name: str | None = None
-    oxen_api_key: str | None = None
-    oxen_host: str = "hub.oxen.ai"
-    oxen_branch: str = "main"
 
     @property
     def config(self) -> dict[str, Any]:

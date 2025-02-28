@@ -1,5 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { ButtonProps } from "@/components/ui/button";
+import { Button, ButtonProps } from "@/components/ui/button";
+import { settingsQueryOptions } from "@/utils/settings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode } from "react";
 
 interface GoogleButtonProps extends ButtonProps {
@@ -7,13 +8,13 @@ interface GoogleButtonProps extends ButtonProps {
   children?: ReactNode;
 }
 
-export const GoogleButton = ({
+const GoogleButton = ({
   iconSize = 24,
   children,
   ...buttonProps
 }: GoogleButtonProps) => {
   return (
-    <Button {...buttonProps} className='hover:bg-[#EFF0EE]'>
+    <Button variant='outline' {...buttonProps} className='hover:bg-[#EFF0EE]'>
       <svg
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 64 64'
@@ -101,4 +102,35 @@ export const GoogleButton = ({
   );
 };
 
-export default GoogleButton;
+export const GoogleLogin = ({ redirect }: { redirect?: string }) => {
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const getAuthUrl = () => {
+    const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+    const params = new URLSearchParams({
+      client_id: settings.google_client_id,
+      redirect_uri: `${settings.remote_client_url}/auth/callback`,
+      scope:
+        "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+      response_type: "code",
+      access_type: "offline",
+      prompt: "select_account",
+    });
+    const stateObject = {
+      provider: "google",
+      ...(redirect && { redirect }),
+    };
+
+    const state = btoa(JSON.stringify(stateObject));
+    params.append("state", state);
+    return `${googleAuthUrl}?${params.toString()}`;
+  };
+  return (
+    <GoogleButton
+      onClick={() => {
+        window.location.href = getAuthUrl();
+      }}
+    >
+      Login with Google
+    </GoogleButton>
+  );
+};

@@ -7,8 +7,6 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import inspect
-import json
-import os
 import site
 import subprocess
 import sys
@@ -505,6 +503,41 @@ class _QualifiedNameRewriter(cst.CSTTransformer):
         return updated_node
 
 
+def _get_class_from_unbound_method(method: Callable[..., Any]) -> type | None:
+    qualname = method.__qualname__
+    parts = qualname.split(".")
+    if len(parts) < 2:
+        return None
+    class_qualname = ".".join(parts[:-1])
+    import gc
+
+    for obj in gc.get_objects():
+        try:
+            object_is_type = isinstance(obj, type)
+        except:  # noqa: E722
+            # Skip objects that don't support isinstance() check (e.g. OpenAI's pandas proxy)
+            continue
+        if object_is_type and getattr(obj, "__qualname__", None) == class_qualname:
+            return obj
+    return None
+
+
+def _clean_source_from_string(source: str, exclude_fn_body: bool = False) -> str:
+    source = dedent(source)
+    module = cst.parse_module(source)
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=exclude_fn_body)
+    new_module = module.visit(transformer)
+    return new_module.code.rstrip()
+
+
+def get_class_source_from_method(method: Callable[..., Any]) -> str:
+    cls = _get_class_from_unbound_method(method)
+    if cls is None:
+        raise ValueError("Cannot determine class from method via gc")
+    source = inspect.getsource(cls)
+    return _clean_source_from_string(source)
+
+
 class _DependencyCollector:
     """Collects all dependencies for a function."""
 
@@ -576,15 +609,36 @@ class _DependencyCollector:
 
             elif isinstance(definition, cached_property):
                 definition = definition.func
-            if definition.__name__ in self.visited_functions:
-                return
-            self.visited_functions.add(definition.__name__)
+            elif (
+                hasattr(definition, "func")
+                and getattr(definition, "__name__", None) is None
+            ):
+                definition = definition.func  # pyright: ignore [reportFunctionMemberAccess]
+
+            # For methods, if __qualname__ contains a dot, does not include "<locals>" (global)
+            # or if it is local (contains "<locals>"), capture the entire class.
+            if (
+                "." in definition.__qualname__
+                and inspect.getmodule(definition) is not None
+            ):
+                try:
+                    source = get_class_source_from_method(definition)
+                except ValueError:
+                    # Fallback: clean only the function source.
+                    source = _clean_source_code(definition)
+                if definition.__qualname__ in self.visited_functions:
+                    return
+                self.visited_functions.add(definition.__qualname__)
+            else:
+                if definition.__qualname__ in self.visited_functions:
+                    return
+                self.visited_functions.add(definition.__qualname__)
+                source = _clean_source_code(definition)
 
             module = inspect.getmodule(definition)
             if not module or _is_third_party(module, self.site_packages):
                 return
 
-            source = _clean_source_code(definition)
             module_source = inspect.getsource(module)
             module_tree = ast.parse(module_source)
             fn_tree = ast.parse(source)
@@ -801,53 +855,6 @@ class Closure(BaseModel):
             hash=hash_value,
             dependencies=dependencies,
         )
-
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        """Run the closure."""
-        script = inspect.cleandoc("""
-        # /// script
-        # dependencies = [
-        #   {dependencies}
-        # ]
-        # ///
-
-        {code}
-
-
-        if __name__ == "__main__":
-            import json
-            result = {name}(*{args}, **{kwargs})
-            print(json.dumps(result))
-        """).format(
-            dependencies=",\n#   ".join(
-                [
-                    f'"{key}[{",".join(extras)}]=={value["version"]}"'
-                    if (extras := value["extras"])
-                    else f'"{key}=={value["version"]}"'
-                    for key, value in self.dependencies.items()
-                ]
-            ),
-            code=self.code,
-            name=self.name,
-            args=args,
-            kwargs=kwargs,
-        )
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp_file:
-            tmp_file.write(script)
-            tmp_path = Path(tmp_file.name)
-        try:
-            result = subprocess.run(
-                ["uv", "run", str(tmp_path)],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=os.environ,
-            )
-            return json.loads(result.stdout.strip())
-        finally:
-            tmp_path.unlink()
 
 
 __all__ = ["Closure"]

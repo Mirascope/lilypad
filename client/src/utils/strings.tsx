@@ -50,14 +50,21 @@ export const safelyParseJSON = (json: string): object | undefined => {
 
   return parsed;
 };
-export const formatDate = (date: Date): string => {
+export const formatDate = (
+  utcDateString: string,
+  dateOnly: boolean = true
+): string => {
+  const date = new Date(utcDateString);
   return new Intl.DateTimeFormat(navigator.language, {
     year: "numeric",
     month: "2-digit",
     day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
+    ...(dateOnly && {
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: true,
+    }),
     timeZoneName: "short",
   }).format(date);
 };

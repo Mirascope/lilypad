@@ -384,18 +384,18 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
-                    output = cast(_R, await fn(*args, **kwargs))
+                    original_output = cast(_R, await fn(*args, **kwargs))
+                    output_for_span = (
+                        original_output.model_dump()
+                        if isinstance(original_output, BaseModel)
+                        else original_output
+                    )
                     span.set_attribute(
-                        "lilypad.generation.output",
-                        str(
-                            output.model_dump()
-                            if isinstance(output, BaseModel)
-                            else output
-                        ),
+                        "lilypad.generation.output", str(output_for_span)
                     )
                 span_context = span.get_span_context()
                 return (
-                    output,
+                    original_output,
                     span_context.trace_id,
                     span_context.span_id,
                 )
@@ -416,18 +416,18 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
-                    output = cast(_R, fn(*args, **kwargs))
+                    original_output = cast(_R, fn(*args, **kwargs))
+                    output_for_span = (
+                        original_output.model_dump()
+                        if isinstance(original_output, BaseModel)
+                        else original_output
+                    )
                     span.set_attribute(
-                        "lilypad.generation.output",
-                        str(
-                            output.model_dump()
-                            if isinstance(output, BaseModel)
-                            else output
-                        ),
+                        "lilypad.generation.output", str(output_for_span)
                     )
                 span_context = span.get_span_context()
                 return (
-                    output,
+                    original_output,
                     span_context.trace_id,
                     span_context.span_id,
                 )

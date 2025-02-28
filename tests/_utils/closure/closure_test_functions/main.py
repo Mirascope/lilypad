@@ -815,3 +815,26 @@ def handle_issue(issue: str) -> str:
         response = customer_support_bot("", history)
         history.append(response.message_param)
     return response.content
+
+
+class Chatbot:
+    """A chatbot class."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    @openai.call("gpt-4o-mini")
+    def instance_method(self) -> str:
+        """
+        from mirascope.core import openai
+
+
+        class Chatbot:
+            def __init__(self, name: str) -> None:
+                self.name = name
+
+            @openai.call("gpt-4o-mini")
+            def instance_method(self) -> str:
+                return f"Hello, {self.name}!"
+        """
+        return f"Hello, {self.name}!"

@@ -143,7 +143,7 @@ export const DataTable = <T extends { uuid: string }>({
         <TableRow
           key={row.id}
           data-state={row.getIsSelected() && "selected"}
-          className={`cursor-pointer hover:bg-primary/10 ${
+          className={`cursor-pointer hover:bg-secondary ${
             selectedRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
           }`}
           onClick={() => toggleRowSelection(row.original)}
