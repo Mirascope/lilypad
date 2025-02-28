@@ -55,5 +55,5 @@ class ResultsModel(BaseModel):
         }}
     """
 )
-async def dummy_prompt() -> None:
-    """The dummy prompt for the judge prompt."""
+async def annotate_trace() -> None:
+    """A placeholder prompt for annotating traces."""

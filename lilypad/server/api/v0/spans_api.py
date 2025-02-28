@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from ....ee.server.generate import dummy_prompt
+from ....ee.server.generations.annotate_trace import annotate_trace
 from ....ee.server.services import AnnotationService
 from ...models import SpanTable
 from ...schemas import SpanMoreDetails, SpanPublic
@@ -108,7 +108,7 @@ async def stream_generation(
 
     async def stream() -> AsyncGenerator[str, None]:
         r"""Stream the generation. Must yield 'data: {your_data}\n\n'."""
-        async for chunk in await dummy_prompt():
+        async for chunk in await annotate_trace():
             yield f"data: {chunk.model_dump_json()}\n\n"
 
     return StreamingResponse(
