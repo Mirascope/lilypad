@@ -63,12 +63,21 @@ T_co = TypeVar("T_co", covariant=True)
 
 
 class Generation(Generic[T]):
-    """Container for a generation output and its metadata."""
+    """Container for a generation output, its metadata, and the associated trace/span ID."""
 
-    def __init__(self, output: T, metadata: GenerationPublic) -> None:
-        """Initialize a Generation instance."""
+    def __init__(
+        self, output: T, metadata: GenerationPublic, trace_id: str | None = None
+    ) -> None:
+        """Initialize a Generation instance.
+
+        Args:
+            output: The generated output.
+            metadata: The generation metadata.
+            trace_id: Optional trace/span ID for this specific run.
+        """
         self.output = output
         self.metadata = metadata
+        self.trace_id = trace_id
 
         self.uuid: UUID = metadata.uuid
         self.name: str = metadata.name
@@ -79,7 +88,10 @@ class Generation(Generic[T]):
 
     def __repr__(self) -> str:
         """String representation of Generation."""
-        return f"Generation(name='{self.name}', version={self.version_num}, output={self.output})"
+        return (
+            f"Generation(name='{self.name}', version={self.version_num}, "
+            f"trace_id='{self.trace_id}', output={self.output})"
+        )
 
 
 current_generation: ContextVar[GenerationPublic | None] = ContextVar(
@@ -364,8 +376,10 @@ def _trace(
                     output = await fn(*args, **kwargs)
                     if isinstance(output, BaseModel):
                         output = str(output.model_dump())
+                    # Capture trace/span ID
+                    trace_id = format(span.get_span_context().trace_id, "x")
                     span.set_attribute("lilypad.generation.output", str(output))
-                return output  # pyright: ignore [reportReturnType]
+                return (output, trace_id)  # Return a tuple with the trace ID
 
             return inner_async
 
@@ -386,8 +400,10 @@ def _trace(
                     output = fn(*args, **kwargs)
                     if isinstance(output, BaseModel):
                         output = str(output.model_dump())
+                    # Capture trace/span ID
+                    trace_id = format(span.get_span_context().trace_id, "x")
                     span.set_attribute("lilypad.generation.output", str(output))
-                return output  # pyright: ignore [reportReturnType]
+                return (output, trace_id)  # Return a tuple with the trace ID
 
             return inner
 
@@ -562,7 +578,12 @@ def generation(
                                     arg_values=arg_values,
                                     prompt_template="",
                                 )
-                                output = await decorator_inner(fn)(*args, **kwargs)
+                                result = await decorator_inner(fn)(*args, **kwargs)
+                                output, trace_id = (
+                                    result
+                                    if isinstance(result, tuple)
+                                    else (result, None)
+                                )
                             else:
                                 decorator_inner = create_mirascope_middleware(
                                     generation,
@@ -578,10 +599,10 @@ def generation(
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-
-                            # Return wrapped or unwrapped output based on mode
+                                trace_id = None
+                            # Wrap output if in wrap mode
                             if mode == GenerationMode.WRAP:
-                                return Generation(output, generation)  # pyright: ignore [reportReturnType]
+                                return Generation(output, generation, trace_id)  # pyright: ignore [reportReturnType]
                             return output  # pyright: ignore [reportReturnType]
                     finally:
                         current_generation.reset(token)
@@ -652,7 +673,12 @@ def generation(
                                     arg_values=arg_values,
                                     prompt_template="",
                                 )
-                                output = decorator_inner(fn)(*args, **kwargs)
+                                result = decorator_inner(fn)(*args, **kwargs)
+                                output, trace_id = (
+                                    result
+                                    if isinstance(result, tuple)
+                                    else (result, None)
+                                )
                             else:
                                 decorator_inner = create_mirascope_middleware(
                                     generation,
@@ -668,10 +694,9 @@ def generation(
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-
-                            # Return wrapped or unwrapped output based on mode
+                                trace_id = None
                             if mode == GenerationMode.WRAP:
-                                return Generation(output, generation)  # pyright: ignore [reportReturnType]
+                                return Generation(output, generation, trace_id)  # pyright: ignore [reportReturnType]
                             return output  # pyright: ignore [reportReturnType]
                     finally:
                         current_generation.reset(token)
