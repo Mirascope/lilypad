@@ -152,7 +152,7 @@ def configure(
         return
     otlp_exporter = _JSONSpanExporter()
     provider = TracerProvider()
-    processor = BatchSpanProcessor(otlp_exporter)
+    processor = BatchSpanProcessor(otlp_exporter)  # pyright: ignore[reportArgumentType]
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
     if importlib.util.find_spec("openai") is not None:
