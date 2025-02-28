@@ -66,18 +66,24 @@ class Generation(Generic[T]):
     """Container for a generation output, its metadata, and the associated trace/span ID."""
 
     def __init__(
-        self, output: T, metadata: GenerationPublic, trace_id: str | None = None
+        self,
+        output: T,
+        metadata: GenerationPublic,
+        trace_id: int | None = None,
+        span_id: int | None = None,
     ) -> None:
         """Initialize a Generation instance.
 
         Args:
             output: The generated output.
             metadata: The generation metadata.
-            trace_id: Optional trace/span ID for this specific run.
+            trace_id: Optional trace ID for this specific run.
+            span_id: Optional span ID for this specific run
         """
         self.output = output
         self.metadata = metadata
         self.trace_id = trace_id
+        self.span_id = span_id
 
         self.uuid: UUID = metadata.uuid
         self.name: str = metadata.name
@@ -90,7 +96,7 @@ class Generation(Generic[T]):
         """String representation of Generation."""
         return (
             f"Generation(name='{self.name}', version={self.version_num}, "
-            f"trace_id='{self.trace_id}', output={self.output})"
+            f"trace_id='{self.trace_id}', span_id='{self.span_id}' , output={self.output})"
         )
 
 
@@ -351,18 +357,23 @@ def _trace(
     @overload
     def decorator(
         fn: Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+    ) -> Callable[_P, Coroutine[Any, Any, tuple[_R, int, int]]]: ...
 
     @overload
-    def decorator(fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+    def decorator(fn: Callable[_P, _R]) -> Callable[_P, tuple[_R, int, int]]: ...
 
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+    ) -> (
+        Callable[_P, tuple[_R, int, int]]
+        | Callable[_P, Coroutine[Any, Any, tuple[_R, int, int]]]
+    ):
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)
-            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            async def inner_async(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> tuple[_R, int, int]:
                 with (
                     get_tracer("lilypad").start_as_current_span(
                         get_qualified_name(fn)
@@ -376,17 +387,19 @@ def _trace(
                     output = await fn(*args, **kwargs)
                     if isinstance(output, BaseModel):
                         output = str(output.model_dump())
-                    # Capture trace/span ID
-                    trace_id = format(span.get_span_context().trace_id, "x")
                     span.set_attribute("lilypad.generation.output", str(output))
-                return (output, trace_id)  # Return a tuple with the trace ID
+                return (
+                    output,
+                    span.get_span_context().trace_id,
+                    span.get_span_context().span_id,
+                )
 
             return inner_async
 
         else:
 
             @wraps(fn)
-            def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            def inner(*args: _P.args, **kwargs: _P.kwargs) -> tuple[_R, int, int]:
                 with (
                     get_tracer("lilypad").start_as_current_span(
                         get_qualified_name(fn)
@@ -400,10 +413,12 @@ def _trace(
                     output = fn(*args, **kwargs)
                     if isinstance(output, BaseModel):
                         output = str(output.model_dump())
-                    # Capture trace/span ID
-                    trace_id = format(span.get_span_context().trace_id, "x")
                     span.set_attribute("lilypad.generation.output", str(output))
-                return (output, trace_id)  # Return a tuple with the trace ID
+                return (
+                    output,
+                    span.get_span_context().trace_id,
+                    span.get_span_context().span_id,
+                )
 
             return inner
 
@@ -579,7 +594,7 @@ def generation(
                                     prompt_template="",
                                 )
                                 result = await decorator_inner(fn)(*args, **kwargs)
-                                output, trace_id = (
+                                output, trace_id, span_id = (
                                     result
                                     if isinstance(result, tuple)
                                     else (result, None)
@@ -599,10 +614,10 @@ def generation(
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-                                trace_id = None
+                                trace_id = span_id = None
                             # Wrap output if in wrap mode
                             if mode == GenerationMode.WRAP:
-                                return Generation(output, generation, trace_id)  # pyright: ignore [reportReturnType]
+                                return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
                             return output  # pyright: ignore [reportReturnType]
                     finally:
                         current_generation.reset(token)
@@ -674,7 +689,7 @@ def generation(
                                     prompt_template="",
                                 )
                                 result = decorator_inner(fn)(*args, **kwargs)
-                                output, trace_id = (
+                                output, trace_id, span_id = (
                                     result
                                     if isinstance(result, tuple)
                                     else (result, None)
@@ -694,9 +709,9 @@ def generation(
                                     if managed
                                     else fn
                                 )(*args, **kwargs)
-                                trace_id = None
+                                trace_id = span_id = None
                             if mode == GenerationMode.WRAP:
-                                return Generation(output, generation, trace_id)  # pyright: ignore [reportReturnType]
+                                return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
                             return output  # pyright: ignore [reportReturnType]
                     finally:
                         current_generation.reset(token)
