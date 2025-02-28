@@ -11,6 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { GenerateAnnotationButton } from "@/ee/components/GenerateAnnotationButton";
 import { labelNodeDefinition } from "@/ee/components/LabelNode";
 import { AnnotationCreate, AnnotationUpdate } from "@/ee/types/types";
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
 import { AnnotationTable, Label } from "@/types/types";
+import { settingsQueryOptions } from "@/utils/settings";
 import { spanQueryOptions } from "@/utils/spans";
 import { safelyParseJSON } from "@/utils/strings";
 import { userQueryOptions } from "@/utils/users";
@@ -33,8 +35,6 @@ import {
   UseFormReturn,
 } from "react-hook-form";
 interface BaseAnnotation {
-  label?: Label | null;
-  reasoning?: string | null;
   data?: Record<string, any> | null;
 }
 
@@ -51,6 +51,7 @@ const AnnotationFormFields = <T extends BaseAnnotation>({
   onSubmit,
   renderButtons,
 }: AnnotationFormFieldsProps<T>) => {
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   return (
     <>
       <Suspense fallback={<CardSkeleton />}>
@@ -61,6 +62,9 @@ const AnnotationFormFields = <T extends BaseAnnotation>({
         />
       </Suspense>
       <Form {...methods}>
+        {settings.experimental && (
+          <GenerateAnnotationButton spanUuid={spanUuid} />
+        )}
         <form
           className='flex flex-col gap-2'
           onSubmit={methods.handleSubmit(onSubmit)}
@@ -95,106 +99,108 @@ const AnnotationFields = ({ spanUuid }: { spanUuid: string }) => {
         },
       }}
       name='data'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Annotation</FormLabel>
-          <FormControl>
-            <JsonEditor
-              data={field.value as JsonData}
-              rootName=''
-              restrictEdit={({ key, parentData }) => {
-                if (
-                  (parentData as { exact: boolean })?.exact === true &&
-                  key === "label"
-                ) {
-                  return true;
-                }
-                return false;
-              }}
-              restrictDelete={({ key }) => {
-                if (
-                  ["label", "exact", "reasoning", "idealOutput"].includes(
-                    key as string
-                  )
-                ) {
-                  return true;
-                }
-                return false;
-              }}
-              restrictTypeSelection={({ key }) => {
-                if (["label", "exact", "reasoning"].includes(key as string)) {
-                  return true;
-                }
-                return false;
-              }}
-              onUpdate={({ newData }) => {
-                field.onChange(newData);
-              }}
-              onEdit={({ newValue, name, currentData, newData, path }) => {
-                if (["exact", "idealOutput"].includes(name as string)) {
-                  // Get the parent object that contains both exact and idealOutput
-                  const parentPath = path.slice(0, -1);
-                  const parentObj = parentPath.reduce(
-                    (obj, key) => (obj as any)[key],
-                    currentData
-                  );
-                  const originalOutput = parentPath.reduce(
-                    (obj, key) => (obj as Record<string, any>)?.[key],
-                    output
-                  );
-
-                  // Check conditions based on which field is being edited
-                  const shouldUpdateLabelToPass =
-                    (name === "exact" &&
-                      newValue === true &&
-                      (parentObj as { idealOutput: any }).idealOutput ===
-                        originalOutput) ||
-                    (name === "idealOutput" &&
-                      (parentObj as { exact: boolean }).exact === true &&
-                      newValue === originalOutput);
-
-                  const shouldUpdateLabelToFail =
-                    (name === "exact" &&
-                      newValue === true &&
-                      (parentObj as { idealOutput: any }).idealOutput !==
-                        originalOutput) ||
-                    (name === "idealOutput" &&
-                      (parentObj as { exact: boolean }).exact === true &&
-                      newValue !== originalOutput);
-
-                  if (shouldUpdateLabelToPass || shouldUpdateLabelToFail) {
-                    // Create a new data object with the updated label
-                    const labelPath = [...parentPath, "label"];
-                    let current = newData;
-                    // iterate through the path except for the last key
-                    for (let i = 0; i < labelPath.length - 1; i++) {
-                      if (
-                        !(current as Record<string, JsonData>)[labelPath[i]]
-                      ) {
-                        (current as Record<string, JsonData>)[labelPath[i]] =
-                          {};
-                      }
-                      current = (current as Record<string, JsonData>)[
-                        labelPath[i]
-                      ];
-                    }
-                    // set the value at the final key based on the condition
-                    (current as Record<string, JsonData>)[
-                      labelPath[labelPath.length - 1]
-                    ] = shouldUpdateLabelToPass ? Label.PASS : Label.FAIL;
-                    field.onChange(newData);
-                    return ["value", newData];
+      render={({ field }) => {
+        return (
+          <FormItem>
+            <FormLabel>Annotation</FormLabel>
+            <FormControl>
+              <JsonEditor
+                data={field.value as JsonData}
+                rootName=''
+                restrictEdit={({ key, parentData }) => {
+                  if (
+                    (parentData as { exact: boolean })?.exact === true &&
+                    key === "label"
+                  ) {
+                    return true;
                   }
-                }
-                field.onChange(newData);
-                return true;
-              }}
-              customNodeDefinitions={[labelNodeDefinition]}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+                  return false;
+                }}
+                restrictDelete={({ key }) => {
+                  if (
+                    ["label", "exact", "reasoning", "idealOutput"].includes(
+                      key as string
+                    )
+                  ) {
+                    return true;
+                  }
+                  return false;
+                }}
+                restrictTypeSelection={({ key }) => {
+                  if (["label", "exact", "reasoning"].includes(key as string)) {
+                    return true;
+                  }
+                  return false;
+                }}
+                onUpdate={({ newData }) => {
+                  field.onChange(newData);
+                }}
+                onEdit={({ newValue, name, currentData, newData, path }) => {
+                  if (["exact", "idealOutput"].includes(name as string)) {
+                    // Get the parent object that contains both exact and idealOutput
+                    const parentPath = path.slice(0, -1);
+                    const parentObj = parentPath.reduce(
+                      (obj, key) => (obj as any)[key],
+                      currentData
+                    );
+                    const originalOutput = parentPath.reduce(
+                      (obj, key) => (obj as Record<string, any>)?.[key],
+                      output
+                    );
+
+                    // Check conditions based on which field is being edited
+                    const shouldUpdateLabelToPass =
+                      (name === "exact" &&
+                        newValue === true &&
+                        (parentObj as { idealOutput: any }).idealOutput ===
+                          originalOutput) ||
+                      (name === "idealOutput" &&
+                        (parentObj as { exact: boolean }).exact === true &&
+                        newValue === originalOutput);
+
+                    const shouldUpdateLabelToFail =
+                      (name === "exact" &&
+                        newValue === true &&
+                        (parentObj as { idealOutput: any }).idealOutput !==
+                          originalOutput) ||
+                      (name === "idealOutput" &&
+                        (parentObj as { exact: boolean }).exact === true &&
+                        newValue !== originalOutput);
+
+                    if (shouldUpdateLabelToPass || shouldUpdateLabelToFail) {
+                      // Create a new data object with the updated label
+                      const labelPath = [...parentPath, "label"];
+                      let current = newData;
+                      // iterate through the path except for the last key
+                      for (let i = 0; i < labelPath.length - 1; i++) {
+                        if (
+                          !(current as Record<string, JsonData>)[labelPath[i]]
+                        ) {
+                          (current as Record<string, JsonData>)[labelPath[i]] =
+                            {};
+                        }
+                        current = (current as Record<string, JsonData>)[
+                          labelPath[i]
+                        ];
+                      }
+                      // set the value at the final key based on the condition
+                      (current as Record<string, JsonData>)[
+                        labelPath[labelPath.length - 1]
+                      ] = shouldUpdateLabelToPass ? Label.PASS : Label.FAIL;
+                      field.onChange(newData);
+                      return ["value", newData];
+                    }
+                  }
+                  field.onChange(newData);
+                  return true;
+                }}
+                customNodeDefinitions={[labelNodeDefinition]}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };

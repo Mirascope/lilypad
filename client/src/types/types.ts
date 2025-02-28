@@ -675,6 +675,8 @@ export interface SettingsPublic {
   google_client_id: string;
   /** Environment */
   environment: string;
+  /** Experimental */
+  experimental: boolean;
 }
 
 /**
