@@ -1,7 +1,5 @@
 """The initial meta judge prompt for generating annotaitons"""
 
-import asyncio
-
 from mirascope import llm
 from mirascope.core import prompt_template
 from pydantic import BaseModel, Field
