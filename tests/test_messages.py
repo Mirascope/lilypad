@@ -181,7 +181,7 @@ class MockBaseTool(BaseTool, ABC):
         Args:
             tool_call: The OpenAI tool call from which to construct this tool instance.
         """
-        model_json = jiter.from_json(tool_call.function.arguments.encode())
+        model_json = jiter.from_json(tool_call.function.arguments.encode())  # pyright: ignore [reportArgumentType]
         model_json["tool_call"] = tool_call.model_dump()
         return cls.model_validate(model_json)
 
