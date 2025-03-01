@@ -1,5 +1,7 @@
 """The initial meta judge prompt for generating annotaitons"""
 
+import asyncio
+
 from mirascope import llm
 from mirascope.core import prompt_template
 from pydantic import BaseModel, Field
@@ -44,8 +46,8 @@ class ResultsModel(BaseModel):
 
     Example:
         {{
-            results: {{
-                key: {{
+            "results": {{
+                "key": {{
                     "idealOutput": "value",
                     "reasoning": "value",
                     "exact": True,
