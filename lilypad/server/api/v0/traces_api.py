@@ -6,10 +6,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from mirascope.core.base.types import CostMetadata
+from mirascope.core.costs import calculate_cost
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ..._utils import (
-    calculate_cost,
     calculate_openrouter_cost,
     validate_api_key_project_strict,
 )
@@ -73,12 +74,13 @@ async def _process_span(
                     input_tokens, output_tokens, model
                 )
             else:
-                cost = calculate_cost(
-                    input_tokens,
-                    output_tokens,
-                    system,
-                    model,
+                # TODO: Add cached_tokens once it is added to OpenTelemetry GenAI spec
+                # https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/
+                cost_metadata = CostMetadata(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
                 )
+                cost = calculate_cost(system, model, metadata=cost_metadata)
             if cost is not None:
                 span_cost = cost
 

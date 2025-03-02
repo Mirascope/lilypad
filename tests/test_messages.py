@@ -8,6 +8,7 @@ import pytest
 from mirascope.core import base as mb
 from mirascope.core.base.call_response import _BaseToolT
 from mirascope.core.base.tool import BaseTool
+from mirascope.core.base.types import CostMetadata
 from mirascope.core.openai import OpenAICallParams
 from mirascope.core.openai.call_response import OpenAICallResponse
 from openai.types.chat import (
@@ -72,14 +73,33 @@ class MockResponse(
         pass
 
     @property
+    def cached_tokens(self) -> int | None:
+        """Returns the number of cached tokens."""
+        pass
+
+    @property
     def cost(self) -> float | None:
         """Returns the cost of the response in dollars."""
         pass
 
     @property
+    def cost_metadata(self) -> CostMetadata:
+        """Returns the cost of the response in dollars."""
+        return CostMetadata(
+            input_tokens=self.input_tokens,
+            output_tokens=self.output_tokens,
+            cached_tokens=self.cached_tokens,
+        )
+
+    @property
     def message_param(self) -> Any:  # pyright: ignore [reportInvalidTypeVarUse, reportIncompatibleVariableOverride]
         """Returns the assistants's response as a message parameter."""
         pass
+
+    @property
+    def common_user_message_param(self) -> mb.BaseMessageParam | None:
+        """Provider-agnostic user message param."""
+        ...
 
     @computed_field
     @property
@@ -143,7 +163,7 @@ class MockResponse(
         ...
 
     @property
-    def common_message_param(self) -> list[mb.BaseMessageParam]:
+    def common_message_param(self) -> mb.BaseMessageParam:
         """Provider-agnostic assistant message param."""
         ...
 
@@ -160,7 +180,7 @@ class MockBaseTool(BaseTool, ABC):
         Args:
             tool_call: The OpenAI tool call from which to construct this tool instance.
         """
-        model_json = jiter.from_json(tool_call.function.arguments.encode())
+        model_json = jiter.from_json(tool_call.function.arguments.encode())  # pyright: ignore [reportArgumentType]
         model_json["tool_call"] = tool_call.model_dump()
         return cls.model_validate(model_json)
 
