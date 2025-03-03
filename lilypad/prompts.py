@@ -1,6 +1,5 @@
 """The `prompts` module for prompting LLMs with data pulled from the database."""
 
-import inspect
 import json
 from collections.abc import Callable, Coroutine, Sequence
 from functools import wraps
@@ -13,7 +12,7 @@ from opentelemetry.trace import get_tracer
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ._utils import inspect_arguments, load_config
+from ._utils import fn_is_async, inspect_arguments, load_config
 from .generations import current_generation
 from .server.client import LilypadClient
 from .server.schemas import PromptPublic
@@ -293,7 +292,7 @@ def _trace(
     def decorator(
         fn: Callable[_P, None] | Callable[_P, Coroutine[Any, Any, None]],
     ) -> Callable[_P, Prompt] | Callable[_P, Coroutine[Any, Any, Prompt]]:
-        if inspect.iscoroutinefunction(fn):
+        if fn_is_async:
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:
@@ -364,7 +363,7 @@ def prompt() -> PromptDecorator:
             timeout=10,
             token=config.get("token", None),
         )
-        if inspect.iscoroutinefunction(fn):
+        if fn_is_async(fn):
 
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> Prompt:

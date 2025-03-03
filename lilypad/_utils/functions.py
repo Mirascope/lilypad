@@ -9,6 +9,7 @@ from importlib import import_module
 from typing import (
     Any,
     ParamSpec,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -24,6 +25,7 @@ from pydantic import BaseModel
 from ..messages import Message
 from ..server.models import Provider
 from ..server.schemas import PromptCreate, PromptPublic
+from .fn_is_async import fn_is_async
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -78,9 +80,13 @@ def _get_type_str(type_hint: Any) -> str:
     return f"{origin.__name__}[{args_str}]"
 
 
+ArgTypes: TypeAlias = dict[str, str]
+ArgValues: TypeAlias = dict[str, Any]
+
+
 def inspect_arguments(
     fn: Callable, *args: Any, **kwargs: Any
-) -> tuple[dict[str, str], dict[str, Any]]:
+) -> tuple[ArgTypes, ArgValues]:
     """Inspect a function's arguments and their values.
     Returns type information and values for all arguments.
     """
@@ -112,7 +118,7 @@ def _construct_call_decorator(
     client = None
     if provider == Provider.OPENROUTER:
         provider = Provider.OPENAI
-        if inspect.iscoroutinefunction(fn):
+        if fn_is_async(fn):
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(
@@ -168,7 +174,7 @@ def create_mirascope_call(
 
     call_decorator = _construct_call_decorator(fn, provider, model)
     return_type = get_type_hints(fn).get("return", type(None))
-    if inspect.iscoroutinefunction(fn):
+    if fn_is_async(fn):
 
         @mb.prompt_template(prompt.template)
         @wraps(fn)
@@ -297,4 +303,4 @@ def create_mirascope_call(
         return inner
 
 
-__all__ = ["inspect_arguments", "create_mirascope_call"]
+__all__ = ["inspect_arguments", "create_mirascope_call", "ArgTypes", "ArgValues"]

@@ -1,7 +1,6 @@
 """The lilypad `Message` complex return type."""
 
 import asyncio
-import inspect
 from collections.abc import Coroutine
 from types import GenericAlias
 from typing import Any, ClassVar, Generic
@@ -9,6 +8,8 @@ from typing import Any, ClassVar, Generic
 from mirascope.core import base as mb
 from pydantic._internal._model_construction import ModelMetaclass
 from typing_extensions import TypeVarTuple, Unpack
+
+from ._utils import fn_is_async
 
 _ToolsT = TypeVarTuple("_ToolsT")
 
@@ -86,7 +87,7 @@ class Message(
         """Returns the tool message parameters constructed from calling each tool."""
         if not (tools := self.tools):
             return []
-        if inspect.iscoroutinefunction(tools[0].call):
+        if fn_is_async(tools[0].call):
 
             async def construct_tool_calls() -> list[Any]:
                 outputs = await asyncio.gather(*[tool.call() for tool in tools])
