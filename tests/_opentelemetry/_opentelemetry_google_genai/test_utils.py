@@ -1,3 +1,4 @@
+from enum import Enum
 from unittest.mock import Mock
 
 import pytest
@@ -11,9 +12,12 @@ from lilypad._opentelemetry._opentelemetry_google_genai.utils import (
     set_stream_async,
 )
 
-
+class FinishReason(Enum):
+    STOP = "STOP"
+    COMPLETED = "COMPLETED"
+    TIMEOUT = "TIMEOUT"
 class DummyCandidate:
-    def __init__(self, index, finish_reason):
+    def __init__(self, index, finish_reason: FinishReason):
         self.index = index
         self.finish_reason = finish_reason
 
@@ -26,7 +30,6 @@ class DummyChunk:
 @pytest.fixture
 def instance():
     obj = Mock()
-    obj._model_name = "google-genai-model"
     return obj
 
 
@@ -39,6 +42,7 @@ def test_get_llm_request_attributes(instance):
             "max_output_tokens": 200,
         },
         "stream": True,
+        "model": "google-genai-model",
     }
     attrs = get_llm_request_attributes(kwargs, instance)
     assert attrs[gen_ai_attributes.GEN_AI_OPERATION_NAME] == "generate_content"
@@ -62,25 +66,21 @@ def test_set_content_event():
 
 def test_set_response_attributes(instance):
     span = Mock()
-    candidate1 = DummyCandidate(0, "completed")
-    candidate2 = DummyCandidate(1, "completed")
+    candidate1 = DummyCandidate(0, FinishReason.COMPLETED)
+    candidate2 = DummyCandidate(1, FinishReason.COMPLETED)
     response = Mock()
     response.candidates = [candidate1, candidate2]
-    set_response_attributes(span, response, instance)
+    set_response_attributes(span, response, instance, kwargs={"model": "google-genai-model"})
     assert span.add_event.call_count == 2
     span.set_attributes.assert_called_once()
     attrs = span.set_attributes.call_args[0][0]
     assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_MODEL] == "google-genai-model"
     assert gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS in attrs
-    assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] == [
-        "completed",
-        "completed",
-    ]
-
+    assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] == "COMPLETED"
 
 def test_set_stream():
     span = Mock()
-    candidate = DummyCandidate(0, "completed")
+    candidate = DummyCandidate(0, FinishReason.COMPLETED)
     chunk1 = DummyChunk([candidate])
     chunk2 = DummyChunk([candidate])
     stream = [chunk1, chunk2]
@@ -94,7 +94,7 @@ def test_set_stream():
 @pytest.mark.asyncio
 async def test_set_stream_async():
     span = Mock()
-    candidate = DummyCandidate(0, "completed")
+    candidate = DummyCandidate(0, FinishReason.COMPLETED)
     chunk = DummyChunk([candidate])
 
     async def async_stream():

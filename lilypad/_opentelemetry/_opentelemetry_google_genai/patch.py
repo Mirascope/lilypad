@@ -50,7 +50,7 @@ def generate_content(
                     # For synchronous streaming, process stream chunks
                     set_stream(span, result, instance)
                 elif span.is_recording():
-                    set_response_attributes(span, result, instance)
+                    set_response_attributes(span, result, instance, kwargs)
                 span.end()
                 return result
             except Exception as error:
@@ -130,7 +130,7 @@ def generate_content_async(
 
                     return final_wrapper()
                 elif span.is_recording():
-                    set_response_attributes(span, result, instance)
+                    set_response_attributes(span, result, instance, kwargs)
                 span.end()
                 return result
             except Exception as error:

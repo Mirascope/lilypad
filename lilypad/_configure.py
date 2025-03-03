@@ -9,6 +9,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
+    ConsoleSpanExporter,
     SpanExporter,
     SpanExportResult,
 )
@@ -150,9 +151,11 @@ def configure(
     if trace.get_tracer_provider().__class__.__name__ == "TracerProvider":
         logger.error("TracerProvider already initialized.")  # noqa: T201
         return
-    otlp_exporter = _JSONSpanExporter()
+    # otlp_exporter = _JSONSpanExporter()
     provider = TracerProvider()
+    otlp_exporter = ConsoleSpanExporter()
     processor = BatchSpanProcessor(otlp_exporter)  # pyright: ignore[reportArgumentType]
+
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
     if importlib.util.find_spec("openai") is not None:
@@ -163,13 +166,15 @@ def configure(
         from lilypad._opentelemetry import AnthropicInstrumentor
 
         AnthropicInstrumentor().instrument()
-    if (
-        importlib.util.find_spec("google") is not None
-        and importlib.util.find_spec("google.generativeai") is not None
-    ):
-        from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
+    if importlib.util.find_spec("google") is not None:
+        if importlib.util.find_spec("google.genai") is not None:
+            from lilypad._opentelemetry import GoogleGenAIInstrumentor
 
-        GoogleGenerativeAIInstrumentor().instrument()
+            GoogleGenAIInstrumentor().instrument()
+        if importlib.util.find_spec("google.generativeai") is not None:
+            from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
+
+            GoogleGenerativeAIInstrumentor().instrument()
     if importlib.util.find_spec("botocore") is not None:
         from lilypad._opentelemetry import BedrockInstrumentor
 

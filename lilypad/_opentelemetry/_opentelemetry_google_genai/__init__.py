@@ -9,7 +9,7 @@ from wrapt import wrap_function_wrapper
 from .patch import generate_content, generate_content_async
 
 
-class GoogleGenAiSdkInstrumentor(BaseInstrumentor):
+class GoogleGenAIInstrumentor(BaseInstrumentor):
     def instrumentation_dependencies(self) -> Collection[str]:
         # Specifies the dependency range for the Google Gen AI SDK.
         return ("google-genai>=1.3.0,<2",)
@@ -26,14 +26,14 @@ class GoogleGenAiSdkInstrumentor(BaseInstrumentor):
 
         # Wrap the synchronous generate_content method.
         wrap_function_wrapper(
-            module="google.genai.models.Models",
-            name="generate_content",
+            module="google.genai.models",
+            name="Models.generate_content",
             wrapper=generate_content(tracer),
         )
         # Wrap the asynchronous generate_content_async method.
         wrap_function_wrapper(
-            module="google.genai.models.AsyncModels",
-            name="generate_content_async",
+            module="google.genai.models",
+            name="AsyncModels.generate_content",
             wrapper=generate_content_async(tracer),
         )
 
@@ -43,4 +43,4 @@ class GoogleGenAiSdkInstrumentor(BaseInstrumentor):
         from opentelemetry.instrumentation.utils import unwrap
 
         unwrap(google.genai.models.Models, "generate_content")
-        unwrap(google.genai.models.AsyncModels, "generate_content_async")
+        unwrap(google.genai.models.AsyncModels, "generate_content")
