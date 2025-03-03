@@ -63,6 +63,7 @@ mirascope_extras = [
     "anthropic",
     "bedrock",
     "gemini",
+    "google",
     "mistral",
     "openai",
     "opentelemetry",
@@ -73,6 +74,7 @@ lilypad_extras = [
     "anthropic",
     "bedrock",
     "gemini",
+    "google",
     "mistral",
     "openai",
     "outlines",
@@ -358,6 +360,7 @@ def test_import_with_different_dist_name_fn() -> None:
         "google-cloud-core": {"extras": ["grpc"], "version": "2.4.1"},
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
+        'google-genai': {'extras': None, 'version': '1.3.0'},
         "google-generativeai": {"extras": None, "version": "0.8.4"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],
