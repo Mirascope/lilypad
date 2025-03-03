@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     serve_frontend: str | None = Field(
         default=None, description="Serve the client in the root"
     )
+    experimental: bool = Field(default=False)
 
     # GitHub OAuth settings
     github_client_id: str = Field(default="my_client_id")
