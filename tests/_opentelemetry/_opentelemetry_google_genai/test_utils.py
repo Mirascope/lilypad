@@ -12,10 +12,13 @@ from lilypad._opentelemetry._opentelemetry_google_genai.utils import (
     set_stream_async,
 )
 
+
 class FinishReason(Enum):
     STOP = "STOP"
     COMPLETED = "COMPLETED"
     TIMEOUT = "TIMEOUT"
+
+
 class DummyCandidate:
     def __init__(self, index, finish_reason: FinishReason):
         self.index = index
@@ -68,15 +71,18 @@ def test_set_response_attributes(instance):
     span = Mock()
     candidate1 = DummyCandidate(0, FinishReason.COMPLETED)
     candidate2 = DummyCandidate(1, FinishReason.COMPLETED)
-    response = Mock()
+    response = Mock(model_version="google-genai-model")
     response.candidates = [candidate1, candidate2]
-    set_response_attributes(span, response, instance, kwargs={"model": "google-genai-model"})
+    set_response_attributes(
+        span, response, instance, kwargs={"model": "google-genai-model"}
+    )
     assert span.add_event.call_count == 2
     span.set_attributes.assert_called_once()
     attrs = span.set_attributes.call_args[0][0]
     assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_MODEL] == "google-genai-model"
     assert gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS in attrs
     assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] == "COMPLETED"
+
 
 def test_set_stream():
     span = Mock()
@@ -104,5 +110,6 @@ async def test_set_stream_async():
     instance = Mock()
     instance._model_name = "google-genai-model"
     await set_stream_async(span, async_stream(), instance)
-    span.set_attributes.assert_called_once()
+    span.set_attributes.assert_called()
+    assert span.add_event.call_count == 2
     assert span.add_event.call_count >= 2

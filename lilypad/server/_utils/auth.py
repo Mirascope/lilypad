@@ -65,7 +65,6 @@ async def validate_api_key_project(
     session: Session,
     strict: bool = True,
 ) -> bool:
-    return True
     """Checks if the API key matches the project UUID."""
     api_key_row = session.exec(
         select(APIKeyTable).where(APIKeyTable.key_hash == api_key)

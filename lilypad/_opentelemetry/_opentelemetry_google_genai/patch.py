@@ -17,6 +17,7 @@ P = ParamSpec("P")
 
 def generate_content(
     tracer: Tracer,
+    stream: bool = False,
 ) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Any]:
     """Synchronous wrapper for generate_content.
 
@@ -46,7 +47,7 @@ def generate_content(
                     set_content_event(span, content)
             try:
                 result = wrapped(*args, **kwargs)
-                if kwargs.get("stream", False):
+                if stream:
                     # For synchronous streaming, process stream chunks
                     set_stream(span, result, instance)
                 elif span.is_recording():
@@ -66,7 +67,7 @@ def generate_content(
 
 
 def generate_content_async(
-    tracer: Tracer,
+    tracer: Tracer, stream: bool = False
 ) -> Callable[[Callable[P, Any], Any, tuple[Any, ...], dict[str, Any]], Awaitable[Any]]:
     """Asynchronous wrapper for generate_content_async.
 
@@ -96,7 +97,7 @@ def generate_content_async(
                     set_content_event(span, content)
             try:
                 result = await wrapped(*args, **kwargs)
-                if kwargs.get("stream", False):
+                if stream:
                     # Wrap the async stream so that candidate events are recorded on-the-fly
                     async def stream_wrapper() -> AsyncGenerator[Any, Any]:
                         finish_reasons = []
@@ -104,19 +105,26 @@ def generate_content_async(
                             candidates = getattr(chunk, "candidates", None)
                             if candidates:
                                 for candidate in candidates:
+                                    finish_reason = (
+                                        candidate.finish_reason.value
+                                        if candidate.finish_reason
+                                        else "none",
+                                    )
                                     event_attrs = {
-                                        "candidate_index": candidate.index,
-                                        "finish_reason": candidate.finish_reason,
+                                        "candidate_index": candidate.index or 0,
+                                        "finish_reason": finish_reason,
                                     }
                                     span.add_event(
                                         "gen_ai.candidate", attributes=event_attrs
                                     )
-                                    finish_reasons.append(candidate.finish_reason)
+                                    finish_reasons.append(finish_reason)
                             yield chunk
                         if finish_reasons:
                             span.set_attributes(
                                 {
-                                    gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS: finish_reasons
+                                    gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS: finish_reasons[
+                                        0
+                                    ]
                                 }
                             )
 

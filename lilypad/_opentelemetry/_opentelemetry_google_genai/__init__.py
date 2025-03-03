@@ -28,13 +28,23 @@ class GoogleGenAIInstrumentor(BaseInstrumentor):
         wrap_function_wrapper(
             module="google.genai.models",
             name="Models.generate_content",
-            wrapper=generate_content(tracer),
+            wrapper=generate_content(tracer, stream=False),
+        )
+        wrap_function_wrapper(
+            module="google.genai.models",
+            name="Models.generate_content_stream",
+            wrapper=generate_content(tracer, stream=True),
         )
         # Wrap the asynchronous generate_content_async method.
         wrap_function_wrapper(
             module="google.genai.models",
             name="AsyncModels.generate_content",
-            wrapper=generate_content_async(tracer),
+            wrapper=generate_content_async(tracer, stream=False),
+        )
+        wrap_function_wrapper(
+            module="google.genai.models",
+            name="AsyncModels.generate_content_stream",
+            wrapper=generate_content_async(tracer, stream=True),
         )
 
     def _uninstrument(self, **kwargs: Any) -> None:
@@ -43,4 +53,6 @@ class GoogleGenAIInstrumentor(BaseInstrumentor):
         from opentelemetry.instrumentation.utils import unwrap
 
         unwrap(google.genai.models.Models, "generate_content")
+        unwrap(google.genai.models.Models, "generate_content_stream")
         unwrap(google.genai.models.AsyncModels, "generate_content")
+        unwrap(google.genai.models.AsyncModels, "generate_content_stream")

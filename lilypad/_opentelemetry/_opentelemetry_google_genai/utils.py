@@ -45,22 +45,28 @@ def set_response_attributes(
     Iterates over response candidates and records candidate events.
     """
     response_attrs = {
-        gen_ai_attributes.GEN_AI_RESPONSE_MODEL: kwargs.get("model", "unknown")
+        gen_ai_attributes.GEN_AI_RESPONSE_MODEL: getattr(
+            response, "model_version", "unknown"
+        )
     }
     finish_reasons = []
     candidates = getattr(response, "candidates", None)
     if candidates:
         for candidate in candidates:
+            finish_reason = (
+                candidate.finish_reason.value if candidate.finish_reason else "none"
+            )
             event_attrs = {
                 "candidate_index": candidate.index or 0,
-                "finish_reason": candidate.finish_reason.value,
+                "finish_reason": finish_reason,
             }
             span.add_event("gen_ai.candidate", attributes=event_attrs)
-            finish_reasons.append(candidate.finish_reason.value)
+            finish_reasons.append(finish_reason)
     if finish_reasons:
         response_attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = (
             finish_reasons[0]
         )
+
     span.set_attributes(response_attrs)
 
 
@@ -71,7 +77,7 @@ def set_stream(span: Any, stream: Any, instance: Any) -> None:
     """
     stream_attrs = {
         gen_ai_attributes.GEN_AI_RESPONSE_MODEL: getattr(
-            instance, "_model_name", "unknown"
+            instance, "model_version", "unknown"
         )
     }
     finish_reasons = []
@@ -79,12 +85,17 @@ def set_stream(span: Any, stream: Any, instance: Any) -> None:
         candidates = getattr(chunk, "candidates", None)
         if candidates:
             for candidate in candidates:
+                finish_reason = (
+                    candidate.finish_reason.value
+                    if candidate.finish_reason
+                    else "none",
+                )
                 event_attrs = {
                     "candidate_index": candidate.index or 0,
-                    "finish_reason": candidate.finish_reason.value,
+                    "finish_reason": finish_reason,
                 }
                 span.add_event("gen_ai.candidate", attributes=event_attrs)
-                finish_reasons.append(candidate.finish_reason)
+                finish_reasons.append(finish_reason)
     if finish_reasons:
         stream_attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = finish_reasons[
             0
@@ -98,6 +109,11 @@ async def set_stream_async(span: Any, stream: Any, instance: Any) -> None:
     Asynchronously iterates over stream chunks and records candidate events on the span.
     (Note: This function fully consumes the stream.)
     """
+    stream_attrs = {
+        gen_ai_attributes.GEN_AI_RESPONSE_MODEL: getattr(
+            instance, "model_version", "unknown"
+        )
+    }
     finish_reasons = []
     async for chunk in stream:
         candidates = getattr(chunk, "candidates", None)
@@ -108,8 +124,9 @@ async def set_stream_async(span: Any, stream: Any, instance: Any) -> None:
                     "finish_reason": candidate.finish_reason.value,
                 }
                 span.add_event("gen_ai.candidate", attributes=event_attrs)
-                finish_reasons.append(candidate.finish_reason)
+                finish_reasons.append(candidate.finish_reason.value)
     if finish_reasons:
         span.set_attributes(
             {gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS: finish_reasons[0]}
         )
+    span.set_attributes(stream_attrs)
