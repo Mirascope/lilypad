@@ -7,6 +7,9 @@ with suppress(ImportError):
     from ._opentelemetry_bedrock import BedrockInstrumentor
 
 with suppress(ImportError):
+    from ._opentelemetry_google_genai import GoogleGenAiSdkInstrumentor
+
+with suppress(ImportError):
     from ._opentelemetry_google_generative_ai import GoogleGenerativeAIInstrumentor
 
 with suppress(ImportError):
