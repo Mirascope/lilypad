@@ -121,9 +121,11 @@ async def get_annotations(
     ]
 
 
-@annotations_router.get("/projects/{project_uuid}/spans/{span_uuid}/generate")
+@annotations_router.get(
+    "/projects/{project_uuid}/spans/{span_uuid}/generate-annotation"
+)
 @require_license(tier=Tier.ENTERPRISE)
-async def stream_generation(
+async def generate_annotation(
     span_uuid: UUID,
     annotation_service: Annotated[AnnotationService, Depends(AnnotationService)],
     span_service: Annotated[SpanService, Depends(SpanService)],

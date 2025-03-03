@@ -14,7 +14,7 @@ export const GenerateAnnotationButton = ({
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const methods = useFormContext<AnnotationCreate>();
-  const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate`;
+  const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate-annotation`;
   const { data, startConnection, stopConnection, isConnected, status } =
     useEventSource(url);
   // Handle generation completion if needed
