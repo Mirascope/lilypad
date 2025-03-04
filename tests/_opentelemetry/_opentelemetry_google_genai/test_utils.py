@@ -73,9 +73,7 @@ def test_set_response_attributes(instance):
     candidate2 = DummyCandidate(1, FinishReason.COMPLETED)
     response = Mock(model_version="google-genai-model")
     response.candidates = [candidate1, candidate2]
-    set_response_attributes(
-        span, response, instance, kwargs={"model": "google-genai-model"}
-    )
+    set_response_attributes(span, response)
     assert span.add_event.call_count == 2
     span.set_attributes.assert_called_once()
     attrs = span.set_attributes.call_args[0][0]
