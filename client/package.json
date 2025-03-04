@@ -52,6 +52,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "diff": "^7.0.0",
+    "eventsource": "^3.0.5",
     "highlight.js": "^11.10.0",
     "json-edit-react": "1.22.2",
     "lexical": "^0.18.0",

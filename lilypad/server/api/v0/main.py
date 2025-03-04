@@ -35,6 +35,7 @@ class SettingsPublic(BaseModel):
     github_client_id: str
     google_client_id: str
     environment: str
+    experimental: bool
 
 
 @api.get("/settings", response_model=SettingsPublic)
@@ -48,6 +49,7 @@ async def get_settings_client(
         github_client_id=settings.github_client_id,
         google_client_id=settings.google_client_id,
         environment=settings.environment,
+        experimental=settings.experimental,
     )
 
 
