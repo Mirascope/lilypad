@@ -14,7 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from mirascope.core import base as mb
 from mirascope.integrations import middleware_factory
 from opentelemetry.trace import get_tracer
-from opentelemetry.trace.span import Span
+from opentelemetry.trace.span import Span, SpanContext
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
@@ -25,6 +25,18 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
+class SpanContextHolder:
+    def __init__(self) -> None:
+        self._span_context: SpanContext | None = None
+
+    def set_span_context(self, span: Span) -> None:
+        self._span_context = span.get_span_context()
+
+    @property
+    def span_context(self) -> SpanContext | None:
+        return self._span_context
+
+
 def _get_custom_context_manager(
     generation: GenerationPublic,
     arg_types: dict[str, str],
@@ -32,6 +44,7 @@ def _get_custom_context_manager(
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
+    span_context_holder: SpanContextHolder | None = None,
 ) -> Callable[..., _GeneratorContextManager[Span]]:
     @contextmanager
     def custom_context_manager(
@@ -66,6 +79,8 @@ def _get_custom_context_manager(
                 "lilypad.is_async": is_async,
             }
             span.set_attributes(attributes)
+            if span_context_holder:
+                span_context_holder.set_span_context(span)
             yield span
 
     return custom_context_manager
@@ -220,11 +235,18 @@ def create_mirascope_middleware(
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
+    span_context_holder: SpanContextHolder | None = None,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Creates the middleware decorator for a Lilypad/Mirascope function."""
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
-            generation, arg_types, arg_values, is_async, prompt_template, project_uuid
+            generation,
+            arg_types,
+            arg_values,
+            is_async,
+            prompt_template,
+            project_uuid,
+            span_context_holder,
         ),
         handle_call_response=_handle_call_response,
         handle_call_response_async=_handle_call_response_async,

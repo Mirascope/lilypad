@@ -22,8 +22,7 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
-from ..server.models import Provider
-from ..server.schemas import PromptCreate, PromptPublic
+from ..server.schemas.generations import GenerationCreate, GenerationPublic, Provider
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -138,7 +137,7 @@ def _construct_call_decorator(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
-    prompt: PromptPublic | PromptCreate,
+    generation: GenerationPublic | GenerationCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -148,7 +147,7 @@ def create_mirascope_call(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, _R],
-    prompt: PromptPublic | PromptCreate,
+    generation: GenerationPublic | GenerationCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -157,7 +156,7 @@ def create_mirascope_call(
 
 def create_mirascope_call(
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    prompt: PromptPublic | PromptCreate,
+    generation: GenerationPublic | GenerationCreate,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -170,12 +169,12 @@ def create_mirascope_call(
     return_type = get_type_hints(fn).get("return", type(None))
     if inspect.iscoroutinefunction(fn):
 
-        @mb.prompt_template(prompt.template)
+        @mb.prompt_template(generation.prompt_template)
         @wraps(fn)
         async def prompt_template_async(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            return {"call_params": prompt.call_params}
+            return {"call_params": generation.call_params}
 
         @wraps(fn)
         async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
@@ -237,12 +236,12 @@ def create_mirascope_call(
         return inner_async
     else:
 
-        @mb.prompt_template(prompt.template)
+        @mb.prompt_template(generation.prompt_template)
         @wraps(fn)
         def prompt_template(
             *args: _P.args, **kwargs: _P.kwargs
         ) -> mb.BaseDynamicConfig:
-            return {"call_params": prompt.call_params}
+            return {"call_params": generation.call_params}
 
         @wraps(fn)
         def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
