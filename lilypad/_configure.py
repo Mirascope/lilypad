@@ -163,13 +163,15 @@ def configure(
         from lilypad._opentelemetry import AnthropicInstrumentor
 
         AnthropicInstrumentor().instrument()
-    if (
-        importlib.util.find_spec("google") is not None
-        and importlib.util.find_spec("google.generativeai") is not None
-    ):
-        from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
+    if importlib.util.find_spec("google") is not None:
+        if importlib.util.find_spec("google.genai") is not None:
+            from lilypad._opentelemetry import GoogleGenAIInstrumentor
 
-        GoogleGenerativeAIInstrumentor().instrument()
+            GoogleGenAIInstrumentor().instrument()
+        if importlib.util.find_spec("google.generativeai") is not None:
+            from lilypad._opentelemetry import GoogleGenerativeAIInstrumentor
+
+            GoogleGenerativeAIInstrumentor().instrument()
     if importlib.util.find_spec("botocore") is not None:
         from lilypad._opentelemetry import BedrockInstrumentor
 
