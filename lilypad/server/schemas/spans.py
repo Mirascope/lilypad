@@ -62,12 +62,19 @@ class SpanPublic(SpanBase):
         attributes: dict[str, Any] = data.get("attributes", {})
         if span.scope == Scope.LILYPAD:
             span_type: str = attributes.get("lilypad.type", "unknown")
-            display_name = data.get("name", "")
+            display_name = data.get("name", f"Lilypad Span ({span_type})")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Scope.LLM
-            gen_ai_system = attributes.get("gen_ai.system", "unknown")
-            gen_ai_request_model = attributes.get("gen_ai.request.model", "unknown")
-            display_name = f"{gen_ai_system} with '{gen_ai_request_model}'"
+            gen_ai_system = attributes.get("gen_ai.system")
+            gen_ai_request_model = attributes.get("gen_ai.request.model")
+            if gen_ai_system and gen_ai_request_model:
+                display_name = f"{gen_ai_system} with '{gen_ai_request_model}'"
+            elif gen_ai_system:
+                display_name = f"{gen_ai_system} LLM Span"
+            elif gen_ai_request_model:
+                display_name = f"LLM Span for '{gen_ai_request_model}'"
+            else:
+                display_name = "LLM Span"
             version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
