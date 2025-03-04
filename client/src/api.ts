@@ -1,7 +1,7 @@
 import { UserPublic } from "@/types/types";
 import { AUTH_STORAGE_KEY } from "@/utils/constants";
 import axios from "axios";
-let baseURL = "/v0";
+export let baseURL = "/v0";
 if (import.meta.env.MODE === "development") {
   baseURL = "http://localhost:8000/v0";
 }
