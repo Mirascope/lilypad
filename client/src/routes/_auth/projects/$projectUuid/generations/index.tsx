@@ -1,5 +1,6 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
 import { useToast } from "@/hooks/use-toast";
@@ -34,14 +44,16 @@ import {
   uniqueLatestVersionGenerationNamesQueryOptions,
   useArchiveGenerationByNameMutation,
 } from "@/utils/generations";
+import { FormattedText } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { MoreHorizontal, Trash } from "lucide-react";
+import { MoreHorizontal, Plus, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
@@ -151,16 +163,14 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
       </CardContent>
       <CardFooter className='flex flex-col gap-2 items-start'>
         <div className='flex flex-col gap-2 w-full'>
-          <h3 className='text-sm font-medium text-gray-500'>Prompt</h3>
-          {generation.prompt ? (
-            <>
-              <CardDescription>
-                Using {generation.prompt.name}: v{generation.prompt.version_num}
-              </CardDescription>
-              <CodeSnippet code={generation.prompt.code} />
-            </>
+          <h3 className='text-sm font-medium text-gray-500'>Template</h3>
+          {generation.is_managed && generation.prompt_template ? (
+            <FormattedText
+              template={generation.prompt_template || ""}
+              values={generation.arg_types}
+            />
           ) : (
-            <Typography variant='small'>No prompt</Typography>
+            <Typography variant='muted'>No template</Typography>
           )}
         </div>
       </CardFooter>
@@ -168,10 +178,17 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
   );
 };
 const GenerationsList = () => {
+  const { projectUuid } = useParams({ from: Route.id });
+  const { data } = useSuspenseQuery(
+    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
+  );
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
       <div className='text-left'>
-        <h1 className='text-4xl font-bold text-left mb-2'>Generations</h1>
+        <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
+          Generations
+          {data.length > 0 && <CreateGenerationButton />}
+        </h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
           <Suspense fallback={<CardSkeleton items={2} />}>
             <GenerationCards />
@@ -182,16 +199,97 @@ const GenerationsList = () => {
   );
 };
 
-const GenerationNoDataPlaceholder = () => {
+const CreateGenerationButton = () => {
   return (
-    <div className='min-h-screen p-8'>
-      <div className='max-w-4xl mx-auto'>
-        <div>
-          No generations found. Start by decorating your LLM powered functions
-          with <code>@lilypad.generation()</code>.
-        </div>
-        <CodeSnippet
-          code={`
+    <LilypadDialog
+      icon={<Plus />}
+      buttonProps={{
+        variant: "default",
+      }}
+      tooltipContent='Create a new managed generation'
+      tooltipProps={{
+        className: "bg-gray-700 text-white",
+      }}
+      title='Create Managed Generation'
+      description='Start by naming your generation'
+      dialogContentProps={{
+        className:
+          "max-h-[90vh] max-w-[90vw] w-auto h-auto overflow-y-auto overflow-x-auto",
+      }}
+    >
+      <GenerationNoDataPlaceholder />
+    </LilypadDialog>
+  );
+};
+
+type CreateGenerationFormValues = {
+  name: string;
+};
+const GenerationNoDataPlaceholder = () => {
+  const { projectUuid } = useParams({ from: Route.id });
+  const methods = useForm<CreateGenerationFormValues>({
+    defaultValues: {
+      name: "",
+    },
+  });
+  const navigate = useNavigate();
+  const onSubmit = (data: CreateGenerationFormValues) => {
+    navigate({
+      to: `/projects/${projectUuid}/generations/${data.name}`,
+    });
+  };
+  return (
+    <div className='flex flex-col gap-4'>
+      <Typography variant='h4'>Create Managed Generation</Typography>
+      <Form {...methods}>
+        <form
+          className='flex flex-col gap-2'
+          onSubmit={methods.handleSubmit(onSubmit)}
+        >
+          <FormField
+            key='name'
+            control={methods.control}
+            name='name'
+            rules={{
+              required: "Generation name is required",
+              validate: (value) => {
+                const pythonFunctionNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+                return (
+                  pythonFunctionNameRegex.test(value) ||
+                  "Generation name must be a valid Python function name."
+                );
+              },
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Generation Name</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder='Enter generation name' />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type='submit'>Get Started</Button>
+        </form>
+      </Form>
+      <Separator />
+      <Typography variant='h4'>Create In code</Typography>
+      <DeveloperGenerationNoDataPlaceholder />
+    </div>
+  );
+};
+
+const DeveloperGenerationNoDataPlaceholder = () => {
+  return (
+    <div className='max-w-4xl mx-auto'>
+      <div>
+        Start by decorating your LLM powered functions with{" "}
+        <code>@lilypad.generation()</code>.
+      </div>
+      <CodeSnippet
+        code={`
 from openai import OpenAI
 
 import lilypad
@@ -210,8 +308,7 @@ def recommend_book(genre: str) -> str:
 
 
 recommend_book("fantasy")`}
-        />
-      </div>
+      />
     </div>
   );
 };
