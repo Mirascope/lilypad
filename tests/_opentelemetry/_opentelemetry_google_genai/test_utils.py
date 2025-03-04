@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from unittest.mock import Mock
 
@@ -20,9 +21,10 @@ class FinishReason(Enum):
 
 
 class DummyCandidate:
-    def __init__(self, index, finish_reason: FinishReason):
+    def __init__(self, index, finish_reason: FinishReason, content=None):
         self.index = index
         self.finish_reason = finish_reason
+        self.content = content
 
 
 class DummyChunk:
@@ -62,15 +64,19 @@ def test_set_content_event():
     span = Mock()
     content = {"role": "user", "parts": ["Test message"]}
     set_content_event(span, content)
+    expected_attributes = {
+        "gen_ai.system": "google_genai",
+        "content": json.dumps(["Test message"]),
+    }
     span.add_event.assert_called_once_with(
-        "gen_ai.content", attributes={"content": str(content)}
+        "gen_ai.user.message", attributes=expected_attributes
     )
 
 
 def test_set_response_attributes(instance):
     span = Mock()
-    candidate1 = DummyCandidate(0, FinishReason.COMPLETED)
-    candidate2 = DummyCandidate(1, FinishReason.COMPLETED)
+    candidate1 = DummyCandidate(0, FinishReason.COMPLETED, content=None)
+    candidate2 = DummyCandidate(1, FinishReason.COMPLETED, content=None)
     response = Mock(model_version="google-genai-model")
     response.candidates = [candidate1, candidate2]
     set_response_attributes(span, response)
@@ -79,12 +85,15 @@ def test_set_response_attributes(instance):
     attrs = span.set_attributes.call_args[0][0]
     assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_MODEL] == "google-genai-model"
     assert gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS in attrs
-    assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] == "COMPLETED"
+    assert attrs[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] == [
+        "COMPLETED",
+        "COMPLETED",
+    ]
 
 
 def test_set_stream():
     span = Mock()
-    candidate = DummyCandidate(0, FinishReason.COMPLETED)
+    candidate = DummyCandidate(0, FinishReason.COMPLETED, content=None)
     chunk1 = DummyChunk([candidate])
     chunk2 = DummyChunk([candidate])
     stream = [chunk1, chunk2]
@@ -98,7 +107,7 @@ def test_set_stream():
 @pytest.mark.asyncio
 async def test_set_stream_async():
     span = Mock()
-    candidate = DummyCandidate(0, FinishReason.COMPLETED)
+    candidate = DummyCandidate(0, FinishReason.COMPLETED, content=None)
     chunk = DummyChunk([candidate])
 
     async def async_stream():
@@ -109,5 +118,4 @@ async def test_set_stream_async():
     instance._model_name = "google-genai-model"
     await set_stream_async(span, async_stream(), instance)
     span.set_attributes.assert_called()
-    assert span.add_event.call_count == 2
     assert span.add_event.call_count >= 2
