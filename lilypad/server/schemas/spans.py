@@ -121,7 +121,7 @@ class SpanMoreDetails(BaseModel):
         events = convert_events(data.get("events", []))
         if span.scope == Scope.LLM:
             provider = attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown")
-            if provider == Provider.GEMINI.value:
+            if provider in (Provider.GEMINI.value, "google_genai"):
                 messages = convert_gemini_messages(data["events"])
             elif (
                 provider == Provider.OPENROUTER.value
