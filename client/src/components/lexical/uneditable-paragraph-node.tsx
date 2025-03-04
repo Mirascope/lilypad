@@ -1,9 +1,9 @@
 import {
+  $applyNodeReplacement,
   EditorConfig,
   LexicalNode,
   ParagraphNode,
   SerializedParagraphNode,
-  $applyNodeReplacement,
 } from "lexical";
 
 export type SerializedUneditableParagraphNode = SerializedParagraphNode;
@@ -24,7 +24,7 @@ export class UneditableParagraphNode extends ParagraphNode {
     return dom;
   }
 
-  updateDOM(prevNode: UneditableParagraphNode, dom: HTMLElement): boolean {
+  updateDOM(_prevNode: UneditableParagraphNode, _dom: HTMLElement): boolean {
     return false;
   }
 

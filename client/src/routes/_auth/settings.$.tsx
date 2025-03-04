@@ -7,6 +7,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
+import { JSX } from "react";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });

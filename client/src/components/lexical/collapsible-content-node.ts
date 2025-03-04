@@ -1,3 +1,4 @@
+import { IS_CHROME } from "@lexical/utils";
 import {
   DOMConversionMap,
   DOMConversionOutput,
@@ -9,7 +10,6 @@ import {
   NodeKey,
   SerializedElementNode,
 } from "lexical";
-import { IS_CHROME } from "@lexical/utils";
 import { invariant } from "./utils";
 
 import { $isCollapsibleContainerNode } from "./collapsible-container-node";
@@ -18,7 +18,7 @@ import { domOnBeforeMatch, setDomHiddenUntilFound } from "./utils";
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
 export function $convertCollapsibleContentElement(
-  domNode: HTMLElement
+  _domNode: HTMLElement
 ): DOMConversionOutput | null {
   const node = $createCollapsibleContentNode();
   return {
@@ -39,7 +39,7 @@ export class CollapsibleContentNode extends ElementNode {
     return new CollapsibleContentNode(node.__key);
   }
 
-  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+  createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement("div");
     dom.classList.add("Collapsible__content");
     if (IS_CHROME) {
@@ -69,7 +69,7 @@ export class CollapsibleContentNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(prevNode: CollapsibleContentNode, dom: HTMLElement): boolean {
+  updateDOM(_prevNode: CollapsibleContentNode, _dom: HTMLElement): boolean {
     return false;
   }
 
@@ -95,7 +95,7 @@ export class CollapsibleContentNode extends ElementNode {
   }
 
   static importJSON(
-    serializedNode: SerializedCollapsibleContentNode
+    _serializedNode: SerializedCollapsibleContentNode
   ): CollapsibleContentNode {
     return $createCollapsibleContentNode();
   }

@@ -25,7 +25,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Route as ProjectRoute } from "@/routes/_auth.projects.$projectUuid";
+import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import {
@@ -43,7 +43,6 @@ import {
   ChevronDown,
   ChevronUp,
   Home,
-  PencilLine,
   ScrollText,
   Settings,
   User2,
@@ -134,11 +133,6 @@ export const AppSidebar = () => {
           title: "Generations",
           url: `/projects/${activeProject.uuid}/generations`,
           icon: Wrench,
-        },
-        {
-          title: "Prompts",
-          url: `/projects/${activeProject.uuid}/prompts`,
-          icon: PencilLine,
         },
       ]
     : [];

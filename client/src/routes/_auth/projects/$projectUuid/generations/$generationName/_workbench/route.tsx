@@ -1,10 +1,7 @@
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { GenerationSpans } from "@/components/GenerationSpans";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GenerationPublic } from "@/types/types";
 import {
   generationsByNameQueryOptions,
   useArchiveGenerationMutation,
@@ -12,14 +9,12 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
+  Outlet,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
 
-import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
-import { MetricCharts } from "@/components/MetricsCharts";
-import { Playground } from "@/components/Playground";
 import {
   Select,
   SelectContent,
@@ -27,10 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { GenerationTab } from "@/types/generations";
-import { Trash } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
 import { JSX, Suspense } from "react";
 
 type GenerationRouteParams = {
@@ -40,15 +40,13 @@ type GenerationRouteParams = {
   tab: GenerationTab;
 };
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/$generationUuid/$tab"
+  "/_auth/projects/$projectUuid/generations/$generationName/_workbench"
 )({
   params: {
     stringify(params: GenerationRouteParams) {
       return {
         projectUuid: params.projectUuid,
         generationName: params.generationName,
-        generationUuid: params.generationUuid,
-        tab: params.tab,
       };
     },
     parse(raw: Record<string, string>): GenerationRouteParams {
@@ -94,15 +92,12 @@ const GenerationWorkbench = () => {
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
   );
-  if (!generation) {
-    return <div>No generation found.</div>;
-  }
   const archiveGeneration = useArchiveGenerationMutation();
   const tabs: Tab[] = [
     {
       label: "Overview",
       value: GenerationTab.OVERVIEW,
-      component: <Generation generation={generation} />,
+      component: <Outlet />,
     },
     {
       label: "Traces",
@@ -134,13 +129,31 @@ const GenerationWorkbench = () => {
     });
     navigate({ to: `/projects/${projectUuid}/generations` });
   };
+
+  const handleNewGenerationClick = () => {
+    navigate({
+      to: `/projects/${projectUuid}/generations/${generationName}`,
+    });
+  };
   const tabWidth = 80 * tabs.length;
   return (
     <div className='w-full p-6'>
-      <Typography variant='h2'>{generationName}</Typography>
+      <div className='flex gap-2'>
+        <Typography variant='h2'>{generationName}</Typography>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size='icon' onClick={handleNewGenerationClick}>
+              <Plus />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className='bg-gray-700 text-white'>
+            Create a new managed generation
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <div className='flex gap-2 items-center'>
         <Select
-          value={generation?.uuid}
+          value={generation?.uuid || ""}
           onValueChange={(uuid) =>
             navigate({
               to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
@@ -207,32 +220,5 @@ const GenerationWorkbench = () => {
         </Suspense>
       </Tabs>
     </div>
-  );
-};
-
-const Generation = ({ generation }: { generation: GenerationPublic }) => {
-  const { projectUuid } = useParams({ from: Route.id });
-
-  if (!generation) {
-    return <div>No generation selected.</div>;
-  }
-  return (
-    <>
-      {generation && (
-        <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
-          <Suspense fallback={<CardSkeleton />}>
-            <MetricCharts
-              generationUuid={generation.uuid}
-              projectUuid={projectUuid}
-            />
-          </Suspense>
-          <div className='text-left'>
-            <Label>Code</Label>
-            <CodeSnippet code={generation.code} />
-          </div>
-          {generation.is_managed && <Playground version={generation} />}
-        </div>
-      )}
-    </>
   );
 };
