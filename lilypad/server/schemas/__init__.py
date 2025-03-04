@@ -4,6 +4,8 @@ from .api_keys import APIKeyCreate, APIKeyPublic
 from .generations import (
     GenerationCreate,
     GenerationPublic,
+    PlaygroundParameters,
+    Provider,
 )
 from .organization_invites import OrganizationInviteCreate, OrganizationInvitePublic
 from .organizations import OrganizationCreate, OrganizationPublic
@@ -26,8 +28,10 @@ __all__ = [
     "OrganizationPublic",
     "OrganizationInviteCreate",
     "OrganizationInvitePublic",
+    "PlaygroundParameters",
     "ProjectCreate",
     "ProjectPublic",
+    "Provider",
     "SpanCreate",
     "SpanPublic",
     "SpanMoreDetails",

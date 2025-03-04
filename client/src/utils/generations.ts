@@ -1,10 +1,17 @@
 import api from "@/api";
-import { GenerationPublic, GenerationUpdate } from "@/types/types";
+import {
+  GenerationCreate,
+  GenerationPublic,
+  GenerationUpdate,
+  PlaygroundParameters,
+} from "@/types/types";
 import {
   queryOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { AxiosResponse } from "axios";
+import { usePostHog } from "posthog-js/react";
 
 const generationKeys = {
   all: ["generations"] as const,
@@ -73,6 +80,30 @@ export const archiveGenerationByName = async (
   return (
     await api.delete<boolean>(
       `/projects/${projectUuid}/generations/names/${generationName}`
+    )
+  ).data;
+};
+
+export const createManagedGeneration = async (
+  projectUuid: string,
+  generationCreate: GenerationCreate
+): Promise<GenerationPublic> => {
+  return (
+    await api.post<GenerationCreate, AxiosResponse<GenerationPublic>>(
+      `/projects/${projectUuid}/managed-generations`,
+      generationCreate
+    )
+  ).data;
+};
+
+export const runGeneration = async (
+  projectUuid: string,
+  playgroundValues: PlaygroundParameters
+): Promise<string> => {
+  return (
+    await api.post<Record<string, string>, AxiosResponse<string>>(
+      `/projects/${projectUuid}/generations/run`,
+      playgroundValues
     )
   ).data;
 };
@@ -151,10 +182,42 @@ export const useArchiveGenerationByNameMutation = () => {
       projectUuid: string;
       generationName: string;
     }) => await archiveGenerationByName(projectUuid, generationName),
-    onSuccess: (_, { projectUuid }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: generationKeys.all,
       });
     },
+  });
+};
+
+export const useCreateManagedGeneration = () => {
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      generationCreate,
+    }: {
+      projectUuid: string;
+      generationCreate: GenerationCreate;
+    }) => await createManagedGeneration(projectUuid, generationCreate),
+    onSuccess: (newVersion) => {
+      posthog.capture("managedGenerationCreated");
+      queryClient.invalidateQueries({
+        queryKey: generationKeys.list(newVersion.name),
+      });
+    },
+  });
+};
+
+export const useRunMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      playgroundValues,
+    }: {
+      projectUuid: string;
+      playgroundValues: PlaygroundParameters;
+    }) => await runGeneration(projectUuid, playgroundValues),
   });
 };

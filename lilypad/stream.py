@@ -44,12 +44,6 @@ class Stream(_Stream):
                 Tool(tool=tool) if tool is not None else None,  # pyright: ignore [reportAbstractUsage]
             )
 
-    def common_construct_call_response(
-        self,
-    ) -> Message:
-        """A common method that constructs a CallResponse instance."""
-        return Message(super().common_construct_call_response())  # pyright: ignore [reportAbstractUsage]
-
     def construct_call_response(
         self,
     ) -> Message:

@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
+from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
-from .base_sql_model import get_json_column
+from .base_sql_model import JSONTypeDecorator, get_json_column
 from .table_names import (
     GENERATION_TABLE_NAME,
     PROJECT_TABLE_NAME,
@@ -43,8 +44,10 @@ class _GenerationBase(SQLModel):
     provider: str | None = Field(default=None)
     model: str | None = Field(default=None)
     call_params: CommonCallParams = Field(
-        sa_column=get_json_column(), default_factory=dict
+        sa_column=Column(JSONTypeDecorator, nullable=False), default_factory=dict
     )
+    is_default: bool | None = Field(default=False, index=True, nullable=True)
+    is_managed: bool | None = Field(default=False, index=True, nullable=True)
 
 
 class GenerationUpdate(SQLModel):

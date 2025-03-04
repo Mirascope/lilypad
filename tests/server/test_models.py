@@ -16,12 +16,12 @@ from lilypad.server.models import (
     SpanTable,
     SpanType,
 )
-from lilypad.server.models.spans import Provider
 from lilypad.server.schemas import (
     GenerationCreate,
     GenerationPublic,
     ProjectCreate,
     ProjectPublic,
+    Provider,
     SpanCreate,
     SpanPublic,
 )

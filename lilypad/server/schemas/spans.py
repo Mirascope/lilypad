@@ -20,8 +20,8 @@ from .._utils import (
     convert_mirascope_messages,
     convert_openai_messages,
 )
-from ..models.spans import Provider, Scope, SpanBase, SpanTable
-from .generations import GenerationPublic
+from ..models.spans import Scope, SpanBase, SpanTable
+from .generations import GenerationPublic, Provider
 
 
 class SpanCreate(SpanBase):

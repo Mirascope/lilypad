@@ -25,7 +25,7 @@ from fastapi.encoders import jsonable_encoder
 from mirascope import llm
 from mirascope.core import prompt_template
 from mirascope.core.base._utils import fn_is_async
-from mirascope.llm._protocols import Provider
+from mirascope.core.base.types import Provider
 from mirascope.llm.call_response import CallResponse
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider

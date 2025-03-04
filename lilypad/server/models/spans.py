@@ -20,15 +20,6 @@ if TYPE_CHECKING:
     from .generations import GenerationTable
 
 
-class Provider(str, Enum):
-    """Provider name enum"""
-
-    OPENAI = "openai"
-    ANTHROPIC = "anthropic"
-    OPENROUTER = "openrouter"
-    GEMINI = "gemini"
-
-
 class Scope(str, Enum):
     """Instrumentation Scope name of the span"""
 

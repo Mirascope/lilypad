@@ -13,7 +13,7 @@ from mirascope.core.base import (
     BaseCallResponse,
     Metadata,
 )
-from mirascope.core.base.types import FinishReason
+from mirascope.core.base.types import CostMetadata, FinishReason
 from mirascope.llm.call_response import CallResponse
 from pydantic import computed_field
 
@@ -229,6 +229,20 @@ class DummyProviderCallResponse(
     def cost(self) -> float | None:
         """Should return the cost of the response in dollars."""
 
+    @property
+    def cached_tokens(self) -> int | None:
+        """Returns the number of cached tokens."""
+        pass
+
+    @property
+    def cost_metadata(self) -> CostMetadata:
+        """Returns the cost of the response in dollars."""
+        return CostMetadata(
+            input_tokens=self.input_tokens,
+            output_tokens=self.output_tokens,
+            cached_tokens=self.cached_tokens,
+        )
+
     @computed_field
     @cached_property
     def message_param(self) -> Any:
@@ -274,10 +288,6 @@ class DummyProviderCallResponse(
         """Return a dummy usage instance."""
         ...
 
-    def common_construct_call_response(self):
-        """Return a dummy CallResponse instance."""
-        ...
-
     def common_construct_message_param(
         self, tool_calls: list[Any] | None, content: str | None
     ):
@@ -302,7 +312,7 @@ def dummy_call_response_instance():
         start_time=0,
         end_time=0,
     )
-    return CallResponse(response=dummy_response)  # pyright: ignore [reportAbstractUsage]
+    return CallResponse(response=dummy_response)  # pyright: ignore [reportAbstractUsage,reportArgumentType]
 
 
 @pytest.fixture
@@ -331,7 +341,7 @@ async def async_outer(param: str) -> str:
 
 
 def fake_mirascope_middleware_sync(
-    generation, arg_types, arg_values, is_async, prompt_template
+    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
 ):
     """Simulate a synchronous mirascope middleware returning a dummy result."""
 
@@ -345,7 +355,7 @@ def fake_mirascope_middleware_sync(
 
 
 def fake_mirascope_middleware_async(
-    generation, arg_types, arg_values, is_async, prompt_template
+    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
 ):
     """Simulate an asynchronous mirascope middleware returning a dummy result."""
 

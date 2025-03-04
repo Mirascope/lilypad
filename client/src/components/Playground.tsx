@@ -27,21 +27,21 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { useToast } from "@/hooks/use-toast";
 import {
+  GenerationCreate,
+  GenerationPublic,
   PlaygroundParameters,
-  PromptCreate,
-  PromptPublic,
 } from "@/types/types";
+import {
+  useArchiveGenerationMutation,
+  useCreateManagedGeneration,
+  usePatchGenerationMutation,
+  useRunMutation,
+} from "@/utils/generations";
 import {
   BaseEditorFormFields,
   getAvailableProviders,
   useBaseEditorForm,
 } from "@/utils/playground-utils";
-import {
-  useArchivePromptMutation,
-  useCreatePrompt,
-  usePatchPromptMutation,
-  useRunMutation,
-} from "@/utils/prompts";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -55,17 +55,21 @@ import ReactMarkdown from "react-markdown";
 type EditorParameters = PlaygroundParameters & {
   inputs: Record<string, string>[];
 };
-export const Playground = ({ version }: { version: PromptPublic | null }) => {
-  const { projectUuid, promptName } = useParams({
+export const Playground = ({
+  version,
+}: {
+  version: GenerationPublic | null;
+}) => {
+  const { projectUuid, generationName } = useParams({
     strict: false,
   });
   const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
-  const createPromptMutation = useCreatePrompt();
+  const createGenerationMutation = useCreateManagedGeneration();
   const runMutation = useRunMutation();
-  const patchPrompt = usePatchPromptMutation();
-  const archivePrompt = useArchivePromptMutation();
+  const patchGeneration = usePatchGenerationMutation();
+  const archiveGeneration = useArchiveGenerationMutation();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -86,7 +90,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
-  if (!projectUuid || !promptName) return <NotFound />;
+  if (!projectUuid || !generationName) return <NotFound />;
   const onSubmit: SubmitHandler<EditorParameters> = (
     data: EditorParameters,
     event?: BaseSyntheticEvent
@@ -110,10 +114,10 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
     const editorState = editorRef.current.getEditorState();
     editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      const promptCreate: PromptCreate = {
-        template: markdown,
-        call_params: data?.prompt?.call_params,
-        name: promptName,
+      const generationCreate: GenerationCreate = {
+        prompt_template: markdown,
+        call_params: data?.generation?.call_params,
+        name: generationName,
         arg_types: inputs.reduce(
           (acc, input) => {
             acc[input.key] = "str";
@@ -146,7 +150,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
           {} as Record<string, string>
         );
         const playgroundValues: PlaygroundParameters = {
-          prompt: promptCreate,
+          generation: generationCreate,
           provider: data.provider,
           model: data.model,
           arg_values: inputValues,
@@ -158,12 +162,12 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
       } else {
         try {
           if (!isValid) return;
-          const newVersion = await createPromptMutation.mutateAsync({
+          const newVersion = await createGenerationMutation.mutateAsync({
             projectUuid,
-            promptCreate,
+            generationCreate,
           });
           navigate({
-            to: `/projects/${projectUuid}/prompts/${newVersion.name}/versions/${newVersion.uuid}`,
+            to: `/projects/${projectUuid}/generations/${newVersion.name}/versions/${newVersion.uuid}`,
             replace: true,
           });
         } catch (error) {
@@ -174,18 +178,19 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
   };
   const handleArchive = async () => {
     if (!version) return;
-    let title = `Successfully deleted prompt ${version.name}`;
+    let title = `Successfully deleted generation ${version.name}`;
     let variant: ToastVariants = "default";
     try {
-      await archivePrompt.mutateAsync({
+      await archiveGeneration.mutateAsync({
         projectUuid,
-        promptUuid: version.uuid,
+        generationUuid: version.uuid,
+        generationName: version.name,
       });
       navigate({
-        to: `/projects/${projectUuid}/prompts`,
+        to: `/projects/${projectUuid}/generations`,
       });
     } catch (e) {
-      title = `Failed to delete prompt ${version.name} v${version.version_num}. Delete generations that use ${version.name} v${version.version_num}.`;
+      title = `Failed to delete generation ${version.name} v${version.version_num}. Delete generations that use ${version.name} v${version.version_num}.`;
       variant = "destructive";
     }
     toast({ title, variant });
@@ -269,16 +274,16 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <div className='flex justify-between'>
             <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{promptName}</Typography>
+              <Typography variant='h3'>{generationName}</Typography>
               {version && (
                 <Button
-                  disabled={version.is_default || patchPrompt.isPending}
+                  disabled={version.is_default || patchGeneration.isPending}
                   onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                     e.preventDefault();
-                    patchPrompt.mutate({
+                    patchGeneration.mutate({
                       projectUuid,
-                      promptUuid: version.uuid,
-                      promptUpdate: { is_default: true },
+                      generationUuid: version.uuid,
+                      generationUpdate: { is_default: true },
                     });
                   }}
                 >
@@ -332,7 +337,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
               <Button
                 type='submit'
                 name='save'
-                loading={createPromptMutation.isPending}
+                loading={createGenerationMutation.isPending}
               >
                 Save
               </Button>
@@ -364,11 +369,11 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
           </div>
           <div className='flex gap-4'>
             <div className='lexical form-group space-y-2 w-[600px]'>
-              <Label htmlFor='prompt-template'>Prompt Template</Label>
+              <Label htmlFor='generation-template'>Generation Template</Label>
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 ref={editorRef}
-                promptTemplate={(version && version.template) || ""}
+                promptTemplate={(version && version.prompt_template) || ""}
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
