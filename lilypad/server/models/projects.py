@@ -12,8 +12,6 @@ if TYPE_CHECKING:
     from .api_keys import APIKeyTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
-    from .prompts import PromptTable
-    from .response_models import ResponseModelTable
 
 
 class _ProjectBase(SQLModel):
@@ -30,12 +28,6 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         UniqueConstraint("organization_uuid", "name", name="unique_project_name"),
     )
     generations: list["GenerationTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
-    prompts: list["PromptTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
-    response_models: list["ResponseModelTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")

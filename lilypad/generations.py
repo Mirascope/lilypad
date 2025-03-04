@@ -3,36 +3,245 @@
 import inspect
 import json
 import threading
+import typing
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
+from enum import Enum
 from functools import wraps
-from typing import Any, ParamSpec, Protocol, TypeVar, overload
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    cast,
+    overload,
+)
+from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
+from mirascope import llm
+from mirascope.core import prompt_template
+from mirascope.core.base._utils import fn_is_async
+from mirascope.core.base.types import Provider
+from mirascope.llm.call_response import CallResponse
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from ._utils import (
+    Closure,
     call_safely,
     create_mirascope_middleware,
     get_qualified_name,
     inspect_arguments,
     load_config,
 )
-from .server.client import LilypadClient
+from ._utils.middleware import SpanContextHolder
+from .messages import Message
+from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
+from .stream import Stream
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+_R_CO = TypeVar("_R_CO", covariant=True)
+T = TypeVar("T")
+
+
+class GenerationMode(str, Enum):
+    """Enum for generation return mode."""
+
+    NO_WRAP = "no-wrap"
+    WRAP = "wrap"
+
+
+T_co = TypeVar("T_co", covariant=True)
+
+
+class Generation(Generic[T]):
+    """Container for a generation output, its metadata, and the associated trace/span ID."""
+
+    def __init__(
+        self,
+        output: T,
+        metadata: GenerationPublic,
+        trace_id: int | None = None,
+        span_id: int | None = None,
+    ) -> None:
+        """Initialize a Generation instance.
+
+        Args:
+            output: The generated output.
+            metadata: The generation metadata.
+            trace_id: Optional trace ID for this specific run.
+            span_id: Optional span ID for this specific run
+        """
+        self.output = output
+        self.metadata = metadata
+        self.trace_id = trace_id
+        self.span_id = span_id
+
+        self.uuid: UUID = metadata.uuid
+        self.name: str = metadata.name
+        self.signature: str = metadata.signature
+        self.version_num: int | None = metadata.version_num
+        self.model: str | None = metadata.model
+        self.provider: str | None = metadata.provider
+
+    def __repr__(self) -> str:
+        """String representation of Generation."""
+        return (
+            f"Generation(name='{self.name}', version={self.version_num}, "
+            f"trace_id='{self.trace_id}', span_id='{self.span_id}' , output={self.output})"
+        )
 
 
 current_generation: ContextVar[GenerationPublic | None] = ContextVar(
     "current_generation", default=None
 )
+
+
+class SyncGenerationFunction(Protocol[_P, _R_CO]):
+    """Protocol for the `generation` decorator return type."""
+
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_CO:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(self, forced_version: int) -> Callable[_P, _R_CO]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class AsyncGenerationFunction(Protocol[_P, _R_CO]):
+    """Protocol for the `generation` decorator return type."""
+
+    def __call__(
+        self, *args: _P.args, **kwargs: _P.kwargs
+    ) -> Coroutine[Any, Any, _R_CO]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(
+        self, forced_version: int
+    ) -> Coroutine[Any, Any, Callable[_P, Coroutine[Any, Any, _R_CO]]]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class SyncGenerationWrapFunction(Protocol[_P, _R]):
+    """Protocol for the `generation` decorator return type with wrap mode."""
+
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> Generation[_R]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(self, forced_version: int) -> Callable[_P, Generation[_R]]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class AsyncGenerationWrapFunction(Protocol[_P, _R]):
+    """Protocol for the `generation` decorator return type with wrap mode."""
+
+    def __call__(
+        self, *args: _P.args, **kwargs: _P.kwargs
+    ) -> Coroutine[Any, Any, Generation[_R]]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+    def version(
+        self, forced_version: int
+    ) -> Coroutine[Any, Any, Callable[_P, Coroutine[Any, Any, Generation[_R]]]]:
+        """Protocol for the `generation` decorator return type."""
+        ...
+
+
+class GenerationVersioningDecorator(Protocol):
+    """Protocol for the `generation` decorator return type."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationFunction[_P, _R]: ...
+
+    @overload
+    def __call__(self, fn: Callable[_P, _R]) -> SyncGenerationFunction[_P, _R]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> SyncGenerationFunction[_P, _R] | AsyncGenerationFunction[_P, _R]:
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
+
+
+class ManagedGenerationVersioningDecorator(Protocol):
+    """Protocol for the `generation` decorator return type."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationFunction[_P, Message | Stream]: ...
+
+    @overload
+    def __call__(
+        self, fn: Callable[_P, _R]
+    ) -> SyncGenerationFunction[_P, Message | Stream]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> (
+        SyncGenerationFunction[_P, Message | Stream]
+        | AsyncGenerationFunction[_P, Message | Stream]
+    ):
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
+
+
+class GenerationVersioningWrapDecorator(Protocol):
+    """Protocol for the `generation` decorator return type with wrap mode."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationWrapFunction[_P, _R]: ...
+
+    @overload
+    def __call__(self, fn: Callable[_P, _R]) -> SyncGenerationWrapFunction[_P, _R]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> SyncGenerationWrapFunction[_P, _R] | AsyncGenerationWrapFunction[_P, _R]:
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
+
+
+class ManagedGenerationVersioningWrapDecorator(Protocol):
+    """Protocol for the `generation` decorator return type with wrap mode."""
+
+    @overload
+    def __call__(  # pyright: ignore [reportOverlappingOverload]
+        self, fn: Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> AsyncGenerationWrapFunction[_P, Message | Stream]: ...
+
+    @overload
+    def __call__(
+        self, fn: Callable[_P, _R]
+    ) -> SyncGenerationWrapFunction[_P, Message | Stream]: ...
+
+    def __call__(
+        self, fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]
+    ) -> (
+        SyncGenerationWrapFunction[_P, Message | Stream]
+        | AsyncGenerationWrapFunction[_P, Message | Stream]
+    ):
+        """Protocol `call` definition for `generation` decorator return type."""
+        ...
 
 
 class GenerationDecorator(Protocol):
@@ -147,20 +356,25 @@ def _trace(
     prompt_template: str = "",
 ) -> GenerationDecorator:
     @overload
-    def decorator(
+    def decorator(  # pyright: ignore [reportOverlappingOverload]
         fn: Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+    ) -> Callable[_P, Coroutine[Any, Any, tuple[_R, int, int]]]: ...
 
     @overload
-    def decorator(fn: Callable[_P, _R]) -> Callable[_P, _R]: ...
+    def decorator(fn: Callable[_P, _R]) -> Callable[_P, tuple[_R, int, int]]: ...
 
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+    ) -> (
+        Callable[_P, tuple[_R, int, int]]
+        | Callable[_P, Coroutine[Any, Any, tuple[_R, int, int]]]
+    ):
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)
-            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            async def inner_async(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> tuple[_R, int, int]:
                 with (
                     get_tracer("lilypad").start_as_current_span(
                         get_qualified_name(fn)
@@ -171,7 +385,7 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, True
                     )
                     span.set_attributes(attributes)
-                    original_output = await fn(*args, **kwargs)
+                    original_output = cast(_R, await fn(*args, **kwargs))
                     output_for_span = (
                         original_output.model_dump()
                         if isinstance(original_output, BaseModel)
@@ -180,14 +394,19 @@ def _trace(
                     span.set_attribute(
                         "lilypad.generation.output", str(output_for_span)
                     )
-                return original_output  # pyright: ignore [reportReturnType]
+                    span_context = span.get_span_context()
+                return (
+                    original_output,
+                    span_context.trace_id,
+                    span_context.span_id,
+                )
 
             return inner_async
 
         else:
 
             @wraps(fn)
-            def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            def inner(*args: _P.args, **kwargs: _P.kwargs) -> tuple[_R, int, int]:
                 with (
                     get_tracer("lilypad").start_as_current_span(
                         get_qualified_name(fn)
@@ -198,7 +417,7 @@ def _trace(
                         generation, arg_types, arg_values, prompt_template, False
                     )
                     span.set_attributes(attributes)
-                    original_output = fn(*args, **kwargs)
+                    original_output = cast(_R, fn(*args, **kwargs))
                     output_for_span = (
                         original_output.model_dump()
                         if isinstance(original_output, BaseModel)
@@ -207,18 +426,131 @@ def _trace(
                     span.set_attribute(
                         "lilypad.generation.output", str(output_for_span)
                     )
-                return original_output  # pyright: ignore [reportReturnType]
+                    span_context = span.get_span_context()
+                return (
+                    original_output,
+                    span_context.trace_id,
+                    span_context.span_id,
+                )
 
             return inner
 
-    return decorator
+    return decorator  # pyright: ignore [reportReturnType]
 
 
-def generation(custom_id: str | None = None) -> GenerationDecorator:
-    """The `generation` decorator for versioning and tracing LLM generations.\
+@overload
+def _build_mirascope_call(  # pyright: ignore [reportOverlappingOverload]
+    generation_public: GenerationPublic, fn: Callable[_P, Coroutine[Any, Any, _R]]
+) -> Callable[_P, Coroutine[Any, Any, Message | Stream]]: ...
+
+
+@overload
+def _build_mirascope_call(
+    generation_public: GenerationPublic, fn: Callable[_P, _R]
+) -> Callable[_P, Message | Stream]: ...
+
+
+def _build_mirascope_call(
+    generation_public: GenerationPublic,
+    fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+) -> (
+    Callable[_P, Message | Stream] | Callable[_P, Coroutine[Any, Any, Message | Stream]]
+):
+    """Build a Mirascope call object."""
+    mirascope_prompt = prompt_template(generation_public.prompt_template)(fn)  # pyright: ignore [reportCallIssue, reportArgumentType]
+
+    if not generation_public.model:
+        raise ValueError("Managed generation requires `model`")
+    if not generation_public.provider:
+        raise ValueError("Managed generation requires `provider`")
+    mirascope_call = llm.call(
+        provider=cast(Provider, generation_public.provider),
+        model=generation_public.model,
+        call_params=generation_public.call_params,
+    )(mirascope_prompt)
+
+    @wraps(mirascope_call)
+    def inner(
+        *args: _P.args, **kwargs: _P.kwargs
+    ) -> Message | Coroutine[Any, Any, Message | Stream] | Stream:
+        result = mirascope_call(*args, **kwargs)
+        if fn_is_async(mirascope_call):
+
+            async def async_wrapper() -> Message | Stream:
+                final = await result
+                if isinstance(final, CallResponse):
+                    return Message(final)  # pyright: ignore [reportAbstractUsage]
+                return Stream(stream=final)
+
+            return async_wrapper()
+        else:
+
+            def sync_wrapper() -> Message | Stream:
+                final = result
+                if isinstance(final, CallResponse):
+                    return Message(final)  # pyright: ignore [reportAbstractUsage]
+
+                return Stream(stream=final)
+
+            return sync_wrapper()
+
+    return inner  # pyright: ignore [reportReturnType]
+
+
+_ArgTypes: typing.TypeAlias = dict[str, str]
+
+
+@overload
+def generation(  # pyright: ignore [reportOverlappingOverload]
+    custom_id: str | None = None,
+    managed: Literal[True] = True,
+    mode: Literal[GenerationMode.WRAP] = GenerationMode.WRAP,
+) -> ManagedGenerationVersioningWrapDecorator: ...
+
+
+@overload
+def generation(  # pyright: ignore [reportOverlappingOverload]
+    custom_id: str | None = None,
+    managed: Literal[False] = False,
+    mode: Literal[GenerationMode.WRAP] = GenerationMode.WRAP,
+) -> GenerationVersioningWrapDecorator: ...
+
+
+@overload
+def generation(  # pyright: ignore [reportOverlappingOverload]
+    custom_id: str | None = None,
+    managed: Literal[True] = True,
+    mode: Literal[GenerationMode.NO_WRAP] = GenerationMode.NO_WRAP,
+) -> ManagedGenerationVersioningDecorator: ...
+
+
+@overload
+def generation(
+    custom_id: str | None = None,
+    managed: Literal[False] = False,
+    mode: Literal[GenerationMode.NO_WRAP] = GenerationMode.NO_WRAP,
+) -> GenerationVersioningDecorator: ...
+
+
+def generation(
+    custom_id: str | None = None,
+    managed: bool = False,
+    mode: GenerationMode = GenerationMode.NO_WRAP,
+) -> (
+    GenerationVersioningDecorator
+    | ManagedGenerationVersioningDecorator
+    | GenerationVersioningWrapDecorator
+    | ManagedGenerationVersioningWrapDecorator
+):
+    """The `generation` decorator for versioning and tracing LLM generations.
 
     The decorated function will be versioned according to it's runnable lexical closure,
     and any call to the function will be traced and logged automatically.
+
+    Args:
+        custom_id: Optional custom identifier for the generation
+        managed: If True, uses managed mode that retrieves generation info from server
+        mode: Controls whether to return the original output or wrap it in a Generation object
 
     Returns:
         GenerationDecorator: The `generation` decorator return protocol.
@@ -234,9 +566,14 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
 
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        is_mirascope_call = hasattr(fn, "__mirascope_call__")
-        prompt_template = (
+    ) -> (
+        Callable[_P, _R]
+        | Callable[_P, Coroutine[Any, Any, _R]]
+        | Callable[_P, Generation[_R]]
+        | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
+    ):
+        is_mirascope_call = hasattr(fn, "__mirascope_call__") or managed
+        prompt_template_value = (
             fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
         )
         config = load_config()
@@ -245,61 +582,202 @@ def generation(custom_id: str | None = None) -> GenerationDecorator:
         )
         if inspect.iscoroutinefunction(fn):
 
-            @call_safely(fn)
-            async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types, custom_id=custom_id
-                )
-                token = current_generation.set(generation)
+            def _create_inner_async(
+                get_generation: Callable[[_ArgTypes], GenerationPublic],
+            ) -> (
+                Callable[_P, Coroutine[Any, Any, _R]]
+                | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
+            ):
+                @call_safely(fn)
+                async def _inner_async(
+                    *args: _P.args, **kwargs: _P.kwargs
+                ) -> _R | Generation[_R]:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    generation = get_generation(arg_types)
+                    token = current_generation.set(generation)
+                    try:
+                        # Check if this is the outermost generation (no previous generation)
+                        is_outermost = token.old_value == Token.MISSING
+                        with outermost_lock_context(is_outermost):
+                            if not is_mirascope_call:
+                                decorator_inner = _trace(
+                                    generation=generation,
+                                    arg_types=arg_types,
+                                    arg_values=arg_values,
+                                    prompt_template="",
+                                )
+                                result = await decorator_inner(fn)(*args, **kwargs)
+                                output, trace_id, span_id = (
+                                    result
+                                    if isinstance(result, tuple)
+                                    else (result, None, None)
+                                )
+                            else:
+                                span_context_holder = SpanContextHolder()
+                                decorator_inner = create_mirascope_middleware(
+                                    generation,
+                                    arg_types,
+                                    arg_values,
+                                    True,
+                                    generation.prompt_template
+                                    if managed
+                                    else prompt_template_value,
+                                    span_context_holder=span_context_holder,
+                                )
+                                output = await decorator_inner(  # pyright: ignore [reportReturnType]
+                                    _build_mirascope_call(generation, fn)
+                                    if managed
+                                    else fn
+                                )(*args, **kwargs)
+                                if span_context := span_context_holder.span_context:
+                                    span_id = span_context.span_id
+                                    trace_id = span_context.trace_id
+                                else:
+                                    trace_id = span_id = None
+                            # Wrap output if in wrap mode
+                            if mode == GenerationMode.WRAP:
+                                return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
+                            return output  # pyright: ignore [reportReturnType]
+                    finally:
+                        current_generation.reset(token)
+
+                return _inner_async
+
+            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
+                if not managed:
+                    return lilypad_client.get_or_create_generation_version(
+                        fn,
+                        arg_types,
+                        custom_id=custom_id,
+                    )
                 try:
-                    # Check if this is the outermost generation (no previous generation)
-                    is_outermost = token.old_value == Token.MISSING
-                    with outermost_lock_context(is_outermost):
-                        if not is_mirascope_call:
-                            decorator_inner = _trace(
-                                generation=generation,
-                                arg_types=arg_types,
-                                arg_values=arg_values,
-                                prompt_template="",
-                            )
-                            return await decorator_inner(fn)(*args, **kwargs)
-                        decorator_inner = create_mirascope_middleware(
-                            generation, arg_types, arg_values, True, prompt_template
-                        )
-                        return await decorator_inner(fn)(*args, **kwargs)
-                finally:
-                    current_generation.reset(token)
+                    return lilypad_client.get_generation_by_signature(
+                        fn,
+                    )
+                except LilypadNotFoundError:
+                    ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
+                    raise ValueError(
+                        f"No generation found for function '{Closure.from_fn(fn).name}'. "
+                        f"Please create a new generation at: {ui_link}"
+                    )
+
+            inner_async = _create_inner_async(_get_active_version)
+
+            async def version_async(
+                forced_version: int,
+            ) -> (
+                Callable[_P, Coroutine[Any, Any, _R]]
+                | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
+            ):
+                specific_version_generation = lilypad_client.get_generation_by_version(
+                    fn,
+                    version=forced_version,
+                )
+                if not specific_version_generation:
+                    raise ValueError(
+                        f"Generation version {forced_version} not found for function: {fn.__name__}"
+                    )
+
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
+                    return specific_version_generation
+
+                return _create_inner_async(_get_specific_version)
+
+            inner_async.version = version_async  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
             return inner_async
 
         else:
 
-            @call_safely(fn)
-            def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-                generation = lilypad_client.get_or_create_generation_version(
-                    fn, arg_types, custom_id=custom_id
-                )
-                token = current_generation.set(generation)
+            def _create_inner_sync(
+                get_generation: Callable[[_ArgTypes], GenerationPublic],
+            ) -> Callable[_P, _R] | Callable[_P, Generation[_R]]:
+                @call_safely(fn)  # pyright: ignore [reportArgumentType]
+                def _inner(*args: _P.args, **kwargs: _P.kwargs) -> _R | Generation[_R]:
+                    arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
+                    generation = get_generation(arg_types)
+                    token = current_generation.set(generation)
+                    try:
+                        is_outermost = token.old_value == Token.MISSING
+                        with outermost_lock_context(is_outermost):
+                            if not is_mirascope_call:
+                                decorator_inner = _trace(
+                                    generation=generation,
+                                    arg_types=arg_types,
+                                    arg_values=arg_values,
+                                    prompt_template="",
+                                )
+                                result = decorator_inner(fn)(*args, **kwargs)
+                                output, trace_id, span_id = (
+                                    result
+                                    if isinstance(result, tuple)
+                                    else (result, None, None)
+                                )
+                            else:
+                                span_context_holder = SpanContextHolder()
+                                decorator_inner = create_mirascope_middleware(
+                                    generation,
+                                    arg_types,
+                                    arg_values,
+                                    False,
+                                    generation.prompt_template
+                                    if managed
+                                    else prompt_template_value,
+                                    span_context_holder=span_context_holder,
+                                )
+                                output = decorator_inner(
+                                    _build_mirascope_call(generation, fn)
+                                    if managed
+                                    else fn
+                                )(*args, **kwargs)
+                                if span_context := span_context_holder.span_context:
+                                    span_id = span_context.span_id
+                                    trace_id = span_context.trace_id
+                                else:
+                                    trace_id = span_id = None
+                            if mode == GenerationMode.WRAP:
+                                return Generation(output, generation, trace_id, span_id)  # pyright: ignore [reportReturnType]
+                            return output  # pyright: ignore [reportReturnType]
+                    finally:
+                        current_generation.reset(token)
+
+                return _inner  # pyright: ignore [reportReturnType]
+
+            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
+                if not managed:
+                    return lilypad_client.get_or_create_generation_version(
+                        fn, arg_types, custom_id=custom_id
+                    )
                 try:
-                    is_outermost = token.old_value == Token.MISSING
-                    with outermost_lock_context(is_outermost):
-                        if not is_mirascope_call:
-                            decorator_inner = _trace(
-                                generation=generation,
-                                arg_types=arg_types,
-                                arg_values=arg_values,
-                                prompt_template="",
-                            )
-                            return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                        decorator_inner = create_mirascope_middleware(
-                            generation, arg_types, arg_values, False, prompt_template
-                        )
-                        return decorator_inner(fn)(*args, **kwargs)  # pyright: ignore [reportReturnType]
-                finally:
-                    current_generation.reset(token)
+                    return lilypad_client.get_generation_by_signature(fn)
+                except LilypadNotFoundError:
+                    ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
+                    raise ValueError(
+                        f"No generation found for function '{Closure.from_fn(fn).name}'. "
+                        f"Please create a new generation at: {ui_link}"
+                    )
 
-            return inner  # pyright: ignore [reportReturnType]
+            inner = _create_inner_sync(_get_active_version)
 
-    return decorator
+            def version_sync(
+                forced_version: int,
+            ) -> Callable[_P, _R] | Callable[_P, Generation[_R]]:
+                specific_version_generation = lilypad_client.get_generation_by_version(
+                    fn,
+                    version=forced_version,
+                )
+                if not specific_version_generation:
+                    raise ValueError(
+                        f"Generation version {forced_version} not found for function: {fn.__name__}"
+                    )
+
+                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
+                    return specific_version_generation
+
+                return _create_inner_sync(_get_specific_version)
+
+            inner.version = version_sync  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
+
+            return inner
+
+    return decorator  # pyright: ignore [reportReturnType]

@@ -4,16 +4,12 @@ from .api_keys import APIKeyCreate, APIKeyPublic
 from .generations import (
     GenerationCreate,
     GenerationPublic,
+    PlaygroundParameters,
+    Provider,
 )
 from .organization_invites import OrganizationInviteCreate, OrganizationInvitePublic
 from .organizations import OrganizationCreate, OrganizationPublic
 from .projects import ProjectCreate, ProjectPublic
-from .prompts import (
-    PlaygroundParameters,
-    PromptCreate,
-    PromptPublic,
-    Provider,
-)
 from .spans import SpanCreate, SpanMoreDetails, SpanPublic, SpanTable
 from .user_organizations import (
     UserOrganizationCreate,
@@ -35,8 +31,6 @@ __all__ = [
     "PlaygroundParameters",
     "ProjectCreate",
     "ProjectPublic",
-    "PromptCreate",
-    "PromptPublic",
     "Provider",
     "SpanCreate",
     "SpanPublic",

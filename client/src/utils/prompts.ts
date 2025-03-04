@@ -1,17 +1,10 @@
 import api from "@/api";
-import {
-  PlaygroundParameters,
-  PromptCreate,
-  PromptPublic,
-  PromptUpdate,
-} from "@/types/types";
+import { PromptPublic, PromptUpdate } from "@/types/types";
 import {
   queryOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { AxiosResponse } from "axios";
-import { usePostHog } from "posthog-js/react";
 
 export const fetchPromptsByName = async (
   promptName: string,
@@ -74,30 +67,6 @@ export const fetchLatestVersionUniquePromptNames = async (
   ).data;
 };
 
-export const createPrompt = async (
-  projectUuid: string,
-  promptCreate: PromptCreate
-): Promise<PromptPublic> => {
-  return (
-    await api.post<PromptCreate, AxiosResponse<PromptPublic>>(
-      `/projects/${projectUuid}/prompts`,
-      promptCreate
-    )
-  ).data;
-};
-
-export const runPrompt = async (
-  projectUuid: string,
-  playgroundValues: PlaygroundParameters
-): Promise<string> => {
-  return (
-    await api.post<Record<string, string>, AxiosResponse<string>>(
-      `/projects/${projectUuid}/prompts/run`,
-      playgroundValues
-    )
-  ).data;
-};
-
 export const archivePrompt = async (
   projectUuid: string,
   promptUuid: string
@@ -153,38 +122,6 @@ export const promptsBySignature = (projectUuid: string, signature?: string) =>
     queryFn: () => fetchPromptsBySignature(projectUuid, signature),
     enabled: !!signature,
   });
-
-export const useCreatePrompt = () => {
-  const queryClient = useQueryClient();
-  const posthog = usePostHog();
-  return useMutation({
-    mutationFn: async ({
-      projectUuid,
-      promptCreate,
-    }: {
-      projectUuid: string;
-      promptCreate: PromptCreate;
-    }) => await createPrompt(projectUuid, promptCreate),
-    onSuccess: (newVersion, { projectUuid }) => {
-      posthog.capture("promptCreated");
-      queryClient.invalidateQueries({
-        queryKey: ["projects", projectUuid, "prompts", newVersion.name],
-      });
-    },
-  });
-};
-
-export const useRunMutation = () => {
-  return useMutation({
-    mutationFn: async ({
-      projectUuid,
-      playgroundValues,
-    }: {
-      projectUuid: string;
-      playgroundValues: PlaygroundParameters;
-    }) => await runPrompt(projectUuid, playgroundValues),
-  });
-};
 
 export const usePatchPromptMutation = () => {
   const queryClient = useQueryClient();

@@ -205,10 +205,6 @@ export interface Event {
 export interface GenerationCreate {
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-  /** Response Model Uuid */
-  response_model_uuid?: string | null;
   /** Version Num */
   version_num?: number | null;
   /**
@@ -230,6 +226,38 @@ export interface GenerationCreate {
   archived?: string | null;
   /** Custom Id */
   custom_id?: string | null;
+  /** Prompt Template */
+  prompt_template?: string | null;
+  /** Provider */
+  provider?: string | null;
+  /** Model */
+  model?: string | null;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Is Managed
+   * @default false
+   */
+  is_managed?: boolean;
 }
 
 /**
@@ -239,10 +267,6 @@ export interface GenerationCreate {
 export interface GenerationPublic {
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-  /** Response Model Uuid */
-  response_model_uuid?: string | null;
   /** Version Num */
   version_num?: number | null;
   /**
@@ -264,23 +288,50 @@ export interface GenerationPublic {
   archived?: string | null;
   /** Custom Id */
   custom_id?: string | null;
+  /** Prompt Template */
+  prompt_template?: string | null;
+  /** Provider */
+  provider?: string | null;
+  /** Model */
+  model?: string | null;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Is Managed
+   * @default false
+   */
+  is_managed?: boolean;
   /**
    * Uuid
    * @format uuid
    */
   uuid: string;
-  prompt?: PromptPublic | null;
-  response_model?: ResponseModelPublic | null;
 }
 
 /**
  * GenerationUpdate
  * Generation update model.
  */
-export interface GenerationUpdate {
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-}
+export type GenerationUpdate = object;
 
 /** HTTPValidationError */
 export interface HTTPValidationError {
@@ -414,7 +465,7 @@ export interface PlaygroundParameters {
   provider: Provider;
   /** Model */
   model: string;
-  prompt?: PromptCreate | null;
+  generation?: GenerationCreate | null;
 }
 
 /**
@@ -444,136 +495,10 @@ export interface ProjectPublic {
    */
   generations?: GenerationPublic[];
   /**
-   * Prompts
-   * @default []
-   */
-  prompts?: PromptPublic[];
-  /**
-   * Response Models
-   * @default []
-   */
-  response_models?: ResponseModelPublic[];
-  /**
    * Created At
    * @format date-time
    */
   created_at: string;
-}
-
-/**
- * PromptCreate
- * Prompt create model.
- */
-export interface PromptCreate {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Version Num */
-  version_num?: number | null;
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-  /** Signature */
-  signature: string;
-  /** Code */
-  code: string;
-  /** Hash */
-  hash: string;
-  /** Dependencies */
-  dependencies?: Record<string, string>;
-  /** Template */
-  template: string;
-  /**
-   * Is Default
-   * @default false
-   */
-  is_default?: boolean;
-  /**
-   * Common parameters shared across LLM providers.
-   *
-   * Note: Each provider may handle these parameters differently or not support them at all.
-   * Please check provider-specific documentation for parameter support and behavior.
-   *
-   * Attributes:
-   *     temperature: Controls randomness in the output (0.0 to 1.0).
-   *     max_tokens: Maximum number of tokens to generate.
-   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
-   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
-   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
-   *     seed: Random seed for reproducibility.
-   *     stop: Stop sequence(s) to end generation.
-   */
-  call_params?: CommonCallParams;
-  /** Arg Types */
-  arg_types?: Record<string, string>;
-  /** Archived */
-  archived?: string | null;
-}
-
-/**
- * PromptPublic
- * Prompt public model.
- */
-export interface PromptPublic {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Version Num */
-  version_num?: number | null;
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-  /** Signature */
-  signature: string;
-  /** Code */
-  code: string;
-  /** Hash */
-  hash: string;
-  /** Dependencies */
-  dependencies?: Record<string, string>;
-  /** Template */
-  template: string;
-  /**
-   * Is Default
-   * @default false
-   */
-  is_default?: boolean;
-  /**
-   * Common parameters shared across LLM providers.
-   *
-   * Note: Each provider may handle these parameters differently or not support them at all.
-   * Please check provider-specific documentation for parameter support and behavior.
-   *
-   * Attributes:
-   *     temperature: Controls randomness in the output (0.0 to 1.0).
-   *     max_tokens: Maximum number of tokens to generate.
-   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
-   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
-   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
-   *     seed: Random seed for reproducibility.
-   *     stop: Stop sequence(s) to end generation.
-   */
-  call_params?: CommonCallParams;
-  /** Arg Types */
-  arg_types?: Record<string, string>;
-  /** Archived */
-  archived?: string | null;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
-}
-
-/**
- * PromptUpdate
- * Prompt update model
- */
-export interface PromptUpdate {
-  /** Is Default */
-  is_default?: boolean | null;
 }
 
 /**
@@ -585,73 +510,6 @@ export enum Provider {
   ANTHROPIC = "anthropic",
   OPENROUTER = "openrouter",
   GEMINI = "gemini",
-}
-
-/**
- * ResponseModelCreate
- * Create model for response models.
- */
-export interface ResponseModelCreate {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-  /** Signature */
-  signature: string;
-  /** Code */
-  code: string;
-  /** Hash */
-  hash: string;
-  /** Dependencies */
-  dependencies?: Record<string, DependencyInfo>;
-  /** Schema Data */
-  schema_data?: object;
-  /** Examples */
-  examples?: object[];
-  /**
-   * Is Active
-   * @default false
-   */
-  is_active?: boolean;
-}
-
-/**
- * ResponseModelPublic
- * Public model for response models.
- */
-export interface ResponseModelPublic {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-  /** Signature */
-  signature: string;
-  /** Code */
-  code: string;
-  /** Hash */
-  hash: string;
-  /** Dependencies */
-  dependencies?: Record<string, DependencyInfo>;
-  /** Schema Data */
-  schema_data?: object;
-  /** Examples */
-  examples?: object[];
-  /**
-   * Is Active
-   * @default false
-   */
-  is_active?: boolean;
-  /**
-   * Uuid
-   * @format uuid
-   */
-  uuid: string;
 }
 
 /**
@@ -736,10 +594,6 @@ export interface SpanPublic {
   span_id: string;
   /** Generation Uuid */
   generation_uuid?: string | null;
-  /** Prompt Uuid */
-  prompt_uuid?: string | null;
-  /** Response Model Uuid */
-  response_model_uuid?: string | null;
   type?: SpanType | null;
   /** Cost */
   cost?: number | null;
@@ -768,8 +622,6 @@ export interface SpanPublic {
   /** Display Name */
   display_name?: string | null;
   generation?: GenerationPublic | null;
-  prompt?: PromptPublic | null;
-  response_model?: ResponseModelPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -791,7 +643,6 @@ export interface SpanPublic {
  */
 export enum SpanType {
   GENERATION = "generation",
-  PROMPT = "prompt",
 }
 
 /**

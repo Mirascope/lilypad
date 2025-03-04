@@ -4,10 +4,11 @@ import importlib.metadata
 import inspect
 import sys
 from collections.abc import Callable
+from uuid import UUID
 
 import pytest
 
-from lilypad._utils import Closure
+from lilypad._utils import Closure, get_qualified_name
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -569,3 +570,46 @@ def test_instance_method_on_local() -> None:
             "extras": mirascope_extras,
         },
     }
+
+
+def test_from_fn_failure(monkeypatch):
+    """Test that Closure.from_fn propagates exceptions from _run_ruff."""
+
+    def fake_run_ruff(code: str) -> str:
+        raise RuntimeError("Ruff failed")
+
+    monkeypatch.setattr("lilypad._utils.closure._run_ruff", fake_run_ruff)
+
+    def dummy_func(x):
+        return x
+
+    with pytest.raises(RuntimeError, match="Ruff failed"):
+        Closure.from_fn(dummy_func)
+
+
+def sample_function(x: int) -> int:
+    """A sample function that multiplies input by 2."""
+    return x * 2
+
+
+@pytest.fixture()
+def fixed_uuid(monkeypatch):
+    """Fixture that replaces uuid.uuid4 with a fixed UUID."""
+    fixed = UUID("12345678123456781234567812345678")
+    monkeypatch.setattr("uuid.uuid4", lambda: fixed)
+    return fixed
+
+
+def test_get_qualified_name_handles_locals():
+    """Test that get_qualified_name returns a simplified name for a function defined in a local scope."""
+
+    def outer():
+        def inner():
+            pass
+
+        return inner
+
+    inner_fn = outer()
+    simple_name = get_qualified_name(inner_fn)
+    # Expected simple name is "inner"
+    assert simple_name == "inner"
