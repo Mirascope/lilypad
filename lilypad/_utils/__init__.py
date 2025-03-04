@@ -13,7 +13,6 @@ __all__ = [
     "Closure",
     "call_safely",
     "DependencyInfo",
-    "create_mirascope_call",
     "create_mirascope_middleware",
     "encode_gemini_part",
     "get_qualified_name",

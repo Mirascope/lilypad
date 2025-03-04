@@ -12,11 +12,6 @@ from .organization_invites import (
 )
 from .organizations import OrganizationTable
 from .projects import ProjectTable
-from .prompts import (
-    PromptTable,
-    PromptUpdate,
-    Provider,
-)
 from .spans import Scope, SpanTable, SpanType
 from .user_organizations import (
     UserOrganizationTable,
@@ -34,9 +29,6 @@ __all__ = [
     "OrganizationInviteTable",
     "OrganizationTable",
     "ProjectTable",
-    "PromptTable",
-    "PromptUpdate",
-    "Provider",
     "Scope",
     "SpanTable",
     "SpanType",

@@ -1,36 +1,25 @@
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { GenerationSpans } from "@/components/GenerationSpans";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GenerationPublic, PromptPublic } from "@/types/types";
+import { GenerationPublic } from "@/types/types";
 import {
   generationsByNameQueryOptions,
   useArchiveGenerationMutation,
-  usePatchGenerationMutation,
 } from "@/utils/generations";
-import { promptsBySignature } from "@/utils/prompts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import JsonView from "@uiw/react-json-view";
-import ReactMarkdown from "react-markdown";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
 import { MetricCharts } from "@/components/MetricsCharts";
+import { Playground } from "@/components/Playground";
 import {
   Select,
   SelectContent,
@@ -221,57 +210,8 @@ const GenerationWorkbench = () => {
   );
 };
 
-const PromptCard = ({
-  prompt,
-  generationUuid,
-  activePromptUuid,
-  index,
-}: {
-  prompt: PromptPublic;
-  generationUuid: string;
-  activePromptUuid?: string;
-  index: number;
-}) => {
-  const { projectUuid } = useParams({ from: Route.id });
-  const patchGeneration = usePatchGenerationMutation();
-  const handleButtonClick = () => {
-    patchGeneration.mutate({
-      projectUuid,
-      generationUuid,
-      generationUpdate: { prompt_uuid: prompt.uuid },
-    });
-  };
-  return (
-    <Card className='w-auto'>
-      <CardHeader>
-        <CardTitle>{prompt.name}</CardTitle>
-        <CardDescription>Version {index + 1}</CardDescription>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-2 h-[200px] overflow-auto'>
-        <Label>Template</Label>
-        <ReactMarkdown>{prompt.template}</ReactMarkdown>
-        <Separator />
-        <Label>Call Parameters</Label>
-        <JsonView value={prompt.call_params} />
-      </CardContent>
-      <CardFooter className='p-6'>
-        <Button
-          className='w-full'
-          disabled={prompt.uuid === activePromptUuid}
-          onClick={handleButtonClick}
-        >
-          {prompt.uuid === activePromptUuid ? "Active" : "Set active"}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
 const Generation = ({ generation }: { generation: GenerationPublic }) => {
   const { projectUuid } = useParams({ from: Route.id });
-
-  const { data: prompts } = useSuspenseQuery(
-    promptsBySignature(projectUuid, generation?.prompt?.signature)
-  );
 
   if (!generation) {
     return <div>No generation selected.</div>;
@@ -289,19 +229,8 @@ const Generation = ({ generation }: { generation: GenerationPublic }) => {
           <div className='text-left'>
             <Label>Code</Label>
             <CodeSnippet code={generation.code} />
-            <Label>Available Prompts</Label>
-            <div className='flex gap-4 w-max-full flex-wrap'>
-              {prompts.map((prompt, i) => (
-                <PromptCard
-                  key={prompt.uuid}
-                  generationUuid={generation.uuid}
-                  activePromptUuid={generation.prompt?.uuid}
-                  prompt={prompt}
-                  index={i}
-                />
-              ))}
-            </div>
           </div>
+          {generation.is_managed && <Playground version={generation} />}
         </div>
       )}
     </>
