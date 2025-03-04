@@ -257,42 +257,6 @@ class LilypadClient:
                 },
             )
 
-    def get_or_create_trace_generation(
-        self,
-        fn: Callable[..., Any],
-        arg_types: dict[str, str],
-        custom_id: str | None = None,
-    ) -> GenerationPublic:
-        """Get or create a generation record for tracing purposes, without versioning.
-
-        This function attempts to retrieve an existing generation record from the DB
-        (by using the function's hash). If not found, it creates a new record with
-        minimal metadata and version_num set to -1.
-        """
-        closure = Closure.from_fn(fn)
-        try:
-            return self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/generations/hash/{closure.hash}",
-                response_model=GenerationPublic,
-            )
-        except LilypadNotFoundError:
-            return self._request(
-                "POST",
-                f"v0/projects/{self.project_uuid}/generations",
-                response_model=GenerationPublic,
-                json={
-                    "name": closure.name,
-                    "signature": closure.signature,
-                    "code": closure.code,
-                    "hash": closure.hash,
-                    "dependencies": closure.dependencies,
-                    "arg_types": arg_types,
-                    "custom_id": custom_id,
-                    "version_num": -1,  # Disable versioning for tracing.
-                },
-            )
-
     def get_prompt_active_version(
         self, fn: Callable[..., Any], generation: GenerationPublic | None
     ) -> PromptPublic | None:
