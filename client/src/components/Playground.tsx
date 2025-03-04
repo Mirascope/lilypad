@@ -1,10 +1,8 @@
 import { Editor } from "@/components/Editor";
 
 import { AddCardButton } from "@/components/AddCardButton";
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
-import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,22 +15,25 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ToastVariants } from "@/components/ui/toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import {
   GenerationCreate,
   GenerationPublic,
   PlaygroundParameters,
 } from "@/types/types";
 import {
-  useArchiveGenerationMutation,
   useCreateManagedGeneration,
   usePatchGenerationMutation,
   useRunMutation,
@@ -47,9 +48,9 @@ import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { LexicalEditor } from "lexical";
-import { Trash, X } from "lucide-react";
+import { X } from "lucide-react";
 import { BaseSyntheticEvent, useRef, useState } from "react";
-import { SubmitHandler, useFieldArray } from "react-hook-form";
+import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 
 type EditorParameters = PlaygroundParameters & {
@@ -63,13 +64,11 @@ export const Playground = ({
   const { projectUuid, generationName } = useParams({
     strict: false,
   });
-  const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
   const createGenerationMutation = useCreateManagedGeneration();
   const runMutation = useRunMutation();
   const patchGeneration = usePatchGenerationMutation();
-  const archiveGeneration = useArchiveGenerationMutation();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -167,7 +166,7 @@ export const Playground = ({
             generationCreate,
           });
           navigate({
-            to: `/projects/${projectUuid}/generations/${newVersion.name}/versions/${newVersion.uuid}`,
+            to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
             replace: true,
           });
         } catch (error) {
@@ -175,25 +174,6 @@ export const Playground = ({
         }
       }
     });
-  };
-  const handleArchive = async () => {
-    if (!version) return;
-    let title = `Successfully deleted generation ${version.name}`;
-    let variant: ToastVariants = "default";
-    try {
-      await archiveGeneration.mutateAsync({
-        projectUuid,
-        generationUuid: version.uuid,
-        generationName: version.name,
-      });
-      navigate({
-        to: `/projects/${projectUuid}/generations`,
-      });
-    } catch (e) {
-      title = `Failed to delete generation ${version.name} v${version.version_num}. Delete generations that use ${version.name} v${version.version_num}.`;
-      variant = "destructive";
-    }
-    toast({ title, variant });
   };
   const renderBottomPanel = () => {
     return (
@@ -269,12 +249,19 @@ export const Playground = ({
   };
   const doesProviderExist = getAvailableProviders(user).length > 0;
   return (
-    <div className='m-auto w-[1200px] p-4'>
-      <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <div className='flex justify-between'>
+    <Form {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <div className='flex flex-col gap-4'>
+          <div className='flex flex-col md:flex-row justify-between gap-4 w-full'>
             <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{generationName}</Typography>
+              <Button
+                type='submit'
+                name='save'
+                loading={createGenerationMutation.isPending}
+                className='bg-mirascope hover:bg-mirascope-light text-white font-medium'
+              >
+                Save
+              </Button>
               {version && (
                 <Button
                   disabled={version.is_default || patchGeneration.isPending}
@@ -286,61 +273,22 @@ export const Playground = ({
                       generationUpdate: { is_default: true },
                     });
                   }}
+                  className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+                  variant='outline'
                 >
-                  {version.is_default ? "Default" : "Set default"}
+                  {version.is_default ? (
+                    <span className='flex items-center gap-1'>
+                      <span className='h-2 w-2 rounded-full bg-green-500'></span>
+                      Default
+                    </span>
+                  ) : (
+                    "Set default"
+                  )}
                 </Button>
-              )}
-              {version && (
-                <LilypadDialog
-                  text='Code'
-                  title='Copy Code'
-                  description='Copy this codeblock into your application.'
-                  dialogContentProps={{
-                    className: "max-w-[600px]",
-                  }}
-                  buttonProps={{
-                    disabled: methods.formState.isDirty,
-                  }}
-                >
-                  <CodeSnippet code={version.code} />
-                </LilypadDialog>
-              )}
-              {version && (
-                <LilypadDialog
-                  icon={<Trash />}
-                  title={`Delete ${version.name} v${version.version_num}`}
-                  description=''
-                  dialogContentProps={{
-                    className: "max-w-[600px]",
-                  }}
-                  buttonProps={{
-                    variant: "outlineDestructive",
-                  }}
-                  dialogButtons={[
-                    <Button
-                      type='button'
-                      variant='destructive'
-                      onClick={handleArchive}
-                    >
-                      Delete
-                    </Button>,
-                    <Button type='button' variant='outline'>
-                      Cancel
-                    </Button>,
-                  ]}
-                >
-                  {`Are you sure you want to delete ${version.name} v${version.version_num}?`}
-                </LilypadDialog>
               )}
             </div>
             <div className='flex items-center gap-2'>
-              <Button
-                type='submit'
-                name='save'
-                loading={createGenerationMutation.isPending}
-              >
-                Save
-              </Button>
+              <CallParamsDrawer />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
@@ -348,12 +296,13 @@ export const Playground = ({
                       name='run'
                       loading={runMutation.isPending}
                       disabled={!doesProviderExist}
+                      className='bg-green-600 hover:bg-green-700 text-white font-medium'
                     >
                       Run
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className='bg-gray-500'>
+                <TooltipContent className='bg-gray-700 text-white'>
                   <p className='max-w-xs break-words'>
                     {doesProviderExist ? (
                       "Run the playground with the selected provider."
@@ -369,7 +318,6 @@ export const Playground = ({
           </div>
           <div className='flex gap-4'>
             <div className='lexical form-group space-y-2 w-[600px]'>
-              <Label htmlFor='generation-template'>Generation Template</Label>
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 ref={editorRef}
@@ -382,11 +330,40 @@ export const Playground = ({
                   </div>
                 ))}
             </div>
-            <BaseEditorFormFields />
           </div>
           {renderBottomPanel()}
-        </form>
-      </Form>
-    </div>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+const CallParamsDrawer = () => {
+  const methods = useFormContext<PlaygroundParameters>();
+  const handleClick = () => {
+    methods.reset();
+  };
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+          variant='outline'
+        >
+          Configure Call Params
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Call Params</SheetTitle>
+        </SheetHeader>
+        <BaseEditorFormFields />
+        <SheetFooter>
+          <Button variant='outline' onClick={handleClick}>
+            Reset to default
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };

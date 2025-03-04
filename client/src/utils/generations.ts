@@ -120,7 +120,7 @@ export const usePatchGenerationMutation = () => {
       generationUuid: string;
       generationUpdate: GenerationUpdate;
     }) => await patchGeneration(projectUuid, generationUuid, generationUpdate),
-    onSuccess: (generation, { projectUuid }) => {
+    onSuccess: (generation) => {
       queryClient.invalidateQueries({
         queryKey: generationKeys.list(generation.name),
       });
@@ -132,7 +132,7 @@ export const uniqueLatestVersionGenerationNamesQueryOptions = (
   projectUuid?: string
 ) =>
   queryOptions({
-    queryKey: generationKeys.list("unique"),
+    queryKey: ["projects", projectUuid, ...generationKeys.list("unique")],
     queryFn: async () =>
       await fetchLatestVersionUniqueGenerationNames(projectUuid),
   });
@@ -164,7 +164,7 @@ export const useArchiveGenerationMutation = () => {
       generationUuid: string;
       generationName: string;
     }) => await archiveGeneration(projectUuid, generationUuid),
-    onSuccess: (_, { projectUuid, generationName }) => {
+    onSuccess: (_, { generationName }) => {
       queryClient.invalidateQueries({
         queryKey: generationKeys.list(generationName),
       });

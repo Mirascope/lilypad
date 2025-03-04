@@ -29,7 +29,9 @@ export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
           </Badge>
         )}
         {span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
-        <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
+        {span.duration_ms && (
+          <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
+        )}
       </div>
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
       {renderData({
