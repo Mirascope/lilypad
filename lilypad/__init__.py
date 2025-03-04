@@ -8,6 +8,7 @@ from ._configure import configure
 from .generations import generation
 from .messages import Message
 from .tools import tool
+from .traces import trace
 
 __version__ = importlib.metadata.version("python-lilypad")
 
@@ -19,4 +20,5 @@ __all__ = [
     "Message",
     "server",
     "tool",
+    "trace",
 ]

@@ -1,6 +1,5 @@
 """Utility module for setting up loggers and log handlers."""
 
-import inspect
 import logging
 import traceback
 from collections.abc import Callable, Coroutine
@@ -8,6 +7,7 @@ from functools import wraps
 from typing import Any, ParamSpec, TypeVar, overload
 
 from ..exceptions import LilypadException
+from .fn_is_async import fn_is_async
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -59,7 +59,7 @@ def call_safely(
     def decorator(
         fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        if inspect.iscoroutinefunction(fn):
+        if fn_is_async(fn):
 
             @wraps(child_fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
