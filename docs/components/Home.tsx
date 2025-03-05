@@ -80,21 +80,21 @@ export const Home = () => {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="py-16 md:py-24 flex flex-col items-center justify-center text-center px-4 max-w-6xl mx-auto">
+      <section className="py-16 md:py-24 flex flex-col gap-8 items-center justify-center text-center px-4 max-w-6xl mx-auto">
         <div className="animate-fade-in-up">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-8">
             <span className="text-primary">Lilypad</span>: Open-Source
             <br />
             AI Engineering Platform
           </h1>
-          <p className="text-lg sm:text-xl mb-10 max-w-3xl mx-auto text-gray-700">
+          <p className="text-lg sm:text-xl max-w-3xl mx-auto text-gray-700">
             Enable seamless collaboration between developers, business users,
             and domain experts while maintaining quality and reproducibility in
             your AI applications.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in-up animation-delay-200">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-200">
           <Link href="/docs/quickstart">
             <Button size="lg">Quickstart</Button>
           </Link>
@@ -131,8 +131,14 @@ export const Home = () => {
 
         {/* Code Example */}
         <CodeBlock
-          code={`import lilypad
+          code={`import os
+
+import lilypad
 from openai import OpenAI
+
+os.environ["LILYPAD_PROJECT_ID"] = "..."
+os.environ["LILYPAD_API_KEY"] = "..."
+os.environ["OPENAI_API_KEY"] = "..."
 
 lilypad.configure()
 client = OpenAI()
@@ -155,12 +161,17 @@ print(answer)
 # > The capital of France is Paris.`}
           language="python"
           filename="answer_question.py"
-          highlightLines={[1, 4, 8]}
+          highlightLines={[3, 6, 7, 10, 14]}
         />
       </section>
 
       {/* Features Section */}
       <section className="py-8">
+        <h2 className="text-2xl text-center sm:text-4xl font-bold mb-6">
+          All the tools you need for the
+          <br />
+          entire LLM development lifecycle
+        </h2>
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {features.map((feature, index) => (
@@ -174,7 +185,7 @@ print(answer)
       <section className="pb-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl sm:text-4xl font-bold mb-6">
-            Start for free today!
+            Start using Lilypad today for free!
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/docs/quickstart">
