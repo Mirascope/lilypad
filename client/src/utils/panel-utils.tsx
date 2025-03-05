@@ -1,4 +1,3 @@
-import { MessageCard } from "@/components/MessageCard";
 import {
   Card,
   CardContent,

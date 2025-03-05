@@ -1,10 +1,8 @@
 import { Editor } from "@/components/Editor";
 
 import { AddCardButton } from "@/components/AddCardButton";
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
-import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,55 +15,60 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ToastVariants } from "@/components/ui/toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import {
+  GenerationCreate,
+  GenerationPublic,
   PlaygroundParameters,
-  PromptCreate,
-  PromptPublic,
 } from "@/types/types";
+import {
+  useCreateManagedGeneration,
+  usePatchGenerationMutation,
+  useRunMutation,
+} from "@/utils/generations";
 import {
   BaseEditorFormFields,
   getAvailableProviders,
   useBaseEditorForm,
 } from "@/utils/playground-utils";
-import {
-  useArchivePromptMutation,
-  useCreatePrompt,
-  usePatchPromptMutation,
-  useRunMutation,
-} from "@/utils/prompts";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { LexicalEditor } from "lexical";
-import { Trash, X } from "lucide-react";
+import { X } from "lucide-react";
 import { BaseSyntheticEvent, useRef, useState } from "react";
-import { SubmitHandler, useFieldArray } from "react-hook-form";
+import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 
 type EditorParameters = PlaygroundParameters & {
   inputs: Record<string, string>[];
 };
-export const Playground = ({ version }: { version: PromptPublic | null }) => {
-  const { projectUuid, promptName } = useParams({
+export const Playground = ({
+  version,
+}: {
+  version: GenerationPublic | null;
+}) => {
+  const { projectUuid, generationName } = useParams({
     strict: false,
   });
-  const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
-  const createPromptMutation = useCreatePrompt();
+  const createGenerationMutation = useCreateManagedGeneration();
   const runMutation = useRunMutation();
-  const patchPrompt = usePatchPromptMutation();
-  const archivePrompt = useArchivePromptMutation();
+  const patchGeneration = usePatchGenerationMutation();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -86,7 +89,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
-  if (!projectUuid || !promptName) return <NotFound />;
+  if (!projectUuid || !generationName) return <NotFound />;
   const onSubmit: SubmitHandler<EditorParameters> = (
     data: EditorParameters,
     event?: BaseSyntheticEvent
@@ -110,10 +113,10 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
     const editorState = editorRef.current.getEditorState();
     editorState.read(async () => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      const promptCreate: PromptCreate = {
-        template: markdown,
-        call_params: data?.prompt?.call_params,
-        name: promptName,
+      const generationCreate: GenerationCreate = {
+        prompt_template: markdown,
+        call_params: data?.generation?.call_params,
+        name: generationName,
         arg_types: inputs.reduce(
           (acc, input) => {
             acc[input.key] = "str";
@@ -146,7 +149,7 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
           {} as Record<string, string>
         );
         const playgroundValues: PlaygroundParameters = {
-          prompt: promptCreate,
+          generation: generationCreate,
           provider: data.provider,
           model: data.model,
           arg_values: inputValues,
@@ -158,12 +161,12 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
       } else {
         try {
           if (!isValid) return;
-          const newVersion = await createPromptMutation.mutateAsync({
+          const newVersion = await createGenerationMutation.mutateAsync({
             projectUuid,
-            promptCreate,
+            generationCreate,
           });
           navigate({
-            to: `/projects/${projectUuid}/prompts/${newVersion.name}/versions/${newVersion.uuid}`,
+            to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
             replace: true,
           });
         } catch (error) {
@@ -171,24 +174,6 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
         }
       }
     });
-  };
-  const handleArchive = async () => {
-    if (!version) return;
-    let title = `Successfully deleted prompt ${version.name}`;
-    let variant: ToastVariants = "default";
-    try {
-      await archivePrompt.mutateAsync({
-        projectUuid,
-        promptUuid: version.uuid,
-      });
-      navigate({
-        to: `/projects/${projectUuid}/prompts`,
-      });
-    } catch (e) {
-      title = `Failed to delete prompt ${version.name} v${version.version_num}. Delete generations that use ${version.name} v${version.version_num}.`;
-      variant = "destructive";
-    }
-    toast({ title, variant });
   };
   const renderBottomPanel = () => {
     return (
@@ -264,78 +249,46 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
   };
   const doesProviderExist = getAvailableProviders(user).length > 0;
   return (
-    <div className='m-auto w-[1200px] p-4'>
-      <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <div className='flex justify-between'>
-            <div className='flex items-center gap-2'>
-              <Typography variant='h3'>{promptName}</Typography>
-              {version && (
-                <Button
-                  disabled={version.is_default || patchPrompt.isPending}
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    patchPrompt.mutate({
-                      projectUuid,
-                      promptUuid: version.uuid,
-                      promptUpdate: { is_default: true },
-                    });
-                  }}
-                >
-                  {version.is_default ? "Default" : "Set default"}
-                </Button>
-              )}
-              {version && (
-                <LilypadDialog
-                  text='Code'
-                  title='Copy Code'
-                  description='Copy this codeblock into your application.'
-                  dialogContentProps={{
-                    className: "max-w-[600px]",
-                  }}
-                  buttonProps={{
-                    disabled: methods.formState.isDirty,
-                  }}
-                >
-                  <CodeSnippet code={version.code} />
-                </LilypadDialog>
-              )}
-              {version && (
-                <LilypadDialog
-                  icon={<Trash />}
-                  title={`Delete ${version.name} v${version.version_num}`}
-                  description=''
-                  dialogContentProps={{
-                    className: "max-w-[600px]",
-                  }}
-                  buttonProps={{
-                    variant: "outlineDestructive",
-                  }}
-                  dialogButtons={[
-                    <Button
-                      type='button'
-                      variant='destructive'
-                      onClick={handleArchive}
-                    >
-                      Delete
-                    </Button>,
-                    <Button type='button' variant='outline'>
-                      Cancel
-                    </Button>,
-                  ]}
-                >
-                  {`Are you sure you want to delete ${version.name} v${version.version_num}?`}
-                </LilypadDialog>
-              )}
-            </div>
+    <Form {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <div className='flex flex-col gap-4'>
+          <div className='flex flex-col md:flex-row justify-between gap-4 w-full'>
             <div className='flex items-center gap-2'>
               <Button
                 type='submit'
                 name='save'
-                loading={createPromptMutation.isPending}
+                loading={createGenerationMutation.isPending}
+                className='bg-mirascope hover:bg-mirascope-light text-white font-medium'
               >
                 Save
               </Button>
+              {version && (
+                <Button
+                  disabled={version.is_default || patchGeneration.isPending}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    patchGeneration.mutate({
+                      projectUuid,
+                      generationUuid: version.uuid,
+                      generationUpdate: { is_default: true },
+                    });
+                  }}
+                  className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+                  variant='outline'
+                >
+                  {version.is_default ? (
+                    <span className='flex items-center gap-1'>
+                      <span className='h-2 w-2 rounded-full bg-green-500'></span>
+                      Default
+                    </span>
+                  ) : (
+                    "Set default"
+                  )}
+                </Button>
+              )}
+            </div>
+            <div className='flex items-center gap-2'>
+              <CallParamsDrawer />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
@@ -343,12 +296,13 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                       name='run'
                       loading={runMutation.isPending}
                       disabled={!doesProviderExist}
+                      className='bg-green-600 hover:bg-green-700 text-white font-medium'
                     >
                       Run
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className='bg-gray-500'>
+                <TooltipContent className='bg-gray-700 text-white'>
                   <p className='max-w-xs break-words'>
                     {doesProviderExist ? (
                       "Run the playground with the selected provider."
@@ -364,11 +318,10 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
           </div>
           <div className='flex gap-4'>
             <div className='lexical form-group space-y-2 w-[600px]'>
-              <Label htmlFor='prompt-template'>Prompt Template</Label>
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 ref={editorRef}
-                promptTemplate={(version && version.template) || ""}
+                promptTemplate={(version && version.prompt_template) || ""}
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
@@ -377,11 +330,40 @@ export const Playground = ({ version }: { version: PromptPublic | null }) => {
                   </div>
                 ))}
             </div>
-            <BaseEditorFormFields />
           </div>
           {renderBottomPanel()}
-        </form>
-      </Form>
-    </div>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+const CallParamsDrawer = () => {
+  const methods = useFormContext<PlaygroundParameters>();
+  const handleClick = () => {
+    methods.reset();
+  };
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+          variant='outline'
+        >
+          Configure Call Params
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Call Params</SheetTitle>
+        </SheetHeader>
+        <BaseEditorFormFields />
+        <SheetFooter>
+          <Button variant='outline' onClick={handleClick}>
+            Reset to default
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 };

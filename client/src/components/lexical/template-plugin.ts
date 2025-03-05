@@ -1,10 +1,10 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalEditor, TextNode } from "lexical";
-import { useEffect, useCallback, useRef } from "react";
+import { JSX, useCallback, useEffect } from "react";
 import {
   $createTemplateNode,
-  TemplateNode,
   $isTemplateNode,
+  TemplateNode,
 } from "./template-node";
 
 const parseTemplate = (

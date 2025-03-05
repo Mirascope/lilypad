@@ -21,12 +21,19 @@ from ..exceptions import (
 )
 from ..server.settings import get_settings
 from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
-from .schemas.prompts import PromptPublic
-from .schemas.response_models import ResponseModelPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
 log = logging.getLogger(__name__)
+
+
+def _is_valid_uuid(val: str) -> bool:
+    """Check if a string is a valid UUID."""
+    try:
+        UUID(val)
+        return True
+    except ValueError:
+        return False
 
 
 class LilypadClient:
@@ -257,108 +264,62 @@ class LilypadClient:
                 },
             )
 
-    def get_prompt_active_version(
-        self, fn: Callable[..., Any], generation: GenerationPublic | None
-    ) -> PromptPublic | None:
-        """Get the matching version for a prompt.
+    def get_generation_by_version(
+        self,
+        fn: Callable[..., Any],
+        version: int,
+    ) -> GenerationPublic:
+        """Get the matching version for a generation.
 
         Args:
-            fn (Callable): The prompt for which to get the version.
-            generation (GenerationPublic | None): A generation that may have a specific
-                version of the prompt linked.
+            fn (Callable): The generation for which to get the version.
+            version (int): If provided, force the retrieval of the generation with this version.
 
         Returns:
-            PromptPublic | None: The matching version for the prompt, or `None`.
+            GenerationPublic: The matching (or created) version for the generation.
         """
         closure = Closure.from_fn(fn)
-        if (
-            generation
-            and generation.prompt
-            and generation.prompt.signature == closure.signature
-        ):
-            return generation.prompt
-        elif generation and not generation.prompt:
-            prompts = self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/metadata/signature/public",
-                params={"signature": closure.signature},
-                response_model=list[PromptPublic],
+        try:
+            forced_version_num = int(version)
+        except ValueError:
+            raise ValueError(
+                f"Version must be an integer. Received: '{version}' (type: {type(version).__name__})"
             )
-            if not prompts:
-                return None
-
-            self._request(
-                "PATCH",
-                f"v0/projects/{self.project_uuid}/generations/{generation.uuid}",
-                json={"prompt_uuid": str(prompts[0].uuid)},
+        try:
+            return self._request(
+                "GET",
+                f"v0/projects/{self.project_uuid}/generations/name/{closure.name}/version/{forced_version_num}",
                 response_model=GenerationPublic,
             )
-
-            return prompts[0]
-        try:
-            return self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/prompts/hash/{closure.hash}/active",
-                response_model=PromptPublic,
-            )
         except LilypadNotFoundError:
-            return None
-
-    def get_response_model_active_version(
-        self, cls: type[BaseModel], generation: GenerationPublic | None
-    ) -> ResponseModelPublic | None:
-        """Get the active version of a response model."""
-        closure = Closure.from_fn(cls)
-        if (
-            generation
-            and generation.response_model
-            and generation.response_model.hash == closure.hash
-        ):
-            return generation.response_model
-        try:
-            return self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/response_models/hash/{closure.hash}/active",
-                response_model=ResponseModelPublic,
+            raise LilypadNotFoundError(
+                f"Generation version '{version}' not found for signature {closure.signature}"
             )
-        except LilypadNotFoundError:
-            return None
 
-    def get_or_create_response_model_version(
+    def get_generation_by_signature(
         self,
-        cls: type[BaseModel],
-        schema_data: dict[str, Any],
-        examples: list[dict[str, Any]],
-    ) -> ResponseModelPublic:
-        """Get or create a response model version by hash.
+        fn: Callable[..., Any],
+    ) -> GenerationPublic:
+        """Get the matching name for a generation.
 
-        If not found, this method will create a new response model version.
+        Args:
+            fn (Callable): The generation for which to get the version.
+
+        Returns:
+            GenerationPublic: The matching (or created) version for the generation.
         """
-        closure = Closure.from_fn(cls)
-        try:
-            rm = self._request(
-                "GET",
-                f"v0/projects/{self.project_uuid}/response_models/hash/{closure.hash}/active",
-                response_model=ResponseModelPublic,
-            )
-            return rm
-        except LilypadNotFoundError:
-            create_data = {
-                "name": closure.name,
-                "signature": closure.signature,
-                "code": closure.code,
-                "hash": closure.hash,
-                "dependencies": closure.dependencies,
-                "schema_data": schema_data,
-                "examples": examples,
-            }
-            rm_new = self._request(
-                "POST",
-                f"v0/projects/{self.project_uuid}/response_models",
-                response_model=ResponseModelPublic,
-                json=create_data,
-            )
-            return rm_new
+        closure = Closure.from_fn(fn)
+        generations = self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            response_model=list[GenerationPublic],
+        )
+        for generation in generations:
+            if generation.signature == closure.signature:
+                return generation
+        raise LilypadNotFoundError(
+            f"Generation with signature '{closure.signature}' not found. Available signatures: {[g.signature for g in generations]}"
+        )
 
     def patch_organization(
         self, organization_uuid: UUID, data: dict[str, Any]

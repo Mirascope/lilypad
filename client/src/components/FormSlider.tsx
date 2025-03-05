@@ -1,15 +1,3 @@
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import {
-  Control,
-  Controller,
-  Path,
-  FieldValues,
-  useFormContext,
-} from "react-hook-form";
-import { SliderProps } from "@radix-ui/react-slider";
-import { Input, InputProps } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import {
   FormControl,
   FormField,
@@ -17,9 +5,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input, InputProps } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { SliderProps } from "@radix-ui/react-slider";
+import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 
 type FormSliderProps<T extends FieldValues> = {
-  control: Control<T>;
   name: Path<T>;
   label: string;
   optional?: boolean;
@@ -30,7 +23,6 @@ type FormSliderProps<T extends FieldValues> = {
 };
 
 export const FormSlider = <T extends FieldValues>({
-  control,
   name,
   switchName,
   label,
@@ -39,59 +31,69 @@ export const FormSlider = <T extends FieldValues>({
   sliderProps,
   inputProps,
 }: FormSliderProps<T>) => {
-  const { watch } = useFormContext<T>();
+  const { control, watch } = useFormContext<T>();
   return (
     <FormField
       name={name}
       control={control}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className='flex justify-between items-center'>
-            <Label
-              htmlFor={sliderProps.name || ""}
-              className='flex items-center gap-2'
-            >
-              {label}
-              {optional && switchName && (
-                <>
-                  <Controller
-                    name={switchName}
-                    control={control}
-                    render={({ field }) => (
-                      <>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                        <p className='text-xs'>
-                          {field.value ? "Active" : "Not set"}
-                        </p>
-                      </>
-                    )}
-                  />
-                </>
+      render={({ field }) => {
+        const isDisabled = switchName && !watch(switchName);
+
+        return (
+          <FormItem>
+            <FormLabel className='flex justify-between items-center'>
+              <Label
+                htmlFor={sliderProps.name || ""}
+                className='flex items-center gap-2'
+              >
+                {label}
+                {optional && switchName && (
+                  <>
+                    <Controller
+                      name={switchName}
+                      control={control}
+                      render={({ field: switchField }) => (
+                        <>
+                          <Switch
+                            checked={switchField.value}
+                            onCheckedChange={switchField.onChange}
+                          />
+                          <p className='text-xs'>
+                            {switchField.value ? "Active" : "Not set"}
+                          </p>
+                        </>
+                      )}
+                    />
+                  </>
+                )}
+              </Label>
+              {showInput && (
+                <Input
+                  {...inputProps}
+                  value={field.value}
+                  onChange={(e) => {
+                    // Convert to number for the field
+                    const val =
+                      e.target.value === "" ? "" : Number(e.target.value);
+                    field.onChange(val);
+                  }}
+                  type='number'
+                  disabled={isDisabled}
+                />
               )}
-            </Label>
-            {showInput && (
-              <Input
-                {...field}
-                {...inputProps}
-                type='number'
-                disabled={switchName && !watch(switchName)}
+            </FormLabel>
+            <FormControl>
+              <Slider
+                {...sliderProps}
+                value={[Number(field.value) || 0]} // Ensure it's a number and defaults to 0 if undefined
+                onValueChange={(values) => field.onChange(values[0])}
+                disabled={isDisabled}
               />
-            )}
-          </FormLabel>
-          <FormControl>
-            <Slider
-              {...sliderProps}
-              value={[field.value]}
-              onValueChange={(values: number[]) => field.onChange(values[0])}
-              disabled={switchName && !watch(switchName)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };

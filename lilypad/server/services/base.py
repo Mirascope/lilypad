@@ -46,11 +46,12 @@ class BaseService(Generic[_TableT, _CreateT]):
         filter_conditions = [
             getattr(self.table, key) == value for key, value in filters.items()
         ]
-        return self.session.exec(
+        res = self.session.exec(
             select(self.table).where(
                 *filter_conditions,
             )
         ).all()
+        return res
 
     def delete_record_by_uuid(self, uuid: UUID, **filters: Any) -> bool:
         """Delete record by uuid"""
