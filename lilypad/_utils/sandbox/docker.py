@@ -1,4 +1,5 @@
 import io
+import json
 import tarfile
 from contextlib import suppress
 from typing import Any
@@ -8,14 +9,19 @@ import docker
 from .. import Closure
 from . import SandboxRunner
 
+_DEFAULT_IMAGE = "ghcr.io/astral-sh/uv:python3.10-alpine"
+
 
 class DockerSandboxRunner(SandboxRunner):
     """Runs code in a Docker container."""
 
     def __init__(
-        self, closure: Closure, image: str = "ghcr.io/astral-sh/uv:python3.10-alpine"
+        self,
+        closure: Closure,
+        image: str = _DEFAULT_IMAGE,
+        environment: dict[str, str] | None = None,
     ) -> None:
-        super().__init__(closure)
+        super().__init__(closure, environment)
         self.image = image
 
     @classmethod
@@ -43,14 +49,16 @@ class DockerSandboxRunner(SandboxRunner):
                 detach=True,
                 security_opt=["no-new-privileges"],  # Prevent privilege escalation
                 cap_drop=["ALL"],  # Drop all capabilities
+                environment=self.environment,
             )
             contents = {"main.py": script}
             stream = self._create_tar_stream(contents)
             container.put_archive("/", stream)
             exit_code, output = container.exec_run(
                 cmd=["uv", "run", "/main.py"],
+                stderr=False,
             )
-            return output.decode("utf-8")
+            return json.loads(output.decode("utf-8").strip())
         finally:
             if container:
                 with suppress(Exception):

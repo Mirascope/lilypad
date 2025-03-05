@@ -379,7 +379,9 @@ def _build_mirascope_call(
 
 
 def _build_generation_call(
-    generation: GenerationPublic, is_async: bool
+    generation: GenerationPublic,
+    is_async: bool,
+    environment: dict[str, str] | None = None,
 ) -> Callable[..., Any] | Callable[..., Coroutine[Any, Any, Any]]:
     """Build a generation call object."""
     closure = Closure(
@@ -389,7 +391,7 @@ def _build_generation_call(
         hash=generation.hash,
         dependencies=generation.dependencies,
     )
-    sandbox = DockerSandboxRunner(closure)
+    sandbox = DockerSandboxRunner(closure, environment=environment)
 
     if is_async:
 

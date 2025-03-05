@@ -11,8 +11,11 @@ class SandboxRunner(ABC):
     Subclasses must implement the execute_function method.
     """
 
-    def __init__(self, closure: Closure) -> None:
-        self.closure = closure
+    def __init__(
+        self, closure: Closure, environment: dict[str, str] | None = None
+    ) -> None:
+        self.closure: Closure = closure
+        self.environment: dict[str, str] = environment or {}
 
     @abstractmethod
     def execute_function(self, *args: Any, **kwargs: Any) -> str: ...
