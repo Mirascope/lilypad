@@ -7,8 +7,19 @@ export default {
     },
     index: "Overview",
     quickstart: "Quickstart",
-    generations: "Generations",
-    client: "Client",
-    prompts: "Prompts",
-    selfHost: "Self Host",
+    "-- Tracing Separator": {
+      type: "separator",
+      title: "Tracing",
+    },
+    // "tracing-introduction": "Introduction",
+    "-- Versioning Separator": {
+      type: "separator",
+      title: "Versioning",
+    },
+    // "generations-introduction": "Introduction",
+    "-- Evaluations Separator": {
+      type: "separator",
+      title: "Evaluations",
+    },
+    // "evaluations-introduction": "Introduction",
 };

@@ -1,8 +1,6 @@
-import { useTheme } from "next-themes";
-
 export const LilypadLogo = ({ width, height }) => {
-  const { resolvedTheme } = useTheme();
-  const fillColor = resolvedTheme === "dark" ? "white" : "black";
+  // Always use black fill since dark mode is disabled
+  const fillColor = "black";
   return (
     <div className="flex items-center gap-2">
       <svg

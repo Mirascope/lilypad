@@ -19,6 +19,10 @@ export default {
       type: 'page',
       title: 'Self Hosting'
     },
+    pricing: {
+      type: 'page',
+      title: 'Pricing'
+    },
     newsletter: {
         title: 'Newsletter',
         type: 'page',
