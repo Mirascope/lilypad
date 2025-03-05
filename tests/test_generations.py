@@ -100,14 +100,14 @@ class DummyTracer:
 def reset_dummies(monkeypatch):
     """Reset the dummy spans and the global counter before each test."""
     dummy_spans.clear()
-    # Reset the global counter in the generations module.
-    monkeypatch.setattr("lilypad.generations._span_counter", 0)
+    # Reset the global counter in the traces module.
+    monkeypatch.setattr("lilypad.traces._span_counter", 0)
 
 
 @pytest.fixture(autouse=True)
 def patch_get_tracer(monkeypatch):
     """Patch the get_tracer method to return a DummyTracer instance."""
-    monkeypatch.setattr("lilypad.generations.get_tracer", lambda _: DummyTracer())
+    monkeypatch.setattr("lilypad.traces.get_tracer", lambda _: DummyTracer())
 
 
 @generation()
