@@ -74,6 +74,7 @@ bedrock = [
 ]
 mistral = ["mistralai>=1.0.0,<2"]
 outlines = ["outlines>=0.1.11"]
+sandbox-docker = ["docker>=7.1.0"]
 vertex = ["google-cloud-aiplatform>=1.74.0"]
 
 

@@ -38,6 +38,7 @@ from ._utils import (
     load_config,
 )
 from ._utils.middleware import SpanContextHolder
+from ._utils.sandbox import DockerSandboxRunner
 from .messages import Message
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
@@ -377,6 +378,33 @@ def _build_mirascope_call(
     return inner  # pyright: ignore [reportReturnType]
 
 
+def _build_generation_call(
+    generation: GenerationPublic, is_async: bool
+) -> Callable[..., Any] | Callable[..., Coroutine[Any, Any, Any]]:
+    """Build a generation call object."""
+    closure = Closure(
+        name=generation.name,
+        code=generation.code,
+        signature=generation.signature,
+        hash=generation.hash,
+        dependencies=generation.dependencies,
+    )
+    sandbox = DockerSandboxRunner(closure)
+
+    if is_async:
+
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            return sandbox.execute_function(*args, **kwargs)
+
+        return async_wrapper
+    else:
+
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            return sandbox.execute_function(*args, **kwargs)
+
+        return sync_wrapper
+
+
 _ArgTypes: typing.TypeAlias = dict[str, str]
 
 
@@ -490,7 +518,12 @@ def generation(
                                     prompt_template="",
                                 ),
                             )
-                            result = await decorator_inner(fn)(*args, **kwargs)
+                            if managed_prompt_template:
+                                result = await _build_generation_call(
+                                    generation_, True
+                                )(*args, **kwargs)
+                            else:
+                                result = await decorator_inner(fn)(*args, **kwargs)
                             output, trace_id, span_id = (
                                 result
                                 if isinstance(result, tuple)
@@ -598,7 +631,12 @@ def generation(
                                     prompt_template="",
                                 ),
                             )
-                            result = decorator_inner(fn)(*args, **kwargs)
+                            if managed_prompt_template:
+                                result = _build_generation_call(generation_, False)(
+                                    *args, **kwargs
+                                )
+                            else:
+                                result = decorator_inner(fn)(*args, **kwargs)
                             output, trace_id, span_id = (
                                 result
                                 if isinstance(result, tuple)
