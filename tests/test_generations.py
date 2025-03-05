@@ -569,11 +569,16 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.DockerSandboxRunner.execute_function",
+            return_value="sync outer",
+        ) as mock_execute,
     ):
         versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
+        mock_execute.assert_called_once_with("dummy")
 
 
 @pytest.mark.asyncio
@@ -591,11 +596,16 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.DockerSandboxRunner.execute_function",
+            return_value="async outer",
+        ) as mock_execute,
     ):
         versioned_func = await async_outer.version(forced_version)
         result = await versioned_func("dummy")
         assert result == "async outer"
         mock_get_ver.assert_called_once()
+        mock_execute.assert_called_once_with("dummy")
 
 
 def test_build_mirascope_call_async(
