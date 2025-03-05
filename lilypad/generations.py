@@ -292,21 +292,28 @@ def _construct_trace_attributes(
     }
 
 
+_MANGED_PROMPT_TEMPLATE: TypeAlias = bool
+
+
 @contextmanager
 def _generation_context(
-    get_generation: Callable[[ArgTypes], GenerationPublic],
+    get_generation: Callable[
+        [ArgTypes], tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]
+    ],
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     *args: Any,
     **kwargs: Any,
-) -> Generator[tuple[ArgTypes, ArgValues, GenerationPublic], None, None]:
+) -> Generator[
+    tuple[ArgTypes, ArgValues, GenerationPublic, _MANGED_PROMPT_TEMPLATE], None, None
+]:
     arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
-    generation_ = get_generation(arg_types)
+    generation_, managed_prompt_template = get_generation(arg_types)
     token = current_generation.set(generation_)
     try:
         # Check if this is the outermost generation (no previous generation)
         is_outermost = token.old_value == Token.MISSING
         with _outermost_lock_context(is_outermost):
-            yield arg_types, arg_values, generation_
+            yield arg_types, arg_values, generation_, managed_prompt_template
     finally:
         current_generation.reset(token)
 
@@ -456,7 +463,9 @@ def generation(
         if fn_is_async(fn):
 
             def _create_inner_async(
-                get_generation: Callable[[_ArgTypes], GenerationPublic],
+                get_generation: Callable[
+                    [_ArgTypes], tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]
+                ],
             ) -> (
                 Callable[_P, Coroutine[Any, Any, _R]]
                 | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
@@ -469,6 +478,7 @@ def generation(
                         arg_types,
                         arg_values,
                         generation_,
+                        managed_prompt_template,
                     ):
                         if not is_mirascope_call:
                             decorator_inner = _trace(
@@ -494,13 +504,13 @@ def generation(
                                 arg_values,
                                 True,
                                 generation_.prompt_template
-                                if managed
+                                if managed_prompt_template
                                 else prompt_template_value,
                                 span_context_holder=span_context_holder,
                             )
                             output = await decorator_inner(  # pyright: ignore [reportReturnType]
                                 _build_mirascope_call(generation_, fn)
-                                if managed
+                                if managed_prompt_template
                                 else fn
                             )(*args, **kwargs)
                             if span_context := span_context_holder.span_context:
@@ -515,17 +525,19 @@ def generation(
 
                 return _inner_async
 
-            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
+            def _get_active_version(
+                arg_types: _ArgTypes,
+            ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
                 if not managed:
                     return lilypad_client.get_or_create_generation_version(
                         fn,
                         arg_types,
                         custom_id=custom_id,
-                    )
+                    ), False
                 try:
                     return lilypad_client.get_generation_by_signature(
                         fn,
-                    )
+                    ), True
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(
@@ -550,8 +562,10 @@ def generation(
                         f"Generation version {forced_version} not found for function: {fn.__name__}"
                     )
 
-                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
-                    return specific_version_generation
+                def _get_specific_version(
+                    _: _ArgTypes,
+                ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
+                    return specific_version_generation, True
 
                 return _create_inner_async(_get_specific_version)
 
@@ -562,7 +576,9 @@ def generation(
         else:
 
             def _create_inner_sync(
-                get_generation: Callable[[_ArgTypes], GenerationPublic],
+                get_generation: Callable[
+                    [_ArgTypes], tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]
+                ],
             ) -> Callable[_P, _R] | Callable[_P, Generation[_R]]:
                 @call_safely(fn)  # pyright: ignore [reportArgumentType]
                 def _inner(*args: _P.args, **kwargs: _P.kwargs) -> _R | Generation[_R]:
@@ -570,6 +586,7 @@ def generation(
                         arg_types,
                         arg_values,
                         generation_,
+                        managed_prompt_template,
                     ):
                         if not is_mirascope_call:
                             decorator_inner = _trace(
@@ -595,13 +612,13 @@ def generation(
                                 arg_values,
                                 False,
                                 generation_.prompt_template
-                                if managed
+                                if managed_prompt_template
                                 else prompt_template_value,
                                 span_context_holder=span_context_holder,
                             )
                             output = decorator_inner(
                                 _build_mirascope_call(generation_, fn)
-                                if managed
+                                if managed_prompt_template
                                 else fn
                             )(*args, **kwargs)
                             if span_context := span_context_holder.span_context:
@@ -615,13 +632,15 @@ def generation(
 
                 return _inner  # pyright: ignore [reportReturnType]
 
-            def _get_active_version(arg_types: _ArgTypes) -> GenerationPublic:
+            def _get_active_version(
+                arg_types: _ArgTypes,
+            ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
                 if not managed:
                     return lilypad_client.get_or_create_generation_version(
                         fn, arg_types, custom_id=custom_id
-                    )
+                    ), False
                 try:
-                    return lilypad_client.get_generation_by_signature(fn)
+                    return lilypad_client.get_generation_by_signature(fn), True
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(
@@ -643,8 +662,10 @@ def generation(
                         f"Generation version {forced_version} not found for function: {fn.__name__}"
                     )
 
-                def _get_specific_version(_: _ArgTypes) -> GenerationPublic:
-                    return specific_version_generation
+                def _get_specific_version(
+                    _: _ArgTypes,
+                ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
+                    return specific_version_generation, True
 
                 return _create_inner_sync(_get_specific_version)
 
