@@ -54,27 +54,22 @@ class SpanPublic(SpanBase):
 
     @classmethod
     def _convert_span_table_to_public(
-        cls,
-        span: SpanTable,
+            cls,
+            span: SpanTable,
     ) -> dict[str, Any]:
         """Set the display name based on the scope."""
         data = span.data
-        attributes: dict[str, Any] = data.get("attributes", {})
+        attributes = data.get("attributes", {})
         if span.scope == Scope.LILYPAD:
+            attributes: dict[str, Any] = span.data.get("attributes", {})
             span_type: str = attributes.get("lilypad.type", "unknown")
-            display_name = data.get("name", f"Lilypad Span ({span_type})")
+            display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
-        else:  # Scope.LLM
-            gen_ai_system = attributes.get("gen_ai.system")
-            gen_ai_request_model = attributes.get("gen_ai.request.model")
-            if gen_ai_system and gen_ai_request_model:
-                display_name = f"{gen_ai_system} with '{gen_ai_request_model}'"
-            elif gen_ai_system:
-                display_name = f"{gen_ai_system} LLM Span"
-            elif gen_ai_request_model:
-                display_name = f"LLM Span for '{gen_ai_request_model}'"
+        else:  # Must be Scope.LLM because Scope is an Enum
+            if gen_ai_system := attributes.get('gen_ai.system'):
+                display_name = f"{gen_ai_system} with '{data['attributes']['gen_ai.request.model']}'"
             else:
-                display_name = "LLM Span"
+                display_name = data.get("name", "")
             version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
@@ -85,7 +80,7 @@ class SpanPublic(SpanBase):
             "child_spans": child_spans,
             "version": version,
             "annotations": span.annotations,
-            "status": data.get("status"),
+            "status": span.data.get("status"),
             **span.model_dump(exclude={"child_spans", "data"}),
         }
 
