@@ -1,4 +1,5 @@
 import { CodeBlock } from "@/components/CodeBlock";
+import { Newsletter } from "@/components/Newsletter";
 import { SlackLogo } from "@/components/SlackLogo";
 import { Button } from "@/components/ui/button";
 import {
@@ -182,7 +183,7 @@ print(answer)
       </section>
 
       {/* CTA Section */}
-      <section className="pb-24 px-4">
+      <section className="pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl sm:text-4xl font-bold mb-6">
             Start using Lilypad today for free!
@@ -198,6 +199,11 @@ print(answer)
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="pb-24 px-4 bg-primary-50">
+        <Newsletter />
       </section>
     </main>
   );

@@ -26,8 +26,6 @@ export default {
     },
     newsletter: {
         title: 'Newsletter',
-        type: 'page',
-        href: 'https://newsletter.lilypad.so',
-        newWindow: true
+        type: 'page'
     }
 }
