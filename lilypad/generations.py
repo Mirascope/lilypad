@@ -1,4 +1,5 @@
 """The `generations` module for automatically versioning and tracing LLM generations."""
+
 import inspect
 import json
 import os
@@ -180,6 +181,7 @@ def get_decorated_functions(decorator_name: str | None = None) -> DecoratorRegis
     if decorator_name:
         return {decorator_name: _DECORATOR_REGISTRY.get(decorator_name, [])}
     return _DECORATOR_REGISTRY.copy()
+
 
 class SyncGenerationFunction(Protocol[_P, _R_CO]):
     """Protocol for the `generation` decorator return type."""

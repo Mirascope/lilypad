@@ -341,9 +341,8 @@ class LilypadClient:
         )
         if generations:
             return generations
-        raise LilypadNotFoundError(
-            f"Generation with name '{closure.name}' not found."
-        )
+        raise LilypadNotFoundError(f"Generation with name '{closure.name}' not found.")
+
     def patch_organization(
         self, organization_uuid: UUID, data: dict[str, Any]
     ) -> OrganizationPublic:
