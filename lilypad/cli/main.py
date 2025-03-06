@@ -6,7 +6,7 @@ from rich import print
 from typer import Typer
 
 from .commands import local_command
-from .commands.stub import stubs_command
+from .commands.stubs import stubs_command
 
 app = Typer()
 
