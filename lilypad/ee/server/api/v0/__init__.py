@@ -4,10 +4,10 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI
 
+from ee.validate import LicenseInfo
 from lilypad.ee.server.require_license import _RequireLicense
-from lilypad.ee.validate import LicenseInfo
 
-from .annotations_api import Tier, annotations_router, require_license
+from .annotations_api import Tier, annotations_router
 
 ee_api = FastAPI(separate_input_output_schemas=False)
 ee_api.include_router(annotations_router)
@@ -21,8 +21,7 @@ async def root(
 ) -> Tier:
     if not license_info:
         return Tier.FREE
-    # return license_info.tier
-    return Tier.FREE
+    return license_info.tier
 
 
 __all__ = ["ee_api"]
