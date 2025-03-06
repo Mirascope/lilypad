@@ -13,6 +13,7 @@ from rich import print
 from rich.console import Console
 from rich.table import Table
 
+from ..._utils import load_config
 from ...generations import (
     clear_registry,
     disable_recording,
@@ -33,6 +34,20 @@ FunctionInfo: TypeAlias = tuple[
 
 # Regular expression to extract a function signature from a stored signature text
 SIGNATURE_REGEX = re.compile(r"def\s+\w+\((.*?)\)\s*->\s*(.*?):")
+
+# Module-level constants for Typer defaults to satisfy B008
+DEFAULT_DIRECTORY: Path = typer.Argument(
+    Path("."), help="Directory to scan for decorated functions."
+)
+DEFAULT_EXCLUDE: list[str] | None = typer.Option(
+    None,
+    "--exclude",
+    "-e",
+    help="Directories to exclude from scanning (comma-separated).",
+)
+DEFAULT_VERBOSE: bool = typer.Option(
+    False, "--verbose", "-v", help="Show verbose output including stub content."
+)
 
 
 def _find_python_files(
@@ -69,11 +84,7 @@ def _module_path_from_file(
     file_path: FilePath, base_dir: str | None = None
 ) -> ModulePath:
     """Convert a file path to a module path that can be imported."""
-    if base_dir:
-        # Make the file path relative to the base directory
-        rel_path = os.path.relpath(file_path, base_dir)
-    else:
-        rel_path = file_path
+    rel_path = os.path.relpath(file_path, base_dir) if base_dir else file_path
 
     # Remove .py extension
     if rel_path.endswith(".py"):
@@ -97,8 +108,10 @@ def _import_module_safely(module_path: ModulePath) -> bool:
 
 def _make_dummy_function(func_name: str) -> Callable[..., Any]:
     """Create a dummy function with the given name for use with get_generations_by_name."""
-    def dummy_func(*args, **kwargs) -> None:
+
+    def dummy_func(*args: Any, **kwargs: Any) -> None:
         return None
+
     dummy_func.__name__ = func_name
     dummy_func.__qualname__ = func_name
     return dummy_func
@@ -278,18 +291,9 @@ def _write_stub_file(file_path: str, function_name: str, stub_content: str) -> P
 
 
 def stubs_command(
-    directory: Path = typer.Argument(
-        Path("."), help="Directory to scan for decorated functions."
-    ),
-    exclude: list[str] | None = typer.Option(
-        None,
-        "--exclude",
-        "-e",
-        help="Directories to exclude from scanning (comma-separated).",
-    ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Show verbose output including stub content."
-    ),
+    directory: Path = DEFAULT_DIRECTORY,
+    exclude: list[str] | None = DEFAULT_EXCLUDE,
+    verbose: bool = DEFAULT_VERBOSE,
 ) -> None:
     """Generate type stubs for functions decorated with lilypad.generation.
 
@@ -360,7 +364,11 @@ def stubs_command(
             sys.path.pop(0)  # Remove the directory from Python path
 
     # Get client for DB operations
-    client = LilypadClient()
+    config = load_config()
+
+    client = LilypadClient(
+        token=config.get("token", None),
+    )
 
     # Process decorated functions
     decorator_name = "lilypad.generation"
