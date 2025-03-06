@@ -1,6 +1,12 @@
 # License / EE
 private.pem
 
+# Cursor
+.cursorrules
+
+# Claude Code
+CLAUDE.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

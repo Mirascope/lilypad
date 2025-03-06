@@ -5,16 +5,27 @@ export default {
       display: "hidden",
       theme: {
         layout: "raw",
+        timestamp: false,
       },
     },
     docs: {
-      title: 'Docs',
-      type: 'page'
+      type: 'page',
+      title: 'Docs'
+    },
+    guides: {
+      type: 'page',
+      title: 'Guides',
+    },
+    "self-hosting": {
+      type: 'page',
+      title: 'Self Hosting'
+    },
+    pricing: {
+      type: 'page',
+      title: 'Pricing',
     },
     newsletter: {
         title: 'Newsletter',
-        type: 'page',
-        href: 'https://newsletter.lilypad.so',
-        newWindow: true
+        type: 'page'
     }
 }

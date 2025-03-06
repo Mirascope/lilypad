@@ -1,261 +1,205 @@
-import { Tabs } from "nextra/components";
+import { Callout, Tabs } from 'nextra/components'
 
-export const providers = [
-  "OpenAI",
-  "Anthropic",
-  "Gemini",
-  "Mistral",
-  "OpenRouter",
-];
-export const os = ["macOS and Linux", "Windows"];
+# Get Started with Lilypad
 
-# Quickstart
+This guide will have you up and running with Lilypad in less than 5 minutes.
 
-Integrate your LLM application with Lilypad to get automatic versioning and tracing.
+## Create an account
 
-## Setup
+First, navigate to [https://app.lilypad.so](https://app.lilypad.so) and create an account. You'll need a GitHub or Google account to sign up.
 
-Install `uv` and create a new project:
+Next, navigate to [Settings -> Organization](https://app.lilypad.so/settings/org) and:
 
-<Tabs items={os} storageKey="os">
-  <Tabs.Tab>
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh 
-    uv init quickstart-project
-    ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```bash
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex" 
-    uv init quickstart-project
-    ```
-  </Tabs.Tab>
-</Tabs>
+1. Create a new project.
+2. Generate an API key for that project.
 
-Install Lilypad, specifying the provider(s) you intend to use, and set your API key:
-
-<Tabs items={os} storageKey="os">
-  <Tabs.Tab>
-    <Tabs items={providers} storageKey="provider">
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        export OPENAI_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[anthropic]"
-        export ANTHROPIC_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[gemini]"
-        export GOOGLE_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[mistral]"
-        export MISTRAL_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        export OPENROUTER_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-    </Tabs>
-  </Tabs.Tab>
-  <Tabs.Tab>
-    <Tabs items={providers} storageKey="provider">
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        set OPENAI_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[anthropic]"
-        set ANTHROPIC_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[gemini]"
-        set GOOGLE_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[mistral]"
-        set MISTRAL_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-      <Tabs.Tab>
-        ```bash
-        uv add "python-lilypad[openai]"
-        set OPENROUTER_API_KEY=XXXXX
-        ```
-      </Tabs.Tab>
-    </Tabs>
-  </Tabs.Tab>
-</Tabs>
-
-## Create a new project
-
-1. Navigate to [Lilypad App](https://app.lilypad.so)
-
-2. Create an account by signing in with your GitHub.
-
-3. Navigate to [Your Organization Settings](https://app.lilypad.so/settings/org) to create a project and API key.
-
-4. Copy the project ID and API key and place them in your environment
+We recommend saving the ID and API key in your environment (e.g. `.env` file):
 
 ```bash
-LILYPAD_PROJECT_ID=XXXXX
-LILYPAD_API_KEY=XXXXX
+LILYPAD_PROJECT_ID=...
+LILYPAD_API_KEY=...
 ```
 
-You are now ready to start tracing your generations.
+## Installation
 
-## Run a generation
+Install the Lilypad Pythonb SDK:
 
-Copy-paste this generation into a new Python file (`main.py`):
+<Tabs items={["uv", "pip"]}>
+    <Tabs.Tab>
+        ```bash
+        # For OpenAI support
+        uv add "python-lilypad[openai]"
 
-<Tabs items={providers} storageKey="provider">
-  <Tabs.Tab>
-  ```python
-  import lilypad
-  from openai import OpenAI
+        # For multiple providers
+        uv add "python-lilypad[openai,anthropic,google]"
+        ```
+    </Tabs.Tab>
+    <Tabs.Tab>
+        ```bash
+        # For OpenAI support
+        pip install "python-lilypad[openai]"
 
-  client = OpenAI()
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      completion = client.chat.completions.create(
-          model="gpt-4o-mini",
-          messages=[{"role": "user", "content": question}],
-      )
-      return str(completion.choices[0].message.content)
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import lilypad
-  from anthropic import Anthropic
-
-  client = Anthropic()
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      message = client.messages.create(
-          model="claude-3-5-sonnet-20240620",
-          messages=[{"role": "user", "content": question}],
-          max_tokens=1024,
-      )
-      block = message.content[0]
-      return block.text if block.type == "text" else ""
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  from google.generativeai import GenerativeModel
-  import lilypad
-
-  client = GenerativeModel("gemini-1.5-flash")
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      generation = client.generate_content(
-          contents=[{"role": "user", "parts": question}]
-      )
-      return generation.candidates[0].content.parts[0].text
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import os
-
-  import lilypad
-  from typing import cast
-
-  from mistralai import Mistral
-
-  client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str | None:
-      completion = client.chat.complete(
-          model="mistral-large-latest",
-          messages=[{"role": "user", "content": question}],
-      )
-      if completion and (choices := completion.choices):
-          return cast(str, choices[0].message.content)
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```python
-  import os
-
-  import lilypad
-  from openai import OpenAI
-
-  client = OpenAI(
-      base_url="https://openrouter.ai/api/v1",
-      api_key=os.getenv("OPENROUTER_API_KEY"),
-  )
-
-  @lilypad.generation()
-  def answer_question(question: str) -> str:
-      completion = client.chat.completions.create(
-          model="gpt-4o-mini",
-          messages=[{"role": "user", "content": question}],
-      )
-      return str(completion.choices[0].message.content)
-
-
-  if __name__ == "__main__":
-      lilypad.configure()
-      answer = answer_question("What is the meaning of life?")
-      print(answer)
-  ```
-  </Tabs.Tab>
+        # For multiple providers
+        pip install "python-lilypad[openai,anthropic,google]"
+        ```
+    </Tabs.Tab>
 </Tabs>
 
-Run the Python file
+Available provider extras:
+- `openai` - OpenAI models
+- `anthropic` - Anthropic models
+- `google` - Google models (`genai` SDK)
+- `bedrock` - AWS Bedrock models
+- `mistral` - Mistral models
+- `outlines` - Outlines framework
 
-```bash
-uv run main.py
+## Configure Tracing
+
+Lilypad automatically traces any LLM API call you make automatically -- **without a proxy**.
+
+To enable tracing, simply run `configure`:
+
+```python {2, 6}
+from dotenv import load_dotenv
+import lilypad
+from openai import OpenAI
+
+load_dotenv()
+lilypad.configure()
+
+client = OpenAI()
+
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+print(completion.choices[0].message.content)
+# > The capital of France is Paris.
 ```
 
-Follow the link output by the command to view the trace in the Lilypad app.
+Follow the link or navigate to the Home page for your project to see the trace.
 
-The `@lilypad.generation` decorator will automatically version the `answer_question` function and collect a trace against that version. This ensures that you can always trace back to the exact code that generated a particular output.
+### Trace Arbitrary functions
 
-This means that you can code as you always have, and Lilypad will take care of the rest.
+You can also use the `trace` decorator to trace arbitrary Python functions to add more structure and color to your traces:
+
+```python {11}
+from dotenv import load_dotenv
+import lilypad
+from openai import OpenAI
+
+load_dotenv()
+lilypad.configure()
+
+client = OpenAI()
+
+
+@lilypad.trace()
+def answer_question(question: str) -> str | None:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": question}]
+    )
+    return completion.choices[0].message.content
+
+
+output = answer_question("What is the capital of France?")
+print(output)
+# > The capital of France is Paris.
+```
+
+You'll see the `answer_question` trace in your project's Home page.
+
+### Trace Arbitrary Code Blocks
+
+Lilypad also supports tracing arbitrary code blocks using the `span` context manager:
+
+```python {13-15,20-21}
+from dotenv import load_dotenv
+import lilypad
+from openai import OpenAI
+
+load_dotenv()
+lilypad.configure()
+
+client = OpenAI()
+
+
+@lilypad.trace()
+def answer_question(question: str) -> str | None:
+    with lilypad.span("Answer Question Prompt") as span:
+        messages = [{"role": "user", "content": question}]
+        span.metadata({"messages": messages})
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
+    with lilypad.span("Answer Question Response") as span:
+        span.metadata({"response": messages})
+    return completion.choices[0].message.content
+
+
+output = answer_question("What is the capital of France?")
+print(output)
+# > The capital of France is Paris.
+```
+
+You should now also see the `Answer Question Prompt` and `Answer Question Response` spans inside the `answer_question` trace in your project's Home page.
+
+## Automatically Version An LLM Function
+
+For non-deterministic functions, it's extremely important that we take a snapshot of the exact version of the code that was used to produce an output. This reproducibility is necessary for properly evaluating quality down the line.
+
+Replacing the `trace` decorator with a `generation` decorator will do exactly that. Lilypad will automatically snapshot and version your non-determinstic LLM function alongside the trace.
+
+```python {11}
+from dotenv import load_dotenv
+import lilypad
+from openai import OpenAI
+
+load_dotenv()
+lilypad.configure()
+
+client = OpenAI()
+
+
+@lilypad.generation()  # Automatically versions `answer_question`
+def answer_question(question: str) -> str | None:
+    with lilypad.span("Answer Question Prompt") as span:
+        messages = [{"role": "user", "content": question}]
+        span.metadata({"messages": messages})
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+    )
+    with lilypad.span("Answer Question Response") as span:
+        span.metadata({"response": messages})
+    return completion.choices[0].message.content
+
+
+output = answer_question("What is the capital of France?")
+print(output)
+# > The capital of France is Paris.
+```
+
+You can see the generation in the Generations tab of your project. This will contain not only the trace but also everything you need to know about that exact generation for future analysis and evaluation.
+
+<Callout type="default">
+    **The version is the runnable closure**
+    
+    Whenenever you run a `generation` decorated LLM function, we compute the entire code execution graph. This is what we use to determine the version.
+
+    This means that you will always be able to reproduce the exact version of the code you ran simply by running the closure again.
+
+    This also means that changing the code to an existing older version will automatically attach the trace to that older version.
+</Callout>
+
+## Evaluations
+
+<Callout type="info">
+    We are working on some cool tooling around evaluations, starting with analysis and annotation tooling.
+
+    It's **currently in closed beta**. If you're interested in participating, *reach out*!
+
+    See our [pricing](../pricing.mdx) page for more information.
+</Callout>

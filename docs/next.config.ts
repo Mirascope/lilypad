@@ -6,4 +6,14 @@ const withNextra = nextra({
   defaultShowCopyCode: true,
 })
  
-export default withNextra({output: 'export', images: {unoptimized: true}, distDir: "build"})
+export default withNextra({
+  output: 'export', 
+  images: {unoptimized: true}, 
+  distDir: "build",
+  nextConfig: {
+    // Force light theme only, disabling dark mode
+    themeConfig: {
+      forcedTheme: 'light'
+    }
+  }
+})

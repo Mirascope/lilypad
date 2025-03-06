@@ -77,6 +77,8 @@ def upgrade() -> None:
 
     op.drop_table("prompts")
 
+    op.execute("UPDATE spans SET type = 'GENERATION' WHERE type = 'PROMPT'")
+
     op.sync_enum_values(  # type: ignore[attr-defined]
         enum_schema="public",
         enum_name="spantype",
