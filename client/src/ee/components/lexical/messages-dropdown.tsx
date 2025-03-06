@@ -6,11 +6,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/lexical/collapsible-plugin";
-import { useEffect, useState } from "react";
-import { $getSelection, $isRangeSelection } from "lexical";
 import { $findMatchingParent } from "@lexical/utils";
-import { $isCollapsibleContainerNode } from "@/components/lexical/collapsible-container-node";
+import { $getSelection, $isRangeSelection } from "lexical";
+import { useEffect, useState } from "react";
+import { $isCollapsibleContainerNode } from "./collapsible-container-node";
+import { INSERT_COLLAPSIBLE_COMMAND } from "./collapsible-plugin";
 
 export const messageTypeToMessageName: Record<string, string> = {
   System: "SYSTEM",

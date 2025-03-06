@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
+import { useIsEnterprise } from "@/hooks/use-isEnterprise";
 import { GenerationTab } from "@/types/generations";
 import { Plus, Trash } from "lucide-react";
 import { JSX, Suspense } from "react";
@@ -78,6 +79,7 @@ type Tab = {
   label: string;
   value: string;
   component?: JSX.Element | null;
+  isEnterprise?: boolean;
 };
 
 const GenerationWorkbench = () => {
@@ -87,7 +89,7 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
-
+  const isEnterprise = useIsEnterprise(projectUuid);
   const navigate = useNavigate();
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
@@ -118,6 +120,7 @@ const GenerationWorkbench = () => {
           generationUuid={generation?.uuid}
         />
       ),
+      isEnterprise: true,
     },
   ];
   const handleArchive = async () => {
@@ -140,16 +143,18 @@ const GenerationWorkbench = () => {
     <div className='w-full p-6'>
       <div className='flex gap-2'>
         <Typography variant='h2'>{generationName}</Typography>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button size='icon' onClick={handleNewGenerationClick}>
-              <Plus />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className='bg-gray-700 text-white'>
-            Create a new managed generation
-          </TooltipContent>
-        </Tooltip>
+        {isEnterprise && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size='icon' onClick={handleNewGenerationClick}>
+                <Plus />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className='bg-gray-700 text-white'>
+              Create a new managed generation
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
       <div className='flex gap-2 items-center'>
         <Select
@@ -203,11 +208,17 @@ const GenerationWorkbench = () => {
       <Tabs defaultValue={tab} className='w-full'>
         <div className='flex justify-center w-full '>
           <TabsList className={`w-[${tabWidth}px]`}>
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
+            {tabs.map((tab) => {
+              return (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  disabled={tab.isEnterprise}
+                >
+                  {tab.label}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </div>
         <Separator className='my-2' />

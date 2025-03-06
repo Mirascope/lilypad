@@ -86,24 +86,29 @@ export function SuggestionItem({
   onMouseEnter: () => void;
   option: CustomTypeaheadOption;
 }): JSX.Element {
-  let className =
-    "cursor-pointer bg-slate-50 text-unique-600 hover:bg-secondary-50 py-2 px-3 text-xs flex items-center";
-  if (isSelected) {
-    className += " bg-slate-200";
-  }
   return (
     <li
       key={option.key}
       tabIndex={-1}
-      className={className}
+      className={`
+        px-3 py-2 mx-1 my-0.5 text-sm cursor-pointer rounded-md
+        transition-colors duration-150 ease-in-out flex items-center
+        ${
+          isSelected
+            ? "bg-blue-50 text-blue-700"
+            : "text-gray-700 hover:bg-gray-50"
+        }
+      `}
       ref={option.setRefElement}
       role='option'
       aria-selected={isSelected}
-      id={"typeahead-item-" + index}
+      id={`typeahead-item-${index}`}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
-      <span className='popper__reference'>{option.metadata.value}</span>
+      <span className='popper__reference truncate'>
+        {option.metadata.value}
+      </span>
     </li>
   );
 }
@@ -154,16 +159,23 @@ export const TemplateSuggestionPlugin = ({
     [editor]
   );
 
-  const createFilteredOptions = (
-    options: Template[],
-    queryString: string | RegExp | null
-  ) => {
-    if (queryString === null) {
+  const createFilteredOptions = (options: Template[], query: string | null) => {
+    // Return first 10 options if no query
+    if (!query || query.trim() === "") {
       return options.slice(0, 10);
     }
 
-    const regex = new RegExp(queryString, "gi");
-    return options.filter((option) => regex.test(option.key)).slice(0, 10);
+    // Create a case-sensitive regex from the query string
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
+    // Filter by both key and display value with case sensitivity
+    return options
+      .filter(
+        (option) =>
+          regex.test(option.key) ||
+          (option.metadata && regex.test(option.metadata.value))
+      )
+      .slice(0, 10);
   };
 
   const options: CustomTypeaheadOption[] = useMemo(
@@ -187,8 +199,8 @@ export const TemplateSuggestionPlugin = ({
     }
     return anchorElementRef.current && options.length
       ? createPortal(
-          <div className='bg-white rounded overflow-hidden shadow-md gap-0.5 max-h-[320px] overflow-y-auto w-[180px] min-w-[90px]'>
-            <ul>
+          <div className='bg-white rounded-md shadow-lg max-h-[320px] overflow-y-auto w-[180px] min-w-[90px] border border-gray-100'>
+            <ul className='px-1.5'>
               {options.map((option: CustomTypeaheadOption, index: number) => (
                 <SuggestionItem
                   index={index}

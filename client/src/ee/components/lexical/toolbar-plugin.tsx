@@ -24,15 +24,15 @@ import {
   mergeRegister,
 } from "@lexical/utils";
 import {
+  CodeIcon,
   FontBoldIcon,
   FontItalicIcon,
   ReloadIcon,
   UnderlineIcon,
-  CodeIcon,
 } from "@radix-ui/react-icons";
 
 import { BlockTypeDropdown, blockTypeToBlockName } from "./block-type-dropdown";
-import { MessageTypeDropdown } from "@/components/lexical/messages-dropdown";
+import { MessageTypeDropdown } from "./messages-dropdown";
 
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
