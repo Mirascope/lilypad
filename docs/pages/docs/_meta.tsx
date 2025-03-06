@@ -10,14 +10,14 @@ export default {
   "open-source": "Open Source",
   "-- Tracing Separator": {
     type: "separator",
-    title: "Tracing",
+    title: "Tracing (Docs WIP)",
   },
   "-- Versioning Separator": {
     type: "separator",
-    title: "Versioning",
+    title: "Versioning (Docs WIP)",
   },
   "-- Evaluations Separator": {
     type: "separator",
-    title: "Evaluations",
+    title: "Evaluations (Docs WIP)",
   },
 };

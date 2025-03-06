@@ -54,7 +54,7 @@ LILYPAD_JWT_SECRET=...
 Next, you'll need to set up OAuth 2.0 Authentication. You can choose between GitHub or Google:
 
 - Homepage URL: `http://localhost:8000`
-- Authorization callback URL: `http://localhost:8000/auth/callback`
+- Authorization Callback URL: `http://localhost:8000/auth/callback`
 
 ### GitHub
 
@@ -82,12 +82,14 @@ First, set your environment variables:
 LILYPAD_SERVE_FRONTEND=true
 ```
 
-You can optionally set `LILYPAD_REMOTE_CLIENT_URL` to the URL where you're hosting the client separately.
+You can optionally set `LILYPAD_REMOTE_CLIENT_URL` to the URL where you're hosting the client separately. In this case, you would set `LILYPAD_SERVE_FRONTEND=false`.
 
 Now, build the client:
 
 ```bash
 cd client
+touch .env
+echo "VITE_REMOTE_API_URL=http://localhost:8000/v0" > .env
 pnpm i
 pnpm run build:notypescript
 cd ..

@@ -1,78 +1,18 @@
 # Lilypad
 
+For the first time ever, business users and domain experts need to be involved in the actual writing of the software. How do we do this without sacrificing our development workflows and tooling?
+
+Lilypad is an AI engineer platform that **modernizes software development for the LLM era**.
+
 ## Why Lilypad?
 
 Prompt engineering is more than writing text - it's an optimization process. Lilypad is an open-source framework that brings software engineering best practices to prompt development with:
 
-- **Automatic versioning** - Every change to your prompts is tracked, allowing you to compare versions and roll back when needed
-- **Transparent tracing** - See exactly how your LLM calls perform, from tokens used to response times
-- **Developer-centric tooling** - Build prompts in code, not web interfaces, with proper integration between your prompts and application logic
-- **Unified provider interface** - Switch seamlessly between OpenAI, Anthropic, Google, and other LLM providers without changing your code
-
-### The Problem: Prompt Development is a Black Box
-
-Traditional LLM development involves:
-
-1. Writing prompts in a web UI, disconnected from your codebase
-2. Manual tracking of prompt changes (or no tracking at all)
-3. Limited visibility into how prompts perform in production
-4. Disconnected loops between prompt development and application code
-
-### The Solution: Lilypad's Engineering Approach
-
-Lilypad brings software engineering rigor to prompt development:
-
-- **Version Control** - Every prompt is automatically versioned when changed
-- **Code Integration** - Build prompts in your IDE alongside your application code
-- **Performance Metrics** - Track token usage, costs, and response times
-- **Tracing System** - Full visibility into request/response chains
-- **A/B Testing** - Compare prompt versions with quantitative data
-
-[NEEDS SCREENSHOT: Dashboard showing prompt versions and metrics]
-
-## Key Features
-
-### Generations
-
-Define prompt templates as Python functions that automatically:
-- Version when code changes
-- Integrate with your application logic
-- Deploy to production with confidence
-
-```python
-from lilypad import generation
-
-@generation(managed=True)
-def answer_question(question: str) -> str:
-    """Answer the given question completely and accurately."""
-    return "This will be replaced by LLM output"
-
-# Use it like a normal function
-response = answer_question("What is machine learning?")
-print(response)
-```
-
-### Tracing
-
-Full visibility into your LLM interactions:
-- Trace entire call chains from user input to LLM response
-- Capture function arguments, model info, and performance metrics
-- Debug issues with complete context
-
-### Provider Abstraction
-
-Write once, run with any provider:
-- OpenAI
-- Anthropic
-- Google (Gemini)
-- AWS Bedrock
-- Mistral
-- And more...
-
-Switch providers with a simple configuration change, not code rewrites.
+- **Automatic versioning** - Every change to your LLM functions are tracked, allowing you to compare versions, A/B test, and roll back when needed.
+- **Transparent tracing** - See everything about your LLM call from inputs/outputs to tokens used to response times alongside the exact reproducible code.
+- **Collaboration-centric tooling** - Seamless collaboration between software engineers, business users, and domain experts.
+- **Actually see progoress** - Annotation tooling to help you understand how your prompts are performing and where they need to be improved. Easily understand if the changes you're making are actually improving quality.
 
 ## Next Steps
 
-- [Get started in minutes](/docs/quickstart) with the Quickstart guide
-- Explore the [tracing system](/docs/tracing-introduction) to understand your LLM performance
-- Learn about [versioning](/docs/versioning-introduction) to manage your prompt development lifecycle
+ADD BOX LINKS HERE
