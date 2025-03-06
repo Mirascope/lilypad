@@ -48,33 +48,39 @@ export const Pricing = () => {
         "Everything individual developers need to get started for small projects.",
       features: [
         { name: "Automatic Versioning & Tracing", included: true },
-        { name: "10K Traces / Month", included: true },
-        { name: "Single User", included: true },
         { name: "Unlimited Projects", included: true },
-        { name: "Private Slack Channel", included: false },
+        { name: "1 User", included: true },
+        { name: "10K Traces / Month", included: true },
+        { name: "30 Day Data Retention", included: true },
         { name: "Managed Generations", included: false },
-        { name: "Analysis Tooling", included: false },
+        { name: "Diff Tooling", included: false },
         { name: "Annotations", included: false },
-        { name: "SSO", included: false },
+        { name: "Support (Community)", included: true },
+        { name: "Support (Email / Chat)", included: false },
+        { name: "Private Slack Channel", included: false },
+        { name: "Custom SSO", included: false },
       ],
       buttonText: "Get Started",
       buttonLink: "/docs/quickstart",
     },
     {
       name: "Pro",
-      price: "$500 / month",
+      price: "$20 / user per month",
       description:
         "Enhanced features for teams that need collaboration tools and higher limits.",
       features: [
         { name: "Automatic Versioning & Tracing", included: true },
-        { name: "100K Traces / month", included: true },
-        { name: "10 Users", included: true },
         { name: "Unlimited Projects", included: true },
-        { name: "Private Slack Channel", included: true },
+        { name: "Unlimited Users", included: true },
+        { name: "100K Traces / Month + ($10 / 100K Extra)", included: true },
+        { name: "Unlimited Data Retention", included: true },
         { name: "Managed Generations", included: true },
-        { name: "Analysis Tooling", included: true },
+        { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
-        { name: "SSO", included: false },
+        { name: "Support (Community)", included: true },
+        { name: "Support (Email / Chat)", included: true },
+        { name: "Private Slack Channel", included: false },
+        { name: "Custom SSO", included: false },
       ],
       buttonText: "Contact Us",
       buttonLink: "mailto:sales@mirascope.com",
@@ -82,20 +88,23 @@ export const Pricing = () => {
       closedBeta: true,
     },
     {
-      name: "Enterprise",
-      price: "Custom",
+      name: "Team",
+      price: "$100 / user per month",
       description:
         "Custom solutions for large organizations with enterprise needs like compliance.",
       features: [
         { name: "Automatic Versioning & Tracing", included: true },
-        { name: "Custom Trace Limits", included: true },
-        { name: "Unlimited Users", included: true },
         { name: "Unlimited Projects", included: true },
-        { name: "Private Slack Channel", included: true },
+        { name: "Unlimited Users", included: true },
+        { name: "100K Traces / Month + ($10 / 100K Extra)", included: true },
+        { name: "Unlimited Data Retention", included: true },
         { name: "Managed Generations", included: true },
-        { name: "Analysis Tooling", included: true },
+        { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
-        { name: "SSO", included: true },
+        { name: "Support (Community)", included: true },
+        { name: "Support (Email / Chat)", included: true },
+        { name: "Private Slack Channel", included: true },
+        { name: "Custom SSO", included: true },
       ],
       buttonText: "Contact Us",
       buttonLink: "mailto:sales@mirascope.com",
@@ -218,10 +227,11 @@ export const Pricing = () => {
     <div className="py-12 flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-16 self-center">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-          Simple, transparent pricing
+          Pricing
         </h1>
         <p className="mt-4 text-xl text-gray-600">
-          Choose the right plan for your needs
+          <p>Get started with the Free plan today.</p>
+          <p className="italic">No credit card required.</p>
         </p>
       </div>
 
@@ -265,8 +275,11 @@ export const Pricing = () => {
           Need to self-host?
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-          Self-hosted deployments use the same pricing tiers with identical
-          features.
+          <p>
+            Self-hosted deployments use the same pricing tiers with identical
+            features.
+          </p>
+          <p>The only difference is that there are no trace limits.</p>
         </p>
         <Button size="lg" variant="outline" asChild>
           <Link href="/self-hosting">View Self-Hosting Docs</Link>

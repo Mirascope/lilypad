@@ -2,7 +2,9 @@ import { Callout } from "nextra/components";
 
 # Self Hosting Lilypad
 
-Lilypad is fully open-source and can be self-hosted on your own infrastructure. You can also run Lilypad on your local machine.
+Lilypad is fully open-source and can be self-hosted in your own infrastructure.
+
+You can also run Lilypad on your local machine.
 
 <Callout type="info">
     **Lilypad is currently in a closed beta.**
@@ -12,78 +14,148 @@ Lilypad is fully open-source and can be self-hosted on your own infrastructure. 
     If you're interested in participating in the closed beta, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message to William Bakst.
 </Callout>
 
-## Walkthrough
+__Requirements:__
 
-Requirements:
+To self-host Lilypad, you'll need:
 
-    - PostgreSQL
-    - Python 3.9+
-    - GitHub account (for authentication)
-    - [Oxen](https://www.oxen.ai/) (for Lilypad Evals EE only)
+1. Python 3.10+
+2. PostgreSQL
+3. A GitHub or Google account (for authentication)
+4. Docker
 
-1. First clone the repo
+## Setup
+
+First, you'll need to clone the repository:
 
 ```bash
 git clone git@github.com:Mirascope/lilypad.git
 cd lilypad
 ```
 
-2. Install the dependencies
+Next, you'll need to install `uv` and the libraries dependencies:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh # install uv if you have not already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
 ```
 
-3. Set environment variables
+Going forward, replace `http://localhost:8000` with the URL where you're hosting Lilypad if not there.
+
+## Authentication
+
+First, you'll need to generate and set JWT secret (e.g. using https://jwtsecret.com/generate).
+
+Then set it in your environment:
 
 ```bash
-# PostgreSQL environment variables
+LILYPAD_JWT_SECRET=...
+```
+
+Next, you'll need to set up OAuth 2.0 Authentication. You can choose between GitHub or Google:
+
+- Homepage URL: `http://localhost:8000`
+- Authorization callback URL: `http://localhost:8000/auth/callback`
+
+### GitHub
+
+To authenticate with GitHub, create a new [OAuth app on GitHub](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and set the following environment variables:
+
+```bash
+LILYPAD_GITHUB_CLIENT_ID=...
+LILYPAD_GITHUB_CLIENT_SECRET=...
+```
+
+### Google
+
+To authenticate with Google, create a new [OAuth app on Google](https://developers.google.com/identity/protocols/oauth2) and set the following environment variables:
+
+```bash
+LILYPAD_GOOGLE_CLIENT_ID=...
+LILYPAD_GOOGLE_CLIENT_SECRET=...
+```
+
+## Client
+
+First, set your environment variables:
+
+```bash
+LILYPAD_SERVE_FRONTEND=true
+```
+
+You can optionally set `LILYPAD_REMOTE_CLIENT_URL` to the URL where you're hosting the client separately.
+
+Now, build the client:
+
+```bash
+cd client
+pnpm i
+pnpm run build:notypescript
+cd ..
+```
+
+## Server
+
+First, you'll need to build the image:
+
+```bash
+DOCKER_BUILDKIT=1 docker build -t lilypad .
+```
+
+### Hosted
+
+You'll need to set up a PostgreSQL database and set the following environment variables:
+
+```bash
+# PostgreSQL
 LILYPAD_DB_HOST=...
 LILYPAD_DB_NAME=...
 LILYPAD_DB_PASSWORD=...
 LILYPAD_DB_PORT=...
 LILYPAD_DB_USER=...
 
-# GitHub Authentication
-LILYPAD_GITHUB_CLIENT_ID=...
-LILYPAD_GITHUB_CLIENT_SECRET=...
-
-# Oxen environment variables
-LILYPAD_OXEN_API_KEY=... # (Optional) if self-hosting Oxen
-LILYPAD_OXEN_REPO_NAME=... # Oxen namespace
-LILYPAD_OXEN_HOST=... # (Optional) if self-hosting Oxen, defaults to hub.oxen.ai
-
-# Lilypad environment variables
-LILYPAD_SERVE_FRONTEND=true # unset to disable serving the frontend from the client
-LILYPAD_JWT_SECRET=... # generate a secret key
-LILYPAD_REMOTE_API_URL=... # the URL of your Lilypad API
-LILYPAD_REMOTE_CLIENT_URL=... # the URL of your Lilypad client (Can be the same as the API, if serving from the same server)
-
+# Server
+LILYPAD_REMOTE_API_URL=http://localhost:8000
+LILYPAD_REMOTE_CLIENT_URL=http://localhost:8000
 ```
 
-4. Run Lilypad
+Run the server:
 
-   - In a local environment:
+```bash
+docker run -p 8000:8000 --env-file .env lilypad
+```
 
-     1. Build the client
-        ```
-        cd client
-        pnpm i # install client dependencies
-        pnpm run build:notypescript # build the client with no strict typescript
-        # this will build to client/dist
-        ```
-        Proceed to next step if you have `LILYPAD_SERVE_FRONTEND=true` set in your environment variables.
-        Otherwise, deploy the client to a static file server and point `LILYPAD_REMOTE_CLIENT_URL` to the DNS.
-     2. Run the server
-        ```
-        cd .. # go back to the root directory
-        fastapi run lilypad/server/main.py # run the server
-        ```
+You should now be able to access your Lilypad instance at `http://localhost:8000`.
 
-   - In cloud:
+### Local
 
-     ```bash
-     docker build -t lilypad .
-     docker run lilypad .
-     ```
+Alternatively, you can use Docker Compose to run everything together locally:
+
+```bash
+docker-compose up
+```
+
+<Callout type="info">
+    You'll must update `docker-compose.yml` to match your environment setup.
+</Callout>
+
+You should now be able to access your Lilypad instance at `http://localhost:8000`.
+
+Note that this results in a PostgreSQL database running in a container. Should you spin down the container, you'll lose all data.
+
+## Application
+
+In your LLM code, make sure you set the API and Client URLs to point to your self-hosted instance:
+
+```bash
+LILYPAD_REMOTE_API_URL=http://localhost:8000
+LILYPAD_REMOTE_CLIENT_URL=http://localhost:8000
+```
+
+Now you can use Lilypad as [documented](../docs/quickstart).
+
+<Callout type="warning">
+    **Make sure to install the correct package version.**
+
+    The production-stable release of Lilypad on PyPI may not be the same version as the one you're self-hosting.
+    Make sure to install the version of Lilypad matching your self-hosted instance.
+</Callout>

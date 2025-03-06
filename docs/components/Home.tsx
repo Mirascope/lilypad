@@ -144,7 +144,7 @@ lilypad.configure()    # Automatically trace LLM API calls
 client = OpenAI()
 
 
-@lilypad.generation()  # Automatically version non-deterministic functions
+@lilypad.generation()  # Automatically version & trace LLM functions
 def answer_question(question: str) -> str | None:
     completion = client.chat.completions.create(
         model="gpt-4o",

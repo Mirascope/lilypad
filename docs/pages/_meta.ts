@@ -5,6 +5,7 @@ export default {
       display: "hidden",
       theme: {
         layout: "raw",
+        timestamp: false,
       },
     },
     docs: {
@@ -13,7 +14,7 @@ export default {
     },
     guides: {
       type: 'page',
-      title: 'Guides'
+      title: 'Guides',
     },
     "self-hosting": {
       type: 'page',
@@ -21,7 +22,7 @@ export default {
     },
     pricing: {
       type: 'page',
-      title: 'Pricing'
+      title: 'Pricing',
     },
     newsletter: {
         title: 'Newsletter',
