@@ -134,8 +134,8 @@ def answer_question(question: str) -> str | None:
         model="gpt-4o-mini",
         messages=messages,
     )
-    with lilypad.span("Answer Question Response") as span:
-        span.metadata({"response": messages})
+    with lilypad.span("Answer Question Completion") as span:
+        span.metadata(completion.model_dump())
     return completion.choices[0].message.content
 
 
@@ -172,8 +172,8 @@ def answer_question(question: str) -> str | None:
         model="gpt-4o-mini",
         messages=messages,
     )
-    with lilypad.span("Answer Question Response") as span:
-        span.metadata({"response": messages})
+    with lilypad.span("Answer Question Completion") as span:
+        span.metadata(completion.model_dump())
     return completion.choices[0].message.content
 
 
