@@ -90,11 +90,18 @@ def _import_module_safely(module_path: ModulePath) -> bool:
 
 
 def _normalize_signature(signature_text: str) -> str:
+    # Return only the function definition line (ignoring import lines and decorators)
     lines = signature_text.splitlines()
-    non_decorator_lines = [
-        line.strip() for line in lines if not line.strip().startswith("@")
+    func_lines = [
+        line.strip()
+        for line in lines
+        if line.strip().startswith("def ") or line.strip().startswith("async def ")
     ]
-    normalized = " ".join(non_decorator_lines).strip()
+    if not func_lines:
+        func_lines = [
+            line.strip() for line in lines if not line.strip().startswith("@")
+        ]
+    normalized = " ".join(func_lines).strip()
     if normalized.endswith("..."):
         normalized = normalized[:-3] + " pass"
     if normalized.endswith(":"):
@@ -324,6 +331,8 @@ def stubs_command(
     """Generate type stubs for functions decorated with lilypad.generation."""
     global DEBUG
     DEBUG = debug
+    if not isinstance(exclude, list):
+        exclude = []
     exclude_dirs: set[str] = {
         "venv",
         ".venv",
@@ -334,10 +343,9 @@ def stubs_command(
         "build",
         "dist",
     }
-    if exclude:
-        for item in exclude:
-            for dir_name in item.split(","):
-                exclude_dirs.add(dir_name.strip())
+    for item in exclude:
+        for dir_name in item.split(","):
+            exclude_dirs.add(dir_name.strip())
     dir_str: str = str(directory.absolute())
     with console.status(
         "Scanning for functions decorated with [bold]lilypad.generation[/bold]..."
