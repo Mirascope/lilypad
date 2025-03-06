@@ -31,6 +31,7 @@ class SpanType(str, Enum):
     """Span type"""
 
     GENERATION = "generation"
+    TRACE = "trace"
 
 
 class SpanBase(SQLModel):
