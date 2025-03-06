@@ -15,6 +15,6 @@ app.command(name="version", help="Show the Lilypad version.")(
 )
 app.command(name="local", help="Run Lilypad Locally")(local_command)
 app.command(
-    "generate-version-stubs",
+    "stubs",
     help="Scan the specified module directory and generate stub files for version assignments.",
 )(stubs_command)

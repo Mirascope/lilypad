@@ -1,11 +1,14 @@
-"""The `stubs` command to generate type stubs for functions decorated with lilypad.generation."""
+"""Stubs command for generating type stubs for functions decorated with lilypad.generation."""
 
+import ast
 import importlib
+import inspect
+import json
 import os
 import re
 import sys
-from collections.abc import Callable
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, TypeAlias
 
 import typer
@@ -14,6 +17,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..._utils import load_config
+from ..._utils.closure import _run_ruff
 from ...generations import (
     clear_registry,
     disable_recording,
@@ -23,37 +27,31 @@ from ...generations import (
 from ...server.client import LilypadClient
 from ...server.schemas import GenerationPublic
 
+app = typer.Typer()
 console = Console()
+DEBUG: bool = False
 
-# Type aliases
 FilePath: TypeAlias = str
 ModulePath: TypeAlias = str
-FunctionInfo: TypeAlias = tuple[
-    str, str, int, str
-]  # (file_path, function_name, line_number, module_name)
+FunctionInfo: TypeAlias = tuple[str, str, int, str]
 
-# Regular expression to extract a function signature from a stored signature text
-SIGNATURE_REGEX = re.compile(r"def\s+\w+\((.*?)\)\s*->\s*(.*?):")
+# Fallback regex (not the primary parser)
+SIGNATURE_REGEX = re.compile(r"(?:async\s+)?def\s+\w+\((.*?)\)\s*->\s*(.*?):")
 
-# Module-level constants for Typer defaults to satisfy B008
 DEFAULT_DIRECTORY: Path = typer.Argument(
     Path("."), help="Directory to scan for decorated functions."
 )
 DEFAULT_EXCLUDE: list[str] | None = typer.Option(
-    None,
-    "--exclude",
-    "-e",
-    help="Directories to exclude from scanning (comma-separated).",
+    None, "--exclude", "-e", help="Comma-separated list of directories to exclude."
 )
 DEFAULT_VERBOSE: bool = typer.Option(
-    False, "--verbose", "-v", help="Show verbose output including stub content."
+    False, "--verbose", "-v", help="Show verbose output."
 )
 
 
 def _find_python_files(
     directory: str, exclude_dirs: set[str] | None = None
 ) -> list[FilePath]:
-    """Find all Python files in a directory recursively."""
     if exclude_dirs is None:
         exclude_dirs = {
             "venv",
@@ -65,39 +63,25 @@ def _find_python_files(
             "build",
             "dist",
         }
-
     python_files: list[FilePath] = []
-
     for root, dirs, files in os.walk(directory):
-        # Remove excluded directories from dirs to prevent them from being walked
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
-
         for file in files:
             if file.endswith(".py"):
-                file_path = os.path.join(root, file)
-                python_files.append(file_path)
-
+                python_files.append(os.path.join(root, file))
     return python_files
 
 
 def _module_path_from_file(
     file_path: FilePath, base_dir: str | None = None
 ) -> ModulePath:
-    """Convert a file path to a module path that can be imported."""
     rel_path = os.path.relpath(file_path, base_dir) if base_dir else file_path
-
-    # Remove .py extension
     if rel_path.endswith(".py"):
         rel_path = rel_path[:-3]
-
-    # Convert path separators to dots
-    module_path = rel_path.replace(os.sep, ".")
-
-    return module_path
+    return rel_path.replace(os.sep, ".")
 
 
 def _import_module_safely(module_path: ModulePath) -> bool:
-    """Import a module safely, returning success status."""
     try:
         importlib.import_module(module_path)
         return True
@@ -106,211 +90,239 @@ def _import_module_safely(module_path: ModulePath) -> bool:
         return False
 
 
-def _make_dummy_function(func_name: str) -> Callable[..., Any]:
-    """Create a dummy function with the given name for use with get_generations_by_name."""
-
-    def dummy_func(*args: Any, **kwargs: Any) -> None:
-        return None
-
-    dummy_func.__name__ = func_name
-    dummy_func.__qualname__ = func_name
-    return dummy_func
-
-
-def _extract_signature_parts(signature_text: str) -> tuple[list[str], str]:
-    """Extract argument types and return type from a function signature.
-
-    Args:
-        signature_text: Full function signature text
-
-    Returns:
-        Tuple of (parameter_types_list, return_type)
-    """
-    # Remove decorator lines and find the function definition
-    lines = [
-        line for line in signature_text.splitlines() if not line.strip().startswith("@")
+def _normalize_signature(signature_text: str) -> str:
+    lines = signature_text.splitlines()
+    non_decorator_lines = [
+        line.strip() for line in lines if not line.strip().startswith("@")
     ]
-    def_line = ""
-    for line in lines:
-        if line.strip().startswith("def "):
-            def_line = line.strip()
-            break
+    normalized = " ".join(non_decorator_lines).strip()
+    if normalized.endswith("..."):
+        normalized = normalized[:-3] + " pass"
+    if normalized.endswith(":"):
+        normalized += " pass"
+    if DEBUG:
+        print(f"[DEBUG] Normalized signature: {normalized}")
+    return normalized
 
-    if not def_line:
-        return [], "Any"
 
-    match = SIGNATURE_REGEX.search(def_line)
-    if not match:
-        return [], "Any"
+def _parse_parameters_from_signature(signature_text: str) -> list[str]:
+    try:
+        normalized = _normalize_signature(signature_text)
+        module = ast.parse(normalized)
+        func_def = module.body[0]
+        params: list[str] = []
+        total_args = func_def.args.args  # pyright: ignore [reportAttributeAccessIssue]
+        defaults = func_def.args.defaults  # pyright: ignore [reportAttributeAccessIssue]
+        num_defaults = len(defaults)
+        start_default = len(total_args) - num_defaults
+        for i, arg in enumerate(total_args):
+            param_str = arg.arg
+            if arg.annotation is not None:
+                try:
+                    annotation = ast.unparse(arg.annotation)
+                except Exception:
+                    annotation = "Any"
+                param_str += f": {annotation}"
+            if i >= start_default:
+                default_node = defaults[i - start_default]
+                try:
+                    default_val = ast.unparse(default_node)
+                except Exception:
+                    default_val = "..."
+                param_str += f" = {default_val}"
+            params.append(param_str)
+        if func_def.args.vararg:  # pyright: ignore [reportAttributeAccessIssue]
+            vararg = func_def.args.vararg  # pyright: ignore [reportAttributeAccessIssue]
+            vararg_str = f"*{vararg.arg}"
+            if vararg.annotation:
+                try:
+                    annotation = ast.unparse(vararg.annotation)
+                except Exception:
+                    annotation = "Any"
+                vararg_str += f": {annotation}"
+            params.append(vararg_str)
+        if func_def.args.kwarg:  # pyright: ignore [reportAttributeAccessIssue]
+            kwarg = func_def.args.kwarg  # pyright: ignore [reportAttributeAccessIssue]
+            kwarg_str = f"**{kwarg.arg}"
+            if kwarg.annotation:
+                try:
+                    annotation = ast.unparse(kwarg.annotation)
+                except Exception:
+                    annotation = "Any"
+                kwarg_str += f": {annotation}"
+            params.append(kwarg_str)
+        if DEBUG:
+            print(
+                f"[DEBUG] Parsed parameters from normalized signature:\n{normalized}\n=> {params}"
+            )
+        return params
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error parsing parameters: {e}")
+        return []
 
-    params_str, return_type = match.groups()
-    param_types = []
-    param_names = []
 
-    if params_str.strip():
-        for param in params_str.split(","):
-            param = param.strip()
-            if not param:
-                continue
+def _extract_type_from_param(param: str) -> str:
+    parts = param.split(":", 1)
+    if len(parts) < 2:
+        return "Any"
+    rest = parts[1].strip()
+    type_part = rest.split("=")[0].strip() if "=" in rest else rest
+    return type_part
 
-            if ":" in param:
-                name, type_hint = param.split(":", 1)
-                param_names.append(name.strip())
-                param_types.append(type_hint.strip())
+
+def _merge_parameters(signature_text: str, arg_types_val: Any) -> list[str]:
+    params_list = _parse_parameters_from_signature(signature_text)
+    if isinstance(arg_types_val, dict):
+        arg_types_dict = arg_types_val
+    else:
+        try:
+            arg_types_dict = json.loads(arg_types_val)
+        except Exception as e:
+            if DEBUG:
+                print(f"[DEBUG] Error loading arg_types: {e}")
+            arg_types_dict = {}
+    merged: list[str] = []
+    for param in params_list:
+        parts = param.split(":", 1)
+        name = parts[0].strip()
+        default_part = None
+        if len(parts) > 1:
+            type_and_default = parts[1].strip()
+            if "=" in type_and_default:
+                type_part, default_part = type_and_default.split("=", 1)
+                type_part = type_part.strip()
+                default_part = default_part.strip()
             else:
-                param_names.append(param.strip())
-                param_types.append("Any")
+                type_part = type_and_default
+        else:
+            type_part = "Any"
+        new_type = arg_types_dict.get(name, type_part)
+        if default_part:
+            merged.append(f"{name}: {new_type} = {default_part}")
+        else:
+            merged.append(f"{name}: {new_type}")
+    if DEBUG:
+        print(
+            f"[DEBUG] Merged parameters for signature:\n{signature_text}\narg_types: {arg_types_val}\n=> {merged}"
+        )
+    return merged
 
-    return param_types, return_type.strip()
+
+def _parse_return_type(signature_text: str) -> str:
+    try:
+        normalized = _normalize_signature(signature_text)
+        module = ast.parse(normalized)
+        func_def = module.body[0]
+        if func_def.returns is not None:  # pyright: ignore [reportAttributeAccessIssue]
+            ret = ast.unparse(func_def.returns).strip()  # pyright: ignore [reportAttributeAccessIssue]
+        else:
+            ret = "Any"
+        if DEBUG:
+            print(
+                f"[DEBUG] Parsed return type from normalized signature: {normalized} => {ret}"
+            )
+        return ret
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error parsing return type: {e}")
+        return "Any"
 
 
-def _parse_signature_for_protocol(
-    signature_text: str,
-) -> tuple[list[tuple[str, str]], str]:
-    """Parse a function signature to extract parameter names, types and return type.
+def _format_return_type(ret_type: str, is_async: bool) -> str:
+    return f"Coroutine[Any, Any, {ret_type}]" if is_async else ret_type
 
-    Example:
-        Input: "def answer_question(question: str, language: str) -> str: ..."
-        Output: [(question, str), (language, str)], str
-    """
-    # Remove decorator lines and find the function definition
-    lines = [
-        line for line in signature_text.splitlines() if not line.strip().startswith("@")
-    ]
-    def_line = ""
-    for line in lines:
-        if line.strip().startswith("def "):
-            def_line = line.strip()
-            break
 
-    if not def_line:
-        return [], "Any"
-
-    match = SIGNATURE_REGEX.search(def_line)
-    if not match:
-        return [], "Any"
-
-    params_str, return_type = match.groups()
-    params = []
-
-    if params_str.strip():
-        for param in params_str.split(","):
-            param = param.strip()
-            if not param:
-                continue
-
-            if ":" in param:
-                name, type_hint = param.split(":", 1)
-                params.append((name.strip(), type_hint.strip()))
-            else:
-                params.append((param.strip(), "Any"))
-
-    return params, return_type.strip()
+def _extract_parameter_types(merged_params: list[str]) -> list[str]:
+    types = [_extract_type_from_param(param) for param in merged_params]
+    if DEBUG:
+        print(
+            f"[DEBUG] Extracted parameter types from merged params: {merged_params} => {types}"
+        )
+    return types
 
 
 def _generate_protocol_stub_content(
-    func_name: str, versions: list[GenerationPublic]
+    func_name: str, versions: list[GenerationPublic], is_async: bool
 ) -> str:
-    """Generate stub content using Protocol for the decorated function.
-
-    The generated stub will define a Protocol class with:
-    - __call__ method matching the latest function signature
-    - version method with overloads for each version number
-    """
     if not versions:
         return ""
-
-    lines = []
-    lines.append("# This file was auto-generated by lilypad stubs command\n")
-    lines.append("from typing import overload, Literal, Callable, Any, Protocol\n\n\n")
-
-    # Sort versions by version number for consistency
     sorted_versions = sorted(versions, key=lambda v: v.version_num or 0)
     latest_version = sorted_versions[-1]
-
-    # Get the latest version's signature for the __call__ method
-    params, return_type = _parse_signature_for_protocol(latest_version.signature)
-
-    # Generate the Protocol class
-    pascal_case_name = "".join(word.title() for word in func_name.split("_"))
-    lines.append(f"class {pascal_case_name}(Protocol):\n")
-    lines.append(f"    # Create a protocol for the {func_name} function\n\n")
-
-    # Add __call__ method with the latest signature
-    param_str = ", ".join([f"{name}: {type_hint}" for name, type_hint in params])
-    lines.append(f"    def __call__(self, {param_str}) -> {return_type}: ...\n")
-    lines.append("    # Keep the original function signature as __call__ method\n\n")
-    lines.append("    # start typing the function signature\n")
-    lines.append(
-        "    # The decorated function has `version` method. the decorator set the version of the function automatically\n\n"
-    )
-
-    # Add overloads for the version method - now with @classmethod
+    ret_type_latest = _parse_return_type(latest_version.signature)
+    class_name = "".join(word.title() for word in func_name.split("_"))
+    version_protocols = []
+    version_overloads = []
     for version in sorted_versions:
-        version_num = version.version_num
-        if version_num is None:
+        if version.version_num is None:
             continue
-
-        param_types, ret_type = _extract_signature_parts(version.signature)
-        callable_type = f"Callable[[{', '.join(param_types)}], {ret_type}]"
-
-        lines.append("    @classmethod\n")
-        lines.append("    @overload\n")
-        lines.append(
-            f"    def version(cls, forced_version: Literal[{version_num}]) -> {callable_type}: ...\n"
+        merged_params = (
+            _merge_parameters(version.signature, version.arg_types)
+            if version.arg_types
+            else _parse_parameters_from_signature(version.signature)
         )
-
-    # Add base version method
-    lines.append("    @classmethod # type: ignore[misc]\n")
-    lines.append(
-        "    def version(cls, forced_version: int) -> Callable[..., Any]: ...\n\n"
+        params_str = ", ".join(merged_params)
+        ret_type = _parse_return_type(version.signature)
+        ret_type_formatted = (
+            f"Coroutine[Any, Any, {ret_type}]" if is_async else ret_type
+        )
+        version_class_name = f"{class_name}Version{version.version_num}"
+        ver_proto = (
+            f"class {version_class_name}(Protocol):\n"
+            f"    def __call__(self, {params_str}) -> {ret_type_formatted}: ..."
+        )
+        version_protocols.append(ver_proto)
+        _extract_parameter_types(merged_params)
+        overload = (
+            f"    @classmethod\n"
+            f"    @overload\n"
+            f"    def version(cls, forced_version: Literal[{version.version_num}]) -> {version_class_name}: ..."
+        )
+        version_overloads.append(overload)
+    main_ret_type = (
+        f"Coroutine[Any, Any, {ret_type_latest}]" if is_async else ret_type_latest
     )
+    main_call = f"    def __call__(self) -> {main_ret_type}: ..."
+    base_version = (
+        f"    @classmethod  # type: ignore[misc]\n"
+        f"    def version(cls, forced_version: int) -> Callable[..., "
+        f"{'Coroutine[Any, Any, Any]' if is_async else 'Any'}]: ..."
+    )
+    header_types = (
+        "overload, Literal, Callable, Any, Protocol, Coroutine"
+        if is_async
+        else "overload, Literal, Callable, Any, Protocol"
+    )
+    content = f"""# This file was auto-generated by lilypad stubs command
+from typing import {header_types}
 
-    # Add type assignment for the decorated function (not TypeAlias)
-    lines.append("# Set Type hint for the decorated function\n")
-    lines.append(f"{func_name} = {pascal_case_name}\n\n\n")
 
-    # Add the dummy greet function
-    lines.append("def greet(name: int) -> str: ...\n")
+{"\n\n".join(version_protocols)}
 
-    return "".join(lines)
+class {class_name}(Protocol):
 
+{main_call}
 
-def _write_stub_file(file_path: str, function_name: str, stub_content: str) -> Path:
-    """Write a stub file for the given function in the same directory as the source."""
-    # Get the directory of the original file
-    directory = os.path.dirname(file_path)
+{"\n\n".join(version_overloads)}
 
-    # Create the stub file path: functionname.pyi in the same directory
-    stub_file_path = Path(directory) / f"{function_name}.pyi"
+{base_version}
 
-    # Write the stub content
-    stub_file_path.write_text(stub_content, encoding="utf-8")
-
-    return stub_file_path
+{func_name} = {class_name}
+"""
+    if DEBUG:
+        print(f"[DEBUG] Generated stub content for function '{func_name}':\n{content}")
+    return dedent(content)
 
 
 def stubs_command(
     directory: Path = DEFAULT_DIRECTORY,
     exclude: list[str] | None = DEFAULT_EXCLUDE,
     verbose: bool = DEFAULT_VERBOSE,
+    debug: bool = False,
 ) -> None:
-    """Generate type stubs for functions decorated with lilypad.generation.
-
-    Scans the specified directory for Python files, finds functions decorated
-    with @lilypad.generation, and generates .pyi stub files with proper type
-    hints for each version of the function.
-
-    This enables type checking for code like:
-        result = answer_question.version(1)("What is the capital of France?")
-        result2 = answer_question.version(2)("What is the capital of France?", "French")
-
-    Examples:
-        lilypad stubs .
-        lilypad stubs ./my_project
-        lilypad stubs ./src --exclude tests,examples --verbose
-    """
-    # Process exclude directories
+    """Generate type stubs for functions decorated with lilypad.generation."""
+    global DEBUG
+    DEBUG = debug
     exclude_dirs: set[str] = {
         "venv",
         ".venv",
@@ -325,119 +337,86 @@ def stubs_command(
         for item in exclude:
             for dir_name in item.split(","):
                 exclude_dirs.add(dir_name.strip())
-
-    # Convert Path to string
     dir_str: str = str(directory.absolute())
-
     with console.status(
         "Scanning for functions decorated with [bold]lilypad.generation[/bold]..."
     ):
-        # Find all Python files in the directory
         python_files: list[FilePath] = _find_python_files(dir_str, exclude_dirs)
-
         if not python_files:
             print(f"No Python files found in {dir_str}")
             return
-
-        # Use an absolute path for the directory
         directory_abs: str = os.path.abspath(dir_str)
-
-        # Add parent directory to Python path temporarily to enable imports
         parent_dir: str = os.path.dirname(directory_abs)
         sys.path.insert(0, parent_dir)
-
-        # Enable recording before importing modules
         enable_recording()
-
         try:
-            # Import each Python file
             for file_path in python_files:
                 module_path: ModulePath = _module_path_from_file(file_path, parent_dir)
                 _import_module_safely(module_path)
-
-            # Get decorated functions information
             results = get_decorated_functions("lilypad.generation")
         finally:
-            # Clean up
             disable_recording()
             clear_registry()
-            sys.path.pop(0)  # Remove the directory from Python path
-
-    # Get client for DB operations
+            sys.path.pop(0)
     config = load_config()
-
-    client = LilypadClient(
-        token=config.get("token", None),
-    )
-
-    # Process decorated functions
+    client = LilypadClient(token=config.get("token", None))
     decorator_name = "lilypad.generation"
     functions = results.get(decorator_name, [])
-
     if not functions:
         print(f"No functions found with decorator [bold]{decorator_name}[/bold]")
         return
-
     print(
         f"\nFound [bold green]{len(functions)}[/bold green] function(s) with decorator [bold]{decorator_name}[/bold]"
     )
-
-    # Create a table for the results
     table = Table(show_header=True)
-    table.add_column("File", style="cyan")
-    table.add_column("Function", style="green")
+    table.add_column("Source File", style="cyan")
+    table.add_column("Functions", style="green")
     table.add_column("Versions", style="yellow")
-    table.add_column("Stub File", style="magenta")
-
-    # Sort by file path for consistent output
-    sorted_functions = sorted(functions, key=lambda x: x[0])
-
-    # Count generated stubs
-    stubs_count = 0
-
-    for file_path, function_name, _lineno, _module_name in sorted_functions:
-        # Create a dummy function for the client
-        dummy_func = _make_dummy_function(function_name)
-
+    file_stub_map: dict[str, list[str]] = {}
+    file_func_map: dict[str, list[str]] = {}
+    for file_path, function_name, _lineno, module_name in sorted(
+        functions, key=lambda x: x[0]
+    ):
         try:
-            # Get all versions of this function
+            mod = importlib.import_module(module_name)
+            fn = getattr(mod, function_name)
+            is_async = inspect.iscoroutinefunction(fn)
+        except Exception as e:
+            print(
+                f"[red]Error retrieving function {function_name} from {module_name}: {e}[/red]"
+            )
+            continue
+        try:
             with console.status(
                 f"Fetching versions for [bold]{function_name}[/bold]..."
             ):
-                versions = client.get_generations_by_name(dummy_func)
-
+                versions = client.get_generations_by_name(fn)
             if not versions:
                 print(f"[yellow]No versions found for {function_name}[/yellow]")
                 continue
-
-            # Generate stub content using the Protocol approach
-            stub_content = _generate_protocol_stub_content(function_name, versions)
-
+            stub_content = _run_ruff(
+                dedent(
+                    _generate_protocol_stub_content(function_name, versions, is_async)
+                )
+            ).strip()
+            file_stub_map.setdefault(file_path, []).append(stub_content)
+            file_func_map.setdefault(file_path, []).append(function_name)
+            table.add_row(
+                file_path, ", ".join(file_func_map[file_path]), str(len(versions))
+            )
             if verbose:
                 print(f"\n[blue]Stub content for {function_name}:[/blue]")
                 print(f"[dim]{stub_content}[/dim]")
-
-            # Write stub file
-            stub_file = _write_stub_file(file_path, function_name, stub_content)
-            stubs_count += 1
-
-            # Make file path relative for display
-            try:
-                rel_path = os.path.relpath(file_path)
-                display_path = rel_path
-            except ValueError:
-                display_path = file_path
-
-            # Add to result table
-            table.add_row(
-                display_path, function_name, str(len(versions)), str(stub_file)
-            )
-
         except Exception as e:
             print(f"[red]Error processing {function_name}: {e}[/red]")
+    for src_file, stubs in file_stub_map.items():
+        final_content = "\n\n".join(stubs)
+        stub_file = Path(src_file).with_suffix(".pyi")
+        stub_file.write_text(final_content, encoding="utf-8")
+    print(f"\nGenerated stub files for {len(file_stub_map)} source file(s).")
+    console.print(table)
 
-    if stubs_count > 0:
-        print(f"\nGenerated [bold green]{stubs_count}[/bold green] stub files:")
-        console.print(table)
-    else:
-        print("[yellow]No stub files were generated[/yellow]")
+
+if __name__ == "__main__":
+    app.command()(stubs_command)
+    app()
