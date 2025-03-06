@@ -1,6 +1,7 @@
 """The `generations` module for automatically versioning and tracing LLM generations."""
-
+import inspect
 import json
+import os
 import typing
 from collections.abc import Callable, Coroutine, Generator
 from contextlib import contextmanager
@@ -106,6 +107,79 @@ current_generation: ContextVar[GenerationPublic | None] = ContextVar(
     "current_generation", default=None
 )
 
+# Type definitions for decorator registry
+FunctionInfo: TypeAlias = tuple[
+    str, str, int, str
+]  # (file_path, function_name, line_number, module_name)
+DecoratorRegistry: TypeAlias = dict[str, list[FunctionInfo]]
+
+# Globals for decorator registry
+_RECORDING_ENABLED: bool = False
+_DECORATOR_REGISTRY: DecoratorRegistry = {}  # Maps decorator names to lists of function info
+
+
+def enable_recording() -> None:
+    """Enable recording of decorated functions."""
+    global _RECORDING_ENABLED
+    _RECORDING_ENABLED = True
+
+
+def disable_recording() -> None:
+    """Disable recording of decorated functions."""
+    global _RECORDING_ENABLED
+    _RECORDING_ENABLED = False
+
+
+def clear_registry() -> None:
+    """Clear the registry of decorated functions."""
+    global _DECORATOR_REGISTRY
+    _DECORATOR_REGISTRY = {}
+
+
+def register_decorated_function(decorator_name: str, fn: Callable[..., Any]) -> None:
+    """Register a function that has been decorated.
+
+    Args:
+        decorator_name: The name of the decorator
+        fn: The decorated function
+    """
+    if not _RECORDING_ENABLED:
+        return
+
+    try:
+        # Get function information
+        file_path: str = inspect.getfile(fn)
+        abs_path: str = os.path.abspath(file_path)
+        lineno: int = inspect.getsourcelines(fn)[1]
+        # Use Closure.from_fn to get the wrapped function name
+        function_name: str = Closure.from_fn(fn).name
+        module_name: str = fn.__module__
+
+        # Add to registry
+        if decorator_name not in _DECORATOR_REGISTRY:
+            _DECORATOR_REGISTRY[decorator_name] = []
+
+        # Store (file_path, function_name, line_number, module_name)
+        _DECORATOR_REGISTRY[decorator_name].append(
+            (abs_path, function_name, lineno, module_name)
+        )
+    except (TypeError, OSError):
+        # Handle cases where inspect might fail (e.g., built-in functions)
+        pass
+
+
+def get_decorated_functions(decorator_name: str | None = None) -> DecoratorRegistry:
+    """Get information about registered decorated functions.
+
+    Args:
+        decorator_name: Optional name of decorator to filter by
+
+    Returns:
+        Dictionary mapping decorator names to lists of function information tuples
+    """
+    if decorator_name:
+        return {decorator_name: _DECORATOR_REGISTRY.get(decorator_name, [])}
+    return _DECORATOR_REGISTRY.copy()
 
 class SyncGenerationFunction(Protocol[_P, _R_CO]):
     """Protocol for the `generation` decorator return type."""
@@ -482,6 +556,9 @@ def generation(
         | Callable[_P, Generation[_R]]
         | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
     ):
+        if _RECORDING_ENABLED:
+            register_decorated_function("lilypad.generation", fn)
+
         is_mirascope_call = hasattr(fn, "__mirascope_call__") or managed
         prompt_template_value = (
             fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]

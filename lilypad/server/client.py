@@ -321,6 +321,29 @@ class LilypadClient:
             f"Generation with signature '{closure.signature}' not found. Available signatures: {[g.signature for g in generations]}"
         )
 
+    def get_generations_by_name(
+        self,
+        fn: Callable[..., Any],
+    ) -> list[GenerationPublic]:
+        """Get the matching name for a generation.
+
+        Args:
+            fn (Callable): The generation for which to get the all version.
+
+        Returns:
+            GenerationPublic: The matching versions for the generation.
+        """
+        closure = Closure.from_fn(fn)
+        generations = self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            response_model=list[GenerationPublic],
+        )
+        if generations:
+            return generations
+        raise LilypadNotFoundError(
+            f"Generation with name '{closure.name}' not found."
+        )
     def patch_organization(
         self, organization_uuid: UUID, data: dict[str, Any]
     ) -> OrganizationPublic:
