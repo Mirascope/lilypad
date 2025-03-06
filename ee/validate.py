@@ -57,7 +57,7 @@ class LicenseValidator:
     def __init__(self) -> None:
         """Initialize the validator for a specific organization"""
         try:
-            with resources.files("lilypad.ee").joinpath("key.pub.pem").open("r") as f:
+            with resources.files("ee").joinpath("key.pub.pem").open("r") as f:
                 public_key_data = f.read()
                 key = serialization.load_pem_public_key(
                     public_key_data.encode(), backend=default_backend()
