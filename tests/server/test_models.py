@@ -12,8 +12,6 @@ from lilypad.server.models import (
     BaseSQLModel,
     GenerationTable,
     ProjectTable,
-    PromptTable,
-    Provider,
     Scope,
     SpanTable,
     SpanType,
@@ -23,8 +21,7 @@ from lilypad.server.schemas import (
     GenerationPublic,
     ProjectCreate,
     ProjectPublic,
-    PromptCreate,
-    PromptPublic,
+    Provider,
     SpanCreate,
     SpanPublic,
 )
@@ -103,7 +100,6 @@ def test_project_models(session) -> None:
     assert proj_table.uuid is not None
     assert proj_table.name == "test_project"
     assert proj_table.generations == []
-    assert proj_table.prompts == []
 
     # Test ProjectPublic
     uuid = uuid4()
@@ -111,34 +107,10 @@ def test_project_models(session) -> None:
         uuid=uuid,
         name="test_project",
         generations=[],
-        prompts=[],
         created_at=proj_table.created_at,
     )
     assert proj_public.uuid == uuid
     assert proj_public.name == "test_project"
-
-
-def test_prompt_models() -> None:
-    """Test Prompt model variants."""
-    prompt_data = {
-        "project_uuid": uuid4(),
-        "name": "test",
-        "signature": "def test(): pass",
-        "code": "def test(): pass",
-        "hash": "def123",
-        "template": "Test template",
-    }
-
-    # Test PromptCreate
-    prompt_create = PromptCreate(**prompt_data)
-    assert prompt_create.hash == "def123"
-    assert prompt_create.template == "Test template"
-
-    # Test PromptPublic
-    uuid = uuid4()
-    prompt_public = PromptPublic(uuid=uuid, **prompt_data)
-    assert prompt_public.uuid == uuid
-    assert prompt_public.template == "Test template"
 
 
 def test_span_models() -> None:
@@ -202,23 +174,9 @@ def test_relationships(session) -> None:
     session.add(project)
     session.commit()
 
-    # Create prompt linked to project
-    prompt = PromptTable(
-        organization_uuid=ORGANIZATION_UUID,
-        project_uuid=project.uuid,  # pyright: ignore [reportArgumentType]
-        name="test",
-        signature="def test(): pass",
-        code="def test(): pass",
-        hash="def123",
-        template="Test template",
-    )
-    session.add(prompt)
-    session.commit()
-
     # Create generation linked to project
     generation = GenerationTable(
         organization_uuid=ORGANIZATION_UUID,
-        prompt_uuid=prompt.uuid,
         name="test_func",
         signature="def test(): pass",
         code="def test(): pass",
@@ -230,8 +188,6 @@ def test_relationships(session) -> None:
 
     # Test relationships
     assert generation in project.generations
-    assert prompt in project.prompts
-    assert generation in prompt.generations
 
     # Test cascade delete
     session.delete(project)
@@ -239,7 +195,6 @@ def test_relationships(session) -> None:
 
     # Verify all related records are deleted
     assert session.get(GenerationTable, generation.uuid) is None
-    assert session.get(PromptTable, prompt.uuid) is None
 
 
 def test_provider_enum() -> None:

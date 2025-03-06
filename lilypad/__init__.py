@@ -7,9 +7,9 @@ from . import server as server
 from ._configure import configure
 from .generations import generation
 from .messages import Message
-from .prompts import prompt
-from .response_models import response_model
+from .spans import span
 from .tools import tool
+from .traces import trace
 
 __version__ = importlib.metadata.version("python-lilypad")
 
@@ -19,8 +19,8 @@ __all__ = [
     "ee",
     "generation",
     "Message",
-    "prompt",
     "server",
+    "span",
     "tool",
-    "response_model",
+    "trace",
 ]

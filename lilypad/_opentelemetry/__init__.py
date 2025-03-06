@@ -7,6 +7,9 @@ with suppress(ImportError):
     from ._opentelemetry_bedrock import BedrockInstrumentor
 
 with suppress(ImportError):
+    from ._opentelemetry_google_genai import GoogleGenAIInstrumentor
+
+with suppress(ImportError):
     from ._opentelemetry_google_generative_ai import GoogleGenerativeAIInstrumentor
 
 with suppress(ImportError):
@@ -24,6 +27,7 @@ with suppress(ImportError):
 __all__ = [
     "AnthropicInstrumentor",
     "BedrockInstrumentor",
+    "GoogleGenAIInstrumentor",
     "GoogleGenerativeAIInstrumentor",
     "MistralInstrumentor",
     "OpenAIInstrumentor",

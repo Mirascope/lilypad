@@ -1,6 +1,6 @@
 [project]
 name = "python-lilypad"
-version = "0.0.27"
+version = "0.0.28"
 description = "An open-source prompt engineering framework."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -31,13 +31,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "mirascope>=1.9.5",
+    "mirascope>=1.20.1",
     "sqlmodel>=0.0.22",
     "psycopg2-binary>=2.9.9",
     "fastapi[standard]>=0.114.0",
-    "opentelemetry-api>=1.29.0",
-    "opentelemetry-sdk>=1.29.0",
-    "opentelemetry-instrumentation>=0.49b1",
+    "opentelemetry-api>=1.30.0",
+    "opentelemetry-sdk>=1.30.0",
+    "opentelemetry-instrumentation>=0.51b0",
     "typer>=0.12.5",
     "itsdangerous>=2.2.0",
     "python-jose[cryptography]>=3.3.0",
@@ -65,6 +65,7 @@ Changelog = "https://github.com/Mirascope/lilypad/releases"
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]
 gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
+google = ["google-genai>=1.3.0,<2", "pillow>=10.4.0,<11"]
 bedrock = [
     "aioboto3>=13.2.0",
     "boto3>=1.35.36",
@@ -79,7 +80,7 @@ vertex = ["google-cloud-aiplatform>=1.74.0"]
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.3.2",
-    "pyright>=1.1.394",
+    "pyright>=1.1.396",
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
@@ -126,7 +127,12 @@ target-version = "py310"
 "migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
-"tests/_utils/closure/closure_test_functions/main.py" = ["D101", "D212", "D402", "D403"]
+"tests/_utils/closure/closure_test_functions/main.py" = [
+    "D101",
+    "D212",
+    "D402",
+    "D403",
+]
 "tests/_utils/closure/closure_test_functions/other.py" = [
     "D101",
     "D102",
@@ -162,7 +168,7 @@ ignore = [
     'ANN401',
 ]
 fixable = ["ALL"]
-isort = { known-first-party = ['lilypad', 'tests', 'examples'] }
+isort = { known-first-party = ['lilypad', 'ee', 'tests', 'examples'] }
 pydocstyle = { convention = 'google' }
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -175,6 +181,7 @@ line-ending = "auto"
 
 [tool.pyright]
 exclude = ["examples"]
+include = ["lilypad", "ee"]
 venvPath = "."
 venv = ".venv"
 
@@ -189,10 +196,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["lilypad"]
+packages = ["lilypad", "ee"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/lilypad"]
+include = ["/lilypad", "/ee"]
 
 [tool.hatch.build.force-include]
 "lilypad/server/static" = "lilypad/server/static"

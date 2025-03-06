@@ -6,10 +6,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from mirascope.core.base.types import CostMetadata
+from mirascope.core.costs import calculate_cost
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ..._utils import (
-    calculate_cost,
     calculate_openrouter_cost,
     validate_api_key_project_strict,
 )
@@ -73,25 +74,24 @@ async def _process_span(
                     input_tokens, output_tokens, model
                 )
             else:
-                cost = calculate_cost(
-                    input_tokens,
-                    output_tokens,
-                    system,
-                    model,
+                # TODO: Add cached_tokens once it is added to OpenTelemetry GenAI spec
+                # https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/
+                cost_metadata = CostMetadata(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
                 )
+                cost = calculate_cost(system, model, metadata=cost_metadata)
             if cost is not None:
                 span_cost = cost
 
     # Process attributes and create span
     attributes = trace.get("attributes", {})
     generation_uuid_str = attributes.get("lilypad.generation.uuid")
-    prompt_uuid_str = attributes.get("lilypad.prompt.uuid")
 
     span_create = SpanCreate(
         span_id=trace["span_id"],
         type=attributes.get("lilypad.type"),
         generation_uuid=UUID(generation_uuid_str) if generation_uuid_str else None,
-        prompt_uuid=UUID(prompt_uuid_str) if prompt_uuid_str else None,
         scope=scope,
         data=trace,
         parent_span_id=trace.get("parent_span_id"),

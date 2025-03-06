@@ -4,10 +4,11 @@ import importlib.metadata
 import inspect
 import sys
 from collections.abc import Callable
+from uuid import UUID
 
 import pytest
 
-from lilypad._utils import Closure
+from lilypad._utils import Closure, get_qualified_name
 
 from .closure_test_functions import (
     aliased_import_fn,
@@ -58,6 +59,28 @@ from .closure_test_functions.main import (
     nested_base_model_definitions,
     raw_string_fn,
 )
+
+mirascope_extras = [
+    "anthropic",
+    "bedrock",
+    "gemini",
+    "google",
+    "mistral",
+    "openai",
+    "opentelemetry",
+    "vertex",
+    "xai",
+]
+lilypad_extras = [
+    "anthropic",
+    "bedrock",
+    "gemini",
+    "google",
+    "mistral",
+    "openai",
+    "outlines",
+    "vertex",
+]
 
 
 def _expected(fn: Callable) -> str:
@@ -113,15 +136,7 @@ def test_third_party_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         }
     }
 
@@ -133,15 +148,7 @@ def test_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         }
     }
 
@@ -153,15 +160,7 @@ def test_multi_decorated_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         }
     }
 
@@ -340,15 +339,7 @@ def test_global_var_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
         "openai": {
             "version": importlib.metadata.version("openai"),
@@ -370,6 +361,7 @@ def test_import_with_different_dist_name_fn() -> None:
         "google-cloud-core": {"extras": ["grpc"], "version": "2.4.1"},
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.0"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
+        "google-genai": {"extras": None, "version": "1.3.0"},
         "google-generativeai": {"extras": None, "version": "0.8.4"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],
@@ -393,15 +385,7 @@ def test_closure_inside_decorator_fn() -> None:
     assert closure.dependencies == {
         "python-lilypad": {
             "version": importlib.metadata.version("python-lilypad"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "outlines",
-                "vertex",
-            ],
+            "extras": lilypad_extras,
         }
     }
 
@@ -413,15 +397,7 @@ def test_closure_inside_imported_decorator_fn() -> None:
     assert closure.dependencies == {
         "python-lilypad": {
             "version": importlib.metadata.version("python-lilypad"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "outlines",
-                "vertex",
-            ],
+            "extras": lilypad_extras,
         }
     }
 
@@ -467,15 +443,7 @@ def test_mirascope_response_model_fn() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
         "pydantic": {
             "extras": None,
@@ -532,15 +500,7 @@ def test_nested_base_model_definitions() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
         "pydantic": {
             "extras": None,
@@ -556,15 +516,7 @@ def test_nested_handle_issue_method() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
         "pydantic": {
             "extras": None,
@@ -580,15 +532,7 @@ def test_instance_method() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
     }
 
@@ -623,14 +567,49 @@ def test_instance_method_on_local() -> None:
     assert closure.dependencies == {
         "mirascope": {
             "version": importlib.metadata.version("mirascope"),
-            "extras": [
-                "anthropic",
-                "bedrock",
-                "gemini",
-                "mistral",
-                "openai",
-                "opentelemetry",
-                "vertex",
-            ],
+            "extras": mirascope_extras,
         },
     }
+
+
+def test_from_fn_failure(monkeypatch):
+    """Test that Closure.from_fn propagates exceptions from _run_ruff."""
+
+    def fake_run_ruff(code: str) -> str:
+        raise RuntimeError("Ruff failed")
+
+    monkeypatch.setattr("lilypad._utils.closure._run_ruff", fake_run_ruff)
+
+    def dummy_func(x):
+        return x
+
+    with pytest.raises(RuntimeError, match="Ruff failed"):
+        Closure.from_fn(dummy_func)
+
+
+def sample_function(x: int) -> int:
+    """A sample function that multiplies input by 2."""
+    return x * 2
+
+
+@pytest.fixture()
+def fixed_uuid(monkeypatch):
+    """Fixture that replaces uuid.uuid4 with a fixed UUID."""
+    fixed = UUID("12345678123456781234567812345678")
+    monkeypatch.setattr("uuid.uuid4", lambda: fixed)
+    return fixed
+
+
+def test_get_qualified_name_handles_locals():
+    """Test that get_qualified_name returns a simplified name for a function defined in a local scope."""
+
+    def outer():
+        def inner():
+            pass
+
+        return inner
+
+    inner_fn = outer()
+    simple_name = get_qualified_name(inner_fn)
+    # Expected simple name is "inner"
+    assert simple_name == "inner"

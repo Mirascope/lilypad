@@ -5,7 +5,8 @@ For development: Run fastapi dev lilypad/server/main.py
 
 import logging
 import subprocess
-from collections.abc import AsyncGenerator
+import traceback
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -59,7 +60,7 @@ origins = [
     f"{settings.client_url}/*",
 ]
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, debug=True)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -67,6 +68,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_exceptions(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """Log exceptions."""
+    try:
+        return await call_next(request)
+    except Exception as e:
+        log.error(f"Exception in request: {e}")
+        log.error(traceback.format_exc())
+        raise  # Re-raise to let FastAPI handle the response
+
+
 setup_posthog_middleware(app, exclude_paths=[], should_capture=lambda _: True)
 
 app.mount("/v0", v0_api)

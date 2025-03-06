@@ -20,11 +20,8 @@ from .._utils import (
     convert_mirascope_messages,
     convert_openai_messages,
 )
-from ..models.prompts import Provider
 from ..models.spans import Scope, SpanBase, SpanTable
-from .generations import GenerationPublic
-from .prompts import PromptPublic
-from .response_models import ResponseModelPublic
+from .generations import GenerationPublic, Provider
 
 
 class SpanCreate(SpanBase):
@@ -40,8 +37,6 @@ class SpanPublic(SpanBase):
     project_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
-    prompt: PromptPublic | None = None
-    response_model: ResponseModelPublic | None = None
     annotations: list[AnnotationTable]
     child_spans: list[SpanPublic]
     created_at: datetime
@@ -59,8 +54,8 @@ class SpanPublic(SpanBase):
 
     @classmethod
     def _convert_span_table_to_public(
-        cls,
-        span: SpanTable,
+            cls,
+            span: SpanTable,
     ) -> dict[str, Any]:
         """Set the display name based on the scope."""
         data = span.data
@@ -71,7 +66,10 @@ class SpanPublic(SpanBase):
             display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
-            display_name = f"{attributes.get('gen_ai.system')} with '{data['attributes']['gen_ai.request.model']}'"
+            if gen_ai_system := attributes.get('gen_ai.system'):
+                display_name = f"{gen_ai_system} with '{data['attributes']['gen_ai.request.model']}'"
+            else:
+                display_name = data.get("name", "")
             version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
@@ -126,7 +124,7 @@ class SpanMoreDetails(BaseModel):
         events = convert_events(data.get("events", []))
         if span.scope == Scope.LLM:
             provider = attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown")
-            if provider == Provider.GEMINI.value:
+            if provider in (Provider.GEMINI.value, "google_genai"):
                 messages = convert_gemini_messages(data["events"])
             elif (
                 provider == Provider.OPENROUTER.value

@@ -19,21 +19,15 @@ import {
 } from "@/components/ui/select";
 import {
   CommonCallParams,
+  GenerationPublic,
   PlaygroundParameters,
-  PromptPublic,
   Provider,
   UserPublic,
 } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import {
-  Control,
-  DefaultValues,
-  Path,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { DefaultValues, Path, useForm, useFormContext } from "react-hook-form";
 export type OptionalField<T> = {
   enabled: boolean;
   value: T;
@@ -164,17 +158,17 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   },
 } as const;
 
-export function createFormSlider<T extends object>(
-  control: Control<T>,
-  sliderKey: keyof typeof SLIDER_CONFIGS
-) {
-  return function renderSlider(name: Path<T>, enabled?: Path<T>) {
+export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS) {
+  return function renderSlider<T extends object>(
+    name: Path<T>,
+    enabled?: Path<T>
+  ) {
     const config = SLIDER_CONFIGS[sliderKey];
     const isOptional = !!enabled;
+
     return (
       <FormSlider<T>
         key={`editor-${sliderKey}`}
-        control={control}
         name={name}
         label={config.label}
         sliderProps={config.sliderProps}
@@ -289,7 +283,7 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
   latestVersion,
   additionalDefaults = {},
 }: {
-  latestVersion?: PromptPublic | null;
+  latestVersion?: GenerationPublic | null;
   additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
@@ -313,21 +307,27 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
 };
 
 const getDefaultValues = <T extends PlaygroundParameters>(
-  latestVersion?: PromptPublic | null
+  latestVersion?: GenerationPublic | null
 ): DefaultValues<T> => {
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
       model: "gpt-4o",
-      prompt: {
+      generation: {
         call_params: commonCallParamsDefault,
       },
     } as DefaultValues<T>;
   }
+  if (
+    !latestVersion.call_params ||
+    Object.keys(latestVersion.call_params).length === 0
+  ) {
+    latestVersion.call_params = commonCallParamsDefault;
+  }
   return {
     provider: Provider.OPENAI,
     model: "gpt-4o",
-    prompt: latestVersion,
+    generation: latestVersion,
   } as DefaultValues<T>;
 };
 
@@ -337,7 +337,7 @@ const renderSeed = () => {
     <FormField
       key='editor-seed'
       control={method.control}
-      name={"prompt.call_params.seed"}
+      name={"generation.call_params.seed"}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Seed</FormLabel>
@@ -390,21 +390,22 @@ export const BaseEditorFormFields = () => {
   }, [provider, methods.resetField]);
 
   const renderSliders = {
-    maxTokens: createFormSlider(methods.control, "maxTokens"),
-    temperature: createFormSlider(methods.control, "temperature"),
-    topK: createFormSlider(methods.control, "topK"),
-    topP: createFormSlider(methods.control, "topP"),
-    frequencyPenalty: createFormSlider(methods.control, "frequencyPenalty"),
-    presencePenalty: createFormSlider(methods.control, "presencePenalty"),
+    maxTokens: createFormSlider("maxTokens"),
+    temperature: createFormSlider("temperature"),
+    topK: createFormSlider("topK"),
+    topP: createFormSlider("topP"),
+    frequencyPenalty: createFormSlider("frequencyPenalty"),
+    presencePenalty: createFormSlider("presencePenalty"),
   };
+
   const commonParams = [
-    renderSliders.temperature("prompt.call_params.temperature"),
-    renderSliders.maxTokens("prompt.call_params.max_tokens"),
-    renderSliders.topP("prompt.call_params.top_p"),
-    renderSliders.frequencyPenalty("prompt.call_params.frequency_penalty"),
-    renderSliders.presencePenalty("prompt.call_params.presence_penalty"),
+    renderSliders.temperature("generation.call_params.temperature"),
+    renderSliders.maxTokens("generation.call_params.max_tokens"),
+    renderSliders.topP("generation.call_params.top_p"),
+    renderSliders.frequencyPenalty("generation.call_params.frequency_penalty"),
+    renderSliders.presencePenalty("generation.call_params.presence_penalty"),
     renderSeed(),
-    renderStopSequences("prompt.call_params.stop", 4),
+    renderStopSequences("generation.call_params.stop", 4),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>
