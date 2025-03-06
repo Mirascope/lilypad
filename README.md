@@ -30,20 +30,14 @@ This project uses a dual-license model:
 
 ### Open-Source License (MIT)
 
-Except for the contents and code contained in any `/ee` directory, which is covered by a commercial license (see below), all code in this repository is licensed under the terms of the [MIT License](https://github.com/Mirascope/lilypad/blob/main/LICENSE).
+Except for the contents and code contained in any `ee` directory or sub-directory of this repository, which is covered by a commercial license (see below), all code in this repository is licensed under the terms of the [MIT License](https://github.com/Mirascope/lilypad/blob/main/LICENSE).
 
-### Enterprise Edition License
+### Enterprise Edition (EE) License
 
-The contents of any `/ee` directory are licensed under the Enterprise Edition License. This code is only available to users with a valid enterprise license. See [`lilypad/ee/LICENSE`](https://github.com/Mirascope/lilypad/blob/main/lilypad/ee/LICENSE) for the full terms.
+The contents and code of any `ee` directory or sub-directory of this repository are licensed under the Enterprise Edition (EE) License. This content and code is only available to users using the Lilypad App or those with a valid Enterprise Edition (EE) License. See [ee/LICENSE](https://github.com/Mirascope/lilypad/blob/main/ee/LICENSE) for the full terms.
 
-__Enterprise Features:__
+__Self-Hosting:__
 
-Stay tuned...
+For those looking to self-host the Enterprise Edition (EE) of Lilypad, please reach out to sales@mirascope.com.
 
-__Obtaining An Enterprise License:__
-
-To purchase an enterprise license, please contact william@mirascope.io
-
-__License Validation:__
-
-Enterprise features require a valid license key for activation. Self-hosted installations will validate licenses against using offline activation.
+You can find more information about self-hosting [here](https://lilypad.so/self-hosting).

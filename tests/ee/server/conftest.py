@@ -8,8 +8,7 @@ from uuid import UUID, uuid4
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from lilypad.ee import LicenseInfo
-from lilypad.ee.validate import Tier
+from ee import LicenseInfo, Tier
 from lilypad.server.models import (
     UserRole,
 )
@@ -95,9 +94,7 @@ def mock_license_info() -> Generator[LicenseInfo, None, None]:
         LicenseInfo: Test license info
     """
     # patch LicenseValidator._verify_license method
-    with patch(
-        "lilypad.ee.validate.LicenseValidator.validate_license"
-    ) as mock_verify_license:
+    with patch("ee.validate.LicenseValidator.validate_license") as mock_verify_license:
         license_info = mock_verify_license.return_value = LicenseInfo(
             organization_uuid=ORGANIZATION_UUID,
             tier=Tier.ENTERPRISE,

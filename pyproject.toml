@@ -127,7 +127,12 @@ target-version = "py310"
 "migrations/versions/*.py" = ["D103"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
-"tests/_utils/closure/closure_test_functions/main.py" = ["D101", "D212", "D402", "D403"]
+"tests/_utils/closure/closure_test_functions/main.py" = [
+    "D101",
+    "D212",
+    "D402",
+    "D403",
+]
 "tests/_utils/closure/closure_test_functions/other.py" = [
     "D101",
     "D102",
@@ -163,7 +168,7 @@ ignore = [
     'ANN401',
 ]
 fixable = ["ALL"]
-isort = { known-first-party = ['lilypad', 'tests', 'examples'] }
+isort = { known-first-party = ['lilypad', 'ee', 'tests', 'examples'] }
 pydocstyle = { convention = 'google' }
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -176,6 +181,7 @@ line-ending = "auto"
 
 [tool.pyright]
 exclude = ["examples"]
+include = ["lilypad", "ee"]
 venvPath = "."
 venv = ".venv"
 
@@ -190,10 +196,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["lilypad"]
+packages = ["lilypad", "ee"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/lilypad"]
+include = ["/lilypad", "/ee"]
 
 [tool.hatch.build.force-include]
 "lilypad/server/static" = "lilypad/server/static"

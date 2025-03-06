@@ -8,11 +8,12 @@ from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
 
+from ee import Tier
+
 from .....server.schemas.spans import SpanMoreDetails
 from .....server.services import SpanService
 from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from ....server.services import AnnotationService
-from ....validate import Tier
 from ...generations.annotate_trace import annotate_trace
 from ...require_license import require_license
 

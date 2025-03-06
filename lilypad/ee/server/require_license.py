@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 
-from lilypad.ee.validate import LicenseError, LicenseInfo, LicenseValidator, Tier
+from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
 from lilypad.server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])

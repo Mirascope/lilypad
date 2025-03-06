@@ -8,8 +8,8 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import HTTPException, status
 
+from ee import LicenseError, LicenseInfo, Tier
 from lilypad.ee.server.require_license import _RequireLicense, require_license
-from lilypad.ee.validate import LicenseError, LicenseInfo, Tier
 
 
 class DummyProject:

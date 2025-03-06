@@ -1,3 +1,166 @@
 # Get Started with Lilypad
 
-...
+This guide will have you up and running with Lilypad in less than 5 minutes.
+
+## Installation
+
+Install Lilypad using pip:
+
+```bash
+pip install lilypad
+```
+
+For specific providers, include them as extras:
+
+```bash
+# For OpenAI support
+pip install "lilypad[openai]"
+
+# For multiple providers
+pip install "lilypad[openai,anthropic,gemini]"
+```
+
+Available provider extras:
+- `openai` - OpenAI models
+- `anthropic` - Claude models
+- `gemini` - Google Gemini models
+- `bedrock` - AWS Bedrock models
+- `mistral` - Mistral models
+- `outlines` - Outlines framework
+- `vertex` - Google Vertex AI
+
+## Your First Lilypad Generation
+
+Create a file named `first_generation.py`:
+
+```python
+from lilypad import generation
+
+@generation()
+def generate_story(topic: str, length: str = "short") -> str:
+    """Generate a creative story about the given topic.
+    
+    Args:
+        topic: The main subject of the story
+        length: How long the story should be ("short", "medium", "long")
+    
+    Returns:
+        The generated story
+    """
+    prompt = f"""
+    Write a {length} creative story about {topic}.
+    Make it engaging and imaginative.
+    """
+    return prompt
+
+# Use the function
+if __name__ == "__main__":
+    story = generate_story("space exploration")
+    print(story)
+```
+
+Run the file:
+
+```bash
+python first_generation.py
+```
+
+This outputs your prompt template. To connect with an LLM provider, we need to set up API keys.
+
+## Connecting to an LLM Provider
+
+Set your API keys as environment variables (replace with your actual keys):
+
+```bash
+# For OpenAI
+export OPENAI_API_KEY=sk-...
+
+# For Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# For Google Gemini
+export GOOGLE_API_KEY=...
+```
+
+Now, update your code to use a managed generation:
+
+```python
+from lilypad import generation
+
+@generation(managed=True)
+def generate_story(topic: str, length: str = "short") -> str:
+    """Generate a creative story about the given topic.
+    
+    Args:
+        topic: The main subject of the story
+        length: How long the story should be ("short", "medium", "long")
+    
+    Returns:
+        The generated story
+    """
+    prompt = f"""
+    Write a {length} creative story about {topic}.
+    Make it engaging and imaginative.
+    """
+    return prompt
+
+# Use the function
+if __name__ == "__main__":
+    story = generate_story("space exploration")
+    print(story)  # Now contains the LLM-generated story
+```
+
+[NEEDS SCREENSHOT: Output showing LLM-generated story]
+
+## Basic Tracing
+
+Let's add tracing to see what's happening:
+
+```python
+from lilypad import generation, trace
+
+@trace()
+def process_story_request(topic: str, length: str) -> str:
+    """Process a story request with full tracing."""
+    # Generate the story
+    story = generate_story(topic, length)
+    
+    # Do something with the story
+    word_count = len(story.split())
+    print(f"Generated a story with {word_count} words")
+    
+    return story
+
+@generation(managed=True)
+def generate_story(topic: str, length: str = "short") -> str:
+    """Generate a creative story about the given topic."""
+    prompt = f"""
+    Write a {length} creative story about {topic}.
+    Make it engaging and imaginative.
+    """
+    return prompt
+
+if __name__ == "__main__":
+    result = process_story_request("underwater cities", "medium")
+    print("\nFinal story:", result)
+```
+
+## Using the Lilypad UI
+
+For enhanced functionality, you can run the Lilypad server:
+
+```bash
+python -m lilypad.cli.main local
+```
+
+This starts a local server at [http://localhost:8000](http://localhost:8000)
+
+[NEEDS SCREENSHOT: Lilypad UI showing traces and generations]
+
+## Next Steps
+
+- Learn more about [tracing](/docs/tracing-introduction) to monitor your LLM interactions
+- Explore [versioning](/docs/versioning-introduction) to manage prompt changes
+- Set up [evaluations](/docs/evaluations-introduction) to measure prompt quality
+
+For a complete example application, check out our [GitHub repository](https://github.com/Mirascope/lilypad).
