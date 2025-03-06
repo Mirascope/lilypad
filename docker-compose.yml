@@ -1,0 +1,35 @@
+version: '3'
+services:
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  
+  lilypad:
+    image: lilypad
+    ports:
+      - "8000:8000"
+    environment:
+      - LILYPAD_DB_HOST=postgres
+      - LILYPAD_DB_NAME=postgres
+      - LILYPAD_DB_PASSWORD=password
+      - LILYPAD_DB_PORT=5432
+      - LILYPAD_DB_USER=postgres
+      - LILYPAD_GITHUB_CLIENT_ID=...
+      - LILYPAD_GITHUB_CLIENT_SECRET=...
+      - LILYPAD_GOOGLE_CLIENT_ID=...
+      - LILYPAD_GOOGLE_CLIENT_SECRET=...
+      - LILYPAD_JWT_SECRET=...
+      - LILYPAD_SERVE_FRONTEND=true
+      - LILYPAD_REMOTE_API_URL=http://localhost:8000
+      - LILYPAD_REMOTE_CLIENT_URL=http://localhost:8000
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:

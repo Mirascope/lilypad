@@ -2,9 +2,9 @@
 
 from sqlmodel import SQLModel
 
-from lilypad.ee.server.models import *  # noqa: F403
-from lilypad.server.db.session import db
-from lilypad.server.models import *  # noqa: F403
+from ...ee.server.models import *  # noqa: F403
+from ...server.db.session import db
+from ...server.models import *  # noqa: F403
 
 
 def create_tables(environment: str | None = None) -> None:

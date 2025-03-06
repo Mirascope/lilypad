@@ -1,6 +1,10 @@
-MIT License
+Copyright (c) 2024-2025 Mirascope
 
-Copyright (c) 2024 Mirascope
+This software is licensed as follows:
+
+- The contents and code of any `ee` directory or sub-directory of this repository are licensed under the license defined in `ee/LICENSE`.
+- All third party components incorporated into the Lilypad Software are licensed under the original license provided by the owner of the applicable component.
+- The contents and code outside of the above mentioned directories or restrictions above are available under the "MIT" license as defined below.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
