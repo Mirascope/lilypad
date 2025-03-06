@@ -367,7 +367,7 @@ def test_import_with_different_dist_name_fn() -> None:
             "extras": ["aiohttp", "requests"],
             "version": "2.7.2",
         },
-        "googleapis-common-protos": {"extras": None, "version": "1.69.0"},
+        "googleapis-common-protos": {"extras": None, "version": "1.69.1"},
         "grpc-google-iam-v1": {"extras": None, "version": "0.14.1"},
     }
     if sys.version_info >= (3, 11):
