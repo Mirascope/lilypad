@@ -643,6 +643,7 @@ export interface SpanPublic {
  */
 export enum SpanType {
   GENERATION = "generation",
+  TRACE = "trace",
 }
 
 /**
