@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 
 from ee.validate import LicenseInfo
-from lilypad.ee.server.require_license import _RequireLicense
+from lilypad.ee.server.require_license import RequireLicense
 
 from .annotations_api import Tier, annotations_router
 from .generations_api import generations_router
@@ -16,9 +16,9 @@ ee_api.include_router(generations_router)
 
 
 @ee_api.get("/projects/{project_uuid}", response_model=Tier)
-async def root(
+async def get_license(
     license_info: Annotated[
-        LicenseInfo | None, Depends(_RequireLicense(tier=Tier.ENTERPRISE))
+        LicenseInfo | None, Depends(RequireLicense(tier=Tier.FREE))
     ],
 ) -> Tier:
     if not license_info:
