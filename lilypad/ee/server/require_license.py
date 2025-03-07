@@ -65,7 +65,7 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
 class RequireLicense:
     """License dependency for FastAPI endpoints."""
 
-    def __init__(self, tier: Tier = Tier.ENTERPRISE) -> None:
+    def __init__(self, tier: Tier | None = Tier.ENTERPRISE) -> None:
         """Initialize with required tier."""
         self.tier = tier
 

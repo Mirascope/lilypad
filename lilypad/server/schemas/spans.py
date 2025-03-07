@@ -54,8 +54,8 @@ class SpanPublic(SpanBase):
 
     @classmethod
     def _convert_span_table_to_public(
-            cls,
-            span: SpanTable,
+        cls,
+        span: SpanTable,
     ) -> dict[str, Any]:
         """Set the display name based on the scope."""
         data = span.data
@@ -66,7 +66,7 @@ class SpanPublic(SpanBase):
             display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
-            if gen_ai_system := attributes.get('gen_ai.system'):
+            if gen_ai_system := attributes.get("gen_ai.system"):
                 display_name = f"{gen_ai_system} with '{data['attributes']['gen_ai.request.model']}'"
             else:
                 display_name = data.get("name", "")
