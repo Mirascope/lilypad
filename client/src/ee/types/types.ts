@@ -187,6 +187,15 @@ export interface SpanMoreDetails {
   events?: Event[] | null;
 }
 
+/**
+ * Tier
+ * License tier enum.
+ */
+export enum Tier {
+  FREE = "FREE",
+  ENTERPRISE = "ENTERPRISE",
+}
+
 /** ValidationError */
 export interface ValidationError {
   /** Location */

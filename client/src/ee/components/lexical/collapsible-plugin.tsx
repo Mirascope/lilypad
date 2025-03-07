@@ -34,7 +34,7 @@ import {
   $isCollapsibleTitleNode,
   CollapsibleTitleNode,
 } from "./collapsible-title-node";
-import { $createUneditableParagraphNode } from "@/components/lexical/uneditable-paragraph-node";
+import { $createUneditableParagraphNode } from "./uneditable-paragraph-node";
 
 export const INSERT_COLLAPSIBLE_COMMAND = createCommand<string>();
 export const TOGGLE_COLLAPSIBLE_COMMAND = createCommand<NodeKey>();

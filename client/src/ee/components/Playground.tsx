@@ -1,8 +1,6 @@
-import { Editor } from "@/components/Editor";
+import { Editor } from "@/ee/components/Editor";
 
 import { AddCardButton } from "@/components/AddCardButton";
-import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { $findErrorTemplateNodes } from "@/components/lexical/template-node";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +14,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetFooter,
   SheetHeader,
@@ -28,6 +34,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
+import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
+import {
+  FormItemValue,
+  simplifyFormItem,
+  TypedInput,
+} from "@/ee/utils/input-utils";
 import {
   GenerationCreate,
   GenerationPublic,
@@ -53,9 +66,10 @@ import { BaseSyntheticEvent, useRef, useState } from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 
-type EditorParameters = PlaygroundParameters & {
-  inputs: Record<string, string>[];
+type FormValues = {
+  inputs: Record<string, any>[];
 };
+type EditorParameters = PlaygroundParameters & FormValues;
 export const Playground = ({
   version,
 }: {
@@ -75,17 +89,14 @@ export const Playground = ({
       inputs: version?.arg_types
         ? Object.keys(version.arg_types).map((key) => ({
             key,
+            type: version.arg_types?.[key] || "str",
             value: "",
           }))
         : [],
     },
   });
-  const { fields, append, remove } = useFieldArray<EditorParameters>({
-    control: methods.control,
-    name: "inputs",
-  });
 
-  const inputs: Record<string, string>[] = methods.watch("inputs");
+  const inputs = methods.watch("inputs");
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const editorRef = useRef<LexicalEditor>(null);
 
@@ -119,7 +130,7 @@ export const Playground = ({
         name: generationName,
         arg_types: inputs.reduce(
           (acc, input) => {
-            acc[input.key] = "str";
+            acc[input.key] = input.type;
             return acc;
           },
           {} as Record<string, string>
@@ -143,10 +154,18 @@ export const Playground = ({
         if (!isValid || hasErrors) return;
         const inputValues = inputs.reduce(
           (acc, input) => {
-            acc[input.key] = input.value;
+            if (input.type === "list" || input.type === "dict") {
+              try {
+                acc[input.key] = simplifyFormItem(input as FormItemValue);
+              } catch (e) {
+                acc[input.key] = input.value;
+              }
+            } else {
+              acc[input.key] = input.value;
+            }
             return acc;
           },
-          {} as Record<string, string>
+          {} as Record<string, any>
         );
         const playgroundValues: PlaygroundParameters = {
           generation: generationCreate,
@@ -178,62 +197,6 @@ export const Playground = ({
   const renderBottomPanel = () => {
     return (
       <>
-        <div className='space-y-2'>
-          <FormLabel className='text-base'>{"Inputs"}</FormLabel>
-          <div className='flex gap-4 flex-wrap pb-4'>
-            {fields.map((field, index) => (
-              <Card key={field.id} className='w-64 flex-shrink-0 relative'>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  onClick={() => remove(index)}
-                  className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
-                >
-                  <X className='h-4 w-4' />
-                </Button>
-                <CardContent className='pt-6 space-y-4'>
-                  <div className='w-full'>
-                    <FormField
-                      control={methods.control}
-                      name={`inputs.${index}.key`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Args</FormLabel>
-                          <FormControl>
-                            <Input placeholder='Args' {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className='w-full'>
-                    <FormField
-                      control={methods.control}
-                      name={`inputs.${index}.value`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Value</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder='Enter value'
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            <AddCardButton onClick={() => append({ key: "", value: "" })} />
-          </div>
-        </div>
         {runMutation.isSuccess && (
           <div>
             <FormLabel className='text-base'>{"Outputs"}</FormLabel>
@@ -252,7 +215,7 @@ export const Playground = ({
     <Form {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)}>
         <div className='flex flex-col gap-4'>
-          <div className='flex flex-col md:flex-row justify-between gap-4 w-full'>
+          <div className='flex justify-between gap-4 w-full'>
             <div className='flex items-center gap-2'>
               <Button
                 type='submit'
@@ -288,6 +251,7 @@ export const Playground = ({
               )}
             </div>
             <div className='flex items-center gap-2'>
+              <InputsDrawer />
               <CallParamsDrawer />
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -316,20 +280,18 @@ export const Playground = ({
               </Tooltip>
             </div>
           </div>
-          <div className='flex gap-4'>
-            <div className='lexical form-group space-y-2 w-[600px]'>
-              <Editor
-                inputs={inputs.map((input) => input.key)}
-                ref={editorRef}
-                promptTemplate={(version && version.prompt_template) || ""}
-              />
-              {editorErrors.length > 0 &&
-                editorErrors.map((error, i) => (
-                  <div key={i} className='text-red-500 text-sm mt-1'>
-                    {error}
-                  </div>
-                ))}
-            </div>
+          <div className='lexical min-w-[500px]'>
+            <Editor
+              inputs={inputs.map((input) => input.key)}
+              ref={editorRef}
+              promptTemplate={(version && version.prompt_template) || ""}
+            />
+            {editorErrors.length > 0 &&
+              editorErrors.map((error, i) => (
+                <div key={i} className='text-red-500 text-sm mt-1'>
+                  {error}
+                </div>
+              ))}
           </div>
           {renderBottomPanel()}
         </div>
@@ -339,7 +301,7 @@ export const Playground = ({
 };
 
 const CallParamsDrawer = () => {
-  const methods = useFormContext<PlaygroundParameters>();
+  const methods = useFormContext<EditorParameters>();
   const handleClick = () => {
     methods.reset();
   };
@@ -362,6 +324,113 @@ const CallParamsDrawer = () => {
           <Button variant='outline' onClick={handleClick}>
             Reset to default
           </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const InputsDrawer = () => {
+  const methods = useFormContext<EditorParameters>();
+  const { fields, append, remove } = useFieldArray<EditorParameters>({
+    control: methods.control,
+    name: "inputs",
+  });
+  const types = ["str", "int", "float", "bool", "bytes", "list", "dict"];
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+          variant='outline'
+        >
+          Inputs
+        </Button>
+      </SheetTrigger>
+      <SheetContent className='sm:max-w-xl md:max-w-2xl overflow-y-auto'>
+        <SheetHeader>
+          <SheetTitle>Inputs</SheetTitle>
+        </SheetHeader>
+        <div className='space-y-2'>
+          <div className='flex gap-4 flex-wrap pb-4'>
+            {fields.map((field, index) => {
+              const type = methods.watch(`inputs.${index}.type`);
+              return (
+                <Card key={field.id} className='w-full flex-shrink-0 relative'>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => remove(index)}
+                    className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
+                  >
+                    <X className='h-4 w-4' />
+                  </Button>
+                  <CardContent className='pt-6 space-y-4'>
+                    <div className='w-full'>
+                      <FormField
+                        control={methods.control}
+                        name={`inputs.${index}.key`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Args</FormLabel>
+                            <FormControl>
+                              <Input placeholder='Args' {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className='w-full flex gap-2'>
+                      <FormField
+                        control={methods.control}
+                        name={`inputs.${index}.type`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type</FormLabel>
+
+                            <FormControl>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger className='w-full'>
+                                  <SelectValue placeholder='Select input type' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {types.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <TypedInput<EditorParameters>
+                        control={methods.control}
+                        name={`inputs.${index}.value`}
+                        type={type}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            <AddCardButton
+              className='w-full'
+              onClick={() => append({ key: "", type: "str", value: "" })}
+            />
+          </div>
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button variant='outline'>Close</Button>
+          </SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>

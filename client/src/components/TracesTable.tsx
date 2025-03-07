@@ -78,10 +78,12 @@ export const TracesTable = ({
   data,
   traceUuid,
   path,
+  isEnterprise,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
+  isEnterprise?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
@@ -198,7 +200,7 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {row.getValue("scope") === Scope.LILYPAD && (
+              {isEnterprise && row.getValue("scope") === Scope.LILYPAD && (
                 <div onClick={(e) => e.stopPropagation()}>
                   <Suspense fallback={<div>Loading ...</div>}>
                     <AnnotationDialog
