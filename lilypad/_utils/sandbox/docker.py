@@ -55,11 +55,15 @@ class DockerSandboxRunner(SandboxRunner):
             contents = {"main.py": script}
             stream = self._create_tar_stream(contents)
             container.put_archive("/", stream)
-            exit_code, output = container.exec_run(
+            exit_code, (stdout, stderr) = container.exec_run(
                 cmd=["uv", "run", "/main.py"],
-                stderr=False,
+                demux=True,
             )
-            return json.loads(output.decode("utf-8").strip())
+            if exit_code:
+                raise RuntimeError(
+                    f"Error running code in Docker container: {stderr.decode('utf-8').strip()}"
+                )
+            return json.loads(stdout.decode("utf-8").strip())
         finally:
             if container:
                 with suppress(Exception):

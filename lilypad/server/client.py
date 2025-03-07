@@ -9,6 +9,8 @@ import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
+from ee import Tier
+
 from .._utils import Closure, load_config
 from ..exceptions import (
     LilypadAPIConnectionError,
@@ -123,7 +125,7 @@ class LilypadClient:
         endpoint: str,
         response_model: None,
         **kwargs: Any,
-    ) -> dict[str, Any]: ...
+    ) -> dict[str, Any] | Any: ...
 
     def _request(
         self,
@@ -131,7 +133,7 @@ class LilypadClient:
         endpoint: str,
         response_model: type[list[_R]] | type[_R] | None = None,
         **kwargs: Any,
-    ) -> _R | list[_R] | dict[str, Any]:
+    ) -> _R | list[_R] | dict[str, Any] | Any:
         """Internal method to make HTTP requests and parse responses.
 
         Args:
@@ -364,3 +366,7 @@ class LilypadClient:
             f"/v0/organizations/{organization_uuid}",
             response_model=OrganizationPublic,
         )
+
+    def get_license_tier(self) -> Tier:
+        """Get the license tier for the organization."""
+        return Tier(self._request("GET", f"/v0/ee/projects/{self.project_uuid}", None))

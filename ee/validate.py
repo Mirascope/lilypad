@@ -3,16 +3,20 @@
 import base64
 import json
 import time
+from collections.abc import Callable, Coroutine
 from datetime import datetime
 from enum import Enum
+from functools import wraps
 from importlib import resources
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, overload
 from uuid import UUID
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import BaseModel, ValidationError, field_validator
+
+from lilypad._utils import fn_is_async, load_config
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -181,3 +185,66 @@ def generate_license(
     data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
     sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
     return f"{data_b64}.{sig_b64}"
+
+
+INVALID_LICENSE_MESSAGE = "Invalid License. Contact support@mirascope.com to get one."
+
+
+def _validate_license_with_client(tier: Tier) -> Tier | None:
+    config = load_config()
+    from lilypad.server.client import LilypadClient
+
+    lilypad_client = LilypadClient(
+        token=config.get("token", None),
+    )
+    lisense_tier = lilypad_client.get_license_tier()
+    if lisense_tier != tier:
+        raise LicenseError("Invalid License. Contact support@mirascope.com to get one.")
+    return lisense_tier
+
+
+@overload
+def require_license(tier: Tier) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
+@overload
+def require_license(
+    tier: Tier,
+) -> Callable[
+    [Callable[_P, Coroutine[Any, Any, _R]]], Callable[_P, Coroutine[Any, Any, _R]]
+]: ...
+def require_license(
+    tier: Tier,
+) -> Callable[
+    [Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]],
+    Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+]:
+    """Decorator to require a valid license for a function"""
+
+    @overload
+    def decorator(func: Callable[_P, _R]) -> Callable[_P, _R]: ...
+    @overload
+    def decorator(
+        func: Callable[_P, Coroutine[Any, Any, _R]],
+    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+    def decorator(
+        func: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+        if fn_is_async(func):
+
+            @wraps(func)
+            async def async_wrapper(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> Coroutine[Any, Any, _R]:
+                _validate_license_with_client(tier)
+                return await func(*args, **kwargs)
+
+            return async_wrapper
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                _validate_license_with_client(tier)
+                return func(*args, **kwargs)
+
+            return sync_wrapper
+
+    return decorator
