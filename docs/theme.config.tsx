@@ -5,6 +5,7 @@ import Script from "next/script";
 
 const config: DocsThemeConfig = {
   logo: <LilypadLogo width="48" height="48" />,
+  darkMode: false,
   color: {
     hue: 123,
     saturation: 47,

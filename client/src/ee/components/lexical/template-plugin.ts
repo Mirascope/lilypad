@@ -42,9 +42,23 @@ const checkTemplateValidity = (
     return { isValid: false, parsed: null };
   }
 
-  const isValid =
-    inputs.includes(parsed.variable) &&
-    (parsed.format === undefined || parsed.format.length > 0);
+  const validFormats = [
+    "list",
+    "lists",
+    "image",
+    "images",
+    "audio",
+    "audios",
+    "text",
+    "texts",
+  ];
+  const pythonFormatterPattern = /^[,.0-9+\-#% ]*[defgxobcnEFGXOBCN%]?$/;
+  // const isValid =
+  //   inputs.includes(parsed.variable) &&
+  //   (parsed.format === undefined ||
+  //     validFormats.includes(parsed.format) ||
+  //     pythonFormatterPattern.test(parsed.format));
+  const isValid = true;
 
   return { isValid, parsed };
 };

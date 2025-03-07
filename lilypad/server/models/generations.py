@@ -17,8 +17,7 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
-    from lilypad.ee.server.models.annotations import AnnotationTable
-
+    from ...ee.server.models.annotations import AnnotationTable
     from .projects import ProjectTable
     from .spans import SpanTable
 

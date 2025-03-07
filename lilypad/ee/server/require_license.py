@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 
-from lilypad.ee.validate import LicenseError, LicenseInfo, LicenseValidator, Tier
+from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
 from lilypad.server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
@@ -28,7 +28,7 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
         new_param = inspect.Parameter(
             name="license_info",
             kind=inspect.Parameter.KEYWORD_ONLY,
-            default=Depends(_RequireLicense(tier=tier)),
+            default=Depends(RequireLicense(tier=tier)),
             annotation="LicenseInfo | None",
         )
 
@@ -62,7 +62,7 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
     return decorator
 
 
-class _RequireLicense:
+class RequireLicense:
     """License dependency for FastAPI endpoints."""
 
     def __init__(self, tier: Tier = Tier.ENTERPRISE) -> None:

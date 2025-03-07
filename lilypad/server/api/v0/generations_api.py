@@ -1,11 +1,13 @@
 """The `/generations` API router."""
 
+import base64
 import hashlib
+import re
 import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -279,8 +281,7 @@ def run_version(
 import os
 import google.generativeai as genai
 from lilypad._utils import create_mirascope_call
-from lilypad.server.models import Provider
-from lilypad.server.schemas import GenerationCreate
+from lilypad.server.schemas import GenerationCreate, Provider
 genai.configure(api_key="{user.keys.get("gemini", "")}")
 os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
 os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
@@ -300,7 +301,7 @@ provider = Provider("{playground_parameters.provider}")
 # Python 3.11
 # provider = {playground_parameters.provider}
 model = "{playground_parameters.model}"
-arg_values = {playground_parameters.arg_values}
+arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_values)}
 print(create_mirascope_call({name}, generation, provider, model, None)(**arg_values))
 '''
     try:
@@ -320,13 +321,67 @@ def _run_playground(code: str) -> str:
     try:
         result = subprocess.run(
             ["uv", "run", str(tmp_path)],
-            check=True,
+            check=False,
             capture_output=True,
             text=True,
         )
-        return result.stdout.strip()
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            error_output = result.stderr.strip()
+            import re
+
+            # Find the last error line in the traceback
+            error_match = re.search(r"(\w+Error.*?)$", error_output, re.DOTALL)
+            if error_match:
+                return error_match.group(1).strip()
+            else:
+                return error_output
+
+    except Exception as e:
+        return f"Exception: {str(e)}"
     finally:
         tmp_path.unlink()
+
+
+def _decode_bytes(
+    arg_types: dict[str, str], arg_values: dict[str, Any]
+) -> dict[str, Any]:
+    """Decodes image bytes from a dictionary of argument values.
+
+    Parameters:
+    arg_types (dict): Dictionary mapping argument names to their types
+    arg_values (dict): Dictionary mapping argument names to their values
+
+    Returns:
+    dict: Dictionary mapping argument names to their decoded values
+    """
+    result = {}
+
+    for arg_name, arg_type in arg_types.items():
+        if arg_type == "bytes" and arg_name in arg_values:
+            value = arg_values[arg_name]
+
+            if isinstance(value, str):
+                if value.startswith('b"') or value.startswith("b'"):
+                    match = re.match(r'^b["\'](.*)["\']$', value, re.DOTALL)
+                    if match:
+                        value = match.group(1)
+
+                try:
+                    decoded_data = base64.b64decode(value)
+                    result[arg_name] = decoded_data
+
+                except Exception as e:
+                    result[arg_name] = f"Error decoding image: {str(e)}"
+            else:
+                result[arg_name] = "Not a string value"
+        else:
+            if arg_name in arg_values:
+                result[arg_name] = arg_values[arg_name]
+
+    return result
 
 
 __all__ = ["generations_router"]
