@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { $createCodeNode } from "@lexical/code";
 import {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
@@ -19,8 +20,7 @@ import {
   HeadingTagType,
 } from "@lexical/rich-text";
 import { $setBlocksType } from "@lexical/selection";
-import { $createCodeNode } from "@lexical/code";
-import { INSERT_COLLAPSIBLE_COMMAND } from "@/components/lexical/collapsible-plugin";
+import { INSERT_COLLAPSIBLE_COMMAND } from "./collapsible-plugin";
 
 export const blockTypeToBlockName: Record<string, string> = {
   h1: "Heading 1",
