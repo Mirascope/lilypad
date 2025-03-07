@@ -1,14 +1,14 @@
-import { CodeHighlightPlugin } from "@/components/lexical/code-highlight-plugin";
-import { CollapsibleContainerNode } from "@/components/lexical/collapsible-container-node";
-import { CollapsibleContentNode } from "@/components/lexical/collapsible-content-node";
-import CollapsiblePlugin from "@/components/lexical/collapsible-plugin";
-import { CollapsibleTitleNode } from "@/components/lexical/collapsible-title-node";
-import { PLAYGROUND_TRANSFORMERS } from "@/components/lexical/markdown-transformers";
-import { TemplateNode } from "@/components/lexical/template-node";
-import { TemplatePlugin } from "@/components/lexical/template-plugin";
-import { TemplateSuggestionPlugin } from "@/components/lexical/template-suggestion-plugin";
-import ToolbarPlugin from "@/components/lexical/toolbar-plugin";
-import { UneditableParagraphNode } from "@/components/lexical/uneditable-paragraph-node";
+import { CodeHighlightPlugin } from "@/ee/components/lexical/code-highlight-plugin";
+import { CollapsibleContainerNode } from "@/ee/components/lexical/collapsible-container-node";
+import { CollapsibleContentNode } from "@/ee/components/lexical/collapsible-content-node";
+import CollapsiblePlugin from "@/ee/components/lexical/collapsible-plugin";
+import { CollapsibleTitleNode } from "@/ee/components/lexical/collapsible-title-node";
+import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
+import { TemplateNode } from "@/ee/components/lexical/template-node";
+import { TemplatePlugin } from "@/ee/components/lexical/template-plugin";
+import { TemplateSuggestionPlugin } from "@/ee/components/lexical/template-suggestion-plugin";
+import ToolbarPlugin from "@/ee/components/lexical/toolbar-plugin";
+import { UneditableParagraphNode } from "@/ee/components/lexical/uneditable-paragraph-node";
 import exampleTheme from "@/utils/lexical-theme";
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
@@ -27,7 +27,7 @@ import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import { LexicalEditor } from "lexical";
-import { ForwardedRef, forwardRef, MutableRefObject, useMemo } from "react";
+import { ForwardedRef, forwardRef, RefObject, useMemo } from "react";
 export const Editor = forwardRef(
   (
     { inputs, promptTemplate }: { inputs: string[]; promptTemplate: string },
@@ -74,7 +74,9 @@ export const Editor = forwardRef(
     );
     return (
       <LexicalComposer key={promptTemplate} initialConfig={config}>
-        <div className={`flex flex-col border shadow rounded-lg prose`}>
+        <div
+          className={`flex flex-col border shadow rounded-lg prose max-w-none`}
+        >
           <ToolbarPlugin />
 
           <div className='relative'>
@@ -98,7 +100,7 @@ export const Editor = forwardRef(
             editorRef={
               ref as
                 | ((instance: LexicalEditor | null) => void)
-                | MutableRefObject<LexicalEditor | null | undefined>
+                | RefObject<LexicalEditor | null | undefined>
             }
           />
           <ListPlugin />
