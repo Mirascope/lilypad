@@ -40,6 +40,7 @@ def dummy_generation_instance() -> GenerationPublic:
         hash="dummy_hash",
         dependencies={},
         arg_types={},
+        arg_values={},
         version_num=1,
         call_params={},
         provider="openai",
@@ -341,7 +342,7 @@ async def async_outer(param: str) -> str:
 
 
 def fake_mirascope_middleware_sync(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate a synchronous mirascope middleware returning a dummy result."""
 
@@ -355,7 +356,7 @@ def fake_mirascope_middleware_sync(
 
 
 def fake_mirascope_middleware_async(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate an asynchronous mirascope middleware returning a dummy result."""
 
@@ -570,15 +571,18 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
         patch(
-            "lilypad.generations.DockerSandboxRunner.execute_function",
-            return_value="sync outer",
-        ) as mock_execute,
+            "lilypad.generations.SubprocessSandboxFactory",
+        ) as mock_factory,
     ):
+        mock_runner = MagicMock()
+        mock_runner.execute_function.return_value = "sync outer"
+        mock_factory.return_value.create.return_value = mock_runner
         versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
-        mock_execute.assert_called_once_with("dummy")
+        mock_factory.return_value.create.assert_called_once()
+        mock_runner.execute_function.assert_called_once_with("dummy")
 
 
 @pytest.mark.asyncio
@@ -597,15 +601,18 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
         patch(
-            "lilypad.generations.DockerSandboxRunner.execute_function",
-            return_value="async outer",
-        ) as mock_execute,
+            "lilypad.generations.SubprocessSandboxFactory",
+        ) as mock_factory,
     ):
+        mock_runner = MagicMock()
+        mock_runner.execute_function.return_value = "sync outer"
+        mock_factory.return_value.create.return_value = mock_runner
         versioned_func = await async_outer.version(forced_version)
         result = await versioned_func("dummy")
-        assert result == "async outer"
+        assert result == "sync outer"
         mock_get_ver.assert_called_once()
-        mock_execute.assert_called_once_with("dummy")
+        mock_factory.return_value.create.assert_called_once()
+        mock_runner.execute_function.assert_called_once_with("dummy")
 
 
 def test_build_mirascope_call_async(

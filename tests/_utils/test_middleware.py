@@ -400,8 +400,8 @@ def test_get_custom_context_manager():
     generation.signature = "def fn(): pass"
     generation.code = "def fn(): pass"
     generation.version_num = 1
-    arg_types = {"arg1": "type1"}
-    arg_values = {"arg1": "value1"}
+    generation.arg_types = {"arg1": "type1"}
+    generation.arg_values = {"arg1": "value1"}
     is_async = False
     prompt_template = "prompt template"
     fn = MagicMock()
@@ -424,8 +424,8 @@ def test_get_custom_context_manager():
                 "lilypad.generation.name": fn.__name__,
                 "lilypad.generation.signature": generation.signature,
                 "lilypad.generation.code": generation.code,
-                "lilypad.generation.arg_types": json.dumps(arg_types),
-                "lilypad.generation.arg_values": json.dumps(arg_values),
+                "lilypad.generation.arg_types": json.dumps(generation.arg_types),
+                "lilypad.generation.arg_values": json.dumps(generation.arg_values),
                 "lilypad.generation.prompt_template": prompt_template,
                 "lilypad.generation.version": 1,
                 "lilypad.is_async": is_async,
