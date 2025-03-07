@@ -7,7 +7,7 @@ def test_construct_function():
     function_name = "test_function"
 
     code = construct_function(arg_types, function_name)
-    assert "@lilypad.prompt()" in code
+    assert "@lilypad.generation()" in code
     assert "def test_function(text: str, temperature: float)" in code
 
 
@@ -18,12 +18,12 @@ def test_construct_function_with_configure():
 
     code = construct_function(arg_types, function_name, include_import=True)
     assert "import lilypad" in code
-    assert "@lilypad.prompt()" in code
+    assert "@lilypad.generation()" in code
     assert "def test_function(text: str)" in code
 
 
 def test_construct_function_no_args():
     """Test constructing function with no arguments"""
     code = construct_function({}, "test_function")
-    assert "@lilypad.prompt()" in code
+    assert "@lilypad.generation()" in code
     assert "def test_function()" in code

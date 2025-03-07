@@ -11,7 +11,7 @@ def construct_function(
     import_line = "import lilypad" if include_import else ""
     func_def = f"""
     {import_line}
-    @lilypad.prompt()
-    def {function_name}({", ".join(arg_list)}): ...
+    @lilypad.generation()
+    def {function_name}({", ".join(arg_list)}) -> str: ...
     """
     return _run_ruff(dedent(func_def)).strip()

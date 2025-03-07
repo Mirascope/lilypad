@@ -23,7 +23,8 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
-from ..server.schemas.generations import GenerationCreate, GenerationPublic, Provider
+from ..server.models.generations import GenerationTable
+from ..server.schemas.generations import GenerationPublic, Provider
 from .fn_is_async import fn_is_async
 
 _P = ParamSpec("_P")
@@ -143,7 +144,7 @@ def _construct_call_decorator(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
-    generation: GenerationPublic | GenerationCreate,
+    generation: GenerationPublic | GenerationTable,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -153,7 +154,7 @@ def create_mirascope_call(
 @overload
 def create_mirascope_call(
     fn: Callable[_P, _R],
-    generation: GenerationPublic | GenerationCreate,
+    generation: GenerationPublic | GenerationTable,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
@@ -162,7 +163,7 @@ def create_mirascope_call(
 
 def create_mirascope_call(
     fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    generation: GenerationPublic | GenerationCreate,
+    generation: GenerationPublic | GenerationTable,
     provider: Provider,
     model: str,
     trace_decorator: Callable | None,
