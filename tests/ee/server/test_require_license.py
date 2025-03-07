@@ -36,7 +36,7 @@ async def test_project_not_found():
     project_uuid = uuid4()
     project_service = DummyProjectService(None)
     organization_service = MagicMock()
-    dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+    dependency = RequireLicense(tier=Tier.ENTERPRISE)
 
     with pytest.raises(HTTPException) as exc_info:
         await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
@@ -51,7 +51,7 @@ async def test_project_without_organization():
     project = DummyProject(organization_uuid=None)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
-    dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+    dependency = RequireLicense(tier=Tier.ENTERPRISE)
 
     with pytest.raises(HTTPException) as exc_info:
         await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
@@ -76,7 +76,7 @@ async def test_invalid_license_none():
         mock_validator.validate_license.return_value = None
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+        dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
@@ -111,7 +111,7 @@ async def test_license_mismatch():
         mock_validator.validate_license.return_value = license_info
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+        dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
@@ -176,7 +176,7 @@ async def test_valid_license():
         mock_validator.validate_license.return_value = license_info
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+        dependency = RequireLicense(tier=Tier.ENTERPRISE)
         result = await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert result == license_info
 
@@ -205,7 +205,7 @@ async def test_free_tier_returns_none():
         mock_validator.validate_license.return_value = license_info
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.FREE)
+        dependency = RequireLicense(tier=Tier.FREE)
         result = await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert result is None
 
@@ -226,7 +226,7 @@ async def test_license_validator_exception():
         mock_validator.validate_license.side_effect = LicenseError("Validation failed")
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+        dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
