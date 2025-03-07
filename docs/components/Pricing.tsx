@@ -16,6 +16,7 @@ interface PricingTier {
   buttonText: string;
   buttonLink: string;
   highlight?: boolean;
+  openBeta?: boolean;
   closedBeta?: boolean;
   comingSoon?: boolean;
 }
@@ -62,6 +63,7 @@ export const Pricing = () => {
       ],
       buttonText: "Get Started",
       buttonLink: "/docs/quickstart",
+      openBeta: true,
     },
     {
       name: "Pro",
@@ -137,6 +139,11 @@ export const Pricing = () => {
       <div className="mb-2">
         <div className="flex sm:flex-row flex-col items-start sm:items-center gap-2">
           <h3 className="text-2xl font-bold">{tier.name}</h3>
+          {tier.openBeta && (
+            <div className="inline-block bg-primary text-secondary text-xs font-medium py-1 px-2 rounded min-w-fit">
+              Open Beta
+            </div>
+          )}
           {tier.closedBeta && (
             <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
               Closed Beta
