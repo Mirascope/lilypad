@@ -2,10 +2,11 @@
 
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
@@ -19,6 +20,12 @@ from ...schemas import SpanCreate, SpanPublic
 from ...services import SpanService
 
 traces_router = APIRouter()
+
+
+def _convert_system_to_provider(system: str) -> Provider:
+    if system == "az.ai.inference":
+        return "azure"
+    return cast(Provider, system)
 
 
 @traces_router.get(
@@ -80,7 +87,9 @@ async def _process_span(
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                 )
-                cost = calculate_cost(system, model, metadata=cost_metadata)
+                cost = calculate_cost(
+                    _convert_system_to_provider(system), model, metadata=cost_metadata
+                )
             if cost is not None:
                 span_cost = cost
 

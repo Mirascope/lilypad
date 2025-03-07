@@ -163,6 +163,10 @@ def configure(
         from lilypad._opentelemetry import AnthropicInstrumentor
 
         AnthropicInstrumentor().instrument()
+    if importlib.util.find_spec("azure.ai.inference") is not None:
+        from lilypad._opentelemetry import AzureInstrumentor
+
+        AzureInstrumentor().instrument()
     if importlib.util.find_spec("google") is not None:
         if importlib.util.find_spec("google.genai") is not None:
             from lilypad._opentelemetry import GoogleGenAIInstrumentor

@@ -13,7 +13,7 @@ from .patch import make_api_call_async_patch, make_api_call_patch
 class BedrockInstrumentor(BaseInstrumentor):
     def instrumentation_dependencies(self) -> Collection[str]:
         return (
-            "aioboto3>=13.2.0,<14",
+            "aioboto3>=13.2.0,<15",
             "boto3>=1.35.36,<2",
         )
 

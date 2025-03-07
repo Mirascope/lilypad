@@ -4,6 +4,9 @@ with suppress(ImportError):
     from ._opentelemetry_anthropic import AnthropicInstrumentor
 
 with suppress(ImportError):
+    from ._opentelemetry_azure import AzureInstrumentor
+
+with suppress(ImportError):
     from ._opentelemetry_bedrock import BedrockInstrumentor
 
 with suppress(ImportError):
@@ -26,6 +29,7 @@ with suppress(ImportError):
 
 __all__ = [
     "AnthropicInstrumentor",
+    "AzureInstrumentor",
     "BedrockInstrumentor",
     "GoogleGenAIInstrumentor",
     "GoogleGenerativeAIInstrumentor",

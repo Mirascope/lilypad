@@ -2,6 +2,7 @@
 
 from lilypad.server._utils.spans import (
     convert_anthropic_messages,
+    convert_azure_messages,
     convert_events,
     convert_gemini_messages,
     convert_openai_messages,
@@ -72,6 +73,32 @@ def test_convert_anthropic_messages():
     assert result[0].content[0].text == "User input"  # pyright: ignore [reportAttributeAccessIssue]
     assert result[1].role == "assistant"
     assert result[1].content[0].text == "Assistant response"  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_convert_azure_messages():
+    """Test converting Azure messages"""
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "gen_ai.system": "az.ai.inference",
+            "attributes": {"content": "Hello, how are you?"},
+        },
+        {
+            "name": "gen_ai.choice",
+            "attributes": {
+                "index": 0,
+                "message": '{"role": "assistant", "content": "I am doing well, thank you!"}',
+                "finish_reason": "stop",
+            },
+        },
+    ]
+
+    result = convert_azure_messages(messages)
+    assert len(result) == 2
+    assert result[0].role == "user"
+    assert result[0].content[0].text == "Hello, how are you?"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[1].role == "assistant"
+    assert result[1].content[0].text == "I am doing well, thank you!"  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_invalid_message_content():
