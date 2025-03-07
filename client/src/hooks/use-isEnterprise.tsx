@@ -20,9 +20,5 @@ export const hasFeatureAccess = (
   userTier: Tier,
   featureTier: Tier
 ): boolean => {
-  if (userTier === Tier.ENTERPRISE) {
-    return true;
-  }
-
   return tierLevels[userTier] >= tierLevels[featureTier];
 };
