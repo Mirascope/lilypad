@@ -8,6 +8,7 @@ import docker
 
 from .. import Closure
 from . import SandboxRunner
+from .runner import SandBoxFactory
 
 _DEFAULT_IMAGE = "ghcr.io/astral-sh/uv:python3.10-alpine"
 
@@ -63,3 +64,10 @@ class DockerSandboxRunner(SandboxRunner):
             if container:
                 with suppress(Exception):
                     container.stop()
+
+
+class DockerSandboxFactory(SandBoxFactory[DockerSandboxRunner]):
+    """Factory for creating DockerSandboxRunners."""
+
+    def create(self, closure: Closure) -> DockerSandboxRunner:
+        return DockerSandboxRunner(closure, environment=self.environment)

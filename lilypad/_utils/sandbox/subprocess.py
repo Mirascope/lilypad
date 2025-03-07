@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .. import Closure
-from . import SandboxRunner
+from . import SandBoxFactory, SandboxRunner
 
 
 class SubprocessSandboxRunner(SandboxRunner):
@@ -36,5 +36,24 @@ class SubprocessSandboxRunner(SandboxRunner):
                 env=self.environment,
             )
             return json.loads(result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            error_message = (
+                f"Process exited with non-zero status.\n"
+                f"Stdout: {e.stdout}\n"
+                f"Stderr: {e.stderr}"
+            )
+            raise RuntimeError(error_message)
         finally:
             tmp_path.unlink()
+
+
+class SubprocessSandboxFactory(SandBoxFactory[SubprocessSandboxRunner]):
+    """Creates subprocess sandbox runners."""
+
+    def __init__(self, environment: dict[str, str] | None = None) -> None:
+        if environment is None:
+            environment = os.environ.copy()
+        super().__init__(environment)
+
+    def create(self, closure: Closure) -> SubprocessSandboxRunner:
+        return SubprocessSandboxRunner(closure, self.environment)

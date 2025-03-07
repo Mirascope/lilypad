@@ -1,6 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from lilypad._utils import Closure
 
@@ -51,3 +51,16 @@ class SandboxRunner(ABC):
             args=args,
             kwargs=kwargs,
         )
+
+
+SandBoxRunnerT = TypeVar("SandBoxRunnerT", bound=SandboxRunner)
+
+
+class SandBoxFactory(Generic[SandBoxRunnerT], ABC):
+    """Abstract base class for creating sandbox runners."""
+
+    def __init__(self, environment: dict[str, str] | None = None) -> None:
+        self.environment: dict[str, str] = environment or {}
+
+    @abstractmethod
+    def create(self, closure: Closure) -> SandBoxRunnerT: ...

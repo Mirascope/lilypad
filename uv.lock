@@ -2673,7 +2673,7 @@ cryptography = [
 
 [[package]]
 name = "python-lilypad"
-version = "0.0.29"
+version = "0.0.30"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

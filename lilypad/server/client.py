@@ -229,6 +229,7 @@ class LilypadClient:
         self,
         fn: Callable[..., Any],
         arg_types: dict[str, str],
+        arg_values: dict[str, Any],
         custom_id: str | None = None,
     ) -> GenerationPublic:
         """Get the matching version for a generation or create it if non-existent.
@@ -236,6 +237,7 @@ class LilypadClient:
         Args:
             fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
+            arg_values (dict): Dictionary of argument names and values.
             custom_id (str, optional): Custom ID for the generation. Defaults to None.
 
         Returns:
@@ -260,6 +262,7 @@ class LilypadClient:
                     "hash": closure.hash,
                     "dependencies": closure.dependencies,
                     "arg_types": arg_types,
+                    "arg_values": arg_values,
                     "custom_id": custom_id,
                 },
             )

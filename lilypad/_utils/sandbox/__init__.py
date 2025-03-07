@@ -1,9 +1,19 @@
 from contextlib import suppress
 
-from .runner import SandboxRunner
-from .subprocess import SubprocessSandboxRunner
+from .runner import SandBoxFactory, SandboxRunner
+from .subprocess import SubprocessSandboxFactory, SubprocessSandboxRunner
 
 with suppress(ImportError):
-    from .docker import DockerSandboxRunner
+    from .docker import DockerSandboxFactory as DockerSandboxFactory
 
-__all__ = ["SubprocessSandboxRunner", "SandboxRunner", "DockerSandboxRunner"]
+with suppress(ImportError):
+    from .docker import DockerSandboxRunner as DockerSandboxRunner
+
+
+__all__ = [
+    "DockerSandboxFactory",
+    "DockerSandboxRunner",
+    "SubprocessSandboxRunner",
+    "SandboxRunner",
+    "DockerSandboxRunner",
+]
