@@ -455,20 +455,6 @@ export interface OrganizationUpdate {
 }
 
 /**
- * PlaygroundParameters
- * Playground parameters model.
- */
-export interface PlaygroundParameters {
-  /** Arg Values */
-  arg_values: object;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
-  generation?: GenerationCreate | null;
-}
-
-/**
  * ProjectCreate
  * Project Create Model.
  */
@@ -499,17 +485,6 @@ export interface ProjectPublic {
    * @format date-time
    */
   created_at: string;
-}
-
-/**
- * Provider
- * Provider name enum
- */
-export enum Provider {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic",
-  OPENROUTER = "openrouter",
-  GEMINI = "gemini",
 }
 
 /**
@@ -643,6 +618,7 @@ export interface SpanPublic {
  */
 export enum SpanType {
   GENERATION = "generation",
+  TRACE = "trace",
 }
 
 /**

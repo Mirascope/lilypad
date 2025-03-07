@@ -36,21 +36,18 @@ import {
 } from "@/components/ui/tooltip";
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
+import { PlaygroundParameters } from "@/ee/types/types";
+import {
+  useCreateManagedGeneration,
+  useRunMutation,
+} from "@/ee/utils/generations";
 import {
   FormItemValue,
   simplifyFormItem,
   TypedInput,
 } from "@/ee/utils/input-utils";
-import {
-  GenerationCreate,
-  GenerationPublic,
-  PlaygroundParameters,
-} from "@/types/types";
-import {
-  useCreateManagedGeneration,
-  usePatchGenerationMutation,
-  useRunMutation,
-} from "@/utils/generations";
+import { GenerationCreate, GenerationPublic } from "@/types/types";
+import { usePatchGenerationMutation } from "@/utils/generations";
 import {
   BaseEditorFormFields,
   getAvailableProviders,

@@ -8,9 +8,11 @@ from ee.validate import LicenseInfo
 from lilypad.ee.server.require_license import _RequireLicense
 
 from .annotations_api import Tier, annotations_router
+from .generations_api import generations_router
 
 ee_api = FastAPI(separate_input_output_schemas=False)
 ee_api.include_router(annotations_router)
+ee_api.include_router(generations_router)
 
 
 @ee_api.get("/projects/{project_uuid}", response_model=Tier)
