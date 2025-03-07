@@ -98,11 +98,12 @@ export const createManagedGeneration = async (
 
 export const runGeneration = async (
   projectUuid: string,
+  generationUuid: string,
   playgroundValues: PlaygroundParameters
 ): Promise<string> => {
   return (
     await api.post<Record<string, string>, AxiosResponse<string>>(
-      `/projects/${projectUuid}/generations/run`,
+      `/projects/${projectUuid}/generations/${generationUuid}/run`,
       playgroundValues
     )
   ).data;
@@ -214,10 +215,12 @@ export const useRunMutation = () => {
   return useMutation({
     mutationFn: async ({
       projectUuid,
+      generationUuid,
       playgroundValues,
     }: {
       projectUuid: string;
+      generationUuid: string;
       playgroundValues: PlaygroundParameters;
-    }) => await runGeneration(projectUuid, playgroundValues),
+    }) => await runGeneration(projectUuid, generationUuid, playgroundValues),
   });
 };

@@ -2,16 +2,19 @@
 
 import base64
 import hashlib
+import json
 import re
 import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
+from textwrap import dedent
 from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from ...._utils.closure import _run_ruff
 from ..._utils import (
     construct_function,
     get_current_user,
@@ -28,7 +31,7 @@ from ...schemas import (
     PlaygroundParameters,
     UserPublic,
 )
-from ...services import GenerationService, SpanService
+from ...services import APIKeyService, GenerationService, SpanService
 
 generations_router = APIRouter()
 
@@ -141,7 +144,7 @@ async def get_generation(
     "/projects/{project_uuid}/managed-generations",
     response_model=GenerationPublic,
 )
-async def create_prompt(
+async def create_managed_generation(
     project_uuid: UUID,
     generation_create: GenerationCreate,
     generation_service: Annotated[GenerationService, Depends(GenerationService)],
@@ -156,10 +159,10 @@ async def create_prompt(
     generation_create.hash = hashlib.sha256(
         generation_create.prompt_template.encode("utf-8")
     ).hexdigest()
-    if prompt := generation_service.check_duplicate_managed_generation(
+    if generation := generation_service.check_duplicate_managed_generation(
         project_uuid, generation_create
     ):
-        return prompt
+        return generation
 
     generation_create.code = construct_function(
         generation_create.arg_types or {}, generation_create.name, True
@@ -262,16 +265,27 @@ async def archive_generation(
     return True
 
 
-@generations_router.post("/projects/{project_uuid}/generations/run")
+@generations_router.post("/projects/{project_uuid}/generations/{generation_uuid}/run")
 def run_version(
     project_uuid: UUID,
+    generation_uuid: UUID,
     playground_parameters: PlaygroundParameters,
     user: Annotated[UserPublic, Depends(get_current_user)],
+    generation_service: Annotated[GenerationService, Depends(GenerationService)],
+    api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
 ) -> str:
     """Run version."""
     if not playground_parameters.generation:
         raise ValueError("Missing generation.")
-    generation = playground_parameters.generation
+    generation = generation_service.find_record_by_uuid(generation_uuid)
+    api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
+    if len(api_keys) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No API keys found"
+        )
+    generation_dict = generation.model_dump()
+    print("WEGWEGWE")
+    print(generation_uuid)
     name = generation.name
     arg_list = [
         f"{arg_name}: {arg_type}" for arg_name, arg_type in generation.arg_types.items()
@@ -279,30 +293,39 @@ def run_version(
     func_def = f"def {name}({', '.join(arg_list)}) -> str: ..."
     wrapper_code = f'''
 import os
+from uuid import UUID
 import google.generativeai as genai
+
+import lilypad
 from lilypad._utils import create_mirascope_call
-from lilypad.server.schemas import GenerationCreate, Provider
+from lilypad.server.schemas import Provider
+from lilypad.server.models import GenerationTable
+
 genai.configure(api_key="{user.keys.get("gemini", "")}")
 os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
 os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
 os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
-{func_def}
-generation = GenerationCreate(
-    name = "{generation.name}",
-    signature = "{generation.signature}",
-    prompt_template = """{generation.prompt_template}""",
-    arg_types = {generation.arg_types},
-    code = "{generation.code}",
-    hash = "{generation.hash}",
-    version_num = {generation.version_num}
+os.environ["LILYPAD_PROJECT_ID"] = "{project_uuid}"
+os.environ["LILYPAD_API_KEY"] = (
+    "{api_keys[0].key_hash}"
 )
+
+lilypad.configure()
+
+@lilypad.generation()
+{func_def}
+
+
+generation = GenerationTable.model_validate({generation_dict})
 # Python 3.10
 provider = Provider("{playground_parameters.provider}")
 # Python 3.11
 # provider = {playground_parameters.provider}
 model = "{playground_parameters.model}"
 arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_values)}
-print(create_mirascope_call({name}, generation, provider, model, None)(**arg_values))
+res = lilypad.generation()(
+    create_mirascope_call(foo, generation, provider, model, None)
+)(**arg_values)
 '''
     try:
         processed_code = _run_playground(wrapper_code)
@@ -314,8 +337,15 @@ print(create_mirascope_call({name}, generation, provider, model, None)(**arg_val
 
 
 def _run_playground(code: str) -> str:
+    # Add code to return a specific variable
+    modified_code = (
+        code + "\n\nimport json\nprint('__RESULT__' + json.dumps(res) + '__RESULT__')"
+    )
+    modified_code = _run_ruff(dedent(modified_code)).strip()
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
-        tmp_file.write(code)
+        print(modified_code)
+        tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)
 
     try:
@@ -327,7 +357,19 @@ def _run_playground(code: str) -> str:
         )
 
         if result.returncode == 0:
-            return result.stdout.strip()
+            # Extract the variable value from the output
+            import re
+
+            result_match = re.search(
+                r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL
+            )
+            if result_match:
+                try:
+                    return json.loads(result_match.group(1))
+                except json.JSONDecodeError:
+                    return result_match.group(1)
+            else:
+                return result.stdout.strip()
         else:
             error_output = result.stderr.strip()
             import re

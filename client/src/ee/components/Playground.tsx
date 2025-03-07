@@ -152,6 +152,10 @@ export const Playground = ({
           }
         });
         if (!isValid || hasErrors) return;
+        const newVersion = await createGenerationMutation.mutateAsync({
+          projectUuid,
+          generationCreate,
+        });
         const inputValues = inputs.reduce(
           (acc, input) => {
             if (input.type === "list" || input.type === "dict") {
@@ -175,6 +179,7 @@ export const Playground = ({
         };
         await runMutation.mutateAsync({
           projectUuid,
+          generationUuid: newVersion.uuid,
           playgroundValues,
         });
       } else {
