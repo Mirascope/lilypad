@@ -6,5 +6,5 @@ export const useIsEnterprise = (projectUuid: string) => {
   const { data: licenseInfo } = useSuspenseQuery(
     licenseQueryOptions(projectUuid)
   );
-  return licenseInfo === Tier.ENTERPRISE;
+  return licenseInfo.tier === Tier.ENTERPRISE;
 };
