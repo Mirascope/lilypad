@@ -79,7 +79,10 @@ def test_generate_protocol_stub_content():
     stub_content = _generate_protocol_stub_content("my_func", versions, is_async=False)  # pyright: ignore [reportArgumentType]
     assert "class MyFuncVersion1(Protocol):" in stub_content
     assert "class MyFunc(Protocol):" in stub_content
-    assert "def version(cls, forced_version: Literal[1])" in stub_content
+    assert (
+        "def version(cls, forced_version: Literal[1], override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None) -> MyFuncVersion1: ..."
+        in stub_content
+    )
 
 
 def dummy_get_decorated_functions(decorator_name: str, dummy_file_path: str):

@@ -573,6 +573,9 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
         patch(
             "lilypad.generations.SubprocessSandboxFactory",
         ) as mock_factory,
+        patch(
+            "ee.validate._validate_license_with_client",
+        ),
     ):
         mock_runner = MagicMock()
         mock_runner.execute_function.return_value = "sync outer"
@@ -603,12 +606,15 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
         patch(
             "lilypad.generations.SubprocessSandboxFactory",
         ) as mock_factory,
+        patch(
+            "ee.validate._validate_license_with_client",
+        ),
     ):
         mock_runner = MagicMock()
         mock_runner.execute_function.return_value = "sync outer"
         mock_factory.return_value.create.return_value = mock_runner
-        versioned_func = await async_outer.version(forced_version)
-        result = await versioned_func("dummy")
+        versioned_func = async_outer.version(forced_version)
+        result = await versioned_func("dummy")  # pyright: ignore [reportCallIssue]
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
         mock_factory.return_value.create.assert_called_once()
