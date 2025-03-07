@@ -252,12 +252,12 @@ export interface GenerationCreate {
    * Is Default
    * @default false
    */
-  is_default?: boolean;
+  is_default?: boolean | null;
   /**
    * Is Managed
    * @default false
    */
-  is_managed?: boolean;
+  is_managed?: boolean | null;
 }
 
 /**
@@ -314,12 +314,12 @@ export interface GenerationPublic {
    * Is Default
    * @default false
    */
-  is_default?: boolean;
+  is_default?: boolean | null;
   /**
    * Is Managed
    * @default false
    */
-  is_managed?: boolean;
+  is_managed?: boolean | null;
   /**
    * Uuid
    * @format uuid

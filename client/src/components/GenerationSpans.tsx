@@ -1,4 +1,5 @@
 import { TracesTable } from "@/components/TracesTable";
+import { useIsEnterprise } from "@/hooks/use-isEnterprise";
 import { spansByGenerationQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -15,5 +16,6 @@ export const GenerationSpans = ({
   const { data } = useSuspenseQuery(
     spansByGenerationQueryOptions(projectUuid, generationUuid)
   );
-  return <TracesTable data={data} />;
+  const isEnterprise = useIsEnterprise(projectUuid);
+  return <TracesTable data={data} isEnterprise={isEnterprise} />;
 };
