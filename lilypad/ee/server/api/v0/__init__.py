@@ -21,6 +21,7 @@ async def get_license(
     project_service: Annotated[ProjectService, Depends(ProjectService)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
 ) -> LicenseInfo:
+    """Get the license information for the organization"""
     project = project_service.find_record_by_uuid(project_uuid)
     if not project:
         raise HTTPException(
