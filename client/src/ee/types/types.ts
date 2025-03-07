@@ -129,6 +129,29 @@ export enum Label {
 }
 
 /**
+ * LicenseInfo
+ * Pydantic model for license validation
+ */
+export interface LicenseInfo {
+  /** Customer */
+  customer: string;
+  /** License Id */
+  license_id: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at: string;
+  /** License tier enum. */
+  tier: Tier;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+}
+
+/**
  * MessageParam
  * Message param model agnostic to providers.
  */
