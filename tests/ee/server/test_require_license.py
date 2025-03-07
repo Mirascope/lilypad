@@ -9,7 +9,7 @@ import pytest
 from fastapi import HTTPException, status
 
 from ee import LicenseError, LicenseInfo, Tier
-from lilypad.ee.server.require_license import _RequireLicense, require_license
+from lilypad.ee.server.require_license import RequireLicense, require_license
 
 
 class DummyProject:
@@ -142,7 +142,7 @@ async def test_wrong_license_tier():
         mock_validator.validate_license.return_value = license_info
         mock_validator_class.return_value = mock_validator
 
-        dependency = _RequireLicense(tier=Tier.ENTERPRISE)
+        dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
