@@ -5,7 +5,6 @@ import importlib
 import inspect
 import json
 import os
-import re
 import sys
 from pathlib import Path
 from textwrap import dedent
@@ -34,8 +33,6 @@ DEBUG: bool = False
 FilePath: TypeAlias = str
 ModulePath: TypeAlias = str
 FunctionInfo: TypeAlias = tuple[str, str, int, str]
-
-SIGNATURE_REGEX = re.compile(r"(?:async\s+)?def\s+\w+\((.*?)\)\s*->\s*(.*?):")
 
 DEFAULT_DIRECTORY: Path = typer.Argument(
     Path("."), help="Directory to scan for decorated functions."

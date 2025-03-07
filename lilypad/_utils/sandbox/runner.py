@@ -22,6 +22,23 @@ class SandboxRunner(ABC):
 
     """Execute the function in the sandbox."""
 
+    def _is_async_func(self) -> bool:
+        lines = self.closure.signature.splitlines()
+        return any(
+            line.strip() for line in lines if line.strip().startswith("async def ")
+        )
+
+    def _generate_async_run(self, *args: Any, **kwargs: Any) -> str:
+        return inspect.cleandoc("""
+                import asyncio
+                    result = asyncio.run({name}(*{args}, **{kwargs}))
+                """).format(name=self.closure.name, args=args, kwargs=kwargs)
+
+    def _generate_sync_run(self, *args: Any, **kwargs: Any) -> str:
+        return inspect.cleandoc("""
+                    result = {name}(*{args}, **{kwargs})
+                """).format(name=self.closure.name, args=args, kwargs=kwargs)
+
     def generate_script(self, *args: Any, **kwargs: Any) -> str:
         return inspect.cleandoc("""
                 # /// script
@@ -35,7 +52,7 @@ class SandboxRunner(ABC):
 
                 if __name__ == "__main__":
                     import json
-                    result = {name}(*{args}, **{kwargs})
+                    {result}
                     print(json.dumps(result))
                 """).format(
             dependencies=",\n#   ".join(
@@ -47,9 +64,9 @@ class SandboxRunner(ABC):
                 ]
             ),
             code=self.closure.code,
-            name=self.closure.name,
-            args=args,
-            kwargs=kwargs,
+            result=self._generate_async_run(*args, **kwargs)
+            if self._is_async_func()
+            else self._generate_sync_run(*args, **kwargs),
         )
 
 
