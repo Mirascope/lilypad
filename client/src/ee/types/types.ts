@@ -216,6 +216,8 @@ export interface SpanMoreDetails {
  */
 export enum Tier {
   FREE = "FREE",
+  PRO = "PRO",
+  TEAM = "TEAM",
   ENTERPRISE = "ENTERPRISE",
 }
 
