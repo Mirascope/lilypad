@@ -4,7 +4,7 @@ import base64
 import json
 import time
 from collections.abc import Callable, Coroutine
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from functools import wraps
 from importlib import resources
@@ -52,7 +52,7 @@ class LicenseInfo(BaseModel):
     @field_validator("expires_at")
     def must_not_be_expired(cls, expires_at: datetime) -> datetime:
         """Validate that the license hasn't expired"""
-        if expires_at <= datetime.now():
+        if expires_at <= datetime.now(timezone.utc):
             raise ValueError("License has expired")
         return expires_at
 
@@ -208,7 +208,7 @@ def _validate_license_with_client(
             token=config.get("token", None),
         )
         cached_license = lilypad_client.get_license_info()
-    if cached_license.info not in tiers:
+    if cached_license.tier not in tiers:
         raise LicenseError(INVALID_LICENSE_MESSAGE)
     return cached_license
 
