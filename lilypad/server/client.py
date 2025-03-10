@@ -9,7 +9,7 @@ import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
-from ee import Tier
+from ee import LicenseInfo
 
 from .._utils import Closure, load_config
 from ..exceptions import (
@@ -367,6 +367,6 @@ class LilypadClient:
             response_model=OrganizationPublic,
         )
 
-    def get_license_tier(self) -> Tier:
-        """Get the license tier for the organization."""
-        return Tier(self._request("GET", f"/v0/ee/projects/{self.project_uuid}", None))
+    def get_license_info(self) -> LicenseInfo:
+        """Get the license info for the organization."""
+        return self._request("GET", f"/v0/ee/projects/{self.project_uuid}", LicenseInfo)

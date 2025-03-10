@@ -2823,7 +2823,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12.5" },
     { name = "types-aioboto3", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=13.2.0.post3" },
 ]
-provides-extras = ["openai", "anthropic", "gemini", "google", "bedrock", "mistral", "outlines", "sandbox-docker", "vertex"]
+provides-extras = ["openai", "anthropic", "azure", "gemini", "google", "bedrock", "mistral", "outlines", "sandbox-docker", "vertex"]
 
 [package.metadata.requires-dev]
 dev = [
