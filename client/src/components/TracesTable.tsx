@@ -182,7 +182,11 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        return <div>{formatDate(row.getValue("timestamp"))}</div>;
+        return (
+          <span className='truncate'>
+            {formatDate(row.getValue("timestamp"))}
+          </span>
+        );
       },
     },
     {
@@ -235,22 +239,22 @@ export const TracesTable = ({
   ];
   const getRowCanExpand = (row: SpanPublic) => row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
-
+  const handleDetailPanelClose = () => {
+    if (path) {
+      navigate({ to: path, replace: true, params: { _splat: undefined } });
+    }
+  };
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
     useEffect(() => {
-      navigate({
-        to: path,
-        replace: true,
-        params: { _splat: data.uuid },
-      });
-      return () => {
+      if (path) {
         navigate({
           to: path,
           replace: true,
-          params: { _splat: undefined },
+          params: { _splat: data.uuid },
         });
-      };
-    }, [data]);
+      }
+    }, [data, path, navigate]);
+
     return (
       <div className='p-4 border rounded-md overflow-auto'>
         <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
@@ -285,6 +289,7 @@ export const TracesTable = ({
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}
+      onDetailPanelClose={handleDetailPanelClose}
     />
   );
 };
