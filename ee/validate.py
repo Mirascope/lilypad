@@ -229,12 +229,14 @@ def require_license(
     tier: Tier,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
 
+
 @overload
 def require_license(
     tier: Tier,
 ) -> Callable[
     [Callable[_P, Coroutine[Any, Any, _R]]], Callable[_P, Coroutine[Any, Any, _R]]
 ]: ...
+
 
 def require_license(
     tier: Tier,
