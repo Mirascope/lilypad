@@ -1,8 +1,8 @@
 """Service for managing environments."""
 
-from ..models import EnvironmentTable
-from ..schemas import EnvironmentCreate
-from .base_organization import BaseOrganizationService
+from lilypad.ee.server.models.environments import EnvironmentTable
+from lilypad.ee.server.schemas.environments import EnvironmentCreate
+from lilypad.server.services.base_organization import BaseOrganizationService
 
 
 class EnvironmentService(BaseOrganizationService[EnvironmentTable, EnvironmentCreate]):

@@ -10,9 +10,11 @@ from ee.validate import LicenseInfo, LicenseValidator
 
 from .....server.services import OrganizationService, ProjectService
 from .annotations_api import Tier, annotations_router
+from .environment_api import environment_router
 
 ee_api = FastAPI(separate_input_output_schemas=False)
 ee_api.include_router(annotations_router)
+ee_api.include_router(environment_router)
 
 
 @ee_api.get("/projects/{project_uuid}", response_model=LicenseInfo)

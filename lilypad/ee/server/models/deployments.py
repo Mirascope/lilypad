@@ -5,16 +5,16 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from .base_organization_sql_model import BaseOrganizationSQLModel
-from .table_names import (
+from lilypad.server.models import BaseOrganizationSQLModel
+from lilypad.server.models.table_names import (
     DEPLOYMENT_TABLE_NAME,
     ENVIRONMENT_TABLE_NAME,
     GENERATION_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
+    from ....server.models.generations import GenerationTable
     from .environments import EnvironmentTable
-    from .generations import GenerationTable
 
 
 class DeploymentBase(SQLModel):

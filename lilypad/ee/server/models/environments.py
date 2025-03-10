@@ -5,12 +5,12 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
-from .base_organization_sql_model import BaseOrganizationSQLModel
-from .table_names import ENVIRONMENT_TABLE_NAME, PROJECT_TABLE_NAME
+from lilypad.server.models import BaseOrganizationSQLModel
+from lilypad.server.models.table_names import ENVIRONMENT_TABLE_NAME, PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
+    from ....server.models.projects import ProjectTable
     from .deployments import DeploymentTable
-    from .projects import ProjectTable
 
 
 class EnvironmentBase(SQLModel):

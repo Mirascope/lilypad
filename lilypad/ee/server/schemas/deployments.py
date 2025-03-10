@@ -2,9 +2,10 @@
 
 from uuid import UUID
 
+from lilypad.server.schemas import GenerationPublic
+
 from ..models.deployments import DeploymentBase
 from .environments import EnvironmentPublic
-from .generations import GenerationPublic
 
 
 class DeploymentPublic(DeploymentBase):

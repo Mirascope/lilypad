@@ -6,12 +6,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models import DeploymentTable, EnvironmentTable, GenerationTable
+from lilypad.server.models import GenerationTable
+from lilypad.server.schemas import GenerationPublic
+
+from ...models.deployments import DeploymentTable
+from ...models.environments import EnvironmentTable
 from ...schemas import (
     DeploymentPublic,
     EnvironmentCreate,
     EnvironmentPublic,
-    GenerationPublic,
 )
 from ...services import DeploymentService, EnvironmentService
 

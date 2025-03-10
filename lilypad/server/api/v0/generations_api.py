@@ -14,6 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
+from lilypad.ee.server.models.deployments import DeploymentTable
+from lilypad.ee.server.models.environments import EnvironmentTable
+from lilypad.ee.server.schemas import EnvironmentPublic
+from lilypad.ee.server.services import DeploymentService, EnvironmentService
+
 from ..._utils import (
     construct_function,
     get_current_user,
@@ -21,21 +26,16 @@ from ..._utils import (
     validate_api_key_project_strict,
 )
 from ...models import (
-    DeploymentTable,
-    EnvironmentTable,
     GenerationTable,
     GenerationUpdate,
 )
 from ...schemas import (
-    EnvironmentPublic,
     GenerationCreate,
     GenerationPublic,
     PlaygroundParameters,
     UserPublic,
 )
 from ...services import (
-    DeploymentService,
-    EnvironmentService,
     GenerationService,
     SpanService,
 )
@@ -413,8 +413,7 @@ async def get_generation_deployments(
             DeploymentTable.organization_uuid
             == deployment_service.user.active_organization_uuid,
             DeploymentTable.generation_uuid == generation_uuid,
-            DeploymentTable.is_active
-            == True,
+            DeploymentTable.is_active is True,
         )
         .options(
             selectinload("environment")  # pyright: ignore [reportArgumentType]

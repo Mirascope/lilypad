@@ -9,8 +9,8 @@ from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
+    from ...ee.server.models.environments import EnvironmentTable
     from .api_keys import APIKeyTable
-    from .environments import EnvironmentTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
 
