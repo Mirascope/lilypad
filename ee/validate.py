@@ -12,7 +12,7 @@ from uuid import UUID
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, ValidationError, computed_field, field_validator
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -45,12 +45,10 @@ class LicenseInfo(BaseModel):
     tier: Tier
     organization_uuid: UUID
 
-    @field_validator("expires_at")
-    def must_not_be_expired(cls, expires_at: datetime) -> datetime:
-        """Validate that the license hasn't expired"""
-        if expires_at <= datetime.now():
-            raise ValueError("License has expired")
-        return expires_at
+    @computed_field
+    def is_expired(self) -> bool:
+        """Check if the license has expired"""
+        return self.expires_at <= datetime.now()
 
 
 class LicenseValidator:

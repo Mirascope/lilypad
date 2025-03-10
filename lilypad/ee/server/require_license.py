@@ -114,6 +114,12 @@ class RequireLicense:
                     detail="License key does not match organization",
                 )
 
+            if license_info.is_expired:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="License has expired",
+                )
+
             if self.tier == Tier.ENTERPRISE and license_info.tier != Tier.ENTERPRISE:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

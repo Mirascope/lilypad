@@ -30,7 +30,7 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { Tier } from "@/ee/types/types";
-import { licenseQueryOptions } from "@/ee/utils/ee";
+import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { hasFeatureAccess } from "@/hooks/use-isEnterprise";
 import { GenerationTab } from "@/types/generations";
 import { Plus, Trash } from "lucide-react";
@@ -91,9 +91,7 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
-  const { data: licenseInfo } = useSuspenseQuery(
-    licenseQueryOptions(projectUuid)
-  );
+  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
 
   const navigate = useNavigate();
   const generation = generations.find(

@@ -1,5 +1,5 @@
 import { Tier } from "@/ee/types/types";
-import { licenseQueryOptions } from "@/ee/utils/ee";
+import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 const tierLevels: Record<Tier, number> = {
@@ -9,10 +9,8 @@ const tierLevels: Record<Tier, number> = {
   [Tier.ENTERPRISE]: 3,
 };
 
-export const useIsEnterprise = (projectUuid: string) => {
-  const { data: licenseInfo } = useSuspenseQuery(
-    licenseQueryOptions(projectUuid)
-  );
+export const useIsEnterprise = () => {
+  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   return licenseInfo.tier === Tier.ENTERPRISE;
 };
 
