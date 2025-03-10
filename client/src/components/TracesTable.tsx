@@ -182,7 +182,11 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        return <div>{formatDate(row.getValue("timestamp"))}</div>;
+        return (
+          <span className='truncate'>
+            {formatDate(row.getValue("timestamp"))}
+          </span>
+        );
       },
     },
     {
