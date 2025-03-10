@@ -39,9 +39,7 @@ dependencies = [
     "opentelemetry-instrumentation>=0.51b0",
     "typer>=0.12.5",
     "itsdangerous>=2.2.0",
-    "python-jose[cryptography]>=3.3.0",
     "pydantic-settings>=2.6.1",
-    "cryptography>=43.0.3",
     "ruff>=0.9.5",
     "requests>=2.32.3",
     "pillow>=10.4.0",
@@ -69,6 +67,10 @@ server = [
     "resend>=2.6.0",
     "alembic-postgresql-enum>=1.6.0",
     "starlette>=0.26.0",
+    "python-jose[cryptography]>=3.3.0",
+]
+ee = [
+     "cryptography>=43.0.3",
 ]
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]

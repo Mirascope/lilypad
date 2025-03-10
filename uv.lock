@@ -2700,7 +2700,6 @@ version = "0.0.31"
 source = { editable = "." }
 dependencies = [
     { name = "cachetools" },
-    { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "itsdangerous" },
@@ -2712,7 +2711,6 @@ dependencies = [
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "python-jose", extra = ["cryptography"] },
     { name = "requests" },
     { name = "rich" },
     { name = "ruff" },
@@ -2734,6 +2732,9 @@ bedrock = [
     { name = "boto3" },
     { name = "boto3-stubs", extra = ["bedrock-runtime"] },
     { name = "types-aioboto3", extra = ["bedrock-runtime"] },
+]
+ee = [
+    { name = "cryptography" },
 ]
 gemini = [
     { name = "google-generativeai" },
@@ -2758,6 +2759,7 @@ server = [
     { name = "fastapi", extra = ["standard"] },
     { name = "posthog" },
     { name = "psycopg2-binary" },
+    { name = "python-jose", extra = ["cryptography"] },
     { name = "resend" },
     { name = "starlette" },
 ]
@@ -2785,7 +2787,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'bedrock'", specifier = ">=1.35.36" },
     { name = "boto3-stubs", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=1.35.82" },
     { name = "cachetools", specifier = ">=5.5.1" },
-    { name = "cryptography", specifier = ">=43.0.3" },
+    { name = "cryptography", marker = "extra == 'ee'", specifier = ">=43.0.3" },
     { name = "fastapi", specifier = ">=0.114.0" },
     { name = "fastapi", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.114.0" },
     { name = "google-cloud-aiplatform", marker = "extra == 'vertex'", specifier = ">=1.74.0" },
@@ -2808,7 +2810,7 @@ requires-dist = [
     { name = "psycopg2-binary", marker = "extra == 'server'", specifier = ">=2.9.9" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydantic-settings", specifier = ">=2.6.1" },
-    { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0" },
+    { name = "python-jose", extras = ["cryptography"], marker = "extra == 'server'", specifier = ">=3.3.0" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "resend", marker = "extra == 'server'", specifier = ">=2.6.0" },
     { name = "rich", specifier = ">=13.0.0" },
@@ -2819,7 +2821,7 @@ requires-dist = [
     { name = "types-aioboto3", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=13.2.0.post3" },
     { name = "typing-extensions", specifier = ">=4.0.0" },
 ]
-provides-extras = ["server", "openai", "anthropic", "azure", "gemini", "google", "bedrock", "mistral", "outlines", "vertex"]
+provides-extras = ["server", "ee", "openai", "anthropic", "azure", "gemini", "google", "bedrock", "mistral", "outlines", "vertex"]
 
 [package.metadata.requires-dev]
 dev = [
