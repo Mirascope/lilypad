@@ -37,7 +37,7 @@ class DockerSandboxRunner(SandboxRunner):
         return stream
 
     def execute_function(self, _closure: Closure, *args: Any, **kwargs: Any) -> str:
-        script = self.generate_script(*args, **kwargs)
+        script = self.generate_script(_closure, *args, **kwargs)
         client = docker.from_env()
         container = None
         try:

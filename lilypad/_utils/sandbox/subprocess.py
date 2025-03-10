@@ -19,7 +19,7 @@ class SubprocessSandboxRunner(SandboxRunner):
             self.environment["PATH"] = os.environ["PATH"]
 
     def execute_function(self, _closure: Closure, *args: Any, **kwargs: Any) -> str:
-        script = self.generate_script(*args, **kwargs)
+        script = self.generate_script(_closure, *args, **kwargs)
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False
         ) as tmp_file:

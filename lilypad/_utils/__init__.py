@@ -6,6 +6,7 @@ from .config import load_config
 from .fn_is_async import fn_is_async
 from .functions import ArgTypes, ArgValues, create_mirascope_call, inspect_arguments
 from .middleware import create_mirascope_middleware, encode_gemini_part
+from .sandbox import DockerSandboxRunner, SubprocessSandboxRunner
 
 __all__ = [
     "ArgTypes",
@@ -13,9 +14,11 @@ __all__ = [
     "Closure",
     "call_safely",
     "DependencyInfo",
+    "DockerSandboxRunner",
     "create_mirascope_middleware",
     "encode_gemini_part",
     "get_qualified_name",
     "inspect_arguments",
     "load_config",
+    "SubprocessSandboxRunner",
 ]
