@@ -40,6 +40,13 @@ class LicenseError(Exception):
     pass
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure a datetime object is in UTC timezone"""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 class LicenseInfo(BaseModel):
     """Pydantic model for license validation"""
 
@@ -52,6 +59,7 @@ class LicenseInfo(BaseModel):
     @field_validator("expires_at")
     def must_not_be_expired(cls, expires_at: datetime) -> datetime:
         """Validate that the license hasn't expired"""
+        expires_at = _ensure_utc(expires_at)
         if expires_at <= datetime.now(timezone.utc):
             raise ValueError("License has expired")
         return expires_at
@@ -198,7 +206,7 @@ def _validate_license_with_client(
     if cached_license:
         if cached_license.info not in tiers:
             cached_license = None
-        if cached_license.info.expires_at < datetime.now():
+        if cached_license.info.expires_at < datetime.now(timezone.utc):
             cached_license = None
     if not cached_license:
         config = load_config()
