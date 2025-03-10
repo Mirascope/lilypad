@@ -52,7 +52,7 @@ class _GenerationBase(SQLModel):
 class GenerationUpdate(SQLModel):
     """Generation update model."""
 
-    ...
+    pass
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):

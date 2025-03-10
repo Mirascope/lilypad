@@ -18,7 +18,8 @@ from ..models import (
     UserRole,
     UserTable,
 )
-from ..schemas.organizations import OrganizationPublic
+from ..models.organizations import OrganizationBase
+from ..models.users import UserBase
 from ..schemas.users import UserPublic
 from ..settings import Settings, get_settings
 
@@ -117,7 +118,7 @@ async def get_local_user(session: Session) -> UserPublic:
     )
     session.add(org)
     session.flush()
-    org_public = OrganizationPublic.model_validate(org)
+    org_base= OrganizationBase.model_validate(org)
     user = UserTable(
         email=local_email,
         first_name="Local User",
@@ -125,15 +126,15 @@ async def get_local_user(session: Session) -> UserPublic:
     )
     session.add(user)
     session.flush()
-    user_public = UserPublic.model_validate(user)
+    user_base = UserBase.model_validate(user)
     user_org = UserOrganizationTable(
-        user_uuid=user_public.uuid,
-        organization_uuid=org_public.uuid,
+        user_uuid=user_base.uuid,
+        organization_uuid=org_base.uuid,
         role=UserRole.ADMIN,
     )
     session.add(user_org)
     session.flush()
-    return user_public
+    return UserPublic.model_validate(user_base)
 
 
 async def get_current_user(

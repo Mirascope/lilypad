@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from .._utils import (
@@ -20,21 +20,43 @@ from .._utils import (
     convert_mirascope_messages,
     convert_openai_messages,
 )
-from ..models.spans import Scope, SpanBase, SpanTable
+from ..models.spans import Scope, SpanTable
 from .generations import GenerationPublic, Provider
 
 
-class SpanCreate(SpanBase):
+class SpanCreate(BaseModel):
     """Span create model"""
 
+    span_id: str
+    generation_uuid: UUID | None = None
+    type: str | None = None
+    cost: float | None = None
+    scope: Scope
+    input_tokens: float | None = None
+    output_tokens: float | None = None
+    duration_ms: float | None = None
+    data: dict = Field(default_factory=dict)
+    parent_span_id: str | None = None
+    organization_uuid: UUID
     project_uuid: UUID | None = None
 
 
-class SpanPublic(SpanBase):
+class SpanPublic(BaseModel):
     """Span public model"""
 
     uuid: UUID
     project_uuid: UUID
+    span_id: str
+    generation_uuid: UUID | None = None
+    type: str | None = None
+    cost: float | None = None
+    scope: Scope
+    input_tokens: float | None = None
+    output_tokens: float | None = None
+    duration_ms: float | None = None
+    data: dict = Field(default_factory=dict)
+    parent_span_id: str | None = None
+    organization_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
     annotations: list[AnnotationTable]
@@ -46,7 +68,7 @@ class SpanPublic(SpanBase):
     @model_validator(mode="before")
     @classmethod
     def convert_from_span_table(cls: type[SpanPublic], data: Any) -> Any:
-        """Convert SpanTable to SpanPublic."""
+        """Convert a SpanTable instance to a SpanPublic dict."""
         if isinstance(data, SpanTable):
             span_public = cls._convert_span_table_to_public(data)
             return cls(**span_public)
@@ -54,10 +76,10 @@ class SpanPublic(SpanBase):
 
     @classmethod
     def _convert_span_table_to_public(
-            cls,
-            span: SpanTable,
+        cls,
+        span: SpanTable,
     ) -> dict[str, Any]:
-        """Set the display name based on the scope."""
+        """Set the display name based on the scope and convert child spans recursively."""
         data = span.data
         attributes = data.get("attributes", {})
         if span.scope == Scope.LILYPAD:
@@ -66,7 +88,7 @@ class SpanPublic(SpanBase):
             display_name = span.data.get("name", "")
             version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
-            if gen_ai_system := attributes.get('gen_ai.system'):
+            if gen_ai_system := attributes.get("gen_ai.system"):
                 display_name = f"{gen_ai_system} with '{data['attributes']['gen_ai.request.model']}'"
             else:
                 display_name = data.get("name", "")

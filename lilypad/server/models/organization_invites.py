@@ -34,5 +34,5 @@ class OrganizationInviteTable(
     __tablename__ = ORGANIZATION_INVITE_TABLE_NAME  # type: ignore
 
     token: str = Field(unique=True, nullable=False)
-    resend_email_id: str
+    resend_email_id: str = Field(nullable=True)
     user: "UserTable" = Relationship(back_populates="organization_invites")

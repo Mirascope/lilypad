@@ -1,23 +1,26 @@
-"""Users schemas."""
+"""Organizations schemas."""
 
 from uuid import UUID
 
-from ..models.organizations import OrganizationBase
+from pydantic import BaseModel
 
 
-class OrganizationPublic(OrganizationBase):
+class OrganizationPublic(BaseModel):
     """Organization public model"""
 
     uuid: UUID
+    name: str
+    license: str | None = None
 
 
-class OrganizationCreate(OrganizationBase):
+class OrganizationCreate(BaseModel):
     """Organization create model"""
 
-    ...
+    name: str
 
 
-class OrganizationUpdate(OrganizationBase):
+class OrganizationUpdate(BaseModel):
     """Organization update model"""
 
-    ...
+    name: str
+    license: str | None = None
