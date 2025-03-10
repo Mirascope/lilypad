@@ -1,7 +1,7 @@
 """Tests for the require_license module in lilypad/ee/server/require_license.py."""
 
 import inspect
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
@@ -135,7 +135,7 @@ async def test_wrong_license_tier():
         license_info = LicenseInfo(
             organization_uuid=org_uuid,
             tier=Tier.FREE,  # Insufficient tier
-            expires_at=datetime.now() + timedelta(days=1),
+            expires_at=datetime.now(tz=timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
@@ -169,7 +169,7 @@ async def test_valid_license():
         license_info = LicenseInfo(
             organization_uuid=org_uuid,
             tier=Tier.ENTERPRISE,
-            expires_at=datetime.now() + timedelta(days=1),
+            expires_at=datetime.now(tz=timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
