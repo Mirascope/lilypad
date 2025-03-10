@@ -125,7 +125,7 @@ class LilypadClient:
         endpoint: str,
         response_model: None,
         **kwargs: Any,
-    ) -> dict[str, Any] | Any: ...
+    ) -> dict[str, Any]: ...
 
     def _request(
         self,

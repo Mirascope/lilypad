@@ -36,7 +36,7 @@ def _specific_generation_version_sync_factory(
 ]:
     """Create a _specific_generation_version_sync function for a function."""
 
-    @require_license(tiers={Tier.PRO, Tier.TEAM, Tier.ENTERPRISE})
+    @require_license(tier=Tier.PRO)
     def _specific_generation_version_sync(
         forced_version: int,
         override_sandbox_factory: SandBoxFactory[_SandBoxRunnerT] | None = None,
@@ -81,7 +81,7 @@ def _specific_generation_version_async_factory(
 ]:
     """Create a _specific_generation_version_async function for a function."""
 
-    @require_license(tiers={Tier.PRO, Tier.TEAM, Tier.ENTERPRISE})
+    @require_license(tier=Tier.PRO)
     def _specific_generation_version_async(
         forced_version: int,
         override_sandbox_factory: SandBoxFactory[_SandBoxRunnerT] | None = None,
