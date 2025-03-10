@@ -18,6 +18,7 @@ from mirascope.llm.call_response import CallResponse
 from pydantic import computed_field
 
 from lilypad import Message
+from lilypad._utils import Closure
 from lilypad.generations import (
     Generation,
     GenerationMode,
@@ -571,21 +572,27 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
         patch(
-            "lilypad.generations.SubprocessSandboxFactory",
-        ) as mock_factory,
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
         patch(
             "ee.validate._validate_license_with_client",
         ),
     ):
-        mock_runner = MagicMock()
-        mock_runner.execute_function.return_value = "sync outer"
-        mock_factory.return_value.create.return_value = mock_runner
+        mock_runner.return_value.execute_function.return_value = "sync outer"
         versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
-        mock_factory.return_value.create.assert_called_once()
-        mock_runner.execute_function.assert_called_once_with("dummy")
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 @pytest.mark.asyncio
@@ -604,21 +611,27 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             return_value=dummy_generation_instance,
         ),
         patch(
-            "lilypad.generations.SubprocessSandboxFactory",
-        ) as mock_factory,
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
         patch(
             "ee.validate._validate_license_with_client",
         ),
     ):
-        mock_runner = MagicMock()
-        mock_runner.execute_function.return_value = "sync outer"
-        mock_factory.return_value.create.return_value = mock_runner
+        mock_runner.return_value.execute_function.return_value = "sync outer"
         versioned_func = async_outer.version(forced_version)
         result = await versioned_func("dummy")  # pyright: ignore [reportCallIssue]
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
-        mock_factory.return_value.create.assert_called_once()
-        mock_runner.execute_function.assert_called_once_with("dummy")
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 def test_build_mirascope_call_async(
