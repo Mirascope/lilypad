@@ -6,21 +6,19 @@ from pathlib import Path
 from typing import Any
 
 from .. import Closure
-from . import SandBoxFactory, SandboxRunner
+from . import SandboxRunner
 
 
 class SubprocessSandboxRunner(SandboxRunner):
     """Runs code in a subprocess."""
 
-    def __init__(
-        self, closure: Closure, environment: dict[str, str] | None = None
-    ) -> None:
-        super().__init__(closure, environment)
+    def __init__(self, environment: dict[str, str] | None = None) -> None:
+        super().__init__(environment)
         if "PATH" not in self.environment:
             # Set uv path to the default value if not provided
             self.environment["PATH"] = os.environ["PATH"]
 
-    def execute_function(self, *args: Any, **kwargs: Any) -> str:
+    def execute_function(self, _closure: Closure, *args: Any, **kwargs: Any) -> str:
         script = self.generate_script(*args, **kwargs)
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False
@@ -45,15 +43,3 @@ class SubprocessSandboxRunner(SandboxRunner):
             raise RuntimeError(error_message)
         finally:
             tmp_path.unlink()
-
-
-class SubprocessSandboxFactory(SandBoxFactory[SubprocessSandboxRunner]):
-    """Creates subprocess sandbox runners."""
-
-    def __init__(self, environment: dict[str, str] | None = None) -> None:
-        if environment is None:
-            environment = os.environ.copy()
-        super().__init__(environment)
-
-    def create(self, closure: Closure) -> SubprocessSandboxRunner:
-        return SubprocessSandboxRunner(closure, self.environment)

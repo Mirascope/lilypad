@@ -8,7 +8,6 @@ import docker
 
 from .. import Closure
 from . import SandboxRunner
-from .runner import SandBoxFactory
 
 _DEFAULT_IMAGE = "ghcr.io/astral-sh/uv:python3.10-alpine"
 
@@ -18,11 +17,10 @@ class DockerSandboxRunner(SandboxRunner):
 
     def __init__(
         self,
-        closure: Closure,
         image: str = _DEFAULT_IMAGE,
         environment: dict[str, str] | None = None,
     ) -> None:
-        super().__init__(closure, environment)
+        super().__init__(environment)
         self.image = image
 
     @classmethod
@@ -38,7 +36,7 @@ class DockerSandboxRunner(SandboxRunner):
         stream.seek(0)
         return stream
 
-    def execute_function(self, *args: Any, **kwargs: Any) -> str:
+    def execute_function(self, _closure: Closure, *args: Any, **kwargs: Any) -> str:
         script = self.generate_script(*args, **kwargs)
         client = docker.from_env()
         container = None
@@ -68,10 +66,3 @@ class DockerSandboxRunner(SandboxRunner):
             if container:
                 with suppress(Exception):
                     container.stop()
-
-
-class DockerSandboxFactory(SandBoxFactory[DockerSandboxRunner]):
-    """Factory for creating DockerSandboxRunners."""
-
-    def create(self, closure: Closure) -> DockerSandboxRunner:
-        return DockerSandboxRunner(closure, environment=self.environment)
