@@ -1,5 +1,11 @@
-from contextlib import suppress
-
+from .auth import (
+    api_key_header,
+    create_api_key,
+    create_jwt_token,
+    get_current_user,
+    validate_api_key_project_no_strict,
+    validate_api_key_project_strict,
+)
 from .spans import (
     Event,
     MessageParam,
@@ -12,15 +18,6 @@ from .spans import (
 )
 from .versions import construct_function
 
-with suppress(ImportError):
-    from .auth import (
-        api_key_header,
-        create_api_key,
-        create_jwt_token,
-        get_current_user,
-        validate_api_key_project_no_strict,
-        validate_api_key_project_strict,
-    )
 __all__ = [
     "api_key_header",
     "Event",

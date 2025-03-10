@@ -2,12 +2,12 @@ import base64
 import hashlib
 import json
 import secrets
+from contextlib import suppress
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
-from jose import JWTError, jwt
 from pydantic import ValidationError
 from sqlmodel import Session, select
 
@@ -22,6 +22,9 @@ from ..models import (
 from ..schemas.organizations import OrganizationPublic
 from ..schemas.users import UserPublic
 from ..settings import Settings, get_settings
+
+with suppress(ImportError):
+    from jose import JWTError, jwt
 
 LOCAL_TOKEN = "local-dev-token"
 
