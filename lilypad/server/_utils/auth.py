@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import json
 import secrets
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -18,12 +20,14 @@ from ..models import (
     UserRole,
     UserTable,
 )
-from ..models.organizations import OrganizationBase
-from ..models.users import UserBase
-from ..schemas.users import UserPublic
+from ..models.organizations import Organization
+from ..models.users import User
 from ..settings import Settings, get_settings
 
 LOCAL_TOKEN = "local-dev-token"
+
+if TYPE_CHECKING:
+    from ..schemas import UserPublic
 
 
 def create_jwt_token(
@@ -103,7 +107,7 @@ async def validate_api_key_project_strict(
     return await validate_api_key_project(project_uuid, api_key, session, strict=True)
 
 
-async def get_local_user(session: Session) -> UserPublic:
+async def get_local_user(session: Session) -> User:
     """Get the local user for development
 
     Create a local user and organization if it does not exist.
@@ -111,14 +115,14 @@ async def get_local_user(session: Session) -> UserPublic:
     local_email = "local@local.com"
     user = session.exec(select(UserTable).where(UserTable.email == local_email)).first()
     if user:
-        return UserPublic.model_validate(user)
+        return User.model_validate(user)
 
     org = OrganizationTable(
         uuid=UUID("123e4567-e89b-12d3-a456-426614174000"), name="Local Organization"
     )
     session.add(org)
     session.flush()
-    org_base= OrganizationBase.model_validate(org)
+    org_public = Organization.model_validate(org)
     user = UserTable(
         email=local_email,
         first_name="Local User",
@@ -126,15 +130,15 @@ async def get_local_user(session: Session) -> UserPublic:
     )
     session.add(user)
     session.flush()
-    user_base = UserBase.model_validate(user)
+    user_public = User.model_validate(user)
     user_org = UserOrganizationTable(
-        user_uuid=user_base.uuid,
-        organization_uuid=org_base.uuid,
+        user_uuid=user_public.uuid,
+        organization_uuid=org_public.uuid,
         role=UserRole.ADMIN,
     )
     session.add(user_org)
     session.flush()
-    return UserPublic.model_validate(user_base)
+    return user_public
 
 
 async def get_current_user(
@@ -143,7 +147,7 @@ async def get_current_user(
     api_key: Annotated[str | None, Depends(api_key_header)],
     session: Annotated[Session, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-) -> UserPublic:
+) -> User:
     """Dependency to get the current authenticated user from session."""
     """Get the current user from JWT token"""
     if token == LOCAL_TOKEN:
@@ -156,7 +160,7 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
-        user_public = UserPublic.model_validate(api_key_row.user)
+        user_public = User.model_validate(api_key_row.user)
         request.state.user = user_public
         return user_public
 
@@ -174,7 +178,7 @@ async def get_current_user(
         if uuid := payload.get("uuid"):
             user = session.exec(select(UserTable).where(UserTable.uuid == uuid)).first()
             if user:
-                user_public = UserPublic.model_validate(user)
+                user_public = User.model_validate(user)
                 request.state.user = user_public
                 return user_public
     except (JWTError, KeyError, ValidationError) as e:

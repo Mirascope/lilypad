@@ -8,11 +8,9 @@ from sqlmodel import Session, SQLModel, create_engine
 from lilypad.server.models import (
     UserRole,
 )
-from lilypad.server.schemas import (
-    OrganizationPublic,
-    UserOrganizationPublic,
-    UserPublic,
-)
+from lilypad.server.models.organizations import Organization
+from lilypad.server.models.user_organizations import UserOrganization
+from lilypad.server.models.users import User
 
 # In-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -46,18 +44,18 @@ def db_session():
 
 
 @pytest.fixture
-def test_user() -> UserPublic:
+def test_user() -> User:
     """Create a test user and organization."""
     user_uuid = uuid4()
-    organization = OrganizationPublic(uuid=ORGANIZATION_UUID, name="Test Organization")
-    user_org = UserOrganizationPublic(
+    organization = Organization(uuid=ORGANIZATION_UUID, name="Test Organization")
+    user_org = UserOrganization(
         uuid=uuid4(),
         user_uuid=user_uuid,
         organization_uuid=ORGANIZATION_UUID,
         role=UserRole.ADMIN,
         organization=organization,
     )
-    user_public = UserPublic(
+    user = User(
         uuid=user_uuid,
         email="test@test.com",
         first_name="Test User",
@@ -65,11 +63,11 @@ def test_user() -> UserPublic:
         user_organizations=[user_org],
     )
 
-    return user_public
+    return user
 
 
 @pytest.fixture
-def get_test_current_user(test_user: UserPublic):
+def get_test_current_user(test_user: User):
     """Override the get_current_user dependency for FastAPI.
 
     Returns:

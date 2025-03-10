@@ -13,6 +13,7 @@ from ...models import (
     UserRole,
     UserTable,
 )
+from ...models.users import User
 from ...schemas import UserOrganizationCreate, UserOrganizationUpdate, UserPublic
 from ...services import OrganizationInviteService, UserOrganizationService, UserService
 
@@ -55,7 +56,7 @@ async def create_user_organization(
         OrganizationInviteService, Depends(OrganizationInviteService)
     ],
     create_user_organization_token: CreateUserOrganizationToken,
-    user: Annotated[UserPublic, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
 ) -> UserOrganizationTable:
     """Create user organization"""
     org_invite = organization_invites_service.find_record_by_token(
@@ -142,7 +143,7 @@ async def get_user(
     user_service: Annotated[UserService, Depends(UserService)],
 ) -> UserPublic:
     """Get user."""
-    return user_service.user
+    return UserPublic.model_validate(user_service.user)
 
 
 __all__ = ["users_router"]

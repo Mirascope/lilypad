@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
+from mirascope.core.base import CommonCallParams
 from pydantic import BaseModel, Field
 
 
@@ -59,9 +60,15 @@ class GenerationPublic(BaseModel):
     prompt_template: str | None = None
     provider: str | None = None
     model: str | None = None
-    call_params: dict[str, Any] = Field(default_factory=dict)
+    call_params: CommonCallParams = Field(default_factory=dict)  # pyright: ignore [reportAssignmentType]
     is_default: bool | None = False
     is_managed: bool | None = False
+
+
+class GenerationUpdate(BaseModel):
+    """Generation update model."""
+
+    ...
 
 
 class PlaygroundParameters(BaseModel):

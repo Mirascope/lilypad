@@ -8,6 +8,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import ORGANIZATION_INVITE_TABLE_NAME, USER_TABLE_NAME
+from .users import User
 
 if TYPE_CHECKING:
     from .users import UserTable
@@ -24,6 +25,16 @@ class OrganizationInviteBase(SQLModel):
         default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=7),
         nullable=False,
     )
+
+
+class OrganizationInvite(OrganizationInviteBase):
+    """OrganizationInvite model"""
+
+    uuid: UUID
+    organization_uuid: UUID
+    user: User
+    resend_email_id: str
+    invite_link: str | None = None
 
 
 class OrganizationInviteTable(

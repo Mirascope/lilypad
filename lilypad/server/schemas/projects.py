@@ -19,6 +19,5 @@ class ProjectPublic(BaseModel):
 
     uuid: UUID
     name: str
-    organization_uuid: UUID
     generations: list[GenerationPublic] = Field(default_factory=list)
     created_at: datetime

@@ -37,7 +37,6 @@ class SpanCreate(BaseModel):
     duration_ms: float | None = None
     data: dict = Field(default_factory=dict)
     parent_span_id: str | None = None
-    organization_uuid: UUID
     project_uuid: UUID | None = None
 
 
@@ -56,7 +55,6 @@ class SpanPublic(BaseModel):
     duration_ms: float | None = None
     data: dict = Field(default_factory=dict)
     parent_span_id: str | None = None
-    organization_uuid: UUID
     display_name: str | None = None
     generation: GenerationPublic | None = None
     annotations: list[AnnotationTable]
@@ -71,7 +69,7 @@ class SpanPublic(BaseModel):
         """Convert a SpanTable instance to a SpanPublic dict."""
         if isinstance(data, SpanTable):
             span_public = cls._convert_span_table_to_public(data)
-            return cls(**span_public)
+            return span_public
         return data
 
     @classmethod

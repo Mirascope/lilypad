@@ -4,6 +4,7 @@ from .api_keys import APIKeyCreate, APIKeyPublic
 from .generations import (
     GenerationCreate,
     GenerationPublic,
+    GenerationUpdate,
     PlaygroundParameters,
     Provider,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "APIKeyPublic",
     "GenerationCreate",
     "GenerationPublic",
+    "GenerationUpdate",
     "OrganizationCreate",
     "OrganizationPublic",
     "OrganizationUpdate",
