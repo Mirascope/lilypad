@@ -15,11 +15,12 @@ from ...models import (
     OrganizationInviteTable,
     OrganizationTable,
 )
+from ...models.organization_invites import OrganizationInvite
+from ...models.users import User
 from ...schemas import (
     OrganizationInviteCreate,
     OrganizationInvitePublic,
     OrganizationPublic,
-    UserPublic,
     UserRole,
 )
 from ...schemas.organizations import OrganizationUpdate
@@ -48,7 +49,7 @@ async def get_organization_invite(
     response_model=OrganizationInvitePublic,
 )
 async def create_organization_invite(
-    user: Annotated[UserPublic, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
     organization_invite_service: Annotated[
         OrganizationInviteService, Depends(OrganizationInviteService)
     ],
@@ -95,10 +96,12 @@ async def create_organization_invite(
         data.resend_email_id = "n/a"
     organization_invite = organization_invite_service.create_record(data)
     return OrganizationInvitePublic.model_validate(
-        organization_invite,
-        update={
-            "invite_link": invite_link,
-        },
+        OrganizationInvite.model_validate(
+            organization_invite,
+            update={
+                "invite_link": invite_link,
+            },
+        )
     )
 
 
@@ -110,7 +113,7 @@ async def update_organization(
     organization_uuid: UUID,
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     organization_update: OrganizationUpdate,
-    user: Annotated[UserPublic, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
 ) -> OrganizationTable:
     """Update an organization."""
     # Check if user is in organization

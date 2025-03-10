@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from .._utils import get_current_user
 from ..db import get_session
 from ..models import BaseSQLModel
-from ..schemas import UserPublic
+from ..models.users import User
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -85,7 +85,7 @@ class BaseService(Generic[_TableT, _CreateT]):
     def __init__(
         self,
         session: Annotated[Session, Depends(get_session)],
-        user: Annotated[UserPublic, Depends(get_current_user)],
+        user: Annotated[User, Depends(get_current_user)],
     ) -> None:
         self.session = session
         self.user = user

@@ -9,12 +9,12 @@ from lilypad.server.models import (
     Scope,
     SpanTable,
 )
-from lilypad.server.schemas import ProjectPublic, UserPublic
+from lilypad.server.models.users import User
 from lilypad.server.services import SpanService
 
 
 def test_find_records_by_version_uuid(
-    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+    db_session: Session, test_project: ProjectTable, test_user: User
 ):
     """Test finding spans by version uuid"""
     service = SpanService(db_session, test_user)
@@ -38,10 +38,10 @@ def test_find_records_by_version_uuid(
 
     db_session.add_all(spans)
     db_session.commit()
-    test_project_public = ProjectPublic.model_validate(test_project)
     # Test retrieval
     found_spans = service.find_records_by_generation_uuid(
-        test_project_public.uuid, generation_uuid
+        test_project.uuid,  # pyright: ignore [reportArgumentType]
+        generation_uuid,  # pyright: ignore [reportArgumentType]
     )
     assert len(found_spans) == 3
     assert all(span.generation_uuid == generation_uuid for span in found_spans)

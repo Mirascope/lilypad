@@ -5,7 +5,6 @@ from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
 from .generations import (
     GenerationTable,
-    GenerationUpdate,
 )
 from .organization_invites import (
     OrganizationInviteTable,
@@ -24,7 +23,6 @@ __all__ = [
     "BaseOrganizationSQLModel",
     "BaseSQLModel",
     "GenerationTable",
-    "GenerationUpdate",
     "JSONTypeDecorator",
     "OrganizationInviteTable",
     "OrganizationTable",

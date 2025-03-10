@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlmodel import Column, Enum, Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .organizations import Organization
 from .table_names import (
     USER_ORGANIZATION_TABLE_NAME,
     USER_TABLE_NAME,
@@ -32,6 +33,14 @@ class UserOrganizationBase(SQLModel):
     user_uuid: UUID = Field(
         index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+
+
+class UserOrganization(UserOrganizationBase):
+    """UserOrganization public model"""
+
+    uuid: UUID
+    organization_uuid: UUID
+    organization: Organization
 
 
 class UserOrganizationTable(UserOrganizationBase, BaseOrganizationSQLModel, table=True):
