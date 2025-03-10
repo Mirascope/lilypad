@@ -33,8 +33,7 @@ classifiers = [
 dependencies = [
     "mirascope>=1.20.1",
     "sqlmodel>=0.0.22",
-    "psycopg2-binary>=2.9.9",
-    "fastapi[standard]>=0.114.0",
+    "fastapi>=0.114.0",
     "opentelemetry-api>=1.30.0",
     "opentelemetry-sdk>=1.30.0",
     "opentelemetry-instrumentation>=0.51b0",
@@ -46,12 +45,12 @@ dependencies = [
     "ruff>=0.9.5",
     "requests>=2.32.3",
     "pillow>=10.4.0",
-    "alembic>=1.14.0",
-    "posthog>=3.8.3",
-    "resend>=2.6.0",
     "libcst>=1.6.0",
-    "alembic-postgresql-enum>=1.6.0",
     "cachetools>=5.5.1",
+    "httpx>=0.24.0",
+    "typing-extensions>=4.0.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
 ]
 
 [project.urls]
@@ -62,6 +61,15 @@ Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"
 
 [project.optional-dependencies]
+server = [
+    "psycopg2-binary>=2.9.9",
+    "fastapi[standard]>=0.114.0",
+    "alembic>=1.14.0",
+    "posthog>=3.8.3",
+    "resend>=2.6.0",
+    "alembic-postgresql-enum>=1.6.0",
+    "starlette>=0.26.0",
+]
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]
 azure = ["azure-ai-inference>=1.0.0b9,<2.0", "aiohttp>=3.10.5,<4.0"]
