@@ -1,7 +1,7 @@
 """Test configuration and fixtures."""
 
 from collections.abc import Callable, Generator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from uuid import UUID, uuid4
 
@@ -98,7 +98,7 @@ def mock_license_info() -> Generator[LicenseInfo, None, None]:
         license_info = mock_verify_license.return_value = LicenseInfo(
             organization_uuid=ORGANIZATION_UUID,
             tier=Tier.ENTERPRISE,
-            expires_at=datetime.now() + timedelta(days=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
             customer="test",
             license_id="test_id",
         )

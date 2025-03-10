@@ -18,6 +18,7 @@ from mirascope.llm.call_response import CallResponse
 from pydantic import computed_field
 
 from lilypad import Message
+from lilypad._utils import Closure
 from lilypad.generations import (
     Generation,
     GenerationMode,
@@ -40,6 +41,7 @@ def dummy_generation_instance() -> GenerationPublic:
         hash="dummy_hash",
         dependencies={},
         arg_types={},
+        arg_values={},
         version_num=1,
         call_params={},
         provider="openai",
@@ -341,7 +343,7 @@ async def async_outer(param: str) -> str:
 
 
 def fake_mirascope_middleware_sync(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate a synchronous mirascope middleware returning a dummy result."""
 
@@ -355,7 +357,7 @@ def fake_mirascope_middleware_sync(
 
 
 def fake_mirascope_middleware_async(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate an asynchronous mirascope middleware returning a dummy result."""
 
@@ -569,11 +571,28 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
+        patch(
+            "ee.validate._validate_license_with_client",
+        ),
     ):
+        mock_runner.return_value.execute_function.return_value = "sync outer"
         versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 @pytest.mark.asyncio
@@ -591,11 +610,28 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
+        patch(
+            "ee.validate._validate_license_with_client",
+        ),
     ):
-        versioned_func = await async_outer.version(forced_version)
-        result = await versioned_func("dummy")
-        assert result == "async outer"
+        mock_runner.return_value.execute_function.return_value = "sync outer"
+        versioned_func = async_outer.version(forced_version)
+        result = await versioned_func("dummy")  # pyright: ignore [reportCallIssue]
+        assert result == "sync outer"
         mock_get_ver.assert_called_once()
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 def test_build_mirascope_call_async(

@@ -39,8 +39,6 @@ class SpanContextHolder:
 
 def _get_custom_context_manager(
     generation: GenerationPublic,
-    arg_types: dict[str, str],
-    arg_values: dict[str, Any],
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
@@ -54,7 +52,7 @@ def _get_custom_context_manager(
         lilypad_client = LilypadClient()
         new_project_uuid = project_uuid or lilypad_client.project_uuid
         jsonable_arg_values = {}
-        for arg_name, arg_value in arg_values.items():
+        for arg_name, arg_value in generation.arg_values.items():
             try:
                 serialized_arg_value = jsonable_encoder(arg_value)
             except ValueError:
@@ -70,7 +68,7 @@ def _get_custom_context_manager(
                 "lilypad.generation.name": fn.__name__,
                 "lilypad.generation.signature": generation.signature,
                 "lilypad.generation.code": generation.code,
-                "lilypad.generation.arg_types": json.dumps(arg_types),
+                "lilypad.generation.arg_types": json.dumps(generation.arg_types),
                 "lilypad.generation.arg_values": json.dumps(jsonable_arg_values),
                 "lilypad.generation.prompt_template": prompt_template or "",
                 "lilypad.generation.version": generation.version_num
@@ -230,8 +228,6 @@ async def _handle_structured_stream_async(
 
 def create_mirascope_middleware(
     generation: GenerationPublic,
-    arg_types: dict[str, str],
-    arg_values: dict[str, Any],
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
@@ -241,8 +237,6 @@ def create_mirascope_middleware(
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
             generation,
-            arg_types,
-            arg_values,
             is_async,
             prompt_template,
             project_uuid,
