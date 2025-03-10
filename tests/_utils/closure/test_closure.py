@@ -81,6 +81,7 @@ lilypad_extras = [
     "mistral",
     "openai",
     "outlines",
+    "server",
     "vertex",
 ]
 
