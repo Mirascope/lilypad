@@ -2,7 +2,6 @@ import base64
 import hashlib
 import json
 import secrets
-from contextlib import suppress
 from typing import Annotated
 from uuid import UUID
 
@@ -23,9 +22,6 @@ from ..schemas.organizations import OrganizationPublic
 from ..schemas.users import UserPublic
 from ..settings import Settings, get_settings
 
-with suppress(ImportError):
-    from jose import JWTError, jwt
-
 LOCAL_TOKEN = "local-dev-token"
 
 
@@ -34,6 +30,8 @@ def create_jwt_token(
 ) -> str:
     """Create a new JWT token."""
     settings = get_settings()
+    from jose import jwt
+
     return jwt.encode(
         json.loads(user_data.model_dump_json()),
         settings.jwt_secret,
@@ -165,6 +163,8 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
+    from jose import JWTError, jwt
+
     try:
         payload = jwt.decode(
             token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
