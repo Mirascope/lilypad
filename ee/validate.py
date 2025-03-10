@@ -29,6 +29,8 @@ class Tier(str, Enum):
     """License tier enum."""
 
     FREE = "FREE"
+    PRO = "PRO"
+    TEAM = "TEAM"
     ENTERPRISE = "ENTERPRISE"
 
 
