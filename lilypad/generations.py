@@ -40,8 +40,8 @@ from ._utils import (
 from ._utils.middleware import SpanContextHolder
 from ._utils.sandbox import SandboxRunner, SubprocessSandboxRunner
 from .ee.generations import (
-    _specific_generation_version_async_factory,
-    _specific_generation_version_sync_factory,
+    specific_generation_version_async_factory,
+    specific_generation_version_sync_factory,
 )
 from .messages import Message
 from .server.client import LilypadClient, LilypadNotFoundError
@@ -662,7 +662,7 @@ def generation(
 
             inner_async = _create_inner_async(_get_active_version)
 
-            inner_async.version = _specific_generation_version_async_factory(  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
+            inner_async.version = specific_generation_version_async_factory(  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
                 fn, _create_inner_async, lilypad_client
             )
 
@@ -745,7 +745,7 @@ def generation(
 
             inner = _create_inner_sync(_get_active_version)
 
-            inner.version = _specific_generation_version_sync_factory(
+            inner.version = specific_generation_version_sync_factory(
                 fn, _create_inner_sync, lilypad_client
             )  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 

@@ -18,7 +18,7 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
-def _specific_generation_version_sync_factory(
+def specific_generation_version_sync_factory(
     fn: Callable[_P, _R],
     _create_inner_sync: Callable[
         [
@@ -58,7 +58,7 @@ def _specific_generation_version_sync_factory(
     return _specific_generation_version_sync
 
 
-def _specific_generation_version_async_factory(
+def specific_generation_version_async_factory(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
     _create_inner_async: Callable[
         [
