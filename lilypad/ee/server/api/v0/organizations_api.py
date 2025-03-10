@@ -1,7 +1,6 @@
 """The EE `/annotations` API router."""
 
 from datetime import datetime, timedelta, timezone
-from operator import is_
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status

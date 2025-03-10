@@ -2,7 +2,6 @@
 
 import secrets
 from typing import Annotated
-from uuid import UUID
 
 import resend
 import resend.exceptions
