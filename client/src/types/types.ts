@@ -447,11 +447,10 @@ export interface OrganizationPublic {
  * Organization update model
  */
 export interface OrganizationUpdate {
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
+  /** Name */
+  name?: string | null;
+  /** License */
+  license?: string | null;
 }
 
 /**

@@ -3,7 +3,7 @@
 import base64
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from importlib import resources
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
@@ -12,7 +12,7 @@ from uuid import UUID
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from pydantic import BaseModel, ValidationError, computed_field, field_validator
+from pydantic import BaseModel, ValidationError, computed_field
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -48,7 +48,7 @@ class LicenseInfo(BaseModel):
     @computed_field
     def is_expired(self) -> bool:
         """Check if the license has expired"""
-        return self.expires_at <= datetime.now()
+        return self.expires_at <= datetime.now(tz=timezone.utc)
 
 
 class LicenseValidator:
@@ -126,7 +126,9 @@ class LicenseValidator:
 
                 # Convert timestamp to datetime
                 if "exp" in data:
-                    data["expires_at"] = datetime.fromtimestamp(data["exp"])
+                    data["expires_at"] = datetime.fromtimestamp(
+                        data["exp"], tz=timezone.utc
+                    )
                     del data["exp"]
 
                 license_info = LicenseInfo(**data)
