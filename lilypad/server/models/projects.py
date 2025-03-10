@@ -10,6 +10,7 @@ from .table_names import PROJECT_TABLE_NAME
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .api_keys import APIKeyTable
+    from .environments import EnvironmentTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
 
@@ -35,5 +36,8 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     annotations: list["AnnotationTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+    environments: list["EnvironmentTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
