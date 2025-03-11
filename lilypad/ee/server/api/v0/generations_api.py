@@ -59,7 +59,7 @@ async def get_generations_by_name(
     response_model=GenerationPublic,
 )
 @require_license(tier=Tier.ENTERPRISE)
-async def get_deployed_generation_by_name(
+async def get_deployed_generation_by_names(
     project_uuid: UUID,
     generation_name: str,
     environment_name: str,
@@ -83,23 +83,17 @@ async def get_deployed_generation_by_name(
             detail=f"Environment '{environment_name}' not found",
         )
 
-    generations = generation_service.find_generations_by_name(
+    latest_generation = generation_service.find_latest_generation_by_name(
         project_uuid, generation_name
     )
-    if not generations:
+    if not latest_generation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Generation '{generation_name}' not found",
         )
 
-    latest_generation = sorted(
-        generations,
-        key=lambda x: x.version_num if x.version_num is not None else 0,
-        reverse=True,
-    )[0]
-
     deployment = deployment_service.get_specific_deployment(
-        environment.uuid, latest_generation.uuid
+        environment.uuid, latest_generation.uuid  # pyright: ignore [reportArgumentType]
     )
 
     if not deployment:
