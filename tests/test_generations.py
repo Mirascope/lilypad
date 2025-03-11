@@ -396,7 +396,7 @@ def test_sync_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadEEClient.get_generation_by_signature",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
@@ -428,7 +428,7 @@ async def test_async_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadEEClient.get_generation_by_signature",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
@@ -564,7 +564,7 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
     forced_version = 2  # Use an integer version as forced version.
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_version",
+            "lilypad.generations.LilypadEEClient.get_generation_by_version",
             return_value=dummy_generation_instance,
         ) as mock_get_ver,
         patch(
@@ -603,7 +603,7 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
     forced_version = 2  # Use an integer version as forced version.
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_version",
+            "lilypad.generations.LilypadEEClient.get_generation_by_version",
             return_value=dummy_generation_instance,
         ) as mock_get_ver,
         patch(

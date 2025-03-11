@@ -123,10 +123,10 @@ def override_dependencies(monkeypatch, tmp_path: Path):
             decorator_name, str(dummy_file)
         ),
     )
-    from lilypad.cli.commands.stubs import LilypadClient
+    from lilypad.cli.commands.stubs import LilypadEEClient
 
     monkeypatch.setattr(
-        LilypadClient,
+        LilypadEEClient,
         "get_generations_by_name",
         lambda self, fn: DummyClient("").get_generations_by_name(fn),
     )

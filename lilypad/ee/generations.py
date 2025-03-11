@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
 from ee.validate import Tier, require_license
 
 from ..sandbox import SandboxRunner
-from ..server.client import LilypadClient
 from ..server.schemas import GenerationPublic
+from .server.client import LilypadEEClient
 
 if TYPE_CHECKING:
     from ..generations import Generation
@@ -28,7 +28,7 @@ def specific_generation_version_sync_factory(
         ],
         Callable[_P, _R] | Callable[_P, Generation[_R]],
     ],
-    lilypad_client: LilypadClient,
+    lilypad_client: LilypadEEClient,
 ) -> Callable[
     [int, SandboxRunner | None],
     Callable[_P, _R] | Callable[_P, Generation[_R]],
@@ -69,7 +69,7 @@ def specific_generation_version_async_factory(
         Callable[_P, Coroutine[Any, Any, _R]]
         | Callable[_P, Coroutine[Any, Any, Generation[_R]]],
     ],
-    lilypad_client: LilypadClient,
+    lilypad_client: LilypadEEClient,
 ) -> Callable[
     [int, SandboxRunner | None],
     Callable[_P, Coroutine[Any, Any, _R]]
