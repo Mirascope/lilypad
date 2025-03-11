@@ -380,7 +380,7 @@ def _construct_trace_attributes(
     }
 
 
-_ManagedPromptTemplate: TypeAlias = bool
+_GenerationIsManaged: TypeAlias = bool
 
 
 @contextmanager
@@ -578,7 +578,7 @@ def generation(
             def _create_inner_async(
                 get_generation: Callable[
                     _P,
-                    tuple[GenerationPublic, _ManagedPromptTemplate],
+                    tuple[GenerationPublic, _GenerationIsManaged],
                 ],
                 sandbox_runner: SandboxRunner | None = None,
             ) -> (
@@ -640,7 +640,7 @@ def generation(
 
             def _get_active_version(
                 *args: _P.args, **kwargs: _P.kwargs
-            ) -> tuple[GenerationPublic, _ManagedPromptTemplate]:
+            ) -> tuple[GenerationPublic, _GenerationIsManaged]:
                 if not managed:
                     arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                     return lilypad_client.get_or_create_generation_version(
@@ -672,7 +672,7 @@ def generation(
 
             def _create_inner_sync(
                 get_generation: Callable[
-                    _P, tuple[GenerationPublic, _ManagedPromptTemplate]
+                    _P, tuple[GenerationPublic, _GenerationIsManaged]
                 ],
                 sandbox_runner: SandboxRunner | None = None,
             ) -> Callable[_P, _R] | Callable[_P, Generation[_R]]:
@@ -728,7 +728,7 @@ def generation(
 
             def _get_active_version(
                 *args: _P.args, **kwargs: _P.kwargs
-            ) -> tuple[GenerationPublic, _ManagedPromptTemplate]:
+            ) -> tuple[GenerationPublic, _GenerationIsManaged]:
                 if not managed:
                     arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                     return lilypad_client.get_or_create_generation_version(
