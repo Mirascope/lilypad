@@ -5,6 +5,7 @@ from pathlib import Path
 
 from datamodel_code_generator import (
     DataModelType,
+    Formatter,
     InputFileType,
     PythonVersion,
     generate,
@@ -34,6 +35,7 @@ def generate_client_schema(input_: str, output: Path) -> None:
         custom_file_header=FILE_HEADER.format(name=output.stem),
         use_subclass_enum=True,
         capitalise_enum_members=True,
+        formatters=[Formatter.RUFF_CHECK, Formatter.RUFF_FORMAT],
     )
 
 

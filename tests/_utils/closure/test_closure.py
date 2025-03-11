@@ -76,7 +76,6 @@ lilypad_extras = [
     "anthropic",
     "azure",
     "bedrock",
-    'code-gen',
     "ee",
     "gemini",
     "google",

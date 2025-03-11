@@ -47,6 +47,7 @@ dependencies = [
     "typing-extensions>=4.0.0",
     "rich>=13.0.0",
     "pydantic>=2.0.0",
+    "datamodel-code-generator",
 ]
 
 [project.urls]
@@ -69,9 +70,6 @@ server = [
 ]
 ee = [
      "cryptography>=43.0.3",
-]
-code-gen = [
-    "datamodel-code-generator>=0.28.3",
 ]
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]
@@ -96,9 +94,8 @@ dev-dependencies = [
     "pytest-asyncio>=0.23.8",
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
+    "datamodel-code-generator[ruff]>=0.28.4"
 ]
-
-[tool.uv.sources]
 
 
 [project.scripts]
@@ -137,7 +134,7 @@ target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
 "migrations/versions/*.py" = ["D"]
-"lilypad/server/client/schemas/*.py" = ["D101", "D200", "D212"]
+"lilypad/server/client/schemas/*.py" = ["D101"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = [
