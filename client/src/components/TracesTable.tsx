@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AnnotationDialog } from "@/ee/components/AnnotationForm";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { Scope, SpanPublic } from "@/types/types";
 import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
@@ -78,16 +79,15 @@ export const TracesTable = ({
   data,
   traceUuid,
   path,
-  isEnterprise,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
-  isEnterprise?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
+  const features = useFeatureAccess();
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const columns: ColumnDef<SpanPublic>[] = [
     {
@@ -204,16 +204,17 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {isEnterprise && row.getValue("scope") === Scope.LILYPAD && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Suspense fallback={<div>Loading ...</div>}>
-                    <AnnotationDialog
-                      spanUuid={row.original.uuid}
-                      annotation={annotation}
-                    />
-                  </Suspense>
-                </div>
-              )}
+              {features.annotations &&
+                row.getValue("scope") === Scope.LILYPAD && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <AnnotationDialog
+                        spanUuid={row.original.uuid}
+                        annotation={annotation}
+                      />
+                    </Suspense>
+                  </div>
+                )}
               {/* {row.original.scope === Scope.LILYPAD && (
                 <DropdownMenuItem
                   onClick={() => {

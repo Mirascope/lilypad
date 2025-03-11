@@ -31,7 +31,7 @@ import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { Tier } from "@/ee/types/types";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { hasFeatureAccess } from "@/hooks/use-isEnterprise";
+import { hasFeatureAccess, useFeatureAccess } from "@/hooks/use-featureaccess";
 import { GenerationTab } from "@/types/generations";
 import { Plus, Trash } from "lucide-react";
 import { JSX, Suspense } from "react";
@@ -92,7 +92,7 @@ const GenerationWorkbench = () => {
     generationsByNameQueryOptions(generationName, projectUuid)
   );
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
-
+  const features = useFeatureAccess();
   const navigate = useNavigate();
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
@@ -148,7 +148,7 @@ const GenerationWorkbench = () => {
     <div className='w-full p-6'>
       <div className='flex gap-2'>
         <Typography variant='h2'>{generationName}</Typography>
-        {hasFeatureAccess(licenseInfo.tier, Tier.ENTERPRISE) && (
+        {features.managedGenerations && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button size='icon' onClick={handleNewGenerationClick}>
