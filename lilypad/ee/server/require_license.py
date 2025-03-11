@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
 
+from ...ee.server import HOST_NAME
 from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
 from ...server.schemas import UserPublic
@@ -164,4 +165,4 @@ async def is_lilypad_cloud(
     request: Request,
 ) -> bool:
     """Check if the request is to Lilypad Cloud"""
-    return request.url.hostname == "api.lilypad.so"
+    return request.url.hostname is not None and request.url.hostname.endswith(HOST_NAME)
