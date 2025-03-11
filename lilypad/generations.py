@@ -38,12 +38,12 @@ from ._utils import (
     load_config,
 )
 from ._utils.middleware import SpanContextHolder
-from ._utils.sandbox import SandboxRunner, SubprocessSandboxRunner
 from .ee.generations import (
     specific_generation_version_async_factory,
     specific_generation_version_sync_factory,
 )
 from .messages import Message
+from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings

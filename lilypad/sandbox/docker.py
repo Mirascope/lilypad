@@ -6,7 +6,7 @@ from typing import Any
 
 import docker
 
-from .. import Closure
+from .._utils import Closure
 from . import SandboxRunner
 
 _DEFAULT_IMAGE = "ghcr.io/astral-sh/uv:python3.10-alpine"

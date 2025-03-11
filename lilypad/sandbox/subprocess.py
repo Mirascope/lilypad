@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from .. import Closure
+from .._utils import Closure
 from . import SandboxRunner
 
 

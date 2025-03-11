@@ -6,12 +6,13 @@ from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
 
 from ee.validate import Tier, require_license
-from lilypad._utils.sandbox import SandboxRunner
-from lilypad.server.client import LilypadClient
-from lilypad.server.schemas import GenerationPublic
+
+from ..sandbox import SandboxRunner
+from ..server.client import LilypadClient
+from ..server.schemas import GenerationPublic
 
 if TYPE_CHECKING:
-    from lilypad.generations import Generation
+    from ..generations import Generation
 
 _MANGED_PROMPT_TEMPLATE: TypeAlias = bool
 _P = ParamSpec("_P")
