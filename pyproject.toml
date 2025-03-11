@@ -33,7 +33,6 @@ classifiers = [
 dependencies = [
     "mirascope>=1.20.1",
     "sqlmodel>=0.0.22",
-    "fastapi>=0.114.0",
     "opentelemetry-api>=1.30.0",
     "opentelemetry-sdk>=1.30.0",
     "opentelemetry-instrumentation>=0.51b0",
