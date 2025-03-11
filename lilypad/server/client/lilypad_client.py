@@ -9,8 +9,8 @@ import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
-from .._utils import Closure, load_config
-from ..exceptions import (
+from ..._utils import Closure, load_config
+from ...exceptions import (
     LilypadAPIConnectionError,
     LilypadException,
     LilypadFileNotFoundError,
@@ -19,8 +19,8 @@ from ..exceptions import (
     LilypadRequestException,
     LilypadTimeout,
 )
-from ..server.settings import get_settings
-from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
+from ...server.settings import get_settings
+from .schemas.v0 import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 

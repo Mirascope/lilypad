@@ -38,8 +38,9 @@ from ._utils import (
     load_config,
 )
 from ._utils.middleware import SpanContextHolder
+from .exceptions import LilypadNotFoundError
 from .messages import Message
-from .server.client import LilypadClient, LilypadNotFoundError
+from .server.client import LilypadClient
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
 from .stream import Stream

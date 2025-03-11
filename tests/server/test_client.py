@@ -7,8 +7,9 @@ import pytest
 
 from lilypad.exceptions import LilypadAPIConnectionError, LilypadNotFoundError
 from lilypad.server.client import LilypadClient
-from lilypad.server.models import Scope
-from lilypad.server.schemas import ProjectPublic, SpanPublic
+from lilypad.server.client.schemas.v0 import ProjectPublic, Scope, SpanPublic
+from lilypad.server.schemas import ProjectPublic as ServerProjectPublic
+from lilypad.server.schemas import SpanPublic as ServerSpanPublic
 
 
 @pytest.fixture
@@ -107,8 +108,10 @@ def test_request_methods(client, method, args, mock_response):
         assert result is not None
         if method == "post_project":
             assert isinstance(result, ProjectPublic)
+            ServerProjectPublic.model_validate(result, strict=True)
         elif method == "post_traces":
             assert isinstance(result, SpanPublic)
+            ServerSpanPublic.model_validate(result)
             assert isinstance(result.scope, Scope)
             assert result.scope == Scope.LILYPAD
 

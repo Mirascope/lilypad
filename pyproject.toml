@@ -70,6 +70,9 @@ server = [
 ee = [
      "cryptography>=43.0.3",
 ]
+code-gen = [
+    "datamodel-code-generator>=0.28.3",
+]
 openai = ["openai>=1.57.0"]
 anthropic = ["anthropic>=0.36.0"]
 azure = ["azure-ai-inference>=1.0.0b9,<2.0", "aiohttp>=3.10.5,<4.0"]
@@ -133,7 +136,8 @@ line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
-"migrations/versions/*.py" = ["D103"]
+"migrations/versions/*.py" = ["D"]
+"lilypad/server/client/schemas/*.py" = ["D101", "D200", "D212"]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["S101", "ANN"]
 "tests/_utils/closure/closure_test_functions/main.py" = [
