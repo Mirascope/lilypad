@@ -42,4 +42,4 @@ class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
     __tablename__ = DEPLOYMENT_TABLE_NAME  # type: ignore
     environment: "EnvironmentTable" = Relationship(back_populates="deployments")
     generation: "GenerationTable" = Relationship(back_populates="deployments")
-    project: "ProjectTable" = Relationship(back_populates="annotations")
+    project: "ProjectTable" = Relationship(back_populates="deployments")
