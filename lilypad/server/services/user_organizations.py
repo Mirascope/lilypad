@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import func, select
 
 from ..models import UserOrganizationTable
 from ..schemas import UserOrganizationCreate
@@ -41,3 +41,16 @@ class UserOrganizationService(
             )
         ).all()
         return user_organizations
+
+    def count_users_in_organization(self) -> int:
+        """Count the number of users in the active organization."""
+        query = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+            )
+        )
+
+        count = self.session.exec(query).one()
+        return count

@@ -135,7 +135,7 @@ async def test_wrong_license_tier():
         license_info = LicenseInfo(
             organization_uuid=org_uuid,
             tier=Tier.FREE,  # Insufficient tier
-            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+            expires_at=datetime.now(tz=timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
@@ -169,7 +169,7 @@ async def test_valid_license():
         license_info = LicenseInfo(
             organization_uuid=org_uuid,
             tier=Tier.ENTERPRISE,
-            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+            expires_at=datetime.now(tz=timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
