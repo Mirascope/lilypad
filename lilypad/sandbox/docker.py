@@ -1,3 +1,5 @@
+"""Docker sandbox runner."""
+
 import io
 import json
 import tarfile
@@ -37,6 +39,7 @@ class DockerSandboxRunner(SandboxRunner):
         return stream
 
     def execute_function(self, closure: Closure, *args: Any, **kwargs: Any) -> str:
+        """Execute the function in the sandbox."""
         script = self.generate_script(closure, *args, **kwargs)
         client = docker.from_env()
         container = None

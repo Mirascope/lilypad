@@ -1,3 +1,5 @@
+"""The `lillypad.sandbox` package."""
+
 from contextlib import suppress
 
 from .runner import SandboxRunner

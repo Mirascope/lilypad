@@ -1,3 +1,5 @@
+"""Subprocess sandbox runner."""
+
 import json
 import os
 import subprocess
@@ -19,6 +21,7 @@ class SubprocessSandboxRunner(SandboxRunner):
             self.environment["PATH"] = os.environ["PATH"]
 
     def execute_function(self, closure: Closure, *args: Any, **kwargs: Any) -> str:
+        """Execute the function in the sandbox."""
         script = self.generate_script(closure, *args, **kwargs)
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False

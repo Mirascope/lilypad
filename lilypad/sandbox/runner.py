@@ -1,3 +1,5 @@
+"""This module contains the SandboxRunner abstract base class."""
+
 import inspect
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
@@ -15,9 +17,9 @@ class SandboxRunner(ABC):
         self.environment: dict[str, str] = environment or {}
 
     @abstractmethod
-    def execute_function(self, closure: Closure, *args: Any, **kwargs: Any) -> str: ...
-
-    """Execute the function in the sandbox."""
+    def execute_function(self, closure: Closure, *args: Any, **kwargs: Any) -> str:
+        """Execute the function in the sandbox."""
+        ...
 
     @classmethod
     def _is_async_func(cls, closure: Closure) -> bool:
@@ -41,6 +43,7 @@ class SandboxRunner(ABC):
 
     @classmethod
     def generate_script(cls, closure: Closure, *args: Any, **kwargs: Any) -> str:
+        """Generate a script that executes the function in the sandbox."""
         return inspect.cleandoc("""
                 # /// script
                 # dependencies = [
