@@ -75,7 +75,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.name == name,
-                self.table.archived.is_(None),   # type: ignore
+                self.table.archived.is_(None),  # type: ignore
             )
             .order_by(desc(self.table.version_num))
             .limit(1)

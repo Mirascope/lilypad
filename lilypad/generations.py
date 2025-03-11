@@ -650,7 +650,7 @@ def generation(
                         custom_id=custom_id,
                     ), False
                 try:
-                    return lilypad_client.get_generation_by_signature(
+                    return lilypad_client.get_deployed_generation_by_names(
                         fn,
                     ), True
                 except LilypadNotFoundError:
@@ -735,7 +735,7 @@ def generation(
                         fn, arg_types, arg_values, custom_id=custom_id
                     ), False
                 try:
-                    return lilypad_client.get_generation_by_signature(fn), True
+                    return lilypad_client.get_deployed_generation_by_names(fn), True
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(

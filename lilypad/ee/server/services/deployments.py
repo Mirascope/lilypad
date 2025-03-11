@@ -110,15 +110,16 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
         ).all()
 
     def get_specific_deployment(
-        self, environment_uuid: UUID, generation_uuid: UUID
+        self, environment_uuid: UUID, generation_name: str
     ) -> DeploymentTable | None:
         """Get a specific deployment for an environment and generation combination."""
         return self.session.exec(
             select(self.table)
+            .join(GenerationTable, self.table.generation)  # pyright: ignore [reportArgumentType]
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
-                self.table.generation_uuid == generation_uuid,
+                GenerationTable.name == generation_name,
             )
-            .order_by(desc(self.table.revision))
+            .order_by(desc(GenerationTable.version_num))
         ).first()

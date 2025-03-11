@@ -10,10 +10,12 @@ from lilypad.server.models.table_names import (
     DEPLOYMENT_TABLE_NAME,
     ENVIRONMENT_TABLE_NAME,
     GENERATION_TABLE_NAME,
+    PROJECT_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from ....server.models.generations import GenerationTable
+    from ....server.models.projects import ProjectTable
     from .environments import EnvironmentTable
 
 
@@ -26,8 +28,11 @@ class DeploymentBase(SQLModel):
     generation_uuid: UUID = Field(
         foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+    project_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
     is_active: bool = Field(default=True, index=True)
-    revision: int = Field(default=1)
+    version_num: int = Field(default=1)
     notes: str | None = Field(default=None)
 
 
@@ -37,3 +42,4 @@ class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
     __tablename__ = DEPLOYMENT_TABLE_NAME  # type: ignore
     environment: "EnvironmentTable" = Relationship(back_populates="deployments")
     generation: "GenerationTable" = Relationship(back_populates="deployments")
+    project: "ProjectTable" = Relationship(back_populates="annotations")

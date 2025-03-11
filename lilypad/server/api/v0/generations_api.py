@@ -11,13 +11,6 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import selectinload
-from sqlmodel import select
-
-from lilypad.ee.server.models.deployments import DeploymentTable
-from lilypad.ee.server.models.environments import EnvironmentTable
-from lilypad.ee.server.schemas import EnvironmentPublic
-from lilypad.ee.server.services import DeploymentService, EnvironmentService
 
 from ..._utils import (
     construct_function,
@@ -364,90 +357,6 @@ def _decode_bytes(
                 result[arg_name] = arg_values[arg_name]
 
     return result
-
-
-@generations_router.get(
-    "/projects/{project_uuid}/generations/{generation_uuid}/deployments",
-    response_model=list[dict],
-)
-async def get_generation_deployments(
-    project_uuid: UUID,
-    generation_uuid: UUID,
-    deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
-) -> list[dict]:
-    """Get all environments where this generation is currently deployed."""
-    # Get all deployments for this generation that are active
-
-    stmt = (
-        select(DeploymentTable)
-        .where(
-            DeploymentTable.organization_uuid
-            == deployment_service.user.active_organization_uuid,
-            DeploymentTable.generation_uuid == generation_uuid,
-            DeploymentTable.is_active is True,
-        )
-        .options(
-            selectinload("environment")  # pyright: ignore [reportArgumentType]
-        )
-    )
-    deployments = deployment_service.session.exec(stmt).all()
-
-    # Format the response with environment info
-    result = []
-    for deployment in deployments:
-        if deployment.environment:
-            result.append(
-                {
-                    "deployment_uuid": deployment.uuid,
-                    "environment": EnvironmentPublic.model_validate(
-                        deployment.environment
-                    ),
-                    "is_active": deployment.is_active,
-                    "revision": deployment.revision,
-                    "deployed_at": deployment.created_at,
-                    "notes": deployment.notes,
-                }
-            )
-
-    return result
-
-
-@generations_router.get(
-    "/projects/{project_uuid}/environments/{environment_name}/active-generation",
-    response_model=GenerationPublic,
-)
-async def get_active_generation_by_environment_name(
-    project_uuid: UUID,
-    environment_name: str,
-    deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
-    environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
-) -> GenerationTable:
-    """Get the active generation for a specific environment by name."""
-    # Find environment by name
-    environment = environment_service.session.exec(
-        select(EnvironmentTable).where(
-            EnvironmentTable.organization_uuid
-            == environment_service.user.active_organization_uuid,
-            EnvironmentTable.project_uuid == project_uuid,
-            EnvironmentTable.name == environment_name,
-        )
-    ).first()
-
-    if not environment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Environment '{environment_name}' not found",
-        )
-
-    # Guard against None
-    if not environment.uuid:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Environment has no UUID",
-        )
-
-    # Get active generation for this environment
-    return deployment_service.get_generation_for_environment(environment.uuid)
 
 
 __all__ = ["generations_router"]

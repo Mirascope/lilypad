@@ -9,6 +9,7 @@ from lilypad.server.models import BaseOrganizationSQLModel
 from lilypad.server.models.table_names import ENVIRONMENT_TABLE_NAME, PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
+    from ....server.models.api_keys import APIKeyTable
     from ....server.models.projects import ProjectTable
     from .deployments import DeploymentTable
 
@@ -21,6 +22,12 @@ class EnvironmentBase(SQLModel):
     project_uuid: UUID = Field(
         index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+
+
+class Environment(EnvironmentBase):
+    """Environment model."""
+
+    uuid: UUID
 
 
 class EnvironmentTable(EnvironmentBase, BaseOrganizationSQLModel, table=True):
@@ -36,3 +43,6 @@ class EnvironmentTable(EnvironmentBase, BaseOrganizationSQLModel, table=True):
         back_populates="environment", cascade_delete=True
     )
     project: "ProjectTable" = Relationship(back_populates="environments")
+    api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="environment", cascade_delete=True
+    )
