@@ -42,7 +42,6 @@ from .ee.generations import (
     specific_generation_version_async_factory,
     specific_generation_version_sync_factory,
 )
-from .ee.server.client import LilypadEEClient
 from .messages import Message
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from .server.client import LilypadClient, LilypadNotFoundError
@@ -571,9 +570,8 @@ def generation(
             fn._prompt_template if hasattr(fn, "_prompt_template") else ""  # pyright: ignore[reportFunctionMemberAccess]
         )
         config = load_config()
-        token = config.get("token", None)
-        lilypad_client = (
-            LilypadEEClient(token=token) if managed else LilypadClient(token=token)
+        lilypad_client = LilypadClient(
+            token=config.get("token", None),
         )
         if fn_is_async(fn):
 
@@ -652,9 +650,7 @@ def generation(
                         custom_id=custom_id,
                     ), False
                 try:
-                    return cast(
-                        LilypadEEClient, lilypad_client
-                    ).get_generation_by_signature(
+                    return lilypad_client.get_generation_by_signature(
                         fn,
                     ), True
                 except LilypadNotFoundError:
@@ -667,11 +663,7 @@ def generation(
             inner_async = _create_inner_async(_get_active_version)
 
             inner_async.version = specific_generation_version_async_factory(  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
-                fn,
-                _create_inner_async,
-                lilypad_client
-                if isinstance(lilypad_client, LilypadEEClient)
-                else LilypadEEClient(token=token),
+                fn, _create_inner_async, lilypad_client
             )
 
             return inner_async
@@ -743,9 +735,7 @@ def generation(
                         fn, arg_types, arg_values, custom_id=custom_id
                     ), False
                 try:
-                    return cast(
-                        LilypadEEClient, lilypad_client
-                    ).get_generation_by_signature(fn), True
+                    return lilypad_client.get_generation_by_signature(fn), True
                 except LilypadNotFoundError:
                     ui_link = f"{get_settings().remote_client_url}/projects/{lilypad_client.project_uuid}"
                     raise ValueError(
@@ -756,11 +746,7 @@ def generation(
             inner = _create_inner_sync(_get_active_version)
 
             inner.version = specific_generation_version_sync_factory(
-                fn,
-                _create_inner_sync,
-                lilypad_client
-                if isinstance(lilypad_client, LilypadEEClient)
-                else LilypadEEClient(token=token),
+                fn, _create_inner_sync, lilypad_client
             )  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
             return inner
