@@ -6,11 +6,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
+from ee import Tier
 from lilypad.server.models import GenerationTable
 from lilypad.server.schemas import GenerationPublic
 
 from ...models.deployments import DeploymentTable
 from ...models.environments import EnvironmentTable
+from ...require_license import require_license
 from ...schemas import (
     DeploymentPublic,
     EnvironmentCreate,
@@ -25,6 +27,7 @@ environment_router = APIRouter()
 @environment_router.get(
     "/projects/{project_uuid}/environments", response_model=Sequence[EnvironmentPublic]
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_environments(
     project_uuid: UUID,
     environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
@@ -36,6 +39,7 @@ async def get_environments(
 @environment_router.post(
     "/projects/{project_uuid}/environments", response_model=EnvironmentPublic
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def create_environment(
     project_uuid: UUID,
     environment_create: EnvironmentCreate,
@@ -51,6 +55,7 @@ async def create_environment(
     "/projects/{project_uuid}/environments/{environment_uuid}",
     response_model=EnvironmentPublic,
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_environment(
     project_uuid: UUID,
     environment_uuid: UUID,
@@ -63,6 +68,7 @@ async def get_environment(
 
 
 @environment_router.delete("/projects/{project_uuid}/environments/{environment_uuid}")
+@require_license(tier=Tier.ENTERPRISE)
 async def delete_environment(
     project_uuid: UUID,
     environment_uuid: UUID,
@@ -79,6 +85,7 @@ async def delete_environment(
     "/projects/{project_uuid}/environments/{environment_uuid}/deploy",
     response_model=DeploymentPublic,
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def deploy_generation(
     project_uuid: UUID,
     environment_uuid: UUID,
@@ -96,6 +103,7 @@ async def deploy_generation(
     "/projects/{project_uuid}/environments/{environment_uuid}/deployment",
     response_model=DeploymentPublic,
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_active_deployment(
     project_uuid: UUID,
     environment_uuid: UUID,
@@ -122,6 +130,7 @@ async def get_environment_generation(
     "/projects/{project_uuid}/environments/{environment_uuid}/history",
     response_model=Sequence[DeploymentPublic],
 )
+@require_license(tier=Tier.ENTERPRISE)
 async def get_deployment_history(
     project_uuid: UUID,
     environment_uuid: UUID,
