@@ -62,6 +62,7 @@ from .closure_test_functions.main import (
 
 mirascope_extras = [
     "anthropic",
+    "azure",
     "bedrock",
     "gemini",
     "google",
@@ -73,12 +74,14 @@ mirascope_extras = [
 ]
 lilypad_extras = [
     "anthropic",
+    "azure",
     "bedrock",
     "gemini",
     "google",
     "mistral",
     "openai",
     "outlines",
+    "sandbox-docker",
     "vertex",
 ]
 

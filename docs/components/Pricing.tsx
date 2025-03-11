@@ -16,6 +16,7 @@ interface PricingTier {
   buttonText: string;
   buttonLink: string;
   highlight?: boolean;
+  openBeta?: boolean;
   closedBeta?: boolean;
   comingSoon?: boolean;
 }
@@ -52,9 +53,10 @@ export const Pricing = () => {
         { name: "1 User", included: true },
         { name: "10K Traces / Month", included: true },
         { name: "30 Day Data Retention", included: true },
-        { name: "Managed Generations", included: false },
+        { name: "Managed Generations (Playground)", included: false },
         { name: "Diff Tooling", included: false },
         { name: "Annotations", included: false },
+        { name: "Vibe Synthesis (Automated Evals)", included: false },
         { name: "Support (Community)", included: true },
         { name: "Support (Email / Chat)", included: false },
         { name: "Private Slack Channel", included: false },
@@ -62,21 +64,23 @@ export const Pricing = () => {
       ],
       buttonText: "Get Started",
       buttonLink: "/docs/quickstart",
+      openBeta: true,
     },
     {
       name: "Pro",
-      price: "$20 / user per month",
+      price: "$50 / user per month",
       description:
         "Enhanced features for teams that need collaboration tools and higher limits.",
       features: [
         { name: "Automatic Versioning & Tracing", included: true },
         { name: "Unlimited Projects", included: true },
-        { name: "Unlimited Users", included: true },
+        { name: "5 Users", included: true },
         { name: "100K Traces / Month + ($10 / 100K Extra)", included: true },
-        { name: "Unlimited Data Retention", included: true },
-        { name: "Managed Generations", included: true },
+        { name: "180 Day Data Retention", included: true },
+        { name: "Managed Generations (Playground)", included: true },
         { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
+        { name: "Vibe Synthesis (Automated Evals)", included: false },
         { name: "Support (Community)", included: true },
         { name: "Support (Email / Chat)", included: true },
         { name: "Private Slack Channel", included: false },
@@ -96,11 +100,12 @@ export const Pricing = () => {
         { name: "Automatic Versioning & Tracing", included: true },
         { name: "Unlimited Projects", included: true },
         { name: "Unlimited Users", included: true },
-        { name: "100K Traces / Month + ($10 / 100K Extra)", included: true },
+        { name: "1M Traces / Month + ($5 / 100K Extra)", included: true },
         { name: "Unlimited Data Retention", included: true },
-        { name: "Managed Generations", included: true },
+        { name: "Managed Generations (Playground)", included: true },
         { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
+        { name: "Vibe Synthesis (Automated Evals)", included: true },
         { name: "Support (Community)", included: true },
         { name: "Support (Email / Chat)", included: true },
         { name: "Private Slack Channel", included: true },
@@ -137,6 +142,11 @@ export const Pricing = () => {
       <div className="mb-2">
         <div className="flex sm:flex-row flex-col items-start sm:items-center gap-2">
           <h3 className="text-2xl font-bold">{tier.name}</h3>
+          {tier.openBeta && (
+            <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
+              Open Beta
+            </div>
+          )}
           {tier.closedBeta && (
             <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
               Closed Beta
@@ -229,10 +239,10 @@ export const Pricing = () => {
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           Pricing
         </h1>
-        <p className="mt-4 text-xl text-gray-600">
-          <p>Get started with the Free plan today.</p>
-          <p className="italic">No credit card required.</p>
-        </p>
+        <div className="mt-4 text-xl text-gray-600">
+          <p>Get started with the Free plan today</p>
+          <p className="italic">No credit card required</p>
+        </div>
       </div>
 
       {/* Mobile tabs */}

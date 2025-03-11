@@ -3,16 +3,20 @@
 import base64
 import json
 import time
-from datetime import datetime
+from collections.abc import Callable, Coroutine
+from datetime import datetime, timezone
 from enum import Enum
+from functools import wraps
 from importlib import resources
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, overload
 from uuid import UUID
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import BaseModel, ValidationError, field_validator
+
+from lilypad._utils import fn_is_async, load_config
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -21,17 +25,31 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
-class Tier(str, Enum):
+class Tier(int, Enum):
     """License tier enum."""
 
-    FREE = "FREE"
-    ENTERPRISE = "ENTERPRISE"
+    FREE = 0
+    PRO = 1
+    TEAM = 2
+    ENTERPRISE = 3
+
+    # Fall back to integer value if string value is not found
+    @classmethod
+    def _missing_(cls, value: Any) -> "Tier":
+        if isinstance(value, str):
+            return cls[value]
+        raise ValueError(f"{value} is not a valid {cls.__name__}")
 
 
 class LicenseError(Exception):
     """Custom exception for license-related errors"""
 
-    pass
+
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure a datetime object is in UTC timezone"""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 class LicenseInfo(BaseModel):
@@ -46,7 +64,8 @@ class LicenseInfo(BaseModel):
     @field_validator("expires_at")
     def must_not_be_expired(cls, expires_at: datetime) -> datetime:
         """Validate that the license hasn't expired"""
-        if expires_at <= datetime.now():
+        expires_at = _ensure_utc(expires_at)
+        if expires_at <= datetime.now(timezone.utc):
             raise ValueError("License has expired")
         return expires_at
 
@@ -181,3 +200,87 @@ def generate_license(
     data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
     sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
     return f"{data_b64}.{sig_b64}"
+
+
+def _validate_license_with_client(
+    cached_license: LicenseInfo | None, tier: Tier
+) -> LicenseInfo | None:
+    if cached_license:
+        if cached_license.info < tier:
+            cached_license = None
+        if cached_license.info.expires_at < datetime.now(timezone.utc):
+            cached_license = None
+    if not cached_license:
+        config = load_config()
+        from lilypad.server.client import LilypadClient
+
+        lilypad_client = LilypadClient(
+            token=config.get("token", None),
+        )
+        cached_license = lilypad_client.get_license_info()
+    if cached_license.tier < tier:
+        raise LicenseError("Invalid License. Contact support@mirascope.com to get one.")
+    return cached_license
+
+
+@overload
+def require_license(
+    tier: Tier,
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
+
+
+@overload
+def require_license(
+    tier: Tier,
+) -> Callable[
+    [Callable[_P, Coroutine[Any, Any, _R]]], Callable[_P, Coroutine[Any, Any, _R]]
+]: ...
+
+
+def require_license(
+    tier: Tier,
+) -> Callable[
+    [Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]],
+    Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+]:
+    """Decorator to require a valid license for a function"""
+
+    @overload
+    def decorator(func: Callable[_P, _R]) -> Callable[_P, _R]: ...
+
+    @overload
+    def decorator(
+        func: Callable[_P, Coroutine[Any, Any, _R]],
+    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+
+    def decorator(
+        func: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
+    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
+        _cached_license_info: LicenseInfo | None = None
+
+        if fn_is_async(func):
+
+            @wraps(func)
+            async def async_wrapper(
+                *args: _P.args, **kwargs: _P.kwargs
+            ) -> Coroutine[Any, Any, _R]:
+                nonlocal _cached_license_info
+                _cached_license_info = _validate_license_with_client(
+                    _cached_license_info, tier
+                )
+                return await func(*args, **kwargs)
+
+            return async_wrapper
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                nonlocal _cached_license_info
+                _cached_license_info = _validate_license_with_client(
+                    _cached_license_info, tier
+                )
+                return func(*args, **kwargs)
+
+            return sync_wrapper
+
+    return decorator

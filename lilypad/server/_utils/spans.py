@@ -205,6 +205,83 @@ def convert_openai_messages(
     return structured_messages
 
 
+def convert_azure_messages(
+    messages: list[dict[str, Any]],
+) -> list[MessageParam]:
+    """Convert Azure OpenTelemetry messages to BaseModel."""
+    structured_messages: list[MessageParam] = []
+    assistant_message = MessageParam(
+        content=[],
+        role="assistant",
+    )
+
+    for message in messages:
+        name = message.get("name")
+        if (
+            name == "gen_ai.user.message"
+            and (attributes := message.get("attributes", {}))
+            and (content := attributes.get("content"))
+        ):
+            user_content = []
+            try:
+                for part in json.loads(content):
+                    if isinstance(part, str):
+                        user_content.append(_TextPart(type="text", text=part))
+                    elif isinstance(part, dict):
+                        if part.get("type", "") == "image_url":
+                            img_url = part["image_url"]["url"]
+                            # Strip data:image/ and ;base64 from the image_url
+                            media = img_url.split("data:image/")[1].split(";")
+                            media_type = media[0]
+                            img = media[1].split(",")[1]
+                            user_content.append(
+                                _ImagePart(
+                                    type="image",
+                                    media_type=f"image/{media_type}",
+                                    image=img,
+                                    detail=part["image_url"]["detail"],
+                                )
+                            )
+                        else:
+                            user_content.append(
+                                _TextPart(type="text", text=part["text"])
+                            )
+            except json.JSONDecodeError:
+                user_content.append(_TextPart(type="text", text=content))
+
+            structured_messages.append(
+                MessageParam(
+                    content=user_content,
+                    role="user",
+                )
+            )
+        elif name == "gen_ai.choice":
+            attributes = message.get("attributes", {})
+            index = attributes["index"]
+            attribute_message: dict = json.loads(attributes.get("message", "{}"))
+            if tool_calls := attribute_message.get("tool_calls"):
+                for tool_call in tool_calls:
+                    function: dict = tool_call.get("function", {})
+                    assistant_message.content.append(
+                        _ToolCall(
+                            type="tool_call",
+                            name=function.get("name", ""),
+                            arguments=json.loads(function.get("arguments", "{}")),
+                        )
+                    )
+            elif len(assistant_message.content) <= index and attribute_message.get(
+                "content"
+            ):
+                assistant_message.content.append(_TextPart(type="text", text=""))
+                try:
+                    content = str(json.loads(attribute_message.get("content", "{}")))
+                except json.JSONDecodeError:
+                    content = attribute_message.get("content", "")
+                assistant_message.content[index].text += content
+    structured_messages.append(assistant_message)
+    return structured_messages
+
+
 def convert_anthropic_messages(
     messages: list[dict[str, Any]],
 ) -> list[MessageParam]:

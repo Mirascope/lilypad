@@ -47,7 +47,7 @@
     "@tanstack/react-table": "^8.20.5",
     "@tanstack/react-virtual": "^3.11.0",
     "@uiw/react-json-view": "2.0.0-alpha.30",
-    "axios": "^1.7.7",
+    "axios": "^1.8.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
@@ -95,7 +95,8 @@
     "overrides": {
       "cross-spawn@>=7.0.0 <7.0.5": ">=7.0.5",
       "@eslint/plugin-kit@<0.2.3": ">=0.2.3",
-      "rollup": "npm:@rollup/wasm-node"
+      "rollup": "npm:@rollup/wasm-node",
+      "esbuild@<=0.24.2": ">=0.25.0"
     }
   }
 }

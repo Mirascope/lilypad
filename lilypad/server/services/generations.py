@@ -46,6 +46,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.hash == generation_create.hash,
                 self.table.call_params == generation_create.call_params,
                 self.table.arg_types == generation_create.arg_types,
+                self.table.arg_values == generation_create.arg_values,
                 self.table.archived.is_(None),  # type: ignore
             )
         ).first()
