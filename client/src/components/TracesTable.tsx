@@ -215,21 +215,22 @@ export const TracesTable = ({
                     </Suspense>
                   </div>
                 )}
-              {/* {row.original.scope === Scope.LILYPAD && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    const { project_uuid, version_uuid, version } =
-                      row.original;
-                    const name = version?.function_name;
-                    if (!name) return;
-                    navigate({
-                      to: `/projects/${project_uuid}/functions/${name}/versions/${version_uuid}`,
-                    });
-                  }}
-                >
-                  Open Playground
-                </DropdownMenuItem>
-              )} */}
+              {row.original.scope === Scope.LILYPAD &&
+                row.original.generation &&
+                row.original.generation.is_managed &&
+                features.managedGenerations && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const { project_uuid, generation } = row.original;
+                      if (!generation) return;
+                      navigate({
+                        to: `/projects/${project_uuid}/generations/${generation.name}/${generation.uuid}/overview`,
+                      });
+                    }}
+                  >
+                    Open Playground
+                  </DropdownMenuItem>
+                )}
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,5 +1,5 @@
+import { features } from "@/ee/utils/features";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { features } from "@/ee/utils/tier";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const useFeatureAccess = () => {

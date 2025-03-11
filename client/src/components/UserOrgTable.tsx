@@ -27,8 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
+import { features } from "@/ee/utils/features";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { features } from "@/ee/utils/tier";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {

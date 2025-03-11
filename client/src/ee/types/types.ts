@@ -220,10 +220,10 @@ export interface SpanMoreDetails {
  * License tier enum.
  */
 export enum Tier {
-  FREE = "FREE",
-  PRO = "PRO",
-  TEAM = "TEAM",
-  ENTERPRISE = "ENTERPRISE",
+  VALUE_0 = 0,
+  VALUE_1 = 1,
+  VALUE_2 = 2,
+  VALUE_3 = 3,
 }
 
 /** ValidationError */

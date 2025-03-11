@@ -1,45 +1,48 @@
-import { Tier } from "@/ee/types/types";
-
 interface FeatureSettings {
   users: number;
+  traces: boolean;
+  generations: boolean;
   managedGenerations: boolean;
   diffTooling: boolean;
   annotations: boolean;
   vibeSynthesis: boolean;
 }
 
-// Define the type for the features object
-type FeaturesConfig = {
-  [key in Tier]: FeatureSettings;
-};
-
-export const features: FeaturesConfig = {
-  [Tier.FREE]: {
+export const features: FeatureSettings[] = [
+  {
     users: 1,
+    traces: true,
+    generations: true,
     managedGenerations: false,
     diffTooling: false,
     annotations: false,
     vibeSynthesis: false,
   },
-  [Tier.PRO]: {
+  {
     users: 5,
+    traces: true,
+    generations: true,
     managedGenerations: true,
     diffTooling: true,
     annotations: true,
     vibeSynthesis: false,
   },
-  [Tier.TEAM]: {
+  {
     users: Infinity,
+    traces: true,
+    generations: true,
     managedGenerations: true,
     diffTooling: true,
     annotations: true,
     vibeSynthesis: true,
   },
-  [Tier.ENTERPRISE]: {
+  {
     users: Infinity,
+    traces: true,
+    generations: true,
     managedGenerations: true,
     diffTooling: true,
     annotations: true,
     vibeSynthesis: true,
   },
-};
+];

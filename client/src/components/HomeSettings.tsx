@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
+import { Tier } from "@/ee/types/types";
 import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { toast } from "@/hooks/use-toast";
@@ -18,10 +19,15 @@ import { OrganizationUpdate } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { capitalize } from "lodash";
 import { SettingsIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
+const tier = {
+  [Tier.VALUE_0]: "Free",
+  [Tier.VALUE_1]: "Pro",
+  [Tier.VALUE_2]: "Team",
+  [Tier.VALUE_3]: "Enterprise",
+};
 export const HomeSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
@@ -43,7 +49,7 @@ export const HomeSettings = () => {
         )}
         <UneditableInput
           label='Plan'
-          value={`${capitalize(licenseInfo.tier)} Plan`}
+          value={`${tier[licenseInfo.tier]} Plan`}
         />
         {!isLilypadCloud() && (
           <div>

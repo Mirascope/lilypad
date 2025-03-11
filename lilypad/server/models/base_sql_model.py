@@ -48,6 +48,7 @@ class BaseSQLModel(SQLModel):
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
         schema_extra={"format": "date-time"},
+        index=True,
     )
 
     @field_serializer("uuid")
