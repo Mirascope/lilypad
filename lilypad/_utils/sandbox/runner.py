@@ -15,7 +15,7 @@ class SandboxRunner(ABC):
         self.environment: dict[str, str] = environment or {}
 
     @abstractmethod
-    def execute_function(self, _closure: Closure, *args: Any, **kwargs: Any) -> str: ...
+    def execute_function(self, closure: Closure, *args: Any, **kwargs: Any) -> str: ...
 
     """Execute the function in the sandbox."""
 
@@ -27,20 +27,20 @@ class SandboxRunner(ABC):
         )
 
     @classmethod
-    def _generate_async_run(cls, _closure: Closure, *args: Any, **kwargs: Any) -> str:
+    def _generate_async_run(cls, closure: Closure, *args: Any, **kwargs: Any) -> str:
         return inspect.cleandoc("""
                 import asyncio
                     result = asyncio.run({name}(*{args}, **{kwargs}))
-                """).format(name=_closure.name, args=args, kwargs=kwargs)
+                """).format(name=closure.name, args=args, kwargs=kwargs)
 
     @classmethod
-    def _generate_sync_run(cls, _closure: Closure, *args: Any, **kwargs: Any) -> str:
+    def _generate_sync_run(cls, closure: Closure, *args: Any, **kwargs: Any) -> str:
         return inspect.cleandoc("""
                     result = {name}(*{args}, **{kwargs})
-                """).format(name=_closure.name, args=args, kwargs=kwargs)
+                """).format(name=closure.name, args=args, kwargs=kwargs)
 
     @classmethod
-    def generate_script(cls, _closure: Closure, *args: Any, **kwargs: Any) -> str:
+    def generate_script(cls, closure: Closure, *args: Any, **kwargs: Any) -> str:
         return inspect.cleandoc("""
                 # /// script
                 # dependencies = [
@@ -61,13 +61,13 @@ class SandboxRunner(ABC):
                     f'"{key}[{",".join(extras)}]=={value["version"]}"'
                     if (extras := value["extras"])
                     else f'"{key}=={value["version"]}"'
-                    for key, value in _closure.dependencies.items()
+                    for key, value in closure.dependencies.items()
                 ]
             ),
-            code=_closure.code,
-            result=cls._generate_async_run(_closure, *args, **kwargs)
-            if cls._is_async_func(_closure)
-            else cls._generate_sync_run(_closure, *args, **kwargs),
+            code=closure.code,
+            result=cls._generate_async_run(closure, *args, **kwargs)
+            if cls._is_async_func(closure)
+            else cls._generate_sync_run(closure, *args, **kwargs),
         )
 
 

@@ -17,7 +17,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import BaseModel, ValidationError, field_validator
 
 from lilypad._utils import fn_is_async, load_config
-from lilypad.exceptions import LilypadLicenseError
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -220,7 +219,7 @@ def _validate_license_with_client(
         )
         cached_license = lilypad_client.get_license_info()
     if cached_license.tier < tier:
-        raise LilypadLicenseError()
+        raise LicenseError("Invalid License. Contact support@mirascope.com to get one.")
     return cached_license
 
 

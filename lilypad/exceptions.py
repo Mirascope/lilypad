@@ -37,9 +37,3 @@ class LilypadRequestException(LilypadException, RequestException):
 
 class LilypadTimeout(LilypadException, Timeout):
     """The request timed out."""
-
-
-class LilypadLicenseError(LilypadException):
-    """The license is invalid or expired."""
-
-    message: str = "Invalid License. Contact support@mirascope.com to get one."
