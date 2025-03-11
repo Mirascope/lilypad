@@ -149,6 +149,11 @@ export interface LicenseInfo {
    * @format uuid
    */
   organization_uuid: string;
+  /**
+   * Is Expired
+   * Check if the license has expired
+   */
+  is_expired: boolean;
 }
 
 /**

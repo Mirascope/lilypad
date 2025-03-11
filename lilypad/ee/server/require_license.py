@@ -1,4 +1,4 @@
-"""License validation module for LilyPad Enterprise Edition"""
+"""License validation module for Lilypad Enterprise Edition"""
 
 import functools
 import inspect

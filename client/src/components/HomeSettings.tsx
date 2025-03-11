@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
+import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { toast } from "@/hooks/use-toast";
 import { OrganizationUpdate } from "@/types/types";
@@ -44,18 +45,20 @@ export const HomeSettings = () => {
           label='Plan'
           value={`${capitalize(licenseInfo.tier)} Plan`}
         />
-        <div>
-          <LilypadDialog
-            title='Change Plan'
-            description='Contact william@mirascope.com to obtain a new license key.'
-            buttonProps={{
-              variant: "default",
-            }}
-            text={"Upgrade plan"}
-          >
-            <ChangePlan />
-          </LilypadDialog>
-        </div>
+        {!isLilypadCloud() && (
+          <div>
+            <LilypadDialog
+              title='Change Plan'
+              description='Contact william@mirascope.com to obtain a new license key.'
+              buttonProps={{
+                variant: "default",
+              }}
+              text={"Upgrade plan"}
+            >
+              <ChangePlan />
+            </LilypadDialog>
+          </div>
+        )}
       </div>
     </SettingsLayout>
   );
