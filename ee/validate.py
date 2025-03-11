@@ -25,19 +25,24 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
-class Tier(str, Enum):
+class Tier(int, Enum):
     """License tier enum."""
 
-    FREE = "FREE"
-    PRO = "PRO"
-    TEAM = "TEAM"
-    ENTERPRISE = "ENTERPRISE"
+    FREE = 0
+    PRO = 1
+    TEAM = 2
+    ENTERPRISE = 3
+
+    # Fall back to integer value if string value is not found
+    @classmethod
+    def _missing_(cls, value: Any) -> "Tier":
+        if isinstance(value, str):
+            return cls[value]
+        raise ValueError(f"{value} is not a valid {cls.__name__}")
 
 
 class LicenseError(Exception):
     """Custom exception for license-related errors"""
-
-    pass
 
 
 def _ensure_utc(dt: datetime) -> datetime:
@@ -197,14 +202,11 @@ def generate_license(
     return f"{data_b64}.{sig_b64}"
 
 
-INVALID_LICENSE_MESSAGE = "Invalid License. Contact support@mirascope.com to get one."
-
-
 def _validate_license_with_client(
-    cached_license: LicenseInfo | None, tiers: set[Tier]
+    cached_license: LicenseInfo | None, tier: Tier
 ) -> LicenseInfo | None:
     if cached_license:
-        if cached_license.info not in tiers:
+        if cached_license.info < tier:
             cached_license = None
         if cached_license.info.expires_at < datetime.now(timezone.utc):
             cached_license = None
@@ -216,23 +218,27 @@ def _validate_license_with_client(
             token=config.get("token", None),
         )
         cached_license = lilypad_client.get_license_info()
-    if cached_license.tier not in tiers:
-        raise LicenseError(INVALID_LICENSE_MESSAGE)
+    if cached_license.tier < tier:
+        raise LicenseError("Invalid License. Contact support@mirascope.com to get one.")
     return cached_license
 
 
 @overload
 def require_license(
-    tiers: set[Tier],
+    tier: Tier,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
+
+
 @overload
 def require_license(
-    tiers: set[Tier],
+    tier: Tier,
 ) -> Callable[
     [Callable[_P, Coroutine[Any, Any, _R]]], Callable[_P, Coroutine[Any, Any, _R]]
 ]: ...
+
+
 def require_license(
-    tiers: set[Tier],
+    tier: Tier,
 ) -> Callable[
     [Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]],
     Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
@@ -241,10 +247,12 @@ def require_license(
 
     @overload
     def decorator(func: Callable[_P, _R]) -> Callable[_P, _R]: ...
+
     @overload
     def decorator(
         func: Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
+
     def decorator(
         func: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
     ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
@@ -258,7 +266,7 @@ def require_license(
             ) -> Coroutine[Any, Any, _R]:
                 nonlocal _cached_license_info
                 _cached_license_info = _validate_license_with_client(
-                    _cached_license_info, tiers
+                    _cached_license_info, tier
                 )
                 return await func(*args, **kwargs)
 
@@ -269,7 +277,7 @@ def require_license(
             def sync_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 nonlocal _cached_license_info
                 _cached_license_info = _validate_license_with_client(
-                    _cached_license_info, tiers
+                    _cached_license_info, tier
                 )
                 return func(*args, **kwargs)
 

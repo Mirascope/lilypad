@@ -80,7 +80,7 @@ def test_generate_protocol_stub_content():
     assert "class MyFuncVersion1(Protocol):" in stub_content
     assert "class MyFunc(Protocol):" in stub_content
     assert (
-        "def version(cls, forced_version: Literal[1], override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None) -> MyFuncVersion1: ..."
+        "def version(cls, forced_version: Literal[1], sandbox_runner: SandboxRunner | None = None) -> MyFuncVersion1: ..."
         in stub_content
     )
 

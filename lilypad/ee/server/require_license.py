@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 
 from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
+from lilypad.server.exceptions import LilypadForbiddenError
 from lilypad.server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
@@ -103,27 +104,23 @@ class RequireLicense:
                 return None
 
             if not license_info:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                raise LilypadForbiddenError(
                     detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             if license_info.organization_uuid != organization_uuid:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                raise LilypadForbiddenError(
                     detail="License key does not match organization",
                 )
 
-            if self.tier == Tier.ENTERPRISE and license_info.tier != Tier.ENTERPRISE:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+            if self.tier and license_info.tier < self.tier:
+                raise LilypadForbiddenError(
                     detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             return license_info
 
         except LicenseError as e:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+            raise LilypadForbiddenError(
                 detail=str(e),
             )

@@ -38,12 +38,12 @@ from ._utils import (
     load_config,
 )
 from ._utils.middleware import SpanContextHolder
-from ._utils.sandbox import SandBoxFactory, SandboxRunner, SubprocessSandboxFactory
 from .ee.generations import (
-    _specific_generation_version_async_factory,
-    _specific_generation_version_sync_factory,
+    specific_generation_version_async_factory,
+    specific_generation_version_sync_factory,
 )
 from .messages import Message
+from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from .server.client import LilypadClient, LilypadNotFoundError
 from .server.schemas import GenerationPublic
 from .server.settings import get_settings
@@ -64,7 +64,6 @@ class GenerationMode(str, Enum):
 
 
 T_co = TypeVar("T_co", covariant=True)
-SandBoxRunnerT = TypeVar("SandBoxRunnerT", bound=SandboxRunner)
 
 
 class Generation(Generic[T]):
@@ -196,7 +195,7 @@ class SyncGenerationFunction(Protocol[_P, _R_CO]):
     def version(
         self,
         forced_version: int,
-        override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None,
+        sandbox_runner: SandboxRunner | None = None,
     ) -> Callable[_P, _R_CO]:
         """Protocol for the `generation` decorator return type."""
         ...
@@ -214,7 +213,7 @@ class AsyncGenerationFunction(Protocol[_P, _R_CO]):
     def version(
         self,
         forced_version: int,
-        override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None,
+        sandbox_runner: SandboxRunner | None = None,
     ) -> Coroutine[Any, Any, Callable[_P, Coroutine[Any, Any, _R_CO]]]:
         """Protocol for the `generation` decorator return type."""
         ...
@@ -230,7 +229,7 @@ class SyncGenerationWrapFunction(Protocol[_P, _R]):
     def version(
         self,
         forced_version: int,
-        override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None,
+        sandbox_runner: SandboxRunner | None = None,
     ) -> Callable[_P, Generation[_R]]:
         """Protocol for the `generation` decorator return type."""
         ...
@@ -248,7 +247,7 @@ class AsyncGenerationWrapFunction(Protocol[_P, _R]):
     def version(
         self,
         forced_version: int,
-        override_sandbox_factory: SandBoxFactory[SandBoxRunnerT] | None = None,
+        sandbox_runner: SandboxRunner | None = None,
     ) -> Coroutine[Any, Any, Callable[_P, Coroutine[Any, Any, Generation[_R]]]]:
         """Protocol for the `generation` decorator return type."""
         ...
@@ -381,7 +380,7 @@ def _construct_trace_attributes(
     }
 
 
-_MANGED_PROMPT_TEMPLATE: TypeAlias = bool
+_GenerationIsManaged: TypeAlias = bool
 
 
 @contextmanager
@@ -460,11 +459,11 @@ def _build_mirascope_call(
 def _build_generation_call(
     generation: GenerationPublic,
     is_async: bool,
-    sandbox_factory: SandBoxFactory | None,
+    sandbox_runner: SandboxRunner | None,
 ) -> Callable[..., Any] | Callable[..., Coroutine[Any, Any, Any]]:
     """Build a generation call object."""
-    if sandbox_factory is None:
-        sandbox_factory = SubprocessSandboxFactory()
+    if sandbox_runner is None:
+        sandbox_runner = SubprocessSandboxRunner(os.environ.copy())
     closure = Closure(
         name=generation.name,
         code=generation.code,
@@ -473,18 +472,16 @@ def _build_generation_call(
         dependencies=generation.dependencies,
     )
 
-    sandbox = sandbox_factory.create(closure)
-
     if is_async:
 
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return sandbox.execute_function(*args, **kwargs)
+            return sandbox_runner.execute_function(closure, *args, **kwargs)
 
         return async_wrapper
     else:
 
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return sandbox.execute_function(*args, **kwargs)
+            return sandbox_runner.execute_function(closure, *args, **kwargs)
 
         return sync_wrapper
 
@@ -528,7 +525,6 @@ def generation(
     custom_id: str | None = None,
     managed: bool = False,
     mode: GenerationMode = GenerationMode.NO_WRAP,
-    sandbox_factory: SandBoxFactory | None = None,
 ) -> (
     GenerationVersioningDecorator
     | ManagedGenerationVersioningDecorator
@@ -582,9 +578,9 @@ def generation(
             def _create_inner_async(
                 get_generation: Callable[
                     _P,
-                    tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE],
+                    tuple[GenerationPublic, _GenerationIsManaged],
                 ],
-                inner_sandbox_factory: SandBoxFactory | None,
+                sandbox_runner: SandboxRunner | None = None,
             ) -> (
                 Callable[_P, Coroutine[Any, Any, _R]]
                 | Callable[_P, Coroutine[Any, Any, Generation[_R]]]
@@ -606,7 +602,7 @@ def generation(
                             )
                             if managed_prompt_template:
                                 result = await _build_generation_call(
-                                    generation_, True, inner_sandbox_factory
+                                    generation_, True, sandbox_runner
                                 )(*args, **kwargs)
                             else:
                                 result = await decorator_inner(fn)(*args, **kwargs)
@@ -644,7 +640,7 @@ def generation(
 
             def _get_active_version(
                 *args: _P.args, **kwargs: _P.kwargs
-            ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
+            ) -> tuple[GenerationPublic, _GenerationIsManaged]:
                 if not managed:
                     arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                     return lilypad_client.get_or_create_generation_version(
@@ -664,10 +660,10 @@ def generation(
                         f"Please create a new generation at: {ui_link}"
                     )
 
-            inner_async = _create_inner_async(_get_active_version, sandbox_factory)
+            inner_async = _create_inner_async(_get_active_version)
 
-            inner_async.version = _specific_generation_version_async_factory(  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
-                fn, sandbox_factory, _create_inner_async, lilypad_client
+            inner_async.version = specific_generation_version_async_factory(  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
+                fn, _create_inner_async, lilypad_client
             )
 
             return inner_async
@@ -676,9 +672,9 @@ def generation(
 
             def _create_inner_sync(
                 get_generation: Callable[
-                    _P, tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]
+                    _P, tuple[GenerationPublic, _GenerationIsManaged]
                 ],
-                inner_sandbox_factory: SandBoxFactory | None,
+                sandbox_runner: SandboxRunner | None = None,
             ) -> Callable[_P, _R] | Callable[_P, Generation[_R]]:
                 @call_safely(fn)  # pyright: ignore [reportArgumentType]
                 def _inner(*args: _P.args, **kwargs: _P.kwargs) -> _R | Generation[_R]:
@@ -695,7 +691,7 @@ def generation(
                             )
                             if managed_prompt_template:
                                 result = _build_generation_call(
-                                    generation_, False, inner_sandbox_factory
+                                    generation_, False, sandbox_runner
                                 )(*args, **kwargs)
                             else:
                                 result = decorator_inner(fn)(*args, **kwargs)
@@ -732,7 +728,7 @@ def generation(
 
             def _get_active_version(
                 *args: _P.args, **kwargs: _P.kwargs
-            ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
+            ) -> tuple[GenerationPublic, _GenerationIsManaged]:
                 if not managed:
                     arg_types, arg_values = inspect_arguments(fn, *args, **kwargs)
                     return lilypad_client.get_or_create_generation_version(
@@ -747,10 +743,10 @@ def generation(
                         f"Please create a new generation at: {ui_link}"
                     )
 
-            inner = _create_inner_sync(_get_active_version, sandbox_factory)
+            inner = _create_inner_sync(_get_active_version)
 
-            inner.version = _specific_generation_version_sync_factory(
-                fn, sandbox_factory, _create_inner_sync, lilypad_client
+            inner.version = specific_generation_version_sync_factory(
+                fn, _create_inner_sync, lilypad_client
             )  # pyright: ignore [reportAttributeAccessIssue, reportFunctionMemberAccess]
 
             return inner
