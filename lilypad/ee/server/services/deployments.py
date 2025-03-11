@@ -110,7 +110,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
         ).all()
 
     def get_specific_deployment(
-        self, environment_uuid: UUID, generation_name: str
+        self, project_uuid: UUID, environment_uuid: UUID, generation_name: str
     ) -> DeploymentTable | None:
         """Get a specific deployment for an environment and generation combination."""
         return self.session.exec(
@@ -119,6 +119,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
+                self.table.project_uuid == project_uuid,
                 GenerationTable.name == generation_name,
             )
             .order_by(desc(GenerationTable.version_num))

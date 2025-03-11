@@ -67,6 +67,7 @@ async def get_deployed_generation_by_names(
 ) -> GenerationTable:
     """Get the deployed generation by generation name and environment name."""
     deployment = deployment_service.get_specific_deployment(
+        project_uuid,
         environment.uuid,
         generation_name,  # pyright: ignore [reportArgumentType]
     )
