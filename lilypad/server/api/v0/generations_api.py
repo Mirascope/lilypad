@@ -145,11 +145,6 @@ async def create_prompt(
     generation_create.version_num = generation_service.get_next_version(
         project_uuid, generation_create.name
     )
-    generations = generation_service.find_generations_by_signature(
-        project_uuid, generation_create.signature
-    )
-    if len(generations) == 0:
-        generation_create.is_default = True
 
     return generation_service.create_record(
         generation_create, project_uuid=project_uuid

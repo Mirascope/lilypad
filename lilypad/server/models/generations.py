@@ -49,7 +49,6 @@ class _GenerationBase(SQLModel):
     call_params: CommonCallParams = Field(
         sa_column=Column(JSONTypeDecorator, nullable=False), default_factory=dict
     )
-    is_default: bool | None = Field(default=False, index=True, nullable=True)
     is_managed: bool | None = Field(default=False, index=True, nullable=True)
 
 
