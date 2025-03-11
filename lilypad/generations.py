@@ -20,7 +20,6 @@ from typing import (
 )
 from uuid import UUID
 
-from fastapi.encoders import jsonable_encoder
 from mirascope import llm
 from mirascope.core import prompt_template
 from mirascope.core.base.types import Provider
@@ -35,6 +34,7 @@ from ._utils import (
     create_mirascope_middleware,
     fn_is_async,
     inspect_arguments,
+    jsonable_encoder,
     load_config,
 )
 from ._utils.middleware import SpanContextHolder

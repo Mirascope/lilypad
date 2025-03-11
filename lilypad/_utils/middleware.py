@@ -10,7 +10,6 @@ from uuid import UUID
 
 import PIL
 import PIL.WebPImagePlugin
-from fastapi.encoders import jsonable_encoder
 from mirascope.core import base as mb
 from mirascope.integrations import middleware_factory
 from opentelemetry.trace import get_tracer
@@ -20,6 +19,7 @@ from pydantic import BaseModel
 
 from ..server.client import LilypadClient
 from ..server.schemas import GenerationPublic
+from . import jsonable_encoder
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
