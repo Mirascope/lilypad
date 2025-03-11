@@ -2,25 +2,22 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from ..models.organizations import OrganizationBase
 
 
-class OrganizationPublic(BaseModel):
+class OrganizationPublic(OrganizationBase):
     """Organization public model"""
 
     uuid: UUID
-    name: str
-    license: str | None = None
 
 
-class OrganizationCreate(BaseModel):
+class OrganizationCreate(OrganizationBase):
     """Organization create model"""
 
-    name: str
+    ...
 
 
-class OrganizationUpdate(BaseModel):
+class OrganizationUpdate(OrganizationBase):
     """Organization update model"""
 
-    name: str
-    license: str | None = None
+    ...

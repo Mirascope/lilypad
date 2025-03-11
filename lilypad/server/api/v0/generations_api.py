@@ -20,13 +20,13 @@ from ..._utils import (
 )
 from ...models import (
     GenerationTable,
+    GenerationUpdate,
 )
-from ...models.users import User
 from ...schemas import (
     GenerationCreate,
     GenerationPublic,
-    GenerationUpdate,
     PlaygroundParameters,
+    UserPublic,
 )
 from ...services import GenerationService, SpanService
 
@@ -266,7 +266,7 @@ async def archive_generation(
 def run_version(
     project_uuid: UUID,
     playground_parameters: PlaygroundParameters,
-    user: Annotated[User, Depends(get_current_user)],
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> str:
     """Run version."""
     if not playground_parameters.generation:

@@ -7,7 +7,6 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from .base_sql_model import BaseSQLModel, get_json_column
 from .table_names import USER_TABLE_NAME
-from .user_organizations import UserOrganization
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
@@ -23,14 +22,6 @@ class UserBase(SQLModel):
     email: str = Field(nullable=False, index=True, min_length=1)
     active_organization_uuid: UUID | None = Field(default=None)
     keys: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
-
-
-class User(UserBase):
-    """User public model"""
-
-    uuid: UUID
-    access_token: str | None = None
-    user_organizations: list[UserOrganization] | None = None
 
 
 class UserTable(UserBase, BaseSQLModel, table=True):

@@ -1,12 +1,12 @@
 """Generations schemas."""
 
-from datetime import datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from mirascope.core.base import CommonCallParams
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from ..models.generations import _GenerationBase
 
 
 class Provider(str, Enum):
@@ -18,57 +18,14 @@ class Provider(str, Enum):
     GEMINI = "gemini"
 
 
-class GenerationCreate(BaseModel):
+class GenerationCreate(_GenerationBase):
     """Generation create model."""
 
-    project_uuid: UUID | None = None
-    prompt_uuid: UUID | None = None
-    response_model_uuid: UUID | None = None
-    version_num: int | None = None
-    name: str
-    signature: str
-    code: str
-    hash: str
-    dependencies: dict[str, Any] = Field(default_factory=dict)
-    arg_types: dict[str, str] = Field(default_factory=dict)
-    archived: datetime | None = None
-    custom_id: str | None = None
-    prompt_template: str | None = None
-    provider: str | None = None
-    model: str | None = None
-    call_params: dict[str, Any] = Field(default_factory=dict)
-    is_default: bool | None = False
-    is_managed: bool | None = False
 
-
-class GenerationPublic(BaseModel):
+class GenerationPublic(_GenerationBase):
     """Generation public model."""
 
     uuid: UUID
-    project_uuid: UUID | None = None
-    prompt_uuid: UUID | None = None
-    response_model_uuid: UUID | None = None
-    version_num: int | None = None
-    name: str
-    signature: str
-    code: str
-    hash: str
-    dependencies: dict[str, Any] = Field(default_factory=dict)
-    arg_types: dict[str, str] = Field(default_factory=dict)
-    archived: datetime | None = None
-    custom_id: str | None = None
-    prompt_template: str | None = None
-    provider: str | None = None
-    model: str | None = None
-    call_params: CommonCallParams = Field(default_factory=dict)  # pyright: ignore [reportAssignmentType]
-    is_default: bool | None = False
-    is_managed: bool | None = False
-
-
-class GenerationUpdate(BaseModel):
-    """Generation update model."""
-
-    ...
 
 
 class PlaygroundParameters(BaseModel):

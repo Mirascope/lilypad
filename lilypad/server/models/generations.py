@@ -49,6 +49,12 @@ class _GenerationBase(SQLModel):
     is_managed: bool | None = Field(default=False, index=True, nullable=True)
 
 
+class GenerationUpdate(SQLModel):
+    """Generation update model."""
+
+    ...
+
+
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     """Generation table."""
 

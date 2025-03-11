@@ -11,8 +11,8 @@ from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import API_KEY_TABLE_NAME, PROJECT_TABLE_NAME, USER_TABLE_NAME
 
 if TYPE_CHECKING:
-    from .organizations import OrganizationTable
     from .projects import ProjectTable
+    from .user_organizations import OrganizationTable
     from .users import UserTable
 
 

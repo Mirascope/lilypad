@@ -142,7 +142,6 @@ def test_span_models() -> None:
         },
     )
     lilypad_span_public = SpanPublic.model_validate(lilypad_span)
-
     assert lilypad_span_public.display_name == "test_span"
 
     # Test LLM scope display name

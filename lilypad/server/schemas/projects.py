@@ -3,21 +3,19 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
+from ..models.projects import _ProjectBase
 from .generations import GenerationPublic
 
 
-class ProjectCreate(BaseModel):
+class ProjectCreate(_ProjectBase):
     """Project Create Model."""
 
-    name: str
+    ...
 
 
-class ProjectPublic(BaseModel):
+class ProjectPublic(_ProjectBase):
     """Project Public Model."""
 
     uuid: UUID
-    name: str
-    generations: list[GenerationPublic] = Field(default_factory=list)
+    generations: list[GenerationPublic] = []
     created_at: datetime

@@ -4,25 +4,22 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from ..models.user_organizations import UserRole
+from ..models.user_organizations import UserOrganizationBase, UserRole
 from .organizations import OrganizationPublic
 
 
-class UserOrganizationPublic(BaseModel):
+class UserOrganizationPublic(UserOrganizationBase):
     """UserOrganization public model"""
 
     uuid: UUID
-    role: UserRole
-    user_uuid: UUID
     organization_uuid: UUID
     organization: OrganizationPublic
 
 
-class UserOrganizationCreate(BaseModel):
+class UserOrganizationCreate(UserOrganizationBase):
     """UserOrganization create model"""
 
     role: UserRole
-    user_uuid: UUID
 
 
 class UserOrganizationUpdate(BaseModel):

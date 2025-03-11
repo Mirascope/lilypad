@@ -1,7 +1,6 @@
 """Organizations models."""
 
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -18,12 +17,6 @@ class OrganizationBase(SQLModel):
     """Base Organization Model."""
 
     name: str = Field(nullable=False, min_length=1)
-
-
-class Organization(OrganizationBase):
-    """Organization public model"""
-
-    uuid: UUID
 
 
 class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
