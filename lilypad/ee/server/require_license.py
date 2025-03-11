@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 
 from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
+from lilypad.server.exceptions import LilypadForbiddenError
 from lilypad.server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
@@ -65,7 +66,7 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
 class RequireLicense:
     """License dependency for FastAPI endpoints."""
 
-    def __init__(self, tier: Tier = Tier.ENTERPRISE) -> None:
+    def __init__(self, tier: Tier | None = Tier.ENTERPRISE) -> None:
         """Initialize with required tier."""
         self.tier = tier
 
@@ -103,33 +104,28 @@ class RequireLicense:
                 return None
 
             if not license_info:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                raise LilypadForbiddenError(
                     detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             if license_info.organization_uuid != organization_uuid:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                raise LilypadForbiddenError(
                     detail="License key does not match organization",
                 )
 
             if license_info.is_expired:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+                raise LilypadForbiddenError(
                     detail="License has expired",
                 )
 
-            if self.tier == Tier.ENTERPRISE and license_info.tier != Tier.ENTERPRISE:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
+            if self.tier and license_info.tier < self.tier:
+                raise LilypadForbiddenError(
                     detail="Invalid License. Contact support@mirascope.com to get one.",
                 )
 
             return license_info
 
         except LicenseError as e:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+            raise LilypadForbiddenError(
                 detail=str(e),
             )

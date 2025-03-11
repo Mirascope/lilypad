@@ -104,7 +104,7 @@ async def test_license_mismatch():
         license_info = LicenseInfo(
             organization_uuid=wrong_org_uuid,
             tier=Tier.ENTERPRISE,
-            expires_at=datetime.now() + timedelta(days=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
@@ -198,7 +198,7 @@ async def test_free_tier_returns_none():
         license_info = LicenseInfo(
             organization_uuid=org_uuid,
             tier=Tier.ENTERPRISE,
-            expires_at=datetime.now() + timedelta(days=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=1),
             customer="dummy",
             license_id="dummy",
         )
