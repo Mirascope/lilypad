@@ -1,7 +1,7 @@
 import { Typography } from "@/components/ui/typography";
 import { Playground } from "@/ee/components/Playground";
-import { useIsEnterprise } from "@/hooks/use-isEnterprise";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationName/_workbench/"
@@ -10,13 +10,13 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { projectUuid } = useParams({ from: Route.id });
-  const isEnterprise = useIsEnterprise(projectUuid);
-  if (!isEnterprise) {
+  const features = useFeatureAccess();
+  if (!features.managedGenerations) {
     return (
       <div className='p-4'>
         <Typography variant='h4'>
-          Only available for enterprise users
+          Not available for your current plan. Please upgrade to use this
+          feature.
         </Typography>
       </div>
     );

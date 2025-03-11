@@ -5,6 +5,8 @@ from typing import Any
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from lilypad.ee.server import REMOTE_API_URL, REMOTE_CLIENT_URL
+
 
 class Settings(BaseSettings):
     """Server settings"""
@@ -12,8 +14,8 @@ class Settings(BaseSettings):
     # Server settings
     environment: str = Field(default="production")
     port: int = Field(default=8000)
-    remote_api_url: str = Field(default="https://api.lilypad.so")
-    remote_client_url: str = Field(default="https://app.lilypad.so")
+    remote_api_url: str = Field(default=REMOTE_API_URL)
+    remote_client_url: str = Field(default=REMOTE_CLIENT_URL)
     api_key: str | None = None
     project_id: str | None = None
     serve_frontend: str | None = Field(

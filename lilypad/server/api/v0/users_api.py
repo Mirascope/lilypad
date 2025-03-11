@@ -7,6 +7,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from ee.validate import LicenseInfo
+
+from ....ee.server.features import cloud_features
+from ....ee.server.require_license import get_organization_license
 from ..._utils import create_jwt_token, get_current_user
 from ...models import (
     UserOrganizationTable,
@@ -48,6 +52,7 @@ class CreateUserOrganizationToken(BaseModel):
 
 @users_router.post("/user-organizations", response_model=UserOrganizationTable)
 async def create_user_organization(
+    license: Annotated[LicenseInfo, Depends(get_organization_license)],
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
     ],
@@ -58,6 +63,13 @@ async def create_user_organization(
     user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> UserOrganizationTable:
     """Create user organization"""
+    tier = license.tier
+    num_users = user_organization_service.count_users_in_organization()
+    if num_users >= cloud_features[tier].num_users_per_organization:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
+        )
     org_invite = organization_invites_service.find_record_by_token(
         create_user_organization_token.token
     )
