@@ -42,10 +42,10 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
         latest = self.session.exec(
             select(self.table)
             .where(self.table.environment_uuid == environment_uuid)
-            .order_by(desc(self.table.revision))
+            .order_by(desc(self.table.version_num))
         ).first()
 
-        revision = (latest.revision + 1) if latest else 1
+        version_num = (latest.version_num + 1) if latest else 1
 
         # Create new active deployment
         deployment = self.create_record(
@@ -53,7 +53,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                 environment_uuid=environment_uuid,
                 generation_uuid=generation_uuid,
                 is_active=True,
-                revision=revision,
+                version_num=version_num,
                 notes=notes,
             )
         )
@@ -106,7 +106,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
             )
-            .order_by(desc(self.table.revision))
+            .order_by(desc(self.table.version_num))
         ).all()
 
     def get_specific_deployment(
