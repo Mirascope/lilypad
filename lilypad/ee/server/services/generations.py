@@ -1,0 +1,56 @@
+"""The `GenerationService` class for generations."""
+
+from collections.abc import Sequence
+from uuid import UUID
+
+from fastapi import HTTPException, status
+from sqlmodel import select
+
+from lilypad.server.models import GenerationTable
+from lilypad.server.schemas import GenerationCreate
+from lilypad.server.services.base_organization import BaseOrganizationService
+
+
+class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreate]):
+    """The service ee class for generations."""
+
+    table: type[GenerationTable] = GenerationTable
+    create_model: type[GenerationCreate] = GenerationCreate
+
+    def find_generations_by_name(
+        self, project_uuid: UUID, name: str
+    ) -> Sequence[GenerationTable]:
+        """Find record by uuid"""
+        record_tables = self.session.exec(
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
+                self.table.archived.is_(None),  # type: ignore
+            )
+            .order_by(self.table.version_num.asc())  # type: ignore
+        ).all()
+        return record_tables
+
+    def find_generations_by_version(
+        self, project_uuid: UUID, name: str, version_num: int
+    ) -> GenerationTable:
+        """Find record by version"""
+        record_table = self.session.exec(
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
+                self.table.version_num == version_num,
+                self.table.archived.is_(None),  # type: ignore
+            )
+            .order_by(self.table.version_num.asc())  # type: ignore
+        ).first()
+        if not record_table:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Record for {self.table.__tablename__} not found",
+            )
+        return record_table
