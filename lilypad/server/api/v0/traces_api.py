@@ -12,11 +12,11 @@ from mirascope.core.costs import calculate_cost
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ee.validate import LicenseInfo
+from ...schemas.spans import calculate_openrouter_cost
 
 from ....ee.server.features import cloud_features
 from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
-    calculate_openrouter_cost,
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable

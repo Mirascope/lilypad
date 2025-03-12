@@ -342,7 +342,8 @@ def decimal_encoder(dec_value: Decimal) -> int | float:
     >>> decimal_encoder(Decimal("1"))
     1
     """
-    if dec_value.as_tuple().exponent >= 0:
+    tup = dec_value.as_tuple()
+    if isinstance(tup.exponent, int) and tup.exponent >= 0:
         return int(dec_value)
     else:
         return float(dec_value)
@@ -487,7 +488,7 @@ def jsonable_encoder(
         )
 
     # Handle dataclasses
-    if dataclasses.is_dataclass(obj):
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         obj_dict = dataclasses.asdict(obj)
         return jsonable_encoder(
             obj_dict,
@@ -587,7 +588,16 @@ def jsonable_encoder(
     # Handle objects without any specific encoder
     # Try to convert to dict first, then fall back to vars()
     try:
-        data = dict(obj)
+        from collections.abc import Mapping
+
+        if isinstance(obj, Mapping):
+            data = dict(obj)
+        elif isinstance(obj, type):
+            data = vars(obj)
+        elif hasattr(obj, "__iter__"):
+            data = dict(obj)
+        else:
+            data = vars(obj)
     except Exception as e:
         errors: list[Exception] = [e]
         try:

@@ -158,16 +158,13 @@ export interface LicenseInfo {
 
 /**
  * MessageParam
- * Message parameter model.
+ * Message param model agnostic to providers.
  */
 export interface MessageParam {
-  /** Message */
-  message: string;
-  /**
-   * Timestamp
-   * @format date-time
-   */
-  timestamp: string;
+  /** Role */
+  role: string;
+  /** Content */
+  content: (AudioPart | TextPart | ImagePart | ToolCall)[];
 }
 
 /**
@@ -237,4 +234,56 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
+}
+
+/**
+ * _AudioPart
+ * Image part model.
+ */
+export interface AudioPart {
+  /** Type */
+  type: "audio";
+  /** Media Type */
+  media_type: string;
+  /** Audio */
+  audio: string;
+}
+
+/**
+ * _ImagePart
+ * Image part model.
+ */
+export interface ImagePart {
+  /** Type */
+  type: "image";
+  /** Media Type */
+  media_type: string;
+  /** Image */
+  image: string;
+  /** Detail */
+  detail: string | null;
+}
+
+/**
+ * _TextPart
+ * Text part model.
+ */
+export interface TextPart {
+  /** Type */
+  type: "text";
+  /** Text */
+  text: string;
+}
+
+/**
+ * _ToolCall
+ * Image part model.
+ */
+export interface ToolCall {
+  /** Type */
+  type: "tool_call";
+  /** Name */
+  name: string;
+  /** Arguments */
+  arguments: object;
 }

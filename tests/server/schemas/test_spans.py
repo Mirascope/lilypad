@@ -1,6 +1,6 @@
 # tests/server/_utils/test_spans.py
 
-from lilypad.server._utils.spans import (
+from lilypad.server.schemas.spans import (
     convert_anthropic_messages,
     convert_azure_messages,
     convert_events,
