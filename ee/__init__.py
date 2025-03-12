@@ -1,5 +1,5 @@
 """The Lilypad Enterprise Edition module."""
 
-from .validate import LicenseError, LicenseInfo, LicenseValidator, Tier
+from .validate import LicenseInfo, LicenseValidator, Tier
 
-__all__ = ["LicenseError", "LicenseInfo", "LicenseValidator", "Tier"]
+__all__ = ["LicenseInfo", "LicenseValidator", "Tier"]

@@ -1,5 +1,6 @@
 """The Schema models for the Lilypad API."""
 
+from .ee_v0 import LicenseInfo, Tier
 from .v0 import (
     AnnotationTable,
     CommonCallParams,
@@ -24,10 +25,12 @@ __all__ = [
     "GenerationCreate",
     "GenerationPublic",
     "Label",
+    "LicenseInfo",
     "OrganizationPublic",
     "ProjectPublic",
     "Provider",
     "Scope",
     "SpanPublic",
     "SpanType",
+    "Tier",
 ]

@@ -11,15 +11,14 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 from pydantic import BaseModel, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
-from .._utils import (
-    Event,
-    MessageParam,
-    convert_anthropic_messages,
-    convert_events,
-    convert_gemini_messages,
-    convert_mirascope_messages,
-    convert_openai_messages,
-)
+# from .._utils import (
+    # MessageParam,
+    # convert_anthropic_messages,
+    # convert_events,
+    # convert_gemini_messages,
+    # convert_mirascope_messages,
+    # convert_openai_messages,
+# )
 from ..models.spans import Scope, SpanBase, SpanTable
 from .generations import GenerationPublic, Provider
 
@@ -85,6 +84,19 @@ class SpanPublic(SpanBase):
         }
 
 
+class Event(BaseModel):
+    """Event model."""
+
+    name: str
+    type: str
+    message: str
+    timestamp: datetime
+
+class MessageParam(BaseModel):
+    """Message parameter model."""
+
+    message: str
+    timestamp: datetime
 class SpanMoreDetails(BaseModel):
     """Span more details model."""
 

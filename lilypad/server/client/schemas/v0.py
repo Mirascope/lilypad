@@ -72,10 +72,6 @@ class GenerationCreate(BaseModel):
     is_managed: Annotated[bool | None, Field(title="Is Managed")] = False
 
 
-class InvalidClass:
-    pass
-
-
 class GenerationPublic(BaseModel):
     """Generation public model."""
 

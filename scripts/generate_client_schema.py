@@ -36,7 +36,7 @@ V0_TARGET_MODELS = [
     "GenerationCreate",
     "Provider",
 ]
-EE_V0_TARGET_MODELS = []
+EE_V0_TARGET_MODELS = ["LicenseInfo"]
 
 
 class LilypadOpenAPIParser(OpenAPIParser):
@@ -93,7 +93,7 @@ class LilypadOpenAPIParser(OpenAPIParser):
 
 def generate_client_schema(
     input_: str, output: Path, target_model_names: list[str]
-) -> list[str] :
+) -> list[str]:
     """Generate the client schema."""
     if not target_model_names:
         return []
@@ -123,6 +123,7 @@ def generate_client_schema(
         use_subclass_enum=True,
         use_annotated=True,
         formatters=FORMATTERS,
+
     )
     parser.target_model_names = target_model_names
     generated_models = parser.parse()
@@ -136,24 +137,29 @@ def generate_client_schema(
         file.write(generated_models)
     return [model.name for model in parser.results]
 
+
 def main() -> None:
     """Generate the client schemas."""
     from lilypad.ee.server.api.v0 import ee_api as ee_v0
     from lilypad.server.api.v0 import api as v0
 
     # Generate the client schemas for v0
-    v0_generated_models = sorted(generate_client_schema(
-        json.dumps(v0.openapi()),
-        CLIENT_SCHEMAS_DIR / "v0.py",
-        V0_TARGET_MODELS,
-    ))
+    v0_generated_models = sorted(
+        generate_client_schema(
+            json.dumps(v0.openapi()),
+            CLIENT_SCHEMAS_DIR / "v0.py",
+            V0_TARGET_MODELS,
+        )
+    )
 
     # Generate the client schemas for ee_v0
-    ee_v0_generated_models = sorted(generate_client_schema(
-        json.dumps(ee_v0.openapi()),
-        CLIENT_SCHEMAS_DIR / "ee_v0.py",
-        EE_V0_TARGET_MODELS,
-    ))
+    ee_v0_generated_models = sorted(
+        generate_client_schema(
+            json.dumps(ee_v0.openapi()),
+            CLIENT_SCHEMAS_DIR / "ee_v0.py",
+            EE_V0_TARGET_MODELS,
+        )
+    )
 
     # Prepare the imports for the schemas __init__.py
     imports = ""
@@ -193,7 +199,9 @@ def main() -> None:
 
     client_exports = ", ".join(
         f'"{name}"'
-        for name in sorted(v0_generated_models + ee_v0_generated_models + ["LilypadClient"])
+        for name in sorted(
+            v0_generated_models + ee_v0_generated_models + ["LilypadClient"]
+        )
     )
     client_init = f"{CLIENT_INIT_FILE_HEADER}\nfrom .lilypad_client import LilypadClient\n{client_imports}\n__all__ = [{client_exports}]"
     CLIENT_INIT.write_text(code_formatter.format_code(client_init), encoding=ENCODING)

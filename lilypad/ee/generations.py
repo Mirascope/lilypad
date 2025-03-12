@@ -5,10 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
 
-from ee.validate import Tier, require_license
-
+from .._utils.license import require_license
 from ..sandbox import SandboxRunner
-from ..server.client import GenerationPublic, LilypadClient
+from ..server.client import GenerationPublic, LilypadClient, Tier
 
 if TYPE_CHECKING:
     from ..generations import Generation

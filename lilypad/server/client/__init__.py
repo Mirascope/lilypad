@@ -9,12 +9,14 @@ from .schemas import (
     GenerationCreate,
     GenerationPublic,
     Label,
+    LicenseInfo,
     OrganizationPublic,
     ProjectPublic,
     Provider,
     Scope,
     SpanPublic,
     SpanType,
+    Tier,
 )
 
 __all__ = [
@@ -25,6 +27,7 @@ __all__ = [
     "GenerationCreate",
     "GenerationPublic",
     "Label",
+    "LicenseInfo",
     "LilypadClient",
     "OrganizationPublic",
     "ProjectPublic",
@@ -32,4 +35,5 @@ __all__ = [
     "Scope",
     "SpanPublic",
     "SpanType",
+    "Tier",
 ]
