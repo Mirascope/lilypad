@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
 import { Playground } from "@/ee/components/Playground";
@@ -19,7 +20,7 @@ export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab"
 )({
   component: () => (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <Generation />
     </Suspense>
   ),
