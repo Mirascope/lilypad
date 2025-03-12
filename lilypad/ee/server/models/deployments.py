@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import DateTime
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import text
+from sqlmodel import DateTime, Field, Index, Relationship, SQLModel
 
 from lilypad.server.models import BaseOrganizationSQLModel
 from lilypad.server.models.table_names import (
@@ -50,6 +50,16 @@ class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
     """Deployment table tracking which generations are active in which environments."""
 
     __tablename__ = DEPLOYMENT_TABLE_NAME  # type: ignore
+    __table_args__ = (
+        Index(
+            "ux_environment_active_deployment",
+            "environment_uuid",
+            unique=True,
+            postgresql_where=text(
+                "is_active = true"
+            ),  # Use text() for partial index condition
+        ),
+    )
     environment: "EnvironmentTable" = Relationship(back_populates="deployments")
     generation: "GenerationTable" = Relationship(back_populates="deployments")
     project: "ProjectTable" = Relationship(back_populates="deployments")

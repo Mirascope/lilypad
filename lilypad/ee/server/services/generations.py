@@ -6,9 +6,9 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import desc, select
 
-from lilypad.server.models import GenerationTable
-from lilypad.server.schemas import GenerationCreate
-from lilypad.server.services.base_organization import BaseOrganizationService
+from ....server.models import GenerationTable
+from ....server.schemas import GenerationCreate
+from ....server.services.base_organization import BaseOrganizationService
 
 
 class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreate]):

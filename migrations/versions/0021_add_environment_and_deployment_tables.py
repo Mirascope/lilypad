@@ -2,7 +2,7 @@
 
 Revision ID: 0021
 Revises: 0020
-Create Date: 2025-03-12 22:21:20.335988
+Create Date: 2025-03-12 22:55:04.702329
 
 """
 
@@ -10,7 +10,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlmodel import AutoString
+from sqlmodel.sql.sqltypes import AutoString
 
 # revision identifiers, used by Alembic.
 revision: str = "0021"
@@ -115,6 +115,12 @@ def upgrade() -> None:
             ["organization_uuid"],
             unique=False,
         )
+        batch_op.create_index(
+            "ux_environment_active_deployment",
+            ["environment_uuid"],
+            unique=True,
+            postgresql_where=sa.text("is_active = true"),
+        )
 
     with op.batch_alter_table("api_keys", schema=None) as batch_op:
         batch_op.add_column(sa.Column("environment_uuid", sa.Uuid(), nullable=True))
@@ -145,6 +151,10 @@ def downgrade() -> None:
         batch_op.drop_column("environment_uuid")
 
     with op.batch_alter_table("deployments", schema=None) as batch_op:
+        batch_op.drop_index(
+            "ux_environment_active_deployment",
+            postgresql_where=sa.text("is_active = true"),
+        )
         batch_op.drop_index(batch_op.f("deployments_organization_uuid_idx"))
         batch_op.drop_index(batch_op.f("deployments_is_active_idx"))
         batch_op.drop_index(batch_op.f("deployments_created_at_idx"))
