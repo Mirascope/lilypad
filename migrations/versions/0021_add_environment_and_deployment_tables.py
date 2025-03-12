@@ -1,8 +1,8 @@
 """Add environment and deployment tables
 
-Revision ID: 0019
-Revises: 0018
-Create Date: 2025-03-11 17:51:52.286418
+Revision ID: 0021
+Revises: 0020
+Create Date: 2025-03-12 21:51:05.248236
 
 """
 
@@ -13,8 +13,8 @@ from alembic import op
 from sqlmodel.sql.sqltypes import AutoString
 
 # revision identifiers, used by Alembic.
-revision: str = "0019"
-down_revision: str | None = "0018"
+revision: str = "0021"
+down_revision: str | None = "0020"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -47,6 +47,9 @@ def upgrade() -> None:
         ),
     )
     with op.batch_alter_table("environments", schema=None) as batch_op:
+        batch_op.create_index(
+            batch_op.f("environments_created_at_idx"), ["created_at"], unique=False
+        )
         batch_op.create_index(
             batch_op.f("environments_name_idx"), ["name"], unique=False
         )
@@ -98,6 +101,9 @@ def upgrade() -> None:
     )
     with op.batch_alter_table("deployments", schema=None) as batch_op:
         batch_op.create_index(
+            batch_op.f("deployments_created_at_idx"), ["created_at"], unique=False
+        )
+        batch_op.create_index(
             batch_op.f("deployments_is_active_idx"), ["is_active"], unique=False
         )
         batch_op.create_index(
@@ -137,12 +143,14 @@ def downgrade() -> None:
     with op.batch_alter_table("deployments", schema=None) as batch_op:
         batch_op.drop_index(batch_op.f("deployments_organization_uuid_idx"))
         batch_op.drop_index(batch_op.f("deployments_is_active_idx"))
+        batch_op.drop_index(batch_op.f("deployments_created_at_idx"))
 
     op.drop_table("deployments")
     with op.batch_alter_table("environments", schema=None) as batch_op:
         batch_op.drop_index(batch_op.f("environments_project_uuid_idx"))
         batch_op.drop_index(batch_op.f("environments_organization_uuid_idx"))
         batch_op.drop_index(batch_op.f("environments_name_idx"))
+        batch_op.drop_index(batch_op.f("environments_created_at_idx"))
 
     op.drop_table("environments")
     # ### end Alembic commands ###
