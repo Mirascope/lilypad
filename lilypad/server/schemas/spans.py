@@ -363,6 +363,7 @@ def convert_anthropic_messages(
 def convert_mirascope_messages(
     messages: list[dict[str, Any]] | str,
 ) -> list[MessageParam]:
+    """Convert Mirascope OpenTelemetry messages to BaseModel."""
     new_messages: list[dict[str, Any]] = (
         json.loads(messages) if isinstance(messages, str) else messages
     )

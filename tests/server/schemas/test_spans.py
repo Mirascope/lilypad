@@ -1,4 +1,4 @@
-# tests/server/_utils/test_spans.py
+"""Test cases for the spans schema."""
 
 from lilypad.server.schemas.spans import (
     convert_anthropic_messages,

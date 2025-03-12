@@ -123,7 +123,6 @@ def generate_client_schema(
         use_subclass_enum=True,
         use_annotated=True,
         formatters=FORMATTERS,
-
     )
     parser.target_model_names = target_model_names
     generated_models = parser.parse()
