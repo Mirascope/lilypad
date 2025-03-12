@@ -11,6 +11,7 @@ from .functions import (
     inspect_arguments,
     jsonable_encoder,
 )
+from .license import require_license
 from .middleware import create_mirascope_middleware, encode_gemini_part
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "inspect_arguments",
     "jsonable_encoder",
     "load_config",
+    "require_license",
 ]

@@ -575,7 +575,7 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.SubprocessSandboxRunner",
         ) as mock_runner,
         patch(
-            "ee.validate._validate_license_with_client",
+            "lilypad._utils.license._validate_license_with_client",
         ),
     ):
         mock_runner.return_value.execute_function.return_value = "sync outer"
@@ -614,7 +614,7 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.SubprocessSandboxRunner",
         ) as mock_runner,
         patch(
-            "ee.validate._validate_license_with_client",
+            "lilypad._utils.license._validate_license_with_client",
         ),
     ):
         mock_runner.return_value.execute_function.return_value = "sync outer"
