@@ -1,8 +1,10 @@
 """Deployment SQLModel."""
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 from lilypad.server.models import BaseOrganizationSQLModel
@@ -34,6 +36,14 @@ class DeploymentBase(SQLModel):
     is_active: bool = Field(default=True, index=True)
     version_num: int = Field(default=1)
     notes: str | None = Field(default=None)
+    activated_at: datetime = Field(
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
+        default_factory=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True,
+        description="Timestamp when the deployment was activated.",
+        schema_extra={"format": "date-time"},
+    )
 
 
 class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
