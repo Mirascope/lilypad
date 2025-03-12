@@ -29,9 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
-import { Tier } from "@/ee/types/types";
-import { licenseQueryOptions } from "@/ee/utils/ee";
-import { hasFeatureAccess } from "@/hooks/use-isEnterprise";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { GenerationTab } from "@/types/generations";
 import { Plus, Trash } from "lucide-react";
 import { JSX, Suspense } from "react";
@@ -81,7 +79,7 @@ type Tab = {
   label: string;
   value: string;
   component?: JSX.Element | null;
-  tier: Tier;
+  isAvailable: boolean;
 };
 
 const GenerationWorkbench = () => {
@@ -91,10 +89,7 @@ const GenerationWorkbench = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
-  const { data: licenseInfo } = useSuspenseQuery(
-    licenseQueryOptions(projectUuid)
-  );
-
+  const features = useFeatureAccess();
   const navigate = useNavigate();
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
@@ -105,7 +100,7 @@ const GenerationWorkbench = () => {
       label: "Overview",
       value: GenerationTab.OVERVIEW,
       component: <Outlet />,
-      tier: Tier.FREE,
+      isAvailable: features.generations,
     },
     {
       label: "Traces",
@@ -116,7 +111,7 @@ const GenerationWorkbench = () => {
           generationUuid={generation?.uuid}
         />
       ),
-      tier: Tier.FREE,
+      isAvailable: features.traces,
     },
     {
       label: "Annotations",
@@ -127,7 +122,7 @@ const GenerationWorkbench = () => {
           generationUuid={generation?.uuid}
         />
       ),
-      tier: Tier.ENTERPRISE,
+      isAvailable: features.annotations,
     },
   ];
   const handleArchive = async () => {
@@ -150,7 +145,7 @@ const GenerationWorkbench = () => {
     <div className='w-full p-6'>
       <div className='flex gap-2'>
         <Typography variant='h2'>{generationName}</Typography>
-        {hasFeatureAccess(licenseInfo.tier, Tier.ENTERPRISE) && (
+        {features.managedGenerations && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button size='icon' onClick={handleNewGenerationClick}>
@@ -220,7 +215,7 @@ const GenerationWorkbench = () => {
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  disabled={!hasFeatureAccess(licenseInfo.tier, tab.tier)}
+                  disabled={!tab.isAvailable}
                 >
                   {tab.label}
                 </TabsTrigger>

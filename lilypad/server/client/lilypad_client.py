@@ -9,6 +9,8 @@ import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
+from ee import LicenseInfo
+
 from ..._utils import Closure, load_config
 from ...exceptions import (
     LilypadAPIConnectionError,
@@ -16,11 +18,12 @@ from ...exceptions import (
     LilypadFileNotFoundError,
     LilypadHTTPError,
     LilypadNotFoundError,
+    LilypadRateLimitError,
     LilypadRequestException,
     LilypadTimeout,
 )
 from ...server.settings import get_settings
-from .schemas.v0 import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
+from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -131,7 +134,7 @@ class LilypadClient:
         endpoint: str,
         response_model: type[list[_R]] | type[_R] | None = None,
         **kwargs: Any,
-    ) -> _R | list[_R] | dict[str, Any]:
+    ) -> _R | list[_R] | dict[str, Any] | Any:
         """Internal method to make HTTP requests and parse responses.
 
         Args:
@@ -165,6 +168,10 @@ class LilypadClient:
         except HTTPError as http_err:
             if http_err.response.status_code == 404:
                 raise LilypadNotFoundError(f"Resource not found: {url}")
+            elif http_err.response.status_code == 429:
+                raise LilypadRateLimitError(
+                    f"Too many requests {url}: {http_err.response.text}"
+                )
             raise LilypadHTTPError(
                 f"HTTP error during request to {url}: {http_err.response.text}"
             )
@@ -229,6 +236,7 @@ class LilypadClient:
         self,
         fn: Callable[..., Any],
         arg_types: dict[str, str],
+        arg_values: dict[str, Any],
         custom_id: str | None = None,
     ) -> GenerationPublic:
         """Get the matching version for a generation or create it if non-existent.
@@ -236,6 +244,7 @@ class LilypadClient:
         Args:
             fn (Callable): The generation for which to get the version.
             arg_types (dict): Dictionary of argument names and types.
+            arg_values (dict): Dictionary of argument names and values.
             custom_id (str, optional): Custom ID for the generation. Defaults to None.
 
         Returns:
@@ -260,6 +269,7 @@ class LilypadClient:
                     "hash": closure.hash,
                     "dependencies": closure.dependencies,
                     "arg_types": arg_types,
+                    "arg_values": arg_values,
                     "custom_id": custom_id,
                 },
             )
@@ -321,6 +331,28 @@ class LilypadClient:
             f"Generation with signature '{closure.signature}' not found. Available signatures: {[g.signature for g in generations]}"
         )
 
+    def get_generations_by_name(
+        self,
+        fn: Callable[..., Any],
+    ) -> list[GenerationPublic]:
+        """Get the matching name for a generation.
+
+        Args:
+            fn (Callable): The generation for which to get the all version.
+
+        Returns:
+            GenerationPublic: The matching versions for the generation.
+        """
+        closure = Closure.from_fn(fn)
+        generations = self._request(
+            "GET",
+            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            response_model=list[GenerationPublic],
+        )
+        if generations:
+            return generations
+        raise LilypadNotFoundError(f"Generation with name '{closure.name}' not found.")
+
     def patch_organization(
         self, organization_uuid: UUID, data: dict[str, Any]
     ) -> OrganizationPublic:
@@ -339,3 +371,7 @@ class LilypadClient:
             f"/v0/organizations/{organization_uuid}",
             response_model=OrganizationPublic,
         )
+
+    def get_license_info(self) -> LicenseInfo:
+        """Get the license info for the organization."""
+        return self._request("GET", f"/v0/ee/projects/{self.project_uuid}", LicenseInfo)

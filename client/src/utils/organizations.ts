@@ -2,6 +2,8 @@ import api from "@/api";
 import {
   OrganizationInviteCreate,
   OrganizationInvitePublic,
+  OrganizationPublic,
+  OrganizationUpdate,
 } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -21,6 +23,10 @@ export const createOrganizationInvite = async (
   ).data;
 };
 
+export const updateOrganization = async (data: OrganizationUpdate) => {
+  return (await api.patch<OrganizationPublic>(`/organizations`, data)).data;
+};
+
 export const organizationInviteQueryOptions = (inviteToken: string) => ({
   queryKey: ["organization-invites", inviteToken],
   queryFn: () => getOrganizationInvite(inviteToken),
@@ -33,6 +39,19 @@ export const useCreateOrganizationInviteMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [["organization-invites"], ["user"]],
+      });
+    },
+  });
+};
+
+export const useUpdateOrganizationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: OrganizationUpdate) =>
+      await updateOrganization(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["license"],
       });
     },
   });

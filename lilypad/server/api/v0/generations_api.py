@@ -292,6 +292,7 @@ generation = GenerationCreate(
     signature = "{generation.signature}",
     prompt_template = """{generation.prompt_template}""",
     arg_types = {generation.arg_types},
+    arg_values = {generation.arg_values},
     code = "{generation.code}",
     hash = "{generation.hash}",
     version_num = {generation.version_num}

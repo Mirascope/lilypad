@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
+import { features } from "@/ee/utils/features";
+import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -55,10 +57,12 @@ export const UserOrgTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const userOrganization = user.user_organizations?.find(
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   if (!userOrganization) return null;
+  const showCreateUser = features[licenseInfo.tier].users > data.length;
   const columns: ColumnDef<UserPublic>[] = [
     {
       accessorKey: "first_name",
@@ -125,7 +129,7 @@ export const UserOrgTable = () => {
         hideColumnButton
         customControls={() => (
           <>
-            {userOrganization.role !== UserRole.MEMBER && (
+            {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
               <InviteUserButton
                 organization={userOrganization.organization}
                 user={user}
