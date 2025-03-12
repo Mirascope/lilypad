@@ -23,10 +23,10 @@ import { SettingsIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 const tier = {
-  [Tier.VALUE_0]: "Free",
-  [Tier.VALUE_1]: "Pro",
-  [Tier.VALUE_2]: "Team",
-  [Tier.VALUE_3]: "Enterprise",
+  [Tier.FREE]: "Free",
+  [Tier.PRO]: "Pro",
+  [Tier.TEAM]: "Team",
+  [Tier.ENTERPRISE]: "Enterprise",
 };
 export const HomeSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
