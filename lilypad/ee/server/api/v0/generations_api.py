@@ -47,17 +47,18 @@ async def create_managed_generation(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     generation_create.is_managed = True
+    generation_create.code = construct_function(
+        generation_create.arg_types or {}, generation_create.name, True
+    )
+
     generation_create.hash = hashlib.sha256(
-        generation_create.prompt_template.encode("utf-8")
+        generation_create.code.encode("utf-8")
     ).hexdigest()
+
     if generation := generation_service.check_duplicate_managed_generation(
         project_uuid, generation_create
     ):
         return generation
-
-    generation_create.code = construct_function(
-        generation_create.arg_types or {}, generation_create.name, True
-    )
 
     generation_create.signature = construct_function(
         generation_create.arg_types or {}, generation_create.name, False
@@ -86,33 +87,23 @@ def run_version(
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
 ) -> str:
     """Run version."""
-    if not playground_parameters.generation:
-        raise ValueError("Missing generation.")
     generation = generation_service.find_record_by_uuid(generation_uuid)
     api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
     if len(api_keys) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No API keys found"
         )
-    generation_dict = generation.model_dump()
-    name = generation.name
-    arg_list = [
-        f"{arg_name}: {arg_type}" for arg_name, arg_type in generation.arg_types.items()
-    ]
-    func_def = f"def {name}({', '.join(arg_list)}) -> str: ..."
+    generation_version = (
+        f"{generation.name}.version({generation.version_num})(**arg_values)"
+    )
     wrapper_code = f'''
 import os
-from uuid import UUID
-import google.generativeai as genai
 
 import lilypad
-from lilypad._utils import create_mirascope_call
-from lilypad.server.schemas import Provider
-from lilypad.server.models import GenerationTable
 
-genai.configure(api_key="{user.keys.get("gemini", "")}")
 os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
 os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
+os.environ["GOOGLE_API_KEY"] = "{user.keys.get("gemini", "")}"
 os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
 os.environ["LILYPAD_PROJECT_ID"] = "{project_uuid}"
 os.environ["LILYPAD_API_KEY"] = (
@@ -121,20 +112,10 @@ os.environ["LILYPAD_API_KEY"] = (
 
 lilypad.configure()
 
-@lilypad.generation()
-{func_def}
+{generation.signature}
 
-
-generation = GenerationTable.model_validate({generation_dict})
-# Python 3.10
-provider = Provider("{playground_parameters.provider}")
-# Python 3.11
-# provider = {playground_parameters.provider}
-model = "{playground_parameters.model}"
 arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_values)}
-res = lilypad.generation()(
-    create_mirascope_call(foo, generation, provider, model, None)
-)(**arg_values)
+res = {generation_version}
 '''
     try:
         processed_code = _run_playground(wrapper_code)
@@ -147,11 +128,8 @@ res = lilypad.generation()(
 
 def _run_playground(code: str) -> str:
     # Add code to return a specific variable
-    modified_code = (
-        code + "\n\nimport json\nprint('__RESULT__' + json.dumps(res) + '__RESULT__')"
-    )
+    modified_code = code + "\n\nimport json\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = _run_ruff(dedent(modified_code)).strip()
-
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)

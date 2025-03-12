@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
+from pydantic import BaseModel
 from sqlalchemy import Column
-from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
@@ -52,19 +53,16 @@ class _GenerationBase(SQLModel):
     is_managed: bool | None = Field(default=False, index=True, nullable=True)
 
 
-class GenerationUpdate(SQLModel):
+class GenerationUpdate(BaseModel):
     """Generation update model."""
 
-    ...
+    is_default: bool | None = None
 
 
 class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
     """Generation table."""
 
     __tablename__ = GENERATION_TABLE_NAME  # type: ignore
-    __table_args__ = (
-        UniqueConstraint("project_uuid", "hash", name="unique_project_generation_hash"),
-    )
     project: "ProjectTable" = Relationship(back_populates="generations")
     spans: list["SpanTable"] = Relationship(
         back_populates="generation", cascade_delete=True

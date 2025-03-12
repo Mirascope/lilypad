@@ -178,6 +178,8 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -240,6 +242,8 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */

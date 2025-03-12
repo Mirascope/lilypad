@@ -335,7 +335,10 @@ export interface GenerationPublic {
  * GenerationUpdate
  * Generation update model.
  */
-export type GenerationUpdate = object;
+export interface GenerationUpdate {
+  /** Is Default */
+  is_default?: boolean | null;
+}
 
 /** HTTPValidationError */
 export interface HTTPValidationError {

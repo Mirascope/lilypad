@@ -374,4 +374,4 @@ class LilypadClient:
 
     def get_license_info(self) -> LicenseInfo:
         """Get the license info for the organization."""
-        return self._request("GET", f"/v0/ee/projects/{self.project_uuid}", LicenseInfo)
+        return self._request("GET", "/v0/ee/organizations/license", LicenseInfo)

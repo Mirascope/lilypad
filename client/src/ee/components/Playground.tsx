@@ -69,8 +69,10 @@ type FormValues = {
 type EditorParameters = PlaygroundParameters & FormValues;
 export const Playground = ({
   version,
+  response,
 }: {
   version: GenerationPublic | null;
+  response?: string;
 }) => {
   const { projectUuid, generationName } = useParams({
     strict: false,
@@ -132,6 +134,8 @@ export const Playground = ({
           },
           {} as Record<string, string>
         ),
+        provider: data.provider,
+        model: data.model,
         signature: "",
         hash: "",
         code: "",
@@ -169,15 +173,21 @@ export const Playground = ({
           {} as Record<string, any>
         );
         const playgroundValues: PlaygroundParameters = {
-          generation: generationCreate,
+          arg_values: inputValues,
           provider: data.provider,
           model: data.model,
-          arg_values: inputValues,
         };
-        await runMutation.mutateAsync({
+        const res = await runMutation.mutateAsync({
           projectUuid,
           generationUuid: newVersion.uuid,
           playgroundValues,
+        });
+        navigate({
+          to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
+          replace: true,
+          state: {
+            result: res,
+          },
         });
       } else {
         try {
@@ -199,12 +209,12 @@ export const Playground = ({
   const renderBottomPanel = () => {
     return (
       <>
-        {runMutation.isSuccess && (
+        {response && (
           <div>
             <FormLabel className='text-base'>{"Outputs"}</FormLabel>
             <Card className='mt-2'>
               <CardContent className='flex flex-col p-6'>
-                <ReactMarkdown>{runMutation.data}</ReactMarkdown>
+                <ReactMarkdown>{response}</ReactMarkdown>
               </CardContent>
             </Card>
           </div>
