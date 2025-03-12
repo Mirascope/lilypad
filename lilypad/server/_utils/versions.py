@@ -12,6 +12,6 @@ def construct_function(
     func_def = f"""
     {import_line}
     @lilypad.generation(managed=True)
-    def {function_name}({", ".join(arg_list)}): ...
+    def {function_name}({", ".join(arg_list)}) -> lilypad.Message: ...
     """
     return _run_ruff(dedent(func_def)).strip()
