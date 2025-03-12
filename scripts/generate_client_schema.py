@@ -19,7 +19,9 @@ FILE_HEADER = '"""The Schema models for the Lilypad {name} API."""'
 OPENAPI_SCHEMAS_PATH = "#/components/schemas"
 
 
-class CustomOpenAPIParser(OpenAPIParser):
+class LilypadOpenAPIParser(OpenAPIParser):
+    """Lilypad OpenAPI parser."""
+
     target_model_names: list[str] = []
 
     @classmethod
@@ -75,31 +77,13 @@ def generate_client_schema(
     """Generate the client schema."""
     if not target_model_names:
         return None
-    # generate(
-    #     input_=input_,
-    #     output=output,
-    #     input_file_type=InputFileType.OpenAPI,
-    #     output_model_type=DataModelType.PydanticV2BaseModel,
-    #     target_python_version=PythonVersion.PY_310,
-    #     use_standard_collections=True,
-    #     use_schema_description=True,
-    #     use_field_description=True,
-    #     use_union_operator=True,
-    #     reuse_model=True,
-    #     field_constraints=True,
-    #     set_default_enum_member=True,
-    #     custom_file_header=FILE_HEADER.format(name=output.stem),
-    #     use_subclass_enum=True,
-    #     capitalise_enum_members=True,
-    #     formatters=[Formatter.RUFF_CHECK, Formatter.RUFF_FORMAT],
-    # )
 
     target_python_version = PythonVersion.PY_310
     data_model_types = get_data_model_types(
         DataModelType.PydanticV2BaseModel, target_python_version
     )
 
-    parser = CustomOpenAPIParser(
+    parser = LilypadOpenAPIParser(
         source=input_,
         data_model_type=data_model_types.data_model,
         data_model_root_type=data_model_types.root_model,
@@ -117,6 +101,7 @@ def generate_client_schema(
         capitalise_enum_members=True,
         keep_model_order=False,
         use_subclass_enum=True,
+        use_annotated=True,
         formatters=[Formatter.RUFF_CHECK, Formatter.RUFF_FORMAT],
     )
     parser.target_model_names = target_model_names

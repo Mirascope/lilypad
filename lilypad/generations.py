@@ -22,6 +22,7 @@ from uuid import UUID
 
 from mirascope import llm
 from mirascope.core import prompt_template
+from mirascope.core.base import CommonCallParams
 from mirascope.core.base.types import Provider
 from mirascope.llm.call_response import CallResponse
 from opentelemetry.util.types import AttributeValue
@@ -40,8 +41,7 @@ from ._utils import (
 from ._utils.middleware import SpanContextHolder
 from .exceptions import LilypadNotFoundError
 from .messages import Message
-from .server.client import LilypadClient
-from .server.schemas import GenerationPublic
+from .server.client import GenerationPublic, LilypadClient
 from .server.settings import get_settings
 from .stream import Stream
 from .traces import TraceDecorator, _get_batch_span_processor, _trace
@@ -340,7 +340,9 @@ def _build_mirascope_call(
     mirascope_call = llm.call(
         provider=cast(Provider, generation_public.provider),
         model=generation_public.model,
-        call_params=generation_public.call_params,
+        call_params=cast(CommonCallParams, generation_public.call_params.model_dump())
+        if generation_public.call_params
+        else None,
     )(mirascope_prompt)
 
     @wraps(mirascope_call)

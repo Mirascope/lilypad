@@ -17,8 +17,7 @@ from opentelemetry.trace.span import Span, SpanContext
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ..server.client import LilypadClient
-from ..server.schemas import GenerationPublic
+from ..server.client import GenerationPublic, LilypadClient
 from . import jsonable_encoder
 
 _P = ParamSpec("_P")

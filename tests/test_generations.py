@@ -24,7 +24,8 @@ from lilypad.generations import (
     _build_mirascope_call,
     generation,
 )
-from lilypad.server.schemas.generations import GenerationPublic
+from lilypad.server.client import GenerationPublic
+from lilypad.server.client.schemas.v0 import CommonCallParams
 
 dummy_spans = []
 
@@ -41,7 +42,7 @@ def dummy_generation_instance() -> GenerationPublic:
         dependencies={},
         arg_types={},
         version_num=1,
-        call_params={},
+        call_params=CommonCallParams(),
         provider="openai",
         model="gpt-4o-mini",
     )

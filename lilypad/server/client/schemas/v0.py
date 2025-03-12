@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,18 +26,18 @@ class CommonCallParams(BaseModel):
         stop: Stop sequence(s) to end generation.
     """
 
-    temperature: float | None = Field(None, title="Temperature")
-    max_tokens: int | None = Field(None, title="Max Tokens")
-    top_p: float | None = Field(None, title="Top P")
-    frequency_penalty: float | None = Field(None, title="Frequency Penalty")
-    presence_penalty: float | None = Field(None, title="Presence Penalty")
-    seed: int | None = Field(None, title="Seed")
-    stop: str | list[str] | None = Field(None, title="Stop")
+    temperature: Annotated[float | None, Field(title="Temperature")] = None
+    max_tokens: Annotated[int | None, Field(title="Max Tokens")] = None
+    top_p: Annotated[float | None, Field(title="Top P")] = None
+    frequency_penalty: Annotated[float | None, Field(title="Frequency Penalty")] = None
+    presence_penalty: Annotated[float | None, Field(title="Presence Penalty")] = None
+    seed: Annotated[int | None, Field(title="Seed")] = None
+    stop: Annotated[str | list[str] | None, Field(title="Stop")] = None
 
 
 class DependencyInfo(BaseModel):
-    version: str = Field(..., title="Version")
-    extras: list[str] | None = Field(..., title="Extras")
+    version: Annotated[str, Field(title="Version")]
+    extras: Annotated[list[str] | None, Field(title="Extras")] = None
 
 
 class EvaluationType(str, Enum):
@@ -51,23 +51,25 @@ class EvaluationType(str, Enum):
 class GenerationPublic(BaseModel):
     """Generation public model."""
 
-    project_uuid: UUID | None = Field(None, title="Project Uuid")
-    version_num: int | None = Field(None, title="Version Num")
-    name: str = Field(..., min_length=1, title="Name")
-    signature: str = Field(..., title="Signature")
-    code: str = Field(..., title="Code")
-    hash: str = Field(..., title="Hash")
-    dependencies: dict[str, DependencyInfo] | None = Field(None, title="Dependencies")
-    arg_types: dict[str, str] | None = Field(None, title="Arg Types")
-    archived: datetime | None = Field(None, title="Archived")
-    custom_id: str | None = Field(None, title="Custom Id")
-    prompt_template: str | None = Field(None, title="Prompt Template")
-    provider: str | None = Field(None, title="Provider")
-    model: str | None = Field(None, title="Model")
+    project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
+    version_num: Annotated[int | None, Field(title="Version Num")] = None
+    name: Annotated[str, Field(min_length=1, title="Name")]
+    signature: Annotated[str, Field(title="Signature")]
+    code: Annotated[str, Field(title="Code")]
+    hash: Annotated[str, Field(title="Hash")]
+    dependencies: Annotated[
+        dict[str, DependencyInfo] | None, Field(title="Dependencies")
+    ] = None
+    arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
+    archived: Annotated[datetime | None, Field(title="Archived")] = None
+    custom_id: Annotated[str | None, Field(title="Custom Id")] = None
+    prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
+    provider: Annotated[str | None, Field(title="Provider")] = None
+    model: Annotated[str | None, Field(title="Model")] = None
     call_params: CommonCallParams | None = None
-    is_default: bool | None = Field(False, title="Is Default")
-    is_managed: bool | None = Field(False, title="Is Managed")
-    uuid: UUID = Field(..., title="Uuid")
+    is_default: Annotated[bool | None, Field(title="Is Default")] = False
+    is_managed: Annotated[bool | None, Field(title="Is Managed")] = False
+    uuid: Annotated[UUID, Field(title="Uuid")]
 
 
 class Label(str, Enum):
@@ -80,17 +82,19 @@ class Label(str, Enum):
 class OrganizationPublic(BaseModel):
     """Organization public model"""
 
-    name: str = Field(..., min_length=1, title="Name")
-    uuid: UUID = Field(..., title="Uuid")
+    name: Annotated[str, Field(min_length=1, title="Name")]
+    uuid: Annotated[UUID, Field(title="Uuid")]
 
 
 class ProjectPublic(BaseModel):
     """Project Public Model."""
 
-    name: str = Field(..., title="Name")
-    uuid: UUID = Field(..., title="Uuid")
-    generations: list[GenerationPublic] | None = Field([], title="Generations")
-    created_at: datetime = Field(..., title="Created At")
+    name: Annotated[str, Field(title="Name")]
+    uuid: Annotated[UUID, Field(title="Uuid")]
+    generations: Annotated[
+        list[GenerationPublic] | None, Field(title="Generations")
+    ] = []
+    created_at: Annotated[datetime, Field(title="Created At")]
 
 
 class Scope(str, Enum):
@@ -110,41 +114,41 @@ class SpanType(str, Enum):
 class AnnotationTable(BaseModel):
     """Annotation table."""
 
-    uuid: UUID | None = Field(None, title="Uuid")
-    created_at: datetime | None = Field(None, title="Created At")
-    organization_uuid: UUID = Field(..., title="Organization Uuid")
+    uuid: Annotated[UUID | None, Field(title="Uuid")] = None
+    created_at: Annotated[datetime | None, Field(title="Created At")] = None
+    organization_uuid: Annotated[UUID, Field(title="Organization Uuid")]
     label: Label | None = None
-    reasoning: str | None = Field(None, title="Reasoning")
+    reasoning: Annotated[str | None, Field(title="Reasoning")] = None
     type: EvaluationType | None = EvaluationType.MANUAL
-    data: dict[str, Any] | None = Field(None, title="Data")
-    assigned_to: UUID | None = Field(None, title="Assigned To")
-    project_uuid: UUID | None = Field(None, title="Project Uuid")
-    span_uuid: UUID | None = Field(None, title="Span Uuid")
-    generation_uuid: UUID | None = Field(None, title="Generation Uuid")
+    data: Annotated[dict[str, Any] | None, Field(title="Data")] = None
+    assigned_to: Annotated[UUID | None, Field(title="Assigned To")] = None
+    project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
+    span_uuid: Annotated[UUID | None, Field(title="Span Uuid")] = None
+    generation_uuid: Annotated[UUID | None, Field(title="Generation Uuid")] = None
 
 
 class SpanPublic(BaseModel):
     """Span public model"""
 
-    span_id: str = Field(..., title="Span Id")
-    generation_uuid: UUID | None = Field(None, title="Generation Uuid")
+    span_id: Annotated[str, Field(title="Span Id")]
+    generation_uuid: Annotated[UUID | None, Field(title="Generation Uuid")] = None
     type: SpanType | None = None
-    cost: float | None = Field(None, title="Cost")
+    cost: Annotated[float | None, Field(title="Cost")] = None
     scope: Scope
-    input_tokens: float | None = Field(None, title="Input Tokens")
-    output_tokens: float | None = Field(None, title="Output Tokens")
-    duration_ms: float | None = Field(None, title="Duration Ms")
-    data: dict[str, Any] | None = Field(None, title="Data")
-    parent_span_id: str | None = Field(None, title="Parent Span Id")
-    uuid: UUID = Field(..., title="Uuid")
-    project_uuid: UUID = Field(..., title="Project Uuid")
-    display_name: str | None = Field(None, title="Display Name")
+    input_tokens: Annotated[float | None, Field(title="Input Tokens")] = None
+    output_tokens: Annotated[float | None, Field(title="Output Tokens")] = None
+    duration_ms: Annotated[float | None, Field(title="Duration Ms")] = None
+    data: Annotated[dict[str, Any] | None, Field(title="Data")] = None
+    parent_span_id: Annotated[str | None, Field(title="Parent Span Id")] = None
+    uuid: Annotated[UUID, Field(title="Uuid")]
+    project_uuid: Annotated[UUID, Field(title="Project Uuid")]
+    display_name: Annotated[str | None, Field(title="Display Name")] = None
     generation: GenerationPublic | None = None
-    annotations: list[AnnotationTable] = Field(..., title="Annotations")
-    child_spans: list[SpanPublic] = Field(..., title="Child Spans")
-    created_at: datetime = Field(..., title="Created At")
-    version: int | None = Field(None, title="Version")
-    status: str | None = Field(None, title="Status")
+    annotations: Annotated[list[AnnotationTable], Field(title="Annotations")]
+    child_spans: Annotated[list[SpanPublic], Field(title="Child Spans")]
+    created_at: Annotated[datetime, Field(title="Created At")]
+    version: Annotated[int | None, Field(title="Version")] = None
+    status: Annotated[str | None, Field(title="Status")] = None
 
 
 SpanPublic.model_rebuild()
