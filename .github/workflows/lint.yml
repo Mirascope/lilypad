@@ -42,5 +42,12 @@ jobs:
       - name: Run Pyright
         run: uv run pyright lilypad tests
 
+      - name: Run Client Schemas Generator script
+        run: uv run scripts/generate_client_schema.py
+
+      - name: Check for git diff
+        run: |
+          git diff --exit-code lilypad/server/client || { echo "Error: Uncommitted changes found. Please run `uv run scripts/generate_client_schema.py`"; exit 1; }
+
       - name: Minimize uv cache
         run: uv cache prune --ci
