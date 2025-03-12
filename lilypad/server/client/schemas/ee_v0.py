@@ -19,10 +19,6 @@ class Tier(int, Enum):
     ENTERPRISE = 3
 
 
-class CITest:
-    pass
-
-
 class LicenseInfo(BaseModel):
     """Pydantic model for license validation"""
 
