@@ -8,7 +8,7 @@ import CardSkeleton from "@/components/CardSkeleton";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
 import { Playground } from "@/ee/components/Playground";
-import { useIsEnterprise } from "@/hooks/use-isEnterprise";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { Suspense } from "react";
 
 export const Route = createFileRoute(
@@ -29,7 +29,7 @@ const Generation = () => {
     generationsByNameQueryOptions(generationName, projectUuid)
   );
 
-  const isEnterprise = useIsEnterprise(projectUuid);
+  const features = useFeatureAccess();
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
   );
@@ -50,7 +50,7 @@ const Generation = () => {
           <CodeSnippet code={generation.code} />
         </div>
 
-        {isEnterprise && generation.is_managed && (
+        {features.managedGenerations && generation.is_managed && (
           <div className='text-left'>
             <Label>Prompt Template</Label>
             <Playground version={generation} />

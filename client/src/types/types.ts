@@ -222,6 +222,8 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -284,6 +286,8 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -447,11 +451,10 @@ export interface OrganizationPublic {
  * Organization update model
  */
 export interface OrganizationUpdate {
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
+  /** Name */
+  name?: string | null;
+  /** License */
+  license?: string | null;
 }
 
 /**

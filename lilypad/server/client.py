@@ -18,6 +18,7 @@ from ..exceptions import (
     LilypadFileNotFoundError,
     LilypadHTTPError,
     LilypadNotFoundError,
+    LilypadRateLimitError,
     LilypadRequestException,
     LilypadTimeout,
 )
@@ -167,6 +168,10 @@ class LilypadClient:
         except HTTPError as http_err:
             if http_err.response.status_code == 404:
                 raise LilypadNotFoundError(f"Resource not found: {url}")
+            elif http_err.response.status_code == 429:
+                raise LilypadRateLimitError(
+                    f"Too many requests {url}: {http_err.response.text}"
+                )
             raise LilypadHTTPError(
                 f"HTTP error during request to {url}: {http_err.response.text}"
             )

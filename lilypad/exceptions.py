@@ -15,6 +15,12 @@ class LilypadNotFoundError(LilypadException):
     status_code: Literal[404] = 404
 
 
+class LilypadRateLimitError(LilypadException):
+    """Raised when an API response has a status code of 429."""
+
+    status_code: Literal[429] = 429
+
+
 class LilypadAPIConnectionError(LilypadException):
     """Raised when an API connection error occurs."""
 

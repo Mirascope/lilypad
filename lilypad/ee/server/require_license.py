@@ -1,16 +1,21 @@
-"""License validation module for LilyPad Enterprise Edition"""
+"""License validation module for Lilypad Enterprise Edition"""
 
 import functools
 import inspect
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, TypeVar, cast
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 
 from ee import LicenseError, LicenseInfo, LicenseValidator, Tier
-from lilypad.server.exceptions import LilypadForbiddenError
-from lilypad.server.services import OrganizationService, ProjectService
+
+from ...ee.server import HOST_NAME
+from ...server._utils import get_current_user
+from ...server.exceptions import LilypadForbiddenError
+from ...server.schemas import UserPublic
+from ...server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
 
@@ -113,6 +118,11 @@ class RequireLicense:
                     detail="License key does not match organization",
                 )
 
+            if license_info.is_expired:
+                raise LilypadForbiddenError(
+                    detail="License has expired",
+                )
+
             if self.tier and license_info.tier < self.tier:
                 raise LilypadForbiddenError(
                     detail="Invalid License. Contact support@mirascope.com to get one.",
@@ -124,3 +134,35 @@ class RequireLicense:
             raise LilypadForbiddenError(
                 detail=str(e),
             )
+
+
+async def get_organization_license(
+    user: Annotated[UserPublic, Depends(get_current_user)],
+    organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
+) -> LicenseInfo:
+    """Get the license information for the organization"""
+    if not user.active_organization_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have an active organization.",
+        )
+    validator = LicenseValidator()
+    license_info = validator.validate_license(
+        user.active_organization_uuid, organization_service
+    )
+    if not license_info:
+        return LicenseInfo(
+            customer="",
+            license_id="",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.FREE,
+            organization_uuid=user.active_organization_uuid,
+        )
+    return license_info
+
+
+async def is_lilypad_cloud(
+    request: Request,
+) -> bool:
+    """Check if the request is to Lilypad Cloud"""
+    return request.url.hostname is not None and request.url.hostname.endswith(HOST_NAME)

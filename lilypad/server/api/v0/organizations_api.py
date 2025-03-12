@@ -2,7 +2,6 @@
 
 import secrets
 from typing import Annotated
-from uuid import UUID
 
 import resend
 import resend.exceptions
@@ -103,11 +102,10 @@ async def create_organization_invite(
 
 
 @organization_router.patch(
-    "/organizations/{organization_uuid}",
+    "/organizations",
     response_model=OrganizationPublic,
 )
 async def update_organization(
-    organization_uuid: UUID,
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     organization_update: OrganizationUpdate,
     user: Annotated[UserPublic, Depends(get_current_user)],
@@ -116,9 +114,14 @@ async def update_organization(
     # Check if user is in organization
     user_org = None
     for org in user.user_organizations or []:
-        if org.organization_uuid == organization_uuid:
+        if org.organization_uuid == user.active_organization_uuid:
             user_org = org
             break
+    if not user.active_organization_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have an active organization",
+        )
     if not user_org:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -138,11 +141,13 @@ async def update_organization(
     ):
         try:
             validator = LicenseValidator()
-            validator.verify_license(new_license, organization_uuid)
+            validator.verify_license(new_license, user.active_organization_uuid)
         except LicenseError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid license key: {str(e)}",
             )
 
-    return organization_service.update_record_by_uuid(organization_uuid, organization)
+    return organization_service.update_record_by_uuid(
+        user.active_organization_uuid, organization
+    )
