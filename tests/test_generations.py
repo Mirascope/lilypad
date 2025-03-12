@@ -25,7 +25,7 @@ from lilypad.generations import (
     _build_mirascope_call,
     generation,
 )
-from lilypad.server.client.schemas import GenerationPublic, CommonCallParams
+from lilypad.server.client.schemas import CommonCallParams, GenerationPublic
 
 dummy_spans = []
 
