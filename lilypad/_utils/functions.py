@@ -40,7 +40,7 @@ from mirascope.core import base as mb
 from pydantic import BaseModel
 
 from ..messages import Message
-from ..server.schemas.generations import GenerationCreate, GenerationPublic, Provider
+from ..server.client.schemas import GenerationCreate, GenerationPublic, Provider
 from .fn_is_async import fn_is_async
 
 _P = ParamSpec("_P")

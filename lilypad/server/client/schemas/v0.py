@@ -48,6 +48,29 @@ class EvaluationType(str, Enum):
     EDITED = "edited"
 
 
+class GenerationCreate(BaseModel):
+    """Generation create model."""
+
+    project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
+    version_num: Annotated[int | None, Field(title="Version Num")] = None
+    name: Annotated[str, Field(min_length=1, title="Name")]
+    signature: Annotated[str, Field(title="Signature")]
+    code: Annotated[str, Field(title="Code")]
+    hash: Annotated[str, Field(title="Hash")]
+    dependencies: Annotated[
+        dict[str, DependencyInfo] | None, Field(title="Dependencies")
+    ] = None
+    arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
+    archived: Annotated[datetime | None, Field(title="Archived")] = None
+    custom_id: Annotated[str | None, Field(title="Custom Id")] = None
+    prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
+    provider: Annotated[str | None, Field(title="Provider")] = None
+    model: Annotated[str | None, Field(title="Model")] = None
+    call_params: CommonCallParams | None = None
+    is_default: Annotated[bool | None, Field(title="Is Default")] = False
+    is_managed: Annotated[bool | None, Field(title="Is Managed")] = False
+
+
 class GenerationPublic(BaseModel):
     """Generation public model."""
 
@@ -95,6 +118,15 @@ class ProjectPublic(BaseModel):
         list[GenerationPublic] | None, Field(title="Generations")
     ] = []
     created_at: Annotated[datetime, Field(title="Created At")]
+
+
+class Provider(str, Enum):
+    """Provider name enum"""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    OPENROUTER = "openrouter"
+    GEMINI = "gemini"
 
 
 class Scope(str, Enum):

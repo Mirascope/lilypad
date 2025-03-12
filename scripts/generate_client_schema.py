@@ -125,7 +125,7 @@ def main() -> None:
     generate_client_schema(
         v0_openapi,
         CLIENT_SCHEMAS_DIR / "v0.py",
-        ["GenerationPublic", "OrganizationPublic", "ProjectPublic", "SpanPublic"],
+        ["GenerationPublic", "OrganizationPublic", "ProjectPublic", "SpanPublic", "GenerationCreate", "Provider"],
     )
 
     ee_v0_openapi = json.dumps(ee_v0.openapi())

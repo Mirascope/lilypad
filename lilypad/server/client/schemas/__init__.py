@@ -1,5 +1,19 @@
 """The Schema models for the Lilypad API."""
 
-from .v0 import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
+from .v0 import (
+    GenerationCreate,
+    GenerationPublic,
+    OrganizationPublic,
+    ProjectPublic,
+    Provider,
+    SpanPublic,
+)
 
-__all__ = ["GenerationPublic", "OrganizationPublic", "ProjectPublic", "SpanPublic"]
+__all__ = [
+    "GenerationCreate",
+    "GenerationPublic",
+    "OrganizationPublic",
+    "ProjectPublic",
+    "Provider",
+    "SpanPublic",
+]
