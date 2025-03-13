@@ -1,5 +1,6 @@
 import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { OrgSettings } from "@/components/OrgSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -7,7 +8,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { JSX } from "react";
+import { JSX, Suspense } from "react";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
@@ -37,7 +38,11 @@ const Settings = () => {
     {
       label: "Organization",
       value: "org",
-      component: <OrgSettings />,
+      component: (
+        <Suspense fallback={<LilypadLoading />}>
+          <OrgSettings />
+        </Suspense>
+      ),
     },
   ];
   if (tab && !tabs.some((t) => t.value === tab)) {

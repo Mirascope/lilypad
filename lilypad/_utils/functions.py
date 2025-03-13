@@ -3,14 +3,11 @@
 import dataclasses
 import datetime
 import inspect
-import os
 import types
 from collections import defaultdict, deque
-from collections.abc import AsyncIterable, Callable, Coroutine, Iterable
+from collections.abc import Callable
 from decimal import Decimal
 from enum import Enum
-from functools import partial, wraps
-from importlib import import_module
 from ipaddress import (
     IPv4Address,
     IPv4Interface,
@@ -28,20 +25,12 @@ from typing import (
     TypeAlias,
     TypeVar,
     Union,
-    cast,
     get_args,
     get_origin,
-    get_type_hints,
-    overload,
 )
 from uuid import UUID
 
-from mirascope.core import base as mb
 from pydantic import BaseModel
-
-from ..messages import Message
-from ..server.client.schemas import GenerationCreate, GenerationPublic, Provider
-from .fn_is_async import fn_is_async
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -126,197 +115,6 @@ def inspect_arguments(
                 arg_types[name] = type(value).__name__
 
     return arg_types, arg_values
-
-
-def _construct_call_decorator(
-    fn: Callable, provider: Provider, model: str
-) -> partial[Any]:
-    client = None
-    if provider == Provider.OPENROUTER:
-        provider = Provider.OPENAI
-        if fn_is_async(fn):
-            from openai import AsyncOpenAI
-
-            client = AsyncOpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=os.getenv("OPENROUTER_API_KEY"),
-            )
-        else:
-            from openai import OpenAI
-
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=os.getenv("OPENROUTER_API_KEY"),
-            )
-
-    return partial(
-        import_module(f"mirascope.core.{provider.value}").call,
-        model=model,
-        json_mode=False,
-        client=client,
-    )
-
-
-@overload
-def create_mirascope_call(
-    fn: Callable[_P, Coroutine[Any, Any, _R]],
-    generation: GenerationPublic | GenerationCreate,
-    provider: Provider,
-    model: str,
-    trace_decorator: Callable | None,
-) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
-
-
-@overload
-def create_mirascope_call(
-    fn: Callable[_P, _R],
-    generation: GenerationPublic | GenerationCreate,
-    provider: Provider,
-    model: str,
-    trace_decorator: Callable | None,
-) -> Callable[_P, _R]: ...
-
-
-def create_mirascope_call(
-    fn: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    generation: GenerationPublic | GenerationCreate,
-    provider: Provider,
-    model: str,
-    trace_decorator: Callable | None,
-) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-    """Returns the constructed Mirascope call function."""
-    if not trace_decorator:
-        trace_decorator = lambda x: x  # noqa: E731
-
-    call_decorator = _construct_call_decorator(fn, provider, model)
-    return_type = get_type_hints(fn).get("return", type(None))
-    if fn_is_async(fn):
-
-        @mb.prompt_template(generation.prompt_template)
-        @wraps(fn)
-        async def prompt_template_async(
-            *args: _P.args, **kwargs: _P.kwargs
-        ) -> mb.BaseDynamicConfig:
-            return {"call_params": generation.call_params}
-
-        @wraps(fn)
-        async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            if return_type is str:
-                traced_call = trace_decorator(call_decorator()(prompt_template_async))
-                return (await traced_call(*args, **kwargs)).content
-            origin_return_type = get_origin(return_type)
-            if origin_return_type is AsyncIterable and get_args(return_type) == (str,):
-                traced_call = trace_decorator(
-                    call_decorator(stream=True)(prompt_template_async)
-                )
-
-                async def iterable() -> AsyncIterable[str]:
-                    async for chunk, _ in await traced_call(*args, **kwargs):
-                        yield chunk.content
-
-                return cast(_R, iterable())
-            elif origin_return_type is Message:
-                traced_call = trace_decorator(
-                    call_decorator(tools=list(get_args(return_type)))(
-                        prompt_template_async
-                    )
-                )
-                return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage] # pyright: ignore [reportAbstractUsage]
-            elif (
-                origin_return_type is AsyncIterable
-                and len(iter_args := get_args(return_type)) == 1
-                and issubclass((response_model := iter_args[0]), BaseModel)
-            ):
-                traced_call = trace_decorator(
-                    call_decorator(response_model=response_model, stream=True)(
-                        prompt_template_async
-                    )
-                )
-                return cast(_R, await traced_call(*args, **kwargs))
-            elif (
-                inspect.isclass(origin_return_type)
-                and issubclass(origin_return_type, Message)
-                or (
-                    inspect.isclass(return_type)
-                    and type(return_type) is not types.GenericAlias
-                    and issubclass(return_type, Message)
-                )
-            ):
-                traced_call = trace_decorator(call_decorator()(prompt_template_async))
-                return cast(_R, Message(await traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
-            elif mb._utils.is_base_type(return_type) or (
-                inspect.isclass(return_type)
-                and type(return_type) is not types.GenericAlias
-                and issubclass(return_type, BaseModel)
-            ):
-                traced_call = trace_decorator(
-                    call_decorator(response_model=return_type)(prompt_template_async)
-                )
-                return cast(_R, await traced_call(*args, **kwargs))
-            else:
-                raise ValueError(f"Unsupported return type `{return_type}`.")
-
-        return inner_async
-    else:
-
-        @mb.prompt_template(generation.prompt_template)
-        @wraps(fn)
-        def prompt_template(
-            *args: _P.args, **kwargs: _P.kwargs
-        ) -> mb.BaseDynamicConfig:
-            return {"call_params": generation.call_params}
-
-        @wraps(fn)
-        def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            if return_type is str:
-                traced_call = trace_decorator(call_decorator()(prompt_template))
-                return traced_call(*args, **kwargs).content
-            origin_return_type = get_origin(return_type)
-            if origin_return_type is Iterable and get_args(return_type) == (str,):
-                traced_call = trace_decorator(
-                    call_decorator(stream=True)(prompt_template)
-                )
-
-                def iterable() -> Iterable[str]:
-                    for chunk, _ in traced_call(*args, **kwargs):
-                        yield chunk.content
-
-                return cast(_R, iterable())
-            elif origin_return_type is Message:
-                traced_call = trace_decorator(
-                    call_decorator(tools=list(get_args(return_type)))(prompt_template)
-                )
-                return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
-            elif (
-                origin_return_type is Iterable
-                and len(iter_args := get_args(return_type)) == 1
-                and issubclass((response_model := iter_args[0]), BaseModel)
-            ):
-                traced_call = trace_decorator(
-                    call_decorator(response_model=response_model, stream=True)(
-                        prompt_template
-                    )
-                )
-                return cast(_R, traced_call(*args, **kwargs))
-            elif (
-                inspect.isclass(origin_return_type)
-                and issubclass(origin_return_type, Message)
-                or inspect.isclass(return_type)
-                and issubclass(return_type, Message)
-            ):
-                traced_call = trace_decorator(call_decorator()(prompt_template))
-                return cast(_R, Message(traced_call(*args, **kwargs)))  # pyright: ignore [reportAbstractUsage]
-            elif mb._utils.is_base_type(return_type) or issubclass(
-                return_type, BaseModel
-            ):
-                traced_call = trace_decorator(
-                    call_decorator(response_model=return_type)(prompt_template)
-                )
-                return cast(_R, traced_call(*args, **kwargs))
-            else:
-                raise ValueError(f"Unsupported return type `{return_type}`.")
-
-        return inner
 
 
 IncEx = set[str] | dict[str, Any]
@@ -621,7 +419,6 @@ def jsonable_encoder(
 
 
 __all__ = [
-    "create_mirascope_call",
     "inspect_arguments",
     "jsonable_encoder",
     "ArgTypes",

@@ -6,7 +6,6 @@ import { UserOrgTable } from "@/components/UserOrgTable";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
-import { Suspense } from "react";
 
 export const OrgSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
@@ -19,11 +18,9 @@ export const OrgSettings = () => {
       title={`${activeUserOrg.organization.name}'s Settings`}
       icon={KeyRound}
     >
-      <Suspense fallback={<div>Loading...</div>}>
-        <UserOrgTable />
-        <ProjectsTable />
-        <APIKeysTable />
-      </Suspense>
+      <UserOrgTable />
+      <ProjectsTable />
+      <APIKeysTable />
     </SettingsLayout>
   );
 };

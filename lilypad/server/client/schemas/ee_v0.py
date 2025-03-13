@@ -10,6 +10,15 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+class Provider(str, Enum):
+    """Provider name enum"""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    OPENROUTER = "openrouter"
+    GEMINI = "gemini"
+
+
 class Tier(int, Enum):
     """License tier enum."""
 

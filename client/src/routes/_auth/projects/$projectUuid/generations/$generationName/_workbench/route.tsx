@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-router";
 
 import LilypadDialog from "@/components/LilypadDialog";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ export const Route = createFileRoute(
   },
 
   component: () => (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <GenerationWorkbench />
     </Suspense>
   ),
@@ -224,7 +225,7 @@ const GenerationWorkbench = () => {
           </TabsList>
         </div>
         <Separator className='my-2' />
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<LilypadLoading />}>
           {tabs.map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className='w-full'>
               {tab.component}

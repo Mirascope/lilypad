@@ -1,6 +1,7 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import LilypadDialog from "@/components/LilypadDialog";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,7 +61,7 @@ export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
   component: () => (
-    <Suspense fallback={<div>Loading ...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <GenerationsList />
     </Suspense>
   ),
