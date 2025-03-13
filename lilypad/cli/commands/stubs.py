@@ -23,8 +23,7 @@ from ...generations import (
     enable_recording,
     get_decorated_functions,
 )
-from ...server.client import LilypadClient
-from ...server.schemas import GenerationPublic
+from ...server.client import GenerationPublic, LilypadClient
 
 app = typer.Typer()
 console = Console()

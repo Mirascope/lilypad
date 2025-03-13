@@ -10,7 +10,6 @@ from uuid import UUID
 
 import PIL
 import PIL.WebPImagePlugin
-from fastapi.encoders import jsonable_encoder
 from mirascope.core import base as mb
 from mirascope.integrations import middleware_factory
 from opentelemetry.trace import get_tracer
@@ -18,8 +17,8 @@ from opentelemetry.trace.span import Span, SpanContext
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from ..server.client import LilypadClient
-from ..server.schemas import GenerationPublic
+from ..server.client import GenerationPublic, LilypadClient
+from . import jsonable_encoder
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -52,12 +51,13 @@ def _get_custom_context_manager(
         lilypad_client = LilypadClient()
         new_project_uuid = project_uuid or lilypad_client.project_uuid
         jsonable_arg_values = {}
-        for arg_name, arg_value in generation.arg_values.items():
-            try:
-                serialized_arg_value = jsonable_encoder(arg_value)
-            except ValueError:
-                serialized_arg_value = "could not serialize"
-            jsonable_arg_values[arg_name] = serialized_arg_value
+        if generation.arg_values:
+            for arg_name, arg_value in generation.arg_values.items():
+                try:
+                    serialized_arg_value = jsonable_encoder(arg_value)
+                except ValueError:
+                    serialized_arg_value = "could not serialize"
+                jsonable_arg_values[arg_name] = serialized_arg_value
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_uuid": str(new_project_uuid)

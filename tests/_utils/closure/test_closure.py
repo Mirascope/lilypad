@@ -76,12 +76,14 @@ lilypad_extras = [
     "anthropic",
     "azure",
     "bedrock",
+    "ee",
     "gemini",
     "google",
     "mistral",
     "openai",
     "outlines",
     "sandbox-docker",
+    "server",
     "vertex",
 ]
 

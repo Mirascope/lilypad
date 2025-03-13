@@ -5,11 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeAlias, TypeVar
 
-from ee.validate import Tier, require_license
-
+from .._utils.license import require_license
 from ..sandbox import SandboxRunner
-from ..server.client import LilypadClient
-from ..server.schemas import GenerationPublic
+from ..server.client import GenerationPublic, LilypadClient, Tier
 
 if TYPE_CHECKING:
     from ..generations import Generation
@@ -56,7 +54,7 @@ def specific_generation_version_sync_factory(
 
         return _create_inner_sync(_get_specific_version, sandbox_runner)
 
-    return _specific_generation_version_sync
+    return _specific_generation_version_sync  # pyright: ignore [reportReturnType]
 
 
 def specific_generation_version_async_factory(
@@ -101,4 +99,4 @@ def specific_generation_version_async_factory(
 
         return _create_inner_async(_get_specific_version, sandbox_runner)
 
-    return _specific_generation_version_async
+    return _specific_generation_version_async  # pyright: ignore [reportReturnType]

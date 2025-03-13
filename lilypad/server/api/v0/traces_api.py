@@ -16,11 +16,11 @@ from ee.validate import LicenseInfo
 from ....ee.server.features import cloud_features
 from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
-    calculate_openrouter_cost,
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable
 from ...schemas import SpanCreate, SpanPublic
+from ...schemas.spans import calculate_openrouter_cost
 from ...services import SpanService
 
 traces_router = APIRouter()
