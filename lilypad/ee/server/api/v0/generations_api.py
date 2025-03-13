@@ -93,7 +93,7 @@ def run_version(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No API keys found"
         )
-    generation_version = (
+    specific_generation_version_fn = (
         f"{generation.name}.version({generation.version_num})(**arg_values)"
     )
     wrapper_code = f'''
@@ -115,7 +115,7 @@ lilypad.configure()
 {generation.signature}
 
 arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_values)}
-res = {generation_version}
+res = {specific_generation_version_fn}
 '''
     try:
         processed_code = _run_playground(wrapper_code)
