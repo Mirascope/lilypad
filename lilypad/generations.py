@@ -22,19 +22,21 @@ from typing import (
 )
 from uuid import UUID
 
-from fastapi.encoders import jsonable_encoder
 from mirascope import llm
 from mirascope.core import prompt_template
+from mirascope.core.base import CommonCallParams
 from mirascope.core.base.types import Provider
 from mirascope.llm.call_response import CallResponse
 from opentelemetry.util.types import AttributeValue
 
 from ._utils import (
     Closure,
+    DependencyInfo,
     call_safely,
     create_mirascope_middleware,
     fn_is_async,
     inspect_arguments,
+    jsonable_encoder,
     load_config,
 )
 from ._utils.middleware import SpanContextHolder
@@ -42,10 +44,10 @@ from .ee.generations import (
     specific_generation_version_async_factory,
     specific_generation_version_sync_factory,
 )
+from .exceptions import LilypadNotFoundError
 from .messages import Message
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
-from .server.client import LilypadClient, LilypadNotFoundError
-from .server.schemas import GenerationPublic
+from .server.client import GenerationPublic, LilypadClient
 from .server.settings import get_settings
 from .stream import Stream
 from .traces import TraceDecorator, _get_batch_span_processor, _trace
@@ -360,12 +362,13 @@ def _construct_trace_attributes(
     generation: GenerationPublic,
 ) -> dict[str, AttributeValue]:
     jsonable_arg_values = {}
-    for arg_name, arg_value in generation.arg_values.items():
-        try:
-            serialized_arg_value = jsonable_encoder(arg_value)
-        except ValueError:
-            serialized_arg_value = "could not serialize"
-        jsonable_arg_values[arg_name] = serialized_arg_value
+    if generation.arg_values:
+        for arg_name, arg_value in generation.arg_values.items():
+            try:
+                serialized_arg_value = jsonable_encoder(arg_value)
+            except ValueError:
+                serialized_arg_value = "could not serialize"
+            jsonable_arg_values[arg_name] = serialized_arg_value
     return {
         "lilypad.generation.uuid": str(generation.uuid),
         "lilypad.generation.name": generation.name,
@@ -425,7 +428,9 @@ def _build_mirascope_call(
     mirascope_call = llm.call(
         provider=cast(Provider, generation_public.provider),
         model=generation_public.model,
-        call_params=generation_public.call_params,
+        call_params=cast(CommonCallParams, generation_public.call_params.model_dump())
+        if generation_public.call_params
+        else None,
     )(mirascope_prompt)
 
     @wraps(mirascope_call)
@@ -469,7 +474,12 @@ def _build_generation_call(
         code=generation.code,
         signature=generation.signature,
         hash=generation.hash,
-        dependencies=generation.dependencies,
+        dependencies={
+            name: cast(DependencyInfo, dependency.model_dump())
+            for name, dependency in generation.dependencies.items()
+        }
+        if generation.dependencies
+        else {},
     )
 
     if is_async:

@@ -1,4 +1,4 @@
-"""Users schemas."""
+"""Organizations schemas."""
 
 from uuid import UUID
 

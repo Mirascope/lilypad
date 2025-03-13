@@ -25,7 +25,7 @@ from lilypad.generations import (
     _build_mirascope_call,
     generation,
 )
-from lilypad.server.schemas.generations import GenerationPublic
+from lilypad.server.client.schemas import CommonCallParams, GenerationPublic
 
 dummy_spans = []
 
@@ -43,7 +43,7 @@ def dummy_generation_instance() -> GenerationPublic:
         arg_types={},
         arg_values={},
         version_num=1,
-        call_params={},
+        call_params=CommonCallParams(),
         provider="openai",
         model="gpt-4o-mini",
     )
@@ -575,7 +575,7 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.SubprocessSandboxRunner",
         ) as mock_runner,
         patch(
-            "ee.validate._validate_license_with_client",
+            "lilypad._utils.license._validate_license_with_client",
         ),
     ):
         mock_runner.return_value.execute_function.return_value = "sync outer"
@@ -614,7 +614,7 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.SubprocessSandboxRunner",
         ) as mock_runner,
         patch(
-            "ee.validate._validate_license_with_client",
+            "lilypad._utils.license._validate_license_with_client",
         ),
     ):
         mock_runner.return_value.execute_function.return_value = "sync outer"

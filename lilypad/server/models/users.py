@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class UserBase(SQLModel):
-    """Base Function Model."""
+    """Base User Model."""
 
     first_name: str = Field(nullable=False, min_length=1)
     last_name: str | None = Field(default=None)
@@ -25,7 +25,7 @@ class UserBase(SQLModel):
 
 
 class UserTable(UserBase, BaseSQLModel, table=True):
-    """Function table."""
+    """User table."""
 
     __tablename__ = USER_TABLE_NAME  # type: ignore
 

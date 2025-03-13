@@ -9,10 +9,8 @@ import requests
 from pydantic import BaseModel, TypeAdapter
 from requests.exceptions import HTTPError, RequestException, Timeout
 
-from ee import LicenseInfo
-
-from .._utils import Closure, load_config
-from ..exceptions import (
+from ..._utils import Closure, load_config
+from ...exceptions import (
     LilypadAPIConnectionError,
     LilypadException,
     LilypadFileNotFoundError,
@@ -22,8 +20,14 @@ from ..exceptions import (
     LilypadRequestException,
     LilypadTimeout,
 )
-from ..server.settings import get_settings
-from .schemas import GenerationPublic, OrganizationPublic, ProjectPublic, SpanPublic
+from ...server.settings import get_settings
+from .schemas import (
+    GenerationPublic,
+    LicenseInfo,
+    OrganizationPublic,
+    ProjectPublic,
+    SpanPublic,
+)
 
 _R = TypeVar("_R", bound=BaseModel)
 
@@ -374,4 +378,4 @@ class LilypadClient:
 
     def get_license_info(self) -> LicenseInfo:
         """Get the license info for the organization."""
-        return self._request("GET", f"/v0/ee/projects/{self.project_uuid}", LicenseInfo)
+        return self._request("GET", "/v0/ee/organizations/license", LicenseInfo)

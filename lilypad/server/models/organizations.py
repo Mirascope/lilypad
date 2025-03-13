@@ -1,4 +1,4 @@
-"""Users models."""
+"""Organizations models."""
 
 from typing import TYPE_CHECKING
 

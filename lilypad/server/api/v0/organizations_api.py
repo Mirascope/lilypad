@@ -7,7 +7,8 @@ import resend
 import resend.exceptions
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ee import LicenseError, LicenseValidator
+from ee import LicenseValidator
+from lilypad.exceptions import LicenseError
 
 from ..._utils import get_current_user
 from ...models import (
