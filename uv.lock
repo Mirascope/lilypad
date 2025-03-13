@@ -2814,7 +2814,6 @@ dependencies = [
     { name = "requests" },
     { name = "rich" },
     { name = "ruff" },
-    { name = "sqlmodel" },
     { name = "typer" },
     { name = "typing-extensions" },
 ]
@@ -2864,6 +2863,7 @@ server = [
     { name = "psycopg2-binary" },
     { name = "python-jose", extra = ["cryptography"] },
     { name = "resend" },
+    { name = "sqlmodel" },
     { name = "starlette" },
 ]
 vertex = [
@@ -2919,7 +2919,7 @@ requires-dist = [
     { name = "resend", marker = "extra == 'server'", specifier = ">=2.6.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "ruff", specifier = ">=0.9.5" },
-    { name = "sqlmodel", specifier = ">=0.0.22" },
+    { name = "sqlmodel", marker = "extra == 'server'", specifier = ">=0.0.22" },
     { name = "starlette", marker = "extra == 'server'", specifier = ">=0.26.0" },
     { name = "typer", specifier = ">=0.12.5" },
     { name = "types-aioboto3", extras = ["bedrock-runtime"], marker = "extra == 'bedrock'", specifier = ">=13.2.0.post3" },
