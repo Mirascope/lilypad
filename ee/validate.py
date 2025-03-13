@@ -3,12 +3,10 @@
 import base64
 import json
 import time
-from collections.abc import Callable, Coroutine
 from datetime import datetime, timezone
 from enum import Enum
-from functools import wraps
 from importlib import resources
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, overload
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from uuid import UUID
 
 from cryptography.hazmat.backends import default_backend
@@ -17,11 +15,14 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import (
     BaseModel,
     ConfigDict,
+    GetJsonSchemaHandler,
     ValidationError,
     computed_field,
 )
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
-from lilypad._utils import fn_is_async, load_config
+from lilypad.exceptions import LicenseError
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -45,9 +46,14 @@ class Tier(int, Enum):
             return cls[value]
         raise ValueError(f"{value} is not a valid {cls.__name__}")
 
-
-class LicenseError(Exception):
-    """Custom exception for license-related errors"""
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["x-enum-varnames"] = [f"{choice.name}" for choice in cls]
+        return json_schema
 
 
 def _ensure_utc(dt: datetime) -> datetime:
@@ -209,87 +215,3 @@ def generate_license(
     data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
     sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
     return f"{data_b64}.{sig_b64}"
-
-
-def _validate_license_with_client(
-    cached_license: LicenseInfo | None, tier: Tier
-) -> LicenseInfo | None:
-    if cached_license:
-        if cached_license.info < tier:
-            cached_license = None
-        if cached_license.info.expires_at < datetime.now(timezone.utc):
-            cached_license = None
-    if not cached_license:
-        config = load_config()
-        from lilypad.server.client import LilypadClient
-
-        lilypad_client = LilypadClient(
-            token=config.get("token", None),
-        )
-        cached_license = lilypad_client.get_license_info()
-    if cached_license.tier < tier:
-        raise LicenseError("Invalid License. Contact support@mirascope.com to get one.")
-    return cached_license
-
-
-@overload
-def require_license(
-    tier: Tier,
-) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
-
-
-@overload
-def require_license(
-    tier: Tier,
-) -> Callable[
-    [Callable[_P, Coroutine[Any, Any, _R]]], Callable[_P, Coroutine[Any, Any, _R]]
-]: ...
-
-
-def require_license(
-    tier: Tier,
-) -> Callable[
-    [Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]],
-    Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-]:
-    """Decorator to require a valid license for a function"""
-
-    @overload
-    def decorator(func: Callable[_P, _R]) -> Callable[_P, _R]: ...
-
-    @overload
-    def decorator(
-        func: Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, Coroutine[Any, Any, _R]]: ...
-
-    def decorator(
-        func: Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]],
-    ) -> Callable[_P, _R] | Callable[_P, Coroutine[Any, Any, _R]]:
-        _cached_license_info: LicenseInfo | None = None
-
-        if fn_is_async(func):
-
-            @wraps(func)
-            async def async_wrapper(
-                *args: _P.args, **kwargs: _P.kwargs
-            ) -> Coroutine[Any, Any, _R]:
-                nonlocal _cached_license_info
-                _cached_license_info = _validate_license_with_client(
-                    _cached_license_info, tier
-                )
-                return await func(*args, **kwargs)
-
-            return async_wrapper
-        else:
-
-            @wraps(func)
-            def sync_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                nonlocal _cached_license_info
-                _cached_license_info = _validate_license_with_client(
-                    _cached_license_info, tier
-                )
-                return func(*args, **kwargs)
-
-            return sync_wrapper
-
-    return decorator

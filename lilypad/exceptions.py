@@ -5,6 +5,10 @@ from typing import Literal
 from requests.exceptions import HTTPError, RequestException, Timeout
 
 
+class LicenseError(Exception):
+    """Custom exception for license-related errors"""
+
+
 class LilypadException(Exception):
     """Base class for all Lilypad exceptions."""
 
