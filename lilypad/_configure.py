@@ -15,8 +15,7 @@ from opentelemetry.sdk.trace.export import (
 from rich.logging import RichHandler
 
 from ._utils import load_config
-from .server.client import LilypadClient
-from .server.schemas import SpanPublic
+from .server.client import LilypadClient, SpanPublic
 from .server.settings import get_settings
 
 DEFAULT_LOG_LEVEL: int = logging.INFO

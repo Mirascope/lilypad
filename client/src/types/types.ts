@@ -335,7 +335,10 @@ export interface GenerationPublic {
  * GenerationUpdate
  * Generation update model.
  */
-export type GenerationUpdate = object;
+export interface GenerationUpdate {
+  /** Is Default */
+  is_default?: boolean | null;
+}
 
 /** HTTPValidationError */
 export interface HTTPValidationError {
@@ -458,20 +461,6 @@ export interface OrganizationUpdate {
 }
 
 /**
- * PlaygroundParameters
- * Playground parameters model.
- */
-export interface PlaygroundParameters {
-  /** Arg Values */
-  arg_values: object;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
-  generation?: GenerationCreate | null;
-}
-
-/**
  * ProjectCreate
  * Project Create Model.
  */
@@ -502,17 +491,6 @@ export interface ProjectPublic {
    * @format date-time
    */
   created_at: string;
-}
-
-/**
- * Provider
- * Provider name enum
- */
-export enum Provider {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic",
-  OPENROUTER = "openrouter",
-  GEMINI = "gemini",
 }
 
 /**

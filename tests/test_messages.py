@@ -6,6 +6,7 @@ from typing import Any
 import jiter
 import pytest
 from mirascope.core import base as mb
+from mirascope.core.base import _utils as mb_utils
 from mirascope.core.base.call_response import _BaseToolT
 from mirascope.core.base.tool import BaseTool
 from mirascope.core.base.types import CostMetadata
@@ -33,9 +34,14 @@ class MockResponse(
         Any,
         mb.BaseCallParams,
         Any,
+        mb_utils.BaseMessageParamConverter,
     ]
 ):
     """Mock response for testing"""
+
+    _message_converter: type[mb_utils.BaseMessageParamConverter] = (
+        mb_utils.BaseMessageParamConverter
+    )
 
     @property
     def content(self) -> str:  # pyright: ignore [reportReturnType]

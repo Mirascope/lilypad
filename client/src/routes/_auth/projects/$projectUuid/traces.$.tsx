@@ -7,10 +7,11 @@ import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { LilypadLoading } from "@/components/LilypadLoading";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <Trace />
     </Suspense>
   ),

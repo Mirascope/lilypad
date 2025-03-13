@@ -18,13 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EditorParameters } from "@/ee/components/Playground";
-import {
-  CommonCallParams,
-  GenerationPublic,
-  PlaygroundParameters,
-  Provider,
-  UserPublic,
-} from "@/types/types";
+import { PlaygroundParameters, Provider } from "@/ee/types/types";
+import { CommonCallParams, GenerationPublic, UserPublic } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";

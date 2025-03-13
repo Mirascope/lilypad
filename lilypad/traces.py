@@ -14,7 +14,6 @@ from typing import (
     overload,
 )
 
-from fastapi.encoders import jsonable_encoder
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
@@ -25,6 +24,7 @@ from lilypad._utils import (
     fn_is_async,
     get_qualified_name,
     inspect_arguments,
+    jsonable_encoder,
 )
 from lilypad.server.settings import get_settings
 

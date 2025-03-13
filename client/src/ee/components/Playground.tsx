@@ -36,21 +36,18 @@ import {
 } from "@/components/ui/tooltip";
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
+import { PlaygroundParameters } from "@/ee/types/types";
+import {
+  useCreateManagedGeneration,
+  useRunMutation,
+} from "@/ee/utils/generations";
 import {
   FormItemValue,
   simplifyFormItem,
   TypedInput,
 } from "@/ee/utils/input-utils";
-import {
-  GenerationCreate,
-  GenerationPublic,
-  PlaygroundParameters,
-} from "@/types/types";
-import {
-  useCreateManagedGeneration,
-  usePatchGenerationMutation,
-  useRunMutation,
-} from "@/utils/generations";
+import { GenerationCreate, GenerationPublic } from "@/types/types";
+import { usePatchGenerationMutation } from "@/utils/generations";
 import {
   BaseEditorFormFields,
   getAvailableProviders,
@@ -79,8 +76,10 @@ type FormValues = {
 export type EditorParameters = PlaygroundParameters & FormValues;
 export const Playground = ({
   version,
+  response,
 }: {
   version: GenerationPublic | null;
+  response?: string;
 }) => {
   const { projectUuid, generationName } = useParams({
     strict: false,
@@ -166,6 +165,8 @@ export const Playground = ({
           },
           {} as Record<string, string>
         ),
+        provider: data.provider,
+        model: data.model,
         signature: "",
         hash: "",
         code: "",
@@ -177,15 +178,41 @@ export const Playground = ({
           setOpenInputDrawer(true);
           return;
         }
+        const newVersion = await createGenerationMutation.mutateAsync({
+          projectUuid,
+          generationCreate,
+        });
+        const inputValues = inputs.reduce(
+          (acc, input) => {
+            if (input.type === "list" || input.type === "dict") {
+              try {
+                acc[input.key] = simplifyFormItem(input as FormItemValue);
+              } catch (e) {
+                acc[input.key] = input.value;
+              }
+            } else {
+              acc[input.key] = input.value;
+            }
+            return acc;
+          },
+          {} as Record<string, any>
+        );
         const playgroundValues: PlaygroundParameters = {
-          generation: generationCreate,
+          arg_values: inputValues,
           provider: data.provider,
           model: data.model,
-          arg_values: inputValues,
         };
-        await runMutation.mutateAsync({
+        const res = await runMutation.mutateAsync({
           projectUuid,
+          generationUuid: newVersion.uuid,
           playgroundValues,
+        });
+        navigate({
+          to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
+          replace: true,
+          state: {
+            result: res,
+          },
         });
       } else {
         try {
@@ -207,12 +234,12 @@ export const Playground = ({
   const renderBottomPanel = () => {
     return (
       <>
-        {runMutation.isSuccess && (
+        {response && (
           <div>
             <FormLabel className='text-base'>{"Outputs"}</FormLabel>
             <Card className='mt-2'>
               <CardContent className='flex flex-col p-6'>
-                <ReactMarkdown>{runMutation.data}</ReactMarkdown>
+                <ReactMarkdown>{response}</ReactMarkdown>
               </CardContent>
             </Card>
           </div>
