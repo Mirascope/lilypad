@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
+from lilypad.ee.server.models import EnvironmentTable
 from lilypad.server._utils import get_current_user, validate_api_key_project_strict
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
@@ -157,14 +158,39 @@ def test_project(session: Session) -> Generator[ProjectTable, None, None]:
 
 
 @pytest.fixture
-def test_api_key(
+def test_environment(
     session: Session, test_project: ProjectTable
+) -> Generator[EnvironmentTable, None, None]:
+    """Create a test environment.
+
+    Args:
+        session: Database session
+        test_project: Parent project
+
+    Yields:
+        EnvironmentTable: Test environment
+    """
+    environment = EnvironmentTable(
+        name="test_environment",
+        project_uuid=test_project.uuid,  # pyright: ignore [reportArgumentType]
+        organization_uuid=ORGANIZATION_UUID,
+    )
+    session.add(environment)
+    session.commit()
+    session.refresh(environment)
+    yield environment
+
+
+@pytest.fixture
+def test_api_key(
+    session: Session, test_project: ProjectTable, test_environment: EnvironmentTable
 ) -> Generator[APIKeyTable, None, None]:
     """Create a test api key.
 
     Args:
         session: Database session
         test_project: Parent project
+        test_environment: Parent environment
 
     Yields:
         APIKeyTable
@@ -178,6 +204,7 @@ def test_api_key(
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",
         project_uuid=test_project.uuid,
+        environment_uuid=test_environment.uuid,  # pyright: ignore [reportArgumentType]
     )
     session.add(api_key)
     session.commit()
