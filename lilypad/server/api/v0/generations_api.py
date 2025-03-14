@@ -18,7 +18,10 @@ from ...schemas import (
     GenerationCreate,
     GenerationPublic,
 )
-from ...services import GenerationService, SpanService
+from ...services import (
+    GenerationService,
+    SpanService,
+)
 
 generations_router = APIRouter()
 
@@ -44,35 +47,6 @@ async def get_generation_by_uuid(
 ) -> GenerationTable:
     """Get generation by UUID."""
     return generation_service.find_record_by_uuid(generation_uuid)
-
-
-@generations_router.get(
-    "/projects/{project_uuid}/generations/name/{generation_name}",
-    response_model=Sequence[GenerationPublic],
-)
-async def get_generations_by_name(
-    project_uuid: UUID,
-    generation_name: str,
-    generation_service: Annotated[GenerationService, Depends(GenerationService)],
-) -> Sequence[GenerationTable]:
-    """Get generation by name."""
-    return generation_service.find_generations_by_name(project_uuid, generation_name)
-
-
-@generations_router.get(
-    "/projects/{project_uuid}/generations/name/{generation_name}/version/{version_num}",
-    response_model=GenerationPublic,
-)
-async def get_generation_by_version(
-    project_uuid: UUID,
-    generation_name: str,
-    version_num: int,
-    generation_service: Annotated[GenerationService, Depends(GenerationService)],
-) -> GenerationTable:
-    """Get generation by name."""
-    return generation_service.find_generations_by_version(
-        project_uuid, generation_name, version_num
-    )
 
 
 @generations_router.get(

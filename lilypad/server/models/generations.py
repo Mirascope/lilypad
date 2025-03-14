@@ -19,6 +19,7 @@ from .table_names import (
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
+    from ...ee.server.models.deployments import DeploymentTable
     from .projects import ProjectTable
     from .spans import SpanTable
 
@@ -71,4 +72,7 @@ class GenerationTable(_GenerationBase, BaseOrganizationSQLModel, table=True):
         back_populates="generation",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,
+    )
+    deployments: list["DeploymentTable"] = Relationship(
+        back_populates="generation", cascade_delete=True
     )
