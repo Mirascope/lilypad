@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from sqlalchemy import Index, text
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from lilypad.server.models import BaseOrganizationSQLModel
@@ -22,6 +23,7 @@ class EnvironmentBase(SQLModel):
     project_uuid: UUID = Field(
         index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+    is_default: bool = Field(default=False, nullable=False)
 
 
 class Environment(EnvironmentBase):
@@ -37,6 +39,13 @@ class EnvironmentTable(EnvironmentBase, BaseOrganizationSQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
             "organization_uuid", "project_uuid", "name", name="unique_org_proj_env_name"
+        ),
+        # Only one default environment per project
+        Index(
+            "ux_default_environment_per_project",
+            "project_uuid",
+            unique=True,
+            postgresql_where=text("is_default = true"),
         ),
     )
     deployments: list["DeploymentTable"] = Relationship(
