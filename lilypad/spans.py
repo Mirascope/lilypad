@@ -23,17 +23,14 @@ class Span:
         self._span_cm: AbstractContextManager[OTSpan] | None = None
         self._order_cm: AbstractContextManager[Any] | None = None
         self._finished: bool = False
-        self._token = None  # Store the token for the context
+        self._token = None
 
     def __enter__(self) -> "Span":
         tracer = get_tracer("lilypad")
-        # Create a span but don't set it as current in the context
         self._span = tracer.start_span(self.name)
         self._span.set_attribute("lilypad.type", SpanType.TRACE.value)
 
-        # Save the current context
         self._current_context = context_api.get_current()
-        # Create a new context with our span
         ctx = set_span_in_context(self._span, self._current_context)
         # Activate our context
         self._token = context_api.attach(ctx)
@@ -57,11 +54,9 @@ class Span:
         if self._order_cm is not None:
             self._order_cm.__exit__(exc_type, exc_val, exc_tb)
 
-        # End the span
         if self._span is not None:
             self._span.end()
 
-        # Detach our context
         if self._token:
             context_api.detach(self._token)
 
@@ -138,7 +133,7 @@ class Span:
         """Explicitly finish the span if it has not been ended yet."""
         if not self._finished and self._span is not None:
             self._span.end()
-            # Detach our context
+
             if self._token:
                 context_api.detach(self._token)
             self._finished = True
