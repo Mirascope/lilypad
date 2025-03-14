@@ -127,6 +127,97 @@ export interface DependencyInfo {
 }
 
 /**
+ * DeploymentPublic
+ * Deployment public model.
+ */
+export interface DeploymentPublic {
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Is Active
+   * @default true
+   */
+  is_active?: boolean;
+  /**
+   * Version Num
+   * @default 1
+   */
+  version_num?: number;
+  /** Notes */
+  notes?: string | null;
+  /**
+   * Activated At
+   * Timestamp when the deployment was activated.
+   * @format date-time
+   */
+  activated_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  generation?: GenerationPublic | null;
+  environment?: EnvironmentPublic | null;
+}
+
+/**
+ * EnvironmentCreate
+ * Environment create model.
+ */
+export interface EnvironmentCreate {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+}
+
+/**
+ * EnvironmentPublic
+ * Environment public model.
+ */
+export interface EnvironmentPublic {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+}
+
+/**
  * EvaluationType
  * Evaluation type enum
  */

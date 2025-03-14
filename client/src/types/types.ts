@@ -29,6 +29,8 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -53,6 +55,8 @@ export interface APIKeyPublic {
    * @format uuid
    */
   project_uuid: string;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid
