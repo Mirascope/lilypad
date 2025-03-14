@@ -120,15 +120,6 @@ class ProjectPublic(BaseModel):
     created_at: Annotated[datetime, Field(title="Created At")]
 
 
-class Provider(str, Enum):
-    """Provider name enum"""
-
-    OPENAI = "openai"
-    ANTHROPIC = "anthropic"
-    OPENROUTER = "openrouter"
-    GEMINI = "gemini"
-
-
 class Scope(str, Enum):
     """Instrumentation Scope name of the span"""
 

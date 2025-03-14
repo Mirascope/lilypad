@@ -11,6 +11,7 @@ ee_api = FastAPI(separate_input_output_schemas=False)
 ee_api.include_router(annotations_router)
 ee_api.include_router(environment_router)
 ee_api.include_router(generations_router)
+ee_api.include_router(generations_router)
 ee_api.include_router(organizations_router)
 
 

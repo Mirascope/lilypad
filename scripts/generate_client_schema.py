@@ -34,9 +34,11 @@ V0_TARGET_MODELS = [
     "ProjectPublic",
     "SpanPublic",
     "GenerationCreate",
+]
+EE_V0_TARGET_MODELS = [
+    "LicenseInfo",
     "Provider",
 ]
-EE_V0_TARGET_MODELS = ["LicenseInfo"]
 
 
 class LilypadOpenAPIParser(OpenAPIParser):

@@ -359,14 +359,14 @@ def test_import_with_different_dist_name_fn() -> None:
     assert closure.code == _expected(import_with_different_dist_name_fn)
     expected_dependencies = {
         "google-ai-generativelanguage": {"extras": None, "version": "0.6.15"},
-        "google-api-core": {"extras": None, "version": "2.24.1"},
+        "google-api-core": {"extras": None, "version": "2.24.2"},
         "google-auth": {"extras": None, "version": "2.38.0"},
-        "google-cloud-aiplatform": {"extras": None, "version": "1.83.0"},
+        "google-cloud-aiplatform": {"extras": None, "version": "1.84.0"},
         "google-cloud-bigquery": {"extras": None, "version": "3.30.0"},
-        "google-cloud-core": {"extras": None, "version": "2.4.2"},
+        "google-cloud-core": {"extras": None, "version": "2.4.3"},
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.1"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
-        "google-genai": {"extras": None, "version": "1.4.0"},
+        "google-genai": {"extras": None, "version": "1.5.0"},
         "google-generativeai": {"extras": None, "version": "0.8.4"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],

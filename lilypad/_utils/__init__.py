@@ -7,7 +7,6 @@ from .fn_is_async import fn_is_async
 from .functions import (
     ArgTypes,
     ArgValues,
-    create_mirascope_call,
     inspect_arguments,
     jsonable_encoder,
 )

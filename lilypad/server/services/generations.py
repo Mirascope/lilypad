@@ -44,9 +44,12 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.project_uuid == project_uuid,
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.hash == generation_create.hash,
+                self.table.prompt_template == generation_create.prompt_template,
                 self.table.call_params == generation_create.call_params,
                 self.table.arg_types == generation_create.arg_types,
                 self.table.arg_values == generation_create.arg_values,
+                self.table.provider == generation_create.provider,
+                self.table.model == generation_create.model,
                 self.table.archived.is_(None),  # type: ignore
             )
         ).first()

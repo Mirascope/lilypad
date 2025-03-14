@@ -1,6 +1,6 @@
 """The Schema models for the Lilypad API."""
 
-from .ee_v0 import LicenseInfo, Tier
+from .ee_v0 import LicenseInfo, Provider, Tier
 from .v0 import (
     AnnotationTable,
     CommonCallParams,
@@ -11,7 +11,6 @@ from .v0 import (
     Label,
     OrganizationPublic,
     ProjectPublic,
-    Provider,
     Scope,
     SpanPublic,
     SpanType,

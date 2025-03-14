@@ -2,9 +2,14 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Label } from "@/components/ui/label";
 import { generationsByNameQueryOptions } from "@/utils/generations";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useParams,
+  useRouterState,
+} from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
 import { Playground } from "@/ee/components/Playground";
@@ -15,7 +20,7 @@ export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab"
 )({
   component: () => (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <Generation />
     </Suspense>
   ),
@@ -28,7 +33,7 @@ const Generation = () => {
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
-
+  const state = useRouterState({ select: (s) => s.location.state });
   const features = useFeatureAccess();
   const generation = generations.find(
     (generation) => generation.uuid === generationUuid
@@ -53,7 +58,7 @@ const Generation = () => {
         {features.managedGenerations && generation.is_managed && (
           <div className='text-left'>
             <Label>Prompt Template</Label>
-            <Playground version={generation} />
+            <Playground version={generation} response={state.result} />
           </div>
         )}
       </div>
