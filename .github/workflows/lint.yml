@@ -43,7 +43,7 @@ jobs:
         run: uv run pyright lilypad tests
 
       - name: Run Client Schemas Generator script
-        run:  uv run scripts/generate_python_client_schema.py generate-python
+        run: uv run scripts/generate_python_client_schema.py generate-python
 
       - name: Check for git diff
         run: |
