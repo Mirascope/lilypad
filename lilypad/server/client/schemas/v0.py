@@ -68,6 +68,7 @@ class GenerationCreate(BaseModel):
     provider: Annotated[str | None, Field(title="Provider")] = None
     model: Annotated[str | None, Field(title="Model")] = None
     call_params: CommonCallParams | None = None
+    is_default: Annotated[bool | None, Field(title="Is Default")] = False
     is_managed: Annotated[bool | None, Field(title="Is Managed")] = False
 
 
@@ -91,6 +92,7 @@ class GenerationPublic(BaseModel):
     provider: Annotated[str | None, Field(title="Provider")] = None
     model: Annotated[str | None, Field(title="Model")] = None
     call_params: CommonCallParams | None = None
+    is_default: Annotated[bool | None, Field(title="Is Default")] = False
     is_managed: Annotated[bool | None, Field(title="Is Managed")] = False
     uuid: Annotated[UUID, Field(title="Uuid")]
 
