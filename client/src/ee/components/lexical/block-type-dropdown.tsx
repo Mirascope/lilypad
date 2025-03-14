@@ -41,9 +41,13 @@ export const blockTypeToBlockName: Record<string, string> = {
 
 interface BlockTypeDropdownProps {
   blockType: keyof typeof blockTypeToBlockName;
+  isEditable: boolean;
 }
 
-export const BlockTypeDropdown = ({ blockType }: BlockTypeDropdownProps) => {
+export const BlockTypeDropdown = ({
+  blockType,
+  isEditable,
+}: BlockTypeDropdownProps) => {
   const [editor] = useLexicalComposerContext();
 
   const formatHeading = (headingLevel: HeadingTagType) => {
@@ -98,6 +102,7 @@ export const BlockTypeDropdown = ({ blockType }: BlockTypeDropdownProps) => {
   return (
     <Select
       value={blockType}
+      disabled={!isEditable}
       onValueChange={(value) => {
         switch (value) {
           case "h1":

@@ -115,8 +115,10 @@ export function SuggestionItem({
 
 export const TemplateSuggestionPlugin = ({
   inputs,
+  inputValues,
 }: {
   inputs: string[];
+  inputValues: Record<string, any>;
 }): JSX.Element | null => {
   const template: Template[] = inputs.map((input: string) => ({
     key: `{${input}}`,
@@ -148,7 +150,8 @@ export const TemplateSuggestionPlugin = ({
       closeMenu: () => void
     ) => {
       editor.update(() => {
-        const templateNode = $createTemplateNode(selectedOption.key);
+        const value = inputValues[selectedOption.metadata.value];
+        const templateNode = $createTemplateNode(selectedOption.key, value);
         if (nodeToReplace) {
           nodeToReplace.replace(templateNode);
         }
@@ -156,7 +159,7 @@ export const TemplateSuggestionPlugin = ({
         closeMenu();
       });
     },
-    [editor]
+    [editor, inputValues]
   );
 
   const createFilteredOptions = (options: Template[], query: string | null) => {

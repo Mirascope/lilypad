@@ -18,7 +18,11 @@ export const messageTypeToMessageName: Record<string, string> = {
   User: "USER",
 };
 
-export const MessageTypeDropdown = () => {
+export const MessageTypeDropdown = ({
+  isEditable,
+}: {
+  isEditable: boolean;
+}) => {
   const [editor] = useLexicalComposerContext();
   const [messageType, setMessageType] = useState<
     keyof typeof messageTypeToMessageName | undefined
@@ -63,6 +67,7 @@ export const MessageTypeDropdown = () => {
       onValueChange={(value) => {
         formatSection(value);
       }}
+      disabled={!isEditable}
     >
       <SelectTrigger className='w-40' disabled={isCursorInsideCollapsible}>
         <SelectValue placeholder='Messages' />
