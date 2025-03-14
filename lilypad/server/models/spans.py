@@ -82,6 +82,7 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="parent_span",
         sa_relationship_kwargs={
             "lazy": "selectin",  # codespell:ignore selectin
+            "order_by": "SpanTable.created_at.desc()",
         },
         cascade_delete=True,
     )

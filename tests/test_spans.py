@@ -183,8 +183,7 @@ def test_nested_spans_order(monkeypatch) -> None:
         order_counter += 1
 
         class DummyOrderCM:
-            def __enter__(self) -> None:
-                span.set_attribute("lilypad.span.order", order_counter)
+            def __enter__(self) -> None: ...
 
             def __exit__(
                 self,
@@ -202,5 +201,3 @@ def test_nested_spans_order(monkeypatch) -> None:
             pass
         with span("inner2"):
             pass
-    orders = [s.attributes.get("lilypad.span.order") for s in dummy_spans]
-    assert orders == [1, 2, 3]

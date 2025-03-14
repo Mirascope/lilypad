@@ -52,17 +52,14 @@ class _JSONSpanExporter(SpanExporter):
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries"""
-        span_data = sorted(
-            [self._span_to_dict(span) for span in spans],
-            key=lambda span: span.get("attributes", {}).get("lilypad.span.order", 0),
-            reverse=True,
-        )
+        span_data = [self._span_to_dict(span) for span in spans]
         json_data = json.dumps(span_data)
 
         try:
             response_spans = self.client.post_traces(data=json_data)
-            if response_spans:
-                self.pretty_print_display_names(response_spans)
+            if len(response_spans) > 0:
+                for response_span in response_spans:
+                    self.pretty_print_display_names(response_span)
                 return SpanExportResult.SUCCESS
             else:
                 return SpanExportResult.FAILURE
