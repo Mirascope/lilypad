@@ -189,6 +189,11 @@ export interface EnvironmentCreate {
    * @format uuid
    */
   project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
 }
 
 /**
@@ -205,6 +210,11 @@ export interface EnvironmentPublic {
    * @format uuid
    */
   project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
   /**
    * Uuid
    * @format uuid
