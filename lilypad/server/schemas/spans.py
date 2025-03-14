@@ -456,7 +456,7 @@ def _convert_timestamp(ns_timestamp: int) -> datetime:
 def _extract_event_attribute(event: dict, field: str) -> str:
     """Extract an attribute from an event using its name as prefix."""
     event_name = event.get("name", "unknown")
-    attributes = event.get("attributes", {})
+    attributes: dict[str, Any] = event.get("attributes", {})
     return attributes.get(f"{event_name}.{field}", "")
 
 

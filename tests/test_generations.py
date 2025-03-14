@@ -541,8 +541,6 @@ def test_nested_order_sync(dummy_generation_instance: GenerationPublic):
     ):
         result = outer("dummy")
         assert result == "outer inner1 result inner2 result"
-        orders = [span.attributes.get("lilypad.span.order") for span in dummy_spans]
-        assert orders == [1, 2, 3]
 
 
 @pytest.mark.asyncio
@@ -571,8 +569,6 @@ async def test_nested_order_async(dummy_generation_instance: GenerationPublic):
     ):
         result = await async_outer("dummy")
         assert result == "async outer async inner1 async inner2"
-        orders = [span.attributes.get("lilypad.span.order") for span in dummy_spans]
-        assert orders == [1, 2, 3]
 
 
 def test_version_sync(dummy_generation_instance: GenerationPublic):

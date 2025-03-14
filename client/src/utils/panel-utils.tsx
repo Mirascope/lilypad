@@ -84,7 +84,7 @@ export const renderEventsContainer = (messages: Event[]) => {
           <Card key={`events-${index}`}>
             <CardHeader>
               <CardTitle>
-                {event.name} {`[${event.type}]`}
+                {event.name} {event.type && `[${event.type}]`}
               </CardTitle>
               <CardDescription>{event.timestamp}</CardDescription>
             </CardHeader>
@@ -139,6 +139,23 @@ export const renderCardOutput = (output: any) => {
   );
 };
 
+export const renderMetadata = (data: Record<string, any>) => {
+  const attributes = data.attributes;
+  if (!attributes) return null;
+  if (attributes.type && attributes.type !== "traces") return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{"Metadata"}</CardTitle>
+      </CardHeader>
+      {attributes && (
+        <CardContent className='overflow-x-auto'>
+          <JsonView value={attributes} />
+        </CardContent>
+      )}
+    </Card>
+  );
+};
 export const renderData = ({ ...props }: JsonViewProps<object>) => {
   return (
     <Card>

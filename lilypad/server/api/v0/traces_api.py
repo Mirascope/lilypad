@@ -117,7 +117,9 @@ async def _process_span(
     return span_create
 
 
-@traces_router.post("/projects/{project_uuid}/traces", response_model=SpanPublic)
+@traces_router.post(
+    "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
+)
 async def traces(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     license: Annotated[LicenseInfo, Depends(get_organization_license)],
@@ -125,7 +127,7 @@ async def traces(
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
-) -> SpanTable:
+) -> Sequence[SpanTable]:
     """Create span traces."""
     # Check if the number of traces exceeds the limit
     if is_lilypad_cloud:
@@ -146,17 +148,14 @@ async def traces(
     for trace in traces_json:
         if parent_span_id := trace.get("parent_span_id"):
             parent_to_children[parent_span_id].append(trace)
-
     # Find root spans (spans with no parents) and process each tree
     root_spans = [span for span in traces_json if span.get("parent_span_id") is None]
 
-    # Process each root span and its subtree, this will always be 1 for now
     for root_span in root_spans:
         await _process_span(root_span, parent_to_children, span_creates)
 
     span_tables = span_service.create_bulk_records(span_creates, project_uuid)
-
-    return span_tables[0]
+    return [span for span in span_tables if span.parent_span_id is None]
 
 
 __all__ = ["traces_router"]

@@ -217,7 +217,7 @@ class LilypadClient:
 
     def post_traces(
         self, params: dict[str, Any] | None = None, **kwargs: Any
-    ) -> SpanPublic:
+    ) -> list[SpanPublic]:
         """Creates span traces.
 
         Args:
@@ -231,7 +231,7 @@ class LilypadClient:
         return self._request(
             "POST",
             f"/v0/projects/{self.project_uuid}/traces",
-            response_model=SpanPublic,
+            response_model=list[SpanPublic],
             params=params,
             **kwargs,
         )

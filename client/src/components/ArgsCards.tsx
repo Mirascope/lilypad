@@ -19,6 +19,7 @@ interface ArgsCardsProps {
 }
 
 export const ArgsCards = ({ args }: ArgsCardsProps) => {
+  if (Object.keys(args).length < 1) return null;
   return (
     <Card className='w-full max-w-full'>
       <CardHeader>
