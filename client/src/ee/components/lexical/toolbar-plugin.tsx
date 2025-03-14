@@ -36,6 +36,7 @@ import { MessageTypeDropdown } from "./messages-dropdown";
 
 export default function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
+  const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isBold, setIsBold] = useState<boolean>(false);
   const [isItalic, setIsItalic] = useState<boolean>(false);
   const [isUnderline, setIsUnderline] = useState<boolean>(false);
@@ -112,6 +113,9 @@ export default function ToolbarPlugin() {
 
   useEffect(() => {
     return mergeRegister(
+      editor.registerEditableListener((editable) => {
+        setIsEditable(editable);
+      }),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {
@@ -137,7 +141,7 @@ export default function ToolbarPlugin() {
         <Button
           className='h-8 px-2'
           variant='ghost'
-          disabled={!canUndo}
+          disabled={!canUndo || !isEditable}
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         >
           {/* reload flip to left */}
@@ -147,7 +151,7 @@ export default function ToolbarPlugin() {
         <Button
           className='h-8 px-2'
           variant='ghost'
-          disabled={!canRedo}
+          disabled={!canRedo || !isEditable}
           onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
         >
           <ReloadIcon />
@@ -155,7 +159,7 @@ export default function ToolbarPlugin() {
 
         <Separator orientation='vertical' className='h-auto my-1' />
 
-        <BlockTypeDropdown blockType={blockType} />
+        <BlockTypeDropdown blockType={blockType} isEditable={isEditable} />
 
         <Separator orientation='vertical' className='h-auto my-1' />
 
@@ -167,6 +171,7 @@ export default function ToolbarPlugin() {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
             setIsBold(pressed);
           }}
+          disabled={!isEditable}
         >
           <FontBoldIcon />
         </Toggle>
@@ -179,6 +184,7 @@ export default function ToolbarPlugin() {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
             setIsItalic(pressed);
           }}
+          disabled={!isEditable}
         >
           <FontItalicIcon />
         </Toggle>
@@ -191,6 +197,7 @@ export default function ToolbarPlugin() {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
             setIsUnderline(pressed);
           }}
+          disabled={!isEditable}
         >
           <UnderlineIcon />
         </Toggle>
@@ -202,11 +209,12 @@ export default function ToolbarPlugin() {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
             setIsCode(pressed);
           }}
+          disabled={!isEditable}
         >
           <CodeIcon />
         </Toggle>
         <Separator orientation='vertical' className='h-auto my-1' />
-        <MessageTypeDropdown />
+        <MessageTypeDropdown isEditable={isEditable} />
       </div>
     </div>
   );

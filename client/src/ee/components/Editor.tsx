@@ -1,3 +1,5 @@
+import { ActionsPlugin } from "@/ee/components/lexical/actions-plugin";
+import { ClearEditorPlugin } from "@/ee/components/lexical/clear-editor-plugin";
 import { CodeHighlightPlugin } from "@/ee/components/lexical/code-highlight-plugin";
 import { CollapsibleContainerNode } from "@/ee/components/lexical/collapsible-container-node";
 import { CollapsibleContentNode } from "@/ee/components/lexical/collapsible-content-node";
@@ -30,7 +32,15 @@ import { LexicalEditor } from "lexical";
 import { ForwardedRef, forwardRef, RefObject, useMemo } from "react";
 export const Editor = forwardRef(
   (
-    { inputs, promptTemplate }: { inputs: string[]; promptTemplate: string },
+    {
+      inputs,
+      promptTemplate,
+      inputValues,
+    }: {
+      inputs: string[];
+      promptTemplate: string;
+      inputValues: Record<string, any>;
+    },
     ref: ForwardedRef<LexicalEditor>
   ) => {
     const loadContent = () => {
@@ -105,12 +115,21 @@ export const Editor = forwardRef(
           />
           <ListPlugin />
           <LinkPlugin />
-          {inputs && <TemplatePlugin inputs={inputs} />}
-          {inputs && <TemplateSuggestionPlugin inputs={inputs} />}
+          {inputs && (
+            <TemplatePlugin inputs={inputs} inputValues={inputValues} />
+          )}
+          {inputs && (
+            <TemplateSuggestionPlugin
+              inputs={inputs}
+              inputValues={inputValues}
+            />
+          )}
           <CodeHighlightPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <CollapsiblePlugin />
           <TabIndentationPlugin />
+          <ClearEditorPlugin />
+          <ActionsPlugin />
         </div>
       </LexicalComposer>
     );
