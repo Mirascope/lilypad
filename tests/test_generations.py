@@ -414,7 +414,7 @@ def test_sync_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadClient.get_deployed_generation_by_names",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
@@ -446,7 +446,7 @@ async def test_async_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadClient.get_deployed_generation_by_names",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
