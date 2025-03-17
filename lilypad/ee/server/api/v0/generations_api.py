@@ -41,7 +41,7 @@ generations_router = APIRouter()
     "/projects/{project_uuid}/generations/name/{generation_name}/version/{version_num}",
     response_model=GenerationPublic,
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.FREE)
 async def get_generation_by_version(
     project_uuid: UUID,
     generation_name: str,
@@ -58,7 +58,7 @@ async def get_generation_by_version(
     "/projects/{project_uuid}/generations/name/{generation_name}",
     response_model=Sequence[GenerationPublic],
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.FREE)
 async def get_generations_by_name(
     project_uuid: UUID,
     generation_name: str,
