@@ -60,7 +60,7 @@ origins = [
     f"{settings.client_url}/*",
 ]
 
-app = FastAPI(lifespan=lifespan, debug=True)
+app = FastAPI(lifespan=lifespan, debug=settings.environment != "production")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
