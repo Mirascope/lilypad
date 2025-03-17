@@ -1,6 +1,7 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import LilypadDialog from "@/components/LilypadDialog";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,7 +38,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
-import { useIsEnterprise } from "@/hooks/use-isEnterprise";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { GenerationTab } from "@/types/generations";
 import { GenerationPublic } from "@/types/types";
@@ -60,7 +61,7 @@ export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/generations/"
 )({
   component: () => (
-    <Suspense fallback={<div>Loading ...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <GenerationsList />
     </Suspense>
   ),
@@ -183,13 +184,15 @@ const GenerationsList = () => {
   const { data } = useSuspenseQuery(
     uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
   );
-  const isEnterprise = useIsEnterprise(projectUuid);
+  const features = useFeatureAccess();
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
           Generations
-          {data.length > 0 && isEnterprise && <CreateGenerationButton />}
+          {data.length > 0 && features.managedGenerations && (
+            <CreateGenerationButton />
+          )}
         </h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
           <Suspense fallback={<CardSkeleton items={2} />}>
@@ -229,12 +232,12 @@ type CreateGenerationFormValues = {
 };
 const GenerationNoDataPlaceholder = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const isEnterprise = useIsEnterprise(projectUuid);
   const methods = useForm<CreateGenerationFormValues>({
     defaultValues: {
       name: "",
     },
   });
+  const features = useFeatureAccess();
   const navigate = useNavigate();
   const onSubmit = (data: CreateGenerationFormValues) => {
     navigate({
@@ -243,7 +246,7 @@ const GenerationNoDataPlaceholder = () => {
   };
   return (
     <div className='flex flex-col gap-4'>
-      {isEnterprise && (
+      {features.managedGenerations && (
         <>
           <Typography variant='h4'>Create Managed Generation</Typography>
           <Form {...methods}>

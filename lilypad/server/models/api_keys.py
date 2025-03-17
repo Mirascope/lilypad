@@ -8,9 +8,15 @@ from pydantic.types import AwareDatetime
 from sqlmodel import DateTime, Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
-from .table_names import API_KEY_TABLE_NAME, PROJECT_TABLE_NAME, USER_TABLE_NAME
+from .table_names import (
+    API_KEY_TABLE_NAME,
+    ENVIRONMENT_TABLE_NAME,
+    PROJECT_TABLE_NAME,
+    USER_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
+    from ...ee.server.models.environments import EnvironmentTable
     from .projects import ProjectTable
     from .user_organizations import OrganizationTable
     from .users import UserTable
@@ -29,6 +35,12 @@ class APIKeyBase(SQLModel):
     project_uuid: UUID = Field(
         index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
+    environment_uuid: UUID | None = Field(
+        default=None,
+        foreign_key=f"{ENVIRONMENT_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
+        index=True,
+    )
 
 
 class APIKeyTable(APIKeyBase, BaseOrganizationSQLModel, table=True):
@@ -42,3 +54,4 @@ class APIKeyTable(APIKeyBase, BaseOrganizationSQLModel, table=True):
     organization: "OrganizationTable" = Relationship(back_populates="api_keys")
     project: "ProjectTable" = Relationship(back_populates="api_keys")
     user: "UserTable" = Relationship(back_populates="api_keys")
+    environment: "EnvironmentTable" = Relationship(back_populates="api_keys")

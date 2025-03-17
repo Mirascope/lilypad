@@ -14,7 +14,6 @@ from typing import (
     overload,
 )
 
-from fastapi.encoders import jsonable_encoder
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, get_tracer, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
@@ -25,6 +24,7 @@ from lilypad._utils import (
     fn_is_async,
     get_qualified_name,
     inspect_arguments,
+    jsonable_encoder,
 )
 from lilypad.server.settings import get_settings
 
@@ -61,8 +61,6 @@ def span_order_context(span: Span) -> Generator[None, None, None]:
     global _span_counter
     with _span_counter_lock:
         _span_counter += 1
-        order = _span_counter
-    span.set_attribute("lilypad.span.order", order)
     yield
 
 

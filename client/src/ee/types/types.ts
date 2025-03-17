@@ -86,6 +86,148 @@ export interface AnnotationUpdate {
 }
 
 /**
+ * CommonCallParams
+ * Common parameters shared across LLM providers.
+ *
+ * Note: Each provider may handle these parameters differently or not support them at all.
+ * Please check provider-specific documentation for parameter support and behavior.
+ *
+ * Attributes:
+ *     temperature: Controls randomness in the output (0.0 to 1.0).
+ *     max_tokens: Maximum number of tokens to generate.
+ *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+ *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+ *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+ *     seed: Random seed for reproducibility.
+ *     stop: Stop sequence(s) to end generation.
+ */
+export interface CommonCallParams {
+  /** Temperature */
+  temperature?: number | null;
+  /** Max Tokens */
+  max_tokens?: number | null;
+  /** Top P */
+  top_p?: number | null;
+  /** Frequency Penalty */
+  frequency_penalty?: number | null;
+  /** Presence Penalty */
+  presence_penalty?: number | null;
+  /** Seed */
+  seed?: number | null;
+  /** Stop */
+  stop?: string | string[] | null;
+}
+
+/** DependencyInfo */
+export interface DependencyInfo {
+  /** Version */
+  version: string;
+  /** Extras */
+  extras: string[] | null;
+}
+
+/**
+ * DeploymentPublic
+ * Deployment public model.
+ */
+export interface DeploymentPublic {
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Is Active
+   * @default true
+   */
+  is_active?: boolean;
+  /**
+   * Version Num
+   * @default 1
+   */
+  version_num?: number;
+  /** Notes */
+  notes?: string | null;
+  /**
+   * Activated At
+   * Timestamp when the deployment was activated.
+   * @format date-time
+   */
+  activated_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  generation?: GenerationPublic | null;
+  environment?: EnvironmentPublic | null;
+}
+
+/**
+ * EnvironmentCreate
+ * Environment create model.
+ */
+export interface EnvironmentCreate {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+}
+
+/**
+ * EnvironmentPublic
+ * Environment public model.
+ */
+export interface EnvironmentPublic {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+}
+
+/**
  * EvaluationType
  * Evaluation type enum
  */
@@ -111,6 +253,139 @@ export interface Event {
    * @format date-time
    */
   timestamp: string;
+}
+
+/**
+ * GenerationCreate
+ * Generation create model.
+ */
+export interface GenerationCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
+  /** Archived */
+  archived?: string | null;
+  /** Custom Id */
+  custom_id?: string | null;
+  /** Prompt Template */
+  prompt_template?: string | null;
+  /** Provider */
+  provider?: string | null;
+  /** Model */
+  model?: string | null;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean | null;
+  /**
+   * Is Managed
+   * @default false
+   */
+  is_managed?: boolean | null;
+}
+
+/**
+ * GenerationPublic
+ * Generation public model.
+ */
+export interface GenerationPublic {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
+  /** Archived */
+  archived?: string | null;
+  /** Custom Id */
+  custom_id?: string | null;
+  /** Prompt Template */
+  prompt_template?: string | null;
+  /** Provider */
+  provider?: string | null;
+  /** Model */
+  model?: string | null;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean | null;
+  /**
+   * Is Managed
+   * @default false
+   */
+  is_managed?: boolean | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
 }
 
 /** HTTPValidationError */
@@ -149,6 +424,11 @@ export interface LicenseInfo {
    * @format uuid
    */
   organization_uuid: string;
+  /**
+   * Is Expired
+   * Check if the license has expired
+   */
+  is_expired: boolean;
 }
 
 /**
@@ -160,6 +440,31 @@ export interface MessageParam {
   role: string;
   /** Content */
   content: (AudioPart | TextPart | ImagePart | ToolCall)[];
+}
+
+/**
+ * PlaygroundParameters
+ * Playground parameters model.
+ */
+export interface PlaygroundParameters {
+  /** Arg Values */
+  arg_values: object;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  generation?: GenerationCreate | null;
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
+  GEMINI = "gemini",
 }
 
 /**
@@ -215,10 +520,10 @@ export interface SpanMoreDetails {
  * License tier enum.
  */
 export enum Tier {
-  FREE = "FREE",
-  PRO = "PRO",
-  TEAM = "TEAM",
-  ENTERPRISE = "ENTERPRISE",
+  FREE = 0,
+  PRO = 1,
+  TEAM = 2,
+  ENTERPRISE = 3,
 }
 
 /** ValidationError */

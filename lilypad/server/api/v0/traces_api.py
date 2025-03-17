@@ -5,18 +5,22 @@ from collections.abc import Sequence
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
+from ee.validate import LicenseInfo
+
+from ....ee.server.features import cloud_features
+from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
-    calculate_openrouter_cost,
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable
 from ...schemas import SpanCreate, SpanPublic
+from ...schemas.spans import calculate_openrouter_cost
 from ...services import SpanService
 
 traces_router = APIRouter()
@@ -113,14 +117,29 @@ async def _process_span(
     return span_create
 
 
-@traces_router.post("/projects/{project_uuid}/traces", response_model=SpanPublic)
+@traces_router.post(
+    "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
+)
 async def traces(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
+    license: Annotated[LicenseInfo, Depends(get_organization_license)],
+    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
-) -> SpanTable:
+) -> Sequence[SpanTable]:
     """Create span traces."""
+    # Check if the number of traces exceeds the limit
+    if is_lilypad_cloud:
+        tier = license.tier
+        num_traces = span_service.count_by_current_month()
+        if num_traces >= cloud_features[tier].traces_per_month:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
+            )
+
+    # Process the traces
     traces_json: list[dict] = await request.json()
     span_creates: list[SpanCreate] = []
     parent_to_children = defaultdict(list)
@@ -129,17 +148,14 @@ async def traces(
     for trace in traces_json:
         if parent_span_id := trace.get("parent_span_id"):
             parent_to_children[parent_span_id].append(trace)
-
     # Find root spans (spans with no parents) and process each tree
     root_spans = [span for span in traces_json if span.get("parent_span_id") is None]
 
-    # Process each root span and its subtree, this will always be 1 for now
     for root_span in root_spans:
         await _process_span(root_span, parent_to_children, span_creates)
 
     span_tables = span_service.create_bulk_records(span_creates, project_uuid)
-
-    return span_tables[0]
+    return [span for span in span_tables if span.parent_span_id is None]
 
 
 __all__ = ["traces_router"]

@@ -17,17 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CommonCallParams,
-  GenerationPublic,
-  PlaygroundParameters,
-  Provider,
-  UserPublic,
-} from "@/types/types";
+import { EditorParameters } from "@/ee/components/Playground";
+import { PlaygroundParameters, Provider } from "@/ee/types/types";
+import { CommonCallParams, GenerationPublic, UserPublic } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { DefaultValues, Path, useForm, useFormContext } from "react-hook-form";
+import {
+  DefaultValues,
+  Path,
+  useForm,
+  useFormContext,
+  UseFormReturn,
+} from "react-hook-form";
 export type OptionalField<T> = {
   enabled: boolean;
   value: T;
@@ -472,4 +474,21 @@ export const formValuesToApi = (obj: { [key: string]: unknown }) => {
   }
 
   return obj;
+};
+
+export const validateInputs = (
+  methods: UseFormReturn<EditorParameters>,
+  inputs: Record<string, any>[]
+) => {
+  let isValid = true;
+  inputs.forEach((input, index) => {
+    if (!input.value) {
+      methods.setError(`inputs.${index}.value`, {
+        type: "required",
+        message: "Value is required for Run",
+      });
+      isValid = false;
+    }
+  });
+  return isValid;
 };
