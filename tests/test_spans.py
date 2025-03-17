@@ -214,3 +214,20 @@ def test_nested_spans_order(monkeypatch) -> None:
             pass
         with span("inner2"):
             pass
+
+
+def test_dummy_span_record_exception_directly() -> None:
+    """Test that DummySpan.record_exception records an exception event correctly when called directly."""
+    span_instance = DummySpan("direct exception test")
+    dummy_exception = ValueError("direct test error")
+    span_instance.record_exception(dummy_exception)
+
+    exception_events = [
+        event for event in span_instance.events if event[0] == "exception"
+    ]
+    assert len(exception_events) == 1
+
+    attrs = exception_events[0][1]
+    assert attrs["exception.type"] == str(dummy_exception)
+    assert attrs["exception.message"] == str(dummy_exception)
+    assert attrs["exception.stacktrace"] == str(dummy_exception)
