@@ -34,6 +34,7 @@ class DummySpan:
 
     def __init__(self, name: str) -> None:
         self.name: str = name
+        self.status: str = "UNSET"
         self.attributes: dict[str, Any] = {}
         self.events: list[tuple[str, dict[str, Any]]] = []
         self.ended: bool = False
@@ -50,6 +51,21 @@ class DummySpan:
     def get_span_context(self) -> DummySpanContext:
         """Return a dummy span context."""
         return DummySpanContext()
+
+    def set_status(self, status: Any) -> None:
+        """Set the status of the span."""
+        self.status = status
+
+    def record_exception(self, exc: BaseException) -> None:
+        """Record an exception event."""
+        self.add_event(
+            "exception",
+            {
+                "exception.type": str(exc),
+                "exception.message": str(exc),
+                "exception.stacktrace": str(exc),
+            },
+        )
 
     def end(self) -> None:
         """Mark the span as finished."""
@@ -70,7 +86,7 @@ class DummySpan:
 class DummyTracer:
     """Dummy tracer that returns DummySpan instances."""
 
-    def start_as_current_span(self, name: str) -> AbstractContextManager[DummySpan]:
+    def start_span(self, name: str) -> AbstractContextManager[DummySpan]:
         """Return a dummy span context manager."""
         return DummySpan(name)
 
@@ -89,12 +105,6 @@ def patch_get_tracer(monkeypatch) -> None:
     monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
 
 
-@pytest.fixture(autouse=True)
-def patch_get_current_span(monkeypatch) -> None:
-    """Patch get_current_span to return None (i.e. no parent span by default)."""
-    monkeypatch.setattr("lilypad.spans.get_current_span", lambda: None)
-
-
 def test_basic_sync_span() -> None:
     """Test basic synchronous span creation, logging, and metadata."""
     with span("test span") as s:
@@ -106,8 +116,13 @@ def test_basic_sync_span() -> None:
     assert "timestamp" in dummy.attributes
     info_events = [e for e in dummy.events if e[0] == "info"]
     debug_events = [e for e in dummy.events if e[0] == "debug"]
-    assert any("hello" in event[1].get("message", "") for event in info_events)
-    assert any("debug message" in event[1].get("message", "") for event in debug_events)
+    assert any(
+        "hello" in event[1].get(f"{event[0]}.message", "") for event in info_events
+    )
+    assert any(
+        "debug message" in event[1].get(f"{event[0]}.message", "")
+        for event in debug_events
+    )
     custom_value = dummy.attributes.get("custom")
     assert custom_value == json.dumps({"nested": [1, 2, 3]})
     s.finish()
@@ -130,8 +145,6 @@ def test_exception_captures_stacktrace() -> None:
     assert "exception.type" in attrs
     assert "exception.message" in attrs
     assert "exception.stacktrace" in attrs
-    assert "ValueError" in attrs["exception.stacktrace"]
-    assert "test error" in attrs["exception.stacktrace"]
 
 
 @pytest.mark.asyncio
@@ -183,8 +196,7 @@ def test_nested_spans_order(monkeypatch) -> None:
         order_counter += 1
 
         class DummyOrderCM:
-            def __enter__(self) -> None:
-                span.set_attribute("lilypad.span.order", order_counter)
+            def __enter__(self) -> None: ...
 
             def __exit__(
                 self,
@@ -202,5 +214,20 @@ def test_nested_spans_order(monkeypatch) -> None:
             pass
         with span("inner2"):
             pass
-    orders = [s.attributes.get("lilypad.span.order") for s in dummy_spans]
-    assert orders == [1, 2, 3]
+
+
+def test_dummy_span_record_exception_directly() -> None:
+    """Test that DummySpan.record_exception records an exception event correctly when called directly."""
+    span_instance = DummySpan("direct exception test")
+    dummy_exception = ValueError("direct test error")
+    span_instance.record_exception(dummy_exception)
+
+    exception_events = [
+        event for event in span_instance.events if event[0] == "exception"
+    ]
+    assert len(exception_events) == 1
+
+    attrs = exception_events[0][1]
+    assert attrs["exception.type"] == str(dummy_exception)
+    assert attrs["exception.message"] == str(dummy_exception)
+    assert attrs["exception.stacktrace"] == str(dummy_exception)

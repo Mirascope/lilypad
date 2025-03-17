@@ -61,6 +61,7 @@ interface GenericDataTableProps<T> {
   selectRow?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
+  onDetailPanelClose?: () => void;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -82,6 +83,7 @@ export const DataTable = <T extends { uuid: string }>({
   selectRow,
   customGetRowId = undefined,
   customExpanded = {},
+  onDetailPanelClose,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
     customExpanded
@@ -90,7 +92,7 @@ export const DataTable = <T extends { uuid: string }>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedRow, setSelectedRow] = useState<T | null | undefined>(
+  const [detailRow, setDetailRow] = useState<T | null | undefined>(
     defaultSelectedRow
   );
   const table = useReactTable({
@@ -115,10 +117,9 @@ export const DataTable = <T extends { uuid: string }>({
     },
     getSubRows,
   });
-
   const { rows } = table.getRowModel();
   useEffect(() => {
-    setSelectedRow(selectRow);
+    setDetailRow(selectRow);
   }, [selectRow]);
   const rowVirtualizer = useVirtualizer({
     count: virtualizerOptions.count,
@@ -131,9 +132,10 @@ export const DataTable = <T extends { uuid: string }>({
     if (onRowClick) {
       onRowClick(row);
     } else {
-      setSelectedRow((prevSelectedRow) =>
+      setDetailRow((prevSelectedRow) =>
         prevSelectedRow && prevSelectedRow.uuid === row.uuid ? null : row
       );
+      onDetailPanelClose && onDetailPanelClose();
     }
   };
 
@@ -144,7 +146,7 @@ export const DataTable = <T extends { uuid: string }>({
           key={row.id}
           data-state={row.getIsSelected() && "selected"}
           className={`cursor-pointer hover:bg-secondary ${
-            selectedRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
+            detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
           }`}
           onClick={() => toggleRowSelection(row.original)}
         >
@@ -161,6 +163,11 @@ export const DataTable = <T extends { uuid: string }>({
       </>
     );
   };
+
+  const onCollapse = () => {
+    setDetailRow(null);
+    onDetailPanelClose && onDetailPanelClose();
+  };
   const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
   const paddingBottom =
     rowVirtualizer.getTotalSize() -
@@ -170,7 +177,7 @@ export const DataTable = <T extends { uuid: string }>({
   return (
     <ResizablePanelGroup direction='horizontal' className='rounded-lg border'>
       <ResizablePanel
-        defaultSize={selectedRow ? defaultPanelSize : 100}
+        defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
         className='p-2 flex flex-col gap-2'
       >
@@ -278,7 +285,7 @@ export const DataTable = <T extends { uuid: string }>({
           </Table>
         </div>
       </ResizablePanel>
-      {selectedRow && DetailPanel && (
+      {detailRow && DetailPanel && (
         <>
           <ResizableHandle withHandle />
           <ResizablePanel
@@ -287,10 +294,10 @@ export const DataTable = <T extends { uuid: string }>({
             style={{ overflowY: "auto" }}
             collapsible={true}
             minSize={12}
-            onCollapse={() => setSelectedRow(null)}
+            onCollapse={onCollapse}
           >
             <div className='p-4 border overflow-auto'>
-              <DetailPanel data={selectedRow} />
+              <DetailPanel data={detailRow} />
             </div>
           </ResizablePanel>
         </>

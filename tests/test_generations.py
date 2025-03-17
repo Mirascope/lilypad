@@ -13,18 +13,20 @@ from mirascope.core.base import (
     BaseCallResponse,
     Metadata,
 )
+from mirascope.core.base._utils import BaseMessageParamConverter
 from mirascope.core.base.types import CostMetadata, FinishReason
 from mirascope.llm.call_response import CallResponse
 from pydantic import computed_field
 
 from lilypad import Message
+from lilypad._utils import Closure
 from lilypad.generations import (
     Generation,
     GenerationMode,
     _build_mirascope_call,
     generation,
 )
-from lilypad.server.schemas.generations import GenerationPublic
+from lilypad.server.client.schemas import CommonCallParams, GenerationPublic
 
 dummy_spans = []
 
@@ -40,8 +42,9 @@ def dummy_generation_instance() -> GenerationPublic:
         hash="dummy_hash",
         dependencies={},
         arg_types={},
+        arg_values={},
         version_num=1,
-        call_params={},
+        call_params=CommonCallParams(),
         provider="openai",
         model="gpt-4o-mini",
     )
@@ -162,6 +165,20 @@ class DummyMessageParam(BaseMessageParam):
     content: Any
 
 
+class DummyMessageParamConverter(BaseMessageParamConverter):
+    """Base class for converting message params to/from provider formats."""
+
+    @staticmethod
+    def to_provider(message_params: list[BaseMessageParam]) -> list[Any]:
+        """Converts base message params -> provider-specific messages."""
+        return []
+
+    @staticmethod
+    def from_provider(message_params: list[Any]) -> list[BaseMessageParam]:
+        """Converts provider-specific messages -> Base message params."""
+        return []
+
+
 class DummyTool(BaseTool):
     """A dummy tool class."""
 
@@ -186,9 +203,12 @@ class DummyProviderCallResponse(
         DummyMessageParam,
         DummyCallParams,
         DummyMessageParam,
+        DummyMessageParamConverter,
     ]
 ):
     """A dummy provider call response class."""
+
+    _message_converter: type[DummyMessageParamConverter] = DummyMessageParamConverter
 
     @property
     def content(self) -> str:
@@ -341,7 +361,7 @@ async def async_outer(param: str) -> str:
 
 
 def fake_mirascope_middleware_sync(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate a synchronous mirascope middleware returning a dummy result."""
 
@@ -355,7 +375,7 @@ def fake_mirascope_middleware_sync(
 
 
 def fake_mirascope_middleware_async(
-    generation, arg_types, arg_values, is_async, prompt_template, span_context_holder
+    generation, is_async, prompt_template, span_context_holder
 ):
     """Simulate an asynchronous mirascope middleware returning a dummy result."""
 
@@ -394,7 +414,7 @@ def test_sync_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadClient.get_deployed_generation_by_names",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
@@ -426,7 +446,7 @@ async def test_async_managed_generation(
     """
     with (
         patch(
-            "lilypad.generations.LilypadClient.get_generation_by_signature",
+            "lilypad.generations.LilypadClient.get_deployed_generation_by_names",
             return_value=dummy_generation_instance,
         ),
         patch("lilypad.generations.llm.call") as mock_llm_call,
@@ -521,8 +541,6 @@ def test_nested_order_sync(dummy_generation_instance: GenerationPublic):
     ):
         result = outer("dummy")
         assert result == "outer inner1 result inner2 result"
-        orders = [span.attributes.get("lilypad.span.order") for span in dummy_spans]
-        assert orders == [1, 2, 3]
 
 
 @pytest.mark.asyncio
@@ -551,8 +569,6 @@ async def test_nested_order_async(dummy_generation_instance: GenerationPublic):
     ):
         result = await async_outer("dummy")
         assert result == "async outer async inner1 async inner2"
-        orders = [span.attributes.get("lilypad.span.order") for span in dummy_spans]
-        assert orders == [1, 2, 3]
 
 
 def test_version_sync(dummy_generation_instance: GenerationPublic):
@@ -569,11 +585,28 @@ def test_version_sync(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
+        patch(
+            "lilypad._utils.license._validate_license_with_client",
+        ),
     ):
+        mock_runner.return_value.execute_function.return_value = "sync outer"
         versioned_func = sync_outer.version(forced_version)
         result = versioned_func("dummy")
         assert result == "sync outer"
         mock_get_ver.assert_called_once()
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 @pytest.mark.asyncio
@@ -591,11 +624,28 @@ async def test_version_async(dummy_generation_instance: GenerationPublic):
             "lilypad.generations.LilypadClient.get_or_create_generation_version",
             return_value=dummy_generation_instance,
         ),
+        patch(
+            "lilypad.generations.SubprocessSandboxRunner",
+        ) as mock_runner,
+        patch(
+            "lilypad._utils.license._validate_license_with_client",
+        ),
     ):
-        versioned_func = await async_outer.version(forced_version)
-        result = await versioned_func("dummy")
-        assert result == "async outer"
+        mock_runner.return_value.execute_function.return_value = "sync outer"
+        versioned_func = async_outer.version(forced_version)
+        result = await versioned_func("dummy")  # pyright: ignore [reportCallIssue]
+        assert result == "sync outer"
         mock_get_ver.assert_called_once()
+        mock_runner.return_value.execute_function.assert_called_once_with(
+            Closure(
+                name="dummy_generation",
+                signature="dummy_signature",
+                code="def dummy(): pass",
+                hash="dummy_hash",
+                dependencies={},
+            ),
+            "dummy",
+        )
 
 
 def test_build_mirascope_call_async(

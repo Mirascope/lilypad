@@ -29,6 +29,11 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -53,6 +58,11 @@ export interface APIKeyPublic {
    * @format uuid
    */
   project_uuid: string;
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
   /**
    * Uuid
    * @format uuid
@@ -222,6 +232,8 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -284,6 +296,8 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
+  /** Arg Values */
+  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -331,7 +345,10 @@ export interface GenerationPublic {
  * GenerationUpdate
  * Generation update model.
  */
-export type GenerationUpdate = object;
+export interface GenerationUpdate {
+  /** Is Default */
+  is_default?: boolean | null;
+}
 
 /** HTTPValidationError */
 export interface HTTPValidationError {
@@ -447,25 +464,10 @@ export interface OrganizationPublic {
  * Organization update model
  */
 export interface OrganizationUpdate {
-  /**
-   * Name
-   * @minLength 1
-   */
-  name: string;
-}
-
-/**
- * PlaygroundParameters
- * Playground parameters model.
- */
-export interface PlaygroundParameters {
-  /** Arg Values */
-  arg_values: object;
-  /** Provider name enum */
-  provider: Provider;
-  /** Model */
-  model: string;
-  generation?: GenerationCreate | null;
+  /** Name */
+  name?: string | null;
+  /** License */
+  license?: string | null;
 }
 
 /**
@@ -499,17 +501,6 @@ export interface ProjectPublic {
    * @format date-time
    */
   created_at: string;
-}
-
-/**
- * Provider
- * Provider name enum
- */
-export enum Provider {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic",
-  OPENROUTER = "openrouter",
-  GEMINI = "gemini",
 }
 
 /**

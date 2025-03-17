@@ -1,7 +1,7 @@
 """The `SpanService` class for spans."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
@@ -194,6 +194,31 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.flush()
         return True
 
+    def count_by_current_month(self) -> int:
+        """Count the number of spans created in the current month"""
+        # Get first and last day of current month
+        today = datetime.now()
+        start_of_month = date(today.year, today.month, 1)
+
+        # Calculate first day of next month
+        if today.month == 12:
+            end_of_month = date(today.year + 1, 1, 1)
+        else:
+            end_of_month = date(today.year, today.month + 1, 1)
+
+        query = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.created_at >= start_of_month,
+                self.table.created_at < end_of_month,
+                self.table.organization_uuid == self.user.active_organization_uuid,
+            )
+        )
+
+        count = self.session.exec(query).one()
+        return count
+
     def create_bulk_records(
         self, spans_create: Sequence[SpanCreate], project_uuid: UUID
     ) -> list[SpanTable]:
@@ -211,7 +236,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             spans.append(span)
 
         self.session.add_all(spans)
-        self.session.commit()
+        self.session.flush()
         return spans
 
     def delete_records_by_generation_uuid(

@@ -225,10 +225,12 @@ export const BytesInput = <
   label = "Value (bytes)",
 }: BaseInputProps<TFieldValues, TName>) => {
   const [inputMode, setInputMode] = useState<"text" | "file">("text");
-  const [fileType, setFileType] = useState<"image" | "audio" | "other">("other");
+  const [fileType, setFileType] = useState<"image" | "audio" | "other">(
+    "other"
+  );
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     onChange: (...event: any[]) => void
@@ -251,10 +253,10 @@ export const BytesInput = <
       reader.onload = () => {
         const result = reader.result as string;
         // Remove the data:*/*;base64, prefix to get just the encoded content
-        const base64Data = result.split(',')[1];
+        const base64Data = result.split(",")[1];
         // Set the value in the form
         onChange(base64Data);
-        
+
         // Keep the full data URL for preview
         setPreview(result);
       };
@@ -271,30 +273,30 @@ export const BytesInput = <
     onChange(e.target.value);
     setPreview(null);
   };
-  
+
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
   };
 
   const renderPreview = (value: any) => {
     if (!preview) return null;
-    
+
     if (fileType === "image") {
       return (
-        <div className="mt-2">
-          <p className="text-sm text-gray-500 mb-1">Image Preview:</p>
-          <img 
-            src={preview} 
-            alt="Preview" 
-            className="max-w-full max-h-40 object-contain border rounded"
+        <div className='mt-2'>
+          <p className='text-sm text-gray-500 mb-1'>Image Preview:</p>
+          <img
+            src={preview}
+            alt='Preview'
+            className='max-w-full max-h-40 object-contain border rounded'
           />
         </div>
       );
     } else if (fileType === "audio") {
       return (
-        <div className="mt-2">
-          <p className="text-sm text-gray-500 mb-1">Audio Preview:</p>
-          <audio controls className="w-full">
+        <div className='mt-2'>
+          <p className='text-sm text-gray-500 mb-1'>Audio Preview:</p>
+          <audio controls className='w-full'>
             <source src={preview} />
             Your browser does not support the audio element.
           </audio>
@@ -302,13 +304,15 @@ export const BytesInput = <
       );
     } else if (value) {
       return (
-        <div className="mt-2 flex items-center text-sm text-gray-500">
-          <FileText className="w-4 h-4 mr-1" />
-          <span>File loaded ({Math.round((value.length * 3/4) / 1024)} KB)</span>
+        <div className='mt-2 flex items-center text-sm text-gray-500'>
+          <FileText className='w-4 h-4 mr-1' />
+          <span>
+            File loaded ({Math.round((value.length * 3) / 4 / 1024)} KB)
+          </span>
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -316,92 +320,96 @@ export const BytesInput = <
     <FormInputWrapper control={control} name={name} label={label}>
       {(field) => (
         <FormControl>
-          <div className="space-y-2">
-            <div className="flex gap-2 mb-2">
+          <div className='space-y-2'>
+            <div className='flex gap-2 mb-2'>
               <Button
-                type="button"
+                type='button'
                 variant={inputMode === "text" ? "default" : "outline"}
                 onClick={() => setInputMode("text")}
-                size="sm"
-                className="flex-1"
+                size='sm'
+                className='flex-1'
               >
                 Text Input
               </Button>
               <Button
-                type="button"
+                type='button'
                 variant={inputMode === "file" ? "default" : "outline"}
                 onClick={() => setInputMode("file")}
-                size="sm"
-                className="flex-1"
+                size='sm'
+                className='flex-1'
               >
                 File Upload
               </Button>
             </div>
-            
+
             {inputMode === "text" ? (
               <textarea
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Enter base64 encoded bytes"
+                className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                placeholder='Enter base64 encoded bytes'
                 value={field.value || ""}
                 onChange={(e) => handleTextInput(e, field.onChange)}
               />
             ) : (
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
+              <div className='space-y-2'>
+                <div className='grid grid-cols-3 gap-2'>
                   <Button
-                    type="button"
-                    variant="outline"
+                    type='button'
+                    variant='outline'
                     onClick={triggerFileSelect}
-                    className="w-full flex items-center justify-center gap-1"
+                    className='w-full flex items-center justify-center gap-1'
                   >
-                    <Image className="w-4 h-4" />
+                    <Image className='w-4 h-4' />
                     <span>Image</span>
                   </Button>
                   <Button
-                    type="button"
-                    variant="outline"
+                    type='button'
+                    variant='outline'
                     onClick={triggerFileSelect}
-                    className="w-full flex items-center justify-center gap-1"
+                    className='w-full flex items-center justify-center gap-1'
                   >
-                    <Music className="w-4 h-4" />
+                    <Music className='w-4 h-4' />
                     <span>Audio</span>
                   </Button>
                   <Button
-                    type="button"
-                    variant="outline"
+                    type='button'
+                    variant='outline'
                     onClick={triggerFileSelect}
-                    className="w-full flex items-center justify-center gap-1"
+                    className='w-full flex items-center justify-center gap-1'
                   >
-                    <FileText className="w-4 h-4" />
+                    <FileText className='w-4 h-4' />
                     <span>Other File</span>
                   </Button>
                 </div>
                 <input
                   ref={fileInputRef}
-                  type="file"
+                  type='file'
                   onChange={(e) => handleFileChange(e, field.onChange)}
-                  className="hidden"
-                  accept="*/*"
+                  className='hidden'
+                  accept='*/*'
                 />
-                <div className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md hover:border-primary cursor-pointer" onClick={triggerFileSelect}>
-                  <div className="flex flex-col items-center">
-                    <Upload className="w-8 h-8 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500">
+                <div
+                  className='flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md hover:border-primary cursor-pointer'
+                  onClick={triggerFileSelect}
+                >
+                  <div className='flex flex-col items-center'>
+                    <Upload className='w-8 h-8 text-gray-400' />
+                    <p className='mt-2 text-sm text-gray-500'>
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className='text-xs text-gray-400'>
                       Any file type supported
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             {renderPreview(field.value)}
-            
+
             {field.value && inputMode === "text" && (
-              <div className="text-xs text-gray-500">
-                {field.value.length} characters ({Math.round((field.value.length * 3/4) / 1024)} KB approx)
+              <div className='text-xs text-gray-500'>
+                {field.value.length} characters (
+                {Math.round((field.value.length * 3) / 4 / 1024)} KB approx)
               </div>
             )}
           </div>
@@ -420,7 +428,6 @@ export const ListInput = <
 >({
   control,
   name,
-  label = "Value (list)",
 }: BaseInputProps<TFieldValues, TName>) => {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -589,7 +596,8 @@ export const ObjectInput = <
       else if (newType === "int") newValue = parseInt(currentValue, 10) || 0;
       else if (newType === "float") newValue = parseFloat(currentValue) || 0.0;
       else if (newType === "bool") newValue = Boolean(currentValue);
-      else if (newType === "bytes") newValue = typeof currentValue === "string" ? currentValue : ""; 
+      else if (newType === "bytes")
+        newValue = typeof currentValue === "string" ? currentValue : "";
       else if (newType === "list")
         newValue = Array.isArray(currentValue) ? currentValue : [];
       else if (newType === "dict")
@@ -615,7 +623,7 @@ export const ObjectInput = <
 
   return (
     <FormInputWrapper control={control} name={name} label={label}>
-      {(field) => (
+      {(_field) => (
         <div className='space-y-4 border rounded-md p-4'>
           {entries.map(({ key, type, value }, entryIndex) => {
             const valueLabel = `Value (${type})`;
@@ -778,9 +786,7 @@ export const TypedInput = <
         <BooleanInput control={control} name={name} label={labelWithType} />
       );
     case "bytes":
-      return (
-        <BytesInput control={control} name={name} label={labelWithType} />
-      );
+      return <BytesInput control={control} name={name} label={labelWithType} />;
     case "list":
       return <ListInput control={control} name={name} label={labelWithType} />;
     case "dict":
@@ -817,7 +823,7 @@ export const simplifyFormItem = (formItem: FormItemValue): SimplifiedValue => {
         : [];
     case "bytes":
       // For bytes, we ensure the value is a proper string and let it pass through
-      return typeof formItem.value === 'string' ? formItem.value : '';
+      return typeof formItem.value === "string" ? formItem.value : "";
     default:
       return formItem.value;
   }

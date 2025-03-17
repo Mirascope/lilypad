@@ -7,8 +7,9 @@ import pytest
 
 from lilypad.exceptions import LilypadAPIConnectionError, LilypadNotFoundError
 from lilypad.server.client import LilypadClient
-from lilypad.server.models import Scope
-from lilypad.server.schemas import ProjectPublic, SpanPublic
+from lilypad.server.client.schemas.v0 import ProjectPublic, Scope, SpanPublic
+from lilypad.server.schemas import ProjectPublic as ServerProjectPublic
+from lilypad.server.schemas import SpanPublic as ServerSpanPublic
 
 
 @pytest.fixture
@@ -76,22 +77,24 @@ def test_client_initialization():
         (
             "post_traces",
             [],
-            {
-                "uuid": uuid4(),
-                "span_id": "span-1",
-                "project_uuid": uuid4(),
-                "version_uuid": uuid4(),
-                "version_num": 1,
-                "scope": "lilypad",  # Changed from "LILYPAD" to "lilypad"
-                "data": {},
-                "parent_span_id": None,
-                "created_at": "2024-01-01T00:00:00",
-                "display_name": "test_function",
-                "version": None,
-                "child_spans": [],
-                "annotations": [],
-                "duration_ms": 100,
-            },
+            [
+                {
+                    "uuid": uuid4(),
+                    "span_id": "span-1",
+                    "project_uuid": uuid4(),
+                    "version_uuid": uuid4(),
+                    "version_num": 1,
+                    "scope": "lilypad",
+                    "data": {},
+                    "parent_span_id": None,
+                    "created_at": "2024-01-01T00:00:00",
+                    "display_name": "test_function",
+                    "version": None,
+                    "child_spans": [],
+                    "annotations": [],
+                    "duration_ms": 100,
+                }
+            ],
         ),
     ],
 )
@@ -107,10 +110,13 @@ def test_request_methods(client, method, args, mock_response):
         assert result is not None
         if method == "post_project":
             assert isinstance(result, ProjectPublic)
+            ServerProjectPublic.model_validate(result, strict=True)
         elif method == "post_traces":
-            assert isinstance(result, SpanPublic)
-            assert isinstance(result.scope, Scope)
-            assert result.scope == Scope.LILYPAD
+            for r in result:
+                assert isinstance(r, SpanPublic)
+                ServerSpanPublic.model_validate(r)
+                assert isinstance(r.scope, Scope)
+                assert r.scope == Scope.LILYPAD
 
 
 def test_request_timeout(client):

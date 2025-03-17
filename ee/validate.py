@@ -3,16 +3,26 @@
 import base64
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from importlib import resources
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from uuid import UUID
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    GetJsonSchemaHandler,
+    ValidationError,
+    computed_field,
+)
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
+
+from lilypad.exceptions import LicenseError
 
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
@@ -21,19 +31,36 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
-class Tier(str, Enum):
+class Tier(int, Enum):
     """License tier enum."""
 
-    FREE = "FREE"
-    PRO = "PRO"
-    TEAM = "TEAM"
-    ENTERPRISE = "ENTERPRISE"
+    FREE = 0
+    PRO = 1
+    TEAM = 2
+    ENTERPRISE = 3
+
+    # Fall back to integer value if string value is not found
+    @classmethod
+    def _missing_(cls, value: Any) -> "Tier":
+        if isinstance(value, str):
+            return cls[value]
+        raise ValueError(f"{value} is not a valid {cls.__name__}")
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["x-enum-varnames"] = [f"{choice.name}" for choice in cls]
+        return json_schema
 
 
-class LicenseError(Exception):
-    """Custom exception for license-related errors"""
-
-    pass
+def _ensure_utc(dt: datetime) -> datetime:
+    """Ensure a datetime object is in UTC timezone"""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 class LicenseInfo(BaseModel):
@@ -45,12 +72,15 @@ class LicenseInfo(BaseModel):
     tier: Tier
     organization_uuid: UUID
 
-    @field_validator("expires_at")
-    def must_not_be_expired(cls, expires_at: datetime) -> datetime:
-        """Validate that the license hasn't expired"""
-        if expires_at <= datetime.now():
-            raise ValueError("License has expired")
-        return expires_at
+    @computed_field
+    @property
+    def is_expired(self) -> bool:
+        """Check if the license has expired"""
+        return self.expires_at <= datetime.now(tz=timezone.utc)
+
+    model_config = ConfigDict(
+        json_schema_mode_override="serialization",
+    )
 
 
 class LicenseValidator:
@@ -128,7 +158,9 @@ class LicenseValidator:
 
                 # Convert timestamp to datetime
                 if "exp" in data:
-                    data["expires_at"] = datetime.fromtimestamp(data["exp"])
+                    data["expires_at"] = datetime.fromtimestamp(
+                        data["exp"], tz=timezone.utc
+                    )
                     del data["exp"]
 
                 license_info = LicenseInfo(**data)

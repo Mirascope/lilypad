@@ -9,6 +9,7 @@ import {
   renderData,
   renderEventsContainer,
   renderMessagesContainer,
+  renderMetadata,
 } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -126,6 +127,7 @@ export const LilypadPanel = ({
       )}
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
       {renderCardOutput(span.output)}
+      {renderMetadata(span.data)}
       {renderData({
         value: span.data,
         ...dataProps,

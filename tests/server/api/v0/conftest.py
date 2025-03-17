@@ -1,12 +1,16 @@
 """Pytest configuration for FastAPI tests."""
 
 from collections.abc import AsyncGenerator, Generator
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
+from ee.validate import LicenseInfo, Tier
+from lilypad.ee.server.models import EnvironmentTable
+from lilypad.ee.server.require_license import get_organization_license
 from lilypad.server._utils import get_current_user
 from lilypad.server.api.v0.main import api
 from lilypad.server.db.session import get_session
@@ -80,10 +84,31 @@ def get_test_session(
 
 
 @pytest.fixture
+def get_test_organization_license():
+    """Override the get_organization_license dependency for FastAPI.
+
+    Returns:
+        UserPublic: Test user
+    """
+
+    def override_get_organization_license():
+        return LicenseInfo(
+            customer="mock_customer",
+            license_id="mock_license",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.FREE,
+            organization_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+        )
+
+    return override_get_organization_license
+
+
+@pytest.fixture
 def client(
     session: Session,
     get_test_session: AsyncGenerator[Session, None],
     get_test_current_user: UserPublic,
+    get_test_organization_license: LicenseInfo,
 ) -> TestClient:  # pyright: ignore [reportInvalidTypeForm]
     """Create a test client with database session dependency override.
 
@@ -91,12 +116,14 @@ def client(
         session: The database session
         get_test_session: Session dependency override
         get_test_current_user: Current user dependency override
+        get_test_organization_license: Organization license dependency override
 
     Returns:
         TestClient: FastAPI test client
     """
     api.dependency_overrides[get_session] = get_test_session  # pyright: ignore [reportArgumentType]
     api.dependency_overrides[get_current_user] = get_test_current_user  # pyright: ignore [reportArgumentType]
+    api.dependency_overrides[get_organization_license] = get_test_organization_license  # pyright: ignore [reportArgumentType]
 
     client = TestClient(api)
     try:
@@ -155,16 +182,39 @@ def test_project(session: Session) -> Generator[ProjectTable, None, None]:
     session.refresh(project)
     yield project
 
+@pytest.fixture
+def test_environment(
+    session: Session, test_project: ProjectTable
+) -> Generator[EnvironmentTable, None, None]:
+    """Create a test environment.
+
+    Args:
+        session: Database session
+        test_project: Parent project
+
+    Yields:
+        EnvironmentTable: Test environment
+    """
+    environment = EnvironmentTable(
+        name="test_environment",
+        project_uuid=test_project.uuid,  # pyright: ignore [reportArgumentType]
+        organization_uuid=ORGANIZATION_UUID,
+    )
+    session.add(environment)
+    session.commit()
+    session.refresh(environment)
+    yield environment
 
 @pytest.fixture
 def test_api_key(
-    session: Session, test_project: ProjectTable
+    session: Session, test_project: ProjectTable, test_environment: EnvironmentTable
 ) -> Generator[APIKeyTable, None, None]:
     """Create a test api key.
 
     Args:
         session: Database session
         test_project: Parent project
+        test_environment: Parent environment
 
     Yields:
         APIKeyTable
@@ -178,6 +228,7 @@ def test_api_key(
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",
         project_uuid=test_project.uuid,
+        environment_uuid=test_environment.uuid,  # pyright: ignore [reportArgumentType]
     )
     session.add(api_key)
     session.commit()

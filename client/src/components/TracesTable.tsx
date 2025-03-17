@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AnnotationDialog } from "@/ee/components/AnnotationForm";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { Scope, SpanPublic } from "@/types/types";
 import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
@@ -78,16 +79,15 @@ export const TracesTable = ({
   data,
   traceUuid,
   path,
-  isEnterprise,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
-  isEnterprise?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
+  const features = useFeatureAccess();
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const columns: ColumnDef<SpanPublic>[] = [
     {
@@ -182,7 +182,11 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        return <div>{formatDate(row.getValue("timestamp"))}</div>;
+        return (
+          <span className='truncate'>
+            {formatDate(row.getValue("timestamp"))}
+          </span>
+        );
       },
     },
     {
@@ -200,31 +204,33 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {isEnterprise && row.getValue("scope") === Scope.LILYPAD && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Suspense fallback={<div>Loading ...</div>}>
-                    <AnnotationDialog
-                      spanUuid={row.original.uuid}
-                      annotation={annotation}
-                    />
-                  </Suspense>
-                </div>
-              )}
-              {/* {row.original.scope === Scope.LILYPAD && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    const { project_uuid, version_uuid, version } =
-                      row.original;
-                    const name = version?.function_name;
-                    if (!name) return;
-                    navigate({
-                      to: `/projects/${project_uuid}/functions/${name}/versions/${version_uuid}`,
-                    });
-                  }}
-                >
-                  Open Playground
-                </DropdownMenuItem>
-              )} */}
+              {features.annotations &&
+                row.getValue("scope") === Scope.LILYPAD && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <AnnotationDialog
+                        spanUuid={row.original.uuid}
+                        annotation={annotation}
+                      />
+                    </Suspense>
+                  </div>
+                )}
+              {row.original.scope === Scope.LILYPAD &&
+                row.original.generation &&
+                row.original.generation.is_managed &&
+                features.managedGenerations && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const { project_uuid, generation } = row.original;
+                      if (!generation) return;
+                      navigate({
+                        to: `/projects/${project_uuid}/generations/${generation.name}/${generation.uuid}/overview`,
+                      });
+                    }}
+                  >
+                    Open Playground
+                  </DropdownMenuItem>
+                )}
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
@@ -235,22 +241,22 @@ export const TracesTable = ({
   ];
   const getRowCanExpand = (row: SpanPublic) => row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
-
+  const handleDetailPanelClose = () => {
+    if (path) {
+      navigate({ to: path, replace: true, params: { _splat: undefined } });
+    }
+  };
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
     useEffect(() => {
-      navigate({
-        to: path,
-        replace: true,
-        params: { _splat: data.uuid },
-      });
-      return () => {
+      if (path) {
         navigate({
           to: path,
           replace: true,
-          params: { _splat: undefined },
+          params: { _splat: data.uuid },
         });
-      };
-    }, [data]);
+      }
+    }, [data, path, navigate]);
+
     return (
       <div className='p-4 border rounded-md overflow-auto'>
         <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
@@ -285,6 +291,7 @@ export const TracesTable = ({
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       defaultSorting={[{ id: "timestamp", desc: true }]}
+      onDetailPanelClose={handleDetailPanelClose}
     />
   );
 };

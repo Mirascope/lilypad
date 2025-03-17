@@ -7,7 +7,6 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
-from jose import JWTError, jwt
 from pydantic import ValidationError
 from sqlmodel import Session, select
 
@@ -31,6 +30,8 @@ def create_jwt_token(
 ) -> str:
     """Create a new JWT token."""
     settings = get_settings()
+    from jose import jwt
+
     return jwt.encode(
         json.loads(user_data.model_dump_json()),
         settings.jwt_secret,
@@ -162,6 +163,8 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
+    from jose import JWTError, jwt
+
     try:
         payload = jwt.decode(
             token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]

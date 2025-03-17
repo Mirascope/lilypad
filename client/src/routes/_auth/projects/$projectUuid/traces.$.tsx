@@ -1,9 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { LilypadLoading } from "@/components/LilypadLoading";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
-import { useIsEnterprise } from "@/hooks/use-isEnterprise";
 import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
@@ -11,7 +11,7 @@ import { Suspense } from "react";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LilypadLoading />}>
       <Trace />
     </Suspense>
   ),
@@ -35,13 +35,7 @@ export const Trace = () => {
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
-  const isEnterprise = useIsEnterprise(projectUuid);
   return (
-    <TracesTable
-      data={data}
-      traceUuid={traceUuid}
-      path={Route.fullPath}
-      isEnterprise={isEnterprise}
-    />
+    <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
   );
 };
