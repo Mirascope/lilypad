@@ -43,6 +43,17 @@ try:
     CAN_LIMIT_RESOURCES = True
 except ImportError:
     # For Windows
+    class _Resource:
+        """Dummy class for Windows."""
+
+        RLIMIT_CPU = 0
+        RLIMIT_AS = 0
+        RLIMIT_NOFILE = 0
+
+        @staticmethod
+        def setrlimit(*args: Any, **kwargs: Any) -> int: ...
+
+    resource = _Resource
     CAN_LIMIT_RESOURCES = False
 
 
