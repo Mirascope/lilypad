@@ -56,7 +56,7 @@ def sanitize_arg_types_and_values(
 
 def _limit_resources(timeout: int = 15, memory: int = 200) -> None:
     try:
-        # Limit CPU time to 10 seconds
+        # Limit CPU time to 15 seconds
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
         # Limit process address space (memory) to 100MB
         resource.setrlimit(

@@ -1,6 +1,8 @@
 """Generations models."""
 
 import ast
+import keyword
+import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Self
 from uuid import UUID
@@ -27,6 +29,9 @@ if TYPE_CHECKING:
 MAX_ARG_NAME_LENGTH = 100
 MAX_TYPE_NAME_LENGTH = 100
 
+# Avoid overwriting built-in special names like __import__.
+ALLOWED_NAME_REGEX = re.compile(r"^(?!__)[A-Za-z_][A-Za-z0-9_]*$")
+
 
 def extract_function_info(source: str) -> tuple[str, dict[str, str]]:
     """Parse the given source code and extract the function name and its arguments with type hints.
@@ -36,8 +41,8 @@ def extract_function_info(source: str) -> tuple[str, dict[str, str]]:
             - function_name is the name of the function.
             - args_info is a dict mapping each argument name to its type annotation as a string (or None if absent).
     """
-    # Parse the source code into an AST.
     tree = ast.parse(source)
+
     # Assume the first statement is a FunctionDef.
     func_def = tree.body[0]
     if not isinstance(func_def, ast.FunctionDef):
@@ -49,24 +54,12 @@ def extract_function_info(source: str) -> tuple[str, dict[str, str]]:
     # Extract argument names and type annotations.
     args_info = {}
     for arg in func_def.args.args:
-        arg_name = arg.arg
-
-        if len(arg_name) > MAX_ARG_NAME_LENGTH:
-            raise ValueError(
-                f"Invalid argument name: '{arg_name}'. Must be less than {MAX_ARG_NAME_LENGTH} characters."
-            )
-
-        # Retrieve annotation if present. For Python 3.9+, ast.unparse() converts AST back to source code.
         arg_annotation = (
             str(ast.unparse(arg.annotation)) if arg.annotation is not None else None
         )
         if arg_annotation is None:
             raise ValueError("All parameters must have a type annotation.")
-        if len(arg_annotation) > MAX_TYPE_NAME_LENGTH:
-            raise ValueError(
-                f"Invalid type name: '{arg_annotation}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
-            )
-        args_info[arg_name] = arg_annotation
+        args_info[arg.arg] = arg_annotation
 
     return function_name, args_info
 
@@ -102,7 +95,7 @@ class _GenerationBase(SQLModel):
 
     @field_validator("arg_types")
     def validate_arg_types(cls, value: dict[str, str]) -> dict[str, str]:
-        for arg_name in value:
+        for arg_name, arg_type in value.items():
             if len(arg_name) > MAX_ARG_NAME_LENGTH:
                 raise ValueError(
                     f"Invalid argument name: '{arg_name}'. Must be less than {MAX_ARG_NAME_LENGTH} characters."
@@ -111,6 +104,32 @@ class _GenerationBase(SQLModel):
                 raise ValueError(
                     f"Invalid type name: '{value[arg_name]}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
                 )
+
+            if not arg_name.isidentifier():
+                raise ValueError("Name must be a valid Python identifier.")
+
+            if keyword.iskeyword(arg_name):
+                raise ValueError("Name must not be a Python keyword.")
+
+            if len(arg_type) > MAX_TYPE_NAME_LENGTH:
+                raise ValueError(
+                    f"Invalid type name: '{arg_type}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
+                )
+        return value
+
+    @field_validator("name")
+    def validate_name(cls, value: str) -> str:
+        if len(value) > 512:
+            raise ValueError("Name must be less than 512 characters.")
+
+        if not value.isidentifier():
+            raise ValueError("Name must be a valid Python identifier.")
+        if keyword.iskeyword(value):
+            raise ValueError("Name must not be a Python keyword.")
+
+        if ALLOWED_NAME_REGEX.match(value) is None:
+            raise ValueError("Name must be a valid Python identifier.")
+
         return value
 
     @model_validator(mode="after")
