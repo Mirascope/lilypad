@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import re
-import resource
 import subprocess
 import tempfile
 from collections.abc import Sequence
@@ -38,6 +37,15 @@ from ..._utils import get_current_environment
 from ...models.environments import Environment
 from ...require_license import require_license
 
+try:
+    import resource
+
+    CAN_LIMIT_RESOURCES = True
+except ImportError:
+    # For Windows
+    CAN_LIMIT_RESOURCES = False
+
+
 generations_router = APIRouter()
 
 
@@ -55,6 +63,8 @@ def sanitize_arg_types_and_values(
 
 
 def _limit_resources(timeout: int = 15, memory: int = 200) -> None:
+    if not CAN_LIMIT_RESOURCES:
+        return None
     try:
         # Limit CPU time to 15 seconds
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
