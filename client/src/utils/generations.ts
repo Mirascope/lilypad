@@ -21,7 +21,7 @@ export const fetchGenerationsByName = async (
   if (!projectUuid) return [];
   return (
     await api.get<GenerationPublic[]>(
-      `/projects/${projectUuid}/generations/name/${generationName}`
+      `/ee/projects/${projectUuid}/generations/name/${generationName}`
     )
   ).data;
 };
