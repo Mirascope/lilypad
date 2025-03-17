@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter, field_validator
 
 from ..models.generations import _GenerationBase
 
@@ -28,10 +28,23 @@ class GenerationPublic(_GenerationBase):
     uuid: UUID
 
 
+AcceptedValue = int | float | bool | str | list | dict[str, Any]
+
+
+accepted_value_adapter = TypeAdapter(AcceptedValue)
+
+
 class PlaygroundParameters(BaseModel):
     """Playground parameters model."""
 
-    arg_values: dict[str, Any]
+    arg_values: dict[str, AcceptedValue]
     provider: Provider
     model: str
     generation: GenerationCreate | None = None
+
+    @field_validator("arg_values")
+    def check_nested_values(cls, values: Any) -> None:
+        """arg_values is a dictionary of key-value pairs where the value can be"""
+        if not isinstance(values, dict | list):
+            return values
+        return accepted_value_adapter.validate_python(values)

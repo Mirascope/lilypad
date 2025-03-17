@@ -3,7 +3,9 @@
 import base64
 import hashlib
 import json
+import logging
 import re
+import resource
 import subprocess
 import tempfile
 from collections.abc import Sequence
@@ -29,12 +31,36 @@ from .....server.schemas import (
     PlaygroundParameters,
     UserPublic,
 )
+from .....server.schemas.generations import AcceptedValue
 from .....server.services import APIKeyService
 from ..._utils import get_current_environment
 from ...models.environments import Environment
 from ...require_license import require_license
 
 generations_router = APIRouter()
+
+
+logger = logging.getLogger(__name__)
+
+
+def sanitize_arg_types_and_values(
+    arg_types: dict[str, str], arg_values: dict[str, AcceptedValue]
+) -> dict[str, tuple[str, AcceptedValue]]:
+    return {
+        key: (arg_types[key], arg_values[key]) for key in arg_types if key in arg_values
+    }
+
+
+def _limit_resources(timeout: int = 10, memory: int = 100) -> None:
+    try:
+        # Limit CPU time to 10 seconds
+        resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
+        # Limit process address space (memory) to 100MB
+        resource.setrlimit(
+            resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
+        )
+    except Exception as e:
+        logger.error("Failed to set resource limits: %s", e)
 
 
 @generations_router.get(
@@ -174,29 +200,38 @@ def run_version(
     specific_generation_version_fn = (
         f"{generation.name}.version({generation.version_num})(**arg_values)"
     )
-    wrapper_code = f'''
+    # Sanitize and decode the argument values to prevent injection attacks
+    safe_arg_types_and_values = sanitize_arg_types_and_values(
+        generation.arg_types, playground_parameters.arg_values
+    )
+    decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
+    # Serialize the user input as a JSON string
+    json_arg_values = json.dumps(decoded_arg_values)
+    user_args_code = f"USER_ARGS = json.loads({json.dumps(json_arg_values)!r})"
+
+    wrapper_code = f"""
 import os
-
 import lilypad
-
-os.environ["OPENAI_API_KEY"] = "{user.keys.get("openai", "")}"
-os.environ["ANTHROPIC_API_KEY"] = "{user.keys.get("anthropic", "")}"
-os.environ["GOOGLE_API_KEY"] = "{user.keys.get("gemini", "")}"
-os.environ["OPENROUTER_API_KEY"] = "{user.keys.get("openrouter", "")}"
-os.environ["LILYPAD_PROJECT_ID"] = "{project_uuid}"
-os.environ["LILYPAD_API_KEY"] = (
-    "{api_keys[0].key_hash}"
-)
 
 lilypad.configure()
 
 {generation.signature}
 
-arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_values)}
+{user_args_code}
 res = {specific_generation_version_fn}
-'''
+"""
+
+    env_vars = {
+        "OPENAI_API_KEY": user.keys.get("openai", ""),
+        "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
+        "GOOGLE_API_KEY": user.keys.get("gemini", ""),
+        "OPENROUTER_API_KEY": user.keys.get("openrouter", ""),
+        "LILYPAD_PROJECT_ID": str(project_uuid),
+        "LILYPAD_API_KEY": api_keys[0].key_hash,
+    }
+
     try:
-        processed_code = _run_playground(wrapper_code)
+        processed_code = _run_playground(wrapper_code, env_vars)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid API Key"
@@ -204,7 +239,16 @@ res = {specific_generation_version_fn}
     return processed_code
 
 
-def _run_playground(code: str) -> str:
+def _run_playground(code: str, env_vars: dict[str, str]) -> str:
+    """Run code in playground with environment variables passed to subprocess.
+
+    Args:
+        code: The Python code to execute
+        env_vars: Dictionary of environment variables to pass to the subprocess
+
+    Returns:
+        The result of code execution
+    """
     # Add code to return a specific variable
     modified_code = code + "\n\nimport json\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = _run_ruff(dedent(modified_code)).strip()
@@ -218,74 +262,63 @@ def _run_playground(code: str) -> str:
             check=False,
             capture_output=True,
             text=True,
+            env=env_vars,
+            timeout=15,
+            preexec_fn=_limit_resources,
         )
-
-        if result.returncode == 0:
-            # Extract the variable value from the output
-            import re
-
-            result_match = re.search(
-                r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL
-            )
-            if result_match:
-                try:
-                    return json.loads(result_match.group(1))
-                except json.JSONDecodeError:
-                    return result_match.group(1)
-            else:
-                return result.stdout.strip()
-        else:
-            error_output = result.stderr.strip()
-            import re
-
-            # Find the last error line in the traceback
-            error_match = re.search(r"(\w+Error.*?)$", error_output, re.DOTALL)
-            if error_match:
-                return error_match.group(1).strip()
-            else:
-                return error_output
-
-    except Exception as e:
-        return f"Exception: {str(e)}"
+    except subprocess.TimeoutExpired:
+        logger.error("Subprocess execution timed out. File: %s", tmp_path)
+        return "Execution timed out"
+    except Exception:
+        logger.exception("Subprocess execution failed")
+        return "Internal execution error"
     finally:
-        tmp_path.unlink()
+        try:
+            tmp_path.unlink()
+        except Exception as e:
+            logger.warning("Failed to delete temporary file: %s", e)
+
+    if result.returncode == 0:
+        result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
+        if result_match:
+            try:
+                return json.loads(result_match.group(1))
+            except json.JSONDecodeError:
+                return result_match.group(1)
+        else:
+            return result.stdout.strip()
+
+    else:
+        logger.error("Subprocess returned an error: %s", result.stderr.strip())
+        return "Code execution error"
 
 
 def _decode_bytes(
-    arg_types: dict[str, str], arg_values: dict[str, Any]
+    arg_types_and_values: dict[str, tuple[str, AcceptedValue]],
 ) -> dict[str, Any]:
     """Decodes image bytes from a dictionary of argument values.
 
     Parameters:
-    arg_types (dict): Dictionary mapping argument names to their types
-    arg_values (dict): Dictionary mapping argument names to their values
+        arg_types_and_values (dict): Dictionary mapping argument names to their types and values
 
     Returns:
-    dict: Dictionary mapping argument names to their decoded values
+        dict: Dictionary mapping argument names to their decoded values
     """
     result = {}
 
-    for arg_name, arg_type in arg_types.items():
-        if arg_type == "bytes" and arg_name in arg_values:
-            value = arg_values[arg_name]
-
-            if isinstance(value, str):
-                if value.startswith('b"') or value.startswith("b'"):
-                    match = re.match(r'^b["\'](.*)["\']$', value, re.DOTALL)
-                    if match:
-                        value = match.group(1)
-
+    for arg_name, (arg_type, arg_value) in arg_types_and_values.items():
+        if arg_type == "bytes":
+            if isinstance(arg_value, str):
                 try:
-                    decoded_data = base64.b64decode(value)
+                    decoded_data = base64.b64decode(arg_value, validate=True)
                     result[arg_name] = decoded_data
 
                 except Exception as e:
-                    result[arg_name] = f"Error decoding image: {str(e)}"
+                    raise ValueError(f"Invalid Base64 encoding: {str(e)}")
             else:
-                result[arg_name] = "Not a string value"
+                raise ValueError(f"Expected bytes, got {type(arg_value)}")
         else:
-            if arg_name in arg_values:
-                result[arg_name] = arg_values[arg_name]
+            result[arg_name] = arg_value
 
     return result
 
