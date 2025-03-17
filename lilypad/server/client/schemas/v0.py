@@ -53,7 +53,7 @@ class GenerationCreate(BaseModel):
 
     project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
     version_num: Annotated[int | None, Field(title="Version Num")] = None
-    name: Annotated[str, Field(min_length=1, title="Name")]
+    name: Annotated[str, Field(max_length=512, min_length=1, title="Name")]
     signature: Annotated[str, Field(title="Signature")]
     code: Annotated[str, Field(title="Code")]
     hash: Annotated[str, Field(title="Hash")]
@@ -77,7 +77,7 @@ class GenerationPublic(BaseModel):
 
     project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
     version_num: Annotated[int | None, Field(title="Version Num")] = None
-    name: Annotated[str, Field(min_length=1, title="Name")]
+    name: Annotated[str, Field(max_length=512, min_length=1, title="Name")]
     signature: Annotated[str, Field(title="Signature")]
     code: Annotated[str, Field(title="Code")]
     hash: Annotated[str, Field(title="Hash")]
