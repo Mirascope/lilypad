@@ -4,13 +4,14 @@ import ast
 import keyword
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
 from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
+from typing_extensions import Self
 
 from ..._utils import DependencyInfo
 from .base_organization_sql_model import BaseOrganizationSQLModel
