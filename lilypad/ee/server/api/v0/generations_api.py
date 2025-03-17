@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import logging
+import os
 import re
 import resource
 import subprocess
@@ -42,6 +43,7 @@ generations_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
+_PROJECT_ROOT = Path(__file__).parents[3]
 
 def sanitize_arg_types_and_values(
     arg_types: dict[str, str], arg_values: dict[str, AcceptedValue]
@@ -51,7 +53,7 @@ def sanitize_arg_types_and_values(
     }
 
 
-def _limit_resources(timeout: int = 10, memory: int = 100) -> None:
+def _limit_resources(timeout: int = 15, memory: int = 200) -> None:
     try:
         # Limit CPU time to 10 seconds
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
@@ -212,9 +214,10 @@ def run_version(
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
     # Serialize the user input as a JSON string
     json_arg_values = json.dumps(decoded_arg_values)
-    user_args_code = f"USER_ARGS = json.loads({json.dumps(json_arg_values)!r})"
+    user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)!r})"
 
     wrapper_code = f"""
+import json
 import os
 import lilypad
 
@@ -255,12 +258,12 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     # Add code to return a specific variable
-    modified_code = code + "\n\nimport json\nprint('__RESULT__', res, '__RESULT__')"
+    modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = _run_ruff(dedent(modified_code)).strip()
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)
-
+    env_vars["PATH"] = os.environ["PATH"]
     try:
         result = subprocess.run(
             ["uv", "run", str(tmp_path)],
@@ -268,7 +271,8 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             capture_output=True,
             text=True,
             env=env_vars,
-            timeout=15,
+            cwd=str(_PROJECT_ROOT),
+            timeout=20,
             preexec_fn=_limit_resources,
         )
     except subprocess.TimeoutExpired:
