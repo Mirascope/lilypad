@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { LilypadLoading } from "@/components/LilypadLoading";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
@@ -7,7 +8,6 @@ import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { LilypadLoading } from "@/components/LilypadLoading";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (

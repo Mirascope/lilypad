@@ -35,8 +35,11 @@ class APIKeyBase(SQLModel):
     project_uuid: UUID = Field(
         index=True, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    environment_uuid: UUID = Field(
-        foreign_key=f"{ENVIRONMENT_TABLE_NAME}.uuid", ondelete="CASCADE", index=True
+    environment_uuid: UUID | None = Field(
+        default=None,
+        foreign_key=f"{ENVIRONMENT_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
+        index=True,
     )
 
 

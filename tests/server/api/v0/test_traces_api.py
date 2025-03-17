@@ -136,8 +136,8 @@ def test_post_traces(
         json=trace_data,
     )
     assert response.status_code == 200
-    span = response.json()
-    assert span["span_id"] == "test_span_2"
+    spans = response.json()
+    assert spans[0]["span_id"] == "test_span_2"
 
 
 def test_get_spans_by_version(

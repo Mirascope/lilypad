@@ -61,8 +61,6 @@ def span_order_context(span: Span) -> Generator[None, None, None]:
     global _span_counter
     with _span_counter_lock:
         _span_counter += 1
-        order = _span_counter
-    span.set_attribute("lilypad.span.order", order)
     yield
 
 

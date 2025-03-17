@@ -236,7 +236,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             spans.append(span)
 
         self.session.add_all(spans)
-        self.session.commit()
+        self.session.flush()
         return spans
 
     def delete_records_by_generation_uuid(
