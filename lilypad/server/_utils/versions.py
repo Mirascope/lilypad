@@ -4,7 +4,10 @@ from ..._utils.closure import _run_ruff
 
 
 def construct_function(
-    arg_types: dict[str, str], function_name: str, include_import: bool = False, include_decorator: bool = True
+    arg_types: dict[str, str],
+    function_name: str,
+    include_import: bool = False,
+    include_decorator: bool = True,
 ) -> str:
     arg_list = [f"{arg_name}: {arg_type}" for arg_name, arg_type in arg_types.items()]
 

@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parents[3]
 
+
 def sanitize_arg_types_and_values(
     arg_types: dict[str, str], arg_values: dict[str, AcceptedValue]
 ) -> dict[str, tuple[str, AcceptedValue]]:
