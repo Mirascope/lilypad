@@ -1,11 +1,12 @@
 """Generations models."""
 
+import ast
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -23,6 +24,52 @@ if TYPE_CHECKING:
     from .projects import ProjectTable
     from .spans import SpanTable
 
+MAX_ARG_NAME_LENGTH = 100
+MAX_TYPE_NAME_LENGTH = 100
+
+
+def extract_function_info(source: str) -> tuple[str, dict[str, str]]:
+    """Parse the given source code and extract the function name and its arguments with type hints.
+
+    Returns:
+        A tuple (function_name, args_info) where:
+            - function_name is the name of the function.
+            - args_info is a dict mapping each argument name to its type annotation as a string (or None if absent).
+    """
+    # Parse the source code into an AST.
+    tree = ast.parse(source)
+    # Assume the first statement is a FunctionDef.
+    func_def = tree.body[0]
+    if not isinstance(func_def, ast.FunctionDef):
+        raise ValueError("No function definition found in source.")
+
+    # Extract the function name.
+    function_name = func_def.name
+
+    # Extract argument names and type annotations.
+    args_info = {}
+    for arg in func_def.args.args:
+        arg_name = arg.arg
+
+        if len(arg_name) > MAX_ARG_NAME_LENGTH:
+            raise ValueError(
+                f"Invalid argument name: '{arg_name}'. Must be less than {MAX_ARG_NAME_LENGTH} characters."
+            )
+
+        # Retrieve annotation if present. For Python 3.9+, ast.unparse() converts AST back to source code.
+        arg_annotation = (
+            str(ast.unparse(arg.annotation)) if arg.annotation is not None else None
+        )
+        if arg_annotation is None:
+            raise ValueError("All parameters must have a type annotation.")
+        if len(arg_annotation) > MAX_TYPE_NAME_LENGTH:
+            raise ValueError(
+                f"Invalid type name: '{arg_annotation}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
+            )
+        args_info[arg_name] = arg_annotation
+
+    return function_name, args_info
+
 
 class _GenerationBase(SQLModel):
     """Base Generation Model."""
@@ -31,7 +78,7 @@ class _GenerationBase(SQLModel):
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     version_num: int | None = Field(default=None)
-    name: str = Field(nullable=False, index=True, min_length=1)
+    name: str = Field(nullable=False, index=True, min_length=1, max_length=512)
     signature: str = Field(nullable=False)
     code: str = Field(nullable=False)
     hash: str = Field(nullable=False, index=True)
@@ -52,6 +99,45 @@ class _GenerationBase(SQLModel):
     )
     is_default: bool | None = Field(default=False, index=True, nullable=True)
     is_managed: bool | None = Field(default=False, index=True, nullable=True)
+
+    @field_validator("arg_types")
+    def validate_arg_types(cls, value: dict[str, str]) -> dict[str, str]:
+        for arg_name in value:
+            if len(arg_name) > MAX_ARG_NAME_LENGTH:
+                raise ValueError(
+                    f"Invalid argument name: '{arg_name}'. Must be less than {MAX_ARG_NAME_LENGTH} characters."
+                )
+            if len(value[arg_name]) > MAX_TYPE_NAME_LENGTH:
+                raise ValueError(
+                    f"Invalid type name: '{value[arg_name]}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
+                )
+        return value
+
+    @model_validator(mode="after")
+    def validate_name_and_arg_types(self) -> Self:
+        if self.arg_types is None:
+            return self
+
+        joined_args = ", ".join(
+            [f"{arg_name}: {arg_type}" for arg_name, arg_type in self.arg_types.items()]
+        )
+        try:
+            parse_function_name, parsed_args = extract_function_info(
+                f"def {self.name}({joined_args}): ..."
+            )
+        except:  # noqa: E722
+            raise ValueError("Failed to parse function name and arguments.")
+
+        if parse_function_name != self.name:
+            raise ValueError(
+                f"Function name '{self.name}' does not match parsed function name '{parse_function_name}'."
+            )
+
+        if parsed_args != self.arg_types:
+            raise ValueError(
+                f"Function arguments '{self.arg_types}' do not match parsed arguments '{parsed_args}'."
+            )
+        return self
 
 
 class GenerationUpdate(BaseModel):

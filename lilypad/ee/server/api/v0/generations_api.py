@@ -200,6 +200,11 @@ def run_version(
     specific_generation_version_fn = (
         f"{generation.name}.version({generation.version_num})(**arg_values)"
     )
+    # generation.signature and generation.arg_types are validated by the schema
+    constructed_function = construct_function(
+        generation.arg_types, generation.name, False
+    )
+
     # Sanitize and decode the argument values to prevent injection attacks
     safe_arg_types_and_values = sanitize_arg_types_and_values(
         generation.arg_types, playground_parameters.arg_values
@@ -215,7 +220,7 @@ import lilypad
 
 lilypad.configure()
 
-{generation.signature}
+{constructed_function}
 
 {user_args_code}
 res = {specific_generation_version_fn}
