@@ -3,21 +3,32 @@ import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import "highlight.js/styles/atom-one-light.min.css";
 import { Check, Copy } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 hljs.registerLanguage("python", python);
 
-export const CodeSnippet = ({
-  code,
-  className,
-  showCopyButton = true,
-}: {
+export interface CodeSnippetProps {
   code: string;
   className?: string;
   showCopyButton?: boolean;
-}) => {
+  showLineNumbers?: boolean;
+  customLineNumbers?: ReactNode;
+  lineHighlights?: Record<number, string>; // Maps line number to CSS class for highlighting
+  wrapperClassName?: string;
+}
+
+export const CodeSnippet = ({
+  code,
+  className = "",
+  showCopyButton = true,
+  showLineNumbers = false,
+  customLineNumbers,
+  lineHighlights = {},
+  wrapperClassName = "",
+}: CodeSnippetProps) => {
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
   useEffect(() => {
     if (!codeRef.current) return;
     // Prevents warning about highlighting the same element multiple times
@@ -34,8 +45,53 @@ export const CodeSnippet = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className='relative'>
+  // Generate line numbers if needed
+  const renderLineNumbers = () => {
+    if (customLineNumbers) {
+      return customLineNumbers;
+    }
+
+    if (showLineNumbers) {
+      const lines = code.split("\n");
+      return (
+        <div className='flex-none w-12 text-right pr-2 bg-gray-100 border-r border-gray-300'>
+          {lines.map((_, index) => (
+            <div
+              key={`line-${index + 1}`}
+              className='text-xs leading-5 text-gray-500 py-[1px]'
+            >
+              {index + 1}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // Apply line highlights if provided
+  const renderCode = () => {
+    if (Object.keys(lineHighlights).length > 0) {
+      const lines = code.split("\n");
+      return (
+        <pre className={`flex-grow !bg-transparent ${className}`}>
+          {lines.map((line, index) => {
+            const highlightClass = lineHighlights[index + 1] || "";
+            return (
+              <div
+                key={`highlight-line-${index + 1}`}
+                className={`${highlightClass}`}
+              >
+                <code>{line}</code>
+              </div>
+            );
+          })}
+        </pre>
+      );
+    }
+
+    return (
       <pre className={className}>
         <code
           ref={codeRef}
@@ -45,6 +101,20 @@ export const CodeSnippet = ({
           {code}
         </code>
       </pre>
+    );
+  };
+
+  return (
+    <div className={`relative font-mono ${wrapperClassName}`}>
+      {showLineNumbers || customLineNumbers ? (
+        <div className='flex'>
+          {renderLineNumbers()}
+          {renderCode()}
+        </div>
+      ) : (
+        renderCode()
+      )}
+
       {showCopyButton && (
         <button
           onClick={handleCopy}

@@ -45,10 +45,7 @@ const Generation = () => {
     return (
       <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
         <Suspense fallback={<CardSkeleton />}>
-          <MetricCharts
-            generationUuid={generation.uuid}
-            projectUuid={projectUuid}
-          />
+          <MetricCharts generation={generation} projectUuid={projectUuid} />
         </Suspense>
         <div className='text-left'>
           <Label>Code</Label>

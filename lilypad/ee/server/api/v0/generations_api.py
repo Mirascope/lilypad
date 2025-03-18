@@ -196,6 +196,7 @@ arg_values = {_decode_bytes(generation.arg_types, playground_parameters.arg_valu
 res = {specific_generation_version_fn}
 '''
     try:
+        print(wrapper_code)
         processed_code = _run_playground(wrapper_code)
     except Exception:
         raise HTTPException(

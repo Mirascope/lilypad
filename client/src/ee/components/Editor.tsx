@@ -36,10 +36,12 @@ export const Editor = forwardRef(
       inputs,
       promptTemplate,
       inputValues,
+      isDisabled,
     }: {
       inputs: string[];
       promptTemplate: string;
       inputValues: Record<string, any>;
+      isDisabled: boolean;
     },
     ref: ForwardedRef<LexicalEditor>
   ) => {
@@ -87,7 +89,7 @@ export const Editor = forwardRef(
         <div
           className={`flex flex-col border shadow rounded-lg prose max-w-none`}
         >
-          <ToolbarPlugin />
+          {!isDisabled && <ToolbarPlugin />}
 
           <div className='relative'>
             <RichTextPlugin
