@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres:
-    image: postgres
+    image: supabase/postgres:15.8.1.054
     ports:
       - "5432:5432"
     environment:
@@ -19,7 +19,7 @@ services:
       - LILYPAD_DB_NAME=postgres
       - LILYPAD_DB_PASSWORD=password
       - LILYPAD_DB_PORT=5432
-      - LILYPAD_DB_USER=postgres
+      - LILYPAD_DB_USER=supabase_admin
       - LILYPAD_GITHUB_CLIENT_ID=...
       - LILYPAD_GITHUB_CLIENT_SECRET=...
       - LILYPAD_GOOGLE_CLIENT_ID=...
