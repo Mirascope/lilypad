@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from ..server.client import GenerationPublic, LilypadClient
 from . import jsonable_encoder
+from .functions import ArgValues
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -38,6 +39,7 @@ class SpanContextHolder:
 
 def _get_custom_context_manager(
     generation: GenerationPublic,
+    arg_values: ArgValues,
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
@@ -51,13 +53,12 @@ def _get_custom_context_manager(
         lilypad_client = LilypadClient()
         new_project_uuid = project_uuid or lilypad_client.project_uuid
         jsonable_arg_values = {}
-        if generation.arg_values:
-            for arg_name, arg_value in generation.arg_values.items():
-                try:
-                    serialized_arg_value = jsonable_encoder(arg_value)
-                except ValueError:
-                    serialized_arg_value = "could not serialize"
-                jsonable_arg_values[arg_name] = serialized_arg_value
+        for arg_name, arg_value in arg_values.items():
+            try:
+                serialized_arg_value = jsonable_encoder(arg_value)
+            except ValueError:
+                serialized_arg_value = "could not serialize"
+            jsonable_arg_values[arg_name] = serialized_arg_value
         with tracer.start_as_current_span(f"{fn.__name__}") as span:
             attributes: dict[str, AttributeValue] = {
                 "lilypad.project_uuid": str(new_project_uuid)
@@ -228,6 +229,7 @@ async def _handle_structured_stream_async(
 
 def create_mirascope_middleware(
     generation: GenerationPublic,
+    arg_values: ArgValues,
     is_async: bool,
     prompt_template: str | None = None,
     project_uuid: UUID | None = None,
@@ -237,6 +239,7 @@ def create_mirascope_middleware(
     return middleware_factory(
         custom_context_manager=_get_custom_context_manager(
             generation,
+            arg_values,
             is_async,
             prompt_template,
             project_uuid,

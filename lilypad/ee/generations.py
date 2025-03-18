@@ -10,6 +10,7 @@ from ..sandbox import SandboxRunner
 from ..server.client import GenerationPublic, LilypadClient, Tier
 
 if TYPE_CHECKING:
+    from .._utils import ArgTypes
     from ..generations import Generation
 
 _MANGED_PROMPT_TEMPLATE: TypeAlias = bool
@@ -21,7 +22,7 @@ def specific_generation_version_sync_factory(
     fn: Callable[_P, _R],
     _create_inner_sync: Callable[
         [
-            Callable[_P, tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]],
+            Callable[[ArgTypes], tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]],
             SandboxRunner | None,
         ],
         Callable[_P, _R] | Callable[_P, Generation[_R]],
@@ -48,7 +49,7 @@ def specific_generation_version_sync_factory(
             )
 
         def _get_specific_version(
-            *args: _P.args, **kwargs: _P.kwargs
+            arg_types: ArgTypes,
         ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
             return specific_version_generation, True
 
@@ -61,7 +62,7 @@ def specific_generation_version_async_factory(
     fn: Callable[_P, Coroutine[Any, Any, _R]],
     _create_inner_async: Callable[
         [
-            Callable[_P, tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]],
+            Callable[[ArgTypes], tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]],
             SandboxRunner | None,
         ],
         Callable[_P, Coroutine[Any, Any, _R]]
@@ -93,7 +94,7 @@ def specific_generation_version_async_factory(
             )
 
         def _get_specific_version(
-            *args: _P.args, **kwargs: _P.kwargs
+            arg_types: ArgTypes,
         ) -> tuple[GenerationPublic, _MANGED_PROMPT_TEMPLATE]:
             return specific_version_generation, True
 

@@ -38,18 +38,6 @@ async def get_unique_generation_names(
 
 
 @generations_router.get(
-    "/projects/{project_uuid}/generations/{generation_uuid}",
-    response_model=GenerationPublic,
-)
-async def get_generation_by_uuid(
-    generation_uuid: UUID,
-    generation_service: Annotated[GenerationService, Depends(GenerationService)],
-) -> GenerationTable:
-    """Get generation by UUID."""
-    return generation_service.find_record_by_uuid(generation_uuid)
-
-
-@generations_router.get(
     "/projects/{project_uuid}/generations/metadata/names/versions",
     response_model=Sequence[GenerationPublic],
 )

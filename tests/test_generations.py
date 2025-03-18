@@ -42,7 +42,6 @@ def dummy_generation_instance() -> GenerationPublic:
         hash="dummy_hash",
         dependencies={},
         arg_types={},
-        arg_values={},
         version_num=1,
         call_params=CommonCallParams(),
         provider="openai",
@@ -361,7 +360,7 @@ async def async_outer(param: str) -> str:
 
 
 def fake_mirascope_middleware_sync(
-    generation, is_async, prompt_template, span_context_holder
+    generation, arg_values, is_async, prompt_template, span_context_holder
 ):
     """Simulate a synchronous mirascope middleware returning a dummy result."""
 
@@ -375,7 +374,7 @@ def fake_mirascope_middleware_sync(
 
 
 def fake_mirascope_middleware_async(
-    generation, is_async, prompt_template, span_context_holder
+    generation, arg_values, is_async, prompt_template, span_context_holder
 ):
     """Simulate an asynchronous mirascope middleware returning a dummy result."""
 
