@@ -412,8 +412,9 @@ def test_get_custom_context_manager():
     tracer.start_as_current_span.return_value.__enter__.return_value = span
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
     with patch("lilypad._utils.middleware.get_tracer", return_value=tracer):
+        arg_values = {"param": "value"}
         context_manager_factory = _get_custom_context_manager(
-            generation, is_async, prompt_template, project_uuid
+            generation, arg_values, is_async, prompt_template, project_uuid
         )
         with context_manager_factory(fn) as cm_span:
             assert cm_span == span
@@ -425,7 +426,7 @@ def test_get_custom_context_manager():
                 "lilypad.generation.signature": generation.signature,
                 "lilypad.generation.code": generation.code,
                 "lilypad.generation.arg_types": json.dumps(generation.arg_types),
-                "lilypad.generation.arg_values": json.dumps(generation.arg_values),
+                "lilypad.generation.arg_values": json.dumps(arg_values),
                 "lilypad.generation.prompt_template": prompt_template,
                 "lilypad.generation.version": 1,
                 "lilypad.is_async": is_async,
@@ -447,7 +448,7 @@ def test_create_mirascope_middleware():
     ):
         mock_get_cm.return_value = "custom_context_manager"
 
-        middleware = create_mirascope_middleware(version, is_async, prompt_template)
+        middleware = create_mirascope_middleware(version, {}, is_async, prompt_template)
 
         mock_middleware_factory.assert_called_once_with(
             custom_context_manager="custom_context_manager",

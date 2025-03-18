@@ -182,6 +182,7 @@ def test_project(session: Session) -> Generator[ProjectTable, None, None]:
     session.refresh(project)
     yield project
 
+
 @pytest.fixture
 def test_environment(
     session: Session, test_project: ProjectTable
@@ -204,6 +205,7 @@ def test_environment(
     session.commit()
     session.refresh(environment)
     yield environment
+
 
 @pytest.fixture
 def test_api_key(
@@ -255,6 +257,7 @@ def test_generation(
         signature="def test(): pass",
         code="def test(): pass",
         hash="test_hash",
+        arg_types={},
         organization_uuid=test_project.organization_uuid,
     )
     session.add(function)

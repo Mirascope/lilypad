@@ -53,7 +53,7 @@ class GenerationCreate(BaseModel):
 
     project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
     version_num: Annotated[int | None, Field(title="Version Num")] = None
-    name: Annotated[str, Field(min_length=1, title="Name")]
+    name: Annotated[str, Field(max_length=512, min_length=1, title="Name")]
     signature: Annotated[str, Field(title="Signature")]
     code: Annotated[str, Field(title="Code")]
     hash: Annotated[str, Field(title="Hash")]
@@ -61,7 +61,6 @@ class GenerationCreate(BaseModel):
         dict[str, DependencyInfo] | None, Field(title="Dependencies")
     ] = None
     arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
-    arg_values: Annotated[dict[str, Any] | None, Field(title="Arg Values")] = None
     archived: Annotated[datetime | None, Field(title="Archived")] = None
     custom_id: Annotated[str | None, Field(title="Custom Id")] = None
     prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
@@ -77,7 +76,7 @@ class GenerationPublic(BaseModel):
 
     project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
     version_num: Annotated[int | None, Field(title="Version Num")] = None
-    name: Annotated[str, Field(min_length=1, title="Name")]
+    name: Annotated[str, Field(max_length=512, min_length=1, title="Name")]
     signature: Annotated[str, Field(title="Signature")]
     code: Annotated[str, Field(title="Code")]
     hash: Annotated[str, Field(title="Hash")]
@@ -85,7 +84,6 @@ class GenerationPublic(BaseModel):
         dict[str, DependencyInfo] | None, Field(title="Dependencies")
     ] = None
     arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
-    arg_values: Annotated[dict[str, Any] | None, Field(title="Arg Values")] = None
     archived: Annotated[datetime | None, Field(title="Archived")] = None
     custom_id: Annotated[str | None, Field(title="Custom Id")] = None
     prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
