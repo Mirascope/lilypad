@@ -4,7 +4,7 @@ import ast
 import keyword
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
@@ -80,9 +80,6 @@ class _GenerationBase(SQLModel):
         sa_column=get_json_column(), default_factory=dict
     )
     arg_types: dict[str, str] = Field(sa_column=get_json_column(), default_factory=dict)
-    arg_values: dict[str, Any] = Field(
-        sa_column=get_json_column(), default_factory=dict
-    )
     archived: datetime | None = Field(default=None, index=True)
     custom_id: str | None = Field(default=None, index=True)
     prompt_template: str | None = Field(default=None)

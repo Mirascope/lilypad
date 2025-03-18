@@ -267,6 +267,7 @@ export interface GenerationCreate {
   /**
    * Name
    * @minLength 1
+   * @maxLength 512
    */
   name: string;
   /** Signature */
@@ -279,8 +280,6 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
-  /** Arg Values */
-  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -331,6 +330,7 @@ export interface GenerationPublic {
   /**
    * Name
    * @minLength 1
+   * @maxLength 512
    */
   name: string;
   /** Signature */
@@ -343,8 +343,6 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
-  /** Arg Values */
-  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -448,7 +446,7 @@ export interface MessageParam {
  */
 export interface PlaygroundParameters {
   /** Arg Values */
-  arg_values: object;
+  arg_values: Record<string, number | boolean | string | any[] | object>;
   /** Provider name enum */
   provider: Provider;
   /** Model */
