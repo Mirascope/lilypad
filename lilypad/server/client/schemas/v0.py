@@ -61,6 +61,7 @@ class GenerationCreate(BaseModel):
         dict[str, DependencyInfo] | None, Field(title="Dependencies")
     ] = None
     arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
+    arg_values: Annotated[dict[str, Any] | None, Field(title="Arg Values")] = None
     archived: Annotated[datetime | None, Field(title="Archived")] = None
     custom_id: Annotated[str | None, Field(title="Custom Id")] = None
     prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
@@ -84,6 +85,7 @@ class GenerationPublic(BaseModel):
         dict[str, DependencyInfo] | None, Field(title="Dependencies")
     ] = None
     arg_types: Annotated[dict[str, str] | None, Field(title="Arg Types")] = None
+    arg_values: Annotated[dict[str, Any] | None, Field(title="Arg Values")] = None
     archived: Annotated[datetime | None, Field(title="Archived")] = None
     custom_id: Annotated[str | None, Field(title="Custom Id")] = None
     prompt_template: Annotated[str | None, Field(title="Prompt Template")] = None
