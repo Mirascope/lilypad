@@ -94,6 +94,66 @@ export interface AggregateMetrics {
 }
 
 /**
+ * AnnotationCreate
+ * Annotation create model.
+ */
+export interface AnnotationCreate {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /** Span Uuid */
+  span_uuid?: string | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Generation Uuid */
+  generation_uuid?: string | null;
+  /** Assigned To */
+  assigned_to?: string[] | null;
+}
+
+/**
+ * AnnotationPublic
+ * Annotation public model.
+ */
+export interface AnnotationPublic {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /** Span more details model. */
+  span: SpanMoreDetails;
+  /** Assigned To */
+  assigned_to: string | null;
+}
+
+/**
  * AnnotationTable
  * Annotation table.
  */
@@ -125,6 +185,22 @@ export interface AnnotationTable {
   span_uuid?: string | null;
   /** Generation Uuid */
   generation_uuid?: string | null;
+}
+
+/**
+ * AnnotationUpdate
+ * Annotation update model.
+ */
+export interface AnnotationUpdate {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /** Assigned To */
+  assigned_to?: string | null;
 }
 
 /**
@@ -172,6 +248,107 @@ export interface DependencyInfo {
   version: string;
   /** Extras */
   extras: string[] | null;
+}
+
+/**
+ * DeploymentPublic
+ * Deployment public model.
+ */
+export interface DeploymentPublic {
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
+  /**
+   * Generation Uuid
+   * @format uuid
+   */
+  generation_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Is Active
+   * @default true
+   */
+  is_active?: boolean;
+  /**
+   * Version Num
+   * @default 1
+   */
+  version_num?: number;
+  /** Notes */
+  notes?: string | null;
+  /**
+   * Activated At
+   * Timestamp when the deployment was activated.
+   * @format date-time
+   */
+  activated_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  generation?: GenerationPublic | null;
+  environment?: EnvironmentPublic | null;
+}
+
+/**
+ * EnvironmentCreate
+ * Environment create model.
+ */
+export interface EnvironmentCreate {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+}
+
+/**
+ * EnvironmentPublic
+ * Environment public model.
+ */
+export interface EnvironmentPublic {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
 }
 
 /**
@@ -358,6 +535,34 @@ export enum Label {
 }
 
 /**
+ * LicenseInfo
+ * Pydantic model for license validation
+ */
+export interface LicenseInfo {
+  /** Customer */
+  customer: string;
+  /** License Id */
+  license_id: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at: string;
+  /** License tier enum. */
+  tier: Tier;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /**
+   * Is Expired
+   * Check if the license has expired
+   */
+  is_expired: boolean;
+}
+
+/**
  * MessageParam
  * Message param model agnostic to providers.
  */
@@ -463,6 +668,20 @@ export interface OrganizationUpdate {
 }
 
 /**
+ * PlaygroundParameters
+ * Playground parameters model.
+ */
+export interface PlaygroundParameters {
+  /** Arg Values */
+  arg_values: Record<string, number | boolean | string | any[] | object>;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  generation?: GenerationCreate | null;
+}
+
+/**
  * ProjectCreate
  * Project Create Model.
  */
@@ -493,6 +712,17 @@ export interface ProjectPublic {
    * @format date-time
    */
   created_at: string;
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
+  GEMINI = "gemini",
 }
 
 /**
@@ -627,6 +857,17 @@ export interface SpanPublic {
 export enum SpanType {
   GENERATION = "generation",
   TRACE = "trace",
+}
+
+/**
+ * Tier
+ * License tier enum.
+ */
+export enum Tier {
+  FREE = 0,
+  PRO = 1,
+  TEAM = 2,
+  ENTERPRISE = 3,
 }
 
 /**

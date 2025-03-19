@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
-from ....ee.server.api import v0_ee_api
+from ....ee.server.api import v0_ee_router
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
@@ -18,7 +18,7 @@ from .users_api import users_router
 
 api = FastAPI(separate_input_output_schemas=False)
 # The `/ee` FastAPI sub-app for `lilypad`.
-api.mount("/ee", v0_ee_api)
+api.include_router(v0_ee_router)
 api.include_router(api_keys_api)
 api.include_router(generations_router)
 api.include_router(projects_router)
