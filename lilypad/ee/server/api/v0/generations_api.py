@@ -294,7 +294,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             env=env_vars,
             cwd=str(_PROJECT_ROOT),
             timeout=20,
-            preexec_fn=_limit_resources,
+            # preexec_fn=_limit_resources, # For test
         )
     except subprocess.TimeoutExpired:
         logger.error("Subprocess execution timed out. File: %s", tmp_path)
