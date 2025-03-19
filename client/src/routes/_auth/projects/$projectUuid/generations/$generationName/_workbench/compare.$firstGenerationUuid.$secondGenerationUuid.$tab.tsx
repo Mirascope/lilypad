@@ -19,11 +19,13 @@ import { PlaygroundParameters } from "@/ee/types/types";
 import { useRunMutation } from "@/ee/utils/generations";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { GenerationTab } from "@/types/generations";
 import { GenerationPublic } from "@/types/types";
+import { Construction } from "lucide-react";
 import { Suspense, useState } from "react";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/overview"
+  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
@@ -183,6 +185,34 @@ const ComparePlaygrounds = ({
 };
 
 const Generation = () => {
+  const { projectUuid, generationName, generationUuid, tab } = useParams({
+    from: Route.id,
+  });
+  const { data: generations } = useSuspenseQuery(
+    generationsByNameQueryOptions(generationName, projectUuid)
+  );
+  const generation = generations.find(
+    (generation) => generation.uuid === generationUuid
+  );
+  if (tab === GenerationTab.OVERVIEW) {
+    return <GenerationOverview />;
+  } else if (tab === GenerationTab.TRACES) {
+    return (
+      <div className='flex justify-center items-center h-96'>
+        <Construction color='orange' /> This page is under construction{" "}
+        <Construction color='orange' />
+      </div>
+    );
+  } else if (tab === GenerationTab.ANNOTATIONS) {
+    return (
+      <div className='flex justify-center items-center h-96'>
+        <Construction color='orange' /> This page is under construction{" "}
+        <Construction color='orange' />
+      </div>
+    );
+  }
+};
+const GenerationOverview = () => {
   const { projectUuid, generationName, generationUuid, secondGenerationUuid } =
     useParams({
       from: Route.id,
