@@ -34,203 +34,57 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
-import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
-import { PlaygroundParameters } from "@/ee/types/types";
 import {
-  useCreateManagedGeneration,
-  useRunMutation,
-} from "@/ee/utils/generations";
-import {
-  FormItemValue,
-  simplifyFormItem,
-  TypedInput,
-} from "@/ee/utils/input-utils";
-import { GenerationCreate, GenerationPublic } from "@/types/types";
-import { usePatchGenerationMutation } from "@/utils/generations";
-import {
-  BaseEditorFormFields,
-  getAvailableProviders,
-  useBaseEditorForm,
-  validateInputs,
-} from "@/utils/playground-utils";
-import { userQueryOptions } from "@/utils/users";
-import { $convertToMarkdownString } from "@lexical/markdown";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { LexicalEditor } from "lexical";
+  EditorParameters,
+  usePlaygroundContainer,
+} from "@/ee/hooks/use-playground";
+import { TypedInput } from "@/ee/utils/input-utils";
+import { GenerationPublic } from "@/types/types";
+import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
 import { X } from "lucide-react";
-import {
-  BaseSyntheticEvent,
-  Dispatch,
-  SetStateAction,
-  useRef,
-  useState,
-} from "react";
+import { Dispatch, SetStateAction } from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 
-type FormValues = {
-  inputs: Record<string, any>[];
-};
-export type EditorParameters = PlaygroundParameters & FormValues;
 export const Playground = ({
   version,
   response,
+  isCompare,
+  showRunButton,
+  playgroundContainer,
 }: {
   version: GenerationPublic | null;
   response?: string;
+  isCompare?: boolean;
+  showRunButton?: boolean;
+  playgroundContainer?: ReturnType<typeof usePlaygroundContainer>;
 }) => {
-  const { projectUuid, generationName } = useParams({
-    strict: false,
+  // Use the hook to manage all playground business logic, or use provided container
+  const {
+    methods,
+    editorRef,
+    inputs,
+    inputValues,
+    editorErrors,
+    openInputDrawer,
+    setOpenInputDrawer,
+    doesProviderExist,
+    isRunLoading,
+    isCreateLoading,
+    isPatchLoading,
+    onSubmit,
+    handleSetDefault,
+    handleReset,
+    projectUuid,
+    generationName,
+    isDisabled,
+  } = playgroundContainer || usePlaygroundContainer({
+    version,
+    isCompare: isCompare || false,
   });
-  const { data: user } = useSuspenseQuery(userQueryOptions());
-  const navigate = useNavigate();
-  const createGenerationMutation = useCreateManagedGeneration();
-  const runMutation = useRunMutation();
-  const patchGeneration = usePatchGenerationMutation();
-  const methods = useBaseEditorForm<EditorParameters>({
-    latestVersion: version,
-    additionalDefaults: {
-      inputs: version?.arg_types
-        ? Object.keys(version.arg_types).map((key) => ({
-            key,
-            type: version.arg_types?.[key] || "str",
-            value: "",
-          }))
-        : [],
-    },
-  });
-
-  const inputs = methods.watch("inputs");
-  const inputValues = inputs.reduce(
-    (acc, input) => {
-      if (input.type === "list" || input.type === "dict") {
-        try {
-          acc[input.key] = simplifyFormItem(input as FormItemValue);
-        } catch (e) {
-          acc[input.key] = input.value;
-        }
-      } else {
-        acc[input.key] = input.value;
-      }
-      return acc;
-    },
-    {} as Record<string, any>
-  );
-  const [editorErrors, setEditorErrors] = useState<string[]>([]);
-  const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
-  const editorRef = useRef<LexicalEditor>(null);
 
   if (!projectUuid || !generationName) return <NotFound />;
-  const onSubmit: SubmitHandler<EditorParameters> = (
-    data: EditorParameters,
-    event?: BaseSyntheticEvent
-  ) => {
-    event?.preventDefault();
-    methods.clearErrors();
-    setEditorErrors([]);
-    if (!editorRef?.current) return;
-    let buttonName = "";
-    if (
-      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
-        ?.submitter
-    ) {
-      buttonName = (
-        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
-      ).submitter.name;
-    } else if (event?.target?.name) {
-      buttonName = event.target.name;
-    }
-    const editorErrors = $findErrorTemplateNodes(editorRef.current);
-    if (editorErrors.length > 0) {
-      setEditorErrors(
-        editorErrors.map(
-          (node) => `'${node.getValue()}' is not a function argument.`
-        )
-      );
-      return;
-    }
-    const editorState = editorRef.current.getEditorState();
-    editorState.read(async () => {
-      const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-      const generationCreate: GenerationCreate = {
-        prompt_template: markdown,
-        call_params: data?.generation?.call_params,
-        name: generationName,
-        arg_types: inputs.reduce(
-          (acc, input) => {
-            acc[input.key] = input.type;
-            return acc;
-          },
-          {} as Record<string, string>
-        ),
-        provider: data.provider,
-        model: data.model,
-        signature: "",
-        hash: "",
-        code: "",
-      };
-      const isValid = await methods.trigger();
-      if (buttonName === "run") {
-        if (!isValid) return;
-        if (!validateInputs(methods, data.inputs)) {
-          setOpenInputDrawer(true);
-          return;
-        }
-        const newVersion = await createGenerationMutation.mutateAsync({
-          projectUuid,
-          generationCreate,
-        });
-        const inputValues = inputs.reduce(
-          (acc, input) => {
-            if (input.type === "list" || input.type === "dict") {
-              try {
-                acc[input.key] = simplifyFormItem(input as FormItemValue);
-              } catch (e) {
-                acc[input.key] = input.value;
-              }
-            } else {
-              acc[input.key] = input.value;
-            }
-            return acc;
-          },
-          {} as Record<string, any>
-        );
-        const playgroundValues: PlaygroundParameters = {
-          arg_values: inputValues,
-          provider: data.provider,
-          model: data.model,
-        };
-        const res = await runMutation.mutateAsync({
-          projectUuid,
-          generationUuid: newVersion.uuid,
-          playgroundValues,
-        });
-        navigate({
-          to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
-          replace: true,
-          state: {
-            result: res,
-          },
-        });
-      } else {
-        try {
-          if (!isValid) return;
-          const newVersion = await createGenerationMutation.mutateAsync({
-            projectUuid,
-            generationCreate,
-          });
-          navigate({
-            to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
-            replace: true,
-          });
-        } catch (error) {
-          console.error(error);
-        }
-      }
-    });
-  };
+
   const renderBottomPanel = () => {
     return (
       <>
@@ -247,95 +101,99 @@ export const Playground = ({
       </>
     );
   };
-  const doesProviderExist = getAvailableProviders(user).length > 0;
+
+  const renderRunButton = () => {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <Button
+              name='run'
+              loading={isRunLoading}
+              disabled={!doesProviderExist}
+              className=' hover:bg-green-700 text-white font-medium'
+            >
+              Run
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className='bg-gray-700 text-white'>
+          <p className='max-w-xs break-words'>
+            {doesProviderExist ? (
+              "Run the playground with the selected provider."
+            ) : (
+              <span>You need to add an API key to run the playground.</span>
+            )}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
   return (
     <Form {...methods}>
       <form
         id={`playground-form-${version?.uuid || ""}`}
         onSubmit={methods.handleSubmit(onSubmit)}
+        className='flex-1'
       >
         <div className='flex flex-col gap-4'>
           <div className='flex justify-between gap-4 w-full'>
-            <div className='flex items-center gap-2'>
-              <Button
-                type='submit'
-                name='save'
-                loading={createGenerationMutation.isPending}
-                className='bg-mirascope hover:bg-mirascope-light text-white font-medium'
-              >
-                Save
-              </Button>
-              {version && (
+            {!isCompare && (
+              <div className='flex items-center gap-2'>
                 <Button
-                  disabled={version.is_default || patchGeneration.isPending}
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    patchGeneration.mutate({
-                      projectUuid,
-                      generationUuid: version.uuid,
-                      generationUpdate: { is_default: true },
-                    });
-                  }}
-                  className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
-                  variant='outline'
+                  type='submit'
+                  name='save'
+                  loading={isCreateLoading}
+                  className='bg-mirascope hover:bg-mirascope-light text-white font-medium'
                 >
-                  {version.is_default ? (
-                    <span className='flex items-center gap-1'>
-                      <span className='h-2 w-2 rounded-full bg-green-500'></span>
-                      Default
-                    </span>
-                  ) : (
-                    "Set default"
-                  )}
+                  Save
                 </Button>
-              )}
-            </div>
+                {version && (
+                  <Button
+                    disabled={version.is_default || isPatchLoading}
+                    onClick={handleSetDefault}
+                    className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
+                    variant='outline'
+                  >
+                    {version.is_default ? (
+                      <span className='flex items-center gap-1'>
+                        <span className='h-2 w-2 rounded-full bg-green-500'></span>
+                        Default
+                      </span>
+                    ) : (
+                      "Set default"
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
             <div className='flex items-center gap-2'>
               <InputsDrawer
                 open={openInputDrawer}
                 setOpen={setOpenInputDrawer}
                 onSubmit={onSubmit}
                 doesProviderExist={doesProviderExist}
-                isLoading={runMutation.isPending}
+                isLoading={isRunLoading}
+                isDisabled={isDisabled}
               />
               <CallParamsDrawer
                 doesProviderExist={doesProviderExist}
                 version={version}
-                isLoading={runMutation.isPending}
+                isLoading={isRunLoading}
+                isDisabled={isDisabled}
+                handleReset={handleReset}
               />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      name='run'
-                      loading={runMutation.isPending}
-                      disabled={!doesProviderExist}
-                      className=' hover:bg-green-700 text-white font-medium'
-                    >
-                      Run
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className='bg-gray-700 text-white'>
-                  <p className='max-w-xs break-words'>
-                    {doesProviderExist ? (
-                      "Run the playground with the selected provider."
-                    ) : (
-                      <span>
-                        You need to add an API key to run the playground.
-                      </span>
-                    )}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              {(!isCompare || showRunButton) && renderRunButton()}
             </div>
           </div>
-          <div className='lexical min-w-[500px]'>
+          <div className='lexical'>
             <Editor
               inputs={inputs.map((input) => input.key)}
               inputValues={inputValues}
               ref={editorRef}
               promptTemplate={(version && version.prompt_template) || ""}
+              isDisabled={isDisabled}
             />
             {editorErrors.length > 0 &&
               editorErrors.map((error, i) => (
@@ -355,15 +213,15 @@ const CallParamsDrawer = ({
   doesProviderExist,
   isLoading,
   version,
+  isDisabled,
+  handleReset,
 }: {
   doesProviderExist: boolean;
   isLoading: boolean;
   version: GenerationPublic | null;
+  isDisabled: boolean;
+  handleReset: () => void;
 }) => {
-  const methods = useFormContext<EditorParameters>();
-  const handleClick = () => {
-    methods.reset();
-  };
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -381,25 +239,29 @@ const CallParamsDrawer = ({
         <SheetHeader>
           <SheetTitle>Call Params</SheetTitle>
         </SheetHeader>
-        <div className='self-end'>
-          <SheetClose asChild>
-            <Button
-              form={`playground-form-${version?.uuid || ""}`}
-              name='run'
-              type='submit'
-              loading={isLoading}
-              disabled={!doesProviderExist}
-              className=' hover:bg-green-700 text-white font-medium'
-            >
-              Run
-            </Button>
-          </SheetClose>
-        </div>
-        <BaseEditorFormFields />
+        {!isDisabled && (
+          <div className='self-end'>
+            <SheetClose asChild>
+              <Button
+                form={`playground-form-${version?.uuid || ""}`}
+                name='run'
+                type='submit'
+                loading={isLoading}
+                disabled={!doesProviderExist}
+                className=' hover:bg-green-700 text-white font-medium'
+              >
+                Run
+              </Button>
+            </SheetClose>
+          </div>
+        )}
+        <BaseEditorFormFields isDisabled={isDisabled} />
         <SheetFooter>
-          <Button variant='outline' onClick={handleClick}>
-            Reset to default
-          </Button>
+          {!isDisabled && (
+            <Button variant='outline' onClick={handleReset}>
+              Reset to default
+            </Button>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -412,20 +274,24 @@ const InputsDrawer = ({
   onSubmit,
   doesProviderExist,
   isLoading,
+  isDisabled,
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   onSubmit: SubmitHandler<EditorParameters>;
   doesProviderExist: boolean;
   isLoading: boolean;
+  isDisabled: boolean;
 }) => {
   const methods = useFormContext<EditorParameters>();
   const inputs = methods.watch("inputs");
+
   const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     if (!validateInputs(methods, inputs)) return;
     methods.handleSubmit((data) => onSubmit(data, event))();
     setOpen(false);
   };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -443,18 +309,20 @@ const InputsDrawer = ({
         <SheetHeader>
           <SheetTitle>Inputs</SheetTitle>
         </SheetHeader>
-        <div className='self-end'>
-          <Button
-            name='run'
-            onClick={handleClick}
-            loading={isLoading}
-            disabled={!doesProviderExist}
-            className=' hover:bg-green-700 text-white font-medium'
-          >
-            Run
-          </Button>
-        </div>
-        <InputsContent />
+        {!isDisabled && (
+          <div className='self-end'>
+            <Button
+              name='run'
+              onClick={handleClick}
+              loading={isLoading}
+              disabled={!doesProviderExist}
+              className=' hover:bg-green-700 text-white font-medium'
+            >
+              Run
+            </Button>
+          </div>
+        )}
+        <InputsContent isDisabled={isDisabled} />
         <SheetFooter>
           <SheetClose asChild>
             <Button variant='outline'>Close</Button>
@@ -465,13 +333,14 @@ const InputsDrawer = ({
   );
 };
 
-const InputsContent = () => {
+const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
   const methods = useFormContext<EditorParameters>();
   const { fields, append, remove } = useFieldArray<EditorParameters>({
     control: methods.control,
     name: "inputs",
   });
   const types = ["str", "int", "float", "bool", "bytes", "list", "dict"];
+
   return (
     <div className='space-y-2'>
       <div className='flex gap-4 flex-wrap pb-4'>
@@ -484,6 +353,7 @@ const InputsContent = () => {
                 variant='ghost'
                 size='icon'
                 onClick={() => remove(index)}
+                disabled={isDisabled}
                 className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
               >
                 <X className='h-4 w-4' />
@@ -497,7 +367,11 @@ const InputsContent = () => {
                       <FormItem>
                         <FormLabel>Args</FormLabel>
                         <FormControl>
-                          <Input placeholder='Args' {...field} />
+                          <Input
+                            placeholder='Args'
+                            disabled={isDisabled}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -516,6 +390,7 @@ const InputsContent = () => {
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
+                            disabled={isDisabled}
                           >
                             <SelectTrigger className='w-full'>
                               <SelectValue placeholder='Select input type' />
@@ -543,10 +418,12 @@ const InputsContent = () => {
             </Card>
           );
         })}
-        <AddCardButton
-          className='w-full'
-          onClick={() => append({ key: "", type: "str", value: "" })}
-        />
+        {!isDisabled && (
+          <AddCardButton
+            className='w-full'
+            onClick={() => append({ key: "", type: "str", value: "" })}
+          />
+        )}
       </div>
     </div>
   );

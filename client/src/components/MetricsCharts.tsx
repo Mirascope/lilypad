@@ -1,17 +1,19 @@
 import { ChartSkeleton } from "@/components/ChartSkeleton";
 import { GenerationCostAndTokensChart } from "@/components/CostAndTokensChart";
-import { ResponseTimeChart } from "@/components/ResponseTimeChart";
+import { GenerationResponseTimeChart } from "@/components/ResponseTimeChart";
 import { Button } from "@/components/ui/button";
-import { TimeFrame } from "@/types/types";
+import { GenerationPublic, TimeFrame } from "@/types/types";
 import { Calendar, CalendarDays, Clock } from "lucide-react";
 import { Suspense, useState } from "react";
 
 export const MetricCharts = ({
   projectUuid,
-  generationUuid,
+  generation,
+  secondGeneration,
 }: {
   projectUuid: string;
-  generationUuid: string;
+  generation: GenerationPublic;
+  secondGeneration?: GenerationPublic;
 }) => {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const costTitle = `Cost and Tokens (${timeFrame})`;
@@ -52,15 +54,17 @@ export const MetricCharts = ({
       <div className='flex gap-2'>
         <Suspense fallback={<ChartSkeleton title={costTitle} />}>
           <GenerationCostAndTokensChart
-            generationUuid={generationUuid}
+            generation={generation}
+            secondGeneration={secondGeneration}
             projectUuid={projectUuid}
             timeFrame={timeFrame}
             title={costTitle}
           />
         </Suspense>
         <Suspense fallback={<ChartSkeleton title={latencyTitle} />}>
-          <ResponseTimeChart
-            generationUuid={generationUuid}
+          <GenerationResponseTimeChart
+            generation={generation}
+            secondGeneration={secondGeneration}
             projectUuid={projectUuid}
             timeFrame={timeFrame}
             title={latencyTitle}

@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EditorParameters } from "@/ee/components/Playground";
+import { EditorParameters } from "@/ee/hooks/use-playground";
 import { PlaygroundParameters, Provider } from "@/ee/types/types";
 import { CommonCallParams, GenerationPublic, UserPublic } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
@@ -160,7 +160,10 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   },
 } as const;
 
-export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS) {
+export function createFormSlider(
+  sliderKey: keyof typeof SLIDER_CONFIGS,
+  isDisabled?: boolean
+) {
   return function renderSlider<T extends object>(
     name: Path<T>,
     enabled?: Path<T>
@@ -175,6 +178,7 @@ export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS) {
         label={config.label}
         sliderProps={config.sliderProps}
         showInput={true}
+        isDisabled={isDisabled}
         inputProps={config.inputProps}
         {...(isOptional && {
           switchName: enabled,
@@ -241,7 +245,8 @@ export const getModelOptions = (provider: Provider) => {
 
 export const renderStopSequences = (
   name: Path<PlaygroundParameters>,
-  maxItems: number = 5
+  maxItems: number = 5,
+  isDisabled: boolean
 ) => {
   const method = useFormContext<PlaygroundParameters>();
   let stopSequences: string[] = [];
@@ -268,6 +273,7 @@ export const renderStopSequences = (
               }))}
               control={method.control}
               name={name}
+              disabled={isDisabled}
               popoverText='Add stop sequences...'
               helperText='Enter a stop sequence'
             />
@@ -333,7 +339,7 @@ const getDefaultValues = <T extends PlaygroundParameters>(
   } as DefaultValues<T>;
 };
 
-const renderSeed = () => {
+const renderSeed = (isDisabled: boolean) => {
   const method = useFormContext<PlaygroundParameters>();
   return (
     <FormField
@@ -344,7 +350,12 @@ const renderSeed = () => {
         <FormItem>
           <FormLabel>Seed</FormLabel>
           <FormControl>
-            <Input {...field} type='number' value={field.value ?? ""} />
+            <Input
+              {...field}
+              type='number'
+              value={field.value ?? ""}
+              disabled={isDisabled}
+            />
           </FormControl>
         </FormItem>
       )}
@@ -372,7 +383,11 @@ export const getAvailableProviders = (user: UserPublic | null) => {
   }
   return availableProviders;
 };
-export const BaseEditorFormFields = () => {
+export const BaseEditorFormFields = ({
+  isDisabled,
+}: {
+  isDisabled: boolean;
+}) => {
   const methods = useFormContext<PlaygroundParameters>();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const provider = methods.watch("provider");
@@ -392,12 +407,12 @@ export const BaseEditorFormFields = () => {
   }, [provider, methods.resetField]);
 
   const renderSliders = {
-    maxTokens: createFormSlider("maxTokens"),
-    temperature: createFormSlider("temperature"),
-    topK: createFormSlider("topK"),
-    topP: createFormSlider("topP"),
-    frequencyPenalty: createFormSlider("frequencyPenalty"),
-    presencePenalty: createFormSlider("presencePenalty"),
+    maxTokens: createFormSlider("maxTokens", isDisabled),
+    temperature: createFormSlider("temperature", isDisabled),
+    topK: createFormSlider("topK", isDisabled),
+    topP: createFormSlider("topP", isDisabled),
+    frequencyPenalty: createFormSlider("frequencyPenalty", isDisabled),
+    presencePenalty: createFormSlider("presencePenalty", isDisabled),
   };
 
   const commonParams = [
@@ -406,8 +421,8 @@ export const BaseEditorFormFields = () => {
     renderSliders.topP("generation.call_params.top_p"),
     renderSliders.frequencyPenalty("generation.call_params.frequency_penalty"),
     renderSliders.presencePenalty("generation.call_params.presence_penalty"),
-    renderSeed(),
-    renderStopSequences("generation.call_params.stop", 4),
+    renderSeed(isDisabled),
+    renderStopSequences("generation.call_params.stop", 4, isDisabled),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>
