@@ -14,7 +14,7 @@ class SecretManager(ABC):
         ...
 
     @abstractmethod
-    def get_secret(self, secret_id: str) -> str:
+    def get_secret(self, secret_id: str) -> str | None:
         """Retrieve a secret by its ID."""
         ...
 
@@ -26,4 +26,9 @@ class SecretManager(ABC):
     @abstractmethod
     def delete_secret(self, secret_id: str) -> bool:
         """Delete a secret by its ID."""
+        ...
+
+    @abstractmethod
+    def get_secret_id_by_name(self, name: str) -> str | None:
+        """Retrieve the secret ID by name."""
         ...

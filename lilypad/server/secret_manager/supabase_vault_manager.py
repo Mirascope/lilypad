@@ -14,7 +14,6 @@ class SupabaseVaultManager(SecretManager):
     def __init__(self, session: Session) -> None:
         """Initialize with SQLModel session."""
         self.session = session
-        self._disable_statement_logging()
 
     @contextmanager
     def _transaction(self) -> Generator[Session, None, None]:
@@ -25,14 +24,6 @@ class SupabaseVaultManager(SecretManager):
         except Exception:
             self.session.rollback()
             raise
-
-    def _disable_statement_logging(self) -> None:
-        """Disable statement logging for security when handling secrets."""
-        try:
-            self.session.execute(text("SET LOCAL statement_timeout = 0"))
-            self.session.execute(text("SET LOCAL log_statement = 'none'"))
-        except Exception:
-            pass
 
     def store_secret(
         self, name: str, secret: str, description: str | None = None
@@ -45,14 +36,16 @@ class SupabaseVaultManager(SecretManager):
             )
             return result.scalar_one()
 
-    def get_secret(self, secret_id: str) -> str:
+    def get_secret(self, secret_id: str) -> str | None:
         """Retrieve a secret from Supabase Vault."""
+        # We need to get name of the secret
+        name = self.get_secret_name_by_id(secret_id)
+        if not name:
+            return None
         with self._transaction():
             result = self.session.execute(
-                text(
-                    "SELECT decrypted_secret FROM vault.decrypted_secrets WHERE id = :id"
-                ),
-                {"id": secret_id},
+                text("SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = :name"),
+                {"name": name},
             )
             return result.scalar_one()
 
@@ -73,3 +66,20 @@ class SupabaseVaultManager(SecretManager):
                 {"id": secret_id},
             )
             return result.scalar_one_or_none() is not None
+
+    def get_secret_id_by_name(self, name: str) -> str | None:
+        """Retrieve the secret id by name from Supabase Vault."""
+        with self._transaction():
+            result = self.session.execute(
+                text("SELECT id FROM vault.secrets WHERE name = :name"), {"name": name}
+            )
+            return result.scalar_one_or_none()
+
+    def get_secret_name_by_id(self, secret_id: str) -> str | None:
+        """Retrieve the secret name by its id from Supabase Vault."""
+        with self._transaction():
+            result = self.session.execute(
+                text("SELECT name FROM vault.secrets WHERE id = :id"),
+                {"id": secret_id},
+            )
+            return result.scalar_one_or_none()

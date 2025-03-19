@@ -9,6 +9,7 @@ from ....ee.server.api import v0_ee_api
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
+from .external_api_keys_api import external_api_key_router
 from .generations_api import generations_router
 from .organizations_api import organization_router
 from .projects_api import projects_router
@@ -27,6 +28,7 @@ api.include_router(traces_router)
 api.include_router(auth_router)
 api.include_router(users_router)
 api.include_router(organization_router)
+api.include_router(external_api_key_router)
 
 
 class SettingsPublic(BaseModel):
