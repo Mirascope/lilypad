@@ -191,7 +191,8 @@ const ProjectDashboard = () => {
             <TabsContent value='overview'>
               <div className='grid grid-cols-1 gap-6'>
                 <CostAndTokensChart
-                  aggregateMetrics={data}
+                  metricsData={[data]}
+                  labels={["Total Cost"]}
                   title={`Cost and Tokens (${timeFrame})`}
                 />
               </div>
