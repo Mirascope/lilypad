@@ -1,5 +1,5 @@
 import api from "@/api";
-import { LicenseInfo } from "@/ee/types/types";
+import { LicenseInfo } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 
 export const fetchLicense = async () => {

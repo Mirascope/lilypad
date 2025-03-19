@@ -11,11 +11,10 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
-import { Tier } from "@/ee/types/types";
 import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { toast } from "@/hooks/use-toast";
-import { OrganizationUpdate } from "@/types/types";
+import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";

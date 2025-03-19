@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { labelNodeDefinition } from "@/ee/components/LabelNode";
-import { AnnotationPublic } from "@/ee/types/types";
-import { Label } from "@/types/types";
+import { AnnotationPublic, Label } from "@/types/types";
 import { renderCardOutput } from "@/utils/panel-utils";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
