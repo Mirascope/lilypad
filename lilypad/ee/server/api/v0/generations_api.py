@@ -33,6 +33,7 @@ from .....server.schemas import (
 )
 from .....server.schemas.generations import AcceptedValue
 from .....server.services import APIKeyService
+from .....server.settings import get_settings
 from ..._utils import get_current_environment
 from ...models.environments import Environment
 from ...require_license import require_license
@@ -232,7 +233,7 @@ def run_version(
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
     # Serialize the user input as a JSON string
     json_arg_values = json.dumps(decoded_arg_values)
-    user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)!r})"
+    user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
 
     wrapper_code = f"""
 import json
@@ -241,6 +242,7 @@ import lilypad
 
 lilypad.configure()
 
+@lilypad.generation(managed=True)
 def {generation.name}({", ".join(generation.arg_types.keys())}) -> lilypad.Message: ...
 
 {user_args_code}
@@ -282,6 +284,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)
     env_vars["PATH"] = os.environ["PATH"]
+    env_vars["LILYPAD_REMOTE_API_URL"] = get_settings().remote_api_url
     try:
         result = subprocess.run(
             ["uv", "run", str(tmp_path)],
