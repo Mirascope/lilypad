@@ -115,7 +115,7 @@ const AuthProjectsProjectUuidTracesSplatRoute =
 
 const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRoute =
   AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteImport.update({
-    id: '/projects/$projectUuid/generations/$generationName/_workbench',
+    id: '/_workbench',
     getParentRoute: () => AuthProjectsProjectUuidGenerationsGenerationNameRoute,
   } as any)
 

@@ -3,38 +3,94 @@ import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import "highlight.js/styles/atom-one-light.min.css";
 import { Check, Copy } from "lucide-react";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Register the language
 hljs.registerLanguage("python", python);
 
-export interface CodeSnippetProps {
-  code: string;
-  className?: string;
-  showCopyButton?: boolean;
-  showLineNumbers?: boolean;
-  customLineNumbers?: ReactNode;
-  lineHighlights?: Record<number, string>; // Maps line number to CSS class for highlighting
-  wrapperClassName?: string;
-}
+// Custom line numbers function (used in the rendered JSX)
+const renderLineNumbers = (code, lineHighlights) => {
+  return code.split("\n").map((line, i) => {
+    // Line numbers are 1-based, but array indices are 0-based
+    const lineNumber = i + 1;
+    // Use the custom highlight class or default to a subtle gray background
+    const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
+
+    return (
+      <div
+        key={i}
+        className={`hljs-line ${lineClass}`}
+        data-line-number={lineNumber}
+      >
+        <span className='hljs-line-number'>{lineNumber}</span>
+        <span className='hljs-line-code'>{line}</span>
+      </div>
+    );
+  });
+};
 
 export const CodeSnippet = ({
   code,
-  className = "",
+  className,
   showCopyButton = true,
-  showLineNumbers = false,
-  customLineNumbers,
   lineHighlights = {},
-  wrapperClassName = "",
-}: CodeSnippetProps) => {
+}: {
+  code: string;
+  className?: string;
+  showCopyButton?: boolean;
+  lineHighlights?: Record<string, string>;
+}) => {
+  const preRef = useRef<HTMLPreElement>(null);
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!codeRef.current) return;
-    // Prevents warning about highlighting the same element multiple times
-    if (!codeRef.current.getAttribute("data-highlighted")) {
-      // Highlights the code snippet
-      hljs.highlightElement(codeRef.current);
+
+    // We need to highlight each line separately
+    const codeLines = codeRef.current.querySelectorAll(".hljs-line-code");
+
+    codeLines.forEach((line) => {
+      if (!line.hasAttribute("data-highlighted")) {
+        hljs.highlightElement(line as HTMLElement);
+      }
+    });
+
+    // Add line number styles if they don't exist yet
+    if (!document.getElementById("line-number-styles")) {
+      const styleEl = document.createElement("style");
+      styleEl.id = "line-number-styles";
+      styleEl.textContent = `
+        .hljs-line {
+          display: flex;
+          width: 100%;
+        }
+        .hljs-line-number {
+          display: inline-block;
+          padding-right: 1em;
+          min-width: 2em;
+          text-align: right;
+          color: #999;
+          user-select: none;
+          border-right: 1px solid #ddd;
+          margin-right: 0.5em;
+        }
+        .hljs-line-code {
+          flex: 1;
+          background: transparent !important; /* Ensure HLJS doesn't override our backgrounds */
+        }
+        /* Ensure our custom highlighting takes precedence */
+        .hljs-line.bg-green-100 .hljs-line-code,
+        .hljs-line.bg-yellow-100 .hljs-line-code,
+        .hljs-line.bg-red-100 .hljs-line-code,
+        .hljs-line.bg-blue-100 .hljs-line-code,
+        .hljs-line.bg-purple-100 .hljs-line-code,
+        .hljs-line[class*="bg-"] .hljs-line-code {
+          background: inherit !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
     }
   }, [code]);
 
@@ -45,76 +101,20 @@ export const CodeSnippet = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate line numbers if needed
-  const renderLineNumbers = () => {
-    if (customLineNumbers) {
-      return customLineNumbers;
-    }
-
-    if (showLineNumbers) {
-      const lines = code.split("\n");
-      return (
-        <div className='flex-none w-12 text-right pr-2 bg-gray-100 border-r border-gray-300'>
-          {lines.map((_, index) => (
-            <div
-              key={`line-${index + 1}`}
-              className='text-xs leading-5 text-gray-500 py-[1px]'
-            >
-              {index + 1}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  // Apply line highlights if provided
-  const renderCode = () => {
-    if (Object.keys(lineHighlights).length > 0) {
-      const lines = code.split("\n");
-      return (
-        <pre className={`flex-grow !bg-transparent ${className}`}>
-          {lines.map((line, index) => {
-            const highlightClass = lineHighlights[index + 1] || "";
-            return (
-              <div
-                key={`highlight-line-${index + 1}`}
-                className={`${highlightClass}`}
-              >
-                <code>{line}</code>
-              </div>
-            );
-          })}
-        </pre>
-      );
-    }
-
-    return (
-      <pre className={className}>
-        <code
-          ref={codeRef}
-          className='language-python text-sm overflow-x-auto'
-          key={code}
-        >
-          {code}
-        </code>
-      </pre>
-    );
-  };
+  // Format the code with line numbers for display and default to gray background
+  const formattedCode = renderLineNumbers(code, lineHighlights);
 
   return (
-    <div className={`relative font-mono ${wrapperClassName}`}>
-      {showLineNumbers || customLineNumbers ? (
-        <div className='flex'>
-          {renderLineNumbers()}
-          {renderCode()}
-        </div>
-      ) : (
-        renderCode()
-      )}
-
+    <div className='relative'>
+      <pre className={className} ref={preRef}>
+        <code
+          ref={codeRef}
+          className='language-python text-sm overflow-x-auto flex flex-col'
+          key={code}
+        >
+          {formattedCode}
+        </code>
+      </pre>
       {showCopyButton && (
         <button
           onClick={handleCopy}

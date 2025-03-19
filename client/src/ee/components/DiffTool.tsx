@@ -147,22 +147,13 @@ const CodeBlockWithLineNumbersSideBySide = ({
       });
     });
 
-    // Custom line numbers component
-    const customLineNumbers = (
-      <div className='flex-none w-12 text-right pr-2 bg-gray-100 border-r border-gray-300'>
-        {lineNumbers}
-      </div>
-    );
-
     return (
-      <div className='flex-1 overflow-x-auto'>
+      <div className='flex-1 w-full overflow-x-auto'>
         <CodeSnippet
           code={codeLines.join("\n")}
           showCopyButton={false}
-          customLineNumbers={customLineNumbers}
           lineHighlights={lineHighlights}
           className='!p-0 !bg-transparent'
-          wrapperClassName='border-0'
         />
       </div>
     );
@@ -186,9 +177,6 @@ interface CodeBlockWithLineNumbersAndHighlightsProps {
 const CodeBlockWithLineNumbersAndHighlights = ({
   diffedLines,
 }: CodeBlockWithLineNumbersAndHighlightsProps) => {
-  let beforeLineNumber = 0;
-  let afterLineNumber = 0;
-
   // Generate the unified code view
   const codeLines: string[] = [];
   const lineHighlights: Record<number, string> = {};
@@ -212,79 +200,13 @@ const CodeBlockWithLineNumbersAndHighlights = ({
     });
   });
 
-  // Generate line numbers for both sides
-  const renderLineNumbers = () => {
-    const beforeNumbers: JSX.Element[] = [];
-    const afterNumbers: JSX.Element[] = [];
-
-    diffedLines.forEach((part) => {
-      if ((!part.added && !part.removed) || part.removed) {
-        part.value.forEach(() => {
-          beforeLineNumber++;
-          beforeNumbers.push(
-            <div
-              key={`before-${beforeLineNumber}`}
-              className='py-0.5 text-gray-500'
-            >
-              {beforeLineNumber}
-            </div>
-          );
-        });
-      } else {
-        part.value.forEach((_, i) => {
-          beforeNumbers.push(
-            <div
-              key={`after-empty-${beforeLineNumber}-${i}`}
-              className='py-0.5'
-            >
-              &nbsp;
-            </div>
-          );
-        });
-      }
-    });
-
-    diffedLines.forEach((part) => {
-      if ((!part.added && !part.removed) || part.added) {
-        part.value.forEach(() => {
-          afterLineNumber++;
-          afterNumbers.push(
-            <div
-              key={`after-${afterLineNumber}`}
-              className='py-0.5 text-gray-500'
-            >
-              {afterLineNumber}
-            </div>
-          );
-        });
-      } else {
-        part.value.forEach((_, i) => {
-          afterNumbers.push(
-            <div key={`after-empty-${afterLineNumber}-${i}`} className='py-0.5'>
-              &nbsp;
-            </div>
-          );
-        });
-      }
-    });
-
-    return (
-      <div className='flex gap-1 w-12 pl-1 bg-gray-100 border-r border-gray-300'>
-        <div>{beforeNumbers}</div>
-        <div>{afterNumbers}</div>
-      </div>
-    );
-  };
-
   return (
-    <div className='font-mono text-sm border rounded-md overflow-hidden'>
+    <div className='w-full font-mono text-sm border rounded-md overflow-hidden'>
       <CodeSnippet
         code={codeLines.join("\n")}
         showCopyButton={false}
-        customLineNumbers={renderLineNumbers()}
         lineHighlights={lineHighlights}
         className='!p-0 !bg-transparent'
-        wrapperClassName='border-0'
       />
     </div>
   );
@@ -299,7 +221,6 @@ interface DiffToolProps {
 export const DiffTool = ({
   firstLexicalClosure,
   secondLexicalClosure,
-  language = "python", // Default to python for backward compatibility
 }: DiffToolProps) => {
   const [mode, setMode] = useState<"split" | "unified">("split");
 
@@ -328,7 +249,7 @@ export const DiffTool = ({
               {mode === "split" ? "Split" : "Unified"} View
             </Label>
           </div>
-          <div className='flex'>
+          <div className='flex w-full'>
             {mode === "unified" ? (
               <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} />
             ) : (

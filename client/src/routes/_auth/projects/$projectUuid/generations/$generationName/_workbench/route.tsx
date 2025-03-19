@@ -40,6 +40,7 @@ type GenerationRouteParams = {
   generationName: string;
   generationUuid: string;
   secondGenerationUuid?: string;
+  isCompare: boolean;
   tab: GenerationTab;
 };
 export const Route = createFileRoute(
@@ -63,6 +64,7 @@ export const Route = createFileRoute(
         generationUuid: raw.generationUuid || raw.firstGenerationUuid,
         secondGenerationUuid: raw.secondGenerationUuid,
         tab: tab as GenerationTab,
+        isCompare: Boolean(raw.firstGenerationUuid),
       };
     },
   },
@@ -92,13 +94,14 @@ const GenerationWorkbench = () => {
     generationUuid,
     secondGenerationUuid,
     tab,
+    isCompare,
   } = useParams({
     from: Route.id,
   });
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
-  const [compareMode, setCompareMode] = useState<boolean>(false);
+  const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const features = useFeatureAccess();
   const navigate = useNavigate();
   const generation = generations.find(
