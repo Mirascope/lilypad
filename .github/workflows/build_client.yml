@@ -39,10 +39,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run build
+      - name: Change to client directory, install dependencies and build
         run: |
           cd client
+          pnpm install
           pnpm run build
