@@ -189,7 +189,7 @@ export const usePlaygroundContainer = ({
               {} as Record<string, any>
             );
 
-            // Set up playground values
+            // TODO: Update this to only pass in arg_values
             const playgroundValues: PlaygroundParameters = {
               arg_values: inputValues,
               provider: data.provider,
@@ -203,7 +203,6 @@ export const usePlaygroundContainer = ({
               playgroundValues,
             });
 
-            // Navigate to result
             navigate({
               to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
               replace: true,
@@ -215,14 +214,12 @@ export const usePlaygroundContainer = ({
             console.error(error);
           }
         } else {
-          // Handle save button
           try {
             const newVersion = await createGenerationMutation.mutateAsync({
               projectUuid,
               generationCreate,
             });
 
-            // Navigate to the new version
             navigate({
               to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
               replace: true,
@@ -249,18 +246,15 @@ export const usePlaygroundContainer = ({
     }
   };
 
-  // Reset form to defaults
   const handleReset = () => {
     methods.reset();
   };
 
-  // Get inputs field array methods
   const { fields, append, remove } = useFieldArray<EditorParameters>({
     control: methods.control,
     name: "inputs",
   });
 
-  // Add new input
   const addInput = () => {
     append({ key: "", type: "str", value: "" });
   };

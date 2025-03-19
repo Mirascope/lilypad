@@ -4,7 +4,6 @@ import { Switch } from "@/components/ui/switch";
 import { diffArrays } from "diff";
 import { JSX, useState } from "react";
 
-// Define the placeholder symbol
 const PLACEHOLDER = Symbol("placeholder");
 
 // Define types for diff data
@@ -215,7 +214,7 @@ const CodeBlockWithLineNumbersAndHighlights = ({
 interface DiffToolProps {
   firstLexicalClosure: string;
   secondLexicalClosure: string;
-  language?: string; // Added to support different languages
+  language?: string;
 }
 
 export const DiffTool = ({

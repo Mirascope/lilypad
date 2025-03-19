@@ -8,12 +8,13 @@ import { useEffect, useRef, useState } from "react";
 // Register the language
 hljs.registerLanguage("python", python);
 
-// Custom line numbers function (used in the rendered JSX)
-const renderLineNumbers = (code, lineHighlights) => {
+const renderLineNumbers = (
+  code: string,
+  lineHighlights: Record<string, string>
+) => {
   return code.split("\n").map((line, i) => {
     // Line numbers are 1-based, but array indices are 0-based
     const lineNumber = i + 1;
-    // Use the custom highlight class or default to a subtle gray background
     const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
 
     return (
@@ -101,7 +102,6 @@ export const CodeSnippet = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Format the code with line numbers for display and default to gray background
   const formattedCode = renderLineNumbers(code, lineHighlights);
 
   return (

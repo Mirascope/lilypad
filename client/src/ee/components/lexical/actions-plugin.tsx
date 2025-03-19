@@ -26,7 +26,6 @@ export const ActionsPlugin = ({
   const [isShowingVariable, setIsShowingVariable] = useState(true);
 
   useEffect(() => {
-    // Set initial state based on isDisabled
     if (isDisabled === true) {
       editor.setEditable(false);
       setIsEditable(false);
@@ -35,7 +34,6 @@ export const ActionsPlugin = ({
       setIsEditable(true);
     }
 
-    // Register listener that respects isDisabled
     const removeListener = editor.registerEditableListener((editable) => {
       if (isDisabled !== true) {
         setIsEditable(editable);
@@ -48,7 +46,6 @@ export const ActionsPlugin = ({
     return removeListener;
   }, [editor, isDisabled]);
 
-  // Function to handle toggling editor state
   const toggleEditable = () => {
     // Only allow toggling if not disabled
     if (isDisabled !== true) {
