@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { AggregateMetrics, TimeFrame } from "@/types/types";
+import { AggregateMetrics, GenerationPublic, TimeFrame } from "@/types/types";
 import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   Bar,
   CartesianGrid,
@@ -17,50 +17,117 @@ import {
 
 export const GenerationCostAndTokensChart = ({
   projectUuid,
-  generationUuid,
+  generation,
+  secondGeneration,
   timeFrame,
   title,
 }: {
   projectUuid: string;
-  generationUuid: string;
+  generation: GenerationPublic;
+  secondGeneration?: GenerationPublic;
   timeFrame: TimeFrame;
   title: string;
 }) => {
-  const { data: aggregateMetrics } = useSuspenseQuery(
-    aggregatesByGenerationQueryOptions(projectUuid, generationUuid, timeFrame)
-  );
+  const metricsData = useSuspenseQueries({
+    queries: [generation.uuid, secondGeneration?.uuid]
+      .filter((uuid) => uuid !== undefined)
+      .map((uuid) => ({
+        ...aggregatesByGenerationQueryOptions(projectUuid, uuid, timeFrame),
+      })),
+  });
+  const extractedMetricsData = metricsData.map((result) => result.data);
+  const labels = [`${generation.name} v${generation.version_num}`];
+  if (secondGeneration) {
+    labels.push(`${secondGeneration.name} v${secondGeneration.version_num}`);
+  }
   return (
-    <CostAndTokensChart aggregateMetrics={aggregateMetrics} title={title} />
+    <CostAndTokensChart
+      metricsData={extractedMetricsData}
+      title={title}
+      labels={labels}
+    />
   );
 };
 export const CostAndTokensChart = ({
-  aggregateMetrics,
+  metricsData,
   title,
+  labels,
 }: {
-  aggregateMetrics: AggregateMetrics[];
+  metricsData: AggregateMetrics[][];
   title: string;
+  labels: string[];
 }) => {
+  // Create a map to organize data by date
+  const dateMap = new Map();
+
+  // Process all metrics data
+  metricsData.forEach((metrics, index) => {
+    const sourceLabel = labels[index];
+
+    metrics.forEach((metric) => {
+      const date = metric.start_date;
+      if (!dateMap.has(date)) {
+        dateMap.set(date, { start_date: date });
+      }
+
+      const entry = dateMap.get(date);
+      entry[`cost_${index}`] = metric.total_cost;
+      entry[`input_tokens_${index}`] = metric.total_input_tokens;
+      entry[`output_tokens_${index}`] = metric.total_output_tokens;
+      entry[`source_${index}`] = sourceLabel;
+    });
+  });
+
+  // Convert map to array and sort by date
+  const combinedData = Array.from(dateMap.values()).sort(
+    (a, b) =>
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+
   // Custom tooltip to show input and output token details
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+
       return (
         <div className='bg-white p-4 rounded shadow-md border'>
           <p className='font-medium'>{formatDate(label, false)}</p>
-          <p className='text-purple-600'>
-            Total Cost: ${data?.total_cost?.toFixed(4)}
-          </p>
-          <p className='text-emerald-600'>
-            Input Tokens: {data?.total_input_tokens?.toLocaleString()}
-          </p>
-          <p className='text-amber-600'>
-            Output Tokens: {data?.total_output_tokens?.toLocaleString()}
-          </p>
+
+          {metricsData.map((_, index) => {
+            // Only show data for this source if it exists for this date point
+            if (data[`cost_${index}`] !== undefined) {
+              return (
+                <div key={index} className='mt-2'>
+                  <p
+                    className='font-medium'
+                    style={{ color: index === 0 ? "#6366f1" : "#f59e0b" }}
+                  >
+                    {labels[index]}
+                  </p>
+                  <p className='text-purple-600'>
+                    Total Cost: ${data[`cost_${index}`]?.toFixed(4)}
+                  </p>
+                  <p className='text-emerald-600'>
+                    Input Tokens:{" "}
+                    {data[`input_tokens_${index}`]?.toLocaleString()}
+                  </p>
+                  <p className='text-amber-600'>
+                    Output Tokens:{" "}
+                    {data[`output_tokens_${index}`]?.toLocaleString()}
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })}
         </div>
       );
     }
     return null;
   };
+
+  // Define colors for each dataset
+  const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
 
   return (
     <Card className='w-full'>
@@ -69,9 +136,9 @@ export const CostAndTokensChart = ({
       </CardHeader>
       <CardContent>
         <div className='h-64'>
-          {aggregateMetrics.length > 0 ? (
+          {combinedData.length > 0 ? (
             <ResponsiveContainer width='100%' height='100%'>
-              <ComposedChart data={aggregateMetrics} margin={{ left: 20 }}>
+              <ComposedChart data={combinedData} margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis
                   dataKey='start_date'
@@ -90,12 +157,16 @@ export const CostAndTokensChart = ({
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar
-                  yAxisId='cost'
-                  dataKey='total_cost'
-                  fill='#6366f1'
-                  name='Total Cost'
-                />
+
+                {metricsData.map((_, index) => (
+                  <Bar
+                    key={index}
+                    yAxisId='cost'
+                    dataKey={`cost_${index}`}
+                    fill={colors[index % colors.length]}
+                    name={labels[index]}
+                  />
+                ))}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (

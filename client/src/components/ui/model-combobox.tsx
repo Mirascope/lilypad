@@ -1,20 +1,12 @@
-import { useEffect, useState } from "react";
-import { Control, FieldPath, FieldValues, PathValue } from "react-hook-form";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import {
   Command,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   FormControl,
   FormField,
@@ -22,6 +14,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Control, FieldPath, FieldValues, PathValue } from "react-hook-form";
 
 type Option = {
   value: string;
@@ -34,6 +35,7 @@ type ModelComboboxProps<T extends FieldValues, TName extends FieldPath<T>> = {
   label: string;
   options: Option[];
   defaultValue?: PathValue<T, TName>;
+  isDisabled?: boolean;
 };
 
 export const ModelCombobox = <
@@ -45,6 +47,7 @@ export const ModelCombobox = <
   label,
   options,
   defaultValue,
+  isDisabled,
 }: ModelComboboxProps<T, TName>) => {
   return (
     <FormField
@@ -73,9 +76,11 @@ export const ModelCombobox = <
             <FormControl>
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <button
+                  <Button
+                    variant='outline'
                     type='button'
                     className='w-full flex justify-between items-center px-3 py-2 border rounded-md'
+                    disabled={isDisabled}
                     onClick={() => setOpen(!open)}
                   >
                     {field.value
@@ -83,13 +88,14 @@ export const ModelCombobox = <
                           ?.label || field.value
                       : "Select an option"}
                     <ChevronsUpDown className='h-4 w-4' />
-                  </button>
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-full p-0'>
                   <Command>
                     <CommandInput
                       placeholder='Type or select an option...'
                       value={inputValue}
+                      disabled={isDisabled}
                       onValueChange={(value) => {
                         setInputValue(value);
                       }}
@@ -106,6 +112,7 @@ export const ModelCombobox = <
                           .map((option) => (
                             <CommandItem
                               key={option.value}
+                              disabled={isDisabled}
                               onSelect={() => handleSelect(option.value)}
                             >
                               <Check

@@ -9,11 +9,14 @@ import {
 } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
+import { GenerationSpans } from "@/components/GenerationSpans";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
+import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { Playground } from "@/ee/components/Playground";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { GenerationTab } from "@/types/generations";
 import { Suspense } from "react";
 
 export const Route = createFileRoute(
@@ -27,6 +30,35 @@ export const Route = createFileRoute(
 });
 
 const Generation = () => {
+  const { projectUuid, generationName, generationUuid, tab } = useParams({
+    from: Route.id,
+  });
+  const { data: generations } = useSuspenseQuery(
+    generationsByNameQueryOptions(generationName, projectUuid)
+  );
+  const generation = generations.find(
+    (generation) => generation.uuid === generationUuid
+  );
+  if (tab === GenerationTab.OVERVIEW) {
+    return <GenerationOverview />;
+  } else if (tab === GenerationTab.TRACES) {
+    return (
+      <GenerationSpans
+        projectUuid={projectUuid}
+        generationUuid={generation?.uuid}
+      />
+    );
+  } else if (tab === GenerationTab.ANNOTATIONS) {
+    return (
+      <GenerationAnnotations
+        projectUuid={projectUuid}
+        generationUuid={generation?.uuid}
+      />
+    );
+  }
+};
+
+const GenerationOverview = () => {
   const { projectUuid, generationName, generationUuid } = useParams({
     from: Route.id,
   });
@@ -45,10 +77,7 @@ const Generation = () => {
     return (
       <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
         <Suspense fallback={<CardSkeleton />}>
-          <MetricCharts
-            generationUuid={generation.uuid}
-            projectUuid={projectUuid}
-          />
+          <MetricCharts generation={generation} projectUuid={projectUuid} />
         </Suspense>
         <div className='text-left'>
           <Label>Code</Label>

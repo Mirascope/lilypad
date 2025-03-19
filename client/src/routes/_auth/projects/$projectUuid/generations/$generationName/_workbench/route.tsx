@@ -1,4 +1,3 @@
-import { GenerationSpans } from "@/components/GenerationSpans";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,16 +28,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
-import { GenerationAnnotations } from "@/ee/components/GenerationAnnotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { GenerationTab } from "@/types/generations";
-import { Plus, Trash } from "lucide-react";
-import { JSX, Suspense } from "react";
+import { GitCompare, Plus, Trash } from "lucide-react";
+import { JSX, Suspense, useState } from "react";
 
 type GenerationRouteParams = {
   projectUuid: string;
   generationName: string;
   generationUuid: string;
+  secondGenerationUuid?: string;
+  isCompare: boolean;
   tab: GenerationTab;
 };
 export const Route = createFileRoute(
@@ -59,8 +59,10 @@ export const Route = createFileRoute(
       return {
         projectUuid: raw.projectUuid,
         generationName: raw.generationName,
-        generationUuid: raw.generationUuid,
+        generationUuid: raw.generationUuid || raw.firstGenerationUuid,
+        secondGenerationUuid: raw.secondGenerationUuid,
         tab: tab as GenerationTab,
+        isCompare: Boolean(raw.firstGenerationUuid),
       };
     },
   },
@@ -84,12 +86,20 @@ type Tab = {
 };
 
 const GenerationWorkbench = () => {
-  const { projectUuid, generationName, generationUuid, tab } = useParams({
+  const {
+    projectUuid,
+    generationName,
+    generationUuid,
+    secondGenerationUuid,
+    tab,
+    isCompare,
+  } = useParams({
     from: Route.id,
   });
   const { data: generations } = useSuspenseQuery(
     generationsByNameQueryOptions(generationName, projectUuid)
   );
+  const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const features = useFeatureAccess();
   const navigate = useNavigate();
   const generation = generations.find(
@@ -100,29 +110,16 @@ const GenerationWorkbench = () => {
     {
       label: "Overview",
       value: GenerationTab.OVERVIEW,
-      component: <Outlet />,
       isAvailable: features.generations,
     },
     {
       label: "Traces",
       value: GenerationTab.TRACES,
-      component: (
-        <GenerationSpans
-          projectUuid={projectUuid}
-          generationUuid={generation?.uuid}
-        />
-      ),
       isAvailable: features.traces,
     },
     {
       label: "Annotations",
       value: GenerationTab.ANNOTATIONS,
-      component: (
-        <GenerationAnnotations
-          projectUuid={projectUuid}
-          generationUuid={generation?.uuid}
-        />
-      ),
       isAvailable: features.annotations,
     },
   ];
@@ -141,9 +138,27 @@ const GenerationWorkbench = () => {
       to: `/projects/${projectUuid}/generations/${generationName}`,
     });
   };
+
+  const handleTabChange = (newTab: string) => {
+    if (compareMode) {
+      navigate({
+        to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+        params: {
+          firstGenerationUuid: generationUuid,
+          secondGenerationUuid,
+          tab: newTab as GenerationTab,
+        },
+      });
+    } else {
+      navigate({
+        to: `/projects/${projectUuid}/generations/${generationName}/${generationUuid}/${newTab}`,
+      });
+    }
+  };
+
   const tabWidth = 80 * tabs.length;
   return (
-    <div className='w-full p-6'>
+    <div className='w-full p-6 flex flex-col gap-1'>
       <div className='flex gap-2'>
         <Typography variant='h2'>{generationName}</Typography>
         {features.managedGenerations && (
@@ -160,26 +175,33 @@ const GenerationWorkbench = () => {
         )}
       </div>
       <div className='flex gap-2 items-center'>
-        <Select
-          value={generation?.uuid || ""}
-          onValueChange={(uuid) =>
-            navigate({
-              to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
-            })
-          }
-        >
-          <SelectTrigger className='w-[200px]'>
-            <SelectValue placeholder='Select a generation' />
-          </SelectTrigger>
-          <SelectContent>
-            {generations.map((generation) => (
-              <SelectItem key={generation.uuid} value={generation.uuid}>
-                v{generation.version_num}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         {generation && (
+          <Button
+            variant='outline'
+            size='icon'
+            onClick={() => {
+              if (!compareMode) {
+                navigate({
+                  to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+                  params: {
+                    firstGenerationUuid: generationUuid,
+                    secondGenerationUuid,
+                    tab,
+                  },
+                });
+              } else {
+                navigate({
+                  to: `/projects/${projectUuid}/generations/${generationName}/${generationUuid}/${tab}`,
+                });
+              }
+              setCompareMode((prevCompareMode) => !prevCompareMode);
+            }}
+          >
+            <GitCompare />
+          </Button>
+        )}
+        <SelectGeneration compareMode={compareMode} isFirstGeneration={true} />
+        {generation && !isCompare && (
           <LilypadDialog
             icon={<Trash />}
             title={`Delete ${generation.name} v${generation.version_num}`}
@@ -208,8 +230,17 @@ const GenerationWorkbench = () => {
           </LilypadDialog>
         )}
       </div>
-      <Tabs defaultValue={tab} className='w-full'>
-        <div className='flex justify-center w-full '>
+      {compareMode && (
+        <div className='flex gap-2 items-center'>
+          <div className='w-10 h-10'></div>
+          <SelectGeneration
+            compareMode={compareMode}
+            isFirstGeneration={false}
+          />
+        </div>
+      )}
+      <Tabs value={tab} onValueChange={handleTabChange} className='w-full'>
+        <div className='flex justify-center w-full'>
           <TabsList className={`w-[${tabWidth}px]`}>
             {tabs.map((tab) => {
               return (
@@ -228,11 +259,78 @@ const GenerationWorkbench = () => {
         <Suspense fallback={<LilypadLoading />}>
           {tabs.map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className='w-full'>
-              {tab.component}
+              <Outlet />
             </TabsContent>
           ))}
         </Suspense>
       </Tabs>
     </div>
+  );
+};
+
+const SelectGeneration = ({
+  compareMode,
+  isFirstGeneration,
+}: {
+  compareMode?: boolean;
+  isFirstGeneration?: boolean;
+}) => {
+  const {
+    projectUuid,
+    generationName,
+    generationUuid: firstGenerationUuid,
+    secondGenerationUuid,
+    tab,
+  } = useParams({
+    from: Route.id,
+  });
+  const { data: generations } = useSuspenseQuery(
+    generationsByNameQueryOptions(generationName, projectUuid)
+  );
+  const navigate = useNavigate();
+  return (
+    <Select
+      value={
+        (isFirstGeneration ? firstGenerationUuid : secondGenerationUuid) || ""
+      }
+      onValueChange={(uuid) => {
+        if (compareMode) {
+          navigate({
+            to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+            params: {
+              firstGenerationUuid: isFirstGeneration
+                ? uuid
+                : firstGenerationUuid,
+              secondGenerationUuid: isFirstGeneration
+                ? secondGenerationUuid
+                : uuid,
+              tab,
+            },
+          });
+        } else {
+          navigate({
+            to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
+          });
+        }
+      }}
+    >
+      <SelectTrigger className='w-[200px]'>
+        <SelectValue placeholder='Select a generation' />
+      </SelectTrigger>
+      <SelectContent>
+        {generations.map((generation) => (
+          <SelectItem
+            key={generation.uuid}
+            value={generation.uuid}
+            disabled={
+              (!isFirstGeneration && generation.uuid === firstGenerationUuid) ||
+              (isFirstGeneration && generation.uuid === secondGenerationUuid)
+            }
+          >
+            v{generation.version_num}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };

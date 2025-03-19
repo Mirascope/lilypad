@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { TimeFrame } from "@/types/types";
+import { AggregateMetrics, GenerationPublic, TimeFrame } from "@/types/types";
 import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   CartesianGrid,
   ComposedChart,
@@ -15,20 +15,77 @@ import {
   YAxis,
 } from "recharts";
 
-export const ResponseTimeChart = ({
+export const GenerationResponseTimeChart = ({
   projectUuid,
-  generationUuid,
+  generation,
+  secondGeneration,
   timeFrame,
   title,
 }: {
   projectUuid: string;
-  generationUuid: string;
+  generation: GenerationPublic;
+  secondGeneration?: GenerationPublic;
   timeFrame: TimeFrame;
   title: string;
 }) => {
-  const { data: aggregateMetrics } = useSuspenseQuery(
-    aggregatesByGenerationQueryOptions(projectUuid, generationUuid, timeFrame)
+  const metricsData = useSuspenseQueries({
+    queries: [generation.uuid, secondGeneration?.uuid]
+      .filter((uuid) => uuid !== undefined)
+      .map((uuid) => ({
+        ...aggregatesByGenerationQueryOptions(projectUuid, uuid, timeFrame),
+      })),
+  });
+  const extractedMetricsData = metricsData.map((result) => result.data);
+  const labels = [`${generation.name} v${generation.version_num}`];
+  if (secondGeneration) {
+    labels.push(`${secondGeneration.name} v${secondGeneration.version_num}`);
+  }
+  return (
+    <ResponseTimeChart
+      metricsData={extractedMetricsData}
+      title={title}
+      labels={labels}
+    />
   );
+};
+
+export const ResponseTimeChart = ({
+  metricsData,
+  title,
+  labels,
+}: {
+  metricsData: AggregateMetrics[][];
+  title: string;
+  labels: string[];
+}) => {
+  // Create a map to organize data by date
+  const dateMap = new Map();
+
+  // Process all metrics data
+  metricsData.forEach((metrics, index) => {
+    const sourceLabel = labels[index];
+
+    metrics?.forEach((metric) => {
+      const date = metric.start_date;
+      if (!dateMap.has(date)) {
+        dateMap.set(date, { start_date: date });
+      }
+
+      const entry = dateMap.get(date);
+      entry[`duration_${index}`] = metric.average_duration_ms;
+      entry[`source_${index}`] = sourceLabel;
+    });
+  });
+
+  // Convert map to array and sort by date
+  const combinedData = Array.from(dateMap.values()).sort(
+    (a, b) =>
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+
+  // Define colors for each dataset
+  const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
+
   return (
     <Card className='w-full'>
       <CardHeader>
@@ -36,9 +93,9 @@ export const ResponseTimeChart = ({
       </CardHeader>
       <CardContent>
         <div className='h-64'>
-          {aggregateMetrics.length > 0 ? (
+          {combinedData.length > 0 ? (
             <ResponsiveContainer width='100%' height='100%'>
-              <ComposedChart data={aggregateMetrics} margin={{ left: 20 }}>
+              <ComposedChart data={combinedData} margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis
                   dataKey='start_date'
@@ -62,11 +119,8 @@ export const ResponseTimeChart = ({
                     value: number | string | Array<any>,
                     name: string
                   ) => {
-                    if (name === "Avg Duration" && typeof value === "number") {
-                      return [
-                        (value / 1_000_000_000).toFixed(2) + " ms",
-                        "Avg Duration (s)",
-                      ];
+                    if (typeof value === "number") {
+                      return [(value / 1_000_000_000).toFixed(2) + " ms", name];
                     }
                     return [
                       typeof value === "number" ? value.toFixed(2) : value,
@@ -75,13 +129,18 @@ export const ResponseTimeChart = ({
                   }}
                 />
                 <Legend />
-                <Line
-                  yAxisId='duration'
-                  type='monotone'
-                  dataKey='average_duration_ms'
-                  stroke='#6366f1'
-                  name='Avg Duration'
-                />
+
+                {metricsData.map((_, index) => (
+                  <Line
+                    key={index}
+                    yAxisId='duration'
+                    type='monotone'
+                    dataKey={`duration_${index}`}
+                    stroke={colors[index % colors.length]}
+                    name={labels[index]}
+                    activeDot={{ r: 8 }}
+                  />
+                ))}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (

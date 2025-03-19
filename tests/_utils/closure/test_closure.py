@@ -364,16 +364,16 @@ def test_import_with_different_dist_name_fn() -> None:
         "google-cloud-aiplatform": {"extras": None, "version": "1.84.0"},
         "google-cloud-bigquery": {"extras": None, "version": "3.30.0"},
         "google-cloud-core": {"extras": None, "version": "2.4.3"},
-        "google-cloud-resource-manager": {"extras": None, "version": "1.14.1"},
+        "google-cloud-resource-manager": {"extras": None, "version": "1.14.2"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
-        "google-genai": {"extras": None, "version": "1.5.0"},
+        "google-genai": {"extras": None, "version": "1.7.0"},
         "google-generativeai": {"extras": None, "version": "0.8.4"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],
             "version": "2.7.2",
         },
-        "googleapis-common-protos": {"extras": None, "version": "1.69.1"},
-        "grpc-google-iam-v1": {"extras": None, "version": "0.14.1"},
+        "googleapis-common-protos": {"extras": None, "version": "1.69.2"},
+        "grpc-google-iam-v1": {"extras": None, "version": "0.14.2"},
     }
     if sys.version_info >= (3, 11):
         expected_dependencies["protobuf"] = {

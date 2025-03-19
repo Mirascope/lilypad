@@ -27,21 +27,15 @@ import { Route as AuthProjectsProjectUuidTracesSplatImport } from './routes/_aut
 import { Route as AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteImport } from './routes/_auth/projects/$projectUuid/generations/$generationName/_workbench/route'
 import { Route as AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexImport } from './routes/_auth/projects/$projectUuid/generations/$generationName/_workbench/index'
 import { Route as AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabImport } from './routes/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid.$tab'
+import { Route as AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabImport } from './routes/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare.$firstGenerationUuid.$secondGenerationUuid.$tab'
 
 // Create Virtual Routes
 
-const DiffLazyImport = createFileRoute('/diff')()
 const AuthProjectsProjectUuidGenerationsGenerationNameImport = createFileRoute(
   '/_auth/projects/$projectUuid/generations/$generationName',
 )()
 
 // Create/Update Routes
-
-const DiffLazyRoute = DiffLazyImport.update({
-  id: '/diff',
-  path: '/diff',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/diff.lazy').then((d) => d.Route))
 
 const AuthRoute = AuthImport.update({
   id: '/_auth',
@@ -121,7 +115,7 @@ const AuthProjectsProjectUuidTracesSplatRoute =
 
 const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRoute =
   AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteImport.update({
-    id: '/projects/$projectUuid/generations/$generationName/_workbench',
+    id: '/_workbench',
     getParentRoute: () => AuthProjectsProjectUuidGenerationsGenerationNameRoute,
   } as any)
 
@@ -143,6 +137,16 @@ const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTab
     } as any,
   )
 
+const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute =
+  AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabImport.update(
+    {
+      id: '/compare/$firstGenerationUuid/$secondGenerationUuid/$tab',
+      path: '/compare/$firstGenerationUuid/$secondGenerationUuid/$tab',
+      getParentRoute: () =>
+        AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRoute,
+    } as any,
+  )
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -159,13 +163,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof AuthImport
-      parentRoute: typeof rootRoute
-    }
-    '/diff': {
-      id: '/diff'
-      path: '/diff'
-      fullPath: '/diff'
-      preLoaderRoute: typeof DiffLazyImport
       parentRoute: typeof rootRoute
     }
     '/auth/callback': {
@@ -259,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabImport
       parentRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteImport
     }
+    '/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab': {
+      id: '/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
+      path: '/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
+      fullPath: '/projects/$projectUuid/generations/$generationName/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
+      preLoaderRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabImport
+      parentRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteImport
+    }
   }
 }
 
@@ -267,6 +271,7 @@ declare module '@tanstack/react-router' {
 interface AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteChildren {
   AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute
   AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute
+  AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute: typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute
 }
 
 const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteChildren: AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteChildren =
@@ -275,6 +280,8 @@ const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteChildre
       AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute,
     AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute:
       AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute,
+    AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute:
+      AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute,
   }
 
 const AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteWithChildren =
@@ -325,7 +332,6 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/join/$token': typeof JoinTokenRoute
@@ -338,12 +344,12 @@ export interface FileRoutesByFullPath {
   '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteWithChildren
   '/projects/$projectUuid/generations/$generationName/': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute
   '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute
+  '/projects/$projectUuid/generations/$generationName/compare/$firstGenerationUuid/$secondGenerationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/join/$token': typeof JoinTokenRoute
@@ -355,13 +361,13 @@ export interface FileRoutesByTo {
   '/projects/$projectUuid/generations': typeof AuthProjectsProjectUuidGenerationsIndexRoute
   '/projects/$projectUuid/generations/$generationName': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute
   '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute
+  '/projects/$projectUuid/generations/$generationName/compare/$firstGenerationUuid/$secondGenerationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
-  '/diff': typeof DiffLazyRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/login': typeof AuthLoginRoute
   '/join/$token': typeof JoinTokenRoute
@@ -375,6 +381,7 @@ export interface FileRoutesById {
   '/_auth/projects/$projectUuid/generations/$generationName/_workbench': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchRouteRouteWithChildren
   '/_auth/projects/$projectUuid/generations/$generationName/_workbench/': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchIndexRoute
   '/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchGenerationUuidTabRoute
+  '/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab': typeof AuthProjectsProjectUuidGenerationsGenerationNameWorkbenchCompareFirstGenerationUuidSecondGenerationUuidTabRoute
 }
 
 export interface FileRouteTypes {
@@ -382,7 +389,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | ''
-    | '/diff'
     | '/auth/callback'
     | '/auth/login'
     | '/join/$token'
@@ -395,11 +401,11 @@ export interface FileRouteTypes {
     | '/projects/$projectUuid/generations/$generationName'
     | '/projects/$projectUuid/generations/$generationName/'
     | '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
+    | '/projects/$projectUuid/generations/$generationName/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | ''
-    | '/diff'
     | '/auth/callback'
     | '/auth/login'
     | '/join/$token'
@@ -411,11 +417,11 @@ export interface FileRouteTypes {
     | '/projects/$projectUuid/generations'
     | '/projects/$projectUuid/generations/$generationName'
     | '/projects/$projectUuid/generations/$generationName/$generationUuid/$tab'
+    | '/projects/$projectUuid/generations/$generationName/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
   id:
     | '__root__'
     | '/'
     | '/_auth'
-    | '/diff'
     | '/auth/callback'
     | '/auth/login'
     | '/join/$token'
@@ -429,13 +435,13 @@ export interface FileRouteTypes {
     | '/_auth/projects/$projectUuid/generations/$generationName/_workbench'
     | '/_auth/projects/$projectUuid/generations/$generationName/_workbench/'
     | '/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab'
+    | '/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
-  DiffLazyRoute: typeof DiffLazyRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthLoginRoute: typeof AuthLoginRoute
   JoinTokenRoute: typeof JoinTokenRoute
@@ -444,7 +450,6 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
-  DiffLazyRoute: DiffLazyRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthLoginRoute: AuthLoginRoute,
   JoinTokenRoute: JoinTokenRoute,
@@ -462,7 +467,6 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_auth",
-        "/diff",
         "/auth/callback",
         "/auth/login",
         "/join/$token"
@@ -482,9 +486,6 @@ export const routeTree = rootRoute
         "/_auth/projects/$projectUuid/generations/",
         "/_auth/projects/$projectUuid/generations/$generationName"
       ]
-    },
-    "/diff": {
-      "filePath": "diff.lazy.tsx"
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
@@ -531,7 +532,8 @@ export const routeTree = rootRoute
       "parent": "/_auth/projects/$projectUuid/generations/$generationName",
       "children": [
         "/_auth/projects/$projectUuid/generations/$generationName/_workbench/",
-        "/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab"
+        "/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab",
+        "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab"
       ]
     },
     "/_auth/projects/$projectUuid/generations/$generationName/_workbench/": {
@@ -540,6 +542,10 @@ export const routeTree = rootRoute
     },
     "/_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid/$tab": {
       "filePath": "_auth/projects/$projectUuid/generations/$generationName/_workbench/$generationUuid.$tab.tsx",
+      "parent": "/_auth/projects/$projectUuid/generations/$generationName/_workbench"
+    },
+    "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab": {
+      "filePath": "_auth/projects/$projectUuid/generations/$generationName/_workbench/compare.$firstGenerationUuid.$secondGenerationUuid.$tab.tsx",
       "parent": "/_auth/projects/$projectUuid/generations/$generationName/_workbench"
     }
   }

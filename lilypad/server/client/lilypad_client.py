@@ -346,7 +346,7 @@ class LilypadClient:
         closure = Closure.from_fn(fn)
         generations = self._request(
             "GET",
-            f"v0/projects/{self.project_uuid}/generations/name/{closure.name}",
+            f"v0/ee/projects/{self.project_uuid}/generations/name/{closure.name}",
             response_model=list[GenerationPublic],
         )
         if generations:

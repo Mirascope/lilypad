@@ -20,6 +20,7 @@ type FormSliderProps<T extends FieldValues> = {
   sliderProps: Omit<SliderProps, "value" | "onChange">;
   showInput?: boolean;
   inputProps?: Omit<InputProps, "value" | "onChange">;
+  isDisabled?: boolean;
 };
 
 export const FormSlider = <T extends FieldValues>({
@@ -30,6 +31,7 @@ export const FormSlider = <T extends FieldValues>({
   showInput,
   sliderProps,
   inputProps,
+  isDisabled: isDisabledProp,
 }: FormSliderProps<T>) => {
   const { control, watch } = useFormContext<T>();
   return (
@@ -37,7 +39,7 @@ export const FormSlider = <T extends FieldValues>({
       name={name}
       control={control}
       render={({ field }) => {
-        const isDisabled = switchName && !watch(switchName);
+        const isDisabled = (switchName && !watch(switchName)) || isDisabledProp;
 
         return (
           <FormItem>
