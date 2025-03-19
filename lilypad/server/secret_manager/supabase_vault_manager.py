@@ -44,7 +44,9 @@ class SupabaseVaultManager(SecretManager):
             return None
         with self._transaction():
             result = self.session.execute(
-                text("SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = :name"),
+                text(
+                    "SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = :name"
+                ),
                 {"name": name},
             )
             return result.scalar_one()

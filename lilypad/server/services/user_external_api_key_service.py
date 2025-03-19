@@ -48,7 +48,9 @@ class UserExternalAPIKeyService(BaseOrganizationService):
         existing = self.session.exec(statement).first()
         if existing:
             # Update the secret in SecretManager using the stored secret_id
-            update_success = self.secret_manager.update_secret(existing.secret_id, api_key)
+            update_success = self.secret_manager.update_secret(
+                existing.secret_id, api_key
+            )
             if not update_success:
                 self.audit_logger.log_secret_access(
                     user_id=user_id,
@@ -56,7 +58,9 @@ class UserExternalAPIKeyService(BaseOrganizationService):
                     service_name=service_name,
                     secret_id=existing.secret_id,
                     success=False,
-                    additional_info={"error": "Failed to update secret in SecretManager"},
+                    additional_info={
+                        "error": "Failed to update secret in SecretManager"
+                    },
                 )
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -73,13 +77,19 @@ class UserExternalAPIKeyService(BaseOrganizationService):
 
         # Create a new secret in SecretManager and store its secret_id in the DB
         try:
-            secret_id = self.secret_manager.store_secret(service_name, api_key, description)
+            secret_id = self.secret_manager.store_secret(
+                service_name, api_key, description
+            )
         except IntegrityError:
             # If a duplicate key error occurs, delete the existing secret and retry storing
-            duplicate_secret_id = self.secret_manager.get_secret_id_by_name(service_name)
+            duplicate_secret_id = self.secret_manager.get_secret_id_by_name(
+                service_name
+            )
             if duplicate_secret_id:
                 self.secret_manager.delete_secret(duplicate_secret_id)
-            secret_id = self.secret_manager.store_secret(service_name, api_key, description)
+            secret_id = self.secret_manager.store_secret(
+                service_name, api_key, description
+            )
 
         new_key = ExternalAPIKeyTable(
             user_id=user.uuid,  # pyright: ignore [reportArgumentType]
@@ -124,7 +134,9 @@ class UserExternalAPIKeyService(BaseOrganizationService):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"External API key for {service_name} not found",
             )
-        update_success = self.secret_manager.update_secret(key_record.secret_id, api_key)
+        update_success = self.secret_manager.update_secret(
+            key_record.secret_id, api_key
+        )
         if not update_success:
             self.audit_logger.log_secret_access(
                 user_id=user_id,
@@ -181,7 +193,9 @@ class UserExternalAPIKeyService(BaseOrganizationService):
                 service_name=service_name,
                 secret_id=key_record.secret_id,
                 success=False,
-                additional_info={"error": "Failed to retrieve secret from SecretManager"},
+                additional_info={
+                    "error": "Failed to retrieve secret from SecretManager"
+                },
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -21,9 +21,7 @@ async def store_external_api_key(
     ],
 ) -> ExternalAPIKeyPublic:
     """Store an external API key for a given service."""
-    external_api_key_service.store_api_key(
-        request.service_name, request.api_key
-    )
+    external_api_key_service.store_api_key(request.service_name, request.api_key)
     return ExternalAPIKeyPublic(
         service_name=request.service_name, masked_api_key=request.api_key
     )
@@ -41,9 +39,7 @@ async def get_external_api_key(
 ) -> ExternalAPIKeyPublic:
     """Retrieve an external API key for a given service."""
     api_key = external_api_key_service.get_api_key(service_name)
-    return ExternalAPIKeyPublic(
-        service_name=service_name, masked_api_key=api_key
-    )
+    return ExternalAPIKeyPublic(service_name=service_name, masked_api_key=api_key)
 
 
 @external_api_key_router.delete("/external-api-keys/{service_name}")
