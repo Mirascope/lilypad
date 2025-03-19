@@ -306,7 +306,11 @@ export const TracesTable = ({
             <Suspense
               fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
-              <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              {selectedRows[0].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[0].uuid} />
+              )}
             </Suspense>
           </div>
           <div className='w-1/2'>
@@ -314,7 +318,11 @@ export const TracesTable = ({
             <Suspense
               fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
-              <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              {selectedRows[1].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[1].uuid} />
+              )}
             </Suspense>
           </div>
         </div>
