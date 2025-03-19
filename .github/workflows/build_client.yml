@@ -42,5 +42,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run build command
-        run: pnpm run build
+      - name: Run build
+        run: |
+          cd client
+          pnpm run build
