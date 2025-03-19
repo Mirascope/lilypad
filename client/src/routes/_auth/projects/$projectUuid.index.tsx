@@ -53,7 +53,7 @@ function RouteComponent() {
 const ProjectDashboard = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
+  const [timeFrame, _setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   const { data } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)

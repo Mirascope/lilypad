@@ -1,6 +1,23 @@
+import LilypadDialog from "@/components/LilypadDialog";
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Typography } from "@/components/ui/typography";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { GenerationTab } from "@/types/generations";
 import {
   generationsByNameQueryOptions,
   useArchiveGenerationMutation,
@@ -12,26 +29,9 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-
-import LilypadDialog from "@/components/LilypadDialog";
-import { LilypadLoading } from "@/components/LilypadLoading";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Typography } from "@/components/ui/typography";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { GenerationTab } from "@/types/generations";
 import { GitCompare, Plus, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
+import { validate } from "uuid";
 
 type GenerationRouteParams = {
   projectUuid: string;
@@ -60,7 +60,9 @@ export const Route = createFileRoute(
         projectUuid: raw.projectUuid,
         generationName: raw.generationName,
         generationUuid: raw.generationUuid || raw.firstGenerationUuid,
-        secondGenerationUuid: raw.secondGenerationUuid,
+        secondGenerationUuid: validate(raw.secondGenerationUuid)
+          ? raw.secondGenerationUuid
+          : undefined,
         tab: tab as GenerationTab,
         isCompare: Boolean(raw.firstGenerationUuid),
       };

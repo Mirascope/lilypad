@@ -49,9 +49,15 @@ export const LilypadPanel = ({
       component: <CodeSnippet code={span.signature || ""} />,
     },
   ];
+  const data: Record<string, any> = span.data;
+  const attributes: Record<string, string> | undefined = data.attributes;
+  const lilypadType = attributes?.["lilypad.type"];
+  const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
   return (
     <div className='flex flex-col gap-4'>
-      <Typography variant='h3'>{span.display_name}</Typography>
+      <Typography variant='h3'>
+        {span.display_name} {versionNum && `v${versionNum}`}
+      </Typography>
       <div className='flex gap-1 flex-wrap'>
         {span.input_tokens != 0 &&
           span.input_tokens &&
