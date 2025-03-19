@@ -131,7 +131,7 @@ export const Editor = forwardRef(
           <CollapsiblePlugin />
           <TabIndentationPlugin />
           <ClearEditorPlugin />
-          <ActionsPlugin />
+          <ActionsPlugin isDisabled={isDisabled} />
         </div>
       </LexicalComposer>
     );

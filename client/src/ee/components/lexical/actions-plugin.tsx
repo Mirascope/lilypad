@@ -16,19 +16,48 @@ import {
 import { TOGGLE_SHOW_VARIABLE_COMMAND } from "@/ee/components/lexical/template-plugin";
 import { Braces, Eye, LetterText, ListRestart, Pencil } from "lucide-react";
 
-export const ActionsPlugin = (): JSX.Element => {
+export const ActionsPlugin = ({
+  isDisabled,
+}: {
+  isDisabled: boolean;
+}): JSX.Element => {
   const [editor] = useLexicalComposerContext();
-  const [isSpeechToText, setIsSpeechToText] = useState(false);
-  const [isEditorEmpty, setIsEditorEmpty] = useState(true);
-  const [isEditable, setIsEditable] = useState(() => editor.isEditable());
+  const [isEditable, setIsEditable] = useState<boolean>(!isDisabled);
   const [isShowingVariable, setIsShowingVariable] = useState(true);
-  //   const [modal, showModal] = useModal();
 
   useEffect(() => {
-    editor.registerEditableListener((editable) => {
-      setIsEditable(editable);
+    // Set initial state based on isDisabled
+    if (isDisabled === true) {
+      editor.setEditable(false);
+      setIsEditable(false);
+    } else if (isDisabled === false) {
+      editor.setEditable(true);
+      setIsEditable(true);
+    }
+
+    // Register listener that respects isDisabled
+    const removeListener = editor.registerEditableListener((editable) => {
+      if (isDisabled !== true) {
+        setIsEditable(editable);
+      } else if (editable) {
+        // If we're supposed to be disabled but somehow became editable
+        editor.setEditable(false);
+      }
     });
-  }, [editor]);
+
+    return removeListener;
+  }, [editor, isDisabled]);
+
+  // Function to handle toggling editor state
+  const toggleEditable = () => {
+    // Only allow toggling if not disabled
+    if (isDisabled !== true) {
+      const newState = !editor.isEditable();
+      editor.setEditable(newState);
+      // Also update our local state to keep things in sync
+      setIsEditable(newState);
+    }
+  };
 
   return (
     <div className='flex justify-end gap-2 p-2'>
@@ -63,9 +92,8 @@ export const ActionsPlugin = (): JSX.Element => {
             type='button'
             variant='outline'
             size='icon'
-            onClick={() => {
-              editor.setEditable(!editor.isEditable());
-            }}
+            disabled={isDisabled === true}
+            onClick={toggleEditable}
           >
             {!isEditable ? (
               <Eye strokeWidth={1.5} />
@@ -85,6 +113,7 @@ export const ActionsPlugin = (): JSX.Element => {
         description="This will clear the editor's contents."
         buttonProps={{
           type: "button",
+          disabled: isDisabled,
         }}
       >
         <ShowClearDialog editor={editor} />
