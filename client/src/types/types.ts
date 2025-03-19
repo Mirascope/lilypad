@@ -29,11 +29,8 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
-  /**
-   * Environment Uuid
-   * @format uuid
-   */
-  environment_uuid: string;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -58,11 +55,8 @@ export interface APIKeyPublic {
    * @format uuid
    */
   project_uuid: string;
-  /**
-   * Environment Uuid
-   * @format uuid
-   */
-  environment_uuid: string;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -220,6 +214,7 @@ export interface GenerationCreate {
   /**
    * Name
    * @minLength 1
+   * @maxLength 512
    */
   name: string;
   /** Signature */
@@ -232,8 +227,6 @@ export interface GenerationCreate {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
-  /** Arg Values */
-  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
@@ -284,6 +277,7 @@ export interface GenerationPublic {
   /**
    * Name
    * @minLength 1
+   * @maxLength 512
    */
   name: string;
   /** Signature */
@@ -296,8 +290,6 @@ export interface GenerationPublic {
   dependencies?: Record<string, DependencyInfo>;
   /** Arg Types */
   arg_types?: Record<string, string>;
-  /** Arg Values */
-  arg_values?: object;
   /** Archived */
   archived?: string | null;
   /** Custom Id */
