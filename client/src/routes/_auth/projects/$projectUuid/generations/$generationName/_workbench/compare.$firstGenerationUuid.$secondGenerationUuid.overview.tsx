@@ -23,7 +23,7 @@ import { GenerationPublic } from "@/types/types";
 import { Suspense, useState } from "react";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab"
+  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/overview"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
