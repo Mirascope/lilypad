@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..models.users import UserBase
 from .user_organizations import UserOrganizationPublic
@@ -14,6 +14,7 @@ class UserPublic(UserBase):
     uuid: UUID
     access_token: str | None = None
     user_organizations: list[UserOrganizationPublic] | None = None
+    scopes: list[str] = Field(default_factory=list)
 
 
 class UserCreate(BaseModel):

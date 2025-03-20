@@ -10,6 +10,7 @@ from .table_names import USER_TABLE_NAME
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
+    from .external_api_keys import ExternalAPIKeyTable
     from .organization_invites import OrganizationInviteTable
     from .user_organizations import UserOrganizationTable
 
@@ -36,5 +37,8 @@ class UserTable(UserBase, BaseSQLModel, table=True):
         back_populates="user", cascade_delete=True
     )
     organization_invites: list["OrganizationInviteTable"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
+    external_api_keys: list["ExternalAPIKeyTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )
