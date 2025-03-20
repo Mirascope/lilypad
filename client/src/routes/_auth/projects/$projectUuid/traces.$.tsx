@@ -36,6 +36,11 @@ export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
   return (
-    <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+    <TracesTable
+      data={data}
+      traceUuid={traceUuid}
+      path={Route.fullPath}
+      hideCompare={true}
+    />
   );
 };

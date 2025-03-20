@@ -6,7 +6,7 @@ if (import.meta.env.MODE === "development") {
   baseURL = "http://localhost:8000/v0";
 }
 if (import.meta.env.MODE === "production") {
-  baseURL = import.meta.env.VITE_REMOTE_API_URL;
+  baseURL = import.meta.env.VITE_REMOTE_API_URL as string;
 }
 const api = axios.create({
   baseURL,
@@ -31,7 +31,7 @@ api.interceptors.request.use(
     }
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(error instanceof Error ? error : new Error(String(error)));
   }
 );
 export default api;

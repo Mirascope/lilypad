@@ -4,6 +4,7 @@ import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +26,7 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -79,16 +80,38 @@ export const TracesTable = ({
   data,
   traceUuid,
   path,
+  hideCompare = false,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
+  hideCompare?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const virtualizerRef = useRef<HTMLDivElement>(null);
+
+  // State to track selected rows
+  const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
+  const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
+
+  // Function to handle checkbox changes
+  const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
+    if (checked) {
+      // If already have 2 selected rows and trying to add another, prevent it
+      if (selectedRows.length >= 2) {
+        return;
+      }
+      setSelectedRows([...selectedRows, row]);
+    } else {
+      setSelectedRows(
+        selectedRows.filter((item) => item.span_id !== row.span_id)
+      );
+    }
+  };
+
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
@@ -98,11 +121,25 @@ export const TracesTable = ({
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
+        const isSelected = selectedRows.some(
+          (item) => item.span_id === row.original.span_id
+        );
 
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
+              {!hideCompare && (
+                <Checkbox
+                  onClick={(e) => e.stopPropagation()}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => {
+                    handleCheckboxChange(row.original, checked === true);
+                  }}
+                  aria-label={`Select ${row.getValue("display_name")}`}
+                  className='mr-2'
+                />
+              )}
               <span className='truncate'>{row.getValue("display_name")}</span>
             </div>
           </div>
@@ -246,6 +283,52 @@ export const TracesTable = ({
       navigate({ to: path, replace: true, params: { _splat: undefined } });
     }
   };
+  const CompareDetailPanel = () => {
+    return (
+      <div className='p-4 border rounded-md overflow-auto'>
+        {selectedRows.length === 2 && (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() =>
+              setToggleCompareMode(
+                (prevToggleCompareMode) => !prevToggleCompareMode
+              )
+            }
+          >
+            Go back
+          </Button>
+        )}
+        <h2 className='text-lg font-semibold mb-2'>Compare Details</h2>
+        <div className='flex gap-4'>
+          <div className='w-1/2'>
+            <h3 className='text-lg font-semibold'>Row 1</h3>
+            <Suspense
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+            >
+              {selectedRows[0].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[0].uuid} />
+              )}
+            </Suspense>
+          </div>
+          <div className='w-1/2'>
+            <h3 className='text-lg font-semibold'>Row 2</h3>
+            <Suspense
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+            >
+              {selectedRows[1].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[1].uuid} />
+              )}
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
+  };
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
     useEffect(() => {
       if (path) {
@@ -272,26 +355,60 @@ export const TracesTable = ({
       </div>
     );
   };
+  const customControls = () => {
+    return (
+      <>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() =>
+            setToggleCompareMode(
+              (prevToggleCompareMode) => !prevToggleCompareMode
+            )
+          }
+          className='whitespace-nowrap'
+          disabled={selectedRows.length === 0}
+        >
+          Compare
+        </Button>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => setSelectedRows([])}
+          className='whitespace-nowrap'
+          disabled={selectedRows.length === 0}
+        >
+          Clear Selection ({selectedRows.length}/2)
+        </Button>
+      </>
+    );
+  };
+  if (toggleCompareMode) {
+    return <CompareDetailPanel />;
+  }
   return (
-    <DataTable<SpanPublic>
-      columns={columns}
-      data={data}
-      virtualizerRef={virtualizerRef}
-      virtualizerOptions={{
-        count: data.length,
-        estimateSize: () => 45,
-        overscan: 20,
-      }}
-      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
-      customGetRowId={(row) => row.span_id}
-      DetailPanel={DetailPanel}
-      defaultPanelSize={50}
-      filterColumn='display_name'
-      selectRow={selectRow}
-      getRowCanExpand={getRowCanExpand}
-      getSubRows={getSubRows}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
-      onDetailPanelClose={handleDetailPanelClose}
-    />
+    <div>
+      <DataTable<SpanPublic>
+        columns={columns}
+        data={data}
+        virtualizerRef={virtualizerRef}
+        virtualizerOptions={{
+          count: data.length,
+          estimateSize: () => 45,
+          overscan: 20,
+        }}
+        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customGetRowId={(row) => row.span_id}
+        DetailPanel={DetailPanel}
+        defaultPanelSize={50}
+        filterColumn={!hideCompare ? undefined : "display_name"}
+        selectRow={selectRow}
+        getRowCanExpand={getRowCanExpand}
+        getSubRows={getSubRows}
+        customControls={!hideCompare ? customControls : undefined}
+        defaultSorting={[{ id: "timestamp", desc: true }]}
+        onDetailPanelClose={handleDetailPanelClose}
+      />
+    </div>
   );
 };
