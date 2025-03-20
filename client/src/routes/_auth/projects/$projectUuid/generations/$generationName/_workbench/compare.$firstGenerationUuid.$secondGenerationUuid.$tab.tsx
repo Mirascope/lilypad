@@ -5,6 +5,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
+import { CompareTracesTable } from "@/components/CompareTracesTable";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import {
@@ -184,23 +185,19 @@ const ComparePlaygrounds = ({
 };
 
 const Generation = () => {
-  const { projectUuid, generationName, generationUuid, tab } = useParams({
-    from: Route.id,
-  });
-  const { data: generations } = useSuspenseQuery(
-    generationsByNameQueryOptions(generationName, projectUuid)
-  );
-  const generation = generations.find(
-    (generation) => generation.uuid === generationUuid
-  );
+  const { projectUuid, firstGenerationUuid, secondGenerationUuid, tab } =
+    useParams({
+      from: Route.id,
+    });
   if (tab === GenerationTab.OVERVIEW) {
     return <GenerationOverview />;
   } else if (tab === GenerationTab.TRACES) {
     return (
-      <div className='flex justify-center items-center h-96'>
-        <Construction color='orange' /> This page is under construction{" "}
-        <Construction color='orange' />
-      </div>
+      <CompareTracesTable
+        projectUuid={projectUuid}
+        firstGenerationUuid={firstGenerationUuid}
+        secondGenerationUuid={secondGenerationUuid}
+      />
     );
   } else if (tab === GenerationTab.ANNOTATIONS) {
     return (

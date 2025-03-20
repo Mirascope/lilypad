@@ -1,4 +1,4 @@
-import { EditorParameters } from "@/ee/components/Playground";
+import { EditorParameters } from "@/ee/hooks/use-playground";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
 import {
@@ -168,7 +168,7 @@ const useTemplates = (
   inputValues: Record<string, any>
 ): void => {
   const methods = useFormContext<EditorParameters>();
-  const { fields, append, remove } = useFieldArray<EditorParameters>({
+  const { append } = useFieldArray<EditorParameters>({
     control: methods.control,
     name: "inputs",
   });

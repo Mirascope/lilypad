@@ -123,7 +123,9 @@ export const ResponseTimeChart = ({
                       return [(value / 1_000_000_000).toFixed(2) + " ms", name];
                     }
                     return [
-                      typeof value === "number" ? value.toFixed(2) : value,
+                      Number.isFinite(value)
+                        ? Number(value).toFixed(2)
+                        : String(value),
                       name,
                     ];
                   }}

@@ -12,6 +12,7 @@
     "./src/components/cardskeleton.tsx",
     "./src/components/chartskeleton.tsx",
     "./src/components/codesnippet.tsx",
+    "./src/components/comparetracestable.tsx",
     "./src/components/costandtokenschart.tsx",
     "./src/components/datatable.tsx",
     "./src/components/defaultcatchboundary.tsx",
@@ -148,6 +149,5 @@
     "./src/utils/traces.ts",
     "./src/utils/users.ts"
   ],
-  "errors": true,
   "version": "5.8.2"
 }

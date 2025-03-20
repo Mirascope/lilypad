@@ -1,0 +1,1 @@
+"""Secret manager module."""
