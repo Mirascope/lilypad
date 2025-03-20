@@ -2,7 +2,8 @@ import base64
 import hashlib
 import json
 import secrets
-from typing import Annotated
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -25,15 +26,22 @@ from ..settings import Settings, get_settings
 LOCAL_TOKEN = "local-dev-token"
 
 
+# Default scopes for all users
+DEFAULT_SCOPES = ["user:read", "user:write", "vault:read", "vault:write"]
+
+
 def create_jwt_token(
     user_data: UserPublic,
 ) -> str:
-    """Create a new JWT token."""
+    """Create a JWT token with default scopes for all users."""
     settings = get_settings()
     from jose import jwt
 
+    user_dict = json.loads(user_data.model_dump_json())
+    user_dict["scopes"] = DEFAULT_SCOPES
+
     return jwt.encode(
-        json.loads(user_data.model_dump_json()),
+        user_dict,
         settings.jwt_secret,
         algorithm=settings.jwt_algorithm,
     )
@@ -143,10 +151,12 @@ async def get_current_user(
     session: Annotated[Session, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> UserPublic:
-    """Dependency to get the current authenticated user from session."""
-    """Get the current user from JWT token"""
+    """Get current user with default scopes."""
     if token == LOCAL_TOKEN:
-        return await get_local_user(session)
+        user_public = await get_local_user(session)
+        user_public.scopes = DEFAULT_SCOPES
+        return user_public
+
     if api_key:
         api_key_row = session.exec(
             select(APIKeyTable).where(APIKeyTable.key_hash == api_key)
@@ -156,6 +166,7 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
         user_public = UserPublic.model_validate(api_key_row.user)
+        user_public.scopes = DEFAULT_SCOPES
         request.state.user = user_public
         return user_public
 
@@ -174,6 +185,7 @@ async def get_current_user(
             user = session.exec(select(UserTable).where(UserTable.uuid == uuid)).first()
             if user:
                 user_public = UserPublic.model_validate(user)
+                user_public.scopes = payload.get("scopes", DEFAULT_SCOPES)
                 request.state.user = user_public
                 return user_public
     except (JWTError, KeyError, ValidationError) as e:
@@ -182,3 +194,28 @@ async def get_current_user(
             detail=str(e),
         )
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
+
+
+def require_scopes(
+    *required_scopes: str,
+) -> Callable[[UserPublic], Coroutine[Any, Any, Any]]:
+    """Create a dependency that requires specific scopes."""
+
+    async def validate_scopes(
+        user: Annotated[UserPublic, Depends(get_current_user)],
+    ) -> UserPublic:
+        if not hasattr(user, "scopes") or user.scopes is None:
+            user.scopes = DEFAULT_SCOPES
+
+        missing_scopes = [
+            scope for scope in required_scopes if scope not in user.scopes
+        ]
+        if missing_scopes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions. Missing scopes: {', '.join(missing_scopes)}",
+            )
+
+        return user
+
+    return validate_scopes
