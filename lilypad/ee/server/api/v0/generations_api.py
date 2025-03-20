@@ -63,7 +63,7 @@ generations_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(__file__).parents[3]
+_PROJECT_ROOT = Path(__file__).parents[5]
 
 
 def sanitize_arg_types_and_values(
