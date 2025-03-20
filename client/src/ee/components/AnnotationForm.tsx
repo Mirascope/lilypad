@@ -13,13 +13,17 @@ import {
 } from "@/components/ui/form";
 import { GenerateAnnotationButton } from "@/ee/components/GenerateAnnotationButton";
 import { labelNodeDefinition } from "@/ee/components/LabelNode";
-import { AnnotationCreate, AnnotationUpdate } from "@/ee/types/types";
 import {
   useCreateAnnotationsMutation,
   useUpdateAnnotationMutation,
 } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import { AnnotationTable, Label } from "@/types/types";
+import {
+  AnnotationCreate,
+  AnnotationTable,
+  AnnotationUpdate,
+  Label,
+} from "@/types/types";
 import { settingsQueryOptions } from "@/utils/settings";
 import { spanQueryOptions } from "@/utils/spans";
 import { safelyParseJSON } from "@/utils/strings";

@@ -1,12 +1,12 @@
 // scripts/generate-api-types.js
 
+import fs from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import { generateApi } from "swagger-typescript-api";
 import { fileURLToPath } from "url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import fs from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,7 +93,9 @@ async function generateApiTypes(options) {
     await fs.mkdir(apiOptions.output, { recursive: true });
 
     // Generate the API types
-    console.log(`Generating TypeScript types to ${apiOptions.output}/${name}...`);
+    console.log(
+      `Generating TypeScript types to ${apiOptions.output}/${name}...`
+    );
     const result = await generateApi(apiOptions);
 
     console.log(`Generated types at ${path.join(apiOptions.output, name)}`);
@@ -125,15 +127,15 @@ yargs(hideBin(process.argv))
           default: false,
         })
         .option("api", {
-          describe: "API type when using stdin (v0 or ee-v0)",
+          describe: "API type when using stdin (v0)",
           type: "string",
-          choices: ["v0", "ee-v0"],
+          choices: ["v0"],
         })
         .option("output", {
           describe: "Output directory for generated types",
           type: "string",
           alias: "o",
-          required: true
+          required: true,
         })
         .check((argv) => {
           // At least one input source is required
@@ -160,17 +162,12 @@ yargs(hideBin(process.argv))
           output: path.resolve(__dirname, "../src/types/"),
         });
 
-        // Second API - ee-v0
-        await generateApiTypes({
-          url: "http://127.0.0.1:8000/v0/ee/openapi.json",
-          output: path.resolve(__dirname, "../src/ee/types/"),
-        });
-        
-        console.log("Generated types for both APIs using default configuration");
+        console.log(
+          "Generated types for both APIs using default configuration"
+        );
       } catch (error) {
         process.exit(1);
       }
     }
   )
-  .help()
-  .argv;
+  .help().argv;

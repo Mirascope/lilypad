@@ -12,9 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "generate:api:v0": "node scripts/generate-api-types.js generate --url http://127.0.0.1:8000/v0/openapi.json --output src/types",
-    "generate:api:ee": "node scripts/generate-api-types.js generate --url http://127.0.0.1:8000/v0/ee/openapi.json --output src/ee/types",
-    "generate:api:pipe:v0": "node scripts/generate-api-types.js generate --stdin --output src/types",
-    "generate:api:pipe:ee": "node scripts/generate-api-types.js generate --stdin --output src/ee/types"
+    "generate:api:pipe:v0": "node scripts/generate-api-types.js generate --stdin --output src/types"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

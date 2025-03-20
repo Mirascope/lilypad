@@ -14,12 +14,8 @@ from sqlmodel import Session, select
 from ..db import get_session
 from ..models import (
     APIKeyTable,
-    OrganizationTable,
-    UserOrganizationTable,
-    UserRole,
     UserTable,
 )
-from ..schemas.organizations import OrganizationPublic
 from ..schemas.users import UserPublic
 from ..settings import Settings, get_settings
 
@@ -56,15 +52,9 @@ def create_api_key() -> str:
 
 
 settings = get_settings()
-if settings.environment == "local":
-
-    async def oauth2_scheme(token: str | None = None) -> str:  # pyright: ignore[reportRedeclaration]
-        return LOCAL_TOKEN
-
-else:
-    oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(
-        tokenUrl="token", auto_error=False
-    )
+oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(
+    tokenUrl="token", auto_error=False
+)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
@@ -110,40 +100,6 @@ async def validate_api_key_project_strict(
     return await validate_api_key_project(project_uuid, api_key, session, strict=True)
 
 
-async def get_local_user(session: Session) -> UserPublic:
-    """Get the local user for development
-
-    Create a local user and organization if it does not exist.
-    """
-    local_email = "local@local.com"
-    user = session.exec(select(UserTable).where(UserTable.email == local_email)).first()
-    if user:
-        return UserPublic.model_validate(user)
-
-    org = OrganizationTable(
-        uuid=UUID("123e4567-e89b-12d3-a456-426614174000"), name="Local Organization"
-    )
-    session.add(org)
-    session.flush()
-    org_public = OrganizationPublic.model_validate(org)
-    user = UserTable(
-        email=local_email,
-        first_name="Local User",
-        active_organization_uuid=org.uuid,
-    )
-    session.add(user)
-    session.flush()
-    user_public = UserPublic.model_validate(user)
-    user_org = UserOrganizationTable(
-        user_uuid=user_public.uuid,
-        organization_uuid=org_public.uuid,
-        role=UserRole.ADMIN,
-    )
-    session.add(user_org)
-    session.flush()
-    return user_public
-
-
 async def get_current_user(
     request: Request,
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -151,12 +107,8 @@ async def get_current_user(
     session: Annotated[Session, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> UserPublic:
-    """Get current user with default scopes."""
-    if token == LOCAL_TOKEN:
-        user_public = await get_local_user(session)
-        user_public.scopes = DEFAULT_SCOPES
-        return user_public
-
+    """Dependency to get the current authenticated user from session."""
+    """Get the current user from JWT token"""
     if api_key:
         api_key_row = session.exec(
             select(APIKeyTable).where(APIKeyTable.key_hash == api_key)

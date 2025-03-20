@@ -16,12 +16,11 @@ import {
 import { DiffTool } from "@/ee/components/DiffTool";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
-import { PlaygroundParameters } from "@/ee/types/types";
 import { useRunMutation } from "@/ee/utils/generations";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { GenerationTab } from "@/types/generations";
-import { GenerationPublic } from "@/types/types";
+import { GenerationPublic, PlaygroundParameters } from "@/types/types";
 import { Construction } from "lucide-react";
 import { Suspense, useState } from "react";
 

@@ -120,6 +120,15 @@ class ProjectPublic(BaseModel):
     created_at: Annotated[datetime, Field(title="Created At")]
 
 
+class Provider(str, Enum):
+    """Provider name enum"""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    OPENROUTER = "openrouter"
+    GEMINI = "gemini"
+
+
 class Scope(str, Enum):
     """Instrumentation Scope name of the span"""
 
@@ -132,6 +141,15 @@ class SpanType(str, Enum):
 
     GENERATION = "generation"
     TRACE = "trace"
+
+
+class Tier(int, Enum):
+    """License tier enum."""
+
+    FREE = 0
+    PRO = 1
+    TEAM = 2
+    ENTERPRISE = 3
 
 
 class AnnotationTable(BaseModel):
@@ -148,6 +166,20 @@ class AnnotationTable(BaseModel):
     project_uuid: Annotated[UUID | None, Field(title="Project Uuid")] = None
     span_uuid: Annotated[UUID | None, Field(title="Span Uuid")] = None
     generation_uuid: Annotated[UUID | None, Field(title="Generation Uuid")] = None
+
+
+class LicenseInfo(BaseModel):
+    """Pydantic model for license validation"""
+
+    customer: Annotated[str, Field(title="Customer")]
+    license_id: Annotated[str, Field(title="License Id")]
+    expires_at: Annotated[datetime, Field(title="Expires At")]
+    tier: Tier
+    organization_uuid: Annotated[UUID, Field(title="Organization Uuid")]
+    is_expired: Annotated[bool, Field(title="Is Expired")]
+    """
+    Check if the license has expired
+    """
 
 
 class SpanPublic(BaseModel):

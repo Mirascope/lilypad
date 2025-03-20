@@ -1,7 +1,7 @@
 import { baseURL } from "@/api";
 import { Button } from "@/components/ui/button";
-import { AnnotationCreate } from "@/ee/types/types";
 import { useEventSource } from "@/hooks/use-eventsource";
+import { AnnotationCreate } from "@/types/types";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
