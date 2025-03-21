@@ -9,10 +9,10 @@ from .base_sql_model import BaseSQLModel, get_json_column
 from .table_names import USER_TABLE_NAME
 
 if TYPE_CHECKING:
+    from ...ee.server.models.organization_invites import OrganizationInviteTable
+    from ...ee.server.models.user_organizations import UserOrganizationTable
     from .api_keys import APIKeyTable
     from .external_api_keys import ExternalAPIKeyTable
-    from .organization_invites import OrganizationInviteTable
-    from .user_organizations import UserOrganizationTable
 
 
 class UserBase(SQLModel):
