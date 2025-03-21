@@ -3,6 +3,11 @@
 from .annotations import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from .deployments import DeploymentCreate, DeploymentPublic
 from .environments import EnvironmentCreate, EnvironmentPublic
+from .user_organizations import (
+    UserOrganizationCreate,
+    UserOrganizationPublic,
+    UserOrganizationUpdate,
+)
 
 __all__ = [
     "AnnotationCreate",
@@ -12,4 +17,7 @@ __all__ = [
     "DeploymentPublic",
     "EnvironmentCreate",
     "EnvironmentPublic",
+    "UserOrganizationCreate",
+    "UserOrganizationPublic",
+    "UserOrganizationUpdate",
 ]

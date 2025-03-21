@@ -1,4 +1,4 @@
-"""Organization invites table and models."""
+"""EE Organization invites table and models."""
 
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
@@ -6,11 +6,14 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from .base_organization_sql_model import BaseOrganizationSQLModel
-from .table_names import ORGANIZATION_INVITE_TABLE_NAME, USER_TABLE_NAME
+from ....server.models import BaseOrganizationSQLModel
+from ....server.models.table_names import (
+    ORGANIZATION_INVITE_TABLE_NAME,
+    USER_TABLE_NAME,
+)
 
 if TYPE_CHECKING:
-    from .users import UserTable
+    from ....server.models.users import UserTable
 
 
 class OrganizationInviteBase(SQLModel):

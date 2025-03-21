@@ -1,16 +1,16 @@
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
-import {
-  useCreateManagedGeneration,
-  useRunMutation,
-} from "@/ee/utils/generations";
+import { useRunPlaygroundMutation } from "@/ee/utils/generations";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import {
   GenerationCreate,
   GenerationPublic,
   PlaygroundParameters,
 } from "@/types/types";
-import { usePatchGenerationMutation } from "@/utils/generations";
+import {
+  useCreateManagedGeneration,
+  usePatchGenerationMutation,
+} from "@/utils/generations";
 import {
   getAvailableProviders,
   useBaseEditorForm,
@@ -48,7 +48,7 @@ export const usePlaygroundContainer = ({
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
   const createGenerationMutation = useCreateManagedGeneration();
-  const runMutation = useRunMutation();
+  const runMutation = useRunPlaygroundMutation();
   const patchGeneration = usePatchGenerationMutation();
   // Initialize form with base editor form
   const methods = useBaseEditorForm<EditorParameters>({

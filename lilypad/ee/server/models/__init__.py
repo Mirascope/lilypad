@@ -12,6 +12,8 @@ from .environments import (
     EnvironmentBase,
     EnvironmentTable,
 )
+from .organization_invites import OrganizationInviteBase, OrganizationInviteTable
+from .user_organizations import UserOrganizationBase, UserOrganizationTable, UserRole
 
 __all__ = [
     "AnnotationBase",
@@ -20,4 +22,9 @@ __all__ = [
     "DeploymentTable",
     "EnvironmentBase",
     "EnvironmentTable",
+    "OrganizationInviteBase",
+    "OrganizationInviteTable",
+    "UserOrganizationBase",
+    "UserOrganizationTable",
+    "UserRole",
 ]
