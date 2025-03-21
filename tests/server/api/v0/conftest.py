@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from ee.validate import LicenseInfo, Tier
 from lilypad.ee.server.models import EnvironmentTable
+from lilypad.ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from lilypad.ee.server.require_license import get_organization_license
 from lilypad.server._utils import get_current_user
 from lilypad.server.api.v0.main import api
@@ -19,8 +20,6 @@ from lilypad.server.models import (
     GenerationTable,
     OrganizationTable,
     ProjectTable,
-    UserOrganizationTable,
-    UserRole,
     UserTable,
 )
 from lilypad.server.schemas import UserPublic

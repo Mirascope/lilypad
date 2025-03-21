@@ -8,16 +8,10 @@ from .generations import (
     GenerationTable,
     GenerationUpdate,
 )
-from .organization_invites import (
-    OrganizationInviteTable,
-)
+from .organization_invites import OrganizationInviteBase, OrganizationInviteTable
 from .organizations import OrganizationTable
 from .projects import ProjectTable
 from .spans import Scope, SpanTable, SpanType
-from .user_organizations import (
-    UserOrganizationTable,
-    UserRole,
-)
 from .users import UserTable
 
 __all__ = [
@@ -28,14 +22,13 @@ __all__ = [
     "GenerationTable",
     "GenerationUpdate",
     "JSONTypeDecorator",
+    "OrganizationInviteBase",
     "OrganizationInviteTable",
     "OrganizationTable",
     "ProjectTable",
     "Scope",
     "SpanTable",
     "SpanType",
-    "UserRole",
     "UserTable",
-    "UserOrganizationTable",
     "get_json_column",
 ]

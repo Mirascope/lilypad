@@ -1,4 +1,4 @@
-"""Users organizations models."""
+"""EE Users organizations models."""
 
 import enum
 from typing import TYPE_CHECKING
@@ -6,15 +6,15 @@ from uuid import UUID
 
 from sqlmodel import Column, Enum, Field, Relationship, SQLModel
 
-from .base_organization_sql_model import BaseOrganizationSQLModel
-from .table_names import (
+from ....server.models import BaseOrganizationSQLModel
+from ....server.models.table_names import (
     USER_ORGANIZATION_TABLE_NAME,
     USER_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
-    from .organizations import OrganizationTable
-    from .users import UserTable
+    from ....server.models.organizations import OrganizationTable
+    from ....server.models.users import UserTable
 
 
 class UserRole(str, enum.Enum):

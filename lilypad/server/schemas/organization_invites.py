@@ -1,4 +1,4 @@
-"""Organization invites schemas."""
+"""EE Organization invites schemas."""
 
 from uuid import UUID
 

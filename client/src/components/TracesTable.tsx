@@ -255,7 +255,7 @@ export const TracesTable = ({
               {row.original.scope === Scope.LILYPAD &&
                 row.original.generation &&
                 row.original.generation.is_managed &&
-                features.managedGenerations && (
+                features.playground && (
                   <DropdownMenuItem
                     onClick={() => {
                       const { project_uuid, generation } = row.original;

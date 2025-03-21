@@ -84,7 +84,7 @@ const GenerationOverview = () => {
           <CodeSnippet code={generation.code} />
         </div>
 
-        {features.managedGenerations && generation.is_managed && (
+        {features.playground && generation.is_managed && (
           <div className='text-left'>
             <Label>Prompt Template</Label>
             <Playground version={generation} response={state.result} />

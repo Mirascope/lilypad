@@ -4,8 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from ...ee.server.schemas.user_organizations import UserOrganizationPublic
 from ..models.users import UserBase
-from .user_organizations import UserOrganizationPublic
 
 
 class UserPublic(UserBase):

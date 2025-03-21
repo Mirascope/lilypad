@@ -1,10 +1,10 @@
-"""The `OrganizationInviteService` class for organization_invites."""
+"""The EE `OrganizationInviteService` class for organization_invites."""
 
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models import OrganizationInviteTable
-from ..schemas import OrganizationInviteCreate
+from ..models.organization_invites import OrganizationInviteTable
+from ..schemas.organization_invites import OrganizationInviteCreate
 from .base import BaseService
 
 

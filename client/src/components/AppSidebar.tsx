@@ -49,12 +49,12 @@ import {
   Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
-type Item = {
+interface Item {
   title: string;
   url: string;
   icon?: React.ElementType;
   children?: Item[];
-};
+}
 const RecursiveMenuContent = ({
   item,
   depth = 0,
@@ -116,11 +116,13 @@ export const AppSidebar = () => {
   const params = useParams({ strict: false });
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
     setProject(project);
-  }, [projects, params]);
+  }, [projects, params, setProject]);
+
   const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectItems: Item[] = activeProject
     ? [
@@ -156,9 +158,10 @@ export const AppSidebar = () => {
     setProject(project);
     const currentPath = window.location.pathname;
 
-    const projectPathMatch = currentPath.match(
-      /\/projects\/[^\/]+(?:\/([^\/]+))?/
+    const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
+      currentPath
     );
+    console.log(currentPath);
     if (projectPathMatch) {
       const currentSection = projectPathMatch[1] || "";
       const newPath = currentSection

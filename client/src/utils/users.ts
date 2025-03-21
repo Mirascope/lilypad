@@ -22,16 +22,17 @@ export const fetchUser = async () => {
 };
 
 export const fetchUsersByOrganization = async () => {
-  return (await api.get<UserPublic[]>(`/user-organizations/users`)).data;
+  return (await api.get<UserPublic[]>(`/ee/user-organizations/users`)).data;
 };
 
 export const fetchUserOrganizations = async () => {
-  return (await api.get<UserOrganizationTable[]>(`/user-organizations`)).data;
+  return (await api.get<UserOrganizationTable[]>(`/ee/user-organizations`))
+    .data;
 };
 
 export const createUserOrganization = async (token: string) => {
   return (
-    await api.post<UserOrganizationTable>(`/user-organizations`, {
+    await api.post<UserOrganizationTable>(`/ee/user-organizations`, {
       token,
     })
   ).data;
@@ -43,7 +44,7 @@ export const updateUserOrganization = async (
 ) => {
   return (
     await api.patch<UserOrganizationTable>(
-      `/user-organizations/${userOrganizationUuid}`,
+      `/ee/user-organizations/${userOrganizationUuid}`,
       data
     )
   ).data;
@@ -51,7 +52,7 @@ export const updateUserOrganization = async (
 
 export const deleteUserOrganization = async (userOrganizationUuid: string) => {
   return (
-    await api.delete<boolean>(`/user-organizations/${userOrganizationUuid}`)
+    await api.delete<boolean>(`/ee/user-organizations/${userOrganizationUuid}`)
   ).data;
 };
 

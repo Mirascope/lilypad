@@ -48,7 +48,7 @@ export const HomeSettings = () => {
         )}
         <UneditableInput
           label='Plan'
-          value={`${tier[licenseInfo.tier]} Plan`}
+          value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
         />
         {!isLilypadCloud() && (
           <div>
@@ -103,7 +103,7 @@ const ChangePlan = () => {
             <FormItem>
               <FormLabel>License</FormLabel>
               <FormControl>
-                <Textarea {...field} value={field.value || ""} />
+                <Textarea {...field} value={field.value ?? ""} />
               </FormControl>
             </FormItem>
           )}

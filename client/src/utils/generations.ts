@@ -1,10 +1,16 @@
 import api from "@/api";
-import { GenerationPublic, GenerationUpdate } from "@/types/types";
+import {
+  GenerationCreate,
+  GenerationPublic,
+  GenerationUpdate,
+} from "@/types/types";
 import {
   queryOptions,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import { AxiosResponse } from "axios";
+import { usePostHog } from "posthog-js/react";
 
 export const generationKeys = {
   all: ["generations"] as const,
@@ -14,6 +20,18 @@ export const generationKeys = {
   detail: (uuid: string) => [...generationKeys.details(), uuid] as const,
 };
 
+export const createManagedGeneration = async (
+  projectUuid: string,
+  generationCreate: GenerationCreate
+): Promise<GenerationPublic> => {
+  return (
+    await api.post<GenerationCreate, AxiosResponse<GenerationPublic>>(
+      `/projects/${projectUuid}/managed-generations`,
+      generationCreate
+    )
+  ).data;
+};
+
 export const fetchGenerationsByName = async (
   generationName: string,
   projectUuid?: string
@@ -21,7 +39,7 @@ export const fetchGenerationsByName = async (
   if (!projectUuid) return [];
   return (
     await api.get<GenerationPublic[]>(
-      `/ee/projects/${projectUuid}/generations/name/${generationName}`
+      `/projects/${projectUuid}/generations/name/${generationName}`
     )
   ).data;
 };
@@ -76,6 +94,26 @@ export const archiveGenerationByName = async (
       `/projects/${projectUuid}/generations/names/${generationName}`
     )
   ).data;
+};
+
+export const useCreateManagedGeneration = () => {
+  const queryClient = useQueryClient();
+  const posthog = usePostHog();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      generationCreate,
+    }: {
+      projectUuid: string;
+      generationCreate: GenerationCreate;
+    }) => await createManagedGeneration(projectUuid, generationCreate),
+    onSuccess: (newVersion) => {
+      posthog.capture("playgroundGenerationCreated");
+      queryClient.invalidateQueries({
+        queryKey: generationKeys.list(newVersion.name),
+      });
+    },
+  });
 };
 
 export const usePatchGenerationMutation = () => {

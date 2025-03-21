@@ -163,7 +163,7 @@ const GenerationWorkbench = () => {
     <div className='w-full p-6 flex flex-col gap-1'>
       <div className='flex gap-2'>
         <Typography variant='h2'>{generationName}</Typography>
-        {features.managedGenerations && (
+        {features.playground && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button size='icon' onClick={handleNewGenerationClick}>

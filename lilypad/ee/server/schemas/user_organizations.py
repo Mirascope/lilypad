@@ -1,11 +1,11 @@
-"""Users organizations schemas."""
+"""EE Users organizations schemas."""
 
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from ....server.schemas.organizations import OrganizationPublic
 from ..models.user_organizations import UserOrganizationBase, UserRole
-from .organizations import OrganizationPublic
 
 
 class UserOrganizationPublic(UserOrganizationBase):

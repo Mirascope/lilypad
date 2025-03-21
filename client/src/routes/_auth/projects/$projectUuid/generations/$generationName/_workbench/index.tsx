@@ -11,7 +11,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const features = useFeatureAccess();
-  if (!features.managedGenerations) {
+  if (!features.playground) {
     return (
       <div className='p-4'>
         <Typography variant='h4'>
