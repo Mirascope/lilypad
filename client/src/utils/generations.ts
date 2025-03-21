@@ -108,7 +108,7 @@ export const useCreateManagedGeneration = () => {
       generationCreate: GenerationCreate;
     }) => await createManagedGeneration(projectUuid, generationCreate),
     onSuccess: (newVersion) => {
-      posthog.capture("managedGenerationCreated");
+      posthog.capture("playgroundGenerationCreated");
       queryClient.invalidateQueries({
         queryKey: generationKeys.list(newVersion.name),
       });

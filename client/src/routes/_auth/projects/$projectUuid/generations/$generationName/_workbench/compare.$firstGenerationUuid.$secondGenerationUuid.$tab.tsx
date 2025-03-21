@@ -243,7 +243,7 @@ const GenerationOverview = () => {
             secondLexicalClosure={secondGeneration.code}
           />
         </div>
-        {features.managedGenerations &&
+        {features.playground &&
           firstGeneration.is_managed &&
           secondGeneration.is_managed && (
             <div className='text-left'>
