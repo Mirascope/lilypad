@@ -23,7 +23,7 @@ from .table_names import (
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
-    from ...ee.server.models.deployments import DeploymentTable
+    from .deployments import DeploymentTable
     from .projects import ProjectTable
     from .spans import SpanTable
 

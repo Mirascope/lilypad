@@ -3,6 +3,8 @@
 from .api_keys import APIKeyTable
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
+from .deployments import DeploymentTable
+from .environments import EnvironmentTable
 from .external_api_keys import ExternalAPIKeyTable
 from .generations import (
     GenerationTable,
@@ -25,6 +27,8 @@ __all__ = [
     "BaseOrganizationSQLModel",
     "BaseSQLModel",
     "ExternalAPIKeyTable",
+    "EnvironmentTable",
+    "DeploymentTable",
     "GenerationTable",
     "GenerationUpdate",
     "JSONTypeDecorator",

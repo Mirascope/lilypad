@@ -20,11 +20,15 @@ from ee import Tier
 
 from ....._utils.closure import _run_ruff
 from .....ee.server.services import (
-    DeploymentService,
     GenerationService,
 )
-from .....server._utils import construct_function, get_current_user
+from .....server._utils import (
+    construct_function,
+    get_current_environment,
+    get_current_user,
+)
 from .....server.models import GenerationTable
+from .....server.models.environments import Environment
 from .....server.schemas import (
     GenerationCreate,
     GenerationPublic,
@@ -32,10 +36,8 @@ from .....server.schemas import (
     UserPublic,
 )
 from .....server.schemas.generations import AcceptedValue
-from .....server.services import APIKeyService
+from .....server.services import APIKeyService, DeploymentService
 from .....server.settings import get_settings
-from ..._utils import get_current_environment
-from ...models.environments import Environment
 from ...require_license import require_license
 
 try:

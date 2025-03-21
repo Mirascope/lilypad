@@ -8,10 +8,9 @@ from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
-    from ...ee.server.models import DeploymentTable
     from ...ee.server.models.annotations import AnnotationTable
-    from ...ee.server.models.environments import EnvironmentTable
     from .api_keys import APIKeyTable
+    from .deployments import DeploymentTable
     from .generations import GenerationTable
     from .organizations import OrganizationTable
 
@@ -37,9 +36,6 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     annotations: list["AnnotationTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
-    environments: list["EnvironmentTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     deployments: list["DeploymentTable"] = Relationship(

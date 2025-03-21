@@ -7,11 +7,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
-from lilypad.ee.server.models import EnvironmentTable
 from lilypad.server._utils import get_current_user, validate_api_key_project_strict
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     APIKeyTable,
+    EnvironmentTable,
     GenerationTable,
     OrganizationTable,
     ProjectTable,
@@ -172,7 +172,6 @@ def test_environment(
     """
     environment = EnvironmentTable(
         name="test_environment",
-        project_uuid=test_project.uuid,  # pyright: ignore [reportArgumentType]
         organization_uuid=ORGANIZATION_UUID,
     )
     session.add(environment)

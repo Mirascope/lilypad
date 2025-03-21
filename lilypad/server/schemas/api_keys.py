@@ -6,6 +6,7 @@ from pydantic import computed_field
 from sqlmodel import Field
 
 from ..models.api_keys import APIKeyBase
+from .environments import EnvironmentPublic
 from .projects import ProjectPublic
 from .users import UserPublic
 
@@ -17,6 +18,7 @@ class APIKeyPublic(APIKeyBase):
     key_hash: str = Field(exclude=True)
     user: "UserPublic"
     project: "ProjectPublic"
+    environment: "EnvironmentPublic"
 
     @computed_field
     @property

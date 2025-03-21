@@ -16,9 +16,9 @@ from lilypad.server.models.table_names import (
 )
 
 if TYPE_CHECKING:
-    from ....server.models.generations import GenerationTable
-    from ....server.models.projects import ProjectTable
     from .environments import EnvironmentTable
+    from .generations import GenerationTable
+    from .projects import ProjectTable
 
 
 class DeploymentBase(SQLModel):

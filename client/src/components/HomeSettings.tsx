@@ -103,7 +103,7 @@ const ChangePlan = () => {
             <FormItem>
               <FormLabel>License</FormLabel>
               <FormControl>
-                <Textarea {...field} value={field.value || ""} />
+                <Textarea {...field} value={field.value ?? ""} />
               </FormControl>
             </FormItem>
           )}

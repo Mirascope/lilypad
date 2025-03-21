@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from lilypad.server.schemas import GenerationPublic
+from lilypad.server.schemas.generations import GenerationPublic
 
 from ..models.deployments import DeploymentBase
 from .environments import EnvironmentPublic

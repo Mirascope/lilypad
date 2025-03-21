@@ -68,6 +68,8 @@ export interface APIKeyPublic {
   user: UserPublic;
   /** Project Public Model. */
   project: ProjectPublic;
+  /** Environment public model. */
+  environment: EnvironmentPublic;
 }
 
 /**
@@ -309,11 +311,6 @@ export interface EnvironmentCreate {
   /** Description */
   description?: string | null;
   /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
-  /**
    * Is Default
    * @default false
    */
@@ -329,11 +326,6 @@ export interface EnvironmentPublic {
   name: string;
   /** Description */
   description?: string | null;
-  /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
   /**
    * Is Default
    * @default false
@@ -377,6 +369,31 @@ export interface Event {
    * @format date-time
    */
   timestamp: string;
+}
+
+/**
+ * ExternalAPIKeyCreate
+ * Request model for creating a secret.
+ */
+export interface ExternalAPIKeyCreate {
+  /** Service Name */
+  service_name: string;
+  /** Api Key */
+  api_key: string;
+}
+
+/**
+ * ExternalAPIKeyPublic
+ * Response model for a secret.
+ */
+export interface ExternalAPIKeyPublic {
+  /** Service Name */
+  service_name: string;
+  /**
+   * Masked Api Key
+   * Partially masked API key
+   */
+  masked_api_key: string;
 }
 
 /**
@@ -972,6 +989,8 @@ export interface UserPublic {
   access_token?: string | null;
   /** User Organizations */
   user_organizations?: UserOrganizationPublic[] | null;
+  /** Scopes */
+  scopes?: string[];
 }
 
 /**

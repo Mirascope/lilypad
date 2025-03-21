@@ -16,7 +16,7 @@ from .table_names import (
 )
 
 if TYPE_CHECKING:
-    from ...ee.server.models.environments import EnvironmentTable
+    from .environments import EnvironmentTable
     from .projects import ProjectTable
     from .user_organizations import OrganizationTable
     from .users import UserTable
