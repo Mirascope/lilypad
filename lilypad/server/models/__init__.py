@@ -8,6 +8,7 @@ from .generations import (
     GenerationTable,
     GenerationUpdate,
 )
+from .organization_invites import OrganizationInviteBase, OrganizationInviteTable
 from .organizations import OrganizationTable
 from .projects import ProjectTable
 from .spans import Scope, SpanTable, SpanType
@@ -21,6 +22,8 @@ __all__ = [
     "GenerationTable",
     "GenerationUpdate",
     "JSONTypeDecorator",
+    "OrganizationInviteBase",
+    "OrganizationInviteTable",
     "OrganizationTable",
     "ProjectTable",
     "Scope",

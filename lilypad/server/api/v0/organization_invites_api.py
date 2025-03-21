@@ -1,4 +1,4 @@
-"""The EE `/organization-invites` API router."""
+"""The `/organization-invites` API router."""
 
 import secrets
 from typing import Annotated
@@ -7,12 +7,12 @@ import resend
 import resend.exceptions
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from .....server._utils import get_current_user
-from .....server.schemas import (
+from ....server.schemas import (
     UserPublic,
 )
-from .....server.services import OrganizationService
-from .....server.settings import get_settings
+from ....server.services import OrganizationService
+from ....server.settings import get_settings
+from ..._utils import get_current_user
 from ...models import (
     OrganizationInviteTable,
 )

@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export const getOrganizationInvite = async (inviteToken: string) => {
   return (
     await api.get<OrganizationInvitePublic>(
-      `/ee/organizations-invites/${inviteToken}`
+      `/organizations-invites/${inviteToken}`
     )
   ).data;
 };
@@ -19,7 +19,7 @@ export const createOrganizationInvite = async (
   data: OrganizationInviteCreate
 ) => {
   return (
-    await api.post<OrganizationInvitePublic>(`/ee/organizations-invites`, data)
+    await api.post<OrganizationInvitePublic>(`/organizations-invites`, data)
   ).data;
 };
 

@@ -3,9 +3,9 @@
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ....server.services.base import BaseService
 from ..models.organization_invites import OrganizationInviteTable
 from ..schemas.organization_invites import OrganizationInviteCreate
+from .base import BaseService
 
 
 class OrganizationInviteService(

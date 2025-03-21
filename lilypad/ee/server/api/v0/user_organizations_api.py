@@ -14,11 +14,11 @@ from .....server.models import UserTable
 from .....server.schemas import (
     UserPublic,
 )
-from .....server.services import OrganizationService
+from .....server.services import OrganizationInviteService, OrganizationService
 from ...features import cloud_features
 from ...models import UserOrganizationTable, UserRole
 from ...schemas import UserOrganizationCreate, UserOrganizationUpdate
-from ...services import OrganizationInviteService, UserOrganizationService
+from ...services import UserOrganizationService
 
 user_organizations_router = APIRouter()
 

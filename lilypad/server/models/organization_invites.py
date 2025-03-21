@@ -6,14 +6,14 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from ....server.models import BaseOrganizationSQLModel
-from ....server.models.table_names import (
+from .base_organization_sql_model import BaseOrganizationSQLModel
+from .table_names import (
     ORGANIZATION_INVITE_TABLE_NAME,
     USER_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
-    from ....server.models.users import UserTable
+    from .users import UserTable
 
 
 class OrganizationInviteBase(SQLModel):

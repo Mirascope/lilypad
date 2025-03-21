@@ -2,8 +2,8 @@
 
 from uuid import UUID
 
-from ....server.schemas.users import UserPublic
 from ..models.organization_invites import OrganizationInviteBase
+from .users import UserPublic
 
 
 class OrganizationInvitePublic(OrganizationInviteBase):
