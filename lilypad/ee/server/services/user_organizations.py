@@ -1,13 +1,14 @@
 """The `UserOrganizationService` class for user_organizations."""
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlmodel import func, select
 
-from ..models import UserOrganizationTable
-from ..schemas import UserOrganizationCreate
-from .base_organization import BaseOrganizationService
+from ....server.services.base_organization import BaseOrganizationService
+from ...server.models import UserOrganizationTable
+from ...server.schemas import UserOrganizationCreate
 
 
 class UserOrganizationService(
@@ -42,13 +43,13 @@ class UserOrganizationService(
         ).all()
         return user_organizations
 
-    def count_users_in_organization(self) -> int:
+    def count_users_in_organization(self, organization_uuid: UUID) -> int:
         """Count the number of users in the active organization."""
         query = (
             select(func.count())
             .select_from(self.table)
             .where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.organization_uuid == organization_uuid,
             )
         )
 

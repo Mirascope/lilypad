@@ -5,8 +5,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import desc
-from sqlmodel import and_, func, select
+from sqlmodel import and_, asc, desc, func, select
 
 from ..models import GenerationTable
 from ..schemas import GenerationCreate
@@ -18,6 +17,32 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
 
     table: type[GenerationTable] = GenerationTable
     create_model: type[GenerationCreate] = GenerationCreate
+
+    def find_latest_generation_by_name(
+        self, project_uuid: UUID, name: str
+    ) -> GenerationTable | None:
+        """Find the latest version of a generation by name.
+
+        This performs sorting at the database level for better performance.
+
+        Args:
+            project_uuid: The project UUID
+            name: The generation name
+
+        Returns:
+            The latest version of the generation or None if not found
+        """
+        return self.session.exec(
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.name == name,
+                self.table.archived.is_(None),  # type: ignore
+            )
+            .order_by(desc(self.table.version_num))
+            .limit(1)
+        ).first()
 
     def find_generations_by_name(
         self, project_uuid: UUID, name: str
@@ -31,7 +56,7 @@ class GenerationService(BaseOrganizationService[GenerationTable, GenerationCreat
                 self.table.name == name,
                 self.table.archived.is_(None),  # type: ignore
             )
-            .order_by(self.table.version_num.asc())  # type: ignore
+            .order_by(asc(self.table.version_num))
         ).all()
         return record_tables
 

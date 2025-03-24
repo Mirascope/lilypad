@@ -27,8 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { features } from "@/ee/utils/features";
-import { licenseQueryOptions } from "@/ee/utils/organizations";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -57,12 +56,12 @@ export const UserOrgTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
+  const features = useFeatureAccess();
   const userOrganization = user.user_organizations?.find(
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   if (!userOrganization) return null;
-  const showCreateUser = features[licenseInfo.tier].users > data.length;
+  const showCreateUser = features.users > data.length;
   const columns: ColumnDef<UserPublic>[] = [
     {
       accessorKey: "first_name",
