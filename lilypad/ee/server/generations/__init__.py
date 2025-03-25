@@ -1,1 +1,1 @@
-"""The module for the `lilypad` EE generations."""
+"""The module for the `lilypad` EE functions."""

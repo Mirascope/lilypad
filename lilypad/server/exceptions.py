@@ -4,7 +4,9 @@ from typing import Literal
 
 from fastapi import HTTPException
 
-from lilypad.exceptions import LilypadException
+
+class LilypadException(Exception):
+    """Base class for all Lilypad exceptions."""
 
 
 class LilypadServerError(LilypadException, HTTPException):

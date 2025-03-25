@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ee import LicenseValidator
-from lilypad.exceptions import LicenseError
+from ee.validate import LicenseError
 
 from ....ee.server.models.user_organizations import UserRole
 from ..._utils import get_current_user

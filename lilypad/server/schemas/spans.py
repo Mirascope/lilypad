@@ -14,7 +14,7 @@ from pydantic import BaseModel, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from ..models.spans import Scope, SpanBase, SpanTable
-from .generations import GenerationPublic, Provider
+from .functions import FunctionPublic, Provider
 
 
 class _TextPart(BaseModel):
@@ -523,7 +523,7 @@ class SpanPublic(SpanBase):
     uuid: UUID
     project_uuid: UUID
     display_name: str | None = None
-    generation: GenerationPublic | None = None
+    function: FunctionPublic | None = None
     annotations: list[AnnotationTable]
     child_spans: list[SpanPublic]
     created_at: datetime
@@ -577,7 +577,7 @@ class SpanMoreDetails(BaseModel):
 
     uuid: UUID
     project_uuid: UUID | None = None
-    generation_uuid: UUID | None = None
+    function_uuid: UUID | None = None
     display_name: str
     provider: str
     model: str

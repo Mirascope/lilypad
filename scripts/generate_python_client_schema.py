@@ -33,11 +33,11 @@ ENCODING = "utf-8"
 
 
 V0_TARGET_MODELS = [
-    "GenerationPublic",
+    "FunctionPublic",
     "OrganizationPublic",
     "ProjectPublic",
     "SpanPublic",
-    "GenerationCreate",
+    "FunctionCreate",
     "LicenseInfo",
     "Provider",
 ]
@@ -212,7 +212,7 @@ def generate_python() -> None:
 @app.command()
 def generate_openapi(
     endpoint: Endpoint = typer.Option(  #  noqa: B008
-        ..., help="API endpoint to generate OpenAPI schema for"
+        default="v0", help="API endpoint to generate OpenAPI schema for"
     ),
     output: Path | None = typer.Option(  #  noqa: B008
         None, help="Output file path. If not specified, outputs to stdout for piping"

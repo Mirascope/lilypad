@@ -10,9 +10,9 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 
 from ee import LicenseInfo, LicenseValidator, Tier
+from ee.validate import LicenseError
 
 from ...ee.server import HOST_NAME
-from ...exceptions import LicenseError
 from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
 from ...server.schemas import UserPublic

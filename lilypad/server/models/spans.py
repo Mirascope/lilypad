@@ -10,14 +10,14 @@ from sqlmodel import Field, Relationship, SQLModel, text
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
 from .table_names import (
-    GENERATION_TABLE_NAME,
+    FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     SPAN_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
-    from .generations import GenerationTable
+    from .functions import FunctionTable
 
 
 class Scope(str, Enum):
@@ -30,7 +30,7 @@ class Scope(str, Enum):
 class SpanType(str, Enum):
     """Span type"""
 
-    GENERATION = "generation"
+    FUNCTION = "function"
     TRACE = "trace"
 
 
@@ -38,8 +38,8 @@ class SpanBase(SQLModel):
     """Span base model"""
 
     span_id: str = Field(nullable=False, index=True, unique=True)
-    generation_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
+    function_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     type: SpanType | None = Field(default=None)
     cost: float | None = Field(default=None)
@@ -72,7 +72,7 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    generation: Optional["GenerationTable"] = Relationship(back_populates="spans")
+    function: Optional["FunctionTable"] = Relationship(back_populates="spans")
     annotations: list["AnnotationTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin

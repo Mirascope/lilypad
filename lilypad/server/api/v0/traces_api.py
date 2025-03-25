@@ -99,12 +99,12 @@ async def _process_span(
 
     # Process attributes and create span
     attributes = trace.get("attributes", {})
-    generation_uuid_str = attributes.get("lilypad.generation.uuid")
+    function_uuid_str = attributes.get("lilypad.function.uuid")
 
     span_create = SpanCreate(
         span_id=trace["span_id"],
         type=attributes.get("lilypad.type"),
-        generation_uuid=UUID(generation_uuid_str) if generation_uuid_str else None,
+        function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
         scope=scope,
         data=trace,
         parent_span_id=trace.get("parent_span_id"),

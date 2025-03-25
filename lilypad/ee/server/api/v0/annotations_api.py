@@ -102,22 +102,22 @@ async def update_annotation(
 
 
 @annotations_router.get(
-    "/projects/{project_uuid}/generations/{generation_uuid}/annotations",
+    "/projects/{project_uuid}/functions/{function_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
 @require_license(tier=Tier.ENTERPRISE)
 async def get_annotations(
     project_uuid: UUID,
-    generation_uuid: UUID,
+    function_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
 ) -> Sequence[AnnotationPublic]:
-    """Get annotations by generations."""
+    """Get annotations by functions."""
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
         )
-        for annotation in annotations_service.find_records_by_generation_uuid(
-            generation_uuid
+        for annotation in annotations_service.find_records_by_function_uuid(
+            function_uuid
         )
     ]
 
@@ -131,7 +131,7 @@ async def generate_annotation(
     annotation_service: Annotated[AnnotationService, Depends(AnnotationService)],
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> StreamingResponse:
-    """Stream generation."""
+    """Stream function."""
     data = {}
     annotation = annotation_service.find_record_by_span_uuid(span_uuid)
     if not annotation:
@@ -162,7 +162,7 @@ async def generate_annotation(
             data = annotation.data
 
     async def stream() -> AsyncGenerator[str, None]:
-        r"""Stream the generation. Must yield 'data: {your_data}\n\n'."""
+        r"""Stream the function. Must yield 'data: {your_data}\n\n'."""
         async for chunk in await annotate_trace():
             yield f"data: {chunk.model_dump_json()}\n\n"
 

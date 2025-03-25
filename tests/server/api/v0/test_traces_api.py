@@ -13,7 +13,7 @@ from sqlmodel import Session
 from lilypad.server.api.v0.traces_api import _process_span
 from lilypad.server.models import (
     APIKeyTable,
-    GenerationTable,
+    FunctionTable,
     ProjectTable,
     Scope,
     SpanTable,
@@ -22,35 +22,35 @@ from lilypad.server.models import (
 
 
 @pytest.fixture
-def test_generation(
-    session: Session, test_project: ProjectTable, test_generation: GenerationTable
-) -> Generator[GenerationTable, None, None]:
-    """Create a test generation.
+def test_function(
+    session: Session, test_project: ProjectTable, test_function: FunctionTable
+) -> Generator[FunctionTable, None, None]:
+    """Create a test function.
 
     Args:
         session: Database session
         test_project: Parent project
-        test_generation: The Generation
+        test_function: The Function
 
     Yields:
-        GenerationTable: Test generation
+        FunctionTable: Test function
     """
-    session.add(test_generation)
+    session.add(test_function)
     session.commit()
-    session.refresh(test_generation)
-    yield test_generation
+    session.refresh(test_function)
+    yield test_function
 
 
 @pytest.fixture
 def test_span(
-    session: Session, test_project: ProjectTable, test_generation: GenerationTable
+    session: Session, test_project: ProjectTable, test_function: FunctionTable
 ) -> Generator[SpanTable, None, None]:
     """Create a test span.
 
     Args:
         session: Database session
         test_project: Parent project
-        test_generation: Parent generation
+        test_function: Parent function
 
     Yields:
         SpanTable: Test span
@@ -61,8 +61,8 @@ def test_span(
         span_id="test_span_1",
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
-        generation_uuid=test_generation.uuid,
-        type=SpanType.GENERATION,
+        function_uuid=test_function.uuid,
+        type=SpanType.FUNCTION,
         scope=Scope.LILYPAD,
         duration_ms=100,
         data={
@@ -70,11 +70,11 @@ def test_span(
             "end_time": current_time + 100,
             "attributes": {
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.type": "generation",
-                "lilypad.generation.uuid": str(test_generation.uuid),
-                "lilypad.generation.name": test_generation.name,
-                "lilypad.generation.signature": "def test(): pass",
-                "lilypad.generation.code": "def test(): pass",
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+                "lilypad.function.name": test_function.name,
+                "lilypad.function.signature": "def test(): pass",
+                "lilypad.function.code": "def test(): pass",
             },
             "name": "test_span",
         },
@@ -106,7 +106,7 @@ def test_get_traces_by_project(
 def test_post_traces(
     client: TestClient,
     test_project: ProjectTable,
-    test_generation: GenerationTable,
+    test_function: FunctionTable,
     test_api_key: APIKeyTable,
 ):
     """Test posting trace data creates expected spans."""
@@ -120,11 +120,11 @@ def test_post_traces(
             "end_time": current_time + 100,
             "attributes": {
                 "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.type": "generation",
-                "lilypad.generation.uuid": str(test_generation.uuid),
-                "lilypad.generation.name": "test_function",
-                "lilypad.generation.signature": "def test(): pass",
-                "lilypad.generation.code": "def test(): pass",
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+                "lilypad.function.name": "test_function",
+                "lilypad.function.signature": "def test(): pass",
+                "lilypad.function.code": "def test(): pass",
             },
             "name": "test_function",
         }
@@ -143,12 +143,12 @@ def test_post_traces(
 def test_get_spans_by_version(
     client: TestClient,
     test_project: ProjectTable,
-    test_generation: GenerationTable,
+    test_function: FunctionTable,
     test_span: SpanTable,
 ):
     """Test getting spans for a version returns expected spans."""
     response = client.get(
-        f"/projects/{test_project.uuid}/generations/{test_generation.uuid}/spans"
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}/spans"
     )
     assert response.status_code == 200
     spans = response.json()
@@ -180,8 +180,8 @@ async def test_process_lilypad_span():
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
-            "lilypad.type": "generation",
-            "lilypad.generation.uuid": "123e4567-e89b-12d3-a456-426614174000",
+            "lilypad.type": "function",
+            "lilypad.function.uuid": "123e4567-e89b-12d3-a456-426614174000",
             "lilypad.prompt.uuid": "123e4567-e89b-12d3-a456-426614174001",
         },
         "instrumentation_scope": {"name": "lilypad"},
@@ -192,7 +192,7 @@ async def test_process_lilypad_span():
     result = await _process_span(trace, parent_to_children, span_creates)
 
     assert result.span_id == "span1"
-    assert result.type == "generation"
+    assert result.type == "function"
     assert result.scope == Scope.LILYPAD
     assert result.cost == 0
     assert result.input_tokens == 0
@@ -209,7 +209,7 @@ async def test_process_llm_span_with_openrouter():
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
-            "lilypad.type": "generation",
+            "lilypad.type": "function",
             gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS: 100,
             gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS: 50,
             gen_ai_attributes.GEN_AI_SYSTEM: "openrouter",
@@ -304,7 +304,7 @@ async def test_process_span_with_invalid_uuids():
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
-            "lilypad.generation.uuid": "invalid-uuid",
+            "lilypad.function.uuid": "invalid-uuid",
             "lilypad.prompt.uuid": "invalid-uuid",
         },
         "instrumentation_scope": {"name": "lilypad"},

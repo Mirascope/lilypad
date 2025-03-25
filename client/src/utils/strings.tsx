@@ -51,9 +51,12 @@ export const safelyParseJSON = (json: string): object | undefined => {
   return parsed;
 };
 export const formatDate = (
-  utcDateString: string,
+  utcDateString?: string,
   dateOnly: boolean = true
 ): string => {
+  if (!utcDateString) {
+    return "";
+  }
   const date = new Date(utcDateString);
   return new Intl.DateTimeFormat(navigator.language, {
     year: "numeric",

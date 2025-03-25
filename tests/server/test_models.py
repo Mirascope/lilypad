@@ -10,15 +10,15 @@ from sqlmodel.pool import StaticPool
 
 from lilypad.server.models import (
     BaseSQLModel,
-    GenerationTable,
+    FunctionTable,
     ProjectTable,
     Scope,
     SpanTable,
     SpanType,
 )
 from lilypad.server.schemas import (
-    GenerationCreate,
-    GenerationPublic,
+    FunctionCreate,
+    FunctionPublic,
     ProjectCreate,
     ProjectPublic,
     Provider,
@@ -60,10 +60,10 @@ def test_base_sql_model() -> None:
     assert model.created_at is not None
 
 
-def test_generation_models() -> None:
-    """Test Generation model variants."""
-    # Test GenerationCreate
-    generation_data = {
+def test_function_models() -> None:
+    """Test Function model variants."""
+    # Test FunctionCreate
+    function_data = {
         "name": "test_func",
         "signature": "def test(): pass",
         "code": "def test(): pass",
@@ -72,14 +72,14 @@ def test_generation_models() -> None:
         "arg_types": {"arg1": "str"},
         "project_uuid": uuid4(),
     }
-    func_create = GenerationCreate(**generation_data)
+    func_create = FunctionCreate(**function_data)
     assert func_create.name == "test_func"
     assert func_create.hash == "abc123"
 
     # Test FunctionPublic
     uuid = uuid4()
-    func_public = GenerationPublic(
-        uuid=uuid, **{k: v for k, v in generation_data.items() if k != "project_uuid"}
+    func_public = FunctionPublic(
+        uuid=uuid, **{k: v for k, v in function_data.items() if k != "project_uuid"}
     )
     assert func_public.uuid == uuid
     assert func_public.name == "test_func"
@@ -99,14 +99,14 @@ def test_project_models(session) -> None:
 
     assert proj_table.uuid is not None
     assert proj_table.name == "test_project"
-    assert proj_table.generations == []
+    assert proj_table.functions == []
 
     # Test ProjectPublic
     uuid = uuid4()
     proj_public = ProjectPublic(
         uuid=uuid,
         name="test_project",
-        generations=[],
+        functions=[],
         created_at=proj_table.created_at,
     )
     assert proj_public.uuid == uuid
@@ -119,7 +119,7 @@ def test_span_models() -> None:
     span_create = SpanCreate(
         span_id="span123",
         project_uuid=uuid4(),
-        generation_uuid=uuid4(),
+        function_uuid=uuid4(),
         scope=Scope.LILYPAD,
         data={"key": "value"},
     )
@@ -131,13 +131,13 @@ def test_span_models() -> None:
         organization_uuid=ORGANIZATION_UUID,
         span_id="span123",
         project_uuid=uuid4(),
-        generation_uuid=uuid4(),
+        function_uuid=uuid4(),
         scope=Scope.LILYPAD,
         data={
             "name": "test_span",
             "attributes": {
-                "lilypad.type": "generation",
-                "lilypad.generation.name": "test_function",
+                "lilypad.type": "function",
+                "lilypad.function.name": "test_function",
             },
         },
     )
@@ -149,8 +149,8 @@ def test_span_models() -> None:
         organization_uuid=ORGANIZATION_UUID,
         span_id="span456",
         project_uuid=uuid4(),
-        generation_uuid=uuid4(),
-        type=SpanType.GENERATION,
+        function_uuid=uuid4(),
+        type=SpanType.FUNCTION,
         scope=Scope.LLM,
         data={
             "name": "llm_span",
@@ -174,8 +174,8 @@ def test_relationships(session) -> None:
     session.add(project)
     session.commit()
 
-    # Create generation linked to project
-    generation = GenerationTable(
+    # Create function linked to project
+    function = FunctionTable(
         organization_uuid=ORGANIZATION_UUID,
         name="test_func",
         signature="def test(): pass",
@@ -183,18 +183,18 @@ def test_relationships(session) -> None:
         hash="abc123",
         project_uuid=project.uuid,  # pyright: ignore [reportArgumentType]
     )
-    session.add(generation)
+    session.add(function)
     session.commit()
 
     # Test relationships
-    assert generation in project.generations
+    assert function in project.functions
 
     # Test cascade delete
     session.delete(project)
     session.commit()
 
     # Verify all related records are deleted
-    assert session.get(GenerationTable, generation.uuid) is None
+    assert session.get(FunctionTable, function.uuid) is None
 
 
 def test_provider_enum() -> None:

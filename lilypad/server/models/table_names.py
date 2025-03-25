@@ -2,7 +2,7 @@
 
 PROJECT_TABLE_NAME = "projects"
 SPAN_TABLE_NAME = "spans"
-GENERATION_TABLE_NAME = "generations"
+FUNCTION_TABLE_NAME = "functions"
 USER_TABLE_NAME = "users"
 ORGANIZATION_TABLE_NAME = "organizations"
 USER_ORGANIZATION_TABLE_NAME = "user_organizations"

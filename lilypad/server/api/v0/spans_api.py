@@ -26,32 +26,30 @@ async def get_span(
 
 
 @spans_router.get(
-    "/projects/{project_uuid}/generations/{generation_uuid}/spans",
+    "/projects/{project_uuid}/functions/{function_uuid}/spans",
     response_model=Sequence[SpanPublic],
 )
-async def get_span_by_generation_uuid(
+async def get_span_by_function_uuid(
     project_uuid: UUID,
-    generation_uuid: UUID,
+    function_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:
     """Get span by uuid."""
-    return span_service.find_records_by_generation_uuid(project_uuid, generation_uuid)
+    return span_service.find_records_by_function_uuid(project_uuid, function_uuid)
 
 
 @spans_router.get(
-    "/projects/{project_uuid}/generations/{generation_uuid}/spans/metadata",
+    "/projects/{project_uuid}/functions/{function_uuid}/spans/metadata",
     response_model=Sequence[AggregateMetrics],
 )
-async def get_aggregates_by_generation_uuid(
+async def get_aggregates_by_function_uuid(
     project_uuid: UUID,
-    generation_uuid: UUID,
+    function_uuid: UUID,
     time_frame: TimeFrame,
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[AggregateMetrics]:
-    """Get aggregated span by generation uuid."""
-    return span_service.get_aggregated_metrics(
-        project_uuid, generation_uuid, time_frame
-    )
+    """Get aggregated span by function uuid."""
+    return span_service.get_aggregated_metrics(project_uuid, function_uuid, time_frame)
 
 
 @spans_router.get(

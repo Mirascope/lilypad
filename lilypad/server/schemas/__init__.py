@@ -1,9 +1,11 @@
 """The module for the `lilypad` API schemas."""
 
 from .api_keys import APIKeyCreate, APIKeyPublic
-from .generations import (
-    GenerationCreate,
-    GenerationPublic,
+from .deployments import DeploymentCreate, DeploymentPublic
+from .environments import EnvironmentCreate, EnvironmentPublic
+from .functions import (
+    FunctionCreate,
+    FunctionPublic,
     PlaygroundParameters,
     Provider,
 )
@@ -15,8 +17,12 @@ from .users import UserCreate, UserPublic
 __all__ = [
     "APIKeyCreate",
     "APIKeyPublic",
-    "GenerationCreate",
-    "GenerationPublic",
+    "DeploymentCreate",
+    "DeploymentPublic",
+    "EnvironmentCreate",
+    "EnvironmentPublic",
+    "FunctionCreate",
+    "FunctionPublic",
     "OrganizationCreate",
     "OrganizationPublic",
     "PlaygroundParameters",

@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from ..._utils.closure import _run_ruff
+from ..._utils import run_ruff
 
 
 def construct_function(
@@ -11,7 +11,7 @@ def construct_function(
     import_line = "import lilypad" if include_import else ""
     func_def = f"""
     {import_line}
-    @lilypad.generation(managed=True)
+    @lilypad.function(managed=True)
     def {function_name}({", ".join(arg_list)}) -> lilypad.Message: ...
     """
-    return _run_ruff(dedent(func_def)).strip()
+    return run_ruff(dedent(func_def)).strip()

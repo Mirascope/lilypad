@@ -8,11 +8,10 @@ from .base_organization_sql_model import BaseOrganizationSQLModel
 from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
-    from ...ee.server.models import DeploymentTable
     from ...ee.server.models.annotations import AnnotationTable
-    from ...ee.server.models.environments import EnvironmentTable
     from .api_keys import APIKeyTable
-    from .generations import GenerationTable
+    from .deployments import DeploymentTable
+    from .functions import FunctionTable
     from .organizations import OrganizationTable
 
 
@@ -29,7 +28,7 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     __table_args__ = (
         UniqueConstraint("organization_uuid", "name", name="unique_project_name"),
     )
-    generations: list["GenerationTable"] = Relationship(
+    functions: list["FunctionTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")
@@ -37,9 +36,6 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
         back_populates="project", cascade_delete=True
     )
     annotations: list["AnnotationTable"] = Relationship(
-        back_populates="project", cascade_delete=True
-    )
-    environments: list["EnvironmentTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     deployments: list["DeploymentTable"] = Relationship(

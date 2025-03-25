@@ -16,13 +16,13 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
     table: type[AnnotationTable] = AnnotationTable
     create_model: type[AnnotationCreate] = AnnotationCreate
 
-    def find_records_by_generation_uuid(
-        self, generation_uuid: UUID
+    def find_records_by_function_uuid(
+        self, function_uuid: UUID
     ) -> Sequence[AnnotationTable]:
-        """Find records by generation UUID."""
+        """Find records by function UUID."""
         return self.session.exec(
             select(self.table).where(
-                self.table.generation_uuid == generation_uuid,
+                self.table.function_uuid == function_uuid,
                 or_(
                     self.table.assigned_to == self.user.uuid,
                     self.table.assigned_to.is_(None),  # type: ignore
@@ -31,7 +31,7 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
         ).all()
 
     def find_record_by_span_uuid(self, span_uuid: UUID) -> AnnotationTable | None:
-        """Find records by generation UUID."""
+        """Find records by function UUID."""
         return self.session.exec(
             select(self.table).where(self.table.span_uuid == span_uuid)
         ).first()

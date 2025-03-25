@@ -64,6 +64,10 @@ export const APIKeysTable = () => {
       header: "Project",
     },
     {
+      accessorKey: "environment.name",
+      header: "Environment",
+    },
+    {
       accessorKey: "prefix",
       header: "Key",
       cell: ({ row }) => <div>{row.getValue("prefix")}...</div>,

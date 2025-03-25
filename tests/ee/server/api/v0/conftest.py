@@ -7,13 +7,13 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
-from lilypad.ee.server.models import EnvironmentTable
 from lilypad.ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from lilypad.server._utils import get_current_user, validate_api_key_project_strict
 from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     APIKeyTable,
-    GenerationTable,
+    EnvironmentTable,
+    FunctionTable,
     OrganizationTable,
     ProjectTable,
     UserTable,
@@ -171,7 +171,6 @@ def test_environment(
     """
     environment = EnvironmentTable(
         name="test_environment",
-        project_uuid=test_project.uuid,  # pyright: ignore [reportArgumentType]
         organization_uuid=ORGANIZATION_UUID,
     )
     session.add(environment)
@@ -212,19 +211,19 @@ def test_api_key(
 
 
 @pytest.fixture
-def test_generation(
+def test_function(
     session: Session, test_project: ProjectTable
-) -> Generator[GenerationTable, None, None]:
-    """Create a test generation.
+) -> Generator[FunctionTable, None, None]:
+    """Create a test function.
 
     Args:
         session: Database session
         test_project: Parent project
 
     Yields:
-        GenerationTable: Test generation
+        FunctionTable: Test function
     """
-    function = GenerationTable(
+    function = FunctionTable(
         project_uuid=test_project.uuid,
         name="test_function",
         signature="def test(): pass",
@@ -232,7 +231,7 @@ def test_generation(
         hash="test_hash",
         organization_uuid=test_project.organization_uuid,
     )
-    second_function = GenerationTable(
+    second_function = FunctionTable(
         project_uuid=test_project.uuid,
         name="test_function",
         signature="def test_(): pass",
