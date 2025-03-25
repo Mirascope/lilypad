@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from lilypad.server.schemas.generations import GenerationPublic
+from lilypad.server.schemas.functions import FunctionPublic
 
 from ..models.deployments import DeploymentBase
 from .environments import EnvironmentPublic
@@ -13,7 +13,7 @@ class DeploymentPublic(DeploymentBase):
 
     uuid: UUID
     organization_uuid: UUID
-    generation: GenerationPublic | None = None
+    function: FunctionPublic | None = None
     environment: EnvironmentPublic | None = None
 
 

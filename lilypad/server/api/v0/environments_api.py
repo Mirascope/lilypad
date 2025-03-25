@@ -6,8 +6,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from lilypad.server.models import GenerationTable
-from lilypad.server.schemas import GenerationPublic
+from lilypad.server.models import FunctionTable
+from lilypad.server.schemas import FunctionPublic
 
 from ....server.schemas import (
     DeploymentPublic,
@@ -65,17 +65,15 @@ async def delete_environment(
     "/projects/{project_uuid}/environments/{environment_uuid}/deploy",
     response_model=DeploymentPublic,
 )
-async def deploy_generation(
+async def deploy_function(
     project_uuid: UUID,
     environment_uuid: UUID,
-    generation_uuid: UUID,
+    function_uuid: UUID,
     deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
     notes: str | None = None,
 ) -> DeploymentTable:
-    """Deploy a generation to an environment."""
-    return deployment_service.deploy_generation(
-        environment_uuid, generation_uuid, notes
-    )
+    """Deploy a function to an environment."""
+    return deployment_service.deploy_function(environment_uuid, function_uuid, notes)
 
 
 @environments_router.get(
@@ -92,16 +90,16 @@ async def get_active_deployment(
 
 
 @environments_router.get(
-    "/projects/{project_uuid}/environments/{environment_uuid}/generation",
-    response_model=GenerationPublic,
+    "/projects/{project_uuid}/environments/{environment_uuid}/function",
+    response_model=FunctionPublic,
 )
-async def get_environment_generation(
+async def get_environment_function(
     project_uuid: UUID,
     environment_uuid: UUID,
     deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
-) -> GenerationTable:
-    """Get the currently active generation for an environment."""
-    return deployment_service.get_generation_for_environment(environment_uuid)
+) -> FunctionTable:
+    """Get the currently active function for an environment."""
+    return deployment_service.get_function_for_environment(environment_uuid)
 
 
 @environments_router.get(

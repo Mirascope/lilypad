@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import desc, select
 
-from ..models import DeploymentTable, GenerationTable
+from ..models import DeploymentTable, FunctionTable
 from ..schemas import DeploymentCreate
 from .base_organization import BaseOrganizationService
 
@@ -19,10 +19,10 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
     table: type[DeploymentTable] = DeploymentTable
     create_model: type[DeploymentCreate] = DeploymentCreate
 
-    def deploy_generation(
-        self, environment_uuid: UUID, generation_uuid: UUID, notes: str | None = None
+    def deploy_function(
+        self, environment_uuid: UUID, function_uuid: UUID, notes: str | None = None
     ) -> DeploymentTable:
-        """Deploy a generation to an environment using a transaction with row-level locking
+        """Deploy a function to an environment using a transaction with row-level locking
         and retry mechanism to handle constraint violations (e.g., partial unique index conflicts).
         This creates a new active deployment and deactivates any existing ones.
         """
@@ -59,7 +59,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                     deployment = self.create_record(
                         DeploymentCreate(
                             environment_uuid=environment_uuid,
-                            generation_uuid=generation_uuid,
+                            function_uuid=function_uuid,
                             is_active=True,
                             version_num=version_num,
                             notes=notes,
@@ -76,7 +76,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Conflict occurred while deploying generation. Please try again.",
+            detail="Conflict occurred while deploying function. Please try again.",
         )
 
     def get_active_deployment(self, environment_uuid: UUID) -> DeploymentTable:
@@ -97,23 +97,21 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
 
         return deployment
 
-    def get_generation_for_environment(self, environment_uuid: UUID) -> GenerationTable:
-        """Get the currently active generation for an environment."""
+    def get_function_for_environment(self, environment_uuid: UUID) -> FunctionTable:
+        """Get the currently active function for an environment."""
         deployment = self.get_active_deployment(environment_uuid)
 
-        generation = self.session.exec(
-            select(GenerationTable).where(
-                GenerationTable.uuid == deployment.generation_uuid
-            )
+        function = self.session.exec(
+            select(FunctionTable).where(FunctionTable.uuid == deployment.function_uuid)
         ).first()
 
-        if not generation:
+        if not function:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Generation not found for this deployment",
+                detail="Function not found for this deployment",
             )
 
-        return generation
+        return function
 
     def get_deployment_history(
         self, environment_uuid: UUID
@@ -129,17 +127,17 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
         ).all()
 
     def get_specific_deployment(
-        self, project_uuid: UUID, environment_uuid: UUID, generation_name: str
+        self, project_uuid: UUID, environment_uuid: UUID, function_name: str
     ) -> DeploymentTable | None:
-        """Get a specific deployment for an environment and generation combination."""
+        """Get a specific deployment for an environment and function combination."""
         return self.session.exec(
             select(self.table)
-            .join(GenerationTable, self.table.generation)  # pyright: ignore [reportArgumentType]
+            .join(FunctionTable, self.table.function)  # pyright: ignore [reportArgumentType]
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
                 self.table.project_uuid == project_uuid,
-                GenerationTable.name == generation_name,
+                FunctionTable.name == function_name,
             )
-            .order_by(desc(GenerationTable.version_num))
+            .order_by(desc(FunctionTable.version_num))
         ).first()

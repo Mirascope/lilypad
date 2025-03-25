@@ -11,13 +11,13 @@ from lilypad.server.models import BaseOrganizationSQLModel
 from lilypad.server.models.table_names import (
     DEPLOYMENT_TABLE_NAME,
     ENVIRONMENT_TABLE_NAME,
-    GENERATION_TABLE_NAME,
+    FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
     from .environments import EnvironmentTable
-    from .generations import GenerationTable
+    from .functions import FunctionTable
     from .projects import ProjectTable
 
 
@@ -27,8 +27,8 @@ class DeploymentBase(SQLModel):
     environment_uuid: UUID = Field(
         foreign_key=f"{ENVIRONMENT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    generation_uuid: UUID = Field(
-        foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
+    function_uuid: UUID = Field(
+        foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
@@ -47,7 +47,7 @@ class DeploymentBase(SQLModel):
 
 
 class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
-    """Deployment table tracking which generations are active in which environments."""
+    """Deployment table tracking which functions are active in which environments."""
 
     __tablename__ = DEPLOYMENT_TABLE_NAME  # type: ignore
     __table_args__ = (
@@ -61,5 +61,5 @@ class DeploymentTable(DeploymentBase, BaseOrganizationSQLModel, table=True):
         ),
     )
     environment: "EnvironmentTable" = Relationship(back_populates="deployments")
-    generation: "GenerationTable" = Relationship(back_populates="deployments")
+    function: "FunctionTable" = Relationship(back_populates="deployments")
     project: "ProjectTable" = Relationship(back_populates="deployments")

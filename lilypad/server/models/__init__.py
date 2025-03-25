@@ -6,9 +6,9 @@ from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
 from .deployments import DeploymentTable
 from .environments import EnvironmentTable
 from .external_api_keys import ExternalAPIKeyTable
-from .generations import (
-    GenerationTable,
-    GenerationUpdate,
+from .functions import (
+    FunctionTable,
+    FunctionUpdate,
 )
 from .organization_invites import OrganizationInviteBase, OrganizationInviteTable
 from .organizations import OrganizationTable
@@ -23,8 +23,8 @@ __all__ = [
     "ExternalAPIKeyTable",
     "EnvironmentTable",
     "DeploymentTable",
-    "GenerationTable",
-    "GenerationUpdate",
+    "FunctionTable",
+    "FunctionUpdate",
     "JSONTypeDecorator",
     "OrganizationInviteBase",
     "OrganizationInviteTable",

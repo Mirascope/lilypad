@@ -13,7 +13,7 @@ from lilypad.server.db.session import get_session
 from lilypad.server.models import (
     APIKeyTable,
     EnvironmentTable,
-    GenerationTable,
+    FunctionTable,
     OrganizationTable,
     ProjectTable,
     UserTable,
@@ -211,19 +211,19 @@ def test_api_key(
 
 
 @pytest.fixture
-def test_generation(
+def test_function(
     session: Session, test_project: ProjectTable
-) -> Generator[GenerationTable, None, None]:
-    """Create a test generation.
+) -> Generator[FunctionTable, None, None]:
+    """Create a test function.
 
     Args:
         session: Database session
         test_project: Parent project
 
     Yields:
-        GenerationTable: Test generation
+        FunctionTable: Test function
     """
-    function = GenerationTable(
+    function = FunctionTable(
         project_uuid=test_project.uuid,
         name="test_function",
         signature="def test(): pass",
@@ -231,7 +231,7 @@ def test_generation(
         hash="test_hash",
         organization_uuid=test_project.organization_uuid,
     )
-    second_function = GenerationTable(
+    second_function = FunctionTable(
         project_uuid=test_project.uuid,
         name="test_function",
         signature="def test_(): pass",

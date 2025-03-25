@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .api_keys import APIKeyTable
     from .deployments import DeploymentTable
-    from .generations import GenerationTable
+    from .functions import FunctionTable
     from .organizations import OrganizationTable
 
 
@@ -28,7 +28,7 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     __table_args__ = (
         UniqueConstraint("organization_uuid", "name", name="unique_project_name"),
     )
-    generations: list["GenerationTable"] = Relationship(
+    functions: list["FunctionTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
     organization: "OrganizationTable" = Relationship(back_populates="projects")

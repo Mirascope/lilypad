@@ -33,11 +33,11 @@ ENCODING = "utf-8"
 
 
 V0_TARGET_MODELS = [
-    "GenerationPublic",
+    "FunctionPublic",
     "OrganizationPublic",
     "ProjectPublic",
     "SpanPublic",
-    "GenerationCreate",
+    "FunctionCreate",
     "LicenseInfo",
     "Provider",
 ]

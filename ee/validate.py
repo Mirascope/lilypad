@@ -22,13 +22,12 @@ from pydantic import (
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
 
-from lilypad.exceptions import LicenseError
-
 if TYPE_CHECKING:
     from lilypad.server.services import OrganizationService
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
+
+class LicenseError(Exception):
+    """Custom exception for license-related errors"""
 
 
 class Tier(int, Enum):

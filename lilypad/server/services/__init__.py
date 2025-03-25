@@ -3,7 +3,7 @@
 from .api_keys import APIKeyService
 from .deployments import DeploymentService
 from .environments import EnvironmentService
-from .generations import GenerationService
+from .functions import FunctionService
 from .organization_invites import OrganizationInviteService
 from .organizations import OrganizationService
 from .projects import ProjectService
@@ -14,11 +14,10 @@ __all__ = [
     "APIKeyService",
     "DeploymentService",
     "EnvironmentService",
-    "GenerationService",
+    "FunctionService",
     "OrganizationInviteService",
     "OrganizationService",
     "ProjectService",
     "SpanService",
-    "UserOrganizationService",
     "UserService",
 ]

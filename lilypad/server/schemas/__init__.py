@@ -3,9 +3,9 @@
 from .api_keys import APIKeyCreate, APIKeyPublic
 from .deployments import DeploymentCreate, DeploymentPublic
 from .environments import EnvironmentCreate, EnvironmentPublic
-from .generations import (
-    GenerationCreate,
-    GenerationPublic,
+from .functions import (
+    FunctionCreate,
+    FunctionPublic,
     PlaygroundParameters,
     Provider,
 )
@@ -21,8 +21,8 @@ __all__ = [
     "DeploymentPublic",
     "EnvironmentCreate",
     "EnvironmentPublic",
-    "GenerationCreate",
-    "GenerationPublic",
+    "FunctionCreate",
+    "FunctionPublic",
     "OrganizationCreate",
     "OrganizationPublic",
     "PlaygroundParameters",

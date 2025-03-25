@@ -34,3 +34,4 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
         back_populates="organization", cascade_delete=True
     )
     license: str | None = Field(default=None, nullable=True)
+    support_services: bool = Field(default=True, nullable=False)
