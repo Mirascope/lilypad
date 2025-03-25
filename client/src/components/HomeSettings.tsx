@@ -48,7 +48,7 @@ export const HomeSettings = () => {
         )}
         <UneditableInput
           label='Plan'
-          value={`${tier[licenseInfo.tier]} Plan`}
+          value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
         />
         {!isLilypadCloud() && (
           <div>

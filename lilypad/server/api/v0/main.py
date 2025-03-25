@@ -12,6 +12,7 @@ from .auth import auth_router
 from .environments_api import environments_router
 from .external_api_keys_api import external_api_key_router
 from .generations_api import generations_router
+from .organization_invites_api import organization_invites_router
 from .organizations_api import organization_router
 from .projects_api import projects_router
 from .spans_api import spans_router
@@ -23,6 +24,7 @@ api = FastAPI(separate_input_output_schemas=False)
 api.include_router(v0_ee_router)
 api.include_router(api_keys_api)
 api.include_router(generations_router)
+api.include_router(organization_invites_router)
 api.include_router(projects_router)
 api.include_router(spans_router)
 api.include_router(traces_router)

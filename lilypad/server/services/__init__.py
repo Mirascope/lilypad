@@ -8,7 +8,6 @@ from .organization_invites import OrganizationInviteService
 from .organizations import OrganizationService
 from .projects import ProjectService
 from .spans import SpanService
-from .user_organizations import UserOrganizationService
 from .users import UserService
 
 __all__ = [

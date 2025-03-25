@@ -16,7 +16,7 @@ import {
 import { DiffTool } from "@/ee/components/DiffTool";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
-import { useRunMutation } from "@/ee/utils/generations";
+import { useRunPlaygroundMutation } from "@/ee/utils/generations";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { GenerationTab } from "@/types/generations";
@@ -55,7 +55,7 @@ const ComparePlaygrounds = ({
     isCompare: true,
   });
 
-  const runMutation = useRunMutation();
+  const runMutation = useRunPlaygroundMutation();
 
   // Check if either playground has missing API keys
   const canRun =
@@ -243,7 +243,7 @@ const GenerationOverview = () => {
             secondLexicalClosure={secondGeneration.code}
           />
         </div>
-        {features.managedGenerations &&
+        {features.playground &&
           firstGeneration.is_managed &&
           secondGeneration.is_managed && (
             <div className='text-left'>

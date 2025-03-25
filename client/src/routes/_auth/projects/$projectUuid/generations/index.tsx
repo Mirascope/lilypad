@@ -190,9 +190,7 @@ const GenerationsList = () => {
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
           Generations
-          {data.length > 0 && features.managedGenerations && (
-            <CreateGenerationButton />
-          )}
+          {data.length > 0 && features.playground && <CreateGenerationButton />}
         </h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
           <Suspense fallback={<CardSkeleton items={2} />}>
@@ -246,7 +244,7 @@ const GenerationNoDataPlaceholder = () => {
   };
   return (
     <div className='flex flex-col gap-4'>
-      {features.managedGenerations && (
+      {features.playground && (
         <>
           <Typography variant='h4'>Create Managed Generation</Typography>
           <Form {...methods}>

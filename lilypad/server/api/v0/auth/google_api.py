@@ -7,13 +7,12 @@ import posthog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from .....ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from ...._utils import create_jwt_token
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
 from ....models import (
     OrganizationTable,
-    UserOrganizationTable,
-    UserRole,
     UserTable,
 )
 from ....schemas import OrganizationPublic, UserPublic
