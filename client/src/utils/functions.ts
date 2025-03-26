@@ -16,13 +16,13 @@ export const functionKeys = {
   detail: (uuid: string) => [...functionKeys.details(), uuid] as const,
 };
 
-export const createManagedFunction = async (
+export const createVersionedFunction = async (
   projectUuid: string,
   functionCreate: FunctionCreate
 ): Promise<FunctionPublic> => {
   return (
     await api.post<FunctionCreate, AxiosResponse<FunctionPublic>>(
-      `/projects/${projectUuid}/managed-functions`,
+      `/projects/${projectUuid}/versioned-functions`,
       functionCreate
     )
   ).data;
@@ -92,7 +92,7 @@ export const archiveFunctionByName = async (
   ).data;
 };
 
-export const useCreateManagedFunction = () => {
+export const useCreateVersionedFunctionMutation = () => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();
   return useMutation({
@@ -102,7 +102,7 @@ export const useCreateManagedFunction = () => {
     }: {
       projectUuid: string;
       functionCreate: FunctionCreate;
-    }) => await createManagedFunction(projectUuid, functionCreate),
+    }) => await createVersionedFunction(projectUuid, functionCreate),
     onSuccess: async (newVersion) => {
       posthog.capture("playgroundFunctionCreated");
       await queryClient.invalidateQueries({

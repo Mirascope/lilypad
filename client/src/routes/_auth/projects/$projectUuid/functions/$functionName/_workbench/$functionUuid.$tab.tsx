@@ -2,11 +2,7 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Label } from "@/components/ui/label";
 import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useParams,
-  useRouterState,
-} from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import { FunctionSpans } from "@/components/FunctionSpans";
@@ -14,8 +10,7 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
-import { Playground } from "@/ee/components/Playground";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
 import { Suspense } from "react";
 
@@ -31,7 +26,7 @@ export const Route = createFileRoute(
 
 const Function = () => {
   const { projectUuid, functionName, functionUuid, tab } = useParams({
-    from: Route.id,
+    from: FunctionRoute.id,
   });
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
@@ -40,10 +35,16 @@ const Function = () => {
   if (tab === FunctionTab.OVERVIEW) {
     return <FunctionOverview />;
   } else if (tab === FunctionTab.TRACES) {
-    return <FunctionSpans projectUuid={projectUuid} functionUuid={fn?.uuid} />;
+    return fn ? (
+      <FunctionSpans projectUuid={projectUuid} functionUuid={fn.uuid} />
+    ) : (
+      <div>No function selected</div>
+    );
   } else if (tab === FunctionTab.ANNOTATIONS) {
-    return (
-      <FunctionAnnotations projectUuid={projectUuid} functionUuid={fn?.uuid} />
+    return fn ? (
+      <FunctionAnnotations projectUuid={projectUuid} functionUuid={fn.uuid} />
+    ) : (
+      <div>No function selected</div>
     );
   }
 };
@@ -55,8 +56,6 @@ const FunctionOverview = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
-  const state = useRouterState({ select: (s) => s.location.state });
-  const features = useFeatureAccess();
   const fn = functions.find((f) => f.uuid === functionUuid);
 
   if (!fn) {
@@ -71,13 +70,6 @@ const FunctionOverview = () => {
           <Label>Code</Label>
           <CodeSnippet code={fn.code} />
         </div>
-
-        {features.playground && fn.is_versioned && (
-          <div className='text-left'>
-            <Label>Prompt Template</Label>
-            <Playground version={fn} response={state.result} />
-          </div>
-        )}
       </div>
     );
   }

@@ -34,7 +34,7 @@ import { GitCompare, Plus, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
 import { validate } from "uuid";
 
-interface FunctionRouteParams {
+export interface FunctionRouteParams {
   projectUuid: string;
   functionName: string;
   functionUuid: string;

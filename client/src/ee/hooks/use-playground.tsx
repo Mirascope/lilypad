@@ -8,7 +8,7 @@ import {
   PlaygroundParameters,
 } from "@/types/types";
 import {
-  useCreateManagedFunction,
+  useCreateVersionedFunctionMutation,
   usePatchFunctionMutation,
 } from "@/utils/functions";
 import {
@@ -47,7 +47,7 @@ export const usePlaygroundContainer = ({
   });
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
-  const createFunctionMutation = useCreateManagedFunction();
+  const createVersionedFunction = useCreateVersionedFunctionMutation();
   const runMutation = useRunPlaygroundMutation();
   const patchFunction = usePatchFunctionMutation();
   // Initialize form with base editor form
@@ -98,9 +98,9 @@ export const usePlaygroundContainer = ({
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
-
+    console.log("HIT");
+    console.log(editorRef?.current, projectUuid, functionName);
     if (!editorRef?.current || !projectUuid || !functionName) return;
-
     // Determine which button was clicked
     let buttonName = "";
     if (
@@ -170,7 +170,7 @@ export const usePlaygroundContainer = ({
 
           try {
             // Create new version
-            const newVersion = await createFunctionMutation.mutateAsync({
+            const newVersion = await createVersionedFunction.mutateAsync({
               projectUuid,
               functionCreate,
             });
@@ -218,7 +218,7 @@ export const usePlaygroundContainer = ({
           }
         } else {
           try {
-            const newVersion = await createFunctionMutation.mutateAsync({
+            const newVersion = await createVersionedFunction.mutateAsync({
               projectUuid,
               functionCreate,
             });
@@ -276,7 +276,7 @@ export const usePlaygroundContainer = ({
 
     // Loading states
     isRunLoading: runMutation.isPending,
-    isCreateLoading: createFunctionMutation.isPending,
+    isCreateLoading: createVersionedFunction.isPending,
     isPatchLoading: patchFunction.isPending,
 
     // Handlers

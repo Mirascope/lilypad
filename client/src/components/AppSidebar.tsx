@@ -46,6 +46,7 @@ import {
   Home,
   ScrollText,
   Settings,
+  SquareTerminal,
   User2,
   Wrench,
 } from "lucide-react";
@@ -137,6 +138,11 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/functions`,
           icon: Wrench,
         },
+        {
+          title: "Playground",
+          url: `/projects/${activeProject.uuid}/playground`,
+          icon: SquareTerminal,
+        },
       ]
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
@@ -225,7 +231,7 @@ export const AppSidebar = () => {
       <DropdownMenuCheckboxItem
         key={user_organization.uuid}
         onClick={() =>
-          handleOrganizationSwitch(user_organization.organization.uuid)
+          void handleOrganizationSwitch(user_organization.organization.uuid)
         }
         checked={
           user_organization.organization.uuid === user.active_organization_uuid

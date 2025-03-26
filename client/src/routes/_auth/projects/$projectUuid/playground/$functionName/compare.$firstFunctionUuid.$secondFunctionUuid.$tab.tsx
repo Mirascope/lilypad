@@ -19,13 +19,13 @@ import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
 import { FunctionPublic, PlaygroundParameters } from "@/types/types";
 import { Construction } from "lucide-react";
 import { Suspense, useState } from "react";
-
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/functions/$functionName/_workbench/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
+  "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
@@ -185,18 +185,16 @@ const ComparePlaygrounds = ({
 };
 
 const Function = () => {
-  const { projectUuid, firstFunctionUuid, secondFunctionUuid, tab } = useParams(
-    {
-      from: Route.id,
-    }
-  );
+  const { projectUuid, functionUuid, secondFunctionUuid, tab } = useParams({
+    from: FunctionRoute.id,
+  });
   if (tab === FunctionTab.OVERVIEW) {
     return <FunctionOverview />;
   } else if (tab === FunctionTab.TRACES) {
     return (
       <CompareTracesTable
         projectUuid={projectUuid}
-        firstFunctionUuid={firstFunctionUuid}
+        firstFunctionUuid={functionUuid}
         secondFunctionUuid={secondFunctionUuid}
       />
     );

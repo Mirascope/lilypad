@@ -7,11 +7,8 @@ export const FunctionSpans = ({
   functionUuid,
 }: {
   projectUuid: string;
-  functionUuid?: string;
+  functionUuid: string;
 }) => {
-  if (!functionUuid) {
-    return <div>No function selected.</div>;
-  }
   const { data } = useSuspenseQuery(
     spansByFunctionQueryOptions(projectUuid, functionUuid)
   );

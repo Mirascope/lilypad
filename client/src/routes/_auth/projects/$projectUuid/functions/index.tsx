@@ -301,28 +301,25 @@ const DeveloperFunctionNoDataPlaceholder = () => {
     <div className='max-w-4xl mx-auto'>
       <div>
         Start by decorating your LLM powered functions with{" "}
-        <code>@lilypad.function()</code>.
+        <code>@lilypad.trace()</code>.
       </div>
       <CodeSnippet
-        code={`
+        code={`import lilypad
 from openai import OpenAI
 
-import lilypad
-
-client = OpenAI()
 lilypad.configure()
-
-
-@lilypad.function()
-def recommend_book(genre: str) -> str:
-    completion = client.chat.completions.create(
+client = OpenAI()
+​
+@lilypad.trace(versioning="automatic")
+def answer_question(question: str) -> str | None:
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": f"Recommend a {genre} book"}],
+        messages=[{"role": "user", "content": f"Answer this question: {question}"}],
     )
-    return str(completion.choices[0].message.content)
-
-
-recommend_book("fantasy")`}
+    return response.choices[0].message.content
+    
+response = answer_question("What is the capital of France?")
+print(response)`}
       />
     </div>
   );

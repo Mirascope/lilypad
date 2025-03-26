@@ -9,11 +9,8 @@ export const FunctionAnnotations = ({
   functionUuid,
 }: {
   projectUuid: string;
-  functionUuid?: string;
+  functionUuid: string;
 }) => {
-  if (!functionUuid) {
-    return <div>No function selected.</div>;
-  }
   const { data } = useSuspenseQuery(
     annotationsByFunctionQueryOptions(projectUuid, functionUuid)
   );

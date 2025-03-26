@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { SliderProps } from "@radix-ui/react-slider";
 import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 
-type FormSliderProps<T extends FieldValues> = {
+interface FormSliderProps<T extends FieldValues> {
   name: Path<T>;
   label: string;
   optional?: boolean;
@@ -21,7 +21,7 @@ type FormSliderProps<T extends FieldValues> = {
   showInput?: boolean;
   inputProps?: Omit<InputProps, "value" | "onChange">;
   isDisabled?: boolean;
-};
+}
 
 export const FormSlider = <T extends FieldValues>({
   name,
@@ -39,13 +39,13 @@ export const FormSlider = <T extends FieldValues>({
       name={name}
       control={control}
       render={({ field }) => {
-        const isDisabled = (switchName && !watch(switchName)) || isDisabledProp;
+        const isDisabled = (switchName && !watch(switchName)) ?? isDisabledProp;
 
         return (
           <FormItem>
             <FormLabel className='flex justify-between items-center'>
               <Label
-                htmlFor={sliderProps.name || ""}
+                htmlFor={sliderProps.name ?? ""}
                 className='flex items-center gap-2'
               >
                 {label}
