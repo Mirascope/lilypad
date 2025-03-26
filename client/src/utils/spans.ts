@@ -17,13 +17,13 @@ export const spanQueryOptions = (spanUuid: string) =>
     queryFn: () => fetchSpan(spanUuid),
   });
 
-export const fetchSpansByGenerationUuid = async (
+export const fetchSpansByFunctionUuid = async (
   projectUuid: string,
-  generationUuid: string
+  functionUuid: string
 ) => {
   return (
     await api.get<SpanPublic[]>(
-      `/projects/${projectUuid}/generations/${generationUuid}/spans`
+      `/projects/${projectUuid}/functions/${functionUuid}/spans`
     )
   ).data;
 };
@@ -39,25 +39,25 @@ export const fetchAggregatesByProjectUuid = async (
   ).data;
 };
 
-export const fetchAggregatesByGenerationUuid = async (
+export const fetchAggregatesByFunctionUuid = async (
   projectUuid: string,
-  generationUuid: string,
+  functionUuid: string,
   timeFrame: TimeFrame
 ) => {
   return (
     await api.get<AggregateMetrics[]>(
-      `/projects/${projectUuid}/generations/${generationUuid}/spans/metadata?time_frame=${timeFrame}`
+      `/projects/${projectUuid}/functions/${functionUuid}/spans/metadata?time_frame=${timeFrame}`
     )
   ).data;
 };
 
-export const spansByGenerationQueryOptions = (
+export const spansByFunctionQueryOptions = (
   projectUuid: string,
-  generationUuid: string
+  functionUuid: string
 ) =>
   queryOptions({
-    queryKey: ["projects", projectUuid, "generations", generationUuid, "spans"],
-    queryFn: () => fetchSpansByGenerationUuid(projectUuid, generationUuid),
+    queryKey: ["projects", projectUuid, "functions", functionUuid, "spans"],
+    queryFn: () => fetchSpansByFunctionUuid(projectUuid, functionUuid),
     refetchInterval: 1000,
   });
 
@@ -70,21 +70,21 @@ export const aggregatesByProjectQueryOptions = (
     queryFn: () => fetchAggregatesByProjectUuid(projectUuid, timeFrame),
   });
 
-export const aggregatesByGenerationQueryOptions = (
+export const aggregatesByFunctionQueryOptions = (
   projectUuid: string,
-  generationUuid: string,
+  functionUuid: string,
   timeFrame: TimeFrame
 ) =>
   queryOptions({
     queryKey: [
       "projects",
       projectUuid,
-      "generations",
-      generationUuid,
+      "functions",
+      functionUuid,
       "spans",
       "metadata",
       timeFrame,
     ],
     queryFn: () =>
-      fetchAggregatesByGenerationUuid(projectUuid, generationUuid, timeFrame),
+      fetchAggregatesByFunctionUuid(projectUuid, functionUuid, timeFrame),
   });

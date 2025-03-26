@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { generationsByNameQueryOptions } from "@/utils/generations";
+import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
@@ -16,42 +16,42 @@ import {
 import { DiffTool } from "@/ee/components/DiffTool";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
-import { useRunPlaygroundMutation } from "@/ee/utils/generations";
+import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { GenerationTab } from "@/types/generations";
-import { GenerationPublic, PlaygroundParameters } from "@/types/types";
+import { FunctionTab } from "@/types/functions";
+import { FunctionPublic, PlaygroundParameters } from "@/types/types";
 import { Construction } from "lucide-react";
 import { Suspense, useState } from "react";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/compare/$firstGenerationUuid/$secondGenerationUuid/$tab"
+  "/_auth/projects/$projectUuid/functions/$functionName/_workbench/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
-      <Generation />
+      <Function />
     </Suspense>
   ),
 });
 
 // Component to handle both playgrounds with a shared run button
 const ComparePlaygrounds = ({
-  firstGeneration,
-  secondGeneration,
+  firstFunction,
+  secondFunction,
 }: {
-  firstGeneration: GenerationPublic;
-  secondGeneration: GenerationPublic;
+  firstFunction: FunctionPublic;
+  secondFunction: FunctionPublic;
 }) => {
   const [firstResponse, setFirstResponse] = useState<string>("");
   const [secondResponse, setSecondResponse] = useState<string>("");
   const [isRunning, setIsRunning] = useState(false);
-  // Set up hooks for both generations
+  // Set up hooks for both functions
   const firstPlayground = usePlaygroundContainer({
-    version: firstGeneration,
+    version: firstFunction,
     isCompare: true,
   });
   const secondPlayground = usePlaygroundContainer({
-    version: secondGeneration,
+    version: secondFunction,
     isCompare: true,
   });
 
@@ -61,30 +61,30 @@ const ComparePlaygrounds = ({
   const canRun =
     firstPlayground.doesProviderExist && secondPlayground.doesProviderExist;
 
-  const runBothGenerations = async () => {
+  const runBothFunctions = async () => {
     setIsRunning(true);
 
     try {
-      // Run both generations in parallel
+      // Run both functions in parallel
       await Promise.all([
-        runGeneration(firstPlayground, firstGeneration.uuid, (response) =>
+        runFunction(firstPlayground, firstFunction.uuid, (response) =>
           setFirstResponse(response)
         ),
-        runGeneration(secondPlayground, secondGeneration.uuid, (response) =>
+        runFunction(secondPlayground, secondFunction.uuid, (response) =>
           setSecondResponse(response)
         ),
       ]);
     } catch (error) {
-      console.error("Error running generations:", error);
+      console.error("Error running functions:", error);
     } finally {
       setIsRunning(false);
     }
   };
 
-  // Helper function to run a single generation
-  const runGeneration = async (
+  // Helper function to run a single function
+  const runFunction = async (
     playground: ReturnType<typeof usePlaygroundContainer>,
-    generationUuid: string,
+    functionUuid: string,
     setResponse: (response: string) => void
   ) => {
     const { methods, inputs, projectUuid } = playground;
@@ -118,10 +118,10 @@ const ComparePlaygrounds = ({
           model: data.model,
         };
 
-        // Run generation
+        // Run function
         const result = await runMutation.mutateAsync({
           projectUuid,
-          generationUuid,
+          functionUuid,
           playgroundValues,
         });
 
@@ -144,7 +144,7 @@ const ComparePlaygrounds = ({
                 name='run'
                 loading={isRunning}
                 disabled={!canRun}
-                onClick={runBothGenerations}
+                onClick={runBothFunctions}
                 className='hover:bg-green-700 text-white font-medium'
               >
                 Run Both Playgrounds
@@ -164,7 +164,7 @@ const ComparePlaygrounds = ({
       <div className='flex w-full justify-between gap-4 overflow-auto'>
         <div className='flex-1'>
           <Playground
-            version={firstGeneration}
+            version={firstFunction}
             response={firstResponse}
             isCompare={true}
             playgroundContainer={firstPlayground}
@@ -173,7 +173,7 @@ const ComparePlaygrounds = ({
 
         <div className='flex-1'>
           <Playground
-            version={secondGeneration}
+            version={secondFunction}
             response={secondResponse}
             isCompare={true}
             playgroundContainer={secondPlayground}
@@ -184,22 +184,23 @@ const ComparePlaygrounds = ({
   );
 };
 
-const Generation = () => {
-  const { projectUuid, firstGenerationUuid, secondGenerationUuid, tab } =
-    useParams({
+const Function = () => {
+  const { projectUuid, firstFunctionUuid, secondFunctionUuid, tab } = useParams(
+    {
       from: Route.id,
-    });
-  if (tab === GenerationTab.OVERVIEW) {
-    return <GenerationOverview />;
-  } else if (tab === GenerationTab.TRACES) {
+    }
+  );
+  if (tab === FunctionTab.OVERVIEW) {
+    return <FunctionOverview />;
+  } else if (tab === FunctionTab.TRACES) {
     return (
       <CompareTracesTable
         projectUuid={projectUuid}
-        firstGenerationUuid={firstGenerationUuid}
-        secondGenerationUuid={secondGenerationUuid}
+        firstFunctionUuid={firstFunctionUuid}
+        secondFunctionUuid={secondFunctionUuid}
       />
     );
-  } else if (tab === GenerationTab.ANNOTATIONS) {
+  } else if (tab === FunctionTab.ANNOTATIONS) {
     return (
       <div className='flex justify-center items-center h-96'>
         <Construction color='orange' /> This page is under construction{" "}
@@ -208,51 +209,45 @@ const Generation = () => {
     );
   }
 };
-const GenerationOverview = () => {
-  const { projectUuid, generationName, generationUuid, secondGenerationUuid } =
+const FunctionOverview = () => {
+  const { projectUuid, functionName, functionUuid, secondFunctionUuid } =
     useParams({
       from: Route.id,
     });
-  const { data: generations } = useSuspenseQuery(
-    generationsByNameQueryOptions(generationName, projectUuid)
+  const { data: functions } = useSuspenseQuery(
+    functionsByNameQueryOptions(functionName, projectUuid)
   );
   const features = useFeatureAccess();
-  const firstGeneration = generations.find(
-    (generation) => generation.uuid === generationUuid
-  );
-  const secondGeneration = generations.find(
-    (generation) => generation.uuid === secondGenerationUuid
-  );
+  const firstFunction = functions.find((f) => f.uuid === functionUuid);
+  const secondFunction = functions.find((f) => f.uuid === secondFunctionUuid);
 
-  if (!firstGeneration || !secondGeneration) {
-    return <div>Please select two generations to compare.</div>;
+  if (!firstFunction || !secondFunction) {
+    return <div>Please select two functions to compare.</div>;
   } else {
     return (
       <div className='p-4 flex flex-col gap-6 max-w-6xl mx-auto'>
         <Suspense fallback={<CardSkeleton />}>
           <MetricCharts
-            generation={firstGeneration}
-            secondGeneration={secondGeneration}
+            firstFunction={firstFunction}
+            secondFunction={secondFunction}
             projectUuid={projectUuid}
           />
         </Suspense>
         <div className='text-left'>
           <Label className='text-lg font-semibold'>Code Comparison</Label>
           <DiffTool
-            firstLexicalClosure={firstGeneration.code}
-            secondLexicalClosure={secondGeneration.code}
+            firstLexicalClosure={firstFunction.code}
+            secondLexicalClosure={secondFunction.code}
           />
         </div>
         {features.playground &&
-          firstGeneration.is_managed &&
-          secondGeneration.is_managed && (
+          firstFunction.is_versioned &&
+          secondFunction.is_versioned && (
             <div className='text-left'>
-              <Label className='text-lg font-semibold'>
-                Compare Generations
-              </Label>
+              <Label className='text-lg font-semibold'>Compare Functions</Label>
               <ComparePlaygrounds
-                firstGeneration={firstGeneration}
-                secondGeneration={secondGeneration}
+                firstFunction={firstFunction}
+                secondFunction={secondFunction}
               />
             </div>
           )}

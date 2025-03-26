@@ -253,15 +253,14 @@ export const TracesTable = ({
                   </div>
                 )}
               {row.original.scope === Scope.LILYPAD &&
-                row.original.generation &&
-                row.original.generation.is_managed &&
+                row.original.function?.is_versioned &&
                 features.playground && (
                   <DropdownMenuItem
                     onClick={() => {
-                      const { project_uuid, generation } = row.original;
-                      if (!generation) return;
+                      const { project_uuid, function: fn } = row.original;
+                      if (!fn) return;
                       navigate({
-                        to: `/projects/${project_uuid}/generations/${generation.name}/${generation.uuid}/overview`,
+                        to: `/projects/${project_uuid}/functions/${fn.name}/${fn.uuid}/overview`,
                       });
                     }}
                   >

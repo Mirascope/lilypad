@@ -1,7 +1,7 @@
 interface FeatureSettings {
   users: number;
   traces: boolean;
-  generations: boolean;
+  functions: boolean;
   diffTooling: boolean;
   playground: boolean;
   annotations: boolean;
@@ -12,7 +12,7 @@ export const selfHostedFeatures: FeatureSettings[] = [
   {
     users: Infinity,
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: false,
     annotations: false,
@@ -21,7 +21,7 @@ export const selfHostedFeatures: FeatureSettings[] = [
   {
     users: Infinity, // By license
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -30,7 +30,7 @@ export const selfHostedFeatures: FeatureSettings[] = [
   {
     users: Infinity, // By license
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -39,7 +39,7 @@ export const selfHostedFeatures: FeatureSettings[] = [
   {
     users: Infinity, // By license
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -50,7 +50,7 @@ export const cloudFeatures: FeatureSettings[] = [
   {
     users: 1,
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -59,7 +59,7 @@ export const cloudFeatures: FeatureSettings[] = [
   {
     users: 5,
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -68,7 +68,7 @@ export const cloudFeatures: FeatureSettings[] = [
   {
     users: Infinity,
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,
@@ -77,7 +77,7 @@ export const cloudFeatures: FeatureSettings[] = [
   {
     users: Infinity,
     traces: true,
-    generations: true,
+    functions: true,
     diffTooling: true,
     playground: true,
     annotations: true,

@@ -25,6 +25,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
 import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
@@ -116,7 +117,7 @@ export const AppSidebar = () => {
   const params = useParams({ strict: false });
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
-
+  const { toast } = useToast();
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
@@ -132,8 +133,8 @@ export const AppSidebar = () => {
           icon: Home,
         },
         {
-          title: "Generations",
-          url: `/projects/${activeProject.uuid}/generations`,
+          title: "Functions",
+          url: `/projects/${activeProject.uuid}/functions`,
           icon: Wrench,
         },
       ]
@@ -161,16 +162,23 @@ export const AppSidebar = () => {
     const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
       currentPath
     );
-    console.log(currentPath);
     if (projectPathMatch) {
       const currentSection = projectPathMatch[1] || "";
       const newPath = currentSection
         ? `/projects/${project.uuid}/${currentSection}`
         : `/projects/${project.uuid}`;
 
-      navigate({ to: newPath, replace: true });
+      navigate({ to: newPath, replace: true }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     } else {
-      navigate({ to: currentPath, replace: true });
+      navigate({ to: currentPath, replace: true }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     }
   };
   const renderProjectSelector = () => {

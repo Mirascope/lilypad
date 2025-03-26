@@ -1,16 +1,16 @@
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
-import { useRunPlaygroundMutation } from "@/ee/utils/generations";
+import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import {
-  GenerationCreate,
-  GenerationPublic,
+  FunctionCreate,
+  FunctionPublic,
   PlaygroundParameters,
 } from "@/types/types";
 import {
-  useCreateManagedGeneration,
-  usePatchGenerationMutation,
-} from "@/utils/generations";
+  useCreateManagedFunction,
+  usePatchFunctionMutation,
+} from "@/utils/functions";
 import {
   getAvailableProviders,
   useBaseEditorForm,
@@ -39,17 +39,17 @@ export const usePlaygroundContainer = ({
   version,
   isCompare = false,
 }: {
-  version: GenerationPublic | null;
+  version: FunctionPublic | null;
   isCompare?: boolean;
 }) => {
-  const { projectUuid, generationName } = useParams({
+  const { projectUuid, functionName } = useParams({
     strict: false,
   });
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
-  const createGenerationMutation = useCreateManagedGeneration();
+  const createFunctionMutation = useCreateManagedFunction();
   const runMutation = useRunPlaygroundMutation();
-  const patchGeneration = usePatchGenerationMutation();
+  const patchFunction = usePatchFunctionMutation();
   // Initialize form with base editor form
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
@@ -99,7 +99,7 @@ export const usePlaygroundContainer = ({
     methods.clearErrors();
     setEditorErrors([]);
 
-    if (!editorRef?.current || !projectUuid || !generationName) return;
+    if (!editorRef?.current || !projectUuid || !functionName) return;
 
     // Determine which button was clicked
     let buttonName = "";
@@ -133,11 +133,11 @@ export const usePlaygroundContainer = ({
         // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
 
-        // Create generation object
-        const generationCreate: GenerationCreate = {
+        // Create function object
+        const functionCreate: FunctionCreate = {
           prompt_template: markdown,
-          call_params: data?.generation?.call_params,
-          name: generationName,
+          call_params: data?.function?.call_params,
+          name: functionName,
           arg_types: inputs.reduce(
             (acc, input) => {
               acc[input.key] = input.type;
@@ -170,9 +170,9 @@ export const usePlaygroundContainer = ({
 
           try {
             // Create new version
-            const newVersion = await createGenerationMutation.mutateAsync({
+            const newVersion = await createFunctionMutation.mutateAsync({
               projectUuid,
-              generationCreate,
+              functionCreate,
             });
 
             // Process input values for the run
@@ -199,15 +199,15 @@ export const usePlaygroundContainer = ({
               model: data.model,
             };
 
-            // Run generation
+            // Run function
             const res = await runMutation.mutateAsync({
               projectUuid,
-              generationUuid: newVersion.uuid,
+              functionUuid: newVersion.uuid,
               playgroundValues,
             });
 
             navigate({
-              to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
+              to: `/projects/${projectUuid}/functions/${newVersion.name}/${newVersion.uuid}/overview`,
               replace: true,
               state: {
                 result: res,
@@ -218,13 +218,13 @@ export const usePlaygroundContainer = ({
           }
         } else {
           try {
-            const newVersion = await createGenerationMutation.mutateAsync({
+            const newVersion = await createFunctionMutation.mutateAsync({
               projectUuid,
-              generationCreate,
+              functionCreate,
             });
 
             navigate({
-              to: `/projects/${projectUuid}/generations/${newVersion.name}/${newVersion.uuid}/overview`,
+              to: `/projects/${projectUuid}/functions/${newVersion.name}/${newVersion.uuid}/overview`,
               replace: true,
             });
           } catch (error) {
@@ -237,14 +237,14 @@ export const usePlaygroundContainer = ({
     });
   };
 
-  // Handle setting generation as default
+  // Handle setting function as default
   const handleSetDefault = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (version && projectUuid) {
-      patchGeneration.mutate({
+      patchFunction.mutate({
         projectUuid,
-        generationUuid: version.uuid,
-        generationUpdate: { is_default: true },
+        functionUuid: version.uuid,
+        functionUpdate: { is_default: true },
       });
     }
   };
@@ -276,8 +276,8 @@ export const usePlaygroundContainer = ({
 
     // Loading states
     isRunLoading: runMutation.isPending,
-    isCreateLoading: createGenerationMutation.isPending,
-    isPatchLoading: patchGeneration.isPending,
+    isCreateLoading: createFunctionMutation.isPending,
+    isPatchLoading: patchFunction.isPending,
 
     // Handlers
     onSubmit,
@@ -289,7 +289,7 @@ export const usePlaygroundContainer = ({
 
     // Navigation
     projectUuid,
-    generationName,
+    functionName,
 
     isDisabled: isCompare,
   };

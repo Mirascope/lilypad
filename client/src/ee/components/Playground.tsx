@@ -39,7 +39,7 @@ import {
   usePlaygroundContainer,
 } from "@/ee/hooks/use-playground";
 import { TypedInput } from "@/ee/utils/input-utils";
-import { GenerationPublic } from "@/types/types";
+import { FunctionPublic } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
@@ -53,7 +53,7 @@ export const Playground = ({
   showRunButton,
   playgroundContainer,
 }: {
-  version: GenerationPublic | null;
+  version: FunctionPublic | null;
   response?: string;
   isCompare?: boolean;
   showRunButton?: boolean;
@@ -76,14 +76,16 @@ export const Playground = ({
     handleSetDefault,
     handleReset,
     projectUuid,
-    generationName,
+    functionName,
     isDisabled,
-  } = playgroundContainer || usePlaygroundContainer({
-    version,
-    isCompare: isCompare || false,
-  });
+  } =
+    playgroundContainer ||
+    usePlaygroundContainer({
+      version,
+      isCompare: isCompare || false,
+    });
 
-  if (!projectUuid || !generationName) return <NotFound />;
+  if (!projectUuid || !functionName) return <NotFound />;
 
   const renderBottomPanel = () => {
     return (
@@ -218,7 +220,7 @@ const CallParamsDrawer = ({
 }: {
   doesProviderExist: boolean;
   isLoading: boolean;
-  version: GenerationPublic | null;
+  version: FunctionPublic | null;
   isDisabled: boolean;
   handleReset: () => void;
 }) => {

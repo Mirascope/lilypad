@@ -40,12 +40,12 @@ import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
-import { GenerationTab } from "@/types/generations";
-import { GenerationPublic } from "@/types/types";
+import { FunctionTab } from "@/types/functions";
+import { FunctionPublic } from "@/types/types";
 import {
-  uniqueLatestVersionGenerationNamesQueryOptions,
-  useArchiveGenerationByNameMutation,
-} from "@/utils/generations";
+  uniqueLatestVersionFunctionNamesQueryOptions,
+  useArchiveFunctionByNameMutation,
+} from "@/utils/functions";
 import { FormattedText } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -57,49 +57,53 @@ import { MoreHorizontal, Plus, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
-export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/"
-)({
-  component: () => (
-    <Suspense fallback={<LilypadLoading />}>
-      <GenerationsList />
-    </Suspense>
-  ),
-});
+export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
+  {
+    component: () => (
+      <Suspense fallback={<LilypadLoading />}>
+        <FunctionsList />
+      </Suspense>
+    ),
+  }
+);
 
-const GenerationCards = () => {
+const FunctionCards = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(
-    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
+    uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
   );
   if (data.length === 0) {
-    return <GenerationNoDataPlaceholder />;
+    return <FunctionNoDataPlaceholder />;
   }
   return (
     <>
-      {data.map((generation) => (
-        <GenerationCard key={generation.uuid} generation={generation} />
+      {data.map((fn) => (
+        <FunctionCard key={fn.uuid} fn={fn} />
       ))}
     </>
   );
 };
-const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
+const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
   const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const { projectUuid } = useParams({ from: Route.id });
   const { toast } = useToast();
-  const archiveGenerationName = useArchiveGenerationByNameMutation();
+  const archiveFunctionName = useArchiveFunctionByNameMutation();
   const handleClick = () => {
     navigate({
-      to: `/projects/${projectUuid}/generations/${generation.name}/${generation.uuid}/${GenerationTab.OVERVIEW}`,
-    });
+      to: `/projects/${projectUuid}/functions/${fn.name}/${fn.uuid}/${FunctionTab.OVERVIEW}`,
+    }).catch(() =>
+      toast({
+        title: "Failed to navigate",
+      })
+    );
   };
   const handleArchive = async () => {
-    await archiveGenerationName.mutateAsync({
+    await archiveFunctionName.mutateAsync({
       projectUuid,
-      generationName: generation.name,
+      functionName: fn.name,
     });
-    toast({ title: `Successfully deleted generation ${generation.name}` });
+    toast({ title: `Successfully deleted function ${fn.name}` });
   };
   return (
     <Card
@@ -112,7 +116,7 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
         onMouseLeave={() => setHover(false)}
       >
         <CardTitle className='flex justify-between items-center'>
-          {generation.name}
+          {fn.name}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='h-8 w-8 p-0'>
@@ -131,18 +135,18 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
                       onSelect={(e) => e.preventDefault()}
                     >
                       <Trash className='w-4 h-4' />
-                      <span className='font-medium'>Delete generation</span>
+                      <span className='font-medium'>Delete function</span>
                     </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent className={"max-w-[425px] overflow-x-auto"}>
-                    <DialogTitle>{`Delete Generation ${generation.name}`}</DialogTitle>
+                    <DialogTitle>{`Delete Function ${fn.name}`}</DialogTitle>
                     <DialogDescription>
-                      {`Deleting ${generation.name} will delete all versions of this generation.`}
+                      {`Deleting ${fn.name} will delete all versions of this function.`}
                     </DialogDescription>
                     <DialogFooter>
                       <DialogClose asChild>
                         <Button variant='destructive' onClick={handleArchive}>
-                          Delete Generation
+                          Delete Function
                         </Button>
                       </DialogClose>
                       <DialogClose asChild>
@@ -155,21 +159,19 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardTitle>
-        <CardDescription>
-          Latest Version: v{generation.version_num}
-        </CardDescription>
+        <CardDescription>Latest Version: v{fn.version_num}</CardDescription>
       </CardHeader>
       <Separator />
       <CardContent className='p-0 m-6 overflow-auto max-h-[100px]'>
-        <CodeSnippet code={generation.code} />
+        <CodeSnippet code={fn.code} />
       </CardContent>
       <CardFooter className='flex flex-col gap-2 items-start'>
         <div className='flex flex-col gap-2 w-full'>
           <h3 className='text-sm font-medium text-gray-500'>Template</h3>
-          {generation.is_managed && generation.prompt_template ? (
+          {fn.is_versioned && fn.prompt_template ? (
             <FormattedText
-              template={generation.prompt_template || ""}
-              values={generation.arg_types}
+              template={fn.prompt_template || ""}
+              values={fn.arg_types}
             />
           ) : (
             <Typography variant='muted'>No template</Typography>
@@ -179,22 +181,22 @@ const GenerationCard = ({ generation }: { generation: GenerationPublic }) => {
     </Card>
   );
 };
-const GenerationsList = () => {
+const FunctionsList = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(
-    uniqueLatestVersionGenerationNamesQueryOptions(projectUuid)
+    uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
   );
   const features = useFeatureAccess();
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
-          Generations
-          {data.length > 0 && features.playground && <CreateGenerationButton />}
+          Functions
+          {data.length > 0 && features.playground && <CreateFunctionButton />}
         </h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
           <Suspense fallback={<CardSkeleton items={2} />}>
-            <GenerationCards />
+            <FunctionCards />
           </Suspense>
         </div>
       </div>
@@ -202,51 +204,56 @@ const GenerationsList = () => {
   );
 };
 
-const CreateGenerationButton = () => {
+const CreateFunctionButton = () => {
   return (
     <LilypadDialog
       icon={<Plus />}
       buttonProps={{
         variant: "default",
       }}
-      tooltipContent='Create a new managed generation'
+      tooltipContent='Create a new managed function'
       tooltipProps={{
         className: "bg-gray-700 text-white",
       }}
-      title='Create Managed Generation'
-      description='Start by naming your generation'
+      title='Create Managed Function'
+      description='Start by naming your function'
       dialogContentProps={{
         className:
           "max-h-[90vh] max-w-[90vw] w-auto h-auto overflow-y-auto overflow-x-auto",
       }}
     >
-      <GenerationNoDataPlaceholder />
+      <FunctionNoDataPlaceholder />
     </LilypadDialog>
   );
 };
 
-type CreateGenerationFormValues = {
+interface CreateFunctionFormValues {
   name: string;
-};
-const GenerationNoDataPlaceholder = () => {
+}
+const FunctionNoDataPlaceholder = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const methods = useForm<CreateGenerationFormValues>({
+  const { toast } = useToast();
+  const methods = useForm<CreateFunctionFormValues>({
     defaultValues: {
       name: "",
     },
   });
   const features = useFeatureAccess();
   const navigate = useNavigate();
-  const onSubmit = (data: CreateGenerationFormValues) => {
+  const onSubmit = (data: CreateFunctionFormValues) => {
     navigate({
-      to: `/projects/${projectUuid}/generations/${data.name}`,
-    });
+      to: `/projects/${projectUuid}/functions/${data.name}`,
+    }).catch(() =>
+      toast({
+        title: "Failed to navigate",
+      })
+    );
   };
   return (
     <div className='flex flex-col gap-4'>
       {features.playground && (
         <>
-          <Typography variant='h4'>Create Managed Generation</Typography>
+          <Typography variant='h4'>Create Managed Function</Typography>
           <Form {...methods}>
             <form
               className='flex flex-col gap-2'
@@ -257,20 +264,20 @@ const GenerationNoDataPlaceholder = () => {
                 control={methods.control}
                 name='name'
                 rules={{
-                  required: "Generation name is required",
+                  required: "Function name is required",
                   validate: (value) => {
                     const pythonFunctionNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
                     return (
                       pythonFunctionNameRegex.test(value) ||
-                      "Generation name must be a valid Python function name."
+                      "Function name must be a valid Python function name."
                     );
                   },
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Generation Name</FormLabel>
+                    <FormLabel>Function Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder='Enter generation name' />
+                      <Input {...field} placeholder='Enter function name' />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -284,17 +291,17 @@ const GenerationNoDataPlaceholder = () => {
         </>
       )}
       <Typography variant='h4'>Create In code</Typography>
-      <DeveloperGenerationNoDataPlaceholder />
+      <DeveloperFunctionNoDataPlaceholder />
     </div>
   );
 };
 
-const DeveloperGenerationNoDataPlaceholder = () => {
+const DeveloperFunctionNoDataPlaceholder = () => {
   return (
     <div className='max-w-4xl mx-auto'>
       <div>
         Start by decorating your LLM powered functions with{" "}
-        <code>@lilypad.generation()</code>.
+        <code>@lilypad.function()</code>.
       </div>
       <CodeSnippet
         code={`
@@ -306,7 +313,7 @@ client = OpenAI()
 lilypad.configure()
 
 
-@lilypad.generation()
+@lilypad.function()
 def recommend_book(genre: str) -> str:
     completion = client.chat.completions.create(
         model="gpt-4o-mini",

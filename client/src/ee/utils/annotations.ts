@@ -25,13 +25,13 @@ export const updateAnnotation = async (
   ).data;
 };
 
-export const fetchAnnotationsByGenerationUuid = async (
+export const fetchAnnotationsByFunctionUuid = async (
   projectUuid: string,
-  generationUuid: string
+  functionUuid: string
 ) => {
   return (
     await api.get<AnnotationPublic[]>(
-      `/ee/projects/${projectUuid}/generations/${generationUuid}/annotations`
+      `/ee/projects/${projectUuid}/functions/${functionUuid}/annotations`
     )
   ).data;
 };
@@ -90,19 +90,18 @@ export const useCreateAnnotationsMutation = () => {
   });
 };
 
-export const annotationsByGenerationQueryOptions = (
+export const annotationsByFunctionQueryOptions = (
   projectUuid: string,
-  generationUuid: string
+  functionUuid: string
 ) =>
   queryOptions({
     queryKey: [
       "projects",
       projectUuid,
-      "generations",
-      generationUuid,
+      "functions",
+      functionUuid,
       "annotations",
     ],
-    queryFn: () =>
-      fetchAnnotationsByGenerationUuid(projectUuid, generationUuid),
+    queryFn: () => fetchAnnotationsByFunctionUuid(projectUuid, functionUuid),
     refetchInterval: 1000,
   });

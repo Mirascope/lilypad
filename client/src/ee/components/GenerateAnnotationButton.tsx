@@ -17,7 +17,7 @@ export const GenerateAnnotationButton = ({
   const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate-annotation`;
   const { data, startConnection, stopConnection, isConnected, status } =
     useEventSource(url);
-  // Handle generation completion if needed
+  // Handle function completion if needed
   useEffect(() => {
     if (data.length > 0) {
       const lastEvent = data[data.length - 1];

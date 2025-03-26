@@ -4,7 +4,7 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/_workbench/"
+  "/_auth/projects/$projectUuid/functions/$functionName/_workbench/"
 )({
   component: RouteComponent,
 });
@@ -23,7 +23,7 @@ function RouteComponent() {
   } else
     return (
       <div className='p-4 flex flex-col gap-4'>
-        <Typography variant='h4'>Create New Generation</Typography>
+        <Typography variant='h4'>Create New Function</Typography>
         <Playground version={null} />
       </div>
     );

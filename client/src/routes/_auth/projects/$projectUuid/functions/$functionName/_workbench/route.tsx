@@ -17,11 +17,12 @@ import {
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { GenerationTab } from "@/types/generations";
+import { useToast } from "@/hooks/use-toast";
+import { FunctionTab } from "@/types/functions";
 import {
-  generationsByNameQueryOptions,
-  useArchiveGenerationMutation,
-} from "@/utils/generations";
+  functionsByNameQueryOptions,
+  useArchiveFunctionMutation,
+} from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -33,128 +34,143 @@ import { GitCompare, Plus, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
 import { validate } from "uuid";
 
-type GenerationRouteParams = {
+interface FunctionRouteParams {
   projectUuid: string;
-  generationName: string;
-  generationUuid: string;
-  secondGenerationUuid?: string;
+  functionName: string;
+  functionUuid: string;
+  secondFunctionUuid?: string;
   isCompare: boolean;
-  tab: GenerationTab;
-};
+  tab: FunctionTab;
+}
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/generations/$generationName/_workbench"
+  "/_auth/projects/$projectUuid/functions/$functionName/_workbench"
 )({
   params: {
-    stringify(params: GenerationRouteParams) {
+    stringify(params: FunctionRouteParams) {
       return {
         projectUuid: params.projectUuid,
-        generationName: params.generationName,
+        functionName: params.functionName,
       };
     },
-    parse(raw: Record<string, string>): GenerationRouteParams {
+    parse(raw: Record<string, string>): FunctionRouteParams {
       let tab = raw.tab;
-      if (!Object.values(GenerationTab).includes(tab as GenerationTab)) {
-        tab = GenerationTab.OVERVIEW;
+      if (!Object.values(FunctionTab).includes(tab as FunctionTab)) {
+        tab = FunctionTab.OVERVIEW;
       }
       return {
         projectUuid: raw.projectUuid,
-        generationName: raw.generationName,
-        generationUuid: raw.generationUuid || raw.firstGenerationUuid,
-        secondGenerationUuid: validate(raw.secondGenerationUuid)
-          ? raw.secondGenerationUuid
+        functionName: raw.functionName,
+        functionUuid: raw.functionUuid || raw.firstFunctionUuid,
+        secondFunctionUuid: validate(raw.secondFunctionUuid)
+          ? raw.secondFunctionUuid
           : undefined,
-        tab: tab as GenerationTab,
-        isCompare: Boolean(raw.firstGenerationUuid),
+        tab: tab as FunctionTab,
+        isCompare: Boolean(raw.firstFunctionUuid),
       };
     },
   },
-  validateSearch: (search): search is { tab: GenerationTab } => {
+  validateSearch: (search): search is { tab: FunctionTab } => {
     const tab = search.tab;
-    return Object.values(GenerationTab).includes(tab as GenerationTab);
+    return Object.values(FunctionTab).includes(tab as FunctionTab);
   },
 
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
-      <GenerationWorkbench />
+      <FunctionWorkbench />
     </Suspense>
   ),
 });
 
-type Tab = {
+interface Tab {
   label: string;
   value: string;
   component?: JSX.Element | null;
   isAvailable: boolean;
-};
+}
 
-const GenerationWorkbench = () => {
+const FunctionWorkbench = () => {
   const {
     projectUuid,
-    generationName,
-    generationUuid,
-    secondGenerationUuid,
+    functionName,
+    functionUuid,
+    secondFunctionUuid,
     tab,
     isCompare,
   } = useParams({
     from: Route.id,
   });
-  const { data: generations } = useSuspenseQuery(
-    generationsByNameQueryOptions(generationName, projectUuid)
+  const { data: functions } = useSuspenseQuery(
+    functionsByNameQueryOptions(functionName, projectUuid)
   );
+  const { toast } = useToast();
   const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const features = useFeatureAccess();
   const navigate = useNavigate();
-  const generation = generations.find(
-    (generation) => generation.uuid === generationUuid
-  );
-  const archiveGeneration = useArchiveGenerationMutation();
+  const fn = functions.find((f) => f.uuid === functionUuid);
+  const archiveFunction = useArchiveFunctionMutation();
   const tabs: Tab[] = [
     {
       label: "Overview",
-      value: GenerationTab.OVERVIEW,
-      isAvailable: features.generations,
+      value: FunctionTab.OVERVIEW,
+      isAvailable: features.functions,
     },
     {
       label: "Traces",
-      value: GenerationTab.TRACES,
+      value: FunctionTab.TRACES,
       isAvailable: features.traces,
     },
     {
       label: "Annotations",
-      value: GenerationTab.ANNOTATIONS,
+      value: FunctionTab.ANNOTATIONS,
       isAvailable: features.annotations,
     },
   ];
   const handleArchive = async () => {
-    if (!generation) return;
-    await archiveGeneration.mutateAsync({
+    if (!fn) return;
+    await archiveFunction.mutateAsync({
       projectUuid,
-      generationUuid: generation.uuid,
-      generationName,
+      functionUuid: fn.uuid,
+      functionName,
     });
-    navigate({ to: `/projects/${projectUuid}/generations` });
+    navigate({ to: `/projects/${projectUuid}/functions` }).catch(() =>
+      toast({
+        title: "Failed to navigate",
+      })
+    );
   };
 
-  const handleNewGenerationClick = () => {
+  const handleNewFunctionClick = () => {
     navigate({
-      to: `/projects/${projectUuid}/generations/${generationName}`,
-    });
+      to: `/projects/${projectUuid}/functions/${functionName}`,
+    }).catch(() =>
+      toast({
+        title: "Failed to navigate",
+      })
+    );
   };
 
   const handleTabChange = (newTab: string) => {
     if (compareMode) {
       navigate({
-        to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+        to: `/projects/${projectUuid}/functions/${functionName}/compare/$firstFunctionUuid/$secondFunctionUuid/$tab`,
         params: {
-          firstGenerationUuid: generationUuid,
-          secondGenerationUuid,
-          tab: newTab as GenerationTab,
+          firstFunctionUuid: functionUuid,
+          secondFunctionUuid,
+          tab: newTab as FunctionTab,
         },
-      });
+      }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     } else {
       navigate({
-        to: `/projects/${projectUuid}/generations/${generationName}/${generationUuid}/${newTab}`,
-      });
+        to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${newTab}`,
+      }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     }
   };
 
@@ -162,39 +178,47 @@ const GenerationWorkbench = () => {
   return (
     <div className='w-full p-6 flex flex-col gap-1'>
       <div className='flex gap-2'>
-        <Typography variant='h2'>{generationName}</Typography>
+        <Typography variant='h2'>{functionName}</Typography>
         {features.playground && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size='icon' onClick={handleNewGenerationClick}>
+              <Button size='icon' onClick={handleNewFunctionClick}>
                 <Plus />
               </Button>
             </TooltipTrigger>
             <TooltipContent className='bg-gray-700 text-white'>
-              Create a new managed generation
+              Create a new managed function
             </TooltipContent>
           </Tooltip>
         )}
       </div>
       <div className='flex gap-2 items-center'>
-        {generation && (
+        {fn && (
           <Button
             variant='outline'
             size='icon'
             onClick={() => {
               if (!compareMode) {
                 navigate({
-                  to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+                  to: `/projects/${projectUuid}/functions/${functionName}/compare/$firstFunctionUuid/$secondFunctionUuid/$tab`,
                   params: {
-                    firstGenerationUuid: generationUuid,
-                    secondGenerationUuid,
+                    firstFunctionUuid: functionUuid,
+                    secondFunctionUuid,
                     tab,
                   },
-                });
+                }).catch(() =>
+                  toast({
+                    title: "Failed to navigate",
+                  })
+                );
               } else {
                 navigate({
-                  to: `/projects/${projectUuid}/generations/${generationName}/${generationUuid}/${tab}`,
-                });
+                  to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${tab}`,
+                }).catch(() =>
+                  toast({
+                    title: "Failed to navigate",
+                  })
+                );
               }
               setCompareMode((prevCompareMode) => !prevCompareMode);
             }}
@@ -202,11 +226,11 @@ const GenerationWorkbench = () => {
             <GitCompare />
           </Button>
         )}
-        <SelectGeneration compareMode={compareMode} isFirstGeneration={true} />
-        {generation && !isCompare && (
+        <SelectFunction compareMode={compareMode} isFirstFunction={true} />
+        {fn && !isCompare && (
           <LilypadDialog
             icon={<Trash />}
-            title={`Delete ${generation.name} v${generation.version_num}`}
+            title={`Delete ${fn.name} v${fn.version_num}`}
             description=''
             dialogContentProps={{
               className: "max-w-[600px]",
@@ -217,28 +241,30 @@ const GenerationWorkbench = () => {
             }}
             dialogButtons={[
               <Button
+                key='delete-function'
                 type='button'
                 variant='destructive'
                 onClick={handleArchive}
               >
                 Delete
               </Button>,
-              <Button type='button' variant='outline'>
+              <Button
+                key='cancel-delete-button'
+                type='button'
+                variant='outline'
+              >
                 Cancel
               </Button>,
             ]}
           >
-            {`Are you sure you want to delete ${generation.name} v${generation.version_num}?`}
+            {`Are you sure you want to delete ${fn.name} v${fn.version_num}?`}
           </LilypadDialog>
         )}
       </div>
       {compareMode && (
         <div className='flex gap-2 items-center'>
           <div className='w-10 h-10'></div>
-          <SelectGeneration
-            compareMode={compareMode}
-            isFirstGeneration={false}
-          />
+          <SelectFunction compareMode={compareMode} isFirstFunction={false} />
         </div>
       )}
       <Tabs value={tab} onValueChange={handleTabChange} className='w-full'>
@@ -270,66 +296,69 @@ const GenerationWorkbench = () => {
   );
 };
 
-const SelectGeneration = ({
+const SelectFunction = ({
   compareMode,
-  isFirstGeneration,
+  isFirstFunction,
 }: {
   compareMode?: boolean;
-  isFirstGeneration?: boolean;
+  isFirstFunction?: boolean;
 }) => {
   const {
     projectUuid,
-    generationName,
-    generationUuid: firstGenerationUuid,
-    secondGenerationUuid,
+    functionName,
+    functionUuid: firstFunctionUuid,
+    secondFunctionUuid,
     tab,
   } = useParams({
     from: Route.id,
   });
-  const { data: generations } = useSuspenseQuery(
-    generationsByNameQueryOptions(generationName, projectUuid)
+  const { data: functions } = useSuspenseQuery(
+    functionsByNameQueryOptions(functionName, projectUuid)
   );
+  const { toast } = useToast();
   const navigate = useNavigate();
   return (
     <Select
-      value={
-        (isFirstGeneration ? firstGenerationUuid : secondGenerationUuid) || ""
-      }
+      value={(isFirstFunction ? firstFunctionUuid : secondFunctionUuid) ?? ""}
       onValueChange={(uuid) => {
         if (compareMode) {
           navigate({
-            to: `/projects/${projectUuid}/generations/${generationName}/compare/$firstGenerationUuid/$secondGenerationUuid/$tab`,
+            to: `/projects/${projectUuid}/functions/${functionName}/compare/$firstFunctionUuid/$secondFunctionUuid/$tab`,
             params: {
-              firstGenerationUuid: isFirstGeneration
-                ? uuid
-                : firstGenerationUuid,
-              secondGenerationUuid: isFirstGeneration
-                ? secondGenerationUuid
-                : uuid,
+              firstFunctionUuid: isFirstFunction ? uuid : firstFunctionUuid,
+              secondFunctionUuid: isFirstFunction ? secondFunctionUuid : uuid,
               tab,
             },
-          });
+          }).catch(() =>
+            toast({
+              title: "Failed to navigate",
+            })
+          );
         } else {
           navigate({
-            to: `/projects/${projectUuid}/generations/${generationName}/${uuid}/${tab}`,
-          });
+            to: `/projects/${projectUuid}/functions/${functionName}/${uuid}/${tab}`,
+          }).catch(() =>
+            toast({
+              title: "Failed to navigate",
+            })
+          );
         }
       }}
     >
       <SelectTrigger className='w-[200px]'>
-        <SelectValue placeholder='Select a generation' />
+        <SelectValue placeholder='Select a function' />
       </SelectTrigger>
       <SelectContent>
-        {generations.map((generation) => (
+        {functions.map((fn) => (
           <SelectItem
-            key={generation.uuid}
-            value={generation.uuid}
+            key={fn.uuid}
+            value={fn.uuid}
             disabled={
-              (!isFirstGeneration && generation.uuid === firstGenerationUuid) ||
-              (isFirstGeneration && generation.uuid === secondGenerationUuid)
+              (!isFirstFunction && fn.uuid === firstFunctionUuid) ||
+              (isFirstFunction && fn.uuid === secondFunctionUuid)
             }
           >
-            v{generation.version_num}
+            v{fn.version_num}
           </SelectItem>
         ))}
       </SelectContent>

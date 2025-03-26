@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { AggregateMetrics, GenerationPublic, TimeFrame } from "@/types/types";
-import { aggregatesByGenerationQueryOptions } from "@/utils/spans";
+import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
+import { aggregatesByFunctionQueryOptions } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import {
@@ -15,30 +15,30 @@ import {
   YAxis,
 } from "recharts";
 
-export const GenerationResponseTimeChart = ({
+export const FunctionResponseTimeChart = ({
   projectUuid,
-  generation,
-  secondGeneration,
+  firstFunction,
+  secondFunction,
   timeFrame,
   title,
 }: {
   projectUuid: string;
-  generation: GenerationPublic;
-  secondGeneration?: GenerationPublic;
+  firstFunction: FunctionPublic;
+  secondFunction?: FunctionPublic;
   timeFrame: TimeFrame;
   title: string;
 }) => {
   const metricsData = useSuspenseQueries({
-    queries: [generation.uuid, secondGeneration?.uuid]
+    queries: [firstFunction.uuid, secondFunction?.uuid]
       .filter((uuid) => uuid !== undefined)
       .map((uuid) => ({
-        ...aggregatesByGenerationQueryOptions(projectUuid, uuid, timeFrame),
+        ...aggregatesByFunctionQueryOptions(projectUuid, uuid, timeFrame),
       })),
   });
   const extractedMetricsData = metricsData.map((result) => result.data);
-  const labels = [`${generation.name} v${generation.version_num}`];
-  if (secondGeneration) {
-    labels.push(`${secondGeneration.name} v${secondGeneration.version_num}`);
+  const labels = [`${firstFunction.name} v${firstFunction.version_num}`];
+  if (secondFunction) {
+    labels.push(`${secondFunction.name} v${secondFunction.version_num}`);
   }
   return (
     <ResponseTimeChart
