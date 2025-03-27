@@ -39,7 +39,7 @@ import {
   usePlaygroundContainer,
 } from "@/ee/hooks/use-playground";
 import { TypedInput } from "@/ee/utils/input-utils";
-import { GenerationPublic } from "@/types/types";
+import { FunctionPublic } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
@@ -53,13 +53,17 @@ export const Playground = ({
   showRunButton,
   playgroundContainer,
 }: {
-  version: GenerationPublic | null;
+  version: FunctionPublic | null;
   response?: string;
   isCompare?: boolean;
   showRunButton?: boolean;
   playgroundContainer?: ReturnType<typeof usePlaygroundContainer>;
 }) => {
-  // Use the hook to manage all playground business logic, or use provided container
+  const defaultContainer = usePlaygroundContainer({
+    version,
+    isCompare: isCompare ?? false,
+  });
+
   const {
     methods,
     editorRef,
@@ -70,20 +74,13 @@ export const Playground = ({
     setOpenInputDrawer,
     doesProviderExist,
     isRunLoading,
-    isCreateLoading,
-    isPatchLoading,
     onSubmit,
-    handleSetDefault,
     handleReset,
     projectUuid,
-    generationName,
     isDisabled,
-  } = playgroundContainer || usePlaygroundContainer({
-    version,
-    isCompare: isCompare || false,
-  });
+  } = playgroundContainer ?? defaultContainer;
 
-  if (!projectUuid || !generationName) return <NotFound />;
+  if (!projectUuid) return <NotFound />;
 
   const renderBottomPanel = () => {
     return (
@@ -133,41 +130,12 @@ export const Playground = ({
   return (
     <Form {...methods}>
       <form
-        id={`playground-form-${version?.uuid || ""}`}
+        id={`playground-form-${version?.uuid ?? ""}`}
         onSubmit={methods.handleSubmit(onSubmit)}
         className='flex-1'
       >
         <div className='flex flex-col gap-4'>
           <div className='flex justify-between gap-4 w-full'>
-            {!isCompare && (
-              <div className='flex items-center gap-2'>
-                <Button
-                  type='submit'
-                  name='save'
-                  loading={isCreateLoading}
-                  className='bg-mirascope hover:bg-mirascope-light text-white font-medium'
-                >
-                  Save
-                </Button>
-                {version && (
-                  <Button
-                    disabled={version.is_default || isPatchLoading}
-                    onClick={handleSetDefault}
-                    className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
-                    variant='outline'
-                  >
-                    {version.is_default ? (
-                      <span className='flex items-center gap-1'>
-                        <span className='h-2 w-2 rounded-full bg-green-500'></span>
-                        Default
-                      </span>
-                    ) : (
-                      "Set default"
-                    )}
-                  </Button>
-                )}
-              </div>
-            )}
             <div className='flex items-center gap-2'>
               <InputsDrawer
                 open={openInputDrawer}
@@ -192,7 +160,7 @@ export const Playground = ({
               inputs={inputs.map((input) => input.key)}
               inputValues={inputValues}
               ref={editorRef}
-              promptTemplate={(version && version.prompt_template) || ""}
+              promptTemplate={version?.prompt_template ?? ""}
               isDisabled={isDisabled}
             />
             {editorErrors.length > 0 &&
@@ -218,7 +186,7 @@ const CallParamsDrawer = ({
 }: {
   doesProviderExist: boolean;
   isLoading: boolean;
-  version: GenerationPublic | null;
+  version: FunctionPublic | null;
   isDisabled: boolean;
   handleReset: () => void;
 }) => {
@@ -243,7 +211,7 @@ const CallParamsDrawer = ({
           <div className='self-end'>
             <SheetClose asChild>
               <Button
-                form={`playground-form-${version?.uuid || ""}`}
+                form={`playground-form-${version?.uuid ?? ""}`}
                 name='run'
                 type='submit'
                 loading={isLoading}
@@ -409,9 +377,8 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
                     )}
                   />
                   <TypedInput<EditorParameters>
-                    control={methods.control}
                     name={`inputs.${index}.value`}
-                    type={type}
+                    type={type as any}
                   />
                 </div>
               </CardContent>

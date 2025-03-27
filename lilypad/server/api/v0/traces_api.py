@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
@@ -13,7 +13,6 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ee.validate import LicenseInfo
 
-from ....ee.server.features import cloud_features
 from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
     validate_api_key_project_strict,
@@ -129,15 +128,15 @@ async def traces(
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> Sequence[SpanTable]:
     """Create span traces."""
-    # Check if the number of traces exceeds the limit
-    if is_lilypad_cloud:
-        tier = license.tier
-        num_traces = span_service.count_by_current_month()
-        if num_traces >= cloud_features[tier].traces_per_month:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
-            )
+    # OPEN BETA: Check if the number of traces exceeds the limit
+    # if is_lilypad_cloud:
+    #     tier = license.tier
+    #     num_traces = span_service.count_by_current_month()
+    #     if num_traces >= cloud_features[tier].traces_per_month:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #             detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
+    #         )
 
     # Process the traces
     traces_json: list[dict] = await request.json()

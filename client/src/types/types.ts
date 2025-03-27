@@ -91,8 +91,8 @@ export interface AggregateMetrics {
   start_date: string | null;
   /** End Date */
   end_date: string | null;
-  /** Generation Uuid */
-  generation_uuid: string | null;
+  /** Function Uuid */
+  function_uuid: string | null;
 }
 
 /**
@@ -111,8 +111,8 @@ export interface AnnotationCreate {
   span_uuid?: string | null;
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   /** Assigned To */
   assigned_to?: string[] | null;
 }
@@ -145,10 +145,10 @@ export interface AnnotationPublic {
    */
   span_uuid: string;
   /**
-   * Generation Uuid
+   * Function Uuid
    * @format uuid
    */
-  generation_uuid: string;
+  function_uuid: string;
   /** Span more details model. */
   span: SpanMoreDetails;
   /** Assigned To */
@@ -185,8 +185,8 @@ export interface AnnotationTable {
   project_uuid?: string | null;
   /** Span Uuid */
   span_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
 }
 
 /**
@@ -238,13 +238,19 @@ export interface CommonCallParams {
   stop?: string | string[] | null;
 }
 
-/** CreateUserOrganizationToken */
+/**
+ * CreateUserOrganizationToken
+ * Create user organization token model
+ */
 export interface CreateUserOrganizationToken {
   /** Token */
   token: string;
 }
 
-/** DependencyInfo */
+/**
+ * DependencyInfo
+ * Dependency information.
+ */
 export interface DependencyInfo {
   /** Version */
   version: string;
@@ -263,10 +269,10 @@ export interface DeploymentPublic {
    */
   environment_uuid: string;
   /**
-   * Generation Uuid
+   * Function Uuid
    * @format uuid
    */
-  generation_uuid: string;
+  function_uuid: string;
   /** Project Uuid */
   project_uuid?: string | null;
   /**
@@ -297,7 +303,7 @@ export interface DeploymentPublic {
    * @format uuid
    */
   organization_uuid: string;
-  generation?: GenerationPublic | null;
+  function?: FunctionPublic | null;
   environment?: EnvironmentPublic | null;
 }
 
@@ -341,6 +347,11 @@ export interface EnvironmentPublic {
    * @format uuid
    */
   organization_uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
 }
 
 /**
@@ -397,10 +408,10 @@ export interface ExternalAPIKeyPublic {
 }
 
 /**
- * GenerationCreate
- * Generation create model.
+ * FunctionCreate
+ * Function create model.
  */
-export interface GenerationCreate {
+export interface FunctionCreate {
   /** Project Uuid */
   project_uuid?: string | null;
   /** Version Num */
@@ -448,22 +459,17 @@ export interface GenerationCreate {
    */
   call_params?: CommonCallParams;
   /**
-   * Is Default
+   * Is Versioned
    * @default false
    */
-  is_default?: boolean | null;
-  /**
-   * Is Managed
-   * @default false
-   */
-  is_managed?: boolean | null;
+  is_versioned?: boolean | null;
 }
 
 /**
- * GenerationPublic
- * Generation public model.
+ * FunctionPublic
+ * Function public model.
  */
-export interface GenerationPublic {
+export interface FunctionPublic {
   /** Project Uuid */
   project_uuid?: string | null;
   /** Version Num */
@@ -511,15 +517,10 @@ export interface GenerationPublic {
    */
   call_params?: CommonCallParams;
   /**
-   * Is Default
+   * Is Versioned
    * @default false
    */
-  is_default?: boolean | null;
-  /**
-   * Is Managed
-   * @default false
-   */
-  is_managed?: boolean | null;
+  is_versioned?: boolean | null;
   /**
    * Uuid
    * @format uuid
@@ -528,13 +529,10 @@ export interface GenerationPublic {
 }
 
 /**
- * GenerationUpdate
- * Generation update model.
+ * FunctionUpdate
+ * Function update model.
  */
-export interface GenerationUpdate {
-  /** Is Default */
-  is_default?: boolean | null;
-}
+export type FunctionUpdate = object;
 
 /** HTTPValidationError */
 export interface HTTPValidationError {
@@ -691,11 +689,15 @@ export interface OrganizationUpdate {
 export interface PlaygroundParameters {
   /** Arg Values */
   arg_values: Record<string, number | boolean | string | any[] | object>;
+  /** Arg Types */
+  arg_types: Record<string, string> | null;
   /** Provider name enum */
   provider: Provider;
   /** Model */
   model: string;
-  generation?: GenerationCreate | null;
+  /** Prompt Template */
+  prompt_template: string;
+  call_params: CommonCallParams | null;
 }
 
 /**
@@ -720,10 +722,10 @@ export interface ProjectPublic {
    */
   uuid: string;
   /**
-   * Generations
+   * Functions
    * @default []
    */
-  generations?: GenerationPublic[];
+  functions?: FunctionPublic[];
   /**
    * Created At
    * @format date-time
@@ -779,8 +781,8 @@ export interface SpanMoreDetails {
   uuid: string;
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -822,8 +824,8 @@ export interface SpanMoreDetails {
 export interface SpanPublic {
   /** Span Id */
   span_id: string;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   type?: SpanType | null;
   /** Cost */
   cost?: number | null;
@@ -851,7 +853,7 @@ export interface SpanPublic {
   project_uuid: string;
   /** Display Name */
   display_name?: string | null;
-  generation?: GenerationPublic | null;
+  function?: FunctionPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -872,7 +874,7 @@ export interface SpanPublic {
  * Span type
  */
 export enum SpanType {
-  GENERATION = "generation",
+  FUNCTION = "function",
   TRACE = "trace",
 }
 

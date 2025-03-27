@@ -77,7 +77,7 @@ export const QueueForm = ({
     const annotationsCreate: AnnotationCreate[] = spans.map((span) => ({
       ...data,
       span_uuid: span.uuid,
-      generation_uuid: span.generation_uuid,
+      function_uuid: span.function_uuid,
     }));
     try {
       await createAnnotation.mutateAsync({

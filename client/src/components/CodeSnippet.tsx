@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
@@ -12,7 +13,12 @@ const renderLineNumbers = (
   code: string,
   lineHighlights: Record<string, string>
 ) => {
-  return code.split("\n").map((line, i) => {
+  const lines = code.split("\n");
+  // Calculate the number of digits in the maximum line number
+  const maxLineNumber = lines.length;
+  const digits = maxLineNumber.toString().length;
+
+  return lines.map((line, i) => {
     // Line numbers are 1-based, but array indices are 0-based
     const lineNumber = i + 1;
     const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
@@ -22,6 +28,7 @@ const renderLineNumbers = (
         key={i}
         className={`hljs-line ${lineClass}`}
         data-line-number={lineNumber}
+        data-digits={digits}
       >
         <span className='hljs-line-number'>{lineNumber}</span>
         <span className='hljs-line-code'>{line}</span>
@@ -58,6 +65,9 @@ export const CodeSnippet = ({
       }
     });
 
+    // Get the number of digits in the maximum line number
+    const digits = code.split("\n").length.toString().length;
+
     // Add line number styles if they don't exist yet
     if (!document.getElementById("line-number-styles")) {
       const styleEl = document.createElement("style");
@@ -70,12 +80,18 @@ export const CodeSnippet = ({
         .hljs-line-number {
           display: inline-block;
           padding-right: 1em;
-          min-width: 2em;
+          min-width: ${digits + 1}em;
           text-align: right;
           color: #999;
           user-select: none;
           border-right: 1px solid #ddd;
           margin-right: 0.5em;
+        }
+        .hljs-line[data-digits="2"] .hljs-line-number {
+          min-width: 3em;
+        }
+        .hljs-line[data-digits="3"] .hljs-line-number {
+          min-width: 4em;
         }
         .hljs-line-code {
           flex: 1;
@@ -96,10 +112,27 @@ export const CodeSnippet = ({
   }, [code]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    toast({ title: "Copied to clipboard" });
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        toast({ title: "Copied to clipboard" });
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          toast({
+            title: "Failed to copy",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Failed to copy",
+            variant: "destructive",
+          });
+        }
+      });
   };
 
   const formattedCode = renderLineNumbers(code, lineHighlights);
@@ -116,13 +149,15 @@ export const CodeSnippet = ({
         </code>
       </pre>
       {showCopyButton && (
-        <button
+        <Button
+          variant='outline'
+          size='icon'
           onClick={handleCopy}
-          className='absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors'
+          className='w-6 h-6 absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors'
           aria-label='Copy code'
         >
           {copied ? <Check size={16} /> : <Copy size={16} />}
-        </button>
+        </Button>
       )}
     </div>
   );

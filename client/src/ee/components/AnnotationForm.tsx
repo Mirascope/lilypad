@@ -243,7 +243,7 @@ const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
   const onSubmit = async (data: AnnotationCreate) => {
     data.span_uuid = span.uuid;
     data.assigned_to = [user.uuid];
-    data.generation_uuid = span.generation_uuid;
+    data.function_uuid = span.function_uuid;
     if (data.data) {
       const values = Object.values(data.data);
       data.label = values.every((value) => value.label === Label.PASS)

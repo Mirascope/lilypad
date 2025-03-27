@@ -1,21 +1,21 @@
 import { TracesTable } from "@/components/TracesTable";
-import { spansByGenerationQueryOptions } from "@/utils/spans";
+import { spansByFunctionQueryOptions } from "@/utils/spans";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 export const CompareTracesTable = ({
   projectUuid,
-  firstGenerationUuid,
-  secondGenerationUuid,
+  firstFunctionUuid,
+  secondFunctionUuid,
 }: {
   projectUuid: string;
-  firstGenerationUuid: string;
-  secondGenerationUuid?: string;
+  firstFunctionUuid: string;
+  secondFunctionUuid?: string;
 }) => {
   const data = useSuspenseQueries({
-    queries: [firstGenerationUuid, secondGenerationUuid]
+    queries: [firstFunctionUuid, secondFunctionUuid]
       .filter((uuid) => uuid !== undefined)
       .map((uuid) => ({
-        ...spansByGenerationQueryOptions(projectUuid, uuid),
+        ...spansByFunctionQueryOptions(projectUuid, uuid),
       })),
   });
   const flattenedData = data.map((result) => result.data).flat();

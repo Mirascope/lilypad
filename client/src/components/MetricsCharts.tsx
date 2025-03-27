@@ -1,19 +1,19 @@
 import { ChartSkeleton } from "@/components/ChartSkeleton";
-import { GenerationCostAndTokensChart } from "@/components/CostAndTokensChart";
-import { GenerationResponseTimeChart } from "@/components/ResponseTimeChart";
+import { FunctionCostAndTokensChart } from "@/components/CostAndTokensChart";
+import { FunctionResponseTimeChart } from "@/components/ResponseTimeChart";
 import { Button } from "@/components/ui/button";
-import { GenerationPublic, TimeFrame } from "@/types/types";
+import { FunctionPublic, TimeFrame } from "@/types/types";
 import { Calendar, CalendarDays, Clock } from "lucide-react";
 import { Suspense, useState } from "react";
 
 export const MetricCharts = ({
   projectUuid,
-  generation,
-  secondGeneration,
+  firstFunction,
+  secondFunction,
 }: {
   projectUuid: string;
-  generation: GenerationPublic;
-  secondGeneration?: GenerationPublic;
+  firstFunction: FunctionPublic;
+  secondFunction?: FunctionPublic;
 }) => {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const costTitle = `Cost and Tokens (${timeFrame})`;
@@ -53,18 +53,18 @@ export const MetricCharts = ({
 
       <div className='flex gap-2'>
         <Suspense fallback={<ChartSkeleton title={costTitle} />}>
-          <GenerationCostAndTokensChart
-            generation={generation}
-            secondGeneration={secondGeneration}
+          <FunctionCostAndTokensChart
+            firstFunction={firstFunction}
+            secondFunction={secondFunction}
             projectUuid={projectUuid}
             timeFrame={timeFrame}
             title={costTitle}
           />
         </Suspense>
         <Suspense fallback={<ChartSkeleton title={latencyTitle} />}>
-          <GenerationResponseTimeChart
-            generation={generation}
-            secondGeneration={secondGeneration}
+          <FunctionResponseTimeChart
+            firstFunction={firstFunction}
+            secondFunction={secondFunction}
             projectUuid={projectUuid}
             timeFrame={timeFrame}
             title={latencyTitle}

@@ -3,7 +3,7 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Route as GenerationsRoute } from "@/routes/_auth/projects/$projectUuid/generations/index";
+import { Route as FunctionsRoute } from "@/routes/_auth/projects/$projectUuid/functions/index";
 import { projectsQueryOptions } from "@/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -44,12 +44,12 @@ const Projects = () => {
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left'>Projects</h1>
-        <p className='text-lg'>Select a project to view generations.</p>
+        <p className='text-lg'>Select a project to view functions.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
             <Link
               key={project.uuid}
-              to={GenerationsRoute.fullPath}
+              to={FunctionsRoute.fullPath}
               params={{ projectUuid: project.uuid }}
             >
               <Card
