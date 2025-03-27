@@ -481,7 +481,11 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             return result.stdout.strip()
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
-
+        error_message = result.stderr.strip()
+        print(  # noqa: T201
+            f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
+            flush=True,
+        )
         return "Code execution error"
 
 
