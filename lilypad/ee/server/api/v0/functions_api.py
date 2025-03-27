@@ -360,6 +360,7 @@ res = {function.name}(**arg_values)
     #     else ""
     #     for name in ["openai", "anthropic", "gemini", "openrouter"]
     # }
+    settings = get_settings()
     env_vars = {
         # "OPENAI_API_KEY": external_api_keys["openai"],
         # "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
@@ -372,10 +373,9 @@ res = {function.name}(**arg_values)
         "LILYPAD_PROJECT_ID": str(project_uuid),
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
-        "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
-        "VIRTUAL_ENV": "/opt/playground-venv",
+        "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
+        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0"
     }
-
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
     except Exception as e:
@@ -440,16 +440,27 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
-    print(modified_code, flush=True)  # For debugging # noqa: T201
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
-
+    settings = get_settings()
+    python_executable = Path(settings.playground_venv_path, "bin/python")
+    if not python_executable.exists():
+        logger.error("Python executable not found")
+        logger.error("Please setup the playground environment")
+        logger.error(
+            f"$ uv venv --no-project {str(settings.playground_venv_path)} &&"
+            f" VIRTUAL_ENV={str(settings.playground_venv_path)} uv pip sync playground-requirements.lock"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Python executable not found",
+        )
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)
         try:
             result = subprocess.run(
-                ["/opt/playground-venv/bin/python", str(tmp_path)],
+                [str(python_executable.absolute()), str(tmp_path)],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -477,10 +488,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
         error_message = result.stderr.strip()
-        print(  # noqa: T201
-            f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
-            flush=True,
-        )
 
         return "Code execution error"
 
