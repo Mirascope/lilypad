@@ -24,10 +24,10 @@ interface UserKeysFormValues {
   gemini: string;
   openrouter: string;
 }
-type KeyInput = {
+interface KeyInput {
   id: keyof UserKeysFormValues;
   label: string;
-};
+}
 const PasswordField = ({ input }: { input: KeyInput }) => {
   const [isView, setIsView] = useState(false);
   const { control } = useFormContext<UserKeysFormValues>();
@@ -74,13 +74,13 @@ export const KeysSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const { toast } = useToast();
   const updateUserKeys = useUpdateUserKeysMutation();
-  const keys = user.keys || {};
+  const keys = user.keys ?? {};
   const methods = useForm<UserKeysFormValues>({
     defaultValues: {
-      openai: keys["openai"] || "",
-      anthropic: keys["anthropic"] || "",
-      gemini: keys["gemini"] || "",
-      openrouter: keys["openrouter"] || "",
+      openai: keys.openai ?? "",
+      anthropic: keys.anthropic ?? "",
+      gemini: keys.gemini ?? "",
+      openrouter: keys.openrouter || "",
     },
   });
 
