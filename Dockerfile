@@ -13,6 +13,9 @@ ENV UV_LINK_MODE=copy
 # First copy only the dependency files for better layer caching
 COPY pyproject.toml uv.lock playground-deps.txt /app/
 
+# For Test
+RUN apt update && apt install git -y
+
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev --all-extras
