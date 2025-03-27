@@ -198,7 +198,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
                 continue
 
             # Basic validation - most API keys are alphanumeric with possible dashes/underscores
-            if not re.match(r"^[a-zA-Z0-9_\-]{20,100}$", value):
+            if not re.match(r"^[a-zA-Z0-9_\-]{20,200}$", value):
                 logger.warning(f"Invalid {key_var} format, removing value")
                 sanitized_env[key_var] = ""
 
