@@ -175,7 +175,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 55, memory: int = 400) -> None:
+def _limit_resources(timeout: int = 180, memory: int = 1024) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
@@ -461,7 +461,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
                 env=sanitized_env,
                 cwd=tmpdir,
                 timeout=60,
-                # preexec_fn=_limit_resources,
+                preexec_fn=_limit_resources,
             )
         except subprocess.TimeoutExpired:
             logger.error("Subprocess execution timed out.")
@@ -481,11 +481,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             return result.stdout.strip()
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
-        error_message = result.stderr.strip()
-        print(  # noqa: T201
-            f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
-            flush=True,
-        )
         return "Code execution error"
 
 
