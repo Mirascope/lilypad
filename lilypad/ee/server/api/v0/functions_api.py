@@ -1,4 +1,4 @@
-"""The EE `/functions` API router."""
+"""The EE `/functions` API router with comprehensive security validation."""
 
 import base64
 import json
@@ -55,23 +55,197 @@ _PROJECT_ROOT = Path(__file__).parents[3]
 def sanitize_arg_types_and_values(
     arg_types: dict[str, str], arg_values: dict[str, AcceptedValue]
 ) -> dict[str, tuple[str, AcceptedValue]]:
+    """Sanitize argument types and values to prevent injection attacks.
+
+    Args:
+        arg_types: Dictionary mapping argument names to their types
+        arg_values: Dictionary mapping argument names to their values
+
+    Returns:
+        Dictionary mapping argument names to tuples of (type, value)
+    """
     return {
         key: (arg_types[key], arg_values[key]) for key in arg_types if key in arg_values
     }
 
 
+def _validate_python_identifier(name: str) -> bool:
+    """Validate if a string is a valid Python identifier.
+
+    Args:
+        name: The string to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    if not name:
+        return False
+
+    # Check if it matches the pattern for a valid identifier
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
+        logger.warning(f"Invalid Python identifier format: {name}")
+        return False
+
+    # Check if it's not a Python keyword
+    import keyword
+
+    if keyword.iskeyword(name):
+        logger.warning(f"Python keyword cannot be used as identifier: {name}")
+        return False
+
+    # Check if it's not a Python built-in
+    if name in dir(__builtins__):
+        logger.warning(f"Python built-in cannot be used as identifier: {name}")
+        return False
+
+    return True
+
+
+def _validate_version_number(version: Any) -> bool:
+    """Validate if a version number is appropriate.
+
+    Args:
+        version: The version number to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    # Check that it's an integer
+    if not isinstance(version, int):
+        logger.warning(f"Version number must be an integer, got {type(version)}")
+        return False
+
+    # Check that it's positive
+    if version <= 0:
+        logger.warning(f"Version number must be positive, got {version}")
+        return False
+
+    return True
+
+
+def _validate_function_data(function: Any) -> bool:
+    """Validate all function data for security.
+
+    Args:
+        function: The function data to validate
+
+    Returns:
+        True if all validations pass, False otherwise
+    """
+    # Validate function name
+    if not _validate_python_identifier(function.name):
+        logger.warning(f"Invalid function name: {function.name}")
+        return False
+
+    # Validate version number
+    if not _validate_version_number(function.version_num):
+        logger.warning(f"Invalid version number: {function.version_num}")
+        return False
+
+    # Validate prompt template
+    if not _validate_template_string(function.prompt_template):
+        logger.warning("Invalid template string in function")
+        return False
+
+    # Validate call_params - ensure it's JSON serializable
+    try:
+        json.dumps(function.call_params)
+    except (TypeError, ValueError):
+        logger.warning("call_params is not JSON serializable")
+        return False
+
+    # Validate arg_types - ensure all keys are valid Python identifiers
+    for arg_name in function.arg_types:
+        if not _validate_python_identifier(arg_name):
+            logger.warning(f"Invalid argument name: {arg_name}")
+            return False
+
+    return True
+
+
+def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
+    """Validate API keys to prevent environment variable injection attacks.
+
+    Args:
+        env_vars: Dictionary of environment variables
+
+    Returns:
+        Dictionary with validated environment variables
+    """
+    sanitized_env = env_vars.copy()
+
+    # API key validation pattern for common LLM providers
+    api_key_vars = [
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GOOGLE_API_KEY",
+        "OPENROUTER_API_KEY",
+    ]
+
+    # Validate each API key
+    for key_var in api_key_vars:
+        if key_var in sanitized_env and sanitized_env[key_var]:
+            value = sanitized_env[key_var]
+
+            # Check for command injection characters
+            if re.search(r"[;&|`$><]", value):
+                logger.warning(
+                    f"Potential injection attempt in {key_var}, removing value"
+                )
+                sanitized_env[key_var] = ""
+                continue
+
+            # Basic validation - most API keys are alphanumeric with possible dashes/underscores
+            if not re.match(r"^[a-zA-Z0-9_\-]{20,100}$", value):
+                logger.warning(f"Invalid {key_var} format, removing value")
+                sanitized_env[key_var] = ""
+
+    return sanitized_env
+
+
 def _limit_resources(timeout: int = 15, memory: int = 200) -> None:
+    """Limit system resources to prevent resource exhaustion attacks.
+
+    Args:
+        timeout: CPU time limit in seconds
+        memory: Memory limit in MB
+    """
     if not CAN_LIMIT_RESOURCES:
         return None
     try:
-        # Limit CPU time to 15 seconds
+        # Limit CPU time
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
-        # Limit process address space (memory) to 100MB
+        # Limit process address space (memory)
         resource.setrlimit(
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
+        # Limit number of open files
+        resource.setrlimit(resource.RLIMIT_NOFILE, (50, 50))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
+
+
+def _validate_template_values(provider: str, model: str) -> bool:
+    """Validate template values for security issues.
+
+    Args:
+        provider: LLM provider name
+        model: Model name
+
+    Returns:
+        True if values are safe, False otherwise
+    """
+    # Check provider (should only contain alphanumeric, dots, hyphens)
+    if not re.match(r"^[a-zA-Z0-9\.\-_]+$", provider):
+        logger.warning(f"Invalid provider format: {provider}")
+        return False
+
+    # Check model (should only contain alphanumeric, dots, hyphens, slashes)
+    if not re.match(r"^[a-zA-Z0-9\.\-_/]+$", model):
+        logger.warning(f"Invalid model format: {model}")
+        return False
+
+    return True
 
 
 @functions_router.post("/projects/{project_uuid}/functions/{function_uuid}/playground")
@@ -83,26 +257,92 @@ def run_playground(
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
 ) -> str:
-    """Run playground version."""
+    """Run playground version of a function with enhanced security.
+
+    Args:
+        project_uuid: UUID of the project
+        function_uuid: UUID of the function
+        playground_parameters: Parameters for the playground execution
+        user: Current authenticated user
+        function_service: Service for function management
+        api_key_service: Service for API key management
+
+    Returns:
+        Result of the function execution
+    """
+    # Get the function from the database
     function = function_service.find_record_by_uuid(function_uuid)
+
+    # Validate all function data for security
+    if not _validate_function_data(function):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Function contains potentially unsafe data",
+        )
+
+    # Get API keys for the project
     api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
     if len(api_keys) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No API keys found"
         )
-    specific_function_version_fn = (
-        f"{function.name}.version({function.version_num})(**arg_values)"
+
+    # Extract required values from playground_parameters
+    provider = playground_parameters.provider.value
+    model = playground_parameters.model
+
+    # Validate provider and model values
+    if not _validate_template_values(provider, model):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid provider or model values detected",
+        )
+
+    # Prepare function arguments string - with validation
+    arg_definitions = []
+    for arg_name, arg_type in function.arg_types.items():
+        # Double-check that argument names are valid Python identifiers
+        if not _validate_python_identifier(arg_name):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid argument name: {arg_name}",
+            )
+        arg_definitions.append(f"{arg_name}: {arg_type}")
+
+    arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
+
+    # Create function code using the required template format with secure escaping
+    # Explicitly escape all variable values using json.dumps()
+    function_code = """
+import lilypad
+from mirascope import llm, prompt_template
+
+
+@lilypad.trace(versioning="automatic", mode="wrap")
+@llm.call(provider={provider}, model={model}, call_params={call_params})
+@prompt_template({template})
+def {function_name}(trace_ctx{arguments}) -> None:
+    trace_ctx.metadata({{"scope": "playground"}})
+""".format(
+        provider=json.dumps(provider),
+        model=json.dumps(model),
+        call_params=json.dumps(function.call_params),
+        template=json.dumps(function.prompt_template or ""),
+        function_name=function.name,  # Already validated
+        arguments=arguments_str,  # Already validated
     )
 
-    # Sanitize and decode the argument values to prevent injection attacks
+    # Sanitize and decode the argument values
     safe_arg_types_and_values = sanitize_arg_types_and_values(
         function.arg_types, playground_parameters.arg_values
     )
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
-    # Serialize the user input as a JSON string
+
+    # Serialize user input as a JSON string with proper escaping
     json_arg_values = json.dumps(decoded_arg_values)
     user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
 
+    # Create the wrapper code as specified in the original implementation
     wrapper_code = f"""
 import json
 import os
@@ -110,13 +350,13 @@ import lilypad
 
 lilypad.configure()
 
-@lilypad.function(managed=True)
-def {function.name}({", ".join(function.arg_types.keys())}) -> lilypad.Message: ...
+{function_code}
 
 {user_args_code}
-res = {specific_function_version_fn}
+res = {function.name}.version({function.version_num})(**arg_values)
 """
 
+    # Set up secure environment variables
     env_vars = {
         "OPENAI_API_KEY": user.keys.get("openai", ""),
         "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
@@ -124,19 +364,69 @@ res = {specific_function_version_fn}
         "OPENROUTER_API_KEY": user.keys.get("openrouter", ""),
         "LILYPAD_PROJECT_ID": str(project_uuid),
         "LILYPAD_API_KEY": api_keys[0].key_hash,
+        "PATH": os.environ["PATH"],
+        "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
     }
 
+    # Execute the code with enhanced security
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
-    except Exception:
+    except Exception as e:
+        logger.exception("Failed to run playground: %s", e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid API Key"
         )
+
     return processed_code
 
 
+def _validate_template_string(template: str | None) -> bool:
+    """Validate a template string for potential injection patterns.
+
+    Args:
+        template: The template string to validate
+
+    Returns:
+        True if safe, False otherwise
+    """
+    if not template:
+        return True  # Empty template is acceptable
+
+    # Check for suspicious patterns
+    suspicious_patterns = [
+        r"{.*?__.*?}",  # Dunder methods
+        r'{.*?["\']\s*:\s*["\'].*?}',  # Dict with string keys like format string attacks
+        r"{.*?\\.*?}",  # Escape sequences
+        r"{.*?#.*?}",  # Comments
+        r"{.*?eval\(.*?}",  # Eval attempts
+        r"{.*?exec\(.*?}",  # Exec attempts
+        r"{.*?import\s+.*?}",  # Import attempts
+        r"{.*?open\(.*?}",  # File operations
+        r"{.*?system\(.*?}",  # System command execution
+    ]
+
+    for pattern in suspicious_patterns:
+        if re.search(pattern, template):
+            logger.warning(f"Suspicious pattern in template: {pattern}")
+            return False
+
+    # Check for unbalanced braces
+    if template.count("{") != template.count("}"):
+        logger.warning("Unbalanced braces in template")
+        return False
+
+    # Extract placeholders and ensure they are valid Python identifiers
+    placeholders = re.findall(r"{([^{}]+)}", template)
+    for placeholder in placeholders:
+        if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", placeholder.strip()):
+            logger.warning("Invalid placeholder in template: %s", placeholder)
+            return False
+
+    return True
+
+
 def _run_playground(code: str, env_vars: dict[str, str]) -> str:
-    """Run code in playground with environment variables passed to subprocess.
+    """Run code in playground with enhanced security.
 
     Args:
         code: The Python code to execute
@@ -145,24 +435,30 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     Returns:
         The result of code execution
     """
-    # Add code to return a specific variable
+    # Append marker code to return a specific variable and format with ruff
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
+
+    # Write code to a temporary file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)
-    env_vars["PATH"] = os.environ["PATH"]
-    env_vars["LILYPAD_REMOTE_API_URL"] = get_settings().remote_api_url
+
+    # Validate API keys to prevent injection
+    sanitized_env = _validate_api_keys(env_vars)
+
     try:
+        # Execute in a subprocess with resource limitations and security flags
+        # Use the temporary file's directory as the working directory for better isolation
         result = subprocess.run(
-            ["uv", "run", str(tmp_path)],
+            ["uv", "run", "--no-project", str(tmp_path)],
             check=False,
             capture_output=True,
             text=True,
-            env=env_vars,
-            cwd=str(_PROJECT_ROOT),
+            env=sanitized_env,
+            cwd=str(tmp_path.parent),
             timeout=20,
-            # preexec_fn=_limit_resources, # For test
+            preexec_fn=_limit_resources,
         )
     except subprocess.TimeoutExpired:
         logger.error("Subprocess execution timed out. File: %s", tmp_path)
@@ -172,11 +468,13 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         return "Internal execution error"
     finally:
         try:
+            # Always clean up the temporary file
             tmp_path.unlink()
         except Exception as e:
             logger.warning("Failed to delete temporary file: %s", e)
 
     if result.returncode == 0:
+        # Extract the result using the marker pattern
         result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
         if result_match:
             try:
@@ -185,7 +483,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
                 return result_match.group(1)
         else:
             return result.stdout.strip()
-
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
         return "Code execution error"
@@ -197,10 +494,10 @@ def _decode_bytes(
     """Decodes image bytes from a dictionary of argument values.
 
     Parameters:
-        arg_types_and_values (dict): Dictionary mapping argument names to their types and values
+        arg_types_and_values: Dictionary mapping argument names to their types and values
 
     Returns:
-        dict: Dictionary mapping argument names to their decoded values
+        Dictionary mapping argument names to their decoded values
     """
     result = {}
 
