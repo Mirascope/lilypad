@@ -284,6 +284,11 @@ def run_playground(
             detail="Function contains potentially unsafe data",
         )
 
+    if not _validate_function_data(playground_parameters.function):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Function contains potentially unsafe data",
+        )
     # Get API keys for the project
     api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
     if len(api_keys) == 0:
@@ -304,7 +309,8 @@ def run_playground(
 
     # Prepare function arguments string - with validation
     arg_definitions = []
-    for arg_name in function.arg_types:
+
+    for arg_name in playground_parameters.function.arg_types:
         if arg_name == "trace_ctx":
             continue  # Skip trace context argument
         # Double-check that argument names are valid Python identifiers
@@ -329,15 +335,15 @@ def {function_name}(trace_ctx{arguments}) -> None:
 """.format(
         provider=json.dumps(provider),
         model=json.dumps(model),
-        call_params=json.dumps(function.call_params),
-        template=json.dumps(function.prompt_template or ""),
+        call_params=json.dumps(playground_parameters.function.call_params or {}),
+        template=json.dumps(playground_parameters.function.prompt_template or ""),
         function_name=function.name,  # Already validated
         arguments=arguments_str,  # Already validated
     )
 
     # Sanitize and decode the argument values
     safe_arg_types_and_values = sanitize_arg_types_and_values(
-        function.arg_types, playground_parameters.arg_values
+        playground_parameters.function.arg_types, playground_parameters.arg_values
     )
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
 
@@ -355,7 +361,7 @@ lilypad.configure()
 {function_code}
 
 {user_args_code}
-res = {function.name}.version({function.version_num})(**arg_values)
+res = {function.name}(**arg_values)
 """
     # external_api_key_names = user_external_api_key_service.list_api_keys().keys()
     # external_api_keys = {
