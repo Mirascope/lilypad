@@ -439,7 +439,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     Returns:
         The result of code execution
     """
-    modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
+    modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
     print(modified_code, flush=True)  # For debugging
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
