@@ -430,34 +430,26 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
-        tmp_file.write(modified_code)
-        tmp_path = Path(tmp_file.name)
-
+    # Validate and prepare environment variables
     sanitized_env = _validate_api_keys(env_vars)
 
     try:
         result = subprocess.run(
-            ["uv", "run", "--no-project", str(tmp_path)],
+            ["uv", "run", "--no-project", "-"],
             check=False,
             capture_output=True,
             text=True,
+            input=modified_code,
             env=sanitized_env,
-            cwd=str(tmp_path.parent),
             timeout=20,
             preexec_fn=_limit_resources,
         )
     except subprocess.TimeoutExpired:
-        logger.error("Subprocess execution timed out. File: %s", tmp_path)
+        logger.error("Subprocess execution timed out.")
         return "Execution timed out"
     except Exception:
         logger.exception("Subprocess execution failed")
         return "Internal execution error"
-    finally:
-        try:
-            tmp_path.unlink()
-        except Exception as e:
-            logger.warning("Failed to delete temporary file: %s", e)
 
     if result.returncode == 0:
         result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
