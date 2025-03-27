@@ -104,11 +104,13 @@ class PlaygroundParameters(BaseModel):
     """Playground parameters model."""
 
     arg_values: dict[str, AcceptedValue]
+    arg_types: dict[str, str] | None
     provider: Provider
     model: str
-    function: FunctionCreate | None = None
+    prompt_template: str
+    call_params: dict[str, Any]
 
-    @field_validator("arg_values")
+    @field_validator("arg_values","call_params")
     def check_nested_values(
         cls, values: dict[str, AcceptedValue]
     ) -> dict[str, AcceptedValue]:

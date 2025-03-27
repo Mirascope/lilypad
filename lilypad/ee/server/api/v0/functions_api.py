@@ -22,7 +22,6 @@ from .....server.schemas import (
 )
 from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
-from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
 
 try:
@@ -100,7 +99,6 @@ def _validate_python_identifier(name: str) -> bool:
         return False
 
     return True
-
 
 
 def _validate_function_data(function: Any) -> bool:
@@ -262,12 +260,6 @@ def run_playground(
             detail="Function contains potentially unsafe data",
         )
 
-    playground_function = playground_parameters.function
-    if playground_function and not _validate_function_data(playground_function):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Function contains potentially unsafe data",
-        )
     # Get API keys for the project
     api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
     if len(api_keys) == 0:
@@ -289,7 +281,12 @@ def run_playground(
     # Prepare function arguments string - with validation
     arg_definitions = []
 
-    for arg_name in playground_function.arg_types if playground_function else function.arg_types:
+    arg_types = (
+        playground_parameters.arg_types
+        if playground_parameters.arg_types is not None
+        else function.arg_types
+    )
+    for arg_name in arg_types:
         if arg_name == "trace_ctx":
             continue  # Skip trace context argument
         # Double-check that argument names are valid Python identifiers
@@ -314,15 +311,29 @@ def {function_name}(trace_ctx{arguments}) -> None:
 """.format(
         provider=json.dumps(provider),
         model=json.dumps(model),
-        call_params=json.dumps((playground_function.call_params if playground_function else function.call_params) or {}),
-        template=json.dumps((playground_function.prompt_template if playground_function else function.prompt_template) or ""),
+        call_params=json.dumps(
+            (
+                playground_parameters.call_params
+                if playground_parameters.call_params is not None
+                else function.call_params
+            )
+            or {}
+        ),
+        template=json.dumps(
+            (
+                playground_parameters.prompt_template
+                if playground_parameters.prompt_template is not None
+                else function.prompt_template
+            )
+            or ""
+        ),
         function_name=function.name,  # Already validated
         arguments=arguments_str,  # Already validated
     )
 
     # Sanitize and decode the argument values
     safe_arg_types_and_values = sanitize_arg_types_and_values(
-        playground_function.arg_types if playground_function else function.arg_types, playground_function.arg_values if playground_function else playground_function.arg_values
+        arg_types, playground_parameters.arg_values
     )
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
 
@@ -362,7 +373,7 @@ res = {function.name}(**arg_values)
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
         "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
-        "VIRTUAL_ENV": "/opt/playground-venv"
+        "VIRTUAL_ENV": "/opt/playground-venv",
     }
 
     try:
