@@ -11,7 +11,7 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
 # First copy only the dependency files for better layer caching
-COPY pyproject.toml uv.lock playground-deps.txt /app/
+COPY pyproject.toml uv.lock playground-requirements.lock /app/
 
 # For Test
 RUN apt update && apt install git -y
@@ -22,7 +22,7 @@ RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv
 
 # Pre-install playground dependencies and cache them
 RUN uv venv --no-project /opt/playground-venv
-RUN VIRTUAL_ENV=/opt/playground-venv uv pip install -r  playground-deps.txt
+RUN VIRTUAL_ENV=/opt/playground-venv uv pip sync playground-requirements.lock
 
 # Now copy the full application code
 COPY . /app
