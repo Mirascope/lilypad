@@ -53,8 +53,6 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).parents[5]
 _DEPS_FILE = _PROJECT_ROOT / "playground-deps.txt"
 
-_PLAYGROUND_DEPS: list[str] = _DEPS_FILE.read_text().strip().splitlines()
-
 
 def sanitize_arg_types_and_values(
     arg_types: dict[str, str], arg_values: dict[str, AcceptedValue]
@@ -348,13 +346,7 @@ def {function_name}(trace_ctx{arguments}) -> None:
     json_arg_values = json.dumps(decoded_arg_values)
     user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
 
-    dependencies = ",\n#   ".join([f'"{deps}"' for deps in _PLAYGROUND_DEPS])
     wrapper_code = f"""
-# /// script
-# dependencies = [
-#   {dependencies}
-# ]
-# ///
 import json
 import os
 import lilypad
@@ -462,7 +454,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
 
     try:
         result = subprocess.run(
-            ["uv", "run", "--no-project", str(tmp_path)],
+            ["uv", "run", "--no-project", "--with-requirements", str(_DEPS_FILE), str(tmp_path)],
             check=False,
             capture_output=True,
             text=True,
