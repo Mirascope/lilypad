@@ -175,7 +175,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 180, memory: int = 2048) -> None:
+def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
@@ -192,7 +192,7 @@ def _limit_resources(timeout: int = 180, memory: int = 2048) -> None:
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
         # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (400, 400))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (1000, 1000))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
