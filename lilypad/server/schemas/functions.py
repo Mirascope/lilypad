@@ -110,7 +110,7 @@ class PlaygroundParameters(BaseModel):
     prompt_template: str
     call_params: dict[str, Any] | None
 
-    @field_validator("arg_values","call_params")
+    @field_validator("arg_values", "call_params")
     def check_nested_values(
         cls, values: dict[str, AcceptedValue]
     ) -> dict[str, AcceptedValue]:

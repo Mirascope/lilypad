@@ -371,7 +371,7 @@ res = {function.name}(**arg_values)
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
         "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
-        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0"
+        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
     }
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
@@ -484,7 +484,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             return result.stdout.strip()
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
-        error_message = result.stderr.strip()
 
         return "Code execution error"
 
