@@ -251,6 +251,10 @@ def run_playground(
     # Get the function from the database
     function = function_service.find_record_by_uuid(function_uuid)
 
+    if not function:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Function not found"
+        )
     # Validate all function data for security
     if not _validate_function_data(function):
         raise HTTPException(
