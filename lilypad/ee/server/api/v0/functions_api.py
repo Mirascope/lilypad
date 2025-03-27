@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated, Any
@@ -205,7 +206,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 15, memory: int = 200) -> None:
+def _limit_resources(timeout: int = 55, memory: int = 400) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
@@ -438,18 +439,20 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
 
-    # Validate and prepare environment variables
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
+        tmp_file.write(modified_code)
+        tmp_path = Path(tmp_file.name)
     sanitized_env = _validate_api_keys(env_vars)
 
     try:
         result = subprocess.run(
-            ["uv", "run", "--no-project", "-"],
+            ["uv", "run", "--no-project", str(tmp_path)],
             check=False,
             capture_output=True,
             text=True,
-            input=modified_code,
             env=sanitized_env,
-            timeout=20,
+            timeout=60,
+            cwd=str(Path(__file__).parent),
             preexec_fn=_limit_resources,
         )
     except subprocess.TimeoutExpired:
