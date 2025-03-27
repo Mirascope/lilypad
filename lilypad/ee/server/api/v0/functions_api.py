@@ -455,7 +455,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
 
     try:
         result = subprocess.run(
-            ["uv", "run", "--no-project", "--with-requirements", str(_DEPS_FILE), str(tmp_path)],
+            ["/opt/playground-venv/bin/python", str(tmp_path)],
             check=False,
             capture_output=True,
             text=True,
