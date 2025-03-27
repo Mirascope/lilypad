@@ -15,10 +15,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ....._utils import run_ruff
-from .....server._utils import get_current_user
 from .....server.schemas import (
     PlaygroundParameters,
-    UserPublic,
 )
 from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
@@ -227,7 +225,6 @@ def run_playground(
     project_uuid: UUID,
     function_uuid: UUID,
     playground_parameters: PlaygroundParameters,
-    user: Annotated[UserPublic, Depends(get_current_user)],
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
     user_external_api_key_service: Annotated[
@@ -240,9 +237,9 @@ def run_playground(
         project_uuid: UUID of the project
         function_uuid: UUID of the function
         playground_parameters: Parameters for the playground execution
-        user: Current authenticated user
         function_service: Service for function management
         api_key_service: Service for API key management
+        user_external_api_key_service: Service for external API key management
 
     Returns:
         Result of the function execution
