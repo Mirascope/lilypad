@@ -1,4 +1,4 @@
-"""The EE `/functions` API router with comprehensive security validation."""
+"""The EE `/functions` API router."""
 
 import base64
 import json
