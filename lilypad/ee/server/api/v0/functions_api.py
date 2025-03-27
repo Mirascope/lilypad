@@ -262,7 +262,8 @@ def run_playground(
             detail="Function contains potentially unsafe data",
         )
 
-    if not _validate_function_data(playground_parameters.function):
+    playground_function = playground_parameters.function
+    if playground_function and not _validate_function_data(playground_function):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Function contains potentially unsafe data",
@@ -288,7 +289,7 @@ def run_playground(
     # Prepare function arguments string - with validation
     arg_definitions = []
 
-    for arg_name in playground_parameters.function.arg_types:
+    for arg_name in playground_function.arg_types if playground_function else function.arg_types:
         if arg_name == "trace_ctx":
             continue  # Skip trace context argument
         # Double-check that argument names are valid Python identifiers
@@ -313,15 +314,15 @@ def {function_name}(trace_ctx{arguments}) -> None:
 """.format(
         provider=json.dumps(provider),
         model=json.dumps(model),
-        call_params=json.dumps(playground_parameters.function.call_params or {}),
-        template=json.dumps(playground_parameters.function.prompt_template or ""),
+        call_params=json.dumps((playground_function.call_params if playground_function else function.call_params) or {}),
+        template=json.dumps((playground_function.prompt_template if playground_function else function.prompt_template) or ""),
         function_name=function.name,  # Already validated
         arguments=arguments_str,  # Already validated
     )
 
     # Sanitize and decode the argument values
     safe_arg_types_and_values = sanitize_arg_types_and_values(
-        playground_parameters.function.arg_types, playground_parameters.arg_values
+        playground_function.arg_types if playground_function else function.arg_types, playground_function.arg_values if playground_function else playground_function.arg_values
     )
     decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
 
