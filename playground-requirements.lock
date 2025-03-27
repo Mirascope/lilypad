@@ -630,7 +630,7 @@ libcst==1.7.0 \
     --hash=sha256:e7d9a796c2f3d5b71dd06b7578e8d1fb1c031d2eb8d59e7b40e288752ae1b210 \
     --hash=sha256:fa519d4391326329f37860c2f2aaf80cb11a6122d14afa2f4f00dde6fcfa7ae4
     # via lilypad-sdk
-lilypad-sdk @ git+https://github.com/Mirascope/lilypad-sdk-python.git@88b5e55ff85ccd3214a016ed38ceb9e18a7326e6
+lilypad-sdk @ git+https://github.com/Mirascope/lilypad-sdk-python.git@0ff5f85c1fdfc0f4e450b37faaa2ba52e2151290
     # via -r playground-requirements.txt
 markupsafe==3.0.2 \
     --hash=sha256:0bff5e0ae4ef2e1ae4fdf2dfd5b76c75e5c2fa4132d05fc1b0dabcd20c7e28c4 \
