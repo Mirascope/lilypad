@@ -697,8 +697,7 @@ export interface PlaygroundParameters {
   model: string;
   /** Prompt Template */
   prompt_template: string;
-  /** Call Params */
-  call_params: object | null;
+  call_params: CommonCallParams | null;
 }
 
 /**

@@ -10,12 +10,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { useToast } from "@/hooks/use-toast";
 import { FunctionPublic, PlaygroundParameters } from "@/types/types";
+import { $convertToMarkdownString } from "@lexical/markdown";
 import { Suspense, useState } from "react";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid"
@@ -35,6 +38,7 @@ const ComparePlaygrounds = ({
   firstFunction: FunctionPublic;
   secondFunction: FunctionPublic;
 }) => {
+  const { toast } = useToast();
   const [firstResponse, setFirstResponse] = useState<string>("");
   const [secondResponse, setSecondResponse] = useState<string>("");
   const [isRunning, setIsRunning] = useState(false);
@@ -75,7 +79,7 @@ const ComparePlaygrounds = ({
   };
 
   // Helper function to run a single function
-  const runFunction = async (
+  const runFunction = (
     playground: ReturnType<typeof usePlaygroundContainer>,
     functionUuid: string,
     setResponse: (response: string) => void
@@ -84,47 +88,59 @@ const ComparePlaygrounds = ({
     if (!projectUuid) return;
     // Get data from the form
     const data = methods.getValues();
-
-    return new Promise<void>(async (resolve) => {
-      try {
-        // Process input values for the run
-        const inputValues = inputs.reduce(
-          (acc, input) => {
-            if (input.type === "list" || input.type === "dict") {
-              try {
-                acc[input.key] = simplifyFormItem(input as FormItemValue);
-              } catch (e) {
+    const editorState = playground?.editorRef?.current?.getEditorState();
+    if (!editorState) return;
+    editorState
+      .read(async () => {
+        // Convert editor content to markdown
+        const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+        try {
+          // Process input values for the run
+          const inputValues = inputs.reduce(
+            (acc, input) => {
+              if (input.type === "list" || input.type === "dict") {
+                try {
+                  acc[input.key] = simplifyFormItem(input as FormItemValue);
+                } catch (e) {
+                  acc[input.key] = input.value;
+                }
+              } else {
                 acc[input.key] = input.value;
               }
-            } else {
-              acc[input.key] = input.value;
-            }
-            return acc;
-          },
-          {} as Record<string, any>
-        );
+              return acc;
+            },
+            {} as Record<string, any>
+          );
 
-        // Set up playground values
-        const playgroundValues: PlaygroundParameters = {
-          arg_values: inputValues,
-          provider: data.provider,
-          model: data.model,
-        };
+          // Set up playground values
+          const playgroundParameters: PlaygroundParameters = {
+            arg_values: inputValues,
+            provider: data.provider,
+            model: data.model,
+            arg_types: data.arg_types,
+            call_params: data?.call_params,
+            prompt_template: markdown,
+          };
 
-        // Run function
-        const result = await runMutation.mutateAsync({
-          projectUuid,
-          functionUuid,
-          playgroundValues,
+          // Run function
+          const result = await runMutation.mutateAsync({
+            projectUuid,
+            functionUuid,
+            playgroundParameters,
+          });
+
+          // Set the response in state
+          setResponse(result);
+        } catch (error) {
+          console.error(error);
+        }
+      })
+      .catch(() => {
+        toast({
+          title: "Failed to run function",
+          variant: "destructive",
         });
-
-        // Set the response in state
-        setResponse(result);
-      } catch (error) {
-        console.error(error);
-      }
-      resolve();
-    });
+      });
   };
 
   return (

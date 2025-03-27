@@ -143,7 +143,7 @@ export const usePlaygroundContainer = ({
         // Create function object
         const functionCreate: FunctionCreate = {
           prompt_template: markdown,
-          call_params: data?.function?.call_params,
+          call_params: data.call_params ?? undefined,
           name: functionName,
           arg_types: argTypes,
           provider: data.provider,
@@ -201,7 +201,7 @@ export const usePlaygroundContainer = ({
             provider: data.provider,
             model: data.model,
             arg_types: argTypes,
-            call_params: data?.function?.call_params,
+            call_params: data?.call_params,
             prompt_template: markdown,
           };
 

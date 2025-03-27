@@ -134,16 +134,6 @@ const FunctionWorkbench = () => {
     );
   };
 
-  const handleNewFunctionClick = () => {
-    navigate({
-      to: `/projects/${projectUuid}/functions/${functionName}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
-  };
-
   const handleTabChange = (newTab: string) => {
     if (compareMode) {
       navigate({
