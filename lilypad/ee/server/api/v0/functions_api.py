@@ -102,27 +102,6 @@ def _validate_python_identifier(name: str) -> bool:
     return True
 
 
-def _validate_version_number(version: Any) -> bool:
-    """Validate if a version number is appropriate.
-
-    Args:
-        version: The version number to validate
-
-    Returns:
-        True if valid, False otherwise
-    """
-    # Check that it's an integer
-    if not isinstance(version, int):
-        logger.warning(f"Version number must be an integer, got {type(version)}")
-        return False
-
-    # Check that it's positive
-    if version <= 0:
-        logger.warning(f"Version number must be positive, got {version}")
-        return False
-
-    return True
-
 
 def _validate_function_data(function: Any) -> bool:
     """Validate all function data for security.
@@ -136,11 +115,6 @@ def _validate_function_data(function: Any) -> bool:
     # Validate function name
     if not _validate_python_identifier(function.name):
         logger.warning(f"Invalid function name: {function.name}")
-        return False
-
-    # Validate version number
-    if not _validate_version_number(function.version_num):
-        logger.warning(f"Invalid version number: {function.version_num}")
         return False
 
     # Validate prompt template
