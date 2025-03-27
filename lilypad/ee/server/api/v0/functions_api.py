@@ -22,6 +22,7 @@ from .....server.schemas import (
 )
 from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
+from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
 
 try:
@@ -259,6 +260,9 @@ def run_playground(
     user: Annotated[UserPublic, Depends(get_current_user)],
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
+    # user_external_api_key_service: Annotated[
+    #     UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
+    # ],
 ) -> str:
     """Run playground version of a function with enhanced security.
 
@@ -303,14 +307,16 @@ def run_playground(
 
     # Prepare function arguments string - with validation
     arg_definitions = []
-    for arg_name, arg_type in function.arg_types.items():
+    for arg_name in function.arg_types:
+        if arg_name == "trace_ctx":
+            continue  # Skip trace context argument
         # Double-check that argument names are valid Python identifiers
         if not _validate_python_identifier(arg_name):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid argument name: {arg_name}",
             )
-        arg_definitions.append(f"{arg_name}: {arg_type}")
+        arg_definitions.append(f"{arg_name}")
 
     arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
 
@@ -360,8 +366,18 @@ lilypad.configure()
 {user_args_code}
 res = {function.name}.version({function.version_num})(**arg_values)
 """
-
+    # external_api_key_names = user_external_api_key_service.list_api_keys().keys()
+    # external_api_keys = {
+    #     name: user_external_api_key_service.get_api_key(name)
+    #     if name in external_api_key_names
+    #     else ""
+    #     for name in ["openai", "anthropic", "gemini", "openrouter"]
+    # }
     env_vars = {
+        # "OPENAI_API_KEY": external_api_keys["openai"],
+        # "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
+        # "GOOGLE_API_KEY": external_api_keys["gemini"],
+        # "OPENROUTER_API_KEY": external_api_keys["openrouter"],
         "OPENAI_API_KEY": user.keys.get("openai", ""),
         "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
         "GOOGLE_API_KEY": user.keys.get("gemini", ""),
@@ -436,7 +452,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
-    print(modified_code) # For debugging
+    print(modified_code)  # For debugging
     modified_code = run_ruff(dedent(modified_code)).strip()
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
