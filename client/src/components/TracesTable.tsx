@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AnnotationDialog } from "@/ee/components/AnnotationForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { useToast } from "@/hooks/use-toast";
 import { Scope, SpanPublic } from "@/types/types";
 import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
@@ -87,6 +88,7 @@ export const TracesTable = ({
   path?: string;
   hideCompare?: boolean;
 }) => {
+  const { toast } = useToast();
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
@@ -124,7 +126,7 @@ export const TracesTable = ({
         const isSelected = selectedRows.some(
           (item) => item.span_id === row.original.span_id
         );
-
+        const displayName: string = row.getValue("display_name");
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
@@ -136,11 +138,11 @@ export const TracesTable = ({
                   onCheckedChange={(checked) => {
                     handleCheckboxChange(row.original, checked === true);
                   }}
-                  aria-label={`Select ${row.getValue("display_name")}`}
+                  aria-label={`Select ${displayName}`}
                   className='mr-2'
                 />
               )}
-              <span className='truncate'>{row.getValue("display_name")}</span>
+              <span className='truncate'>{displayName}</span>
             </div>
           </div>
         );
@@ -253,15 +255,18 @@ export const TracesTable = ({
                   </div>
                 )}
               {row.original.scope === Scope.LILYPAD &&
-                row.original.generation &&
-                row.original.generation.is_managed &&
+                row.original.function?.is_versioned &&
                 features.playground && (
                   <DropdownMenuItem
                     onClick={() => {
-                      const { project_uuid, generation } = row.original;
-                      if (!generation) return;
+                      const { project_uuid, function: fn } = row.original;
+                      if (!fn) return;
                       navigate({
-                        to: `/projects/${project_uuid}/generations/${generation.name}/${generation.uuid}/overview`,
+                        to: `/projects/${project_uuid}/functions/${fn.name}/${fn.uuid}/overview`,
+                      }).catch(() => {
+                        toast({
+                          title: "Failed to navigate",
+                        });
                       });
                     }}
                   >
@@ -280,7 +285,15 @@ export const TracesTable = ({
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
   const handleDetailPanelClose = () => {
     if (path) {
-      navigate({ to: path, replace: true, params: { _splat: undefined } });
+      navigate({
+        to: path,
+        replace: true,
+        params: { _splat: undefined },
+      }).catch(() => {
+        toast({
+          title: "Failed to navigate",
+        });
+      });
     }
   };
   const CompareDetailPanel = () => {
@@ -336,9 +349,13 @@ export const TracesTable = ({
           to: path,
           replace: true,
           params: { _splat: data.uuid },
+        }).catch(() => {
+          toast({
+            title: "Failed to navigate",
+          });
         });
       }
-    }, [data, path, navigate]);
+    }, [data]);
 
     return (
       <div className='p-4 border rounded-md overflow-auto'>

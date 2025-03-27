@@ -25,9 +25,9 @@ export const useCreateEnvironmentMutation = () => {
   return useMutation({
     mutationFn: async (environmentCreate: EnvironmentCreate) =>
       await postEnvironment(environmentCreate),
-    onSuccess: () => {
+    onSuccess: async () => {
       posthog.capture("environmentCreated");
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["environments"],
       });
     },
@@ -39,8 +39,8 @@ export const useDeleteEnvironmentMutation = () => {
   return useMutation({
     mutationFn: async (environmentUuid: string) =>
       await deleteEnvironment(environmentUuid),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["environments"],
       });
     },

@@ -37,6 +37,7 @@ import {
   useCreateApiKeyMutation,
   useDeleteApiKeyMutation,
 } from "@/utils/api-keys";
+import { environmentsQueryOptions } from "@/utils/environments";
 import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -142,9 +143,14 @@ const GenerateAPIKeyForm = ({
   setProjectUuid: Dispatch<SetStateAction<string | null>>;
 }) => {
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+  const { data: environments } = useSuspenseQuery(environmentsQueryOptions());
   const { activeProject } = useAuth();
   const methods = useForm<APIKeyCreate>({
-    defaultValues: { name: "", project_uuid: activeProject?.uuid || "" },
+    defaultValues: {
+      name: "",
+      project_uuid: activeProject?.uuid,
+      environment_uuid: "",
+    },
   });
   const createApiKey = useCreateApiKeyMutation();
   const onSubmit = async (data: APIKeyCreate) => {
@@ -182,7 +188,10 @@ const GenerateAPIKeyForm = ({
             <FormItem>
               <FormLabel>Project</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                >
                   <SelectTrigger className='w-full'>
                     <SelectValue placeholder='Select a project' />
                   </SelectTrigger>
@@ -190,6 +199,36 @@ const GenerateAPIKeyForm = ({
                     {projects.map((project) => (
                       <SelectItem key={project.uuid} value={project.uuid}>
                         {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          key='environment_uuid'
+          control={methods.control}
+          name='environment_uuid'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Environment</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder='Select an environment' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {environments.map((environment) => (
+                      <SelectItem
+                        key={environment.uuid}
+                        value={environment.uuid}
+                      >
+                        {environment.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -256,13 +295,13 @@ const CopyKeyButton = ({
         <DialogDescription className='space-y-4'>
           Copy your project ID and API key into your environment
           <div className='bg-muted rounded-md p-4 font-mono text-sm'>
-            LILYPAD_PROJECT_ID="..."
+            LILYPAD_PROJECT_ID=&quot;...&quot;
             {"\n"}
-            LILYPAD_API_KEY="..."
+            LILYPAD_API_KEY=&quot;...&quot;
           </div>
         </DialogDescription>
         <p className='text-red-500'>
-          WARNING: You won't be able to see your API key again.
+          WARNING: You won&apos;t be able to see your API key again.
         </p>
       </DialogHeader>
       <Alert>

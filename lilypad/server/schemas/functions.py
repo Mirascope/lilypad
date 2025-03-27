@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, TypeVar, overload
 from uuid import UUID
 
+from mirascope.core.base import CommonCallParams
 from pydantic import BaseModel, TypeAdapter, field_validator
 
 from ..models.functions import _FunctionBase
@@ -108,7 +109,7 @@ class PlaygroundParameters(BaseModel):
     provider: Provider
     model: str
     prompt_template: str
-    call_params: dict[str, Any] | None
+    call_params: CommonCallParams | None
 
     @field_validator("arg_values", "call_params")
     def check_nested_values(

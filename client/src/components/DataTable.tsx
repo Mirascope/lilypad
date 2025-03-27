@@ -135,7 +135,7 @@ export const DataTable = <T extends { uuid: string }>({
       setDetailRow((prevSelectedRow) =>
         prevSelectedRow && prevSelectedRow.uuid === row.uuid ? null : row
       );
-      onDetailPanelClose && onDetailPanelClose();
+      onDetailPanelClose?.();
     }
   };
 
@@ -166,7 +166,7 @@ export const DataTable = <T extends { uuid: string }>({
 
   const onCollapse = () => {
     setDetailRow(null);
-    onDetailPanelClose && onDetailPanelClose();
+    onDetailPanelClose?.();
   };
   const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
   const paddingBottom =
@@ -190,7 +190,7 @@ export const DataTable = <T extends { uuid: string }>({
                 ""
               }
               onChange={(event) => {
-                onFilterChange && onFilterChange(event.target.value);
+                onFilterChange?.(event.target.value);
                 table
                   .getColumn(filterColumn)
                   ?.setFilterValue(event.target.value);

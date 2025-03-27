@@ -123,8 +123,8 @@ importers:
         specifier: 2.0.0-alpha.30
         version: 2.0.0-alpha.30(@babel/runtime@7.26.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       axios:
-        specifier: ^1.8.2
-        version: 1.8.2
+        specifier: ^1.8.4
+        version: 1.8.4
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -1165,8 +1165,8 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@rollup/wasm-node@4.36.0':
-    resolution: {integrity: sha512-qEzDrBzGlkWgtWiP8OJJegVdT+gHYEbHXtkI0vhlDLSzejAzMuhl1MfIQyU6U6XCZrijX9KTSi3UNBwB4en/eQ==}
+  '@rollup/wasm-node@4.37.0':
+    resolution: {integrity: sha512-Nzbex+bqQ2wffHfAX5nHUMhcAUwedzE02arkETjt/ybjD0ieWtXwRUgIipB7giMRqKLdopDmkSIWow0mxzWmLg==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
@@ -1625,8 +1625,8 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  axios@1.8.2:
-    resolution: {integrity: sha512-ls4GYBm5aig9vWx8AWDSGLpnpDQRtWAfrjU+EuytuODrFBkqesN2RkOQCBzrA1RQNHw1SmRMSDDDSwzNAYQ6Rg==}
+  axios@1.8.4:
+    resolution: {integrity: sha512-eBSYY4Y68NNlHbHBMdeDmKNtDgXWhQsJcGqzO3iLUM0GraQFSS9cVgPX5I9b3lbdFKyYoAEGAZF1DwhTaljNAw==}
 
   babel-dead-code-elimination@1.0.9:
     resolution: {integrity: sha512-JLIhax/xullfInZjtu13UJjaLHDeTzt3vOeomaSUdO/nAMEL/pWC/laKrSvWylXMnVWyL5bpmG9njqBZlUQOdg==}
@@ -4437,7 +4437,7 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@rollup/wasm-node@4.36.0':
+  '@rollup/wasm-node@4.37.0':
     dependencies:
       '@types/estree': 1.0.6
     optionalDependencies:
@@ -4934,7 +4934,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  axios@1.8.2:
+  axios@1.8.4:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.2
@@ -7068,7 +7068,7 @@ snapshots:
     dependencies:
       esbuild: 0.25.0
       postcss: 8.5.3
-      rollup: '@rollup/wasm-node@4.36.0'
+      rollup: '@rollup/wasm-node@4.37.0'
     optionalDependencies:
       '@types/node': 22.13.10
       fsevents: 2.3.3

@@ -20,7 +20,7 @@ import {
 import { EditorParameters } from "@/ee/hooks/use-playground";
 import {
   CommonCallParams,
-  GenerationPublic,
+  FunctionPublic,
   PlaygroundParameters,
   Provider,
   UserPublic,
@@ -296,7 +296,7 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
   latestVersion,
   additionalDefaults = {},
 }: {
-  latestVersion?: GenerationPublic | null;
+  latestVersion?: FunctionPublic | null;
   additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
@@ -320,15 +320,13 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
 };
 
 const getDefaultValues = <T extends PlaygroundParameters>(
-  latestVersion?: GenerationPublic | null
+  latestVersion?: FunctionPublic | null
 ): DefaultValues<T> => {
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
       model: "gpt-4o",
-      generation: {
-        call_params: commonCallParamsDefault,
-      },
+      call_params: commonCallParamsDefault,
     } as DefaultValues<T>;
   }
   if (
@@ -340,7 +338,12 @@ const getDefaultValues = <T extends PlaygroundParameters>(
   return {
     provider: Provider.OPENAI,
     model: "gpt-4o",
-    generation: latestVersion,
+    call_params: {
+      ...commonCallParamsDefault,
+      ...latestVersion.call_params,
+    },
+    arg_types: latestVersion?.arg_types,
+    prompt_template: latestVersion?.prompt_template,
   } as DefaultValues<T>;
 };
 
@@ -350,7 +353,7 @@ const renderSeed = (isDisabled: boolean) => {
     <FormField
       key='editor-seed'
       control={method.control}
-      name={"generation.call_params.seed"}
+      name={"call_params.seed"}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Seed</FormLabel>
@@ -421,13 +424,13 @@ export const BaseEditorFormFields = ({
   };
 
   const commonParams = [
-    renderSliders.temperature("generation.call_params.temperature"),
-    renderSliders.maxTokens("generation.call_params.max_tokens"),
-    renderSliders.topP("generation.call_params.top_p"),
-    renderSliders.frequencyPenalty("generation.call_params.frequency_penalty"),
-    renderSliders.presencePenalty("generation.call_params.presence_penalty"),
+    renderSliders.temperature("call_params.temperature"),
+    renderSliders.maxTokens("call_params.max_tokens"),
+    renderSliders.topP("call_params.top_p"),
+    renderSliders.frequencyPenalty("call_params.frequency_penalty"),
+    renderSliders.presencePenalty("call_params.presence_penalty"),
     renderSeed(isDisabled),
-    renderStopSequences("generation.call_params.stop", 4, isDisabled),
+    renderStopSequences("call_params.stop", 4, isDisabled),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>
