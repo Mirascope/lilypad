@@ -15,13 +15,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ....._utils import run_ruff
-from .....server._utils import get_current_user
 from .....server.schemas import (
     PlaygroundParameters,
-    UserPublic,
 )
 from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
+from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
 
 try:
@@ -226,12 +225,11 @@ def run_playground(
     project_uuid: UUID,
     function_uuid: UUID,
     playground_parameters: PlaygroundParameters,
-    user: Annotated[UserPublic, Depends(get_current_user)],
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
-    # user_external_api_key_service: Annotated[
-    #     UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
-    # ],
+    user_external_api_key_service: Annotated[
+        UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
+    ],
 ) -> str:
     """Run playground version of a function with enhanced security.
 
@@ -239,9 +237,9 @@ def run_playground(
         project_uuid: UUID of the project
         function_uuid: UUID of the function
         playground_parameters: Parameters for the playground execution
-        user: Current authenticated user
         function_service: Service for function management
         api_key_service: Service for API key management
+        user_external_api_key_service: Service for external API key management
 
     Returns:
         Result of the function execution
@@ -353,23 +351,19 @@ lilypad.configure()
 {user_args_code}
 res = {function.name}(**arg_values)
 """
-    # external_api_key_names = user_external_api_key_service.list_api_keys().keys()
-    # external_api_keys = {
-    #     name: user_external_api_key_service.get_api_key(name)
-    #     if name in external_api_key_names
-    #     else ""
-    #     for name in ["openai", "anthropic", "gemini", "openrouter"]
-    # }
+    external_api_key_names = user_external_api_key_service.list_api_keys().keys()
+    external_api_keys = {
+        name: user_external_api_key_service.get_api_key(name)
+        if name in external_api_key_names
+        else ""
+        for name in ["openai", "anthropic", "gemini", "openrouter"]
+    }
     settings = get_settings()
     env_vars = {
-        # "OPENAI_API_KEY": external_api_keys["openai"],
-        # "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
-        # "GOOGLE_API_KEY": external_api_keys["gemini"],
-        # "OPENROUTER_API_KEY": external_api_keys["openrouter"],
-        "OPENAI_API_KEY": user.keys.get("openai", ""),
-        "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
-        "GOOGLE_API_KEY": user.keys.get("gemini", ""),
-        "OPENROUTER_API_KEY": user.keys.get("openrouter", ""),
+        "OPENAI_API_KEY": external_api_keys["openai"],
+        "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
+        "GOOGLE_API_KEY": external_api_keys["gemini"],
+        "OPENROUTER_API_KEY": external_api_keys["openrouter"],
         "LILYPAD_PROJECT_ID": str(project_uuid),
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
