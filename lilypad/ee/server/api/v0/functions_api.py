@@ -461,7 +461,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             text=True,
             env=sanitized_env,
             timeout=60,
-            cwd=str(Path(__file__).parent),
             preexec_fn=_limit_resources,
         )
     except subprocess.TimeoutExpired:
@@ -470,6 +469,11 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     except Exception:
         logger.exception("Subprocess execution failed")
         return "Internal execution error"
+    finally:
+        try:
+            tmp_path.unlink()
+        except Exception as e:
+            logger.warning("Failed to delete temporary file: %s", e)
 
     if result.returncode == 0:
         result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
