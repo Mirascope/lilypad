@@ -193,7 +193,7 @@ def _limit_resources(timeout: int = 55, memory: int = 400) -> None:
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
         # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (50, 50))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (100, 100))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
@@ -376,7 +376,6 @@ res = {function.name}(**arg_values)
         "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
         "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0"
     }
-
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
     except Exception as e:
@@ -457,6 +456,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Python executable not found",
         )
+    print(f"{sanitized_env=}", flush=True)  # noqa: T201
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)
@@ -469,7 +469,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
                 env=sanitized_env,
                 cwd=tmpdir,
                 timeout=60,
-                # preexec_fn=_limit_resources,
+                preexec_fn=_limit_resources,
             )
         except subprocess.TimeoutExpired:
             logger.error("Subprocess execution timed out.")
