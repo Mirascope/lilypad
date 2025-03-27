@@ -192,7 +192,7 @@ def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
         # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (1000, 1000))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
