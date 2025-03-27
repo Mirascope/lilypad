@@ -445,7 +445,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
-    print(modified_code)  # For debugging
+    print(modified_code, flush=True)  # For debugging
     modified_code = run_ruff(dedent(modified_code)).strip()
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
