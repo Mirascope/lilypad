@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import subprocess
-import tempfile
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated, Any
@@ -49,7 +48,10 @@ functions_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(__file__).parents[3]
+_PROJECT_ROOT = Path(__file__).parents[5]
+_DEPS_FILE = _PROJECT_ROOT / "playground-deps.txt"
+
+_PLAYGROUND_DEPS: list[str] = _DEPS_FILE.read_text().strip().splitlines()
 
 
 def sanitize_arg_types_and_values(
@@ -340,7 +342,13 @@ def {function_name}(trace_ctx{arguments}) -> None:
     json_arg_values = json.dumps(decoded_arg_values)
     user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
 
+    dependencies = ",\n#   ".join([f'"{deps}"' for deps in _PLAYGROUND_DEPS])
     wrapper_code = f"""
+# /// script
+# dependencies = [
+#   {dependencies}
+# ]
+# ///
 import json
 import os
 import lilypad
