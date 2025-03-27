@@ -6,12 +6,12 @@ import { AxiosResponse } from "axios";
 export const runPlayground = async (
   projectUuid: string,
   functionUuid: string,
-  playgroundValues: PlaygroundParameters
+  playgroundParameters: PlaygroundParameters
 ): Promise<string> => {
   return (
     await api.post<Record<string, string>, AxiosResponse<string>>(
       `/ee/projects/${projectUuid}/functions/${functionUuid}/playground`,
-      playgroundValues
+      playgroundParameters
     )
   ).data;
 };
@@ -21,11 +21,11 @@ export const useRunPlaygroundMutation = () => {
     mutationFn: async ({
       projectUuid,
       functionUuid,
-      playgroundValues,
+      playgroundParameters,
     }: {
       projectUuid: string;
       functionUuid: string;
-      playgroundValues: PlaygroundParameters;
-    }) => await runPlayground(projectUuid, functionUuid, playgroundValues),
+      playgroundParameters: PlaygroundParameters;
+    }) => await runPlayground(projectUuid, functionUuid, playgroundParameters),
   });
 };

@@ -126,7 +126,6 @@ export const usePlaygroundContainer = ({
       );
       return;
     }
-
     // Read editor state
     const editorState = editorRef.current.getEditorState();
 
@@ -134,19 +133,19 @@ export const usePlaygroundContainer = ({
       void editorState.read(async () => {
         // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
-
+        const argTypes = inputs.reduce(
+          (acc, input) => {
+            acc[input.key] = input.type;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
         // Create function object
         const functionCreate: FunctionCreate = {
           prompt_template: markdown,
           call_params: data?.function?.call_params,
           name: functionName,
-          arg_types: inputs.reduce(
-            (acc, input) => {
-              acc[input.key] = input.type;
-              return acc;
-            },
-            {} as Record<string, string>
-          ),
+          arg_types: argTypes,
           provider: data.provider,
           model: data.model,
           signature: "",
@@ -196,20 +195,23 @@ export const usePlaygroundContainer = ({
             },
             {} as Record<string, any>
           );
-
           // TODO: Update this to only pass in arg_values
-          const playgroundValues: PlaygroundParameters = {
+          const playgroundParameters: PlaygroundParameters = {
             arg_values: inputValues,
             provider: data.provider,
             model: data.model,
+            arg_types: argTypes,
+            call_params: data?.function?.call_params,
+            prompt_template: markdown,
           };
 
           // Run function
           const res = await runMutation.mutateAsync({
             projectUuid,
             functionUuid: newVersion.uuid,
-            playgroundValues,
+            playgroundParameters,
           });
+          console.log(res);
           setSpanUuid(res);
 
           navigate({

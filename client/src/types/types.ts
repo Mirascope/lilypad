@@ -689,11 +689,16 @@ export interface OrganizationUpdate {
 export interface PlaygroundParameters {
   /** Arg Values */
   arg_values: Record<string, number | boolean | string | any[] | object>;
+  /** Arg Types */
+  arg_types: Record<string, string> | null;
   /** Provider name enum */
   provider: Provider;
   /** Model */
   model: string;
-  function?: FunctionCreate | null;
+  /** Prompt Template */
+  prompt_template: string;
+  /** Call Params */
+  call_params: object | null;
 }
 
 /**
