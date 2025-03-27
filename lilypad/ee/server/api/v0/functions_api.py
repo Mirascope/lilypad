@@ -311,8 +311,6 @@ def run_playground(
 
     arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
 
-    # Create function code using the required template format with secure escaping
-    # Explicitly escape all variable values using json.dumps()
     function_code = """
 import lilypad
 from mirascope import llm, prompt_template
@@ -342,7 +340,6 @@ def {function_name}(trace_ctx{arguments}) -> None:
     json_arg_values = json.dumps(decoded_arg_values)
     user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
 
-    # Create the wrapper code as specified in the original implementation
     wrapper_code = f"""
 import json
 import os
@@ -356,7 +353,6 @@ lilypad.configure()
 res = {function.name}.version({function.version_num})(**arg_values)
 """
 
-    # Set up secure environment variables
     env_vars = {
         "OPENAI_API_KEY": user.keys.get("openai", ""),
         "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
@@ -368,7 +364,6 @@ res = {function.name}.version({function.version_num})(**arg_values)
         "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
     }
 
-    # Execute the code with enhanced security
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
     except Exception as e:
@@ -390,9 +385,8 @@ def _validate_template_string(template: str | None) -> bool:
         True if safe, False otherwise
     """
     if not template:
-        return True  # Empty template is acceptable
+        return True
 
-    # Check for suspicious patterns
     suspicious_patterns = [
         r"{.*?__.*?}",  # Dunder methods
         r'{.*?["\']\s*:\s*["\'].*?}',  # Dict with string keys like format string attacks
@@ -410,12 +404,10 @@ def _validate_template_string(template: str | None) -> bool:
             logger.warning(f"Suspicious pattern in template: {pattern}")
             return False
 
-    # Check for unbalanced braces
     if template.count("{") != template.count("}"):
         logger.warning("Unbalanced braces in template")
         return False
 
-    # Extract placeholders and ensure they are valid Python identifiers
     placeholders = re.findall(r"{([^{}]+)}", template)
     for placeholder in placeholders:
         if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", placeholder.strip()):
@@ -435,21 +427,16 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     Returns:
         The result of code execution
     """
-    # Append marker code to return a specific variable and format with ruff
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
 
-    # Write code to a temporary file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(modified_code)
         tmp_path = Path(tmp_file.name)
 
-    # Validate API keys to prevent injection
     sanitized_env = _validate_api_keys(env_vars)
 
     try:
-        # Execute in a subprocess with resource limitations and security flags
-        # Use the temporary file's directory as the working directory for better isolation
         result = subprocess.run(
             ["uv", "run", "--no-project", str(tmp_path)],
             check=False,
@@ -468,13 +455,11 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         return "Internal execution error"
     finally:
         try:
-            # Always clean up the temporary file
             tmp_path.unlink()
         except Exception as e:
             logger.warning("Failed to delete temporary file: %s", e)
 
     if result.returncode == 0:
-        # Extract the result using the marker pattern
         result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
         if result_match:
             try:
