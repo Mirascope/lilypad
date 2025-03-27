@@ -440,7 +440,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
-    print(modified_code, flush=True)  # For debugging
+    print(modified_code, flush=True)  # For debugging # noqa: T201
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
 
@@ -477,7 +477,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
         error_message = result.stderr.strip()
-        print(
+        print(  # noqa: T201
             f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
             flush=True,
         )
