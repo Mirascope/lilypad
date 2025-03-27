@@ -360,6 +360,7 @@ res = {function.name}(**arg_values)
     #     else ""
     #     for name in ["openai", "anthropic", "gemini", "openrouter"]
     # }
+    settings = get_settings()
     env_vars = {
         # "OPENAI_API_KEY": external_api_keys["openai"],
         # "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
@@ -372,7 +373,8 @@ res = {function.name}(**arg_values)
         "LILYPAD_PROJECT_ID": str(project_uuid),
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
-        "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
+        "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
+        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0"
     }
 
     try:
