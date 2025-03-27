@@ -51,7 +51,6 @@ functions_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parents[5]
-_DEPS_FILE = _PROJECT_ROOT / "playground-deps.txt"
 
 
 def sanitize_arg_types_and_values(
@@ -447,33 +446,28 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     modified_code = code + "\n\nprint('__RESULT__', res, '__RESULT__')"
     print(modified_code, flush=True)  # For debugging
     modified_code = run_ruff(dedent(modified_code)).strip()
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
-        tmp_file.write(modified_code)
-        tmp_path = Path(tmp_file.name)
     sanitized_env = _validate_api_keys(env_vars)
 
-    try:
-        result = subprocess.run(
-            ["/opt/playground-venv/bin/python", str(tmp_path)],
-            check=False,
-            capture_output=True,
-            text=True,
-            env=sanitized_env,
-            timeout=60,
-            preexec_fn=_limit_resources,
-        )
-    except subprocess.TimeoutExpired:
-        logger.error("Subprocess execution timed out.")
-        return "Execution timed out"
-    except Exception:
-        logger.exception("Subprocess execution failed")
-        return "Internal execution error"
-    finally:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir) / "playground.py"
+        tmp_path.write_text(modified_code)
         try:
-            tmp_path.unlink()
-        except Exception as e:
-            logger.warning("Failed to delete temporary file: %s", e)
+            result = subprocess.run(
+                ["/opt/playground-venv/bin/python", str(tmp_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=sanitized_env,
+                cwd=tmpdir,
+                timeout=60,
+                preexec_fn=_limit_resources,
+            )
+        except subprocess.TimeoutExpired:
+            logger.error("Subprocess execution timed out.")
+            return "Execution timed out"
+        except Exception:
+            logger.exception("Subprocess execution failed")
+            return "Internal execution error"
 
     if result.returncode == 0:
         result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
