@@ -440,7 +440,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
-    print(modified_code, flush=True)  # For debugging # noqa: T201
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
     settings = get_settings()
@@ -456,7 +455,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Python executable not found",
         )
-    print(f"{sanitized_env=}", flush=True)  # noqa: T201
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)
@@ -490,10 +488,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
         error_message = result.stderr.strip()
-        print(  # noqa: T201
-            f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
-            flush=True,
-        )
 
         return "Code execution error"
 
