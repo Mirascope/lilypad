@@ -21,7 +21,8 @@ RUN --mount=type=cache,id=s/f10d6a1b-8979-434f-addc-9ac197d051b2-/root/.cache/uv
     uv sync --frozen --no-install-project --no-dev --all-extras
 
 # Pre-install playground dependencies and cache them
-RUN echo "" | uv run --no-project --with-requirements  playground-deps.txt -
+RUN uv venv --no-project /opt/playground-venv
+RUN VIRTUAL_ENV=/opt/playground-venv uv pip install -r  playground-deps.txt
 
 # Now copy the full application code
 COPY . /app

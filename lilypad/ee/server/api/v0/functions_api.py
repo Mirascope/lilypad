@@ -378,6 +378,7 @@ res = {function.name}.version({function.version_num})(**arg_values)
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
         "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
+        "VIRTUAL_ENV": "/opt/playground-venv"
     }
 
     try:
