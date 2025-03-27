@@ -30,9 +30,9 @@ export const createVersionedFunction = async (
 
 export const fetchFunctionsByName = async (
   functionName: string,
-  projectUuid?: string
+  projectUuid: string
 ) => {
-  if (!projectUuid) return [];
+  if (!projectUuid || !functionName) return [];
   return (
     await api.get<FunctionPublic[]>(
       `/projects/${projectUuid}/functions/name/${functionName}`
@@ -149,11 +149,12 @@ export const functionsQueryOptions = (projectUuid: string) =>
 
 export const functionsByNameQueryOptions = (
   functionName: string,
-  projectUuid?: string
+  projectUuid: string
 ) =>
   queryOptions({
     queryKey: functionKeys.list(functionName),
     queryFn: async () => await fetchFunctionsByName(functionName, projectUuid),
+    enabled: !!functionName,
   });
 
 export const useArchiveFunctionMutation = () => {

@@ -19,9 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Image, Music, Upload, X } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Control,
+  ControllerRenderProps,
   FieldPath,
   FieldValues,
   useFieldArray,
@@ -31,7 +31,7 @@ import {
 // Define value types
 export interface FormItemValue {
   type: "str" | "int" | "float" | "bool" | "bytes" | "list" | "dict";
-  value: any;
+  value: unknown;
 }
 
 export interface ListItemValue extends FormItemValue {
@@ -39,44 +39,42 @@ export interface ListItemValue extends FormItemValue {
 }
 
 // Generic types for form components
-type FormInputWrapperProps<
+interface FormInputWrapperProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
-  control: Control<TFieldValues>;
+> {
   name: TName;
   label?: string;
   description?: string;
-  children: (field: any) => React.ReactNode;
+  children: (
+    field: ControllerRenderProps<TFieldValues, TName>
+  ) => React.ReactNode;
   containerClassName?: string;
   formItemClassName?: string;
-};
+}
 
-type TypedInputProps<
+interface TypedInputProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
-  control: Control<TFieldValues>;
+> {
   name: TName;
   type: "str" | "int" | "float" | "bool" | "bytes" | "list" | "dict";
   label?: string;
-};
+}
 
-type BaseInputProps<
+interface BaseInputProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
-  control: Control<TFieldValues>;
+> {
   name: TName;
   label?: string;
-};
+}
 
 // Base FormInput wrapper to reduce boilerplate
 export const FormInputWrapper = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label,
   description,
@@ -84,6 +82,7 @@ export const FormInputWrapper = <
   containerClassName = "w-full",
   formItemClassName = "",
 }: FormInputWrapperProps<TFieldValues, TName>) => {
+  const { control } = useFormContext<TFieldValues>();
   return (
     <div className={containerClassName}>
       <FormField
@@ -107,18 +106,17 @@ export const StringInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (str)",
 }: BaseInputProps<TFieldValues, TName>) => {
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
           <Input
             {...field}
             placeholder='Enter text value'
-            value={field.value || ""}
+            value={field.value ?? ""}
             onChange={field.onChange}
           />
         </FormControl>
@@ -132,12 +130,11 @@ export const IntegerInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (int)",
 }: BaseInputProps<TFieldValues, TName>) => {
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
           <Input
@@ -163,12 +160,11 @@ export const FloatInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (float)",
 }: BaseInputProps<TFieldValues, TName>) => {
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
           <Input
@@ -194,12 +190,11 @@ export const BooleanInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (bool)",
 }: BaseInputProps<TFieldValues, TName>) => {
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
           <div>
@@ -220,7 +215,6 @@ export const BytesInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (bytes)",
 }: BaseInputProps<TFieldValues, TName>) => {
@@ -317,7 +311,7 @@ export const BytesInput = <
   };
 
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
           <div className='space-y-2'>
@@ -383,7 +377,7 @@ export const BytesInput = <
                 <input
                   ref={fileInputRef}
                   type='file'
-                  onChange={(e) => handleFileChange(e, field.onChange)}
+                  onChange={(e) => void handleFileChange(e, field.onChange)}
                   className='hidden'
                   accept='*/*'
                 />
@@ -426,9 +420,9 @@ export const ListInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
 }: BaseInputProps<TFieldValues, TName>) => {
+  const { control } = useFormContext<TFieldValues>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: name as unknown as any,
@@ -490,7 +484,6 @@ export const ListInput = <
                         }}
                       />
                       <TypedInput
-                        control={control}
                         name={
                           `${String(name)}.${index}.value` as unknown as FieldPath<TFieldValues>
                         }
@@ -521,16 +514,15 @@ export const ObjectInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   label = "Value (dict)",
 }: BaseInputProps<TFieldValues, TName>) => {
-  const form = useFormContext<TFieldValues>();
-  const objectValue = form.watch(name) || {};
+  const methods = useFormContext<TFieldValues>();
+  const objectValue = methods.watch(name) || {};
 
   // Convert flat object to structured format with type and value
   const getStructuredEntries = () => {
-    const result: Array<{ key: string; type: string; value: any }> = [];
+    const result: { key: string; type: string; value: unknown }[] = [];
     Object.entries(objectValue).forEach(([key, val]) => {
       // If value is already in our structured format
       if (val && typeof val === "object" && "type" in val && "value" in val) {
@@ -554,9 +546,9 @@ export const ObjectInput = <
   const entries = getStructuredEntries();
 
   const handleAddProperty = () => {
-    const currentObj = form.getValues(name) || {};
+    const currentObj = methods.getValues(name) || {};
     const newKey = `key${Object.keys(currentObj).length + 1}`;
-    form.setValue(
+    methods.setValue(
       name as FieldPath<TFieldValues>,
       {
         ...currentObj,
@@ -566,50 +558,38 @@ export const ObjectInput = <
   };
 
   const handleRemoveProperty = (key: string) => {
-    const currentObj = { ...form.getValues(name) };
+    const currentObj = { ...methods.getValues(name) };
     delete currentObj[key];
-    form.setValue(name, currentObj);
+    methods.setValue(name, currentObj);
   };
 
   const handleKeyChange = (oldKey: string, newKey: string) => {
-    const currentObj = { ...form.getValues(name) };
+    const currentObj = { ...methods.getValues(name) };
     const value = currentObj[oldKey];
     delete currentObj[oldKey];
     currentObj[newKey] = value;
-    form.setValue(name, currentObj);
+    methods.setValue(name, currentObj);
   };
 
   const handleTypeChange = (key: string, newType: string) => {
-    const currentObj = { ...form.getValues(name) };
-    const currentEntry = currentObj[key];
+    const currentObj = { ...methods.getValues(name) };
 
-    // Convert value based on new type
-    let newValue: any = "";
-    if (
-      currentEntry &&
-      typeof currentEntry === "object" &&
-      "value" in currentEntry
-    ) {
-      const currentValue = currentEntry.value;
-
-      if (newType === "str") newValue = String(currentValue || "");
-      else if (newType === "int") newValue = parseInt(currentValue, 10) || 0;
-      else if (newType === "float") newValue = parseFloat(currentValue) || 0.0;
-      else if (newType === "bool") newValue = Boolean(currentValue);
-      else if (newType === "bytes")
-        newValue = typeof currentValue === "string" ? currentValue : "";
-      else if (newType === "list")
-        newValue = Array.isArray(currentValue) ? currentValue : [];
-      else if (newType === "dict")
-        newValue = typeof currentValue === "object" ? currentValue : {};
-    }
+    // Reset value based on new type
+    let newValue: unknown = "";
+    if (newType === "str") newValue = "";
+    else if (newType === "int") newValue = 0;
+    else if (newType === "float") newValue = 0.0;
+    else if (newType === "bool") newValue = false;
+    else if (newType === "bytes") newValue = "";
+    else if (newType === "list") newValue = [];
+    else if (newType === "dict") newValue = {};
 
     currentObj[key] = { type: newType, value: newValue };
-    form.setValue(name, currentObj);
+    methods.setValue(name, currentObj);
   };
 
-  const handleValueChange = (key: string, newValue: any) => {
-    const currentObj = { ...form.getValues(name) };
+  const handleValueChange = (key: string, newValue: unknown) => {
+    const currentObj = { ...methods.getValues(name) };
     if (currentObj[key] && typeof currentObj[key] === "object") {
       currentObj[key] = {
         ...currentObj[key],
@@ -618,11 +598,11 @@ export const ObjectInput = <
     } else {
       currentObj[key] = { type: "str", value: newValue };
     }
-    form.setValue(name, currentObj);
+    methods.setValue(name, currentObj);
   };
 
   return (
-    <FormInputWrapper control={control} name={name} label={label}>
+    <FormInputWrapper name={name} label={label}>
       {(_field) => (
         <div className='space-y-4 border rounded-md p-4'>
           {entries.map(({ key, type, value }, entryIndex) => {
@@ -673,7 +653,7 @@ export const ObjectInput = <
                       <FormLabel>{valueLabel}</FormLabel>
                       {type === "str" && (
                         <Input
-                          value={value || ""}
+                          value={(value as any) ?? ""}
                           onChange={(e) =>
                             handleValueChange(key, e.target.value)
                           }
@@ -684,7 +664,7 @@ export const ObjectInput = <
                         <Input
                           type='number'
                           step='1'
-                          value={value ?? ""}
+                          value={(value as any) ?? ""}
                           onChange={(e) => {
                             const val =
                               e.target.value === ""
@@ -699,7 +679,7 @@ export const ObjectInput = <
                         <Input
                           type='number'
                           step='0.01'
-                          value={value ?? ""}
+                          value={(value as any) ?? ""}
                           onChange={(e) => {
                             const val =
                               e.target.value === ""
@@ -723,7 +703,6 @@ export const ObjectInput = <
                       )}
                       {type === "list" && (
                         <ListInput
-                          control={control}
                           name={
                             `${String(name)}.${key}.value` as unknown as FieldPath<TFieldValues>
                           }
@@ -732,7 +711,6 @@ export const ObjectInput = <
                       )}
                       {type === "dict" && (
                         <ObjectInput
-                          control={control}
                           name={
                             `${String(name)}.${key}.value` as unknown as FieldPath<TFieldValues>
                           }
@@ -764,51 +742,52 @@ export const TypedInput = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-  control,
   name,
   type,
   label,
 }: TypedInputProps<TFieldValues, TName>) => {
-  const labelWithType = label || `Value (${type})`;
+  const methods = useFormContext<TFieldValues>();
+  useEffect(() => {
+    let newValue: any = "";
+    if (type === "str") newValue = "";
+    else if (type === "int") newValue = 0;
+    else if (type === "float") newValue = 0.0;
+    else if (type === "bool") newValue = false;
+    else if (type === "bytes") newValue = "";
+    else if (type === "list") newValue = [];
+    else if (type === "dict") newValue = {};
+    methods?.setValue(name, newValue);
+  }, [type]);
+  const labelWithType = label ?? `Value (${type})`;
   switch (type) {
     case "str":
-      return (
-        <StringInput control={control} name={name} label={labelWithType} />
-      );
+      return <StringInput name={name} label={labelWithType} />;
     case "int":
-      return (
-        <IntegerInput control={control} name={name} label={labelWithType} />
-      );
+      return <IntegerInput name={name} label={labelWithType} />;
     case "float":
-      return <FloatInput control={control} name={name} label={labelWithType} />;
+      return <FloatInput name={name} label={labelWithType} />;
     case "bool":
-      return (
-        <BooleanInput control={control} name={name} label={labelWithType} />
-      );
+      return <BooleanInput name={name} label={labelWithType} />;
     case "bytes":
-      return <BytesInput control={control} name={name} label={labelWithType} />;
+      return <BytesInput name={name} label={labelWithType} />;
     case "list":
-      return <ListInput control={control} name={name} label={labelWithType} />;
+      return <ListInput name={name} label={labelWithType} />;
     case "dict":
-      return (
-        <ObjectInput control={control} name={name} label={labelWithType} />
-      );
+      return <ObjectInput name={name} label={labelWithType} />;
     default:
-      return (
-        <StringInput control={control} name={name} label={labelWithType} />
-      );
+      return <StringInput name={name} label={labelWithType} />;
   }
 };
 
-export type NestedFormItemValue = {
+export interface NestedFormItemValue {
   [key: string]: FormItemValue | NestedFormItemValue;
-};
+}
 
-type NestedArray = Array<NestedValue>;
+type NestedArray = NestedValue[];
 
 type NestedValue = FormItemValue | NestedFormItemValue | NestedArray;
 
-type SimplifiedValue = any;
+type SimplifiedValue = unknown;
 
 /**
  * Simplifies a FormItemValue by extracting just the value while handling nested structures

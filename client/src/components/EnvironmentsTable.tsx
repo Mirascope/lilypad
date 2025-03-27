@@ -52,7 +52,6 @@ export const EnvironmentsTable = () => {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => {
-        console.log(row.getValue("created_at"));
         return <div>{formatDate(row.getValue("created_at"))}</div>;
       },
     },

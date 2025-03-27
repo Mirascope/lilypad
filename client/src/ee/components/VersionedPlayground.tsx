@@ -9,8 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { Playground } from "@/ee/components/Playground";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { FunctionPublic } from "@/types/types";
 import {
@@ -19,7 +17,7 @@ import {
   useArchiveFunctionMutation,
 } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Outlet, useNavigate } from "@tanstack/react-router";
 import { GitCompare, Trash } from "lucide-react";
 import { useState } from "react";
 
@@ -44,9 +42,8 @@ export const VersionedPlayground = ({
   );
   const { toast } = useToast();
   const [compareMode, setCompareMode] = useState<boolean>(isCompare);
-  const features = useFeatureAccess();
   const navigate = useNavigate();
-  const fn = functions?.find((f) => f.uuid === functionUuid);
+  const fn = functions?.find((f) => f.uuid === functionUuid) ?? null;
   const archiveFunction = useArchiveFunctionMutation();
   const handleNewFunctionClick = (newFunctionName: string) => {
     navigate({
@@ -77,7 +74,8 @@ export const VersionedPlayground = ({
       <Typography variant='h3'>Playground</Typography>
       <div className='flex gap-2'>
         <Combobox
-          popoverText='Select a function'
+          popoverText='Select or create a new playground'
+          helperText='Search for a playground...'
           emptyText='Type to create a new function'
           items={functionNames.map((fn) => ({
             value: fn.name,
@@ -90,48 +88,45 @@ export const VersionedPlayground = ({
         />
       </div>
       <div className='flex gap-2 items-center'>
-        {fn && (
-          <Button
-            variant='outline'
-            size='icon'
-            onClick={() => {
-              if (!compareMode) {
-                navigate({
-                  to: `/projects/${projectUuid}/playground/${functionName}/compare/$firstFunctionUuid/$secondFunctionUuid`,
-                  params: {
-                    firstFunctionUuid: functionUuid,
-                    secondFunctionUuid,
-                  },
-                }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
-                );
-              } else {
-                navigate({
-                  to: `/projects/${projectUuid}/playground/${functionName}/${functionUuid}`,
-                }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
-                );
-              }
-              setCompareMode((prevCompareMode) => !prevCompareMode);
-            }}
-          >
-            <GitCompare />
-          </Button>
-        )}
-        {functionName && (
-          <SelectFunction
-            projectUuid={projectUuid}
-            functionName={functionName}
-            firstFunctionUuid={functionUuid}
-            secondFunctionUuid={secondFunctionUuid}
-            compareMode={compareMode}
-            isFirstFunction={true}
-          />
-        )}
+        <Button
+          variant='outline'
+          size='icon'
+          disabled={!fn}
+          onClick={() => {
+            if (!compareMode) {
+              navigate({
+                to: `/projects/${projectUuid}/playground/${functionName}/compare/$firstFunctionUuid/$secondFunctionUuid`,
+                params: {
+                  firstFunctionUuid: functionUuid,
+                  secondFunctionUuid,
+                },
+              }).catch(() =>
+                toast({
+                  title: "Failed to navigate",
+                })
+              );
+            } else {
+              navigate({
+                to: `/projects/${projectUuid}/playground/${functionName}/${functionUuid}`,
+              }).catch(() =>
+                toast({
+                  title: "Failed to navigate",
+                })
+              );
+            }
+            setCompareMode((prevCompareMode) => !prevCompareMode);
+          }}
+        >
+          <GitCompare />
+        </Button>
+        <SelectFunction
+          projectUuid={projectUuid}
+          functionName={functionName}
+          firstFunctionUuid={functionUuid}
+          secondFunctionUuid={secondFunctionUuid}
+          compareMode={compareMode}
+          isFirstFunction={true}
+        />
         {fn && !isCompare && functionName && (
           <LilypadDialog
             icon={<Trash />}
@@ -179,13 +174,14 @@ export const VersionedPlayground = ({
           />
         </div>
       )}
-      <Playground version={fn ?? null} />
+      <Outlet />
     </div>
   );
 };
+
 interface SelectFunctionProps {
   projectUuid: string;
-  functionName: string;
+  functionName?: string;
   firstFunctionUuid?: string;
   secondFunctionUuid?: string;
   compareMode?: boolean;
@@ -202,10 +198,11 @@ const SelectFunction = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: functions } = useSuspenseQuery(
-    functionsByNameQueryOptions(functionName, projectUuid)
+    functionsByNameQueryOptions(functionName ?? "", projectUuid)
   );
   return (
     <Select
+      disabled={!functionName}
       value={(isFirstFunction ? firstFunctionUuid : secondFunctionUuid) ?? ""}
       onValueChange={(uuid) => {
         if (compareMode) {

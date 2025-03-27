@@ -2,16 +2,23 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { Label } from "@/components/ui/label";
 import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import { FunctionSpans } from "@/components/FunctionSpans";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
+import { Button } from "@/components/ui/button";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
+import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
+import { SquareTerminal } from "lucide-react";
 import { Suspense } from "react";
 
 export const Route = createFileRoute(
@@ -56,8 +63,18 @@ const FunctionOverview = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const fn = functions.find((f) => f.uuid === functionUuid);
-
+  const handlePlaygroundButtonClick = () => {
+    navigate({
+      to: `/projects/${projectUuid}/playground/${functionName}/${functionUuid}`,
+    }).catch(() =>
+      toast({
+        title: "Failed to navigate",
+      })
+    );
+  };
   if (!fn) {
     return <NotFound />;
   } else {
@@ -69,6 +86,12 @@ const FunctionOverview = () => {
         <div className='text-left'>
           <Label>Code</Label>
           <CodeSnippet code={fn.code} />
+        </div>
+        <div>
+          <Button variant='outline' onClick={handlePlaygroundButtonClick}>
+            <SquareTerminal className='w-4 h-4 mr-2' />
+            Go to playground
+          </Button>
         </div>
       </div>
     );

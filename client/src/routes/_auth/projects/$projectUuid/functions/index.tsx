@@ -1,6 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
-import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,18 +26,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { FunctionTab } from "@/types/functions";
 import { FunctionPublic } from "@/types/types";
@@ -53,9 +42,8 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, Trash } from "lucide-react";
+import { MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
-import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
   {
@@ -182,17 +170,11 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
   );
 };
 const FunctionsList = () => {
-  const { projectUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(
-    uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
-  );
-  const features = useFeatureAccess();
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
       <div className='text-left'>
         <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
           Functions
-          {data.length > 0 && features.playground && <CreateFunctionButton />}
         </h1>
         <div className='flex gap-2 max-w-full flex-wrap'>
           <Suspense fallback={<CardSkeleton items={2} />}>
@@ -204,93 +186,9 @@ const FunctionsList = () => {
   );
 };
 
-const CreateFunctionButton = () => {
-  return (
-    <LilypadDialog
-      icon={<Plus />}
-      buttonProps={{
-        variant: "default",
-      }}
-      tooltipContent='Create a new managed function'
-      tooltipProps={{
-        className: "bg-gray-700 text-white",
-      }}
-      title='Create Managed Function'
-      description='Start by naming your function'
-      dialogContentProps={{
-        className:
-          "max-h-[90vh] max-w-[90vw] w-auto h-auto overflow-y-auto overflow-x-auto",
-      }}
-    >
-      <FunctionNoDataPlaceholder />
-    </LilypadDialog>
-  );
-};
-
-interface CreateFunctionFormValues {
-  name: string;
-}
 const FunctionNoDataPlaceholder = () => {
-  const { projectUuid } = useParams({ from: Route.id });
-  const { toast } = useToast();
-  const methods = useForm<CreateFunctionFormValues>({
-    defaultValues: {
-      name: "",
-    },
-  });
-  const features = useFeatureAccess();
-  const navigate = useNavigate();
-  const onSubmit = (data: CreateFunctionFormValues) => {
-    navigate({
-      to: `/projects/${projectUuid}/functions/${data.name}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
-  };
   return (
     <div className='flex flex-col gap-4'>
-      {features.playground && (
-        <>
-          <Typography variant='h4'>Create Managed Function</Typography>
-          <Form {...methods}>
-            <form
-              className='flex flex-col gap-2'
-              onSubmit={methods.handleSubmit(onSubmit)}
-            >
-              <FormField
-                key='name'
-                control={methods.control}
-                name='name'
-                rules={{
-                  required: "Function name is required",
-                  validate: (value) => {
-                    const pythonFunctionNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-                    return (
-                      pythonFunctionNameRegex.test(value) ||
-                      "Function name must be a valid Python function name."
-                    );
-                  },
-                }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Function Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder='Enter function name' />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type='submit'>Get Started</Button>
-            </form>
-          </Form>
-          <Separator />
-        </>
-      )}
-      <Typography variant='h4'>Create In code</Typography>
       <DeveloperFunctionNoDataPlaceholder />
     </div>
   );

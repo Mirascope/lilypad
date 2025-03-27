@@ -21,11 +21,11 @@ import { JSX } from "react";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
 
-type Tab = {
+interface Tab {
   label: string;
   value: string;
   component?: JSX.Element | null;
-};
+}
 
 export const LilypadPanel = ({
   spanUuid,
@@ -41,16 +41,17 @@ export const LilypadPanel = ({
     {
       label: "Code",
       value: "code",
-      component: <CodeSnippet code={span.code || ""} />,
+      component: <CodeSnippet code={span.code ?? ""} />,
     },
     {
       label: "Signature",
       value: "signature",
-      component: <CodeSnippet code={span.signature || ""} />,
+      component: <CodeSnippet code={span.signature ?? ""} />,
     },
   ];
-  const data: Record<string, any> = span.data;
-  const attributes: Record<string, string> | undefined = data.attributes;
+  const data: Record<string, unknown> = span.data as Record<string, unknown>;
+  const attributes: Record<string, string> | undefined =
+    data.attributes as Record<string, string>;
   const lilypadType = attributes?.["lilypad.type"];
   const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
   return (
@@ -76,7 +77,7 @@ export const LilypadPanel = ({
           <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
         )}
       </div>
-      {(span.code || span.signature) && (
+      {(span.code ?? span.signature) && (
         <Card>
           <CardHeader>
             <CardTitle>{"Code"}</CardTitle>

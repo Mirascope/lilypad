@@ -4,32 +4,25 @@ import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
-import CardSkeleton from "@/components/CardSkeleton";
-import { CompareTracesTable } from "@/components/CompareTracesTable";
 import { LilypadLoading } from "@/components/LilypadLoading";
-import { MetricCharts } from "@/components/MetricsCharts";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DiffTool } from "@/ee/components/DiffTool";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
-import { FunctionTab } from "@/types/functions";
 import { FunctionPublic, PlaygroundParameters } from "@/types/types";
-import { Construction } from "lucide-react";
 import { Suspense, useState } from "react";
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
+  "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
-      <Function />
+      <ComparePlaygroundsRoute />
     </Suspense>
   ),
 });
@@ -184,30 +177,7 @@ const ComparePlaygrounds = ({
   );
 };
 
-const Function = () => {
-  const { projectUuid, functionUuid, secondFunctionUuid, tab } = useParams({
-    from: FunctionRoute.id,
-  });
-  if (tab === FunctionTab.OVERVIEW) {
-    return <FunctionOverview />;
-  } else if (tab === FunctionTab.TRACES) {
-    return (
-      <CompareTracesTable
-        projectUuid={projectUuid}
-        firstFunctionUuid={functionUuid}
-        secondFunctionUuid={secondFunctionUuid}
-      />
-    );
-  } else if (tab === FunctionTab.ANNOTATIONS) {
-    return (
-      <div className='flex justify-center items-center h-96'>
-        <Construction color='orange' /> This page is under construction{" "}
-        <Construction color='orange' />
-      </div>
-    );
-  }
-};
-const FunctionOverview = () => {
+const ComparePlaygroundsRoute = () => {
   const { projectUuid, functionName, functionUuid, secondFunctionUuid } =
     useParams({
       from: Route.id,
@@ -223,21 +193,7 @@ const FunctionOverview = () => {
     return <div>Please select two functions to compare.</div>;
   } else {
     return (
-      <div className='p-4 flex flex-col gap-6 max-w-6xl mx-auto'>
-        <Suspense fallback={<CardSkeleton />}>
-          <MetricCharts
-            firstFunction={firstFunction}
-            secondFunction={secondFunction}
-            projectUuid={projectUuid}
-          />
-        </Suspense>
-        <div className='text-left'>
-          <Label className='text-lg font-semibold'>Code Comparison</Label>
-          <DiffTool
-            firstLexicalClosure={firstFunction.code}
-            secondLexicalClosure={secondFunction.code}
-          />
-        </div>
+      <div className='p-4 flex flex-col gap-6'>
         {features.playground &&
           firstFunction.is_versioned &&
           secondFunction.is_versioned && (

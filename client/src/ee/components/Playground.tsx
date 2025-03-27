@@ -74,9 +74,7 @@ export const Playground = ({
     setOpenInputDrawer,
     doesProviderExist,
     isRunLoading,
-    isPatchLoading,
     onSubmit,
-    handleSetDefault,
     handleReset,
     projectUuid,
     isDisabled,
@@ -379,9 +377,8 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
                     )}
                   />
                   <TypedInput<EditorParameters>
-                    control={methods.control}
                     name={`inputs.${index}.value`}
-                    type={type}
+                    type={type as any}
                   />
                 </div>
               </CardContent>

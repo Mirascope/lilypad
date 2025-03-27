@@ -7,15 +7,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from ee.validate import LicenseValidator, Tier
-
 from .....server._utils import get_current_user
 from .....server.models import UserTable
 from .....server.schemas import (
     UserPublic,
 )
 from .....server.services import OrganizationInviteService, OrganizationService
-from ...features import cloud_features
 from ...models import UserOrganizationTable, UserRole
 from ...schemas import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
@@ -71,7 +68,6 @@ async def create_user_organization(
     user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> UserOrganizationTable:
     """Create user organization"""
-    validator = LicenseValidator()
     org_invite = organization_invites_service.find_record_by_token(
         create_user_organization_token.token
     )
@@ -80,20 +76,22 @@ async def create_user_organization(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Invite not found.",
         )
-    license_info = validator.validate_license(
-        org_invite.organization_uuid, organization_service
-    )
-    tier = Tier.FREE
-    if license_info:
-        tier = license_info.tier
-    num_users = user_organization_service.count_users_in_organization(
-        org_invite.organization_uuid
-    )
-    if num_users >= cloud_features[tier].num_users_per_organization:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
-        )
+    # OPEN BETA: Limit number of users per organization based on tier
+    # validator = LicenseValidator()
+    # license_info = validator.validate_license(
+    #     org_invite.organization_uuid, organization_service
+    # )
+    # tier = Tier.FREE
+    # if license_info:
+    #     tier = license_info.tier
+    # num_users = user_organization_service.count_users_in_organization(
+    #     org_invite.organization_uuid
+    # )
+    # if num_users >= cloud_features[tier].num_users_per_organization:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
+    #     )
     invite_deleted = organization_invites_service.delete_record_by_uuid(
         org_invite.uuid,
     )

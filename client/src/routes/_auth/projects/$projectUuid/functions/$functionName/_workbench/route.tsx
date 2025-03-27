@@ -10,11 +10,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +25,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { GitCompare, Plus, Trash } from "lucide-react";
+import { GitCompare, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
 import { validate } from "uuid";
 
@@ -177,21 +172,7 @@ const FunctionWorkbench = () => {
   const tabWidth = 80 * tabs.length;
   return (
     <div className='w-full p-6 flex flex-col gap-1'>
-      <div className='flex gap-2'>
-        <Typography variant='h2'>{functionName}</Typography>
-        {features.playground && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size='icon' onClick={handleNewFunctionClick}>
-                <Plus />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className='bg-gray-700 text-white'>
-              Create a new managed function
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      <Typography variant='h2'>{functionName}</Typography>
       <div className='flex gap-2 items-center'>
         {fn && (
           <Button

@@ -99,7 +99,7 @@ export const ResponseTimeChart = ({
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis
                   dataKey='start_date'
-                  tickFormatter={(value) => formatDate(value, false)}
+                  tickFormatter={(value: string) => formatDate(value, false)}
                 />
                 <YAxis
                   yAxisId='duration'
@@ -114,9 +114,9 @@ export const ResponseTimeChart = ({
                   tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
                 />
                 <Tooltip
-                  labelFormatter={(label) => formatDate(label, false)}
+                  labelFormatter={(label: string) => formatDate(label, false)}
                   formatter={(
-                    value: number | string | Array<any>,
+                    value: number | string | unknown[],
                     name: string
                   ) => {
                     if (typeof value === "number") {
