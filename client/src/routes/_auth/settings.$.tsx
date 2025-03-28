@@ -100,15 +100,17 @@ const Settings = () => {
           ))}
         </TabsList>
       </div>
-      {tabs.map((tab) => (
-        <TabsContent
-          key={tab.value}
-          value={tab.value}
-          className='w-full bg-gray-50 h-full'
-        >
-          {tab.component}
-        </TabsContent>
-      ))}
+      <div className='flex-1 min-h-0 relative'>
+        {tabs.map((tab) => (
+          <TabsContent
+            key={tab.value}
+            value={tab.value}
+            className='w-full bg-gray-50 absolute inset-0 overflow-auto'
+          >
+            {tab.component}
+          </TabsContent>
+        ))}
+      </div>
     </Tabs>
   );
 };

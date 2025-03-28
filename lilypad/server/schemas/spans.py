@@ -523,11 +523,10 @@ class SpanPublic(SpanBase):
     uuid: UUID
     project_uuid: UUID
     display_name: str | None = None
-    function: FunctionPublic | None = None
+    function: FunctionPublic | None
     annotations: list[AnnotationTable]
     child_spans: list[SpanPublic]
     created_at: datetime
-    version: int | None = None
     status: str | None = None
 
     @model_validator(mode="before")
@@ -549,15 +548,12 @@ class SpanPublic(SpanBase):
         attributes = data.get("attributes", {})
         if span.scope == Scope.LILYPAD:
             attributes: dict[str, Any] = span.data.get("attributes", {})
-            span_type: str = attributes.get("lilypad.type", "unknown")
             display_name = span.data.get("name", "")
-            version = attributes.get(f"lilypad.{span_type}.version")
         else:  # Must be Scope.LLM because Scope is an Enum
             if gen_ai_system := attributes.get("gen_ai.system"):
                 display_name = f"{gen_ai_system} with '{data['attributes']['gen_ai.request.model']}'"
             else:
                 display_name = data.get("name", "")
-            version = None
         child_spans = [
             cls._convert_span_table_to_public(child_span)
             for child_span in span.child_spans
@@ -565,7 +561,7 @@ class SpanPublic(SpanBase):
         return {
             "display_name": display_name,
             "child_spans": child_spans,
-            "version": version,
+            "function": span.function,
             "annotations": span.annotations,
             "status": span.data.get("status"),
             **span.model_dump(exclude={"child_spans", "data"}),

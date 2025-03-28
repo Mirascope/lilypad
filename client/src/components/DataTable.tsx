@@ -174,12 +174,16 @@ export const DataTable = <T extends { uuid: string }>({
     (rowVirtualizer.getVirtualItems()[
       rowVirtualizer.getVirtualItems().length - 1
     ]?.end ?? 0);
+
   return (
-    <ResizablePanelGroup direction='horizontal' className='rounded-lg border'>
+    <ResizablePanelGroup
+      direction='horizontal'
+      className='flex-1 rounded-lg w-full'
+    >
       <ResizablePanel
         defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
-        className='p-2 flex flex-col gap-2'
+        className='flex flex-col p-2 gap-2'
       >
         <div className='flex items-center rounded-md gap-2'>
           {filterColumn && (
@@ -228,77 +232,79 @@ export const DataTable = <T extends { uuid: string }>({
             </DropdownMenu>
           )}
         </div>
-        <div ref={virtualizerRef} className='rounded-md border overflow-auto'>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {rows.length ? (
-                <>
-                  {paddingTop > 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        style={{ height: `${paddingTop}px`, padding: 0 }}
-                      />
-                    </TableRow>
-                  )}
-                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const row = table.getRowModel().rows[virtualRow.index];
-                    if (!row) return null;
-                    return <CollapsibleRow key={row?.id} row={row} />;
-                  })}
-                  {paddingBottom > 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        style={{ height: `${paddingBottom}px`, padding: 0 }}
-                      />
-                    </TableRow>
-                  )}
-                </>
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className='h-24 text-center'
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+
+        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border'>
+          <div ref={virtualizerRef} className='rounded-md flex-1'>
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {rows.length ? (
+                  <>
+                    {paddingTop > 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          style={{ height: `${paddingTop}px`, padding: 0 }}
+                        />
+                      </TableRow>
+                    )}
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const row = table.getRowModel().rows[virtualRow.index];
+                      if (!row) return null;
+                      return <CollapsibleRow key={row?.id} row={row} />;
+                    })}
+                    {paddingBottom > 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          style={{ height: `${paddingBottom}px`, padding: 0 }}
+                        />
+                      </TableRow>
+                    )}
+                  </>
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className='h-24 text-center'
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </ResizablePanel>
+
       {detailRow && DetailPanel && (
         <>
           <ResizableHandle withHandle />
           <ResizablePanel
             defaultSize={defaultPanelSize}
             order={2}
-            style={{ overflowY: "auto" }}
+            className='flex flex-col overflow-hidden h-full p-4 gap-4'
             collapsible={true}
             minSize={12}
             onCollapse={onCollapse}
           >
-            <div className='p-4 border overflow-auto'>
-              <DetailPanel data={detailRow} />
-            </div>
+            <DetailPanel data={detailRow} />
           </ResizablePanel>
         </>
       )}

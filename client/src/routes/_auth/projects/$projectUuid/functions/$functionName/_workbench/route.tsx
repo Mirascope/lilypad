@@ -161,7 +161,7 @@ const FunctionWorkbench = () => {
 
   const tabWidth = 80 * tabs.length;
   return (
-    <div className='w-full p-6 flex flex-col gap-1'>
+    <div className='pt-4 pb-1 h-screen flex flex-col px-2'>
       <Typography variant='h2'>{functionName}</Typography>
       <div className='flex gap-2 items-center'>
         {fn && (
@@ -238,11 +238,15 @@ const FunctionWorkbench = () => {
           <SelectFunction compareMode={compareMode} isFirstFunction={false} />
         </div>
       )}
-      <Tabs value={tab} onValueChange={handleTabChange} className='w-full'>
-        <div className='flex justify-center w-full'>
-          <TabsList className={`w-[${tabWidth}px]`}>
-            {tabs.map((tab) => {
-              return (
+      <Tabs
+        value={tab}
+        onValueChange={handleTabChange}
+        className='w-full h-full flex flex-col'
+      >
+        <div>
+          <div className='flex justify-center w-full'>
+            <TabsList className={`w-[${tabWidth}px]`}>
+              {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
@@ -250,18 +254,25 @@ const FunctionWorkbench = () => {
                 >
                   {tab.label}
                 </TabsTrigger>
-              );
-            })}
-          </TabsList>
+              ))}
+            </TabsList>
+          </div>
+          <Separator className='my-2' />
         </div>
-        <Separator className='my-2' />
-        <Suspense fallback={<LilypadLoading />}>
-          {tabs.map((tab) => (
-            <TabsContent key={tab.value} value={tab.value} className='w-full'>
-              <Outlet />
-            </TabsContent>
-          ))}
-        </Suspense>
+
+        <div className='flex-1 min-h-0 relative'>
+          <Suspense fallback={<LilypadLoading />}>
+            {tabs.map((tab) => (
+              <TabsContent
+                key={tab.value}
+                value={tab.value}
+                className='absolute inset-0 overflow-auto'
+              >
+                <Outlet />
+              </TabsContent>
+            ))}
+          </Suspense>
+        </div>
       </Tabs>
     </div>
   );

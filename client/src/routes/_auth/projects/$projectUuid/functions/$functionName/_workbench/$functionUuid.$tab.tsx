@@ -79,11 +79,11 @@ const FunctionOverview = () => {
     return <NotFound />;
   } else {
     return (
-      <div className='p-4 flex flex-col gap-2 max-w-4xl mx-auto'>
+      <div className='p-2 flex flex-1 flex-col gap-2 max-w-4xl mx-auto'>
         <Suspense fallback={<CardSkeleton />}>
           <MetricCharts firstFunction={fn} projectUuid={projectUuid} />
         </Suspense>
-        <div className='text-left'>
+        <div>
           <Label>Code</Label>
           <CodeSnippet code={fn.code} />
         </div>

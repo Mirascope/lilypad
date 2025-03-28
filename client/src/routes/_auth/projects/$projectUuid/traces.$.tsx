@@ -21,9 +21,9 @@ export const Trace = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   return (
-    <div className='h-full flex flex-col px-2'>
+    <div className='pt-4 pb-1 h-screen flex flex-col px-2'>
       <Typography variant='h2'>{project.name}</Typography>
-      <div className='flex-1 min-h-0 overflow-auto'>
+      <div className='flex-1 overflow-auto'>
         <Suspense fallback={<TableSkeleton />}>
           <TraceBody />
         </Suspense>

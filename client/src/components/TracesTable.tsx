@@ -13,7 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AnnotationDialog } from "@/ee/components/AnnotationForm";
+import {
+  CreateAnnotationForm,
+  UpdateAnnotationForm,
+} from "@/ee/components/AnnotationForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { Scope, SpanPublic } from "@/types/types";
@@ -113,7 +116,6 @@ export const TracesTable = ({
       );
     }
   };
-
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
@@ -153,7 +155,7 @@ export const TracesTable = ({
       header: "Scope",
     },
     {
-      accessorKey: "version",
+      accessorKey: "function.version_num",
       id: "version",
       header: ({ column }) => {
         return (
@@ -232,7 +234,6 @@ export const TracesTable = ({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const annotation = row.original.annotations[0];
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -243,17 +244,6 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {features.annotations &&
-                row.getValue("scope") === Scope.LILYPAD && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<div>Loading ...</div>}>
-                      <AnnotationDialog
-                        spanUuid={row.original.uuid}
-                        annotation={annotation}
-                      />
-                    </Suspense>
-                  </div>
-                )}
               {row.original.scope === Scope.LILYPAD &&
                 row.original.function?.is_versioned &&
                 features.playground && (
@@ -358,18 +348,26 @@ export const TracesTable = ({
     }, [data]);
 
     return (
-      <div className='p-4 border rounded-md overflow-auto'>
-        <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-        <Suspense
-          fallback={<CardSkeleton items={5} className='flex flex-col' />}
-        >
+      <Suspense fallback={<CardSkeleton items={5} className='flex flex-col' />}>
+        <div>
+          {data.annotations.length > 0 ? (
+            <UpdateAnnotationForm
+              annotation={data.annotations[0]}
+              spanUuid={data.uuid}
+            />
+          ) : (
+            <CreateAnnotationForm spanUuid={data.uuid} />
+          )}
+        </div>
+        <div className='p-4 border rounded-md overflow-auto flex-1'>
+          <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
           {data.scope === Scope.LILYPAD ? (
             <LilypadPanel spanUuid={data.uuid} />
           ) : (
             <LlmPanel spanUuid={data.uuid} />
           )}
-        </Suspense>
-      </div>
+        </div>
+      </Suspense>
     );
   };
   const customControls = () => {
@@ -404,28 +402,26 @@ export const TracesTable = ({
     return <CompareDetailPanel />;
   }
   return (
-    <div>
-      <DataTable<SpanPublic>
-        columns={columns}
-        data={data}
-        virtualizerRef={virtualizerRef}
-        virtualizerOptions={{
-          count: data.length,
-          estimateSize: () => 45,
-          overscan: 20,
-        }}
-        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
-        customGetRowId={(row) => row.span_id}
-        DetailPanel={DetailPanel}
-        defaultPanelSize={50}
-        filterColumn={!hideCompare ? undefined : "display_name"}
-        selectRow={selectRow}
-        getRowCanExpand={getRowCanExpand}
-        getSubRows={getSubRows}
-        customControls={!hideCompare ? customControls : undefined}
-        defaultSorting={[{ id: "timestamp", desc: true }]}
-        onDetailPanelClose={handleDetailPanelClose}
-      />
-    </div>
+    <DataTable<SpanPublic>
+      columns={columns}
+      data={data}
+      virtualizerRef={virtualizerRef}
+      virtualizerOptions={{
+        count: data.length,
+        estimateSize: () => 45,
+        overscan: 20,
+      }}
+      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+      customGetRowId={(row) => row.span_id}
+      DetailPanel={DetailPanel}
+      defaultPanelSize={50}
+      filterColumn={!hideCompare ? undefined : "display_name"}
+      selectRow={selectRow}
+      getRowCanExpand={getRowCanExpand}
+      getSubRows={getSubRows}
+      customControls={!hideCompare ? customControls : undefined}
+      defaultSorting={[{ id: "timestamp", desc: true }]}
+      onDetailPanelClose={handleDetailPanelClose}
+    />
   );
 };
