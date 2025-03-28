@@ -27,6 +27,7 @@ services:
       - LILYPAD_SERVE_FRONTEND=true
       - LILYPAD_REMOTE_API_URL=http://localhost:8000
       - LILYPAD_REMOTE_CLIENT_URL=http://localhost:8000
+      - LILYPAD_PLAYGROUND_VENV_PATH=/opt/playground-venv
     depends_on:
       - postgres
 
