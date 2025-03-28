@@ -233,9 +233,9 @@ export const DataTable = <T extends { uuid: string }>({
           )}
         </div>
 
-        <div className='flex flex-col overflow-hidden' style={{ minHeight: 0 }}>
+        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border'>
           <div ref={virtualizerRef} className='rounded-md flex-1'>
-            <Table className='border'>
+            <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
