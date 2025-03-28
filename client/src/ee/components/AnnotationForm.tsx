@@ -1,6 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import LilypadDialog from "@/components/LilypadDialog";
-import { LilypadPanel } from "@/components/LilypadPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
@@ -49,7 +48,7 @@ interface AnnotationFormFieldsProps<T extends BaseAnnotation> {
   renderButtons: () => React.ReactNode;
 }
 
-const AnnotationFormFields = <T extends BaseAnnotation>({
+export const AnnotationFormFields = <T extends BaseAnnotation>({
   spanUuid,
   methods,
   onSubmit,
@@ -57,29 +56,20 @@ const AnnotationFormFields = <T extends BaseAnnotation>({
 }: AnnotationFormFieldsProps<T>) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   return (
-    <>
-      <Suspense fallback={<CardSkeleton />}>
-        <LilypadPanel
-          spanUuid={spanUuid}
-          showJsonArgs
-          dataProps={{ collapsed: true }}
-        />
-      </Suspense>
-      <Form {...methods}>
-        {settings.experimental && (
-          <GenerateAnnotationButton spanUuid={spanUuid} />
-        )}
-        <form
-          className='flex flex-col gap-2'
-          onSubmit={methods.handleSubmit(onSubmit)}
-        >
-          <Suspense fallback={<CardSkeleton />}>
-            <AnnotationFields spanUuid={spanUuid} />
-          </Suspense>
-          {renderButtons()}
-        </form>
-      </Form>
-    </>
+    <Form {...methods}>
+      {settings.experimental && (
+        <GenerateAnnotationButton spanUuid={spanUuid} />
+      )}
+      <form
+        className='flex flex-col gap-2'
+        onSubmit={methods.handleSubmit(onSubmit)}
+      >
+        <Suspense fallback={<CardSkeleton />}>
+          <AnnotationFields spanUuid={spanUuid} />
+        </Suspense>
+        {renderButtons()}
+      </form>
+    </Form>
   );
 };
 
@@ -208,10 +198,9 @@ const AnnotationFields = ({ spanUuid }: { spanUuid: string }) => {
     />
   );
 };
-const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
+export const CreateAnnotationForm = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const [open, setOpen] = useState<boolean>(false);
-  const output = safelyParseJSON(span.output ?? "") || span.output;
+  const output = safelyParseJSON(span.output ?? "") ?? span.output;
   const jsonOutput = typeof output === "string" ? { output } : output;
   const transformedOutput = Object.entries(jsonOutput ?? {}).reduce<
     Record<string, any>
@@ -271,47 +260,18 @@ const CreateAnnotationDialog = ({ spanUuid }: { spanUuid: string }) => {
         variant: "destructive",
       });
     }
-    setOpen(false);
   };
   return (
-    <LilypadDialog
-      open={open}
-      onOpenChange={(open) => {
-        methods.reset();
-        setOpen(open);
-      }}
-      customTrigger={
-        <DropdownMenuItem
-          className='flex items-center gap-2'
-          onSelect={(e) => e.preventDefault()}
-        >
-          <MessageSquareText className='w-4 h-4' />
-          <span className='font-medium'>Annotate</span>
-        </DropdownMenuItem>
-      }
-      text={"Start Annotating"}
-      title={"Annotate trace"}
-      description={`Annotate this trace.`}
-      buttonProps={{
-        variant: "default",
-      }}
-      dialogContentProps={{
-        className: "max-w-[800px] max-h-screen overflow-y-auto",
-        onEscapeKeyDown: (e) => e.preventDefault(),
-        onPointerDownOutside: (e) => e.preventDefault(),
-      }}
-    >
-      <AnnotationFormFields<AnnotationCreate>
-        spanUuid={span.uuid}
-        methods={methods}
-        onSubmit={onSubmit}
-        renderButtons={renderButtons}
-      />
-    </LilypadDialog>
+    <AnnotationFormFields<AnnotationCreate>
+      spanUuid={span.uuid}
+      methods={methods}
+      onSubmit={onSubmit}
+      renderButtons={renderButtons}
+    />
   );
 };
 
-const UpdateAnnotationDialog = ({
+export const UpdateAnnotationDialog = ({
   annotation,
   spanUuid,
 }: {
@@ -349,19 +309,19 @@ const UpdateAnnotationDialog = ({
   );
 };
 
-const UpdateAnnotationForm = ({
+export const UpdateAnnotationForm = ({
   setOpen,
   annotation,
   spanUuid,
 }: {
-  setOpen: Dispatch<SetStateAction<boolean>>;
+  setOpen?: Dispatch<SetStateAction<boolean>>;
   annotation: AnnotationTable;
   spanUuid: string;
 }) => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const methods = useForm<AnnotationUpdate>({
     defaultValues: {
-      reasoning: annotation.reasoning || "",
+      reasoning: annotation.reasoning ?? "",
       label: annotation.label,
       data: annotation.data,
     },
@@ -372,15 +332,6 @@ const UpdateAnnotationForm = ({
   const renderButtons = () => {
     return (
       <div className='flex gap-2 w-full'>
-        <Button
-          type='button'
-          variant='outline'
-          loading={isLoading}
-          onClick={() => setOpen(false)}
-          className='flex-1'
-        >
-          Cancel
-        </Button>
         <Button type='submit' loading={isLoading} className='flex-1'>
           {isLoading ? "Updating..." : "Update"}
         </Button>
@@ -418,7 +369,7 @@ const UpdateAnnotationForm = ({
       });
     }
     methods.reset();
-    setOpen(false);
+    setOpen?.(false);
   };
 
   return (
@@ -429,19 +380,4 @@ const UpdateAnnotationForm = ({
       renderButtons={renderButtons}
     />
   );
-};
-
-export const AnnotationDialog = ({
-  spanUuid,
-  annotation,
-}: {
-  spanUuid: string;
-  annotation?: AnnotationTable;
-}) => {
-  if (annotation) {
-    return (
-      <UpdateAnnotationDialog annotation={annotation} spanUuid={spanUuid} />
-    );
-  }
-  return <CreateAnnotationDialog spanUuid={spanUuid} />;
 };
