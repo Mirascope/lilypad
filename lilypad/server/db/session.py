@@ -1,6 +1,5 @@
 """Database session management"""
 
-import os
 from collections.abc import Generator
 
 from sqlalchemy.engine import Engine
@@ -22,8 +21,7 @@ def get_database_url(environment: str | None = None) -> str:
     if not environment:
         environment = settings.environment
     if environment == "local" or environment == "test":
-        db_directory = os.getenv("LILYPAD_PROJECT_DIR", os.getcwd())
-        database_url = f"sqlite:///{db_directory}/pad.db"
+        database_url = "sqlite:///pad.db"
     else:
         database_url = f"postgresql://{settings.db_user}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_name}"
     return database_url

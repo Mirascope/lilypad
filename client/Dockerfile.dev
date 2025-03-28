@@ -1,0 +1,17 @@
+FROM node:22
+
+# Install pnpm
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# Copy package.json and pnpm-lock.yaml (if available)
+COPY package*.json pnpm-lock.yaml* ./
+
+# Set the working directory for following commands
+WORKDIR /app
+
+# Expose the port the app runs on
+EXPOSE 5173
+
+CMD ["sh", "-c", "pnpm i && pnpm run dev -- --host 0.0.0.0"]

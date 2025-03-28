@@ -332,15 +332,6 @@ export const UpdateAnnotationForm = ({
   const renderButtons = () => {
     return (
       <div className='flex gap-2 w-full'>
-        <Button
-          type='button'
-          variant='outline'
-          loading={isLoading}
-          onClick={() => setOpen?.(false)}
-          className='flex-1'
-        >
-          Cancel
-        </Button>
         <Button type='submit' loading={isLoading} className='flex-1'>
           {isLoading ? "Updating..." : "Update"}
         </Button>

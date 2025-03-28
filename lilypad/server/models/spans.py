@@ -72,7 +72,10 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    function: Optional["FunctionTable"] = Relationship(back_populates="spans")
+    function: Optional["FunctionTable"] = Relationship(
+        back_populates="spans",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+    )
     annotations: list["AnnotationTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin

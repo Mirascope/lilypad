@@ -116,7 +116,6 @@ export const TracesTable = ({
       );
     }
   };
-
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
@@ -156,7 +155,7 @@ export const TracesTable = ({
       header: "Scope",
     },
     {
-      accessorKey: "version",
+      accessorKey: "function.version_num",
       id: "version",
       header: ({ column }) => {
         return (
