@@ -1,5 +1,5 @@
-import { LucideIcon, SettingsIcon } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LucideIcon, SettingsIcon } from "lucide-react";
 export const SettingsLayout = ({
   children,
   icon: Icon = SettingsIcon,
@@ -10,7 +10,7 @@ export const SettingsLayout = ({
   title?: string;
 }) => {
   return (
-    <div className='min-h-screen bg-gray-50 p-8'>
+    <div className='bg-gray-50 p-8'>
       <div className='max-w-4xl mx-auto'>
         <Card>
           <CardHeader className='flex flex-row justify-center items-center gap-2'>
