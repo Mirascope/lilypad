@@ -15,13 +15,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ....._utils import run_ruff
-from .....server._utils import get_current_user
 from .....server.schemas import (
     PlaygroundParameters,
-    UserPublic,
 )
 from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
+from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
 
 try:
@@ -176,7 +175,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 55, memory: int = 400) -> None:
+def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
@@ -193,7 +192,7 @@ def _limit_resources(timeout: int = 55, memory: int = 400) -> None:
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
         # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (50, 50))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
@@ -226,12 +225,11 @@ def run_playground(
     project_uuid: UUID,
     function_uuid: UUID,
     playground_parameters: PlaygroundParameters,
-    user: Annotated[UserPublic, Depends(get_current_user)],
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     api_key_service: Annotated[APIKeyService, Depends(APIKeyService)],
-    # user_external_api_key_service: Annotated[
-    #     UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
-    # ],
+    user_external_api_key_service: Annotated[
+        UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
+    ],
 ) -> str:
     """Run playground version of a function with enhanced security.
 
@@ -239,9 +237,9 @@ def run_playground(
         project_uuid: UUID of the project
         function_uuid: UUID of the function
         playground_parameters: Parameters for the playground execution
-        user: Current authenticated user
         function_service: Service for function management
         api_key_service: Service for API key management
+        user_external_api_key_service: Service for external API key management
 
     Returns:
         Result of the function execution
@@ -353,29 +351,25 @@ lilypad.configure()
 {user_args_code}
 res = {function.name}(**arg_values)
 """
-    # external_api_key_names = user_external_api_key_service.list_api_keys().keys()
-    # external_api_keys = {
-    #     name: user_external_api_key_service.get_api_key(name)
-    #     if name in external_api_key_names
-    #     else ""
-    #     for name in ["openai", "anthropic", "gemini", "openrouter"]
-    # }
+    external_api_key_names = user_external_api_key_service.list_api_keys().keys()
+    external_api_keys = {
+        name: user_external_api_key_service.get_api_key(name)
+        if name in external_api_key_names
+        else ""
+        for name in ["openai", "anthropic", "gemini", "openrouter"]
+    }
+    settings = get_settings()
     env_vars = {
-        # "OPENAI_API_KEY": external_api_keys["openai"],
-        # "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
-        # "GOOGLE_API_KEY": external_api_keys["gemini"],
-        # "OPENROUTER_API_KEY": external_api_keys["openrouter"],
-        "OPENAI_API_KEY": user.keys.get("openai", ""),
-        "ANTHROPIC_API_KEY": user.keys.get("anthropic", ""),
-        "GOOGLE_API_KEY": user.keys.get("gemini", ""),
-        "OPENROUTER_API_KEY": user.keys.get("openrouter", ""),
+        "OPENAI_API_KEY": external_api_keys["openai"],
+        "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
+        "GOOGLE_API_KEY": external_api_keys["gemini"],
+        "OPENROUTER_API_KEY": external_api_keys["openrouter"],
         "LILYPAD_PROJECT_ID": str(project_uuid),
         "LILYPAD_API_KEY": api_keys[0].key_hash,
         "PATH": os.environ["PATH"],
-        "LILYPAD_REMOTE_API_URL": get_settings().remote_api_url,
-        "VIRTUAL_ENV": "/opt/playground-venv",
+        "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
+        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
     }
-
     try:
         processed_code = _run_playground(wrapper_code, env_vars)
     except Exception as e:
@@ -440,16 +434,27 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
         The result of code execution
     """
     modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
-    print(modified_code, flush=True)  # For debugging # noqa: T201
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
-
+    settings = get_settings()
+    python_executable = Path(settings.playground_venv_path, "bin/python")
+    if not python_executable.exists():
+        logger.error("Python executable not found")
+        logger.error("Please setup the playground environment")
+        logger.error(
+            f"$ uv venv --no-project {str(settings.playground_venv_path)} &&"
+            f" VIRTUAL_ENV={str(settings.playground_venv_path)} uv pip sync playground-requirements.lock"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Python executable not found",
+        )
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)
         try:
             result = subprocess.run(
-                ["/opt/playground-venv/bin/python", str(tmp_path)],
+                [str(python_executable.absolute()), str(tmp_path)],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -476,12 +481,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             return result.stdout.strip()
     else:
         logger.error("Subprocess returned an error: %s", result.stderr.strip())
-        error_message = result.stderr.strip()
-        print(  # noqa: T201
-            f"--- SUBPROCESS STDERR ---:\n{error_message}\n--- END STDERR ---",
-            flush=True,
-        )
-
         return "Code execution error"
 
 

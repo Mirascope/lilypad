@@ -22,7 +22,7 @@ class Settings(BaseSettings):
         default=None, description="Serve the client in the root"
     )
     experimental: bool = Field(default=False)
-
+    playground_venv_path: str = Field(default=".playground-venv")
     # GitHub OAuth settings
     github_client_id: str = Field(default="my_client_id")
     github_client_secret: str = Field(default="my_client_secret")
