@@ -29,11 +29,11 @@ class UserExternalAPIKeyService(BaseOrganizationService):
         self.audit_logger = AuditLogger(session)
         # Initialize SecretManager instance (e.g., SupabaseVaultManager)
         self.secret_manager = get_secret_manager(self.session)
-        self.uuid = user.uuid
+
 
     def get_secret_name(self, service_name: str) -> str:
         """Generate a unique secret name for the user and service."""
-        return f"{self.uuid}_{service_name}"
+        return f"{self.user.uuid}_{service_name}"
 
     def store_api_key(self, service_name: str, api_key: str) -> ExternalAPIKeyTable:
         """Store an external API key for a given service using SecretManager.
