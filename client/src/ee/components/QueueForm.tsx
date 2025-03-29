@@ -17,10 +17,9 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { AnnotationCreate } from "@/ee/types/types";
 import { useCreateAnnotationsMutation } from "@/ee/utils/annotations";
 import { useToast } from "@/hooks/use-toast";
-import { SpanPublic } from "@/types/types";
+import { AnnotationCreate, SpanPublic } from "@/types/types";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
@@ -78,7 +77,7 @@ export const QueueForm = ({
     const annotationsCreate: AnnotationCreate[] = spans.map((span) => ({
       ...data,
       span_uuid: span.uuid,
-      generation_uuid: span.generation_uuid,
+      function_uuid: span.function_uuid,
     }));
     try {
       await createAnnotation.mutateAsync({

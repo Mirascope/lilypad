@@ -10,7 +10,7 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
-from ..models import GenerationTable, SpanTable
+from ..models import FunctionTable, SpanTable
 from ..schemas import SpanCreate
 from .base_organization import BaseOrganizationService
 
@@ -34,7 +34,7 @@ class AggregateMetrics(BaseModel):
     span_count: int
     start_date: datetime | None
     end_date: datetime | None
-    generation_uuid: UUID | None
+    function_uuid: UUID | None
 
 
 class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
@@ -56,15 +56,15 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             .options(selectinload(self.table.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
         ).all()
 
-    def find_records_by_generation_uuid(
-        self, project_uuid: UUID, generation_uuid: UUID
+    def find_records_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
     ) -> Sequence[SpanTable]:
         """Find spans by version uuid"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.generation_uuid == generation_uuid,
+                self.table.function_uuid == function_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
         ).all()
@@ -75,33 +75,33 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             return None
         return text(f"date_trunc('{timeframe.value}', created_at)")
 
-    def find_aggregate_data_by_generation_uuid(
-        self, project_uuid: UUID, generation_uuid: UUID
+    def find_aggregate_data_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
     ) -> Sequence[SpanTable]:
         """Find spans by version uuid"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.generation_uuid == generation_uuid,
+                self.table.function_uuid == function_uuid,
             )
         ).all()
 
     def get_aggregated_metrics(
         self,
         project_uuid: UUID,
-        generation_uuid: UUID | None = None,
+        function_uuid: UUID | None = None,
         time_frame: TimeFrame = TimeFrame.LIFETIME,
     ) -> list[AggregateMetrics]:
         """Get aggregated metrics for spans grouped by the specified timeframe
 
         Parameters:
         - project_uuid: Project to get metrics for
-        - generation_uuid: Optional specific generation to filter by
+        - function_uuid: Optional specific function to filter by
         - time_frame: Time period to group by (DAY, WEEK, MONTH, LIFETIME)
 
         Returns:
-        - List of aggregated metrics, optionally grouped by generation
+        - List of aggregated metrics, optionally grouped by function
         """
         # Base query with common filters
         base_filters = [
@@ -120,11 +120,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         group_by_columns = []
         date_group = None
 
-        if generation_uuid is not None:
-            base_filters.append(self.table.generation_uuid == generation_uuid)
+        if function_uuid is not None:
+            base_filters.append(self.table.function_uuid == function_uuid)
         else:
-            columns.append(self.table.generation_uuid.label("generation_uuid"))  # type: ignore
-            group_by_columns.append(self.table.generation_uuid)
+            columns.append(self.table.function_uuid.label("function_uuid"))  # type: ignore
+            group_by_columns.append(self.table.function_uuid)
             base_filters.append(self.table.parent_span_id.is_(None))  # type: ignore
 
         # Add time-based grouping if not lifetime
@@ -167,24 +167,23 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 span_count=row.span_count,
                 start_date=getattr(row, "period_start", None),
                 end_date=None,  # Can be calculated if needed based on timeframe
-                generation_uuid=generation_uuid
-                or getattr(row, "generation_uuid", None),
+                function_uuid=function_uuid or getattr(row, "function_uuid", None),
             )
             metrics.append(metric)
 
         return metrics
 
-    def delete_records_by_generation_name(
-        self, project_uuid: UUID, generation_name: str
+    def delete_records_by_function_name(
+        self, project_uuid: UUID, function_name: str
     ) -> bool:
-        """Delete all spans by generation name"""
+        """Delete all spans by function name"""
         delete_stmt = delete(self.table).where(
             and_(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.generation_uuid.in_(  # type: ignore
-                    select(GenerationTable.uuid).where(
-                        GenerationTable.name == generation_name
+                self.table.function_uuid.in_(  # type: ignore
+                    select(FunctionTable.uuid).where(
+                        FunctionTable.name == function_name
                     )
                 ),
             )
@@ -239,15 +238,15 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.flush()
         return spans
 
-    def delete_records_by_generation_uuid(
-        self, project_uuid: UUID, generation_uuid: UUID
+    def delete_records_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
     ) -> bool:
-        """Delete all spans by generation uuid"""
+        """Delete all spans by function uuid"""
         delete_stmt = delete(self.table).where(
             and_(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.generation_uuid == generation_uuid,
+                self.table.function_uuid == function_uuid,
             )
         )
         self.session.exec(delete_stmt)  # type: ignore

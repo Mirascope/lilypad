@@ -14,7 +14,7 @@ class AnnotationPublic(AnnotationBase):
     uuid: UUID
     project_uuid: UUID
     span_uuid: UUID
-    generation_uuid: UUID
+    function_uuid: UUID
     span: SpanMoreDetails
     assigned_to: UUID | None
 
@@ -24,7 +24,7 @@ class AnnotationCreate(AnnotationBase):
 
     span_uuid: UUID | None = None
     project_uuid: UUID | None = None
-    generation_uuid: UUID | None = None
+    function_uuid: UUID | None = None
     assigned_to: list[UUID] | None = None
 
 

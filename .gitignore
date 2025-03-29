@@ -177,6 +177,11 @@ cython_debug/
 # Next / Node / TypeScript
 .next
 node_modules
+client/.pnpm-store/*
+
+# Env
+.env*
+!.env.dev.example
 
 # Lilypad Specific Files
 !docs/lib

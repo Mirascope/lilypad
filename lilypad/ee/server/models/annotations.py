@@ -11,14 +11,14 @@ from lilypad.server.models.base_sql_model import get_json_column
 from ....server.models import BaseOrganizationSQLModel
 from ....server.models.table_names import (
     ANNOTATION_TABLE_NAME,
-    GENERATION_TABLE_NAME,
+    FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     SPAN_TABLE_NAME,
     USER_TABLE_NAME,
 )
 
 if TYPE_CHECKING:
-    from ....server.models.generations import GenerationTable
+    from ....server.models.functions import FunctionTable
     from ....server.models.projects import ProjectTable
     from ....server.models.spans import SpanTable
 
@@ -60,9 +60,9 @@ class AnnotationTable(AnnotationBase, BaseOrganizationSQLModel, table=True):
     span_uuid: UUID | None = Field(
         default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
-    generation_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{GENERATION_TABLE_NAME}.uuid", ondelete="CASCADE"
+    function_uuid: UUID | None = Field(
+        default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     project: "ProjectTable" = Relationship(back_populates="annotations")
     span: "SpanTable" = Relationship(back_populates="annotations")
-    generation: "GenerationTable" = Relationship(back_populates="annotations")
+    function: "FunctionTable" = Relationship(back_populates="annotations")

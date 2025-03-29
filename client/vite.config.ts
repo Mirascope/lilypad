@@ -12,6 +12,10 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: env["VITE_OUT_DIR"] || "../lilypad/server/static",
     },
+    server: {
+      host: true,
+      port: 5173,
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

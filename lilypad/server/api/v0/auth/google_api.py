@@ -11,13 +11,11 @@ from ...._utils import create_jwt_token
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
 from ....models import (
-    OrganizationTable,
-    UserOrganizationTable,
-    UserRole,
     UserTable,
 )
-from ....schemas import OrganizationPublic, UserPublic
+from ....schemas import UserPublic
 from ....settings import Settings, get_settings
+from .utils import create_new_user
 
 google_router = APIRouter()
 
@@ -104,49 +102,13 @@ async def google_callback(
             last_name = user_data.get("family_name") or ""
 
             # Create organization for new user
-            organization = OrganizationTable(
-                name=f"{name}'s Workspace",
-            )
-            session.add(organization)
-            session.flush()
-            organization_public = OrganizationPublic.model_validate(organization)
-
-            # Create new user
-            user = UserTable(
+            return create_new_user(
+                name=name,
                 email=email,
-                first_name=name,
                 last_name=last_name,
-                active_organization_uuid=organization_public.uuid,
+                session=session,
+                posthog=posthog,
             )
-            session.add(user)
-            session.flush()
-
-            if not user.uuid:
-                raise HTTPException(
-                    status_code=500, detail="User creation failed, please try again"
-                )
-
-            # Create user-organization relationship
-            user_organization = UserOrganizationTable(
-                user_uuid=user.uuid,
-                organization_uuid=organization_public.uuid,
-                role=UserRole.OWNER,
-            )
-            session.add(user_organization)
-            session.flush()
-
-            # Generate JWT token for new user
-            user_public = UserPublic.model_validate(user)
-            lilypad_token = create_jwt_token(user_public)
-            user_public = user_public.model_copy(update={"access_token": lilypad_token})
-
-            # Track sign up event
-            posthog.capture(
-                distinct_id=user_public.email,
-                event="sign_up",
-            )
-
-            return user_public
 
         except httpx.RequestError as exc:
             raise HTTPException(

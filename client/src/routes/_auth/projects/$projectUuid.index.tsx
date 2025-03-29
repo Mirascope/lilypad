@@ -2,8 +2,8 @@ import { CostAndTokensChart } from "@/components/CostAndTokensChart";
 import { DataTable } from "@/components/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AggregateMetrics, GenerationPublic, TimeFrame } from "@/types/types";
-import { generationsQueryOptions } from "@/utils/generations";
+import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
+import { functionsQueryOptions } from "@/utils/functions";
 import { projectQueryOptions } from "@/utils/projects";
 import { aggregatesByProjectQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -35,11 +35,7 @@ interface ProcessedData extends AggregateMetrics {
   uuid: string;
 }
 
-interface ConsolidatedRecord {
-  [key: string]: {
-    [key: string]: ProcessedData;
-  };
-}
+type ConsolidatedRecord = Record<string, Record<string, ProcessedData>>;
 
 interface PieChartData {
   name: string;
@@ -53,7 +49,7 @@ function RouteComponent() {
 const ProjectDashboard = () => {
   const { projectUuid } = useParams({ from: Route.id });
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
+  const [timeFrame, _setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   const { data } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)
@@ -73,17 +69,17 @@ const ProjectDashboard = () => {
     };
   });
 
-  // Group by date and generation uuid
+  // Group by date and function uuid
   const consolidatedData: ConsolidatedRecord = {};
   processedData.forEach((item) => {
     if (!consolidatedData[item.date]) {
       consolidatedData[item.date] = {};
     }
-    const generationKey = item.generation_uuid || item.uuid;
-    if (!consolidatedData[item.date][generationKey]) {
-      consolidatedData[item.date][generationKey] = item;
+    const functionKey = item.function_uuid || item.uuid;
+    if (!consolidatedData[item.date][functionKey]) {
+      consolidatedData[item.date][functionKey] = item;
     } else {
-      const existing = consolidatedData[item.date][generationKey];
+      const existing = consolidatedData[item.date][functionKey];
       existing.total_cost += item.total_cost;
       existing.total_input_tokens += item.total_input_tokens;
       existing.total_output_tokens += item.total_output_tokens;
@@ -191,7 +187,8 @@ const ProjectDashboard = () => {
             <TabsContent value='overview'>
               <div className='grid grid-cols-1 gap-6'>
                 <CostAndTokensChart
-                  aggregateMetrics={data}
+                  metricsData={[data]}
+                  labels={["Total Cost"]}
                   title={`Cost and Tokens (${timeFrame})`}
                 />
               </div>
@@ -291,17 +288,16 @@ const ProjectDashboard = () => {
 
 export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: generations } = useSuspenseQuery(
-    generationsQueryOptions(projectUuid)
+  const { data: functions } = useSuspenseQuery(
+    functionsQueryOptions(projectUuid)
   );
-  const mappedGenerations: { [key: string]: GenerationPublic } =
-    generations.reduce(
-      (acc, generation) => ({
-        ...acc,
-        [generation.uuid]: generation,
-      }),
-      {}
-    );
+  const mappedFunctions: Record<string, FunctionPublic> = functions.reduce(
+    (acc, fn) => ({
+      ...acc,
+      [fn.uuid]: fn,
+    }),
+    {}
+  );
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const columns: ColumnDef<ProcessedData>[] = [
     {
@@ -309,14 +305,14 @@ export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
       header: "Date",
     },
     {
-      accessorKey: "generation_uuid",
-      header: "Generation",
+      accessorKey: "function_uuid",
+      header: "Function",
       cell: ({ row }) => {
-        const generationUuid: string = row.getValue("generation_uuid");
-        const generation = mappedGenerations[generationUuid];
+        const functionUuid: string = row.getValue("function_uuid");
+        const fn = mappedFunctions[functionUuid];
         return (
           <div>
-            {generation.name} v{generation.version_num}
+            {fn.name} v{fn.version_num}
           </div>
         );
       },

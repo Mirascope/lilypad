@@ -795,7 +795,7 @@ class _DependencyCollector:
         )
 
 
-def _run_ruff(code: str) -> str:
+def run_ruff(code: str) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(code)
         tmp_path = Path(tmp_file.name)
@@ -846,11 +846,11 @@ class Closure(BaseModel):
             assignments="\n".join(assignments),
             source_code="\n\n".join(source_code),
         )
-        formatted_code = _run_ruff(code)
+        formatted_code = run_ruff(code)
         hash_value = hashlib.sha256(formatted_code.encode("utf-8")).hexdigest()
         return cls(
             name=get_qualified_name(fn),
-            signature=_run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
+            signature=run_ruff(_clean_source_code(fn, exclude_fn_body=True)).strip(),
             code=formatted_code,
             hash=hash_value,
             dependencies=dependencies,

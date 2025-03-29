@@ -1,7 +1,7 @@
 import { baseURL } from "@/api";
 import { Button } from "@/components/ui/button";
-import { AnnotationCreate } from "@/ee/types/types";
 import { useEventSource } from "@/hooks/use-eventsource";
+import { AnnotationCreate } from "@/types/types";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -17,7 +17,7 @@ export const GenerateAnnotationButton = ({
   const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate-annotation`;
   const { data, startConnection, stopConnection, isConnected, status } =
     useEventSource(url);
-  // Handle generation completion if needed
+  // Handle function completion if needed
   useEffect(() => {
     if (data.length > 0) {
       const lastEvent = data[data.length - 1];

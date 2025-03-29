@@ -1,58 +1,163 @@
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import "highlight.js/styles/atom-one-light.min.css";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+// Register the language
 hljs.registerLanguage("python", python);
+
+const renderLineNumbers = (
+  code: string,
+  lineHighlights: Record<string, string>
+) => {
+  const lines = code.split("\n");
+  // Calculate the number of digits in the maximum line number
+  const maxLineNumber = lines.length;
+  const digits = maxLineNumber.toString().length;
+
+  return lines.map((line, i) => {
+    // Line numbers are 1-based, but array indices are 0-based
+    const lineNumber = i + 1;
+    const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
+
+    return (
+      <div
+        key={i}
+        className={`hljs-line ${lineClass}`}
+        data-line-number={lineNumber}
+        data-digits={digits}
+      >
+        <span className='hljs-line-number'>{lineNumber}</span>
+        <span className='hljs-line-code'>{line}</span>
+      </div>
+    );
+  });
+};
 
 export const CodeSnippet = ({
   code,
   className,
   showCopyButton = true,
+  lineHighlights = {},
 }: {
   code: string;
   className?: string;
   showCopyButton?: boolean;
+  lineHighlights?: Record<string, string>;
 }) => {
+  const preRef = useRef<HTMLPreElement>(null);
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
   useEffect(() => {
     if (!codeRef.current) return;
-    // Prevents warning about highlighting the same element multiple times
-    if (!codeRef.current.getAttribute("data-highlighted")) {
-      // Highlights the code snippet
-      hljs.highlightElement(codeRef.current);
+
+    // We need to highlight each line separately
+    const codeLines = codeRef.current.querySelectorAll(".hljs-line-code");
+
+    codeLines.forEach((line) => {
+      if (!line.hasAttribute("data-highlighted")) {
+        hljs.highlightElement(line as HTMLElement);
+      }
+    });
+
+    // Get the number of digits in the maximum line number
+    const digits = code.split("\n").length.toString().length;
+
+    // Add line number styles if they don't exist yet
+    if (!document.getElementById("line-number-styles")) {
+      const styleEl = document.createElement("style");
+      styleEl.id = "line-number-styles";
+      styleEl.textContent = `
+        .hljs-line {
+          display: flex;
+          width: 100%;
+        }
+        .hljs-line-number {
+          display: inline-block;
+          padding-right: 1em;
+          min-width: ${digits + 1}em;
+          text-align: right;
+          color: #999;
+          user-select: none;
+          border-right: 1px solid #ddd;
+          margin-right: 0.5em;
+        }
+        .hljs-line[data-digits="2"] .hljs-line-number {
+          min-width: 3em;
+        }
+        .hljs-line[data-digits="3"] .hljs-line-number {
+          min-width: 4em;
+        }
+        .hljs-line-code {
+          flex: 1;
+          background: transparent !important; /* Ensure HLJS doesn't override our backgrounds */
+        }
+        /* Ensure our custom highlighting takes precedence */
+        .hljs-line.bg-green-100 .hljs-line-code,
+        .hljs-line.bg-yellow-100 .hljs-line-code,
+        .hljs-line.bg-red-100 .hljs-line-code,
+        .hljs-line.bg-blue-100 .hljs-line-code,
+        .hljs-line.bg-purple-100 .hljs-line-code,
+        .hljs-line[class*="bg-"] .hljs-line-code {
+          background: inherit !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
     }
   }, [code]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    toast({ title: "Copied to clipboard" });
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        toast({ title: "Copied to clipboard" });
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          toast({
+            title: "Failed to copy",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Failed to copy",
+            variant: "destructive",
+          });
+        }
+      });
   };
+
+  const formattedCode = renderLineNumbers(code, lineHighlights);
 
   return (
     <div className='relative'>
-      <pre className={className}>
+      <pre className={className} ref={preRef}>
         <code
           ref={codeRef}
-          className='language-python text-sm overflow-x-auto'
+          className='language-python text-sm overflow-x-auto flex flex-col'
           key={code}
         >
-          {code}
+          {formattedCode}
         </code>
       </pre>
       {showCopyButton && (
-        <button
+        <Button
+          variant='outline'
+          size='icon'
           onClick={handleCopy}
-          className='absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors'
+          className='w-6 h-6 absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors'
           aria-label='Copy code'
         >
           {copied ? <Check size={16} /> : <Copy size={16} />}
-        </button>
+        </Button>
       )}
     </div>
   );

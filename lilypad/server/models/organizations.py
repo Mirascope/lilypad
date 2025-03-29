@@ -8,9 +8,9 @@ from .base_sql_model import BaseSQLModel
 from .table_names import ORGANIZATION_TABLE_NAME
 
 if TYPE_CHECKING:
+    from ...ee.server.models.user_organizations import UserOrganizationTable
     from .api_keys import APIKeyTable
     from .projects import ProjectTable
-    from .user_organizations import UserOrganizationTable
 
 
 class OrganizationBase(SQLModel):
@@ -34,3 +34,4 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
         back_populates="organization", cascade_delete=True
     )
     license: str | None = Field(default=None, nullable=True)
+    support_services: bool = Field(default=True, nullable=False)

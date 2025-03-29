@@ -53,7 +53,7 @@ export const Pricing = () => {
         { name: "1 User", included: true },
         { name: "10K Traces / Month", included: true },
         { name: "30 Day Data Retention", included: true },
-        { name: "Managed Generations (Playground)", included: false },
+        { name: "Managed Functions (Playground)", included: false },
         { name: "Diff Tooling", included: false },
         { name: "Annotations", included: false },
         { name: "Vibe Synthesis (Automated Evals)", included: false },
@@ -77,7 +77,7 @@ export const Pricing = () => {
         { name: "5 Users", included: true },
         { name: "100K Traces / Month + ($10 / 100K Extra)", included: true },
         { name: "180 Day Data Retention", included: true },
-        { name: "Managed Generations (Playground)", included: true },
+        { name: "Managed Functions (Playground)", included: true },
         { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
         { name: "Vibe Synthesis (Automated Evals)", included: false },
@@ -102,7 +102,7 @@ export const Pricing = () => {
         { name: "Unlimited Users", included: true },
         { name: "1M Traces / Month + ($5 / 100K Extra)", included: true },
         { name: "Unlimited Data Retention", included: true },
-        { name: "Managed Generations (Playground)", included: true },
+        { name: "Managed Functions (Playground)", included: true },
         { name: "Diff Tooling", included: true },
         { name: "Annotations", included: true },
         { name: "Vibe Synthesis (Automated Evals)", included: true },
@@ -132,46 +132,46 @@ export const Pricing = () => {
       )}
     >
       {tier.highlight && (
-        <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-full">
+        <div className='absolute -top-4 left-0 right-0 flex justify-center'>
+          <div className='bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-full'>
             Recommended
           </div>
         </div>
       )}
 
-      <div className="mb-2">
-        <div className="flex sm:flex-row flex-col items-start sm:items-center gap-2">
-          <h3 className="text-2xl font-bold">{tier.name}</h3>
+      <div className='mb-2'>
+        <div className='flex sm:flex-row flex-col items-start sm:items-center gap-2'>
+          <h3 className='text-2xl font-bold'>{tier.name}</h3>
           {tier.openBeta && (
-            <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
+            <div className='inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit'>
               Open Beta
             </div>
           )}
           {tier.closedBeta && (
-            <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
+            <div className='inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit'>
               Closed Beta
             </div>
           )}
           {tier.comingSoon && (
-            <div className="inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit">
+            <div className='inline-block border text-secondary-foreground text-xs font-medium py-1 px-2 rounded min-w-fit'>
               Coming Soon
             </div>
           )}
         </div>
-        <div className="mt-2 flex items-baseline">
-          <span className="text-2xl font-medium tracking-tight text-gray-600">
+        <div className='mt-2 flex items-baseline'>
+          <span className='text-2xl font-medium tracking-tight text-gray-600'>
             {tier.price}
           </span>
         </div>
-        <p className="mt-3 text-gray-500 min-h-[60px] max-w-xs">
+        <p className='mt-3 text-gray-500 min-h-[60px] max-w-xs'>
           {tier.description}
         </p>
       </div>
 
-      <div className="mb-6">
-        <div className="w-full">
+      <div className='mb-6'>
+        <div className='w-full'>
           {tier.features.map((feature) => (
-            <div key={feature.name} className="flex items-center py-2 w-full">
+            <div key={feature.name} className='flex items-center py-2 w-full'>
               <div
                 className={cn(
                   "mr-3 h-4 w-4 flex-shrink-0 rounded-full flex items-center justify-center",
@@ -180,30 +180,30 @@ export const Pricing = () => {
               >
                 {feature.included ? (
                   <svg
-                    className="h-4 w-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    className='h-4 w-4 text-white'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
                       strokeWidth={2}
-                      d="M5 13l4 4L19 7"
+                      d='M5 13l4 4L19 7'
                     />
                   </svg>
                 ) : (
                   <svg
-                    className="h-4 w-4 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    className='h-4 w-4 text-gray-400'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
                       strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                      d='M6 18L18 6M6 6l12 12'
                     />
                   </svg>
                 )}
@@ -221,9 +221,9 @@ export const Pricing = () => {
         </div>
       </div>
 
-      <div className="mt-auto">
+      <div className='mt-auto'>
         <Button
-          className="w-full"
+          className='w-full'
           variant={tier.highlight ? "default" : "outline"}
           asChild
         >
@@ -234,25 +234,25 @@ export const Pricing = () => {
   );
 
   return (
-    <div className="py-12 flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-16 self-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+    <div className='py-12 flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8'>
+      <div className='text-center mb-16 self-center'>
+        <h1 className='text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl'>
           Pricing
         </h1>
-        <div className="mt-4 text-xl text-gray-600">
+        <div className='mt-4 text-xl text-gray-600'>
           <p>Get started with the Free plan today</p>
-          <p className="italic">No credit card required</p>
+          <p className='italic'>No credit card required</p>
         </div>
       </div>
 
       {/* Mobile tabs */}
       {isMobile && (
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex w-full max-w-sm rounded-md shadow-sm mb-10">
+        <div className='flex flex-col items-center mb-8'>
+          <div className='flex w-full max-w-sm rounded-md shadow-sm mb-10'>
             {pricingTiers.map((tier, index) => (
               <button
                 key={tier.name}
-                type="button"
+                type='button'
                 onClick={() => setActiveTab(index)}
                 className={cn(
                   "flex-1 justify-center relative flex items-center px-4 py-2 text-sm font-medium border",
@@ -267,7 +267,7 @@ export const Pricing = () => {
               </button>
             ))}
           </div>
-          <div className="w-full flex justify-center">
+          <div className='w-full flex justify-center'>
             {renderPricingCard(pricingTiers[activeTab], activeTab, true)}
           </div>
         </div>
@@ -275,24 +275,24 @@ export const Pricing = () => {
 
       {/* Desktop layout */}
       {!isMobile && (
-        <div className="flex justify-center gap-8 w-full">
+        <div className='flex justify-center gap-8 w-full'>
           {pricingTiers.map((tier, index) => renderPricingCard(tier, index))}
         </div>
       )}
 
-      <div className="mt-24 text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">
+      <div className='mt-24 text-center'>
+        <h2 className='text-2xl font-bold tracking-tight text-gray-900 mb-2'>
           Need to self-host?
         </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+        <p className='text-lg text-gray-600 max-w-2xl mx-auto mb-6'>
           <p>
             Self-hosted deployments use the same pricing tiers with identical
             features.
           </p>
           <p>The only difference is that there are no trace limits.</p>
         </p>
-        <Button size="lg" variant="outline" asChild>
-          <Link href="/self-hosting">View Self-Hosting Docs</Link>
+        <Button size='lg' variant='outline' asChild>
+          <Link href='/self-hosting'>View Self-Hosting Docs</Link>
         </Button>
       </div>
     </div>

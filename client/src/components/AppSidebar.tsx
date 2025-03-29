@@ -25,6 +25,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
 import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
@@ -45,16 +46,17 @@ import {
   Home,
   ScrollText,
   Settings,
+  SquareTerminal,
   User2,
   Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
-type Item = {
+interface Item {
   title: string;
   url: string;
   icon?: React.ElementType;
   children?: Item[];
-};
+}
 const RecursiveMenuContent = ({
   item,
   depth = 0,
@@ -116,11 +118,13 @@ export const AppSidebar = () => {
   const params = useParams({ strict: false });
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+  const { toast } = useToast();
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
     setProject(project);
-  }, [projects, params]);
+  }, [projects, params, setProject]);
+
   const organizationMutation = useUpdateActiveOrganizationMutation();
   const projectItems: Item[] = activeProject
     ? [
@@ -130,9 +134,14 @@ export const AppSidebar = () => {
           icon: Home,
         },
         {
-          title: "Generations",
-          url: `/projects/${activeProject.uuid}/generations`,
+          title: "Functions",
+          url: `/projects/${activeProject.uuid}/functions`,
           icon: Wrench,
+        },
+        {
+          title: "Playground",
+          url: `/projects/${activeProject.uuid}/playground`,
+          icon: SquareTerminal,
         },
       ]
     : [];
@@ -156,8 +165,8 @@ export const AppSidebar = () => {
     setProject(project);
     const currentPath = window.location.pathname;
 
-    const projectPathMatch = currentPath.match(
-      /\/projects\/[^\/]+(?:\/([^\/]+))?/
+    const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
+      currentPath
     );
     if (projectPathMatch) {
       const currentSection = projectPathMatch[1] || "";
@@ -165,9 +174,17 @@ export const AppSidebar = () => {
         ? `/projects/${project.uuid}/${currentSection}`
         : `/projects/${project.uuid}`;
 
-      navigate({ to: newPath, replace: true });
+      navigate({ to: newPath, replace: true }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     } else {
-      navigate({ to: currentPath, replace: true });
+      navigate({ to: currentPath, replace: true }).catch(() =>
+        toast({
+          title: "Failed to navigate",
+        })
+      );
     }
   };
   const renderProjectSelector = () => {
@@ -214,7 +231,7 @@ export const AppSidebar = () => {
       <DropdownMenuCheckboxItem
         key={user_organization.uuid}
         onClick={() =>
-          handleOrganizationSwitch(user_organization.organization.uuid)
+          void handleOrganizationSwitch(user_organization.organization.uuid)
         }
         checked={
           user_organization.organization.uuid === user.active_organization_uuid

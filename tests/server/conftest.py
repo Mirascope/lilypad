@@ -5,12 +5,10 @@ from uuid import UUID, uuid4
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from lilypad.server.models import (
-    UserRole,
-)
+from lilypad.ee.server.models import UserRole
+from lilypad.ee.server.schemas.user_organizations import UserOrganizationPublic
 from lilypad.server.schemas import (
     OrganizationPublic,
-    UserOrganizationPublic,
     UserPublic,
 )
 

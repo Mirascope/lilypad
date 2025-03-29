@@ -68,6 +68,8 @@ export interface APIKeyPublic {
   user: UserPublic;
   /** Project Public Model. */
   project: ProjectPublic;
+  /** Environment public model. */
+  environment: EnvironmentPublic;
 }
 
 /**
@@ -89,8 +91,68 @@ export interface AggregateMetrics {
   start_date: string | null;
   /** End Date */
   end_date: string | null;
-  /** Generation Uuid */
-  generation_uuid: string | null;
+  /** Function Uuid */
+  function_uuid: string | null;
+}
+
+/**
+ * AnnotationCreate
+ * Annotation create model.
+ */
+export interface AnnotationCreate {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /** Span Uuid */
+  span_uuid?: string | null;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
+  /** Assigned To */
+  assigned_to?: string[] | null;
+}
+
+/**
+ * AnnotationPublic
+ * Annotation public model.
+ */
+export interface AnnotationPublic {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+  /**
+   * Function Uuid
+   * @format uuid
+   */
+  function_uuid: string;
+  /** Span more details model. */
+  span: SpanMoreDetails;
+  /** Assigned To */
+  assigned_to: string | null;
 }
 
 /**
@@ -123,8 +185,24 @@ export interface AnnotationTable {
   project_uuid?: string | null;
   /** Span Uuid */
   span_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
+}
+
+/**
+ * AnnotationUpdate
+ * Annotation update model.
+ */
+export interface AnnotationUpdate {
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  /** @default "manual" */
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
+  /** Assigned To */
+  assigned_to?: string | null;
 }
 
 /**
@@ -160,18 +238,120 @@ export interface CommonCallParams {
   stop?: string | string[] | null;
 }
 
-/** CreateUserOrganizationToken */
+/**
+ * CreateUserOrganizationToken
+ * Create user organization token model
+ */
 export interface CreateUserOrganizationToken {
   /** Token */
   token: string;
 }
 
-/** DependencyInfo */
+/**
+ * DependencyInfo
+ * Dependency information.
+ */
 export interface DependencyInfo {
   /** Version */
   version: string;
   /** Extras */
   extras: string[] | null;
+}
+
+/**
+ * DeploymentPublic
+ * Deployment public model.
+ */
+export interface DeploymentPublic {
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
+  /**
+   * Function Uuid
+   * @format uuid
+   */
+  function_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Is Active
+   * @default true
+   */
+  is_active?: boolean;
+  /**
+   * Version Num
+   * @default 1
+   */
+  version_num?: number;
+  /** Notes */
+  notes?: string | null;
+  /**
+   * Activated At
+   * Timestamp when the deployment was activated.
+   * @format date-time
+   */
+  activated_at?: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  function?: FunctionPublic | null;
+  environment?: EnvironmentPublic | null;
+}
+
+/**
+ * EnvironmentCreate
+ * Environment create model.
+ */
+export interface EnvironmentCreate {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+}
+
+/**
+ * EnvironmentPublic
+ * Environment public model.
+ */
+export interface EnvironmentPublic {
+  /** Name */
+  name: string;
+  /** Description */
+  description?: string | null;
+  /**
+   * Is Default
+   * @default false
+   */
+  is_default?: boolean;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
 }
 
 /**
@@ -203,73 +383,44 @@ export interface Event {
 }
 
 /**
- * GenerationCreate
- * Generation create model.
+ * ExternalAPIKeyCreate
+ * Request model for creating a secret.
  */
-export interface GenerationCreate {
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Version Num */
-  version_num?: number | null;
-  /**
-   * Name
-   * @minLength 1
-   * @maxLength 512
-   */
-  name: string;
-  /** Signature */
-  signature: string;
-  /** Code */
-  code: string;
-  /** Hash */
-  hash: string;
-  /** Dependencies */
-  dependencies?: Record<string, DependencyInfo>;
-  /** Arg Types */
-  arg_types?: Record<string, string>;
-  /** Archived */
-  archived?: string | null;
-  /** Custom Id */
-  custom_id?: string | null;
-  /** Prompt Template */
-  prompt_template?: string | null;
-  /** Provider */
-  provider?: string | null;
-  /** Model */
-  model?: string | null;
-  /**
-   * Common parameters shared across LLM providers.
-   *
-   * Note: Each provider may handle these parameters differently or not support them at all.
-   * Please check provider-specific documentation for parameter support and behavior.
-   *
-   * Attributes:
-   *     temperature: Controls randomness in the output (0.0 to 1.0).
-   *     max_tokens: Maximum number of tokens to generate.
-   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
-   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
-   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
-   *     seed: Random seed for reproducibility.
-   *     stop: Stop sequence(s) to end generation.
-   */
-  call_params?: CommonCallParams;
-  /**
-   * Is Default
-   * @default false
-   */
-  is_default?: boolean | null;
-  /**
-   * Is Managed
-   * @default false
-   */
-  is_managed?: boolean | null;
+export interface ExternalAPIKeyCreate {
+  /** Service Name */
+  service_name: string;
+  /** Api Key */
+  api_key: string;
 }
 
 /**
- * GenerationPublic
- * Generation public model.
+ * ExternalAPIKeyPublic
+ * Response model for a secret.
  */
-export interface GenerationPublic {
+export interface ExternalAPIKeyPublic {
+  /** Service Name */
+  service_name: string;
+  /**
+   * Masked Api Key
+   * Partially masked API key
+   */
+  masked_api_key: string;
+}
+
+/**
+ * ExternalAPIKeyUpdate
+ * Request model for updating a secret.
+ */
+export interface ExternalAPIKeyUpdate {
+  /** Api Key */
+  api_key: string;
+}
+
+/**
+ * FunctionCreate
+ * Function create model.
+ */
+export interface FunctionCreate {
   /** Project Uuid */
   project_uuid?: string | null;
   /** Version Num */
@@ -317,15 +468,68 @@ export interface GenerationPublic {
    */
   call_params?: CommonCallParams;
   /**
-   * Is Default
+   * Is Versioned
    * @default false
    */
-  is_default?: boolean | null;
+  is_versioned?: boolean | null;
+}
+
+/**
+ * FunctionPublic
+ * Function public model.
+ */
+export interface FunctionPublic {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /** Version Num */
+  version_num?: number | null;
   /**
-   * Is Managed
+   * Name
+   * @minLength 1
+   * @maxLength 512
+   */
+  name: string;
+  /** Signature */
+  signature: string;
+  /** Code */
+  code: string;
+  /** Hash */
+  hash: string;
+  /** Dependencies */
+  dependencies?: Record<string, DependencyInfo>;
+  /** Arg Types */
+  arg_types?: Record<string, string>;
+  /** Archived */
+  archived?: string | null;
+  /** Custom Id */
+  custom_id?: string | null;
+  /** Prompt Template */
+  prompt_template?: string | null;
+  /** Provider */
+  provider?: string | null;
+  /** Model */
+  model?: string | null;
+  /**
+   * Common parameters shared across LLM providers.
+   *
+   * Note: Each provider may handle these parameters differently or not support them at all.
+   * Please check provider-specific documentation for parameter support and behavior.
+   *
+   * Attributes:
+   *     temperature: Controls randomness in the output (0.0 to 1.0).
+   *     max_tokens: Maximum number of tokens to generate.
+   *     top_p: Nucleus sampling parameter (0.0 to 1.0).
+   *     frequency_penalty: Penalizes frequent tokens (-2.0 to 2.0).
+   *     presence_penalty: Penalizes tokens based on presence (-2.0 to 2.0).
+   *     seed: Random seed for reproducibility.
+   *     stop: Stop sequence(s) to end generation.
+   */
+  call_params?: CommonCallParams;
+  /**
+   * Is Versioned
    * @default false
    */
-  is_managed?: boolean | null;
+  is_versioned?: boolean | null;
   /**
    * Uuid
    * @format uuid
@@ -334,13 +538,10 @@ export interface GenerationPublic {
 }
 
 /**
- * GenerationUpdate
- * Generation update model.
+ * FunctionUpdate
+ * Function update model.
  */
-export interface GenerationUpdate {
-  /** Is Default */
-  is_default?: boolean | null;
-}
+export type FunctionUpdate = object;
 
 /** HTTPValidationError */
 export interface HTTPValidationError {
@@ -355,6 +556,34 @@ export interface HTTPValidationError {
 export enum Label {
   PASS = "pass",
   FAIL = "fail",
+}
+
+/**
+ * LicenseInfo
+ * Pydantic model for license validation
+ */
+export interface LicenseInfo {
+  /** Customer */
+  customer: string;
+  /** License Id */
+  license_id: string;
+  /**
+   * Expires At
+   * @format date-time
+   */
+  expires_at: string;
+  /** License tier enum. */
+  tier: Tier;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /**
+   * Is Expired
+   * Check if the license has expired
+   */
+  is_expired: boolean;
 }
 
 /**
@@ -463,6 +692,24 @@ export interface OrganizationUpdate {
 }
 
 /**
+ * PlaygroundParameters
+ * Playground parameters model.
+ */
+export interface PlaygroundParameters {
+  /** Arg Values */
+  arg_values: Record<string, number | boolean | string | any[] | object>;
+  /** Arg Types */
+  arg_types: Record<string, string> | null;
+  /** Provider name enum */
+  provider: Provider;
+  /** Model */
+  model: string;
+  /** Prompt Template */
+  prompt_template: string;
+  call_params: CommonCallParams | null;
+}
+
+/**
  * ProjectCreate
  * Project Create Model.
  */
@@ -484,15 +731,26 @@ export interface ProjectPublic {
    */
   uuid: string;
   /**
-   * Generations
+   * Functions
    * @default []
    */
-  generations?: GenerationPublic[];
+  functions?: FunctionPublic[];
   /**
    * Created At
    * @format date-time
    */
   created_at: string;
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
+  GEMINI = "gemini",
 }
 
 /**
@@ -532,8 +790,8 @@ export interface SpanMoreDetails {
   uuid: string;
   /** Project Uuid */
   project_uuid?: string | null;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   /** Display Name */
   display_name: string;
   /** Provider */
@@ -575,8 +833,8 @@ export interface SpanMoreDetails {
 export interface SpanPublic {
   /** Span Id */
   span_id: string;
-  /** Generation Uuid */
-  generation_uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   type?: SpanType | null;
   /** Cost */
   cost?: number | null;
@@ -604,7 +862,7 @@ export interface SpanPublic {
   project_uuid: string;
   /** Display Name */
   display_name?: string | null;
-  generation?: GenerationPublic | null;
+  function?: FunctionPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -625,8 +883,19 @@ export interface SpanPublic {
  * Span type
  */
 export enum SpanType {
-  GENERATION = "generation",
+  FUNCTION = "function",
   TRACE = "trace",
+}
+
+/**
+ * Tier
+ * License tier enum.
+ */
+export enum Tier {
+  FREE = 0,
+  PRO = 1,
+  TEAM = 2,
+  ENTERPRISE = 3,
 }
 
 /**
@@ -731,6 +1000,8 @@ export interface UserPublic {
   access_token?: string | null;
   /** User Organizations */
   user_organizations?: UserOrganizationPublic[] | null;
+  /** Scopes */
+  scopes?: string[];
 }
 
 /**

@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from ..models.projects import _ProjectBase
-from .generations import GenerationPublic
+from .functions import FunctionPublic
 
 
 class ProjectCreate(_ProjectBase):
@@ -17,5 +17,5 @@ class ProjectPublic(_ProjectBase):
     """Project Public Model."""
 
     uuid: UUID
-    generations: list[GenerationPublic] = []
+    functions: list[FunctionPublic] = []
     created_at: datetime

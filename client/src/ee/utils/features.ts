@@ -1,47 +1,85 @@
 interface FeatureSettings {
   users: number;
   traces: boolean;
-  generations: boolean;
-  managedGenerations: boolean;
+  functions: boolean;
   diffTooling: boolean;
+  playground: boolean;
   annotations: boolean;
   vibeSynthesis: boolean;
 }
 
-export const features: FeatureSettings[] = [
+export const selfHostedFeatures: FeatureSettings[] = [
   {
-    users: 1,
+    users: Infinity,
     traces: true,
-    generations: true,
-    managedGenerations: false,
-    diffTooling: false,
+    functions: true,
+    diffTooling: true,
+    playground: false,
     annotations: false,
     vibeSynthesis: false,
   },
   {
-    users: 5,
+    users: Infinity, // By license
     traces: true,
-    generations: true,
-    managedGenerations: true,
+    functions: true,
     diffTooling: true,
+    playground: true,
     annotations: true,
     vibeSynthesis: false,
   },
   {
-    users: Infinity,
+    users: Infinity, // By license
     traces: true,
-    generations: true,
-    managedGenerations: true,
+    functions: true,
     diffTooling: true,
+    playground: true,
+    annotations: true,
+    vibeSynthesis: true,
+  },
+  {
+    users: Infinity, // By license
+    traces: true,
+    functions: true,
+    diffTooling: true,
+    playground: true,
+    annotations: true,
+    vibeSynthesis: true,
+  },
+];
+export const cloudFeatures: FeatureSettings[] = [
+  {
+    users: 1,
+    traces: true,
+    functions: true,
+    diffTooling: true,
+    playground: true,
+    annotations: true,
+    vibeSynthesis: true,
+  },
+  {
+    users: 5,
+    traces: true,
+    functions: true,
+    diffTooling: true,
+    playground: true,
     annotations: true,
     vibeSynthesis: true,
   },
   {
     users: Infinity,
     traces: true,
-    generations: true,
-    managedGenerations: true,
+    functions: true,
     diffTooling: true,
+    playground: true,
+    annotations: true,
+    vibeSynthesis: true,
+  },
+  {
+    users: Infinity,
+    traces: true,
+    functions: true,
+    diffTooling: true,
+    playground: true,
     annotations: true,
     vibeSynthesis: true,
   },

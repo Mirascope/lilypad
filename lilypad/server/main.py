@@ -25,6 +25,7 @@ from .api import v0_api
 from .settings import get_settings
 
 log = logging.getLogger("lilypad")
+settings = get_settings()
 
 
 def run_migrations() -> None:
@@ -49,7 +50,6 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-settings = get_settings()
 origins = [
     "http://localhost:5173",
     "http://localhost:8000/*",
@@ -60,7 +60,7 @@ origins = [
     f"{settings.client_url}/*",
 ]
 
-app = FastAPI(lifespan=lifespan, debug=settings.environment != "production")
+app = FastAPI(lifespan=lifespan, debug=True)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

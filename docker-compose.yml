@@ -1,7 +1,6 @@
-version: '3'
 services:
   postgres:
-    image: postgres
+    image: supabase/postgres:15.8.1.060
     ports:
       - "5432:5432"
     environment:
@@ -9,7 +8,7 @@ services:
       - POSTGRES_DB=postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
-  
+
   lilypad:
     image: lilypad
     ports:
@@ -19,7 +18,7 @@ services:
       - LILYPAD_DB_NAME=postgres
       - LILYPAD_DB_PASSWORD=password
       - LILYPAD_DB_PORT=5432
-      - LILYPAD_DB_USER=postgres
+      - LILYPAD_DB_USER=supabase_admin
       - LILYPAD_GITHUB_CLIENT_ID=...
       - LILYPAD_GITHUB_CLIENT_SECRET=...
       - LILYPAD_GOOGLE_CLIENT_ID=...
@@ -28,6 +27,7 @@ services:
       - LILYPAD_SERVE_FRONTEND=true
       - LILYPAD_REMOTE_API_URL=http://localhost:8000
       - LILYPAD_REMOTE_CLIENT_URL=http://localhost:8000
+      - LILYPAD_PLAYGROUND_VENV_PATH=/opt/playground-venv
     depends_on:
       - postgres
 

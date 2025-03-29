@@ -1,0 +1,1 @@
+lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral,outlines]@git+https://github.com/Mirascope/lilypad-sdk-python.git@main

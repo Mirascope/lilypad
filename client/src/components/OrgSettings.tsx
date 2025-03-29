@@ -1,4 +1,5 @@
 import { APIKeysTable } from "@/components/APIKeysTable";
+import { EnvironmentsTable } from "@/components/EnvironmentsTable";
 import { NotFound } from "@/components/NotFound";
 import { ProjectsTable } from "@/components/ProjectsTable";
 import { SettingsLayout } from "@/components/SettingsLayout";
@@ -20,6 +21,7 @@ export const OrgSettings = () => {
     >
       <UserOrgTable />
       <ProjectsTable />
+      <EnvironmentsTable />
       <APIKeysTable />
     </SettingsLayout>
   );

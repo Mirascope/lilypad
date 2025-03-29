@@ -12,9 +12,10 @@ You can also run Lilypad on your local machine.
     You can self-host the [Free](../pricing.mdx) version of Lilypad without any restrictions. However, the [Pro](../pricing.mdx) and [Enterprise](../pricing.mdx) versions require an [Enterprise Edition (EE)](https://github.com/Mirascope/lilypad/lilypad/ee/LICENSE) license.
 
     If you're interested in participating in the closed beta, [join our community](https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA) and send a message to William Bakst.
+
 </Callout>
 
-__Requirements:__
+**Requirements:**
 
 To self-host Lilypad, you'll need:
 
@@ -91,7 +92,7 @@ cd client
 touch .env
 echo "VITE_REMOTE_API_URL=http://localhost:8000/v0" > .env
 pnpm i
-pnpm run build:notypescript
+pnpm run build
 cd ..
 ```
 
@@ -136,8 +137,8 @@ Alternatively, you can use Docker Compose to run everything together locally:
 docker-compose up
 ```
 
-<Callout type="info">
-    You'll must update `docker-compose.yml` to match your environment setup.
+<Callout type='info'>
+  You'll must update `docker-compose.yml` to match your environment setup.
 </Callout>
 
 You should now be able to access your Lilypad instance at `http://localhost:8000`.
@@ -160,4 +161,5 @@ Now you can use Lilypad as [documented](../docs/quickstart).
 
     The production-stable release of Lilypad on PyPI may not be the same version as the one you're self-hosting.
     Make sure to install the version of Lilypad matching your self-hosted instance.
+
 </Callout>

@@ -1,1 +1,0 @@
-"""The `lilypad` CLI."""

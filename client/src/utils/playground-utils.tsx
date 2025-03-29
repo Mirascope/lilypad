@@ -17,9 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EditorParameters } from "@/ee/components/Playground";
-import { PlaygroundParameters, Provider } from "@/ee/types/types";
-import { CommonCallParams, GenerationPublic, UserPublic } from "@/types/types";
+import { EditorParameters } from "@/ee/hooks/use-playground";
+import {
+  CommonCallParams,
+  FunctionPublic,
+  PlaygroundParameters,
+  Provider,
+  UserPublic,
+} from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -160,7 +165,10 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   },
 } as const;
 
-export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS) {
+export function createFormSlider(
+  sliderKey: keyof typeof SLIDER_CONFIGS,
+  isDisabled?: boolean
+) {
   return function renderSlider<T extends object>(
     name: Path<T>,
     enabled?: Path<T>
@@ -175,6 +183,7 @@ export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS) {
         label={config.label}
         sliderProps={config.sliderProps}
         showInput={true}
+        isDisabled={isDisabled}
         inputProps={config.inputProps}
         {...(isOptional && {
           switchName: enabled,
@@ -241,7 +250,8 @@ export const getModelOptions = (provider: Provider) => {
 
 export const renderStopSequences = (
   name: Path<PlaygroundParameters>,
-  maxItems: number = 5
+  maxItems: number = 5,
+  isDisabled: boolean
 ) => {
   const method = useFormContext<PlaygroundParameters>();
   let stopSequences: string[] = [];
@@ -268,6 +278,7 @@ export const renderStopSequences = (
               }))}
               control={method.control}
               name={name}
+              disabled={isDisabled}
               popoverText='Add stop sequences...'
               helperText='Enter a stop sequence'
             />
@@ -285,7 +296,7 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
   latestVersion,
   additionalDefaults = {},
 }: {
-  latestVersion?: GenerationPublic | null;
+  latestVersion?: FunctionPublic | null;
   additionalDefaults?: Partial<T>;
 }) => {
   const methods = useForm<T>({
@@ -309,15 +320,13 @@ export const useBaseEditorForm = <T extends PlaygroundParameters>({
 };
 
 const getDefaultValues = <T extends PlaygroundParameters>(
-  latestVersion?: GenerationPublic | null
+  latestVersion?: FunctionPublic | null
 ): DefaultValues<T> => {
   if (!latestVersion) {
     return {
       provider: Provider.OPENAI,
       model: "gpt-4o",
-      generation: {
-        call_params: commonCallParamsDefault,
-      },
+      call_params: commonCallParamsDefault,
     } as DefaultValues<T>;
   }
   if (
@@ -329,22 +338,32 @@ const getDefaultValues = <T extends PlaygroundParameters>(
   return {
     provider: Provider.OPENAI,
     model: "gpt-4o",
-    generation: latestVersion,
+    call_params: {
+      ...commonCallParamsDefault,
+      ...latestVersion.call_params,
+    },
+    arg_types: latestVersion?.arg_types,
+    prompt_template: latestVersion?.prompt_template,
   } as DefaultValues<T>;
 };
 
-const renderSeed = () => {
+const renderSeed = (isDisabled: boolean) => {
   const method = useFormContext<PlaygroundParameters>();
   return (
     <FormField
       key='editor-seed'
       control={method.control}
-      name={"generation.call_params.seed"}
+      name={"call_params.seed"}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Seed</FormLabel>
           <FormControl>
-            <Input {...field} type='number' value={field.value ?? ""} />
+            <Input
+              {...field}
+              type='number'
+              value={field.value ?? ""}
+              disabled={isDisabled}
+            />
           </FormControl>
         </FormItem>
       )}
@@ -372,7 +391,11 @@ export const getAvailableProviders = (user: UserPublic | null) => {
   }
   return availableProviders;
 };
-export const BaseEditorFormFields = () => {
+export const BaseEditorFormFields = ({
+  isDisabled,
+}: {
+  isDisabled: boolean;
+}) => {
   const methods = useFormContext<PlaygroundParameters>();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const provider = methods.watch("provider");
@@ -392,22 +415,22 @@ export const BaseEditorFormFields = () => {
   }, [provider, methods.resetField]);
 
   const renderSliders = {
-    maxTokens: createFormSlider("maxTokens"),
-    temperature: createFormSlider("temperature"),
-    topK: createFormSlider("topK"),
-    topP: createFormSlider("topP"),
-    frequencyPenalty: createFormSlider("frequencyPenalty"),
-    presencePenalty: createFormSlider("presencePenalty"),
+    maxTokens: createFormSlider("maxTokens", isDisabled),
+    temperature: createFormSlider("temperature", isDisabled),
+    topK: createFormSlider("topK", isDisabled),
+    topP: createFormSlider("topP", isDisabled),
+    frequencyPenalty: createFormSlider("frequencyPenalty", isDisabled),
+    presencePenalty: createFormSlider("presencePenalty", isDisabled),
   };
 
   const commonParams = [
-    renderSliders.temperature("generation.call_params.temperature"),
-    renderSliders.maxTokens("generation.call_params.max_tokens"),
-    renderSliders.topP("generation.call_params.top_p"),
-    renderSliders.frequencyPenalty("generation.call_params.frequency_penalty"),
-    renderSliders.presencePenalty("generation.call_params.presence_penalty"),
-    renderSeed(),
-    renderStopSequences("generation.call_params.stop", 4),
+    renderSliders.temperature("call_params.temperature"),
+    renderSliders.maxTokens("call_params.max_tokens"),
+    renderSliders.topP("call_params.top_p"),
+    renderSliders.frequencyPenalty("call_params.frequency_penalty"),
+    renderSliders.presencePenalty("call_params.presence_penalty"),
+    renderSeed(isDisabled),
+    renderStopSequences("call_params.stop", 4, isDisabled),
   ];
   return (
     <div className='w-full max-w-sm flex flex-col gap-3'>

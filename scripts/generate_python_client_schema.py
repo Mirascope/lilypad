@@ -8,10 +8,9 @@ from pathlib import Path
 import typer
 from datamodel_code_generator import (
     DataModelType,
-    Formatter,
     PythonVersion,
 )
-from datamodel_code_generator.format import CodeFormatter
+from datamodel_code_generator.format import CodeFormatter, Formatter
 from datamodel_code_generator.model import DataModel, get_data_model_types
 from datamodel_code_generator.parser.openapi import OpenAPIParser
 
@@ -34,13 +33,11 @@ ENCODING = "utf-8"
 
 
 V0_TARGET_MODELS = [
-    "GenerationPublic",
+    "FunctionPublic",
     "OrganizationPublic",
     "ProjectPublic",
     "SpanPublic",
-    "GenerationCreate",
-]
-EE_V0_TARGET_MODELS = [
+    "FunctionCreate",
     "LicenseInfo",
     "Provider",
 ]
@@ -50,7 +47,6 @@ class Endpoint(str, Enum):
     """Supported API endpoints."""
 
     V0 = "v0"
-    EE_V0 = "ee-v0"
 
 
 class LilypadOpenAPIParser(OpenAPIParser):
@@ -157,10 +153,6 @@ def get_openapi_schema(endpoint: Endpoint) -> dict:
         from lilypad.server.api.v0 import api as v0
 
         return v0.openapi()
-    elif endpoint == Endpoint.EE_V0:
-        from lilypad.ee.server.api.v0 import ee_api as ee_v0
-
-        return ee_v0.openapi()
     else:
         raise ValueError(f"Unsupported endpoint: {endpoint}")
 
@@ -168,7 +160,6 @@ def get_openapi_schema(endpoint: Endpoint) -> dict:
 @app.command()
 def generate_python() -> None:
     """Generate the Python client schemas."""
-    from lilypad.ee.server.api.v0 import ee_api as ee_v0
     from lilypad.server.api.v0 import api as v0
 
     # Generate the client schemas for v0
@@ -180,24 +171,11 @@ def generate_python() -> None:
         )
     )
 
-    # Generate the client schemas for ee_v0
-    ee_v0_generated_models = sorted(
-        generate_client_schema(
-            json.dumps(ee_v0.openapi()),
-            CLIENT_SCHEMAS_DIR / "ee_v0.py",
-            EE_V0_TARGET_MODELS,
-        )
-    )
-
     # Prepare the imports for the schemas __init__.py
     imports = ""
     if v0_generated_models:
         imports += "from .v0 import {v0_target_models}\n".format(
             v0_target_models=", ".join(v0_generated_models)
-        )
-    if ee_v0_generated_models:
-        imports += "from .ee_v0 import {ee_v0_target_models}\n".format(
-            ee_v0_target_models=", ".join(ee_v0_generated_models)
         )
 
     code_formatter = CodeFormatter(
@@ -208,9 +186,7 @@ def generate_python() -> None:
     )
 
     # Generate the schemas __init__.py
-    schema_exports = ", ".join(
-        f'"{name}"' for name in sorted(v0_generated_models + ee_v0_generated_models)
-    )
+    schema_exports = ", ".join(f'"{name}"' for name in sorted(v0_generated_models))
     schemas_init = (
         f"{SCHEMAS_INIT_FILE_HEADER}\n{imports}\n__all__ = [{schema_exports}]"
     )
@@ -221,27 +197,22 @@ def generate_python() -> None:
 
     # Generate the client module __init__.py
     client_imports = "from .schemas import {target_models}\n".format(
-        target_models=", ".join(v0_generated_models + ee_v0_generated_models)
+        target_models=", ".join(v0_generated_models)
     )
 
     client_exports = ", ".join(
-        f'"{name}"'
-        for name in sorted(
-            v0_generated_models + ee_v0_generated_models + ["LilypadClient"]
-        )
+        f'"{name}"' for name in sorted(v0_generated_models + ["LilypadClient"])
     )
     client_init = f"{CLIENT_INIT_FILE_HEADER}\nfrom .lilypad_client import LilypadClient\n{client_imports}\n__all__ = [{client_exports}]"
     CLIENT_INIT.write_text(code_formatter.format_code(client_init), encoding=ENCODING)
 
-    typer.echo(
-        f"Generated Python client schemas: {len(v0_generated_models + ee_v0_generated_models)} models"
-    )
+    typer.echo(f"Generated Python client schemas: {len(v0_generated_models)} models")
 
 
 @app.command()
 def generate_openapi(
     endpoint: Endpoint = typer.Option(  #  noqa: B008
-        ..., help="API endpoint to generate OpenAPI schema for"
+        default="v0", help="API endpoint to generate OpenAPI schema for"
     ),
     output: Path | None = typer.Option(  #  noqa: B008
         None, help="Output file path. If not specified, outputs to stdout for piping"

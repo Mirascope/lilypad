@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: supabase/postgres:15.8.1.060
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  lilypad:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.dev
+    develop:
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: sync
+          path: .
+          target: /app
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .venv/
+
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
+    environment:
+      - LILYPAD_DB_HOST=${LILYPAD_DB_HOST:-postgres}
+      - LILYPAD_DB_NAME=${LILYPAD_DB_NAME:-postgres}
+      - LILYPAD_DB_PASSWORD=${LILYPAD_DB_PASSWORD:-password}
+      - LILYPAD_DB_PORT=${LILYPAD_DB_PORT:-5432}
+      - LILYPAD_DB_USER=${LILYPAD_DB_USER:-supabase_admin}
+      - LILYPAD_GITHUB_CLIENT_ID=${LILYPAD_GITHUB_CLIENT_ID:-...}
+      - LILYPAD_GITHUB_CLIENT_SECRET=${LILYPAD_GITHUB_CLIENT_SECRET:-...}
+      - LILYPAD_GOOGLE_CLIENT_ID=${LILYPAD_GOOGLE_CLIENT_ID:-...}
+      - LILYPAD_GOOGLE_CLIENT_SECRET=${LILYPAD_GOOGLE_CLIENT_SECRET:-...}
+      - LILYPAD_REMOTE_API_URL=${LILYPAD_REMOTE_API_URL:-http://localhost:8000}
+      - LILYPAD_REMOTE_CLIENT_URL=${LILYPAD_REMOTE_CLIENT_URL:-http://localhost:5173}
+      - LILYPAD_ENVIRONMENT=${LILYPAD_ENVIRONMENT:-development}
+      - LILYPAD_SERVE_FRONTEND=false
+      - LILYPAD_PLAYGROUND_VENV_PATH=/opt/playground-venv
+    depends_on:
+      - postgres
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${CLIENT_PORT:-5173}:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - VITE_HOST=0.0.0.0
+
+volumes:
+  postgres-data:

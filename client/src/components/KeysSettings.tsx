@@ -12,6 +12,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import { useToast } from "@/hooks/use-toast";
+import {
+  externalApiKeysQueryOptions,
+  useCreateExternalApiKeyMutation,
+  usePatchExternalApiKeyMutation,
+} from "@/utils/external-api-keys";
 import { userQueryOptions, useUpdateUserKeysMutation } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
@@ -24,10 +29,10 @@ interface UserKeysFormValues {
   gemini: string;
   openrouter: string;
 }
-type KeyInput = {
+interface KeyInput {
   id: keyof UserKeysFormValues;
   label: string;
-};
+}
 const PasswordField = ({ input }: { input: KeyInput }) => {
   const [isView, setIsView] = useState(false);
   const { control } = useFormContext<UserKeysFormValues>();
@@ -72,20 +77,49 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
 
 export const KeysSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { data: externalApiKeys } = useSuspenseQuery(
+    externalApiKeysQueryOptions()
+  );
   const { toast } = useToast();
+  const externalApiKeysMap = externalApiKeys.reduce(
+    (acc, key) => {
+      acc[key.service_name] = key.masked_api_key;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+  const patchExternalApiKeys = usePatchExternalApiKeyMutation();
+  const createExternalApiKeys = useCreateExternalApiKeyMutation();
   const updateUserKeys = useUpdateUserKeysMutation();
-  const keys = user.keys || {};
+  const keys = user.keys ?? {};
   const methods = useForm<UserKeysFormValues>({
     defaultValues: {
-      openai: keys["openai"] || "",
-      anthropic: keys["anthropic"] || "",
-      gemini: keys["gemini"] || "",
-      openrouter: keys["openrouter"] || "",
+      openai: externalApiKeysMap.openai ?? "",
+      anthropic: externalApiKeysMap.anthropic ?? "",
+      gemini: externalApiKeysMap.gemini ?? "",
+      openrouter: externalApiKeysMap.openrouter || "",
     },
   });
 
   const onSubmit = async (data: UserKeysFormValues) => {
     try {
+      for (const key in data) {
+        if (data[key as keyof UserKeysFormValues] !== keys[key]) {
+          if (externalApiKeysMap[key]) {
+            await patchExternalApiKeys.mutateAsync({
+              serviceName: key as keyof UserKeysFormValues,
+              externalApiKeysUpdate: {
+                api_key: data[key as keyof UserKeysFormValues],
+              },
+            });
+          } else {
+            await createExternalApiKeys.mutateAsync({
+              service_name: key as keyof UserKeysFormValues,
+              api_key: data[key as keyof UserKeysFormValues],
+            });
+          }
+        }
+      }
       await updateUserKeys.mutateAsync(data);
       toast({
         title: "LLM Keys Updated",
@@ -105,7 +139,7 @@ export const KeysSettings = () => {
   if (!user) return <NotFound />;
   return (
     <SettingsLayout title={`${user.first_name}'s Keys`} icon={KeyRound}>
-      <Typography variant='h4'> API Keys</Typography>
+      <Typography variant='h4'>API Keys</Typography>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
           <div className='space-y-4'>

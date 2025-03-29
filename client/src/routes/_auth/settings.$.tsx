@@ -3,23 +3,25 @@ import { KeysSettings } from "@/components/KeysSettings";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { OrgSettings } from "@/components/OrgSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { JSX, Suspense } from "react";
+import { JSX, Suspense, useEffect } from "react";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
-type Tab = {
+interface Tab {
   label: string;
   value: string;
   component?: JSX.Element | null;
-};
+}
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const params = useParams({
     from: Route.id,
   });
@@ -45,22 +47,47 @@ const Settings = () => {
       ),
     },
   ];
+  useEffect(() => {
+    if (tab) {
+      navigate({
+        to: `/settings/${tab}`,
+        replace: true,
+      }).catch(() =>
+        toast({
+          title: "Navigation failed",
+        })
+      );
+    } else {
+      navigate({
+        to: `/settings/$`,
+        params: { _splat: "overview" },
+        replace: true,
+      }).catch(() =>
+        toast({
+          title: "Navigation failed",
+        })
+      );
+    }
+  }, [tab, navigate, toast]);
   if (tab && !tabs.some((t) => t.value === tab)) {
     tab = "overview";
   }
-  const activeTab = tab || "overview";
-
   const handleTabChange = (value: string) => {
     navigate({
-      to: `/settings/${value}`,
+      to: `/settings/$`,
+      params: { _splat: value },
       replace: true,
-    });
+    }).catch(() =>
+      toast({
+        title: "Navigation failed",
+      })
+    );
   };
   const tabWidth = 90 * tabs.length;
 
   return (
     <Tabs
-      value={activeTab}
+      value={tab ?? "overview"}
       onValueChange={handleTabChange}
       className='flex flex-col h-full'
     >
@@ -73,15 +100,17 @@ const Settings = () => {
           ))}
         </TabsList>
       </div>
-      {tabs.map((tab) => (
-        <TabsContent
-          key={tab.value}
-          value={tab.value}
-          className='w-full bg-gray-50 h-full'
-        >
-          {tab.component}
-        </TabsContent>
-      ))}
+      <div className='flex-1 min-h-0 relative'>
+        {tabs.map((tab) => (
+          <TabsContent
+            key={tab.value}
+            value={tab.value}
+            className='w-full bg-gray-50 absolute inset-0 overflow-auto'
+          >
+            {tab.component}
+          </TabsContent>
+        ))}
+      </div>
     </Tabs>
   );
 };

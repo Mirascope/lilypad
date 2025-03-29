@@ -4,6 +4,7 @@ import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AnnotationDialog } from "@/ee/components/AnnotationForm";
+import {
+  CreateAnnotationForm,
+  UpdateAnnotationForm,
+} from "@/ee/components/AnnotationForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { useToast } from "@/hooks/use-toast";
 import { Scope, SpanPublic } from "@/types/types";
 import { formatDate } from "@/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
@@ -25,7 +30,7 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
@@ -79,16 +84,38 @@ export const TracesTable = ({
   data,
   traceUuid,
   path,
+  hideCompare = false,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
+  hideCompare?: boolean;
 }) => {
+  const { toast } = useToast();
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const virtualizerRef = useRef<HTMLDivElement>(null);
+
+  // State to track selected rows
+  const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
+  const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
+
+  // Function to handle checkbox changes
+  const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
+    if (checked) {
+      // If already have 2 selected rows and trying to add another, prevent it
+      if (selectedRows.length >= 2) {
+        return;
+      }
+      setSelectedRows([...selectedRows, row]);
+    } else {
+      setSelectedRows(
+        selectedRows.filter((item) => item.span_id !== row.span_id)
+      );
+    }
+  };
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
@@ -98,12 +125,26 @@ export const TracesTable = ({
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
-
+        const isSelected = selectedRows.some(
+          (item) => item.span_id === row.original.span_id
+        );
+        const displayName: string = row.getValue("display_name");
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
-              <span className='truncate'>{row.getValue("display_name")}</span>
+              {!hideCompare && (
+                <Checkbox
+                  onClick={(e) => e.stopPropagation()}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => {
+                    handleCheckboxChange(row.original, checked === true);
+                  }}
+                  aria-label={`Select ${displayName}`}
+                  className='mr-2'
+                />
+              )}
+              <span className='truncate'>{displayName}</span>
             </div>
           </div>
         );
@@ -114,7 +155,7 @@ export const TracesTable = ({
       header: "Scope",
     },
     {
-      accessorKey: "version",
+      accessorKey: "function.version_num",
       id: "version",
       header: ({ column }) => {
         return (
@@ -193,7 +234,6 @@ export const TracesTable = ({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const annotation = row.original.annotations[0];
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -204,27 +244,19 @@ export const TracesTable = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {features.annotations &&
-                row.getValue("scope") === Scope.LILYPAD && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Suspense fallback={<div>Loading ...</div>}>
-                      <AnnotationDialog
-                        spanUuid={row.original.uuid}
-                        annotation={annotation}
-                      />
-                    </Suspense>
-                  </div>
-                )}
               {row.original.scope === Scope.LILYPAD &&
-                row.original.generation &&
-                row.original.generation.is_managed &&
-                features.managedGenerations && (
+                row.original.function?.is_versioned &&
+                features.playground && (
                   <DropdownMenuItem
                     onClick={() => {
-                      const { project_uuid, generation } = row.original;
-                      if (!generation) return;
+                      const { project_uuid, function: fn } = row.original;
+                      if (!fn) return;
                       navigate({
-                        to: `/projects/${project_uuid}/generations/${generation.name}/${generation.uuid}/overview`,
+                        to: `/projects/${project_uuid}/functions/${fn.name}/${fn.uuid}/overview`,
+                      }).catch(() => {
+                        toast({
+                          title: "Failed to navigate",
+                        });
                       });
                     }}
                   >
@@ -243,8 +275,62 @@ export const TracesTable = ({
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
   const handleDetailPanelClose = () => {
     if (path) {
-      navigate({ to: path, replace: true, params: { _splat: undefined } });
+      navigate({
+        to: path,
+        replace: true,
+        params: { _splat: undefined },
+      }).catch(() => {
+        toast({
+          title: "Failed to navigate",
+        });
+      });
     }
+  };
+  const CompareDetailPanel = () => {
+    return (
+      <div className='p-4 border rounded-md overflow-auto'>
+        {selectedRows.length === 2 && (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() =>
+              setToggleCompareMode(
+                (prevToggleCompareMode) => !prevToggleCompareMode
+              )
+            }
+          >
+            Go back
+          </Button>
+        )}
+        <h2 className='text-lg font-semibold mb-2'>Compare Details</h2>
+        <div className='flex gap-4'>
+          <div className='w-1/2'>
+            <h3 className='text-lg font-semibold'>Row 1</h3>
+            <Suspense
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+            >
+              {selectedRows[0].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[0].uuid} />
+              )}
+            </Suspense>
+          </div>
+          <div className='w-1/2'>
+            <h3 className='text-lg font-semibold'>Row 2</h3>
+            <Suspense
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+            >
+              {selectedRows[1].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              ) : (
+                <LlmPanel spanUuid={selectedRows[1].uuid} />
+              )}
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
   };
   const DetailPanel = ({ data }: { data: SpanPublic }) => {
     useEffect(() => {
@@ -253,25 +339,68 @@ export const TracesTable = ({
           to: path,
           replace: true,
           params: { _splat: data.uuid },
+        }).catch(() => {
+          toast({
+            title: "Failed to navigate",
+          });
         });
       }
-    }, [data, path, navigate]);
+    }, [data]);
 
     return (
-      <div className='p-4 border rounded-md overflow-auto'>
-        <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-        <Suspense
-          fallback={<CardSkeleton items={5} className='flex flex-col' />}
-        >
+      <Suspense fallback={<CardSkeleton items={5} className='flex flex-col' />}>
+        <div>
+          {data.annotations.length > 0 ? (
+            <UpdateAnnotationForm
+              annotation={data.annotations[0]}
+              spanUuid={data.uuid}
+            />
+          ) : (
+            <CreateAnnotationForm spanUuid={data.uuid} />
+          )}
+        </div>
+        <div className='p-4 border rounded-md overflow-auto flex-1'>
+          <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
           {data.scope === Scope.LILYPAD ? (
             <LilypadPanel spanUuid={data.uuid} />
           ) : (
             <LlmPanel spanUuid={data.uuid} />
           )}
-        </Suspense>
-      </div>
+        </div>
+      </Suspense>
     );
   };
+  const customControls = () => {
+    return (
+      <>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() =>
+            setToggleCompareMode(
+              (prevToggleCompareMode) => !prevToggleCompareMode
+            )
+          }
+          className='whitespace-nowrap'
+          disabled={selectedRows.length === 0}
+        >
+          Compare
+        </Button>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => setSelectedRows([])}
+          className='whitespace-nowrap'
+          disabled={selectedRows.length === 0}
+        >
+          Clear Selection ({selectedRows.length}/2)
+        </Button>
+      </>
+    );
+  };
+  if (toggleCompareMode) {
+    return <CompareDetailPanel />;
+  }
   return (
     <DataTable<SpanPublic>
       columns={columns}
@@ -286,10 +415,11 @@ export const TracesTable = ({
       customGetRowId={(row) => row.span_id}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
-      filterColumn='display_name'
+      filterColumn={!hideCompare ? undefined : "display_name"}
       selectRow={selectRow}
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
+      customControls={!hideCompare ? customControls : undefined}
       defaultSorting={[{ id: "timestamp", desc: true }]}
       onDetailPanelClose={handleDetailPanelClose}
     />
