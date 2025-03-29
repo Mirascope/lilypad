@@ -29,6 +29,11 @@ class UserExternalAPIKeyService(BaseOrganizationService):
         self.audit_logger = AuditLogger(session)
         # Initialize SecretManager instance (e.g., SupabaseVaultManager)
         self.secret_manager = get_secret_manager(self.session)
+        self.uuid = user.uuid
+
+    def get_secret_name(self, service_name: str) -> str:
+        """Generate a unique secret name for the user and service."""
+        return f"{self.uuid}_{service_name}"
 
     def store_api_key(self, service_name: str, api_key: str) -> ExternalAPIKeyTable:
         """Store an external API key for a given service using SecretManager.
@@ -75,20 +80,21 @@ class UserExternalAPIKeyService(BaseOrganizationService):
             )
             return existing
 
+        name = self.get_secret_name(service_name)
         # Create a new secret in SecretManager and store its secret_id in the DB
         try:
             secret_id = self.secret_manager.store_secret(
-                service_name, api_key, description
+                name, api_key, description
             )
         except IntegrityError:
             # If a duplicate key error occurs, delete the existing secret and retry storing
             duplicate_secret_id = self.secret_manager.get_secret_id_by_name(
-                service_name
+                name
             )
             if duplicate_secret_id:
                 self.secret_manager.delete_secret(duplicate_secret_id)
             secret_id = self.secret_manager.store_secret(
-                service_name, api_key, description
+                name, api_key, description
             )
 
         new_key = ExternalAPIKeyTable(
