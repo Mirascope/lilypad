@@ -1,15 +1,19 @@
 [project]
-name = "python-lilypad"
-version = "0.0.34"
-description = "An open-source prompt engineering framework."
+name = "lilypad"
+version = "0.1.0-alpha.7"
+description = "Start building your data flywheel in one line of code."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
-    { name = "William Bakst", email = "william@mirascope.io" },
-    { name = "Brendan Kao", email = "brendan@mirascope.io" },
+    { name = "William Bakst", email = "william@mirascope.com" },
+    { name = "Brendan Kao", email = "brendan@mirascope.com" },
+    { name = "Koudai Aono", email = "koudai@mirascope.com" },
 ]
-maintainers = [{ name = "William Bakst", email = "william@mirascope.io" }]
+maintainers = [
+    { name = "Brendan Kao", email = "brendan@mirascope.com" },
+    { name = "Koudai Aono", email = "william@mirascope.com" },
+]
 keywords = [
     "prompt engineering",
     "evaluation",
@@ -35,7 +39,6 @@ dependencies = [
     "opentelemetry-api>=1.30.0",
     "opentelemetry-sdk>=1.30.0",
     "opentelemetry-instrumentation>=0.51b0",
-    "typer>=0.12.5",
     "pydantic-settings>=2.6.1",
     "ruff>=0.9.5",
     "requests>=2.32.3",
@@ -50,8 +53,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://lilypad.so"
-Documentation = "https://lilypad.so/docs"
+Homepage = "https://lilypad.mirascope.com"
+Documentation = "https://mirascope.com/lilypad"
 Repository = "https://github.com/Mirascope/lilypad"
 Issues = "https://github.com/Mirascope/lilypad/issues"
 Changelog = "https://github.com/Mirascope/lilypad/releases"

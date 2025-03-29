@@ -5,7 +5,7 @@ import importlib.metadata
 from . import ee as ee
 from . import server as server
 
-__version__ = importlib.metadata.version("python-lilypad")
+__version__ = importlib.metadata.version("lilypad")
 
 
 __all__ = [
