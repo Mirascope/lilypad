@@ -408,6 +408,15 @@ export interface ExternalAPIKeyPublic {
 }
 
 /**
+ * ExternalAPIKeyUpdate
+ * Request model for updating a secret.
+ */
+export interface ExternalAPIKeyUpdate {
+  /** Api Key */
+  api_key: string;
+}
+
+/**
  * FunctionCreate
  * Function create model.
  */

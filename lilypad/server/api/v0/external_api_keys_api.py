@@ -5,8 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from ..._utils.auth import require_scopes
+from ...models.external_api_keys import ExternalAPIKeyTable
 from ...schemas import UserPublic
-from ...schemas.external_api_keys import ExternalAPIKeyCreate, ExternalAPIKeyPublic
+from ...schemas.external_api_keys import (
+    ExternalAPIKeyCreate,
+    ExternalAPIKeyPublic,
+    ExternalAPIKeyUpdate,
+)
 from ...services.user_external_api_key_service import UserExternalAPIKeyService
 
 external_api_key_router = APIRouter()
@@ -40,6 +45,23 @@ async def get_external_api_key(
     """Retrieve an external API key for a given service."""
     api_key = external_api_key_service.get_api_key(service_name)
     return ExternalAPIKeyPublic(service_name=service_name, masked_api_key=api_key)
+
+
+@external_api_key_router.patch(
+    "/external-api-keys/{service_name}", response_model=ExternalAPIKeyPublic
+)
+async def update_external_api_key(
+    user: Annotated[UserPublic, Depends(require_scopes("vault:write"))],
+    service_name: str,
+    external_api_key_service: Annotated[
+        UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
+    ],
+    external_api_key_update: ExternalAPIKeyUpdate,
+) -> ExternalAPIKeyTable:
+    """Update users keys."""
+    return external_api_key_service.update_api_key(
+        service_name, external_api_key_update.api_key
+    )
 
 
 @external_api_key_router.delete("/external-api-keys/{service_name}")
