@@ -45,6 +45,7 @@ services:
       - LILYPAD_REMOTE_CLIENT_URL=${LILYPAD_REMOTE_CLIENT_URL:-http://localhost:5173}
       - LILYPAD_ENVIRONMENT=${LILYPAD_ENVIRONMENT:-development}
       - LILYPAD_SERVE_FRONTEND=false
+      - LILYPAD_PLAYGROUND_VENV_PATH=/opt/playground-venv
     depends_on:
       - postgres
 
