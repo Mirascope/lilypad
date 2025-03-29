@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: supabase/postgres:15.8.1.054
+    image: supabase/postgres:15.8.1.060
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
