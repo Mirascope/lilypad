@@ -37,19 +37,15 @@ class SupabaseVaultManager(SecretManager):
             return result.scalar_one()
 
     def get_secret(self, secret_id: str) -> str | None:
-        """Retrieve a secret from Supabase Vault."""
-        # We need to get name of the secret
-        name = self.get_secret_name_by_id(secret_id)
-        if not name:
-            return None
+        """Retrieve a decrypted secret from Supabase Vault using its ID."""
         with self._transaction():
             result = self.session.execute(
                 text(
-                    "SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = :name"
+                    "SELECT decrypted_secret FROM vault.decrypted_secrets WHERE id = :secret_id"
                 ),
-                {"name": name},
+                {"secret_id": secret_id},
             )
-            return result.scalar_one()
+            return result.scalar_one_or_none()
 
     def update_secret(self, secret_id: str, secret: str) -> bool:
         """Update a secret in Supabase Vault."""
