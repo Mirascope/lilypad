@@ -1,7 +1,7 @@
-"""The initial meta judge prompt for generating annotaitons"""
+"""The initial meta judge prompt for generating annotations"""
 
-from mirascope import llm
-from mirascope.core import prompt_template
+from collections.abc import AsyncGenerator
+
 from pydantic import BaseModel, Field
 
 
@@ -22,38 +22,57 @@ class ResultsModel(BaseModel):
     )
 
 
-@llm.call(
-    "openai",
-    "gpt-4o",
-    stream=True,
-    json_mode=True,
-    response_model=ResultsModel,
-)
-@prompt_template(
+MOCK_ANNOTATION_DATA = {
+    "results": {
+        "key": {
+            "idealOutput": "The expected outcome was achieved successfully.",
+            "reasoning": "The logic applied was consistent with the requirements specified, ensuring that the solution met all given criteria.",
+            "exact": True,
+            "label": "pass",
+        }
+    },
+    "status": "completed",
+}
+
+
+# @llm.call(
+#     "openai",
+#     "gpt-4o",
+#     stream=True,
+#     json_mode=True,
+#     response_model=ResultsModel,
+# )
+# @prompt_template(
+#     """
+#     Please generate a JSON output that complies with the following JSON Schema.
+#     The output should only include valid JSON data according to the schema and
+#     should not contain any additional text or markdown formatting.
+#
+#     Please provide an example output that fits this schema.
+#
+#     - idealOutput: str
+#     - reasoning: str
+#     - exact: bool
+#     - label: Literal['pass','fail']
+#
+#     Example:
+#         {{
+#             "results": {{
+#                 "key": {{
+#                     "idealOutput": "value",
+#                     "reasoning": "value",
+#                     "exact": True,
+#                     "label": "pass"
+#                 }}
+#             }}
+#         }}
+#     """
+# )
+async def annotate_trace() -> AsyncGenerator[ResultsModel, None]:
+    """A placeholder prompt for annotating traces.
+
+    NOTE: Returns static mock data as actual generation is not implemented.
+    Yields the mock data once in Server-Sent Event 'data' format.
     """
-    Please generate a JSON output that complies with the following JSON Schema. 
-    The output should only include valid JSON data according to the schema and 
-    should not contain any additional text or markdown formatting.
-
-    Please provide an example output that fits this schema.
-
-    - idealOutput: str
-    - reasoning: str
-    - exact: bool
-    - label: Literal['pass','fail']
-
-    Example:
-        {{
-            "results": {{
-                "key": {{
-                    "idealOutput": "value",
-                    "reasoning": "value",
-                    "exact": True,
-                    "label": "pass"
-                }}
-            }}
-        }}
-    """
-)
-async def annotate_trace() -> None:
-    """A placeholder prompt for annotating traces."""
+    # Yield the static mock data formatted as a Server-Sent Event
+    yield ResultsModel.model_validate(MOCK_ANNOTATION_DATA)

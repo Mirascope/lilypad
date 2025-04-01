@@ -163,7 +163,7 @@ async def generate_annotation(
 
     async def stream() -> AsyncGenerator[str, None]:
         r"""Stream the function. Must yield 'data: {your_data}\n\n'."""
-        async for chunk in await annotate_trace():
+        async for chunk in annotate_trace():
             yield f"data: {chunk.model_dump_json()}\n\n"
 
     return StreamingResponse(
