@@ -21,13 +21,21 @@ from ...server.services import OrganizationService, ProjectService
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
 
 
-def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
+def require_license(
+    tier: Tier, cloud_free: bool = False
+) -> Callable[[_EndPointFunc], _EndPointFunc]:
     """Decorator that adds a dependency for license validation based on the given tier.
 
     This decorator dynamically adds a parameter to the endpoint's signature:
       license_info: Annotated[LicenseInfo | None, Depends(_RequireLicense(tier=tier))]
     This allows FastAPI to resolve the dependency and include the parameter in the OpenAPI documentation,
     while the endpoint function itself does not need to explicitly declare the dependency parameter.
+
+    Args:
+        tier: The required license tier for self-hosted instances or
+              cloud instances if cloud_free is False.
+        cloud_free: If True, allows access on Lilypad Cloud regardless of the tier.
+                    Defaults to False.
     """
 
     def decorator(func: _EndPointFunc) -> _EndPointFunc:
@@ -35,7 +43,7 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
         new_param = inspect.Parameter(
             name="license_info",
             kind=inspect.Parameter.KEYWORD_ONLY,
-            default=Depends(RequireLicense(tier=tier)),
+            default=Depends(RequireLicense(tier=tier, cloud_free=cloud_free)),
             annotation="LicenseInfo | None",
         )
 
@@ -72,20 +80,23 @@ def require_license(tier: Tier) -> Callable[[_EndPointFunc], _EndPointFunc]:
 class RequireLicense:
     """License dependency for FastAPI endpoints."""
 
-    def __init__(self, tier: Tier | None = Tier.ENTERPRISE) -> None:
-        """Initialize with required tier."""
+    def __init__(
+        self, tier: Tier | None = Tier.ENTERPRISE, cloud_free: bool = False
+    ) -> None:
+        """Initialize with required tier and cloud behavior."""
         self.tier = tier
+        self.cloud_free = cloud_free
 
     async def __call__(
         self,
+        request: Request,
         project_uuid: UUID,
         project_service: Annotated[ProjectService, Depends(ProjectService)],
         organization_service: Annotated[
             OrganizationService, Depends(OrganizationService)
         ],
     ) -> LicenseInfo | None:
-        """Validate license and return license info if valid."""
-        # Get project record by UUID
+        """Validate license based on tier and environment (cloud/self-hosted)."""
         project = project_service.find_record_by_uuid(project_uuid)
         if not project:
             raise HTTPException(
@@ -98,6 +109,11 @@ class RequireLicense:
                 detail="Project does not belong to an organization",
             )
         organization_uuid = project.organization_uuid
+
+        is_cloud = await is_lilypad_cloud(request)
+
+        if is_cloud and self.cloud_free:
+            return None
 
         try:
             # Validate license using the LicenseValidator
@@ -126,7 +142,8 @@ class RequireLicense:
 
             if self.tier and license_info.tier < self.tier:
                 raise LilypadForbiddenError(
-                    detail="Invalid License. Contact support@mirascope.com to get one.",
+                    detail=f"License tier ({license_info.tier.name}) does not meet the required tier ({self.tier.name}). "
+                    "Contact support@mirascope.com to upgrade.",
                 )
 
             return license_info

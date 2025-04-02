@@ -24,7 +24,7 @@ annotations_router = APIRouter()
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -86,7 +86,7 @@ async def create_annotations(
     "/projects/{project_uuid}/annotations/{annotation_uuid}",
     response_model=AnnotationPublic,
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def update_annotation(
     annotation_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -105,7 +105,7 @@ async def update_annotation(
     "/projects/{project_uuid}/functions/{function_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def get_annotations(
     project_uuid: UUID,
     function_uuid: UUID,
@@ -125,7 +125,7 @@ async def get_annotations(
 @annotations_router.get(
     "/projects/{project_uuid}/spans/{span_uuid}/generate-annotation"
 )
-@require_license(tier=Tier.ENTERPRISE)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def generate_annotation(
     span_uuid: UUID,
     annotation_service: Annotated[AnnotationService, Depends(AnnotationService)],
