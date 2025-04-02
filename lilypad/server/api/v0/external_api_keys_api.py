@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from ..._utils.auth import require_scopes
-from ...models.external_api_keys import ExternalAPIKeyTable
 from ...schemas import UserPublic
 from ...schemas.external_api_keys import (
     ExternalAPIKeyCreate,
@@ -57,10 +56,13 @@ async def update_external_api_key(
         UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
     ],
     external_api_key_update: ExternalAPIKeyUpdate,
-) -> ExternalAPIKeyTable:
+) -> ExternalAPIKeyPublic:
     """Update users keys."""
-    return external_api_key_service.update_api_key(
+    external_api_key_service.update_api_key(
         service_name, external_api_key_update.api_key
+    )
+    return ExternalAPIKeyPublic(
+        service_name=service_name, masked_api_key=external_api_key_update.api_key
     )
 
 
