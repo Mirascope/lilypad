@@ -38,7 +38,7 @@ export const PlaygroundContainer = ({
           playgroundContainer={playgroundContainer}
         />
       </ResizablePanel>
-      {playgroundContainer.spanUuid && !isPanelCollapsed && (
+      {playgroundContainer.result && !isPanelCollapsed && (
         <>
           <ResizableHandle />
           <ResizablePanel
@@ -49,7 +49,7 @@ export const PlaygroundContainer = ({
             onCollapse={handleCollapse}
             className='relative'
           >
-            <div>This is a placeholder</div>
+            <div>{playgroundContainer.result}</div>
           </ResizablePanel>
         </>
       )}

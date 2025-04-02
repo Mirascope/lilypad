@@ -90,7 +90,7 @@ export const usePlaygroundContainer = ({
   // Editor state
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
-  const [spanUuid, setSpanUuid] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
   const editorRef = useRef<LexicalEditor>(null);
   const doesProviderExist = getAvailableProviders(user).length > 0;
 
@@ -211,8 +211,7 @@ export const usePlaygroundContainer = ({
             functionUuid: newVersion.uuid,
             playgroundParameters,
           });
-          console.log(res);
-          setSpanUuid(res);
+          setResult(res);
 
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
@@ -287,9 +286,9 @@ export const usePlaygroundContainer = ({
     projectUuid,
     functionName,
 
-    // Span
-    spanUuid,
-
     isDisabled: isCompare,
+
+    // Execution result
+    result
   };
 };
