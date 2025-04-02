@@ -7,6 +7,7 @@ import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { FunctionPublic } from "@/types/types";
 import { useState } from "react";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 interface PlaygroundContainerProps {
   version: FunctionPublic | null;
   isCompare: boolean;
@@ -38,7 +39,7 @@ export const PlaygroundContainer = ({
           playgroundContainer={playgroundContainer}
         />
       </ResizablePanel>
-      {playgroundContainer.spanUuid && !isPanelCollapsed && (
+      {playgroundContainer.result && !isPanelCollapsed && (
         <>
           <ResizableHandle />
           <ResizablePanel
@@ -49,7 +50,14 @@ export const PlaygroundContainer = ({
             onCollapse={handleCollapse}
             className='relative'
           >
-            <div>This is a placeholder</div>
+            <Card>
+              <CardHeader>
+                <CardTitle>{"Execution Result"}</CardTitle>
+              </CardHeader>
+                <CardContent className='whitespace-pre-wrap'>
+                 {playgroundContainer.result}
+                </CardContent>
+            </Card>
           </ResizablePanel>
         </>
       )}
