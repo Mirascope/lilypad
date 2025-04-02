@@ -37,7 +37,7 @@ os.environ["LILYPAD_PROJECT_ID"] = "..."
 os.environ["LILYPAD_API_KEY"] = "..."
 os.environ["OPENAI_API_KEY"] = "..."
 
-lilypad.configure()    # Automatically trace LLM API calls
+lilypad.configure(auto_llm=True)    # Automatically trace LLM API calls
 client = OpenAI()
 
 
