@@ -349,7 +349,7 @@ lilypad.configure()
 {function_code}
 
 {user_args_code}
-res = {function.name}(**arg_values)
+response = {function.name}(**arg_values)
 """
     external_api_key_names = user_external_api_key_service.list_api_keys().keys()
     external_api_keys = {
@@ -433,7 +433,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     Returns:
         The result of code execution
     """
-    modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
+    modified_code = code + "\n\nprint('__RESULT__', response, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
     settings = get_settings()
