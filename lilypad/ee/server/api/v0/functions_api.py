@@ -300,7 +300,6 @@ def run_playground(
     function_code = """
 from mirascope import llm, prompt_template
 
-lilypad.configure(auto_llm=True)
 
 @lilypad.trace(versioning="automatic")
 @llm.call(provider={provider}, model={model}, call_params={call_params})
