@@ -39,6 +39,10 @@ except ImportError:
         @staticmethod
         def setrlimit(*args: Any, **kwargs: Any) -> int: ...
 
+        @staticmethod
+        def getrlimit(*args: Any, **kwargs: Any) -> tuple[int, int]: ...
+
+
     resource = _Resource
     CAN_LIMIT_RESOURCES = False
 
@@ -175,7 +179,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
+def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
@@ -191,8 +195,9 @@ def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
         resource.setrlimit(
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
-        # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+        # Limit number of open files. Torch can open many files, so we set it to 20K * 10
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1]))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
@@ -298,10 +303,13 @@ def run_playground(
     arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
 
     function_code = """
+import lilypad
 from mirascope import llm, prompt_template
 
 
-@lilypad.trace(versioning="automatic", mode="wrap")
+lilypad.configure(auto_llm=True)
+
+@lilypad.trace(versioning="automatic")
 @llm.call(provider={provider}, model={model}, call_params={call_params})
 @prompt_template({template})
 def {function_name}(trace_ctx{arguments}) -> None:
@@ -342,14 +350,12 @@ def {function_name}(trace_ctx{arguments}) -> None:
     wrapper_code = f"""
 import json
 import os
-import lilypad
 
-lilypad.configure()
 
 {function_code}
 
 {user_args_code}
-res = {function.name}(**arg_values)
+response = {function.name}(**arg_values)
 """
     external_api_key_names = user_external_api_key_service.list_api_keys().keys()
     external_api_keys = {
@@ -433,7 +439,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
     Returns:
         The result of code execution
     """
-    modified_code = code + "\n\nprint('__RESULT__', res.response, '__RESULT__')"
+    modified_code = code + "\n\nprint('__RESULT__', response, '__RESULT__')"
     modified_code = run_ruff(dedent(modified_code)).strip()
     sanitized_env = _validate_api_keys(env_vars)
     settings = get_settings()
@@ -449,6 +455,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Python executable not found",
         )
+    logger.error(f"modified_code: {modified_code}")
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)

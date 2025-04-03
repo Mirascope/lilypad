@@ -28,6 +28,8 @@ traces_router = APIRouter()
 def _convert_system_to_provider(system: str) -> Provider:
     if system == "az.ai.inference":
         return "azure"
+    elif system == "google_genai":
+        return "google"
     return cast(Provider, system)
 
 
