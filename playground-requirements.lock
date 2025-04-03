@@ -157,7 +157,7 @@ lark==1.2.2
     # via outlines
 libcst==1.7.0
     # via lilypad-sdk
-lilypad-sdk @ git+https://github.com/Mirascope/lilypad-sdk-python.git@0ff5f85c1fdfc0f4e450b37faaa2ba52e2151290
+lilypad-sdk @ git+https://github.com/Mirascope/lilypad-sdk-python.git@e8ba439c25561fdc0f57bfa1312c262f80f0c813
     # via -r playground-requirements.txt
 markupsafe==3.0.2
     # via jinja2
