@@ -1,3 +1,5 @@
 export const isLilypadCloud = (): boolean => {
-  return window.location.hostname === "app.lilypad.so";
+  const hostname = window.location.hostname;
+  const domainSuffix = ".lilypad.so";
+  return hostname.endsWith(domainSuffix);
 };
