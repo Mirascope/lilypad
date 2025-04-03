@@ -449,6 +449,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Python executable not found",
         )
+    logger.info(f"modified_code: {modified_code}")
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
         tmp_path.write_text(modified_code)
