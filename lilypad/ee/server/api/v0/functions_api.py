@@ -39,6 +39,10 @@ except ImportError:
         @staticmethod
         def setrlimit(*args: Any, **kwargs: Any) -> int: ...
 
+        @staticmethod
+        def getrlimit(*args: Any, **kwargs: Any) -> tuple[int, int]: ...
+
+
     resource = _Resource
     CAN_LIMIT_RESOURCES = False
 
