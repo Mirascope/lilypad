@@ -191,8 +191,9 @@ def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
         resource.setrlimit(
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
-        # Limit number of open files
-        resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+        # Limit number of open files. Torch can open many files, so we set it to 20K * 10
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 10, rlimit[1]))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
@@ -463,7 +464,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
                 env=sanitized_env,
                 cwd=tmpdir,
                 timeout=60,
-                # preexec_fn=_limit_resources,
+                preexec_fn=_limit_resources,
             )
         except subprocess.TimeoutExpired:
             logger.error("Subprocess execution timed out.")
