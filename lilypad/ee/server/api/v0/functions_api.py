@@ -196,7 +196,7 @@ def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
         )
         # Limit number of open files. Torch can open many files, so we set it to 20K * 10
         rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-        resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1]))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 100, rlimit[1]))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
