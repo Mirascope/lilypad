@@ -19,7 +19,7 @@ RUN apt update && apt install git wget -y
 # For Outlines
 RUN wget https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.deb \
       && dpkg -i cuda-keyring_1.1-1_all.deb \
-      && apt-get update && apt-get install -y cuda-toolkit-12-8 libcudnn9-cuda-12 libcusparselt0  libcusparselt-dev libcublas-12-0 \
+      && apt-get update && apt-get install -y cuda-toolkit-12-8 libcudnn9-cuda-12 libcusparselt0  libcusparselt-dev libcublas-12-8 \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
 
