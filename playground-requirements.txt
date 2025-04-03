@@ -1,1 +1,2 @@
-lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral,outlines]@git+https://github.com/Mirascope/lilypad-sdk-python.git@main
+lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral]@git+https://github.com/Mirascope/lilypad-sdk-python.git@main
+mirascope[anthropic,azure,bedrock,cohere,google,groq,litellm,mistral,openai,xai]==1.22.2
