@@ -175,7 +175,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
     return sanitized_env
 
 
-def _limit_resources(timeout: int = 180, memory: int = 4096) -> None:
+def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
     """Limit system resources to prevent resource exhaustion attacks.
 
     Args:
