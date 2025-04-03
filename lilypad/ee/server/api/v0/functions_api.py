@@ -298,8 +298,11 @@ def run_playground(
     arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
 
     function_code = """
+import lilypad
 from mirascope import llm, prompt_template
 
+
+lilypad.configure(auto_llm=True)
 
 @lilypad.trace(versioning="automatic")
 @llm.call(provider={provider}, model={model}, call_params={call_params})
@@ -342,9 +345,7 @@ def {function_name}(trace_ctx{arguments}) -> None:
     wrapper_code = f"""
 import json
 import os
-import lilypad
 
-lilypad.configure()
 
 {function_code}
 
