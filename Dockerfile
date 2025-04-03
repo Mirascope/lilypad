@@ -14,7 +14,7 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock playground-requirements.lock /app/
 
 # For Test
-RUN apt update && apt install git -y
+RUN apt update && apt install git wget -y
 
 # For Outlines
 RUN wget https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.debian12 \
