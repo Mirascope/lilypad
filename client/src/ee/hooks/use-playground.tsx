@@ -231,11 +231,6 @@ export const usePlaygroundContainer = ({
           } else {
             setError(response.error);
             setExecutedSpanUuid(null);
-            toast({
-              title: "Error Running Playground",
-              description: response.error.reason || "An unknown error occurred.",
-              variant: "destructive",
-            });
           }
 
           navigate({
@@ -283,11 +278,9 @@ export const usePlaygroundContainer = ({
 
   const handleReset = () => {
     methods.reset();
-    // setResult(null); // Remove result clearing
     setError(null);
     setExecutedSpanUuid(null); // Clear span UUID on reset
     setEditorErrors([]);
-    // Consider resetting Lexical editor state explicitly if needed
   };
 
   const { fields, append, remove } = useFieldArray<EditorParameters>({
