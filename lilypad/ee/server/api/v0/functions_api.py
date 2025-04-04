@@ -279,6 +279,7 @@ def run_playground(
         function_service: Service for function management
         api_key_service: Service for API key management
         user_external_api_key_service: Service for external API key management
+        span_service: Service for span management
 
     Returns:
         Result of the function execution
