@@ -1,3 +1,5 @@
+// ee/hooks/use-playground.ts
+
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
@@ -7,7 +9,8 @@ import {
   FunctionCreate,
   FunctionPublic,
   PlaygroundParameters,
-  PlaygroundErrorDetail
+  PlaygroundErrorDetail,
+  Scope, // Import Scope if not already imported
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -19,8 +22,8 @@ import {
   validateInputs,
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
-import { $convertToMarkdownString } from "@lexical/markdown";
-import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical"; // Import Lexical node types if needed
+import { $convertToMarkdownString, TEXT_FORMAT_TRANSFORMERS } from "@lexical/markdown";
+import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { BaseSyntheticEvent, useRef, useState } from "react";
@@ -53,7 +56,6 @@ export const usePlaygroundContainer = ({
   const runMutation = useRunPlaygroundMutation();
   const patchFunction = usePatchFunctionMutation();
   const { toast } = useToast();
-  // Initialize form with base editor form
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -67,15 +69,12 @@ export const usePlaygroundContainer = ({
     },
   });
 
-  // Watch inputs for changes
   const inputs = methods.watch("inputs");
 
-  // Process input values
   const inputValues = inputs.reduce(
     (acc, input) => {
       if (input.type === "list" || input.type === "dict") {
         try {
-          // Type narrowing happens here
           const simplifiedValue = simplifyFormItem(input as any);
           acc[input.key] = simplifiedValue;
         } catch {
@@ -88,15 +87,15 @@ export const usePlaygroundContainer = ({
     },
     {} as Record<string, any>
   );
-  // Editor state
+
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
-  const [result, setResult] = useState<string | null>(null);
+  // const [result, setResult] = useState<string | null>(null); // Remove result state
   const [error, setError] = useState<PlaygroundErrorDetail | null>(null);
+  const [executedSpanUuid, setExecutedSpanUuid] = useState<string | null>(null); // Add state for executed span UUID
   const editorRef = useRef<LexicalEditor>(null);
   const doesProviderExist = getAvailableProviders(user).length > 0;
 
-  // Handler for form submission
   const onSubmit = async (
     data: EditorParameters,
     event?: BaseSyntheticEvent
@@ -104,19 +103,15 @@ export const usePlaygroundContainer = ({
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
-    setResult(null);
-    setError(null);
+    // setResult(null); // Remove result clearing
+    setError(null); // Clear previous error
+    setExecutedSpanUuid(null); // Clear previous span UUID
 
     if (!editorRef?.current || !projectUuid || !functionName) return;
-    // Determine which button was clicked
+
     let buttonName = "";
-    if (
-      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
-        ?.submitter
-    ) {
-      buttonName = (
-        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
-      ).submitter.name;
+    if ((event?.nativeEvent as unknown as { submitter: HTMLButtonElement })?.submitter) {
+      buttonName = (event?.nativeEvent as unknown as { submitter: HTMLButtonElement }).submitter.name;
     } else if (event?.target && "name" in event.target) {
       buttonName = (event.target as { name: string }).name;
     }
@@ -124,31 +119,27 @@ export const usePlaygroundContainer = ({
     const templateErrors = $findErrorTemplateNodes(editorRef.current);
     if (templateErrors.length > 0) {
       setEditorErrors(
-        templateErrors.map(
-          (node) => `'${node.getValue()}' is not a valid function argument.` // Corrected message
-        )
+        templateErrors.map((node) => `'${node.getValue()}' is not a valid function argument.`)
       );
-      return; // Stop submission if template errors exist
+      return;
     }
-    // Read editor state
+
     const editorState = editorRef.current.getEditorState();
 
     return new Promise<void>((resolve) => {
       void editorState.read(async () => {
-        // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
 
         let isEmpty = false;
         if (!markdown || markdown.trim().length === 0) {
-            isEmpty = true;
+          isEmpty = true;
         } else {
-            const root = $getRoot();
-            const firstChild = root.getFirstChild();
-            if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
-                 isEmpty = true;
-            }
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
+            isEmpty = true;
+          }
         }
-
 
         if (isEmpty) {
           toast({
@@ -160,17 +151,16 @@ export const usePlaygroundContainer = ({
           return;
         }
 
-
         const argTypes = inputs.reduce(
           (acc, input) => {
             if (input.key && input.key.trim().length > 0) {
-                acc[input.key] = input.type;
+              acc[input.key] = input.type;
             }
             return acc;
           },
           {} as Record<string, string>
         );
-        // Create function object
+
         const functionCreate: FunctionCreate = {
           prompt_template: markdown,
           call_params: data.call_params ?? undefined,
@@ -183,7 +173,6 @@ export const usePlaygroundContainer = ({
           code: "",
         };
 
-        // Validate form
         const isValid = await methods.trigger();
         if (!isValid) {
           resolve();
@@ -191,11 +180,10 @@ export const usePlaygroundContainer = ({
         }
 
         if (buttonName !== "run") {
-           resolve();
-           return;
+          resolve();
+          return;
         }
 
-        // Validate custom inputs (args and their values)
         if (!validateInputs(methods, data.inputs)) {
           setOpenInputDrawer(true);
           resolve();
@@ -203,36 +191,31 @@ export const usePlaygroundContainer = ({
         }
 
         try {
-          // Create a new version of the function
-           // It includes the prompt_template, call_params, arg_types etc.
           const newVersion = await createVersionedFunction.mutateAsync({
             projectUuid,
-            functionCreate, // Pass the prepared function data
+            functionCreate,
           });
 
-          // Process input values specifically for the run execution
           const runInputValues = inputs.reduce(
             (acc, input) => {
-               if (input.key && input.key.trim().length > 0) {
-                  if (input.type === "list" || input.type === "dict") {
-                    try {
-                      const simplifiedValue = simplifyFormItem(
-                        input as FormItemValue // Cast needed due to complexity
-                      );
-                      acc[input.key] = simplifiedValue;
-                    } catch (parseError) {
-                       console.warn(`Could not parse input '${input.key}':`, parseError);
-                      acc[input.key] = input.value; // Fallback to raw value
-                    }
-                  } else {
+              if (input.key && input.key.trim().length > 0) {
+                if (input.type === "list" || input.type === "dict") {
+                  try {
+                    const simplifiedValue = simplifyFormItem(input as FormItemValue);
+                    acc[input.key] = simplifiedValue;
+                  } catch (parseError) {
+                    console.warn(`Could not parse input '${input.key}':`, parseError);
                     acc[input.key] = input.value;
                   }
+                } else {
+                  acc[input.key] = input.value;
+                }
               }
               return acc;
             },
             {} as Record<string, any>
           );
-          // TODO: Update this to only pass in arg_values
+
           const playgroundParameters: PlaygroundParameters = {
             arg_values: runInputValues,
             provider: data.provider,
@@ -242,7 +225,6 @@ export const usePlaygroundContainer = ({
             prompt_template: markdown,
           };
 
-          // Execute the function run via the API
           const response = await runMutation.mutateAsync({
             projectUuid,
             functionUuid: newVersion.uuid,
@@ -250,14 +232,15 @@ export const usePlaygroundContainer = ({
           });
 
           if (response.success) {
-            setResult(response.data.result);
+            // setResult(response.data.result); // Remove setting result string
+            setExecutedSpanUuid(response.data.trace_context?.span_uuid ?? null); // Set the executed span UUID
             setError(null);
           } else {
-             // Handle specific error from the run endpoint
             setError(response.error);
-            setResult(null);
+            setExecutedSpanUuid(null); // Clear span UUID on error
+            // setResult(null); // Ensure result is also cleared on error
             toast({
-              title: "Error Running Playground", // More specific title
+              title: "Error Running Playground",
               description: response.error.reason || "An unknown error occurred.",
               variant: "destructive",
             });
@@ -271,30 +254,31 @@ export const usePlaygroundContainer = ({
             toast({
               title: "Navigation Error",
               description: "Failed to update the URL after running the playground.",
+              variant: "warning",
             });
           });
         } catch (apiError) {
           console.error("API Error during create/run:", apiError);
-           const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
-           setError({
-              type: 'ApiError',
-              reason: 'Failed to create or run the function version via API.',
-              details: message
+          const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
+          setError({
+            type: 'ApiError',
+            reason: 'Failed to create or run the function version via API.',
+            details: message
           });
-           setResult(null);
+          setExecutedSpanUuid(null); // Clear span UUID on API error
+          // setResult(null); // Ensure result is also cleared on API error
           toast({
             title: "API Error",
             description: message,
             variant: "destructive",
           });
         } finally {
-            resolve();
+          resolve();
         }
       });
     });
   };
 
-  // Handle setting function as default
   const handleSetDefault = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (version && projectUuid) {
@@ -308,11 +292,11 @@ export const usePlaygroundContainer = ({
 
   const handleReset = () => {
     methods.reset();
-    setResult(null);
+    // setResult(null); // Remove result clearing
     setError(null);
+    setExecutedSpanUuid(null); // Clear span UUID on reset
     setEditorErrors([]);
-    if (editorRef.current) {
-    }
+    // Consider resetting Lexical editor state explicitly if needed
   };
 
   const { fields, append, remove } = useFieldArray<EditorParameters>({
@@ -325,41 +309,28 @@ export const usePlaygroundContainer = ({
   };
 
   return {
-    // Form state
     methods,
     editorRef,
     inputs,
     inputValues,
     editorErrors,
-
-    // UI state
     openInputDrawer,
     setOpenInputDrawer,
     doesProviderExist,
-
-    // Loading states
     isRunLoading: runMutation.isPending,
     isCreateLoading: createVersionedFunction.isPending,
     isPatchLoading: patchFunction.isPending,
-
-    // Event handlers
-    onSubmit, // Form submission handler
-    handleSetDefault, // Handler for setting version as default
-    handleReset, // Handler for resetting the form
-
-    // Input field array management
-    fields, // Array of input fields from useFieldArray
-    addInput, // Function to add a new input field
-    removeInput: remove, // Function to remove an input field (renamed for clarity)
-
-    // Route parameters
+    onSubmit,
+    handleSetDefault,
+    handleReset,
+    fields,
+    addInput,
+    removeInput: remove,
     projectUuid,
     functionName,
-
     isDisabled: isCompare,
-
-    // Execution result and error
-    result,
+    // result: null, // Return null or remove if completely unused
+    executedSpanUuid, // Return the new state
     error,
     setError,
   };
