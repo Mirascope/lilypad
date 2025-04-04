@@ -1,6 +1,7 @@
 """The EE `/functions` API router."""
 
 import base64
+import binascii
 import json
 import logging
 import os
@@ -15,10 +16,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ....._utils import run_ruff
-from .....server.schemas import (
+from .....server.schemas.functions import (
+    AcceptedValue,
+    PlaygroundErrorDetail,
+    PlaygroundErrorResponse,
+    PlaygroundErrorType,
     PlaygroundParameters,
+    PlaygroundSuccessResponse,
 )
-from .....server.schemas.functions import AcceptedValue
 from .....server.services import APIKeyService, FunctionService
 from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
@@ -42,7 +47,6 @@ except ImportError:
         @staticmethod
         def getrlimit(*args: Any, **kwargs: Any) -> tuple[int, int]: ...
 
-
     resource = _Resource
     CAN_LIMIT_RESOURCES = False
 
@@ -53,6 +57,8 @@ functions_router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parents[5]
+_JSON_START_MARKER = "__JSON_START__"
+_JSON_END_MARKER = "__JSON_END__"
 
 
 def sanitize_arg_types_and_values(
@@ -225,7 +231,34 @@ def _validate_template_values(provider: str, model: str) -> bool:
     return True
 
 
-@functions_router.post("/projects/{project_uuid}/functions/{function_uuid}/playground")
+@functions_router.post(
+    "/projects/{project_uuid}/functions/{function_uuid}/playground",
+    response_model=PlaygroundSuccessResponse,  # Use imported model
+    summary="Run Function in Playground",
+    description="Executes a function with specified parameters in a secure playground environment.",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Function executed successfully.",
+            "model": PlaygroundSuccessResponse,
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Bad Request",
+            "model": PlaygroundErrorResponse,
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Function not found",
+            "model": PlaygroundErrorResponse,
+        },
+        status.HTTP_408_REQUEST_TIMEOUT: {
+            "description": "Request Timeout",
+            "model": PlaygroundErrorResponse,
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Internal Server Error",
+            "model": PlaygroundErrorResponse,
+        },
+    },
+)
 def run_playground(
     project_uuid: UUID,
     function_uuid: UUID,
@@ -235,7 +268,7 @@ def run_playground(
     user_external_api_key_service: Annotated[
         UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
     ],
-) -> str:
+) -> PlaygroundSuccessResponse:
     """Run playground version of a function with enhanced security.
 
     Args:
@@ -249,142 +282,282 @@ def run_playground(
     Returns:
         Result of the function execution
     """
-    # Get the function from the database
-    function = function_service.find_record_by_uuid(function_uuid)
-
-    if not function:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Function not found"
-        )
-    # Validate all function data for security
-    if not _validate_function_data(function):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Function contains potentially unsafe data",
-        )
-
-    # Get API keys for the project
-    api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
-    if len(api_keys) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="No API keys found"
-        )
-
-    # Extract required values from playground_parameters
-    provider = playground_parameters.provider.value
-    model = playground_parameters.model
-
-    # Validate provider and model values
-    if not _validate_template_values(provider, model):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid provider or model values detected",
-        )
-
-    # Prepare function arguments string - with validation
-    arg_definitions = []
-
-    arg_types = (
-        playground_parameters.arg_types
-        if playground_parameters.arg_types is not None
-        else function.arg_types
-    )
-    for arg_name in arg_types:
-        if arg_name == "trace_ctx":
-            continue  # Skip trace context argument
-        # Double-check that argument names are valid Python identifiers
-        if not _validate_python_identifier(arg_name):
+    try:
+        function = function_service.find_record_by_uuid(function_uuid)
+        if not function:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=PlaygroundErrorType.NOT_FOUND,
+                        reason="Function not found.",
+                        details=f"Function with UUID {function_uuid} does not exist.",
+                    ).model_dump()
+                },
+            )
+        if not _validate_function_data(function):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid argument name: {arg_name}",
+                detail={
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=PlaygroundErrorType.BAD_REQUEST,
+                        reason="Function data validation failed.",
+                        details="The function's stored configuration contains potentially unsafe data.",
+                    ).model_dump()
+                },
             )
-        arg_definitions.append(f"{arg_name}")
 
-    arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
+        # Get API keys for the project
+        api_keys = api_key_service.find_keys_by_user_and_project(project_uuid)
+        if len(api_keys) == 0:
+            logger.warning(
+                f"No project-specific API keys found for project {project_uuid}. Relying on user's external keys."
+            )
 
-    function_code = """
+        # Extract required values from playground_parameters
+        provider = playground_parameters.provider.value
+        model = playground_parameters.model
+
+        # Validate provider and model values
+        if not _validate_template_values(provider, model):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=PlaygroundErrorType.INVALID_INPUT,
+                        reason="Invalid provider or model name format.",
+                    ).model_dump()
+                },
+            )
+
+        arg_types = (
+            playground_parameters.arg_types
+            if playground_parameters.arg_types is not None
+            else function.arg_types
+        ) or {}
+
+        arg_definitions = []
+        for arg_name in arg_types:
+            if arg_name == "trace_ctx":
+                continue
+            if not _validate_python_identifier(arg_name):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error": PlaygroundErrorDetail(  # Use imported model
+                            type=PlaygroundErrorType.INVALID_INPUT,
+                            reason=f"Invalid argument name: {arg_name}.",
+                            details="Argument names must be valid Python identifiers.",
+                        ).model_dump()
+                    },
+                )
+            arg_definitions.append(f"{arg_name}")
+
+        arguments_str = ", " + ", ".join(arg_definitions) if arg_definitions else ""
+
+        try:
+            safe_arg_types_and_values = sanitize_arg_types_and_values(
+                arg_types, playground_parameters.arg_values or {}
+            )
+            decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=PlaygroundErrorType.INVALID_INPUT,
+                        reason="Invalid argument value encoding.",
+                        details=str(e),
+                    ).model_dump()
+                },
+            )
+
+        json_arg_values = json.dumps(decoded_arg_values)
+        user_args_preparation_code = (
+            f"arg_values = json.loads({json.dumps(json_arg_values)})"
+        )
+        function_definition_code = f"""
+import json
+import os
+import sys
+
 import lilypad
 from mirascope import llm, prompt_template
 
 
 lilypad.configure(auto_llm=True)
 
-@lilypad.trace(versioning="automatic")
-@llm.call(provider={provider}, model={model}, call_params={call_params})
-@prompt_template({template})
-def {function_name}(trace_ctx{arguments}) -> None:
+@lilypad.trace(versioning="automatic", mode="wrap")
+@llm.call(provider={json.dumps(provider)}, model={json.dumps(model)}, call_params={
+            json.dumps(
+                (
+                    playground_parameters.call_params
+                    if playground_parameters.call_params is not None
+                    else function.call_params
+                )
+                or {}
+            )
+        })
+@prompt_template({
+            json.dumps(
+                (
+                    playground_parameters.prompt_template
+                    if playground_parameters.prompt_template is not None
+                    else function.prompt_template
+                )
+                or ""
+            )
+        })
+def {function.name}(trace_ctx{arguments_str}) -> None:
     trace_ctx.metadata({{"scope": "playground"}})
-""".format(
-        provider=json.dumps(provider),
-        model=json.dumps(model),
-        call_params=json.dumps(
-            (
-                playground_parameters.call_params
-                if playground_parameters.call_params is not None
-                else function.call_params
-            )
-            or {}
-        ),
-        template=json.dumps(
-            (
-                playground_parameters.prompt_template
-                if playground_parameters.prompt_template is not None
-                else function.prompt_template
-            )
-            or ""
-        ),
-        function_name=function.name,  # Already validated
-        arguments=arguments_str,  # Already validated
-    )
 
-    # Sanitize and decode the argument values
-    safe_arg_types_and_values = sanitize_arg_types_and_values(
-        arg_types, playground_parameters.arg_values
-    )
-    decoded_arg_values = _decode_bytes(safe_arg_types_and_values)
-
-    # Serialize user input as a JSON string with proper escaping
-    json_arg_values = json.dumps(decoded_arg_values)
-    user_args_code = f"arg_values = json.loads({json.dumps(json_arg_values)})"
-
-    wrapper_code = f"""
-import json
-import os
-
-
-{function_code}
-
-{user_args_code}
-response = {function.name}(**arg_values)
 """
-    external_api_key_names = user_external_api_key_service.list_api_keys().keys()
-    external_api_keys = {
-        name: user_external_api_key_service.get_api_key(name)
-        if name in external_api_key_names
-        else ""
-        for name in ["openai", "anthropic", "gemini", "openrouter"]
-    }
-    settings = get_settings()
-    env_vars = {
-        "OPENAI_API_KEY": external_api_keys["openai"],
-        "ANTHROPIC_API_KEY": external_api_keys["anthropic"],
-        "GOOGLE_API_KEY": external_api_keys["gemini"],
-        "OPENROUTER_API_KEY": external_api_keys["openrouter"],
-        "LILYPAD_PROJECT_ID": str(project_uuid),
-        "LILYPAD_API_KEY": api_keys[0].key_hash,
-        "PATH": os.environ["PATH"],
-        "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
-        "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
-    }
-    try:
-        processed_code = _run_playground(wrapper_code, env_vars)
-    except Exception as e:
-        logger.exception("Failed to run playground: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid API Key"
-        )
+        full_wrapper_code = dedent(f"""
+{dedent(function_definition_code)}
 
-    return processed_code
+{dedent(user_args_preparation_code)}
+
+output_data = None
+try:
+    response = {function.name}(**arg_values)
+
+    output_data = {{
+        "result": response.response.content,
+        "trace_context": {{"span_id": response.formated_span_id }}
+    }}
+except Exception as e:
+    import traceback
+    error_reason = str(e)
+    print("--- Playground Execution Traceback ---", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+    print("------------------------------------", file=sys.stderr)
+    output_data = {{
+        "error": {{
+            # Use specific Python error type name directly as string
+            "type": type(e).__name__,
+            "reason": error_reason,
+            "details": "Error during playground function execution."
+        }}
+    }}
+finally:
+    _JSON_START_MARKER = "{_JSON_START_MARKER}"
+    _JSON_END_MARKER = "{_JSON_END_MARKER}"
+
+    if output_data is None:
+         output_data = {{ "error": {{ "type": "InternalPlaygroundError", "reason": "Failed to produce result or capture error.", "details": "" }} }}
+    try:
+        json_output = json.dumps(output_data)
+        print(f"{{_JSON_START_MARKER}}{{json_output}}{{_JSON_END_MARKER}}")
+    except Exception as dump_error:
+        fallback_error_data = {{
+            "error": {{
+                 "type": type(dump_error).__name__, # Type of the dumping error
+                 "reason": "Failed to serialize final playground output to JSON.",
+                 "details": str(dump_error)
+            }}
+        }}
+        print(f"{{_JSON_START_MARKER}}{{json.dumps(fallback_error_data)}}{{_JSON_END_MARKER}}")
+""")
+
+        try:
+            formatted_wrapper_code = run_ruff(full_wrapper_code)
+        except Exception as format_error:
+            logger.warning(
+                f"Ruff formatting failed: {format_error}. Proceeding with unformatted code."
+            )
+            formatted_wrapper_code = full_wrapper_code
+
+        external_api_keys = {}
+        try:
+            key_names = user_external_api_key_service.list_api_keys().keys()
+            for name in ["openai", "anthropic", "gemini", "openrouter"]:
+                api_key_val = (
+                    user_external_api_key_service.get_api_key(name)
+                    if name in key_names
+                    else None
+                )
+                if api_key_val:
+                    external_api_keys[name.upper() + "_API_KEY"] = api_key_val
+        except Exception as key_error:
+            logger.error(f"Failed to retrieve external API keys: {key_error}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=PlaygroundErrorType.API_KEY_ISSUE,
+                        reason="Failed to retrieve external API keys.",
+                        details=str(key_error),
+                    ).model_dump()
+                },
+            )
+
+        settings = get_settings()
+        env_vars = {
+            **external_api_keys,
+            "LILYPAD_PROJECT_ID": str(project_uuid),
+            "LILYPAD_API_KEY": api_keys[0].key_hash,
+            "PATH": os.environ["PATH"],
+            "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
+            "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
+        }
+
+        execution_result_dict = _run_playground(formatted_wrapper_code, env_vars)
+
+        if isinstance(execution_result_dict, dict) and "error" in execution_result_dict:
+            try:
+                error_detail_validated = PlaygroundErrorDetail(
+                    **execution_result_dict["error"]
+                )
+                error_type = error_detail_validated.type
+            except Exception as validation_error:
+                logger.error(
+                    f"Playground returned invalid error structure: {validation_error}\n{execution_result_dict}"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "error": PlaygroundErrorDetail(
+                            type=PlaygroundErrorType.INTERNAL,
+                            reason="Playground returned an invalid error structure.",
+                            details=str(validation_error),
+                        ).model_dump()
+                    },
+                )
+
+            status_code = status.HTTP_400_BAD_REQUEST
+            if isinstance(error_type, PlaygroundErrorType):
+                if error_type == PlaygroundErrorType.TIMEOUT:
+                    status_code = status.HTTP_408_REQUEST_TIMEOUT
+                elif error_type in [
+                    PlaygroundErrorType.CONFIGURATION,
+                    PlaygroundErrorType.SUBPROCESS,
+                    PlaygroundErrorType.INTERNAL,
+                ]:
+                    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+            raise HTTPException(
+                status_code=status_code,
+                detail=execution_result_dict,  # Pass the original dict (now known to contain a valid error structure)
+            )
+
+        return execution_result_dict
+
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.exception(
+            "Unexpected error occurred during playground request processing: %s", e
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": PlaygroundErrorDetail(
+                    type=PlaygroundErrorType.UNEXPECTED,
+                    reason="An unexpected server error occurred.",
+                    details=str(e),
+                ).model_dump()
+            },
+        )
 
 
 def _validate_template_string(template: str | None) -> bool:
@@ -429,36 +602,27 @@ def _validate_template_string(template: str | None) -> bool:
     return True
 
 
-def _run_playground(code: str, env_vars: dict[str, str]) -> str:
-    """Run code in playground with enhanced security.
-
-    Args:
-        code: The Python code to execute
-        env_vars: Dictionary of environment variables to pass to the subprocess
-
-    Returns:
-        The result of code execution
-    """
-    modified_code = code + "\n\nprint('__RESULT__', response, '__RESULT__')"
-    modified_code = run_ruff(dedent(modified_code)).strip()
+def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
+    """Runs code in playground, returning structured dict for success or error."""
     sanitized_env = _validate_api_keys(env_vars)
     settings = get_settings()
     python_executable = Path(settings.playground_venv_path, "bin/python")
+    timeout_seconds = 60
+
     if not python_executable.exists():
-        logger.error("Python executable not found")
-        logger.error("Please setup the playground environment")
-        logger.error(
-            f"$ uv venv --no-project {str(settings.playground_venv_path)} &&"
-            f" VIRTUAL_ENV={str(settings.playground_venv_path)} uv pip sync playground-requirements.lock"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Python executable not found",
-        )
-    logger.error(f"modified_code: {modified_code}")
+        logger.error(f"Playground Python executable not found: {python_executable}")
+        return {
+            "error": PlaygroundErrorDetail(
+                type=PlaygroundErrorType.CONFIGURATION,
+                reason="Playground Python executable not found.",
+                details="Server environment setup issue.",
+            ).model_dump()
+        }
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir) / "playground.py"
-        tmp_path.write_text(modified_code)
+        tmp_path.write_text(code)
+
         try:
             result = subprocess.run(
                 [str(python_executable.absolute()), str(tmp_path)],
@@ -467,28 +631,124 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> str:
                 text=True,
                 env=sanitized_env,
                 cwd=tmpdir,
-                timeout=60,
+                timeout=timeout_seconds,
                 preexec_fn=_limit_resources,
             )
-        except subprocess.TimeoutExpired:
-            logger.error("Subprocess execution timed out.")
-            return "Execution timed out"
-        except Exception:
-            logger.exception("Subprocess execution failed")
-            return "Internal execution error"
 
-    if result.returncode == 0:
-        result_match = re.search(r"__RESULT__(.*?)__RESULT__", result.stdout, re.DOTALL)
-        if result_match:
-            try:
-                return json.loads(result_match.group(1))
-            except json.JSONDecodeError:
-                return result_match.group(1)
-        else:
-            return result.stdout.strip()
-    else:
-        logger.error("Subprocess returned an error: %s", result.stderr.strip())
-        return "Code execution error"
+            if result.returncode == 0:
+                stdout_content = result.stdout
+                start_index = stdout_content.find(_JSON_START_MARKER)
+                end_index = stdout_content.rfind(_JSON_END_MARKER)
+
+                if start_index != -1 and end_index != -1 and start_index < end_index:
+                    json_payload = stdout_content[
+                        start_index + len(_JSON_START_MARKER) : end_index
+                    ]
+                    try:
+                        parsed_output = json.loads(json_payload)
+                        if (
+                            isinstance(parsed_output, dict)
+                            and "error" in parsed_output
+                            and isinstance(parsed_output["error"], dict)
+                        ):
+                            try:
+                                # Validate and return the error structure
+                                validated_error = PlaygroundErrorDetail(
+                                    **parsed_output["error"]
+                                )
+                                return {"error": validated_error.model_dump()}
+                            except Exception as validation_error:
+                                logger.warning(
+                                    f"Script returned error structure that failed validation: {validation_error}. Returning raw structure."
+                                )
+                                # Return the unvalidated structure but still wrapped in "error" key if possible
+                                return {"error": parsed_output["error"]}
+
+                        # TODO: get span_uuid by using span_id
+                        return parsed_output
+                    except json.JSONDecodeError as json_err:
+                        logger.error(
+                            f"Failed to parse JSON between markers: {json_err}\nPayload: {json_payload[:500]}"
+                        )
+                        return {
+                            "error": PlaygroundErrorDetail(
+                                type=PlaygroundErrorType.OUTPUT_PARSING,
+                                reason="Playground produced invalid JSON output between markers.",
+                                details=str(json_err),
+                            ).model_dump()
+                        }
+                else:
+                    logger.error(
+                        f"Output markers not found in stdout.\nStdout: {stdout_content[:1000]}"
+                    )
+                    if result.stderr:
+                        logger.error(
+                            f"Stderr on return code 0:\n{result.stderr.strip()[:1000]}"
+                        )
+                    return {
+                        "error": PlaygroundErrorDetail(  # Use imported model
+                            type=PlaygroundErrorType.OUTPUT_MARKER,
+                            reason="Playground did not produce expected output markers.",
+                            details="Execution might have finished unexpectedly or stdout is malformed.",
+                        ).model_dump()
+                    }
+            else:
+                stderr_content = result.stderr.strip()
+                logger.error(
+                    f"Subprocess returned error (code {result.returncode}):\n{stderr_content}"
+                )
+                error_type_str = (
+                    PlaygroundErrorType.EXECUTION_ERROR
+                )  # Default Enum value
+                error_reason = "Code execution failed inside the playground."
+                last_line = stderr_content.splitlines()[-1] if stderr_content else ""
+                match = re.search(r"^(?:[\w\.]+\.)*(\w*Error):\s*(.*)", last_line)
+                if match:
+                    error_reason = (
+                        match.group(2).strip()
+                        if match.group(2)
+                        else f"Python {match.group(1)}"
+                    )
+
+                return {
+                    "error": PlaygroundErrorDetail(  # Use imported model
+                        type=error_type_str,
+                        reason=error_reason,
+                        details=f"Subprocess failed with return code {result.returncode}. Check server logs for full stderr.",
+                    ).model_dump()
+                }
+
+        except subprocess.TimeoutExpired:
+            logger.error(
+                f"Subprocess execution timed out after {timeout_seconds} seconds."
+            )
+            return {
+                "error": PlaygroundErrorDetail(  # Use imported model
+                    type=PlaygroundErrorType.TIMEOUT,
+                    reason="Playground execution exceeded the time limit.",
+                    details=f"Timeout was {timeout_seconds} seconds.",
+                ).model_dump()
+            }
+        except FileNotFoundError:
+            logger.error(
+                f"Playground Python executable failed to run (FileNotFoundError): {python_executable}"
+            )
+            return {
+                "error": PlaygroundErrorDetail(  # Use imported model
+                    type=PlaygroundErrorType.CONFIGURATION,
+                    reason="Failed to execute the playground Python interpreter.",
+                    details="Check server environment setup and executable path.",
+                ).model_dump()
+            }
+        except Exception as sub_err:
+            logger.exception("Subprocess execution failed unexpectedly.")
+            return {
+                "error": PlaygroundErrorDetail(  # Use imported model
+                    type=PlaygroundErrorType.SUBPROCESS,
+                    reason="An unexpected error occurred while managing the playground process.",
+                    details=str(sub_err),
+                ).model_dump()
+            }
 
 
 def _decode_bytes(
@@ -510,11 +770,22 @@ def _decode_bytes(
                 try:
                     decoded_data = base64.b64decode(arg_value, validate=True)
                     result[arg_name] = decoded_data
-
-                except Exception as e:
-                    raise ValueError(f"Invalid Base64 encoding: {str(e)}")
+                except (
+                    TypeError,
+                    binascii.Error,
+                ) as e:  # binascii.Error covers most b64decode issues
+                    # Raise ValueError with specific argument name and chained exception
+                    raise ValueError(
+                        f"Invalid Base64 encoding for argument '{arg_name}': {str(e)}"
+                    ) from e
+            elif arg_value is None:
+                result[arg_name] = None
+            elif isinstance(arg_value, bytes):
+                result[arg_name] = arg_value
             else:
-                raise ValueError(f"Expected bytes, got {type(arg_value)}")
+                raise ValueError(
+                    f"Expected base64 encoded string or None for bytes argument '{arg_name}', got {type(arg_value)}"
+                )
         else:
             result[arg_name] = arg_value
 

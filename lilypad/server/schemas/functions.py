@@ -5,7 +5,7 @@ from typing import Any, TypeVar, overload
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
-from pydantic import BaseModel, TypeAdapter, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from ..models.functions import _FunctionBase
 
@@ -117,3 +117,59 @@ class PlaygroundParameters(BaseModel):
     ) -> dict[str, AcceptedValue]:
         """arg_values is a dictionary of key-value pairs where the value can be"""
         return _validate_object(values)
+
+
+class PlaygroundErrorType(str, Enum):
+    """Categorizes the types of errors that can occur during playground execution."""
+
+    TIMEOUT = "TimeoutError"
+    CONFIGURATION = "ConfigurationError"
+    SUBPROCESS = "SubprocessError"
+    OUTPUT_PARSING = "OutputParsingError"
+    OUTPUT_MARKER = "OutputMarkerError"
+    INTERNAL = "InternalPlaygroundError"
+    EXECUTION_ERROR = "ExecutionError"  # Error within user code
+    BAD_REQUEST = "BadRequestError"  # General validation errors before execution
+    NOT_FOUND = "NotFoundError"  # Resource not found
+    INVALID_INPUT = "InvalidInputError"  # Specific input format/value errors
+    API_KEY_ISSUE = "ApiKeyIssue"  # Error related to API key retrieval/validation
+    UNEXPECTED = "UnexpectedServerError"  # Catch-all for server issues
+
+
+class PlaygroundErrorDetail(BaseModel):
+    """Detailed information about a playground error."""
+
+    type: PlaygroundErrorType | str = Field(
+        ...,
+        description="Category of the error (Enum value) or specific Python Exception type name.",
+    )
+    reason: str = Field(..., description="User-friendly description of the error.")
+    details: str | None = Field(
+        None, description="Additional technical details, if available."
+    )
+
+
+class PlaygroundErrorResponse(BaseModel):
+    """Standard structure for playground error responses."""
+
+    error: PlaygroundErrorDetail
+
+
+class TraceContextModel(BaseModel):
+    """Represents the tracing context information provided by Lilypad."""
+
+    span_uuid: str | None = Field(
+        None, description="The unique identifier for the current span within the trace."
+    )
+
+
+class PlaygroundSuccessResponse(BaseModel):
+    """Standard structure for successful playground execution responses."""
+
+    result: Any = Field(
+        ...,
+        description="The result returned by the executed function. Can be any JSON-serializable type.",
+    )
+    trace_context: TraceContextModel | None = Field(
+        None, description="Tracing context associated with the execution."
+    )
