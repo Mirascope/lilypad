@@ -51,7 +51,7 @@ const LoginComponent = () => {
           <Typography variant='p' affects='muted'>
             By signing in, you agree to our{" "}
             <a
-              href='https://mirascope.com/terms'
+              href='https://mirascope.com/terms/service'
               target='_blank'
               rel='noopener noreferrer'
             >
