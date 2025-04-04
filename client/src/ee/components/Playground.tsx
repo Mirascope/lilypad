@@ -40,54 +40,12 @@ import {
 import { TypedInput } from "@/ee/utils/input-utils";
 import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
-import { AlertTriangle, GripVertical, X } from "lucide-react";
-import {Dispatch, SetStateAction, Suspense, useEffect, useRef} from "react";
+import { X } from "lucide-react";
+import {Dispatch, SetStateAction, useEffect} from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { spanQueryOptions } from "@/utils/spans";
-import { LilypadPanel } from "@/components/LilypadPanel";
-import CardSkeleton from "@/components/CardSkeleton";
-import { PanelGroup, Panel, PanelResizeHandle, ImperativePanelHandle } from "react-resizable-panels";
-
-
-const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {
-  return (
-    <div className="bg-red-50 border border-red-200 rounded-md p-3">
-      <div className="flex items-start">
-        <div className="flex-shrink-0">
-          <AlertTriangle className="h-4 w-4 text-red-500" />
-        </div>
-        <div className="ml-2">
-          <p className="text-sm text-red-700">{error.reason || "An unknown error occurred"}</p>
-          {error.details && (
-            <details className="mt-2">
-              <summary className="cursor-pointer text-xs font-medium">Technical details</summary>
-              <pre className="mt-2 text-xs p-2 bg-red-100 rounded overflow-auto whitespace-pre-wrap break-all">
-                {typeof error.details === 'object' ? JSON.stringify(error.details, null, 2) : error.details}
-              </pre>
-            </details>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ExecutedSpanDetailPanel = ({ spanUuid }: { spanUuid: string }) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  return (
-    <div className='flex flex-col gap-4 h-full'>
-      <div className='p-4 border rounded-md overflow-auto flex-1'>
-        <h2 className='text-lg font-semibold mb-4'>Run Details</h2>
-        <LilypadPanel spanUuid={span.uuid} />
-      </div>
-    </div>
-  );
-};
 
 export const Playground = ({
   version,
-  error,
   isCompare,
   showRunButton,
   playgroundContainer,
@@ -115,22 +73,7 @@ export const Playground = ({
     onSubmit,
     handleReset,
     projectUuid,
-    executedSpanUuid,
-    error: containerError,
   } = playgroundContainer ?? defaultContainer;
-
-  const displayError = error ?? containerError;
-  const showRightPanel = Boolean(executedSpanUuid ?? displayError);
-
-  const rightPanelRef = useRef<ImperativePanelHandle>(null);
-
-  useEffect(() => {
-    if (showRightPanel && rightPanelRef.current) {
-      if (rightPanelRef.current.isCollapsed()) {
-        rightPanelRef.current.expand();
-      }
-    }
-  }, [showRightPanel, executedSpanUuid, displayError]);
 
   if (!projectUuid) return <NotFound />;
 
@@ -164,88 +107,51 @@ export const Playground = ({
 
   return (
     <Form {...methods}>
-      <PanelGroup direction="horizontal" className="flex-1 h-full border rounded-lg overflow-hidden">
-        <Panel defaultSize={showRightPanel ? 50 : 100} minSize={30} order={1}>
-          <div className="flex flex-col h-full p-4 overflow-y-auto">
-            <form
-              id={`playground-form-${version?.uuid ?? Math.random().toString(36).substring(7)}`}
-              onSubmit={methods.handleSubmit(onSubmit)}
-              className='flex flex-col gap-4 flex-1 h-full'
-            >
-              <div className='flex justify-between gap-4 w-full'>
-                <div className='flex items-center gap-2'>
-                  <InputsDrawer
-                    open={openInputDrawer}
-                    setOpen={setOpenInputDrawer}
-                    onSubmit={onSubmit}
-                    doesProviderExist={doesProviderExist}
-                    isLoading={isRunLoading}
-                    isDisabled={isRunLoading}
-                  />
-                  <CallParamsDrawer
-                    doesProviderExist={doesProviderExist}
-                    version={version}
-                    isLoading={isRunLoading}
-                    isDisabled={isRunLoading}
-                    handleReset={handleReset}
-                  />
-                  {(!isCompare || showRunButton) && renderRunButton()}
-                </div>
-              </div>
-              <div className='lexical flex-1 min-h-[200px] relative'>
-                <Editor
-                  inputs={inputs.map((input) => input.key)}
-                  inputValues={inputValues}
-                  ref={editorRef}
-                  promptTemplate={version?.prompt_template ?? ""}
+      <div className="h-full">
+        <div className="flex flex-col h-full">
+          <form
+            id={`playground-form-${version?.uuid ?? Math.random().toString(36).substring(7)}`}
+            onSubmit={methods.handleSubmit(onSubmit)}
+            className='flex flex-col gap-4 flex-1 h-full'
+          >
+            <div className='flex justify-between gap-4 w-full'>
+              <div className='flex items-center gap-2'>
+                <InputsDrawer
+                  open={openInputDrawer}
+                  setOpen={setOpenInputDrawer}
+                  onSubmit={onSubmit}
+                  doesProviderExist={doesProviderExist}
+                  isLoading={isRunLoading}
                   isDisabled={isRunLoading}
                 />
-                {editorErrors.length > 0 &&
-                  editorErrors.map((error, i) => (
-                    <div key={i} className='text-red-500 text-sm mt-1'>
-                      {error}
-                    </div>
-                  ))}
+                <CallParamsDrawer
+                  doesProviderExist={doesProviderExist}
+                  version={version}
+                  isLoading={isRunLoading}
+                  isDisabled={isRunLoading}
+                  handleReset={handleReset}
+                />
+                {(!isCompare || showRunButton) && renderRunButton()}
               </div>
-            </form>
-          </div>
-        </Panel>
-
-        {showRightPanel && (
-          <PanelResizeHandle className="w-2 bg-gray-100 hover:bg-gray-200 border-x flex items-center justify-center cursor-col-resize">
-            <GripVertical className="h-4 w-4 text-gray-400" />
-          </PanelResizeHandle>
-        )}
-
-        <Panel
-          ref={rightPanelRef}
-          defaultSize={50}
-          minSize={25}
-          collapsible={true}
-          collapsedSize={0}
-          order={2}
-          className={!showRightPanel ? 'hidden' : ''}
-        >
-          {showRightPanel && (
-            <div className="flex flex-col overflow-y-auto h-full p-4">
-              {isRunLoading && (
-                <div className="text-gray-500">Running...</div>
-              )}
-              {!isRunLoading && displayError && (
-                <SimpleErrorDisplay error={displayError} />
-              )}
-              {!isRunLoading && !displayError && executedSpanUuid && (
-                <Suspense fallback={<CardSkeleton items={8} className='flex flex-col' />}>
-                  <ExecutedSpanDetailPanel spanUuid={executedSpanUuid} />
-                </Suspense>
-              )}
-              {!isRunLoading && !displayError && !executedSpanUuid && (
-                <div className="text-gray-500">No result yet</div>
-              )}
             </div>
-          )}
-        </Panel>
-      </PanelGroup>
+            <div className='lexical flex-1 min-h-[200px] relative'>
+              <Editor
+                inputs={inputs.map((input) => input.key)}
+                inputValues={inputValues}
+                ref={editorRef}
+                promptTemplate={version?.prompt_template ?? ""}
+                isDisabled={isRunLoading}
+              />
+              {editorErrors.length > 0 &&
+                editorErrors.map((error, i) => (
+                  <div key={i} className='text-red-500 text-sm mt-1'>
+                    {error}
+                  </div>
+                ))}
+            </div>
+          </form>
+        </div>
+      </div>
     </Form>
   );
 };
