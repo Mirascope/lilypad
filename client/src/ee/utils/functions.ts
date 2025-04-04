@@ -1,18 +1,16 @@
 import api from "@/api";
 import {
-  PlaygroundParameters,
-  PlaygroundSuccessResponse,
-  PlaygroundErrorResponse
-} from "@/types/types"; // Import existing types
+    PlaygroundParameters,
+    PlaygroundSuccessResponse,
+    PlaygroundErrorResponse, PlaygroundErrorDetail
+} from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 
-interface PlaygroundErrorRawResponse {
-  detail: PlaygroundErrorResponse
-}
-type PlaygroundResult =
+
+export type PlaygroundResult =
   | { success: true; data: PlaygroundSuccessResponse }
-  | { success: false; error: PlaygroundErrorResponse['error'] };
+  | { success: false; error: PlaygroundErrorDetail };
 
 /**
  * Function to call the playground API
@@ -38,20 +36,20 @@ export const runPlayground = async (
     };
   } catch (error) {
     if (error instanceof AxiosError && error.response?.data) {
-      const errorResponse = error.response.data as PlaygroundErrorRawResponse;
+      const errorResponse = error.response.data as PlaygroundErrorResponse;
 
       return {
         success: false,
-        error: errorResponse.detail.error
+        error: errorResponse.error
       };
     }
 
     return {
       success: false,
       error: {
-        type: "UnexpectedServerError",
-        reason: "An error occurred on the client side",
-        details: error instanceof Error ? error.message : String(error)
+          type: "UnexpectedServerError",
+          reason: "An error occurred on the client side",
+          details: error instanceof Error ? error.message : String(error)
       }
     };
   }

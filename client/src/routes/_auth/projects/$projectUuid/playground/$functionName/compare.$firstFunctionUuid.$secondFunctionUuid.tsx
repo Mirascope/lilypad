@@ -19,7 +19,12 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { FunctionPublic, PlaygroundParameters, PlaygroundErrorDetail } from "@/types/types";
 import { $convertToMarkdownString } from "@lexical/markdown";
-import { Suspense, useState } from "react";
+import {Suspense, useState } from "react";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import CardSkeleton from "@/components/CardSkeleton.tsx";
+import {LilypadPanel} from "@/components/LilypadPanel.tsx";
+
+
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid"
 )({
@@ -39,19 +44,17 @@ const ComparePlaygrounds = ({
   secondFunction: FunctionPublic;
 }) => {
   const { toast } = useToast();
-  const [firstResponse, setFirstResponse] = useState<string>("");
-  const [secondResponse, setSecondResponse] = useState<string>("");
+  const [firstSpanUuid, setFirstSpanUuid] = useState<string | null>(null);
+  const [secondSpanUuid, setSecondSpanUuid] = useState<string | null>(null);
   const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(null);
   const [secondError, setSecondError] = useState<PlaygroundErrorDetail | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   // Set up hooks for both functions
   const firstPlayground = usePlaygroundContainer({
     version: firstFunction,
-    isCompare: true,
   });
   const secondPlayground = usePlaygroundContainer({
     version: secondFunction,
-    isCompare: true,
   });
 
   const runMutation = useRunPlaygroundMutation();
@@ -62,8 +65,8 @@ const ComparePlaygrounds = ({
 
   const runBothFunctions = async () => {
     setIsRunning(true);
-    setFirstResponse("");
-    setSecondResponse("");
+    setFirstSpanUuid(null);
+    setSecondSpanUuid(null);
     setFirstError(null);
     setSecondError(null);
 
@@ -73,13 +76,13 @@ const ComparePlaygrounds = ({
         runFunction(
           firstPlayground,
           firstFunction.uuid,
-          (response) => setFirstResponse(response),
+          (spanUuid) => setFirstSpanUuid(spanUuid),
           (error) => setFirstError(error)
         ),
         runFunction(
           secondPlayground,
           secondFunction.uuid,
-          (response) => setSecondResponse(response),
+          (spanUuid) => setSecondSpanUuid(spanUuid),
           (error) => setSecondError(error)
         ),
       ]);
@@ -99,7 +102,7 @@ const ComparePlaygrounds = ({
   const runFunction = (
     playground: ReturnType<typeof usePlaygroundContainer>,
     functionUuid: string,
-    setResponse: (response: string) => void,
+    setSpanUuid: (spanUuid: string) => void,
     setError: (error: PlaygroundErrorDetail) => void
   ) => {
     const { methods, inputs, projectUuid } = playground;
@@ -149,18 +152,11 @@ const ComparePlaygrounds = ({
             playgroundParameters,
           });
 
-          // Handle the typed response
-          if (result.success) {
-            // Set successful response
-            // If result.data.result is a string, use it directly
-            if (typeof result.data.result === 'string') {
-              setResponse(result.data.result);
-            } else {
-              // Otherwise, stringify it for display
-              setResponse(JSON.stringify(result.data.result, null, 2));
-            }
-          } else {
-            setError(result.error);
+          // Handle the response
+          if (result.success && result.data.trace_context?.span_uuid) {
+            setSpanUuid(result.data.trace_context.span_uuid);
+          } else if (!result.success) {
+            setError(result.error.error);
             console.error("Function error:", result.error);
           }
         } catch (error) {
@@ -183,24 +179,24 @@ const ComparePlaygrounds = ({
   };
 
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='flex justify-end'>
+    <div className="flex flex-col h-full">
+      <div className="flex justify-end mb-4">
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
               <Button
-                name='run'
+                name="run"
                 loading={isRunning}
-                disabled={!canRun}
+                disabled={!canRun || isRunning}
                 onClick={runBothFunctions}
-                className='hover:bg-green-700 text-white font-medium'
+                className="hover:bg-green-700 text-white font-medium"
               >
                 Run Both Playgrounds
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent className='bg-gray-700 text-white'>
-            <p className='max-w-xs break-words'>
+          <TooltipContent className="bg-gray-700 text-white">
+            <p className="max-w-xs break-words">
               {canRun
                 ? "Run both playgrounds simultaneously and compare outputs."
                 : "You need to add API keys to run the playgrounds."}
@@ -209,60 +205,84 @@ const ComparePlaygrounds = ({
         </Tooltip>
       </div>
 
-      <div className='flex w-full justify-between gap-4 overflow-auto'>
-        <div className='flex-1'>
-          <Playground
+      <div className="flex mb-4" style={{ gap: '16px' }}>
+        <div style={{ width: '50%' }}>
+          <div className="playground-container">
+            <Playground
             version={firstFunction}
-            response={firstResponse}
             error={firstError}
             isCompare={true}
             playgroundContainer={firstPlayground}
           />
+          </div>
         </div>
-
-        <div className='flex-1'>
-          <Playground
+        <div style={{ width: '50%' }}>
+          <div className="playground-container">
+            <Playground
             version={secondFunction}
-            response={secondResponse}
             error={secondError}
             isCompare={true}
             playgroundContainer={secondPlayground}
           />
+          </div>
         </div>
       </div>
+
+      {(firstSpanUuid ?? secondSpanUuid) && (
+        <div className="flex mt-4" style={{ gap: '16px' }}>
+          <div style={{ width: '50%' }}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Function 1 Result</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {firstSpanUuid ? (
+                  <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
+                    <LilypadPanel spanUuid={firstSpanUuid} />
+                  </Suspense>
+                ) : firstError ? (
+                  <div className="text-red-500">
+                    {firstError.reason || "An error occurred"}
+                  </div>
+                ) : (
+                  <div className="text-gray-500">No result yet</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <div style={{ width: '50%' }}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Function 2 Result</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {secondSpanUuid ? (
+                  <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
+                    <LilypadPanel spanUuid={secondSpanUuid} />
+                  </Suspense>
+                ) : secondError ? (
+                  <div className="text-red-500">
+                    {secondError.reason || "An error occurred"}
+                  </div>
+                ) : (
+                  <div className="text-gray-500">No result yet</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const ComparePlaygroundsRoute = () => {
-  const { projectUuid, functionName, functionUuid, secondFunctionUuid } =
-    useParams({
-      from: Route.id,
-    });
-  const { data: functions } = useSuspenseQuery(
-    functionsByNameQueryOptions(functionName, projectUuid)
-  );
+const ComparePlaygroundsRoute = () => { /* ... remains the same ... */
+  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } = useParams({ from: "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid", });
+  const { data: functions } = useSuspenseQuery( functionsByNameQueryOptions(functionName, projectUuid));
   const features = useFeatureAccess();
-  const firstFunction = functions.find((f) => f.uuid === functionUuid);
+  const firstFunction = functions.find((f) => f.uuid === firstFunctionUuid);
   const secondFunction = functions.find((f) => f.uuid === secondFunctionUuid);
-
-  if (!firstFunction || !secondFunction) {
-    return <div>Please select two functions to compare.</div>;
-  } else {
-    return (
-      <div className='p-4 flex flex-col gap-6'>
-        {features.playground &&
-          firstFunction.is_versioned &&
-          secondFunction.is_versioned && (
-            <div className='text-left'>
-              <Label className='text-lg font-semibold'>Compare Functions</Label>
-              <ComparePlaygrounds
-                firstFunction={firstFunction}
-                secondFunction={secondFunction}
-              />
-            </div>
-          )}
-      </div>
-    );
-  }
+  if (!firstFunction || !secondFunction) { return <div>Selected functions not found or invalid comparison link.</div>; }
+  const canCompare = features.playground && firstFunction.is_versioned && secondFunction.is_versioned;
+  return ( <div className='p-4 flex flex-col gap-6 flex-1 h-full'> <div className='text-left flex flex-col flex-1 h-full'> <Label className='text-lg font-semibold mb-4'>Compare Functions</Label> {canCompare ? ( <ComparePlaygrounds firstFunction={firstFunction} secondFunction={secondFunction} /> ) : ( <div>Comparison requires versioned functions and playground access.</div> )} </div> </div> );
 };

@@ -1,5 +1,3 @@
-// ee/hooks/use-playground.ts
-
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
@@ -10,7 +8,6 @@ import {
   FunctionPublic,
   PlaygroundParameters,
   PlaygroundErrorDetail,
-  Scope, // Import Scope if not already imported
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -22,7 +19,7 @@ import {
   validateInputs,
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
-import { $convertToMarkdownString, TEXT_FORMAT_TRANSFORMERS } from "@lexical/markdown";
+import { $convertToMarkdownString } from "@lexical/markdown";
 import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
@@ -42,10 +39,8 @@ export type EditorParameters = PlaygroundParameters & FormValues;
  */
 export const usePlaygroundContainer = ({
   version,
-  isCompare = false,
 }: {
   version: FunctionPublic | null;
-  isCompare?: boolean;
 }) => {
   const { projectUuid, functionName } = useParams({
     strict: false,
@@ -90,7 +85,6 @@ export const usePlaygroundContainer = ({
 
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
-  // const [result, setResult] = useState<string | null>(null); // Remove result state
   const [error, setError] = useState<PlaygroundErrorDetail | null>(null);
   const [executedSpanUuid, setExecutedSpanUuid] = useState<string | null>(null); // Add state for executed span UUID
   const editorRef = useRef<LexicalEditor>(null);
@@ -103,9 +97,8 @@ export const usePlaygroundContainer = ({
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
-    // setResult(null); // Remove result clearing
-    setError(null); // Clear previous error
-    setExecutedSpanUuid(null); // Clear previous span UUID
+    setError(null);
+    setExecutedSpanUuid(null);
 
     if (!editorRef?.current || !projectUuid || !functionName) return;
 
@@ -237,8 +230,7 @@ export const usePlaygroundContainer = ({
             setError(null);
           } else {
             setError(response.error);
-            setExecutedSpanUuid(null); // Clear span UUID on error
-            // setResult(null); // Ensure result is also cleared on error
+            setExecutedSpanUuid(null);
             toast({
               title: "Error Running Playground",
               description: response.error.reason || "An unknown error occurred.",
@@ -265,8 +257,7 @@ export const usePlaygroundContainer = ({
             reason: 'Failed to create or run the function version via API.',
             details: message
           });
-          setExecutedSpanUuid(null); // Clear span UUID on API error
-          // setResult(null); // Ensure result is also cleared on API error
+          setExecutedSpanUuid(null);
           toast({
             title: "API Error",
             description: message,
@@ -328,9 +319,7 @@ export const usePlaygroundContainer = ({
     removeInput: remove,
     projectUuid,
     functionName,
-    isDisabled: isCompare,
-    // result: null, // Return null or remove if completely unused
-    executedSpanUuid, // Return the new state
+    executedSpanUuid,
     error,
     setError,
   };

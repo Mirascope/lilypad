@@ -6,8 +6,11 @@ import {
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { FunctionPublic } from "@/types/types";
-import { useState } from "react";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import { useState, Suspense } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LilypadPanel } from "@/components/LilypadPanel";
+import CardSkeleton from "@/components/CardSkeleton";
+
 interface PlaygroundContainerProps {
   version: FunctionPublic | null;
   isCompare: boolean;
@@ -15,11 +18,9 @@ interface PlaygroundContainerProps {
 
 export const PlaygroundContainer = ({
   version,
-  isCompare,
 }: PlaygroundContainerProps) => {
   const playgroundContainer = usePlaygroundContainer({
     version,
-    isCompare,
   });
 
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
@@ -39,7 +40,7 @@ export const PlaygroundContainer = ({
           playgroundContainer={playgroundContainer}
         />
       </ResizablePanel>
-      {playgroundContainer.result && !isPanelCollapsed && (
+      {playgroundContainer.executedSpanUuid && !isPanelCollapsed && (
         <>
           <ResizableHandle />
           <ResizablePanel
@@ -54,9 +55,11 @@ export const PlaygroundContainer = ({
               <CardHeader>
                 <CardTitle>{"Execution Result"}</CardTitle>
               </CardHeader>
-                <CardContent className='whitespace-pre-wrap'>
-                 {playgroundContainer.result}
-                </CardContent>
+              <CardContent>
+                <Suspense fallback={<CardSkeleton items={5} className='flex flex-col' />}>
+                  <LilypadPanel spanUuid={playgroundContainer.executedSpanUuid} />
+                </Suspense>
+              </CardContent>
             </Card>
           </ResizablePanel>
         </>
