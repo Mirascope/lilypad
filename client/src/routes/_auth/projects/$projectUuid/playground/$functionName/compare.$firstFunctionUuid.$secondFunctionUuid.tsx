@@ -19,10 +19,10 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { FunctionPublic, PlaygroundParameters, PlaygroundErrorDetail } from "@/types/types";
 import { $convertToMarkdownString } from "@lexical/markdown";
-import {Suspense, useState } from "react";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
-import CardSkeleton from "@/components/CardSkeleton.tsx";
-import {LilypadPanel} from "@/components/LilypadPanel.tsx";
+import { Suspense, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LilypadPanel } from "@/components/LilypadPanel";
+import CardSkeleton from "@/components/CardSkeleton";
 
 
 export const Route = createFileRoute(
@@ -46,8 +46,6 @@ const ComparePlaygrounds = ({
   const { toast } = useToast();
   const [firstSpanUuid, setFirstSpanUuid] = useState<string | null>(null);
   const [secondSpanUuid, setSecondSpanUuid] = useState<string | null>(null);
-  const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(null);
-  const [secondError, setSecondError] = useState<PlaygroundErrorDetail | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   // Set up hooks for both functions
   const firstPlayground = usePlaygroundContainer({
@@ -67,8 +65,6 @@ const ComparePlaygrounds = ({
     setIsRunning(true);
     setFirstSpanUuid(null);
     setSecondSpanUuid(null);
-    setFirstError(null);
-    setSecondError(null);
 
     try {
       // Run both functions in parallel
@@ -77,13 +73,25 @@ const ComparePlaygrounds = ({
           firstPlayground,
           firstFunction.uuid,
           (spanUuid) => setFirstSpanUuid(spanUuid),
-          (error) => setFirstError(error)
+          (error) => {
+            toast({
+              title: `Error in Function 1 (${firstFunction.name})`,
+              description: error.reason || "An unknown error occurred",
+              variant: "destructive",
+            });
+          }
         ),
         runFunction(
           secondPlayground,
           secondFunction.uuid,
           (spanUuid) => setSecondSpanUuid(spanUuid),
-          (error) => setSecondError(error)
+          (error) => {
+            toast({
+              title: `Error in Function 2 (${secondFunction.name})`,
+              description: error.reason || "An unknown error occurred",
+              variant: "destructive",
+            });
+          }
         ),
       ]);
     } catch (error) {
@@ -103,7 +111,7 @@ const ComparePlaygrounds = ({
     playground: ReturnType<typeof usePlaygroundContainer>,
     functionUuid: string,
     setSpanUuid: (spanUuid: string) => void,
-    setError: (error: PlaygroundErrorDetail) => void
+    handleError: (error: PlaygroundErrorDetail) => void
   ) => {
     const { methods, inputs, projectUuid } = playground;
     if (!projectUuid) return Promise.resolve();
@@ -156,7 +164,7 @@ const ComparePlaygrounds = ({
           if (result.success && result.data.trace_context?.span_uuid) {
             setSpanUuid(result.data.trace_context.span_uuid);
           } else if (!result.success) {
-            setError(result.error.error);
+            handleError(result.error);
             console.error("Function error:", result.error);
           }
         } catch (error) {
@@ -210,7 +218,6 @@ const ComparePlaygrounds = ({
           <div className="playground-container">
             <Playground
             version={firstFunction}
-            error={firstError}
             isCompare={true}
             playgroundContainer={firstPlayground}
           />
@@ -220,7 +227,6 @@ const ComparePlaygrounds = ({
           <div className="playground-container">
             <Playground
             version={secondFunction}
-            error={secondError}
             isCompare={true}
             playgroundContainer={secondPlayground}
           />
@@ -240,10 +246,6 @@ const ComparePlaygrounds = ({
                   <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
                     <LilypadPanel spanUuid={firstSpanUuid} />
                   </Suspense>
-                ) : firstError ? (
-                  <div className="text-red-500">
-                    {firstError.reason || "An error occurred"}
-                  </div>
                 ) : (
                   <div className="text-gray-500">No result yet</div>
                 )}
@@ -260,10 +262,6 @@ const ComparePlaygrounds = ({
                   <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
                     <LilypadPanel spanUuid={secondSpanUuid} />
                   </Suspense>
-                ) : secondError ? (
-                  <div className="text-red-500">
-                    {secondError.reason || "An error occurred"}
-                  </div>
                 ) : (
                   <div className="text-gray-500">No result yet</div>
                 )}
@@ -276,7 +274,7 @@ const ComparePlaygrounds = ({
   );
 };
 
-const ComparePlaygroundsRoute = () => { /* ... remains the same ... */
+const ComparePlaygroundsRoute = () => {
   const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } = useParams({ from: "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid", });
   const { data: functions } = useSuspenseQuery( functionsByNameQueryOptions(functionName, projectUuid));
   const features = useFeatureAccess();

@@ -7,6 +7,9 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 
+interface PlaygroundErrorRawResponse {
+  detail: PlaygroundErrorResponse
+}
 
 export type PlaygroundResult =
   | { success: true; data: PlaygroundSuccessResponse }
@@ -36,11 +39,11 @@ export const runPlayground = async (
     };
   } catch (error) {
     if (error instanceof AxiosError && error.response?.data) {
-      const errorResponse = error.response.data as PlaygroundErrorResponse;
+      const errorResponse = error.response.data as PlaygroundErrorRawResponse;
 
       return {
         success: false,
-        error: errorResponse.error
+        error: errorResponse.detail.error
       };
     }
 
