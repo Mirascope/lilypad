@@ -7,6 +7,7 @@ import {
   FunctionCreate,
   FunctionPublic,
   PlaygroundParameters,
+  PlaygroundErrorDetail
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -91,6 +92,7 @@ export const usePlaygroundContainer = ({
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<PlaygroundErrorDetail | null>(null);
   const editorRef = useRef<LexicalEditor>(null);
   const doesProviderExist = getAvailableProviders(user).length > 0;
 
@@ -102,6 +104,9 @@ export const usePlaygroundContainer = ({
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
+    setResult(null);
+    setError(null);
+
     if (!editorRef?.current || !projectUuid || !functionName) return;
     // Determine which button was clicked
     let buttonName = "";
@@ -206,12 +211,24 @@ export const usePlaygroundContainer = ({
           };
 
           // Run function
-          const res = await runMutation.mutateAsync({
+          const response = await runMutation.mutateAsync({
             projectUuid,
             functionUuid: newVersion.uuid,
             playgroundParameters,
           });
-          setResult(res);
+
+          if (response.success) {
+            // Set successful result
+            setResult(response.data.result);
+          } else {
+            // Handle error
+            setError(response.error);
+            toast({
+              title: "Error running playground",
+              description: response.error.reason,
+              variant: "destructive",
+            });
+          }
 
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
@@ -224,6 +241,11 @@ export const usePlaygroundContainer = ({
           });
         } catch (error) {
           console.error(error);
+          toast({
+            title: "Error",
+            description: error instanceof Error ? error.message : "An unexpected error occurred",
+            variant: "destructive",
+          });
         }
 
         resolve();
@@ -288,7 +310,9 @@ export const usePlaygroundContainer = ({
 
     isDisabled: isCompare,
 
-    // Execution result
-    result
+    // Execution result and error
+    result,
+    error,
+    setError,
   };
 };

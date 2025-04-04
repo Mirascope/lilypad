@@ -39,22 +39,52 @@ import {
   usePlaygroundContainer,
 } from "@/ee/hooks/use-playground";
 import { TypedInput } from "@/ee/utils/input-utils";
-import { FunctionPublic } from "@/types/types";
+import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 
+const PlaygroundError = ({ error }: { error: PlaygroundErrorDetail }) => {
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-md p-4 my-4">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <AlertTriangle className="h-5 w-5 text-red-500" />
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-red-800">
+            {error.type.toString().replace(/_/g, ' ')}
+          </h3>
+          <div className="mt-2 text-sm text-red-700">
+            <p>{error.reason}</p>
+            {error.details && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs font-medium">Technical details</summary>
+                <pre className="mt-2 text-xs p-2 bg-red-100 rounded overflow-auto">
+                  {error.details}
+                </pre>
+              </details>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Playground = ({
   version,
   response,
+  error,
   isCompare,
   showRunButton,
   playgroundContainer,
 }: {
   version: FunctionPublic | null;
   response?: string;
+  error?: PlaygroundErrorDetail | null;
   isCompare?: boolean;
   showRunButton?: boolean;
   playgroundContainer?: ReturnType<typeof usePlaygroundContainer>;
@@ -78,14 +108,19 @@ export const Playground = ({
     handleReset,
     projectUuid,
     isDisabled,
+    error: containerError,
   } = playgroundContainer ?? defaultContainer;
+
+  const displayError = error ?? containerError;
 
   if (!projectUuid) return <NotFound />;
 
   const renderBottomPanel = () => {
     return (
       <>
-        {response && (
+        {displayError && <PlaygroundError error={displayError} />}
+
+        {response && !displayError && (
           <div>
             <FormLabel className='text-base'>{"Outputs"}</FormLabel>
             <Card className='mt-2'>
@@ -108,7 +143,7 @@ export const Playground = ({
               name='run'
               loading={isRunLoading}
               disabled={!doesProviderExist}
-              className=' hover:bg-green-700 text-white font-medium'
+              className='hover:bg-green-700 text-white font-medium'
             >
               Run
             </Button>
@@ -216,7 +251,7 @@ const CallParamsDrawer = ({
                 type='submit'
                 loading={isLoading}
                 disabled={!doesProviderExist}
-                className=' hover:bg-green-700 text-white font-medium'
+                className='hover:bg-green-700 text-white font-medium'
               >
                 Run
               </Button>
@@ -284,7 +319,7 @@ const InputsDrawer = ({
               onClick={handleClick}
               loading={isLoading}
               disabled={!doesProviderExist}
-              className=' hover:bg-green-700 text-white font-medium'
+              className='hover:bg-green-700 text-white font-medium'
             >
               Run
             </Button>

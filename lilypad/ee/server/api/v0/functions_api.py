@@ -180,6 +180,7 @@ def _validate_api_keys(env_vars: dict[str, str]) -> dict[str, str]:
             # Basic validation - most API keys are alphanumeric with possible dashes/underscores
             if not re.match(r"^[a-zA-Z0-9_\-]{20,200}$", value):
                 logger.warning(f"Invalid {key_var} format, removing value")
+                logger.error(f"Invalid API key: {value}")
                 sanitized_env[key_var] = ""
 
     return sanitized_env
@@ -229,6 +230,33 @@ def _validate_template_values(provider: str, model: str) -> bool:
         return False
 
     return True
+
+
+def _validate_provider_api_key(
+    provider: str, external_api_keys: dict[str, str]
+) -> bool:
+    """Check if the required API key for the specified provider is available.
+
+    Args:
+        provider: The provider name (e.g., 'openai', 'anthropic')
+        external_api_keys: Dictionary of available API keys
+
+    Returns:
+        True if the required API key is available, False otherwise
+    """
+    provider_to_key_map = {
+        "openai": "OPENAI_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "gemini": "GOOGLE_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
+    }
+
+    required_key = provider_to_key_map.get(provider.lower())
+    if not required_key:
+        logger.warning(f"Unknown provider: {provider}")
+        return False
+
+    return required_key in external_api_keys and bool(external_api_keys[required_key])
 
 
 @functions_router.post(
@@ -492,7 +520,18 @@ finally:
                     ).model_dump()
                 },
             )
-
+        # Validate that the required API key for the specified provider is available
+        if not _validate_provider_api_key(provider, external_api_keys):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": PlaygroundErrorDetail(
+                        type=PlaygroundErrorType.API_KEY_ISSUE,
+                        reason=f"Missing API key for provider '{provider}'.",
+                        details=f"Please add your {provider.upper()} API key in the settings before running this playground.",
+                    ).model_dump()
+                },
+            )
         settings = get_settings()
         env_vars = {
             **external_api_keys,
@@ -507,8 +546,8 @@ finally:
 
         if "error" not in execution_result:
             spand_id = execution_result.pop("span_id", None)
-            if isinstance(spand_id, str) and (spand_uuid := span_service.get_record_by_span_id(project_uuid, spand_id)):
-                return PlaygroundSuccessResponse.model_validate({"trace_context": {"span_uuid": spand_uuid}, **execution_result})
+            if isinstance(spand_id, str) and (spand := span_service.get_record_by_span_id(project_uuid, spand_id)):
+                return PlaygroundSuccessResponse.model_validate({"trace_context": {"span_uuid": str(spand.uuid)}, **execution_result})
 
             logger.warning(
                 "Playground function did not return a span_id."

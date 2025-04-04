@@ -17,7 +17,7 @@ import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
-import { FunctionPublic, PlaygroundParameters } from "@/types/types";
+import { FunctionPublic, PlaygroundParameters, PlaygroundErrorDetail } from "@/types/types";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { Suspense, useState } from "react";
 export const Route = createFileRoute(
@@ -41,6 +41,8 @@ const ComparePlaygrounds = ({
   const { toast } = useToast();
   const [firstResponse, setFirstResponse] = useState<string>("");
   const [secondResponse, setSecondResponse] = useState<string>("");
+  const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(null);
+  const [secondError, setSecondError] = useState<PlaygroundErrorDetail | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   // Set up hooks for both functions
   const firstPlayground = usePlaygroundContainer({
@@ -60,19 +62,34 @@ const ComparePlaygrounds = ({
 
   const runBothFunctions = async () => {
     setIsRunning(true);
+    setFirstResponse("");
+    setSecondResponse("");
+    setFirstError(null);
+    setSecondError(null);
 
     try {
       // Run both functions in parallel
       await Promise.all([
-        runFunction(firstPlayground, firstFunction.uuid, (response) =>
-          setFirstResponse(response)
+        runFunction(
+          firstPlayground,
+          firstFunction.uuid,
+          (response) => setFirstResponse(response),
+          (error) => setFirstError(error)
         ),
-        runFunction(secondPlayground, secondFunction.uuid, (response) =>
-          setSecondResponse(response)
+        runFunction(
+          secondPlayground,
+          secondFunction.uuid,
+          (response) => setSecondResponse(response),
+          (error) => setSecondError(error)
         ),
       ]);
     } catch (error) {
       console.error("Error running functions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to run one or both functions",
+        variant: "destructive",
+      });
     } finally {
       setIsRunning(false);
     }
@@ -82,15 +99,18 @@ const ComparePlaygrounds = ({
   const runFunction = (
     playground: ReturnType<typeof usePlaygroundContainer>,
     functionUuid: string,
-    setResponse: (response: string) => void
+    setResponse: (response: string) => void,
+    setError: (error: PlaygroundErrorDetail) => void
   ) => {
     const { methods, inputs, projectUuid } = playground;
-    if (!projectUuid) return;
+    if (!projectUuid) return Promise.resolve();
+
     // Get data from the form
     const data = methods.getValues();
     const editorState = playground?.editorRef?.current?.getEditorState();
-    if (!editorState) return;
-    editorState
+    if (!editorState) return Promise.resolve();
+
+    return editorState
       .read(async () => {
         // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
@@ -129,15 +149,34 @@ const ComparePlaygrounds = ({
             playgroundParameters,
           });
 
-          // Set the response in state
-          setResponse(result);
+          // Handle the typed response
+          if (result.success) {
+            // Set successful response
+            // If result.data.result is a string, use it directly
+            if (typeof result.data.result === 'string') {
+              setResponse(result.data.result);
+            } else {
+              // Otherwise, stringify it for display
+              setResponse(JSON.stringify(result.data.result, null, 2));
+            }
+          } else {
+            setError(result.error);
+            console.error("Function error:", result.error);
+          }
         } catch (error) {
           console.error(error);
+          toast({
+            title: "Error running function",
+            description: error instanceof Error ? error.message : String(error),
+            variant: "destructive",
+          });
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Editor error:", error);
         toast({
           title: "Failed to run function",
+          description: "Could not read editor state",
           variant: "destructive",
         });
       });
@@ -175,6 +214,7 @@ const ComparePlaygrounds = ({
           <Playground
             version={firstFunction}
             response={firstResponse}
+            error={firstError}
             isCompare={true}
             playgroundContainer={firstPlayground}
           />
@@ -184,6 +224,7 @@ const ComparePlaygrounds = ({
           <Playground
             version={secondFunction}
             response={secondResponse}
+            error={secondError}
             isCompare={true}
             playgroundContainer={secondPlayground}
           />
