@@ -241,7 +241,6 @@ export const usePlaygroundContainer = ({
             toast({
               title: "Navigation Error",
               description: "Failed to update the URL after running the playground.",
-              variant: "warning",
             });
           });
         } catch (apiError) {
