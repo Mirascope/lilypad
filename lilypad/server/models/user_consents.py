@@ -19,7 +19,8 @@ class UserConsentBase(SQLModel):
     """Base User Consent Model."""
 
     privacy_policy_version: str = Field(
-        default="2025-04-04", description="Last updated date of the privacy policy"
+        default="2025-04-04",
+        description="Last updated date of the privacy policy accepted",
     )
     privacy_policy_accepted_at: Annotated[datetime, AwareDatetime] = Field(
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
@@ -27,7 +28,8 @@ class UserConsentBase(SQLModel):
         schema_extra={"format": "date-time"},
     )
     tos_version: str = Field(
-        default="2025-04-04", description="Last updated date of the privacy policy"
+        default="2025-04-04",
+        description="Last updated date of the terms of service accepted",
     )
     tos_accepted_at: Annotated[datetime, AwareDatetime] = Field(
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
