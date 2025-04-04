@@ -225,7 +225,6 @@ export const usePlaygroundContainer = ({
           });
 
           if (response.success) {
-            // setResult(response.data.result); // Remove setting result string
             setExecutedSpanUuid(response.data.trace_context?.span_uuid ?? null); // Set the executed span UUID
             setError(null);
           } else {

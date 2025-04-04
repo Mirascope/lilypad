@@ -184,7 +184,6 @@ const CallParamsDrawer = ({
         className='flex flex-col gap-2 overflow-y-auto'
         showOverlay={false}
       >
-        {/* ... content ... */}
         <SheetHeader>
           <SheetTitle>Call Params</SheetTitle>
         </SheetHeader>
@@ -306,7 +305,6 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
           const type = methods.watch(`inputs.${index}.type`);
           return (
             <Card key={field.id} className='w-full flex-shrink-0 relative'>
-              {/* ... content ... */}
                {!isDisabled && (
                   <Button
                     type='button'
