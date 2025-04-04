@@ -8,6 +8,7 @@ from .organization_invites import OrganizationInviteService
 from .organizations import OrganizationService
 from .projects import ProjectService
 from .spans import SpanService
+from .user_consents import UserConsentService
 from .users import UserService
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "OrganizationService",
     "ProjectService",
     "SpanService",
+    "UserConsentService",
     "UserService",
 ]

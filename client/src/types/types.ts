@@ -862,7 +862,7 @@ export interface SpanPublic {
   project_uuid: string;
   /** Display Name */
   display_name?: string | null;
-  function?: FunctionPublic | null;
+  function: FunctionPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -872,8 +872,6 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
-  /** Version */
-  version?: number | null;
   /** Status */
   status?: string | null;
 }
@@ -907,6 +905,70 @@ export enum TimeFrame {
   WEEK = "week",
   MONTH = "month",
   LIFETIME = "lifetime",
+}
+
+/**
+ * UserConsentCreate
+ * UserConsent create model.
+ */
+export interface UserConsentCreate {
+  /** Privacy Policy Version */
+  privacy_policy_version: string;
+  /** Privacy Policy Accepted At */
+  privacy_policy_accepted_at?: string | null;
+  /** Tos Version */
+  tos_version: string;
+  /** Tos Accepted At */
+  tos_accepted_at?: string | null;
+  /** User Uuid */
+  user_uuid?: string | null;
+}
+
+/**
+ * UserConsentPublic
+ * UserConsent public model.
+ */
+export interface UserConsentPublic {
+  /**
+   * Privacy Policy Version
+   * @default "1.0"
+   */
+  privacy_policy_version?: string;
+  /**
+   * Privacy Policy Accepted At
+   * @format date-time
+   */
+  privacy_policy_accepted_at: string;
+  /**
+   * Tos Version
+   * @default "1.0"
+   */
+  tos_version?: string;
+  /**
+   * Tos Accepted At
+   * @format date-time
+   */
+  tos_accepted_at: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+}
+
+/**
+ * UserConsentUpdate
+ * UserConsent update model.
+ */
+export interface UserConsentUpdate {
+  /** Privacy Policy Version */
+  privacy_policy_version?: string | null;
+  /** Privacy Policy Accepted At */
+  privacy_policy_accepted_at?: string | null;
+  /** Tos Version */
+  tos_version?: string | null;
+  /** Tos Accepted At */
+  tos_accepted_at?: string | null;
 }
 
 /**
@@ -1002,6 +1064,7 @@ export interface UserPublic {
   user_organizations?: UserOrganizationPublic[] | null;
   /** Scopes */
   scopes?: string[];
+  user_consents?: UserConsentPublic | null;
 }
 
 /**

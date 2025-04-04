@@ -14,6 +14,7 @@ from .organization_invites import OrganizationInviteBase, OrganizationInviteTabl
 from .organizations import OrganizationTable
 from .projects import ProjectTable
 from .spans import Scope, SpanTable, SpanType
+from .user_consents import UserConsentTable
 from .users import UserTable
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     "Scope",
     "SpanTable",
     "SpanType",
+    "UserConsentTable",
     "UserTable",
     "get_json_column",
 ]

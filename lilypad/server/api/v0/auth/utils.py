@@ -2,12 +2,38 @@
 
 import posthog
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .....ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from ...._utils import create_jwt_token
 from ....models import EnvironmentTable, OrganizationTable, UserTable
 from ....schemas import OrganizationPublic, UserPublic
+
+
+def handle_user(
+    name: str,
+    email: str,
+    last_name: str | None,
+    session: Session,
+    posthog: posthog.Posthog,
+) -> UserPublic:
+    """Handle user creation or retrieval."""
+    user = session.exec(select(UserTable).where(UserTable.email == email)).first()
+
+    if user:
+        user_public = UserPublic.model_validate(user)
+        lilypad_token = create_jwt_token(user_public)
+        user_public = user_public.model_copy(update={"access_token": lilypad_token})
+        return user_public
+
+    # Create organization for new user
+    return create_new_user(
+        name=name,
+        email=email,
+        last_name=last_name,
+        session=session,
+        posthog=posthog,
+    )
 
 
 def create_new_user(

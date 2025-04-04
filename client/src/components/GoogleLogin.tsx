@@ -117,6 +117,8 @@ export const GoogleLogin = ({ redirect }: { redirect?: string }) => {
     });
     const stateObject = {
       provider: "google",
+      privacy_version: "2.0",
+      terms_version: "2.0",
       ...(redirect && { redirect }),
     };
 

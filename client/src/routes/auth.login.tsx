@@ -1,25 +1,22 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { useAuth } from "@/auth";
 import { GithubLogin } from "@/components/GithubLogin";
 import { GoogleLogin } from "@/components/GoogleLogin";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { settingsQueryOptions } from "@/utils/settings";
-import { userQueryOptions } from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { Typography } from "@/components/ui/typography";
 
-type LoginSearchParam = {
+interface LoginSearchParam {
   redirect?: string;
-};
+}
 
-const fallback = "/projects" as const;
+const fallback = "/projects";
 export const Route = createFileRoute("/auth/login")({
   validateSearch: (search): LoginSearchParam => {
     return {
@@ -29,7 +26,7 @@ export const Route = createFileRoute("/auth/login")({
   beforeLoad: ({ context, search }) => {
     if (context.auth.isAuthenticated) {
       throw redirect({
-        to: search.redirect || fallback,
+        to: search.redirect ?? fallback,
       });
     }
   },
@@ -38,42 +35,40 @@ export const Route = createFileRoute("/auth/login")({
 
 const LoginComponent = () => {
   const { redirect } = Route.useSearch();
-  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
-  const isLocal = settings.environment === "local";
 
   return (
     <div className='flex items-center justify-center h-screen'>
       <Card className='w-[600px] m-0'>
         <CardHeader>
           <CardTitle>Welcome to Lilypad</CardTitle>
-          <CardDescription>
-            {isLocal ? "Local environment" : "Sign in to continue"}
-          </CardDescription>
+          <CardDescription>Sign in to continue</CardDescription>
         </CardHeader>
         <CardContent className='flex flex-col gap-2'>
-          {isLocal ? (
-            <LocalLogin />
-          ) : (
-            <>
-              <GithubLogin redirect={redirect} />
-              <GoogleLogin redirect={redirect} />
-            </>
-          )}
+          <GithubLogin redirect={redirect} />
+          <GoogleLogin redirect={redirect} />
         </CardContent>
+        <CardFooter>
+          <Typography variant='p' affects='muted'>
+            By signing in, you agree to our{" "}
+            <a
+              href='https://mirascope.com/terms'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a
+              href='https://mirascope.com/privacy'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              Privacy Policy
+            </a>
+            .
+          </Typography>
+        </CardFooter>
       </Card>
     </div>
   );
-};
-
-const LocalLogin = () => {
-  const { data } = useSuspenseQuery(userQueryOptions());
-  const { setSession } = useAuth();
-  const navigate = useNavigate();
-  const handleLocalLogin = () => {
-    setSession(data);
-    navigate({
-      to: "/projects",
-    });
-  };
-  return <Button onClick={handleLocalLogin}>Sign in with Local</Button>;
 };

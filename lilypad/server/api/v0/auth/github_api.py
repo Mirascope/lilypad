@@ -5,17 +5,13 @@ from typing import Annotated
 import httpx
 import posthog
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from ...._utils import create_jwt_token
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
-from ....models import (
-    UserTable,
-)
 from ....schemas import UserPublic
 from ....settings import Settings, get_settings
-from .utils import create_new_user
+from .utils import handle_user
 
 github_router = APIRouter()
 
@@ -85,23 +81,13 @@ async def github_callback(
                 raise HTTPException(
                     status_code=400, detail="No email address found in GitHub account"
                 )
-            user = session.exec(
-                select(UserTable).where(UserTable.email == email)
-            ).first()
-            if user:
-                user_public = UserPublic.model_validate(user)
-                lilypad_token = create_jwt_token(user_public)
-                user_public = user_public.model_copy(
-                    update={"access_token": lilypad_token}
-                )
-                return user_public
             name = (
                 user_data.get("first_name")
                 or user_data.get("name")
                 or user_data.get("login")
                 or email
             )
-            return create_new_user(
+            return handle_user(
                 name=name,
                 email=email,
                 last_name=None,

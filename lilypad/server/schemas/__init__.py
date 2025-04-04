@@ -12,6 +12,7 @@ from .functions import (
 from .organizations import OrganizationCreate, OrganizationPublic
 from .projects import ProjectCreate, ProjectPublic
 from .spans import SpanCreate, SpanMoreDetails, SpanPublic, SpanTable
+from .user_consents import UserConsentCreate, UserConsentPublic, UserConsentUpdate
 from .users import UserCreate, UserPublic
 
 __all__ = [
@@ -33,6 +34,9 @@ __all__ = [
     "SpanPublic",
     "SpanMoreDetails",
     "SpanTable",
+    "UserConsentCreate",
+    "UserConsentPublic",
+    "UserConsentUpdate",
     "UserCreate",
     "UserPublic",
 ]

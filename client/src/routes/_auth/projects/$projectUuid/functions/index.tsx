@@ -162,7 +162,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
               values={fn.arg_types}
             />
           ) : (
-            <Typography variant='muted'>No template</Typography>
+            <Typography affects='muted'>No template</Typography>
           )}
         </div>
       </CardFooter>
