@@ -69,6 +69,17 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         ).all()
 
+    def get_record_by_span_id(self, project_uuid: UUID, spand_id: str) -> SpanTable:
+        """Find spans by spand id"""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.span_id == spand_id,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+        ).one_or_none()
+
     def _get_date_trunc(self, timeframe: TimeFrame) -> TextClause | None:
         """Get the appropriate date truncation for the timeframe"""
         if timeframe == TimeFrame.LIFETIME:

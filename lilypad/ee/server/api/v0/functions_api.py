@@ -24,7 +24,7 @@ from .....server.schemas.functions import (
     PlaygroundParameters,
     PlaygroundSuccessResponse,
 )
-from .....server.services import APIKeyService, FunctionService
+from .....server.services import APIKeyService, FunctionService, SpanService
 from .....server.services.user_external_api_key_service import UserExternalAPIKeyService
 from .....server.settings import get_settings
 
@@ -268,6 +268,7 @@ def run_playground(
     user_external_api_key_service: Annotated[
         UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
     ],
+    span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> PlaygroundSuccessResponse:
     """Run playground version of a function with enhanced security.
 
@@ -423,7 +424,7 @@ try:
 
     output_data = {{
         "result": response.response.content,
-        "trace_context": {{"span_id": response.formated_span_id }}
+        "span_id": response.formated_span_id
     }}
 except Exception as e:
     import traceback
@@ -501,46 +502,60 @@ finally:
             "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
         }
 
-        execution_result_dict = _run_playground(formatted_wrapper_code, env_vars)
+        execution_result = _run_playground(formatted_wrapper_code, env_vars)
 
-        if isinstance(execution_result_dict, dict) and "error" in execution_result_dict:
-            try:
-                error_detail_validated = PlaygroundErrorDetail(
-                    **execution_result_dict["error"]
-                )
-                error_type = error_detail_validated.type
-            except Exception as validation_error:
-                logger.error(
-                    f"Playground returned invalid error structure: {validation_error}\n{execution_result_dict}"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "error": PlaygroundErrorDetail(
-                            type=PlaygroundErrorType.INTERNAL,
-                            reason="Playground returned an invalid error structure.",
-                            details=str(validation_error),
-                        ).model_dump()
-                    },
-                )
+        if "error" not in execution_result:
+            spand_id = execution_result.pop("span_id", None)
+            if isinstance(spand_id, str) and (spand_uuid := span_service.get_record_by_span_id(project_uuid, spand_id)):
+                return PlaygroundSuccessResponse.model_validate({"trace_context": {"span_uuid": spand_uuid}, **execution_result})
 
-            status_code = status.HTTP_400_BAD_REQUEST
-            if isinstance(error_type, PlaygroundErrorType):
-                if error_type == PlaygroundErrorType.TIMEOUT:
-                    status_code = status.HTTP_408_REQUEST_TIMEOUT
-                elif error_type in [
-                    PlaygroundErrorType.CONFIGURATION,
-                    PlaygroundErrorType.SUBPROCESS,
-                    PlaygroundErrorType.INTERNAL,
-                ]:
-                    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            logger.warning(
+                "Playground function did not return a span_id."
+            )
+            execution_result = {
+                "error": PlaygroundErrorDetail(
+                    type=PlaygroundErrorType.INTERNAL,
+                    reason="Missing span_id in response.",
+                    details="The function did not return a span_id.",
+                ).model_dump()
+            }
 
+
+        try:
+            error_detail_validated = PlaygroundErrorDetail(
+                **execution_result["error"]
+            )
+            error_type = error_detail_validated.type
+        except Exception as validation_error:
+            logger.error(
+                f"Playground returned invalid error structure: {validation_error}\n{execution_result}"
+            )
             raise HTTPException(
-                status_code=status_code,
-                detail=execution_result_dict,  # Pass the original dict (now known to contain a valid error structure)
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    "error": PlaygroundErrorDetail(
+                        type=PlaygroundErrorType.INTERNAL,
+                        reason="Playground returned an invalid error structure.",
+                        details=str(validation_error),
+                    ).model_dump()
+                },
             )
 
-        return execution_result_dict
+        status_code = status.HTTP_400_BAD_REQUEST
+        if isinstance(error_type, PlaygroundErrorType):
+            if error_type == PlaygroundErrorType.TIMEOUT:
+                status_code = status.HTTP_408_REQUEST_TIMEOUT
+            elif error_type in [
+                PlaygroundErrorType.CONFIGURATION,
+                PlaygroundErrorType.SUBPROCESS,
+                PlaygroundErrorType.INTERNAL,
+            ]:
+                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        raise HTTPException(
+            status_code=status_code,
+            detail=execution_result,  # Pass the original dict (now known to contain a valid error structure)
+        )
 
     except HTTPException as http_exc:
         raise http_exc
@@ -664,7 +679,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                                 # Return the unvalidated structure but still wrapped in "error" key if possible
                                 return {"error": parsed_output["error"]}
 
-                        # TODO: get span_uuid by using span_id
+
                         return parsed_output
                     except json.JSONDecodeError as json_err:
                         logger.error(

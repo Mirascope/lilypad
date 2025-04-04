@@ -1,7 +1,7 @@
 """Functions schemas."""
 
 from enum import Enum
-from typing import Any, TypeVar, overload
+from typing import Annotated, Any, TypeVar, overload
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
@@ -144,9 +144,10 @@ class PlaygroundErrorDetail(BaseModel):
         description="Category of the error (Enum value) or specific Python Exception type name.",
     )
     reason: str = Field(..., description="User-friendly description of the error.")
-    details: str | None = Field(
-        None, description="Additional technical details, if available."
-    )
+    details: Annotated[
+        str | None,
+        Field(None, description="Additional technical details, if available."),
+    ] = None
 
 
 class PlaygroundErrorResponse(BaseModel):
