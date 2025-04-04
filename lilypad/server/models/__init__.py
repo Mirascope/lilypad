@@ -13,7 +13,9 @@ from .functions import (
 from .organization_invites import OrganizationInviteBase, OrganizationInviteTable
 from .organizations import OrganizationTable
 from .projects import ProjectTable
+from .span_tag_link import SpanTagLink
 from .spans import Scope, SpanTable, SpanType
+from .tags import TagTable
 from .user_consents import UserConsentTable
 from .users import UserTable
 
@@ -31,9 +33,11 @@ __all__ = [
     "OrganizationInviteTable",
     "OrganizationTable",
     "ProjectTable",
+    "SpanTagLink",
     "Scope",
     "SpanTable",
     "SpanType",
+    "TagTable",
     "UserConsentTable",
     "UserTable",
     "get_json_column",

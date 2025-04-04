@@ -11,7 +11,8 @@ from .functions import (
 )
 from .organizations import OrganizationCreate, OrganizationPublic
 from .projects import ProjectCreate, ProjectPublic
-from .spans import SpanCreate, SpanMoreDetails, SpanPublic, SpanTable
+from .spans import SpanCreate, SpanMoreDetails, SpanPublic, SpanTable, SpanUpdate
+from .tags import TagCreate, TagPublic, TagUpdate
 from .user_consents import UserConsentCreate, UserConsentPublic, UserConsentUpdate
 from .users import UserCreate, UserPublic
 
@@ -34,6 +35,10 @@ __all__ = [
     "SpanPublic",
     "SpanMoreDetails",
     "SpanTable",
+    "SpanUpdate",
+    "TagCreate",
+    "TagPublic",
+    "TagUpdate",
     "UserConsentCreate",
     "UserConsentPublic",
     "UserConsentUpdate",

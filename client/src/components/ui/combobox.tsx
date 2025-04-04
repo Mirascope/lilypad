@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
-import { X } from "lucide-react";
 import { useState } from "react";
 
 interface ComboboxBaseProps {
@@ -24,6 +23,7 @@ interface ComboboxBaseProps {
   emptyText?: string;
   disabled?: boolean;
   disableAdd?: boolean;
+  customTrigger?: React.ReactNode;
 }
 
 interface SingleComboboxProps extends ComboboxBaseProps {
@@ -44,6 +44,7 @@ export function Combobox({
   items,
   value,
   onChange,
+  customTrigger,
   popoverText = "Select item...",
   helperText = "Search item...",
   emptyText = "No item found.",
@@ -56,10 +57,15 @@ export function Combobox({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
+  // Ensure value is always an array for multiple select
+  const safeValue = isMultiple ? (Array.isArray(value) ? value : []) : value;
+
   const handleSelect = (currentValue: string) => {
     if (multiple) {
       // Type assertion is safe here because we've ensured multiple is true
-      const newValue = [...(value as string[])];
+      const multipleValue = (value as string[]) || [];
+      const newValue = [...multipleValue];
+
       if (newValue.includes(currentValue)) {
         (onChange as (value: string[]) => void)(
           newValue.filter((v) => v !== currentValue)
@@ -67,6 +73,8 @@ export function Combobox({
       } else {
         (onChange as (value: string[]) => void)([...newValue, currentValue]);
       }
+
+      // Don't close when handling multiple selections
     } else {
       // Type assertion is safe here because we've ensured multiple is false
       (onChange as (value: string) => void)(
@@ -77,24 +85,27 @@ export function Combobox({
     setInputValue("");
   };
 
-  const handleRemove = (valueToRemove: string) => {
-    if (multiple) {
-      // Type assertion is safe here because we've ensured multiple is true
-      const newValue = (value as string[]).filter((v) => v !== valueToRemove);
-      (onChange as (value: string[]) => void)(newValue);
-    }
-  };
-
   const getLabel = (val: string) => {
     const item = items.find((item) => item.value === val);
     return item ? item.label : val;
   };
 
   const getDisplayValue = () => {
-    if (!value) return popoverText;
+    if (
+      !value ||
+      (isMultiple && (!Array.isArray(value) || value.length === 0))
+    ) {
+      return popoverText;
+    }
 
     if (isMultiple) {
-      return popoverText;
+      const multipleValue = value as string[];
+
+      if (multipleValue.length === 1) {
+        return getLabel(multipleValue[0]);
+      }
+
+      return `${getLabel(multipleValue[0])} +${multipleValue.length - 1} more`;
     } else {
       return getLabel(value as string);
     }
@@ -104,25 +115,26 @@ export function Combobox({
     <div className='flex flex-col gap-2'>
       <Popover open={disabled ? false : open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant='outline'
-            role='combobox'
-            aria-expanded={open}
-            disabled={disabled}
-            className={cn(
-              "w-full justify-between",
-              disabled && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {getDisplayValue()}
-            <CaretSortIcon className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-          </Button>
+          {customTrigger ?? (
+            <Button
+              variant='outline'
+              role='combobox'
+              aria-expanded={open}
+              disabled={disabled}
+              className={cn(
+                "w-full justify-between",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {getDisplayValue()}
+              <CaretSortIcon className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+            </Button>
+          )}
         </PopoverTrigger>
         <PopoverContent
-          className='p-0'
+          className='p-0 w-[var(--radix-popover-trigger-width)] min-w-[200px]'
           align='start'
           sideOffset={4}
-          style={{ width: "var(--radix-popover-trigger-width)" }}
         >
           <Command>
             <CommandInput
@@ -134,10 +146,34 @@ export function Combobox({
             <CommandList>
               <CommandEmpty>{emptyText}</CommandEmpty>
               <CommandGroup>
+                {/* Always show selected items first */}
+                {isMultiple &&
+                  safeValue.length > 0 &&
+                  items
+                    .filter((item) => safeValue.includes(item.value))
+                    .map((item) => (
+                      <CommandItem
+                        key={`selected-${item.value}`}
+                        value={item.value}
+                        onSelect={handleSelect}
+                      >
+                        <CheckIcon className='mr-2 h-4 w-4 opacity-100' />
+                        {item.label}
+                      </CommandItem>
+                    ))}
+
+                {/* Show filtered unselected items */}
                 {items
-                  .filter((item) =>
-                    item.label.toLowerCase().includes(inputValue.toLowerCase())
-                  )
+                  .filter((item) => {
+                    // For multiple, don't show items again that we've already shown above
+                    if (isMultiple && safeValue.includes(item.value)) {
+                      return false;
+                    }
+                    // Filter by search input
+                    return item.label
+                      .toLowerCase()
+                      .includes(inputValue.toLowerCase());
+                  })
                   .map((item) => (
                     <CommandItem
                       key={item.value}
@@ -148,7 +184,7 @@ export function Combobox({
                         className={cn(
                           "mr-2 h-4 w-4",
                           isMultiple
-                            ? (value as string[]).includes(item.value)
+                            ? safeValue.includes(item.value)
                               ? "opacity-100"
                               : "opacity-0"
                             : value === item.value
@@ -186,35 +222,6 @@ export function Combobox({
           </Command>
         </PopoverContent>
       </Popover>
-
-      {/* Selected Items Pills (only for multiple selection) */}
-      {isMultiple && (value as string[]).length > 0 && (
-        <div className='flex flex-wrap gap-2'>
-          {(value as string[]).map((val) => (
-            <div
-              key={val}
-              className={cn(
-                "flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm",
-                disabled && "opacity-50"
-              )}
-            >
-              <span>{getLabel(val)}</span>
-              {!disabled && (
-                <button
-                  type='button'
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleRemove(val);
-                  }}
-                  className='ml-1 rounded-full hover:bg-destructive/50 p-0.5'
-                >
-                  <X className='h-3 w-3' />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

@@ -158,7 +158,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
           <h3 className='text-sm font-medium text-gray-500'>Template</h3>
           {fn.is_versioned && fn.prompt_template ? (
             <FormattedText
-              template={fn.prompt_template || ""}
+              template={fn.prompt_template ?? ""}
               values={fn.arg_types}
             />
           ) : (

@@ -886,6 +886,50 @@ export enum SpanType {
 }
 
 /**
+ * TagCreate
+ * Tag Create Model.
+ */
+export interface TagCreate {
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+}
+
+/**
+ * TagPublic
+ * Tag Public Model.
+ */
+export interface TagPublic {
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+}
+
+/**
  * Tier
  * License tier enum.
  */

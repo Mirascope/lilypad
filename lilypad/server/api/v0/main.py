@@ -16,6 +16,7 @@ from .organization_invites_api import organization_invites_router
 from .organizations_api import organization_router
 from .projects_api import projects_router
 from .spans_api import spans_router
+from .tags_api import tags_router
 from .traces_api import traces_router
 from .user_consents_api import user_consents_router
 from .users_api import users_router
@@ -35,6 +36,7 @@ api.include_router(organization_router)
 api.include_router(external_api_key_router)
 api.include_router(environments_router)
 api.include_router(user_consents_router)
+api.include_router(tags_router)
 
 
 class SettingsPublic(BaseModel):

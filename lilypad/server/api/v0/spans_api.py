@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from ...models import SpanTable
-from ...schemas import SpanMoreDetails, SpanPublic
+from ...schemas import SpanMoreDetails, SpanPublic, SpanUpdate
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()
@@ -23,6 +23,18 @@ async def get_span(
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
     return SpanMoreDetails.from_span(span)
+
+
+@spans_router.patch("/spans/{span_uuid}", response_model=SpanPublic)
+async def update_span(
+    span_uuid: UUID,
+    span_update: SpanUpdate,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> SpanTable:
+    """Update span by uuid."""
+    return span_service.update_record_by_uuid(
+        span_uuid, span_update.model_dump(exclude_unset=True)
+    )
 
 
 @spans_router.get(

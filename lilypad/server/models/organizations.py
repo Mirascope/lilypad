@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from ...ee.server.models.user_organizations import UserOrganizationTable
     from .api_keys import APIKeyTable
     from .projects import ProjectTable
+    from .tags import TagTable
 
 
 class OrganizationBase(SQLModel):
@@ -31,6 +32,9 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
         back_populates="organization", cascade_delete=True
     )
     api_keys: list["APIKeyTable"] = Relationship(
+        back_populates="organization", cascade_delete=True
+    )
+    tags: list["TagTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
     license: str | None = Field(default=None, nullable=True)

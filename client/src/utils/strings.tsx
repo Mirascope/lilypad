@@ -1,3 +1,5 @@
+import JSON5 from "json5";
+
 export const stringToBytes = (data: string): Uint8Array => {
   const binaryString = window.atob(data);
   const bytes = new Uint8Array(binaryString.length);
@@ -9,21 +11,19 @@ export const stringToBytes = (data: string): Uint8Array => {
 
 interface FormattedTextProps {
   template: string;
-  values?: {
-    [key: string]: string;
-  };
+  values?: Record<string, string>;
 }
 
-export const FormattedText: React.FC<FormattedTextProps> = ({
+export const FormattedText = ({
   template,
   values = {},
-}) => {
+}: FormattedTextProps) => {
   const parts = template.split(/(\{[^}]+\})/g);
 
   return (
     <p>
       {parts.map((part, index) => {
-        const match = part.match(/\{([^}]+)\}/);
+        const match = /\{([^}]+)\}/.exec(part);
         if (match) {
           const key = match[1];
           return (
@@ -45,15 +45,12 @@ export const safelyParseJSON = (json: string): object | undefined => {
   let parsed = undefined;
 
   try {
-    parsed = JSON.parse(json);
+    parsed = JSON5.parse(json);
   } catch (e) {}
 
   return parsed;
 };
-export const formatDate = (
-  utcDateString?: string,
-  dateOnly: boolean = true
-): string => {
+export const formatDate = (utcDateString?: string, dateOnly = true): string => {
   if (!utcDateString) {
     return "";
   }

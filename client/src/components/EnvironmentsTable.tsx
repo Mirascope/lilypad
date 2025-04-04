@@ -217,7 +217,7 @@ const DeleteEnvironmentButton = ({
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outline' size='icon' className='h-8 w-8'>
+        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
           <Trash />
         </Button>
       </DialogTrigger>
