@@ -20,9 +20,9 @@ import {
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
+import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical"; // Import Lexical node types if needed
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { LexicalEditor } from "lexical";
 import { BaseSyntheticEvent, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 
@@ -121,15 +121,14 @@ export const usePlaygroundContainer = ({
       buttonName = (event.target as { name: string }).name;
     }
 
-    // Check for errors in editor
-    const editorErrors = $findErrorTemplateNodes(editorRef.current);
-    if (editorErrors.length > 0) {
+    const templateErrors = $findErrorTemplateNodes(editorRef.current);
+    if (templateErrors.length > 0) {
       setEditorErrors(
-        editorErrors.map(
-          (node) => `'${node.getValue()}' is not a function argument.`
+        templateErrors.map(
+          (node) => `'${node.getValue()}' is not a valid function argument.` // Corrected message
         )
       );
-      return;
+      return; // Stop submission if template errors exist
     }
     // Read editor state
     const editorState = editorRef.current.getEditorState();
@@ -138,9 +137,35 @@ export const usePlaygroundContainer = ({
       void editorState.read(async () => {
         // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+
+        let isEmpty = false;
+        if (!markdown || markdown.trim().length === 0) {
+            isEmpty = true;
+        } else {
+            const root = $getRoot();
+            const firstChild = root.getFirstChild();
+            if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
+                 isEmpty = true;
+            }
+        }
+
+
+        if (isEmpty) {
+          toast({
+            title: "Empty Prompt",
+            description: "The prompt template cannot be empty. Please enter some text.",
+            variant: "destructive",
+          });
+          resolve();
+          return;
+        }
+
+
         const argTypes = inputs.reduce(
           (acc, input) => {
-            acc[input.key] = input.type;
+            if (input.key && input.key.trim().length > 0) {
+                acc[input.key] = input.type;
+            }
             return acc;
           },
           {} as Record<string, string>
@@ -164,10 +189,13 @@ export const usePlaygroundContainer = ({
           resolve();
           return;
         }
+
         if (buttonName !== "run") {
-          return;
+           resolve();
+           return;
         }
-        // Validate inputs
+
+        // Validate custom inputs (args and their values)
         if (!validateInputs(methods, data.inputs)) {
           setOpenInputDrawer(true);
           resolve();
@@ -175,26 +203,30 @@ export const usePlaygroundContainer = ({
         }
 
         try {
-          // Create new version
+          // Create a new version of the function
+           // It includes the prompt_template, call_params, arg_types etc.
           const newVersion = await createVersionedFunction.mutateAsync({
             projectUuid,
-            functionCreate,
+            functionCreate, // Pass the prepared function data
           });
 
-          // Process input values for the run
-          const inputValues = inputs.reduce(
+          // Process input values specifically for the run execution
+          const runInputValues = inputs.reduce(
             (acc, input) => {
-              if (input.type === "list" || input.type === "dict") {
-                try {
-                  const simplifiedValue = simplifyFormItem(
-                    input as FormItemValue
-                  );
-                  acc[input.key] = simplifiedValue;
-                } catch {
-                  acc[input.key] = input.value;
-                }
-              } else {
-                acc[input.key] = input.value;
+               if (input.key && input.key.trim().length > 0) {
+                  if (input.type === "list" || input.type === "dict") {
+                    try {
+                      const simplifiedValue = simplifyFormItem(
+                        input as FormItemValue // Cast needed due to complexity
+                      );
+                      acc[input.key] = simplifiedValue;
+                    } catch (parseError) {
+                       console.warn(`Could not parse input '${input.key}':`, parseError);
+                      acc[input.key] = input.value; // Fallback to raw value
+                    }
+                  } else {
+                    acc[input.key] = input.value;
+                  }
               }
               return acc;
             },
@@ -202,7 +234,7 @@ export const usePlaygroundContainer = ({
           );
           // TODO: Update this to only pass in arg_values
           const playgroundParameters: PlaygroundParameters = {
-            arg_values: inputValues,
+            arg_values: runInputValues,
             provider: data.provider,
             model: data.model,
             arg_types: argTypes,
@@ -210,7 +242,7 @@ export const usePlaygroundContainer = ({
             prompt_template: markdown,
           };
 
-          // Run function
+          // Execute the function run via the API
           const response = await runMutation.mutateAsync({
             projectUuid,
             functionUuid: newVersion.uuid,
@@ -218,14 +250,15 @@ export const usePlaygroundContainer = ({
           });
 
           if (response.success) {
-            // Set successful result
             setResult(response.data.result);
+            setError(null);
           } else {
-            // Handle error
+             // Handle specific error from the run endpoint
             setError(response.error);
+            setResult(null);
             toast({
-              title: "Error running playground",
-              description: response.error.reason,
+              title: "Error Running Playground", // More specific title
+              description: response.error.reason || "An unknown error occurred.",
               variant: "destructive",
             });
           }
@@ -233,22 +266,30 @@ export const usePlaygroundContainer = ({
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
             replace: true,
-          }).catch(() => {
+          }).catch((navError) => {
+            console.error("Navigation failed:", navError);
             toast({
-              title: "Error",
-              description: "Failed to navigate to playground.",
+              title: "Navigation Error",
+              description: "Failed to update the URL after running the playground.",
             });
           });
-        } catch (error) {
-          console.error(error);
+        } catch (apiError) {
+          console.error("API Error during create/run:", apiError);
+           const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
+           setError({
+              type: 'ApiError',
+              reason: 'Failed to create or run the function version via API.',
+              details: message
+          });
+           setResult(null);
           toast({
-            title: "Error",
-            description: error instanceof Error ? error.message : "An unexpected error occurred",
+            title: "API Error",
+            description: message,
             variant: "destructive",
           });
+        } finally {
+            resolve();
         }
-
-        resolve();
       });
     });
   };
@@ -267,6 +308,11 @@ export const usePlaygroundContainer = ({
 
   const handleReset = () => {
     methods.reset();
+    setResult(null);
+    setError(null);
+    setEditorErrors([]);
+    if (editorRef.current) {
+    }
   };
 
   const { fields, append, remove } = useFieldArray<EditorParameters>({
@@ -296,15 +342,17 @@ export const usePlaygroundContainer = ({
     isCreateLoading: createVersionedFunction.isPending,
     isPatchLoading: patchFunction.isPending,
 
-    // Handlers
-    onSubmit,
-    handleSetDefault,
-    handleReset,
-    fields,
-    addInput,
-    removeInput: remove,
+    // Event handlers
+    onSubmit, // Form submission handler
+    handleSetDefault, // Handler for setting version as default
+    handleReset, // Handler for resetting the form
 
-    // Navigation
+    // Input field array management
+    fields, // Array of input fields from useFieldArray
+    addInput, // Function to add a new input field
+    removeInput: remove, // Function to remove an input field (renamed for clarity)
+
+    // Route parameters
     projectUuid,
     functionName,
 
