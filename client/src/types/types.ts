@@ -824,6 +824,8 @@ export interface SpanMoreDetails {
   status?: string | null;
   /** Events */
   events?: Event[] | null;
+  /** Tags */
+  tags?: TagPublic[] | null;
 }
 
 /**
@@ -874,6 +876,8 @@ export interface SpanPublic {
   created_at: string;
   /** Status */
   status?: string | null;
+  /** Tags */
+  tags: TagPublic[];
 }
 
 /**
@@ -886,15 +890,21 @@ export enum SpanType {
 }
 
 /**
+ * SpanUpdate
+ * Span update model
+ */
+export interface SpanUpdate {
+  /** Tags */
+  tags?: TagPublic[] | null;
+}
+
+/**
  * TagCreate
  * Tag Create Model.
  */
 export interface TagCreate {
-  /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
   /**
    * Name
    * @minLength 1
@@ -907,11 +917,8 @@ export interface TagCreate {
  * Tag Public Model.
  */
 export interface TagPublic {
-  /**
-   * Project Uuid
-   * @format uuid
-   */
-  project_uuid: string;
+  /** Project Uuid */
+  project_uuid?: string | null;
   /**
    * Name
    * @minLength 1
@@ -975,7 +982,8 @@ export interface UserConsentCreate {
 export interface UserConsentPublic {
   /**
    * Privacy Policy Version
-   * @default "1.0"
+   * Last updated date of the privacy policy
+   * @default "2025-04-04"
    */
   privacy_policy_version?: string;
   /**
@@ -985,7 +993,8 @@ export interface UserConsentPublic {
   privacy_policy_accepted_at: string;
   /**
    * Tos Version
-   * @default "1.0"
+   * Last updated date of the privacy policy
+   * @default "2025-04-04"
    */
   tos_version?: string;
   /**

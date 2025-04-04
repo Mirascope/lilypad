@@ -51,8 +51,8 @@ const CallbackPage = () => {
   }
   const activeProvider = stateJson.provider ?? "github";
   // TODO: make these dynamic
-  const termsVersion = "1.0";
-  const privacyVersion = "1.0";
+  const termsVersion = "2025-04-04";
+  const privacyVersion = "2025-04-04";
 
   const { data: session } = useSuspenseQuery(
     callbackCodeQueryOptions(activeProvider, privacyVersion, termsVersion, code)

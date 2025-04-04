@@ -18,13 +18,17 @@ if TYPE_CHECKING:
 class UserConsentBase(SQLModel):
     """Base User Consent Model."""
 
-    privacy_policy_version: str = Field(default="1.0")
+    privacy_policy_version: str = Field(
+        default="2025-04-04", description="Last updated date of the privacy policy"
+    )
     privacy_policy_accepted_at: Annotated[datetime, AwareDatetime] = Field(
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
         nullable=False,
         schema_extra={"format": "date-time"},
     )
-    tos_version: str = Field(default="1.0")
+    tos_version: str = Field(
+        default="2025-04-04", description="Last updated date of the privacy policy"
+    )
     tos_accepted_at: Annotated[datetime, AwareDatetime] = Field(
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
         nullable=False,
