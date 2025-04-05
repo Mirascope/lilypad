@@ -9,6 +9,7 @@ from sqlmodel import Field, Relationship, SQLModel, text
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
+from .span_tag_link import SpanTagLink
 from .table_names import (
     FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
@@ -18,6 +19,7 @@ from .table_names import (
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .functions import FunctionTable
+    from .tags import TagTable
 
 
 class Scope(str, Enum):
@@ -80,6 +82,9 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,
+    )
+    tags: list["TagTable"] = Relationship(
+        back_populates="spans", link_model=SpanTagLink
     )
     child_spans: list["SpanTable"] = Relationship(
         back_populates="parent_span",

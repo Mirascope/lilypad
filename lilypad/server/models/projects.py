@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .deployments import DeploymentTable
     from .functions import FunctionTable
     from .organizations import OrganizationTable
+    from .tags import TagTable
 
 
 class _ProjectBase(SQLModel):
@@ -41,3 +42,4 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     deployments: list["DeploymentTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
+    tags: list["TagTable"] = Relationship(back_populates="project", cascade_delete=True)

@@ -103,9 +103,9 @@ export const ProjectsTable = () => {
   );
 };
 
-type DeleteProjectFormValues = {
+interface DeleteProjectFormValues {
   projectName: string;
-};
+}
 
 const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
   const methods = useForm<DeleteProjectFormValues>({
@@ -127,7 +127,12 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
     });
     navigate({
       to: "/projects",
-      search: { redirect: undefined },
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to navigate after deletion.",
+        variant: "destructive",
+      });
     });
   };
 
@@ -167,7 +172,7 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
                     <Input {...field} />
                   </FormControl>
                   <FormDescription>
-                    Please type "{project.name}" to confirm deletion
+                    Please type &quot;{project.name}&quot; to confirm deletion
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -52,12 +52,12 @@ export const LilypadDialog = ({
       {...buttonProps}
       size={icon ? "icon" : buttonProps.size}
     >
-      {icon || text}
+      {icon ?? text}
     </Button>
   );
 
   const TriggerButton = (
-    <DialogTrigger asChild>{customTrigger || ButtonComponent}</DialogTrigger>
+    <DialogTrigger asChild>{customTrigger ?? ButtonComponent}</DialogTrigger>
   );
 
   return (

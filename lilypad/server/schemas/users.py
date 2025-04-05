@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from lilypad.server.schemas.user_consents import UserConsentPublic
+
 from ...ee.server.schemas.user_organizations import UserOrganizationPublic
 from ..models.users import UserBase
 
@@ -15,6 +17,7 @@ class UserPublic(UserBase):
     access_token: str | None = None
     user_organizations: list[UserOrganizationPublic] | None = None
     scopes: list[str] = Field(default_factory=list)
+    user_consents: UserConsentPublic | None = None
 
 
 class UserCreate(BaseModel):

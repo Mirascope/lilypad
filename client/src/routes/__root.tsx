@@ -1,7 +1,9 @@
 import { AuthContext } from "@/auth";
 import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
 import { NotFound } from "@/components/NotFound";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { lazy } from "react";
@@ -22,6 +24,7 @@ const RootComponent = () => {
     <>
       <Outlet />
       <Toaster />
+      <SonnerToaster richColors />
       <TanStackRouterDevtools position='bottom-right' />
     </>
   );

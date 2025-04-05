@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: supabase/postgres:15.8.1.060
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:

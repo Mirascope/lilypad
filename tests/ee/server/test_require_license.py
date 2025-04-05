@@ -37,9 +37,10 @@ async def test_project_not_found():
     project_service = DummyProjectService(None)
     organization_service = MagicMock()
     dependency = RequireLicense(tier=Tier.ENTERPRISE)
+    request = MagicMock()
 
     with pytest.raises(HTTPException) as exc_info:
-        await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+        await dependency(request, project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
     assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc_info.value.detail == "Project not found"
 
@@ -52,9 +53,10 @@ async def test_project_without_organization():
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
     dependency = RequireLicense(tier=Tier.ENTERPRISE)
+    request = MagicMock()
 
     with pytest.raises(HTTPException) as exc_info:
-        await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+        await dependency(request, project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
     assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
     assert exc_info.value.detail == "Project does not belong to an organization"
 
@@ -67,6 +69,7 @@ async def test_invalid_license_none():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     # Patch LicenseValidator so that validate_license returns None
     with patch(
@@ -78,7 +81,9 @@ async def test_invalid_license_none():
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
-            await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+            await dependency(
+                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert (
             exc_info.value.detail
@@ -94,6 +99,7 @@ async def test_license_mismatch():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     # Return a LicenseInfo with an organization_uuid that does not match the project's
     with patch(
@@ -113,7 +119,9 @@ async def test_license_mismatch():
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
-            await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+            await dependency(
+                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert exc_info.value.detail == "License key does not match organization"
 
@@ -126,6 +134,7 @@ async def test_wrong_license_tier():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     # Return a LicenseInfo with a correct organization_uuid but a FREE tier while ENTERPRISE is required
     with patch(
@@ -144,11 +153,13 @@ async def test_wrong_license_tier():
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
-            await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+            await dependency(
+                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert (
             exc_info.value.detail
-            == "Invalid License. Contact support@mirascope.com to get one."
+            == "License tier (FREE) does not meet the required tier (ENTERPRISE). Contact support@mirascope.com to upgrade."
         )
 
 
@@ -160,6 +171,7 @@ async def test_valid_license():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     # Return a valid LicenseInfo with matching organization_uuid and ENTERPRISE tier
     with patch(
@@ -177,7 +189,9 @@ async def test_valid_license():
         mock_validator_class.return_value = mock_validator
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
-        result = await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+        result = await dependency(
+            request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+        )
         assert result == license_info
 
 
@@ -189,6 +203,7 @@ async def test_free_tier_returns_none():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     # Even if a valid LicenseInfo is returned, FREE tier should cause the dependency to return None.
     with patch(
@@ -206,7 +221,9 @@ async def test_free_tier_returns_none():
         mock_validator_class.return_value = mock_validator
 
         dependency = RequireLicense(tier=Tier.FREE)
-        result = await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+        result = await dependency(
+            request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+        )
         assert result is None
 
 
@@ -218,6 +235,7 @@ async def test_license_validator_exception():
     project = DummyProject(organization_uuid=org_uuid)
     project_service = DummyProjectService(project)
     organization_service = MagicMock()
+    request = MagicMock()
 
     with patch(
         "lilypad.ee.server.require_license.LicenseValidator"
@@ -228,7 +246,9 @@ async def test_license_validator_exception():
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
-            await dependency(project_uuid, project_service, organization_service)  # pyright: ignore [reportArgumentType]
+            await dependency(
+                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert "Validation failed" in exc_info.value.detail
 

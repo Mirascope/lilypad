@@ -37,11 +37,11 @@ os.environ["LILYPAD_PROJECT_ID"] = "..."
 os.environ["LILYPAD_API_KEY"] = "..."
 os.environ["OPENAI_API_KEY"] = "..."
 
-lilypad.configure()    # Automatically trace LLM API calls
+lilypad.configure(auto_llm=True)    # Automatically trace LLM API calls
 client = OpenAI()
 
 
-@lilypad.generation()  # Automatically version non-deterministic functions
+@lilypad.trace(versioning="automatic")  # Automatically version non-deterministic functions
 def answer_question(question: str) -> str | None:
     completion = client.chat.completions.create(
         model="gpt-4o",

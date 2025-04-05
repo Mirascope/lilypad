@@ -14,6 +14,7 @@ from pydantic import BaseModel, model_validator
 
 from ...ee.server.models.annotations import AnnotationTable
 from ..models.spans import Scope, SpanBase, SpanTable
+from ..schemas.tags import TagPublic
 from .functions import FunctionPublic, Provider
 
 
@@ -517,6 +518,12 @@ class SpanCreate(SpanBase):
     project_uuid: UUID | None = None
 
 
+class SpanUpdate(BaseModel):
+    """Span update model"""
+
+    tags: list[TagPublic] | None = None
+
+
 class SpanPublic(SpanBase):
     """Span public model"""
 
@@ -528,6 +535,7 @@ class SpanPublic(SpanBase):
     child_spans: list[SpanPublic]
     created_at: datetime
     status: str | None = None
+    tags: list[TagPublic]
 
     @model_validator(mode="before")
     @classmethod
@@ -564,6 +572,7 @@ class SpanPublic(SpanBase):
             "function": span.function,
             "annotations": span.annotations,
             "status": span.data.get("status"),
+            "tags": span.tags,
             **span.model_dump(exclude={"child_spans", "data"}),
         }
 
@@ -590,6 +599,7 @@ class SpanMoreDetails(BaseModel):
     template: str | None = None
     status: str | None = None
     events: list[Event] | None = None
+    tags: list[TagPublic] | None = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:

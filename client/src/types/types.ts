@@ -389,7 +389,11 @@ export interface Event {
 export interface ExternalAPIKeyCreate {
   /** Service Name */
   service_name: string;
-  /** Api Key */
+  /**
+   * Api Key
+   * New API key
+   * @minLength 1
+   */
   api_key: string;
 }
 
@@ -412,7 +416,11 @@ export interface ExternalAPIKeyPublic {
  * Request model for updating a secret.
  */
 export interface ExternalAPIKeyUpdate {
-  /** Api Key */
+  /**
+   * Api Key
+   * New API key
+   * @minLength 1
+   */
   api_key: string;
 }
 
@@ -692,6 +700,56 @@ export interface OrganizationUpdate {
 }
 
 /**
+ * PlaygroundErrorDetail
+ * Detailed information about a playground error.
+ */
+export interface PlaygroundErrorDetail {
+  /**
+   * Type
+   * Category of the error (Enum value) or specific Python Exception type name.
+   */
+  type: PlaygroundErrorType | string;
+  /**
+   * Reason
+   * User-friendly description of the error.
+   */
+  reason: string;
+  /**
+   * Details
+   * Additional technical details, if available.
+   */
+  details?: string | null;
+}
+
+/**
+ * PlaygroundErrorResponse
+ * Standard structure for playground error responses.
+ */
+export interface PlaygroundErrorResponse {
+  /** Detailed information about a playground error. */
+  error: PlaygroundErrorDetail;
+}
+
+/**
+ * PlaygroundErrorType
+ * Categorizes the types of errors that can occur during playground execution.
+ */
+export enum PlaygroundErrorType {
+  TIMEOUT_ERROR = "TimeoutError",
+  CONFIGURATION_ERROR = "ConfigurationError",
+  SUBPROCESS_ERROR = "SubprocessError",
+  OUTPUT_PARSING_ERROR = "OutputParsingError",
+  OUTPUT_MARKER_ERROR = "OutputMarkerError",
+  INTERNAL_PLAYGROUND_ERROR = "InternalPlaygroundError",
+  EXECUTION_ERROR = "ExecutionError",
+  BAD_REQUEST_ERROR = "BadRequestError",
+  NOT_FOUND_ERROR = "NotFoundError",
+  INVALID_INPUT_ERROR = "InvalidInputError",
+  API_KEY_ISSUE = "ApiKeyIssue",
+  UNEXPECTED_SERVER_ERROR = "UnexpectedServerError",
+}
+
+/**
  * PlaygroundParameters
  * Playground parameters model.
  */
@@ -707,6 +765,20 @@ export interface PlaygroundParameters {
   /** Prompt Template */
   prompt_template: string;
   call_params: CommonCallParams | null;
+}
+
+/**
+ * PlaygroundSuccessResponse
+ * Standard structure for successful playground execution responses.
+ */
+export interface PlaygroundSuccessResponse {
+  /**
+   * Result
+   * The result returned by the executed function. Can be any JSON-serializable type.
+   */
+  result: any;
+  /** Tracing context associated with the execution. */
+  trace_context?: TraceContextModel | null;
 }
 
 /**
@@ -824,6 +896,8 @@ export interface SpanMoreDetails {
   status?: string | null;
   /** Events */
   events?: Event[] | null;
+  /** Tags */
+  tags?: TagPublic[] | null;
 }
 
 /**
@@ -862,7 +936,7 @@ export interface SpanPublic {
   project_uuid: string;
   /** Display Name */
   display_name?: string | null;
-  function?: FunctionPublic | null;
+  function: FunctionPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -872,10 +946,10 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
-  /** Version */
-  version?: number | null;
   /** Status */
   status?: string | null;
+  /** Tags */
+  tags: TagPublic[];
 }
 
 /**
@@ -885,6 +959,53 @@ export interface SpanPublic {
 export enum SpanType {
   FUNCTION = "function",
   TRACE = "trace",
+}
+
+/**
+ * SpanUpdate
+ * Span update model
+ */
+export interface SpanUpdate {
+  /** Tags */
+  tags?: TagPublic[] | null;
+}
+
+/**
+ * TagCreate
+ * Tag Create Model.
+ */
+export interface TagCreate {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+}
+
+/**
+ * TagPublic
+ * Tag Public Model.
+ */
+export interface TagPublic {
+  /** Project Uuid */
+  project_uuid?: string | null;
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
 }
 
 /**
@@ -907,6 +1028,84 @@ export enum TimeFrame {
   WEEK = "week",
   MONTH = "month",
   LIFETIME = "lifetime",
+}
+
+/**
+ * TraceContextModel
+ * Represents the tracing context information provided by Lilypad.
+ */
+export interface TraceContextModel {
+  /**
+   * Span Uuid
+   * The unique identifier for the current span within the trace.
+   */
+  span_uuid?: string | null;
+}
+
+/**
+ * UserConsentCreate
+ * UserConsent create model.
+ */
+export interface UserConsentCreate {
+  /** Privacy Policy Version */
+  privacy_policy_version: string;
+  /** Privacy Policy Accepted At */
+  privacy_policy_accepted_at?: string | null;
+  /** Tos Version */
+  tos_version: string;
+  /** Tos Accepted At */
+  tos_accepted_at?: string | null;
+  /** User Uuid */
+  user_uuid?: string | null;
+}
+
+/**
+ * UserConsentPublic
+ * UserConsent public model.
+ */
+export interface UserConsentPublic {
+  /**
+   * Privacy Policy Version
+   * Last updated date of the privacy policy accepted
+   * @default "2025-04-04"
+   */
+  privacy_policy_version?: string;
+  /**
+   * Privacy Policy Accepted At
+   * @format date-time
+   */
+  privacy_policy_accepted_at: string;
+  /**
+   * Tos Version
+   * Last updated date of the terms of service accepted
+   * @default "2025-04-04"
+   */
+  tos_version?: string;
+  /**
+   * Tos Accepted At
+   * @format date-time
+   */
+  tos_accepted_at: string;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+}
+
+/**
+ * UserConsentUpdate
+ * UserConsent update model.
+ */
+export interface UserConsentUpdate {
+  /** Privacy Policy Version */
+  privacy_policy_version?: string | null;
+  /** Privacy Policy Accepted At */
+  privacy_policy_accepted_at?: string | null;
+  /** Tos Version */
+  tos_version?: string | null;
+  /** Tos Accepted At */
+  tos_accepted_at?: string | null;
 }
 
 /**
@@ -1002,6 +1201,7 @@ export interface UserPublic {
   user_organizations?: UserOrganizationPublic[] | null;
   /** Scopes */
   scopes?: string[];
+  user_consents?: UserConsentPublic | null;
 }
 
 /**
