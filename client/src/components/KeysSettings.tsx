@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   externalApiKeysQueryOptions,
   useCreateExternalApiKeyMutation,
+  useDeleteExternalApiKeyMutation,
   usePatchExternalApiKeyMutation,
 } from "@/utils/external-api-keys";
 import { userQueryOptions, useUpdateUserKeysMutation } from "@/utils/users";
@@ -50,8 +51,6 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
                 type={isView ? "text" : "password"}
                 id={input.id}
                 {...field}
-                value={field.value}
-                onChange={field.onChange}
               />
               {isView ? (
                 <Eye
@@ -90,8 +89,9 @@ export const KeysSettings = () => {
   );
   const patchExternalApiKeys = usePatchExternalApiKeyMutation();
   const createExternalApiKeys = useCreateExternalApiKeyMutation();
+  const deleteExternalApiKeys = useDeleteExternalApiKeyMutation();
   const updateUserKeys = useUpdateUserKeysMutation();
-  const keys = user.keys ?? {};
+
   const methods = useForm<UserKeysFormValues>({
     defaultValues: {
       openai: externalApiKeysMap.openai ?? "",
@@ -103,30 +103,54 @@ export const KeysSettings = () => {
 
   const onSubmit = async (data: UserKeysFormValues) => {
     try {
-      for (const key in data) {
-        if (data[key as keyof UserKeysFormValues] !== keys[key]) {
-          if (externalApiKeysMap[key]) {
-            await patchExternalApiKeys.mutateAsync({
-              serviceName: key as keyof UserKeysFormValues,
-              externalApiKeysUpdate: {
-                api_key: data[key as keyof UserKeysFormValues],
-              },
-            });
-          } else {
-            await createExternalApiKeys.mutateAsync({
-              service_name: key as keyof UserKeysFormValues,
-              api_key: data[key as keyof UserKeysFormValues],
-            });
+      // Get dirty fields to process only the ones modified by the user
+      const { dirtyFields } = methods.formState;
+      const promises: Promise<any>[] = []; // Array to hold promises for parallel execution
+
+      for (const key of Object.keys(data) as Array<keyof UserKeysFormValues>) {
+        if (dirtyFields[key]) {
+          const newValue = data[key].trim();
+          const existsInExternal = externalApiKeysMap[key];
+
+          if (existsInExternal) {
+            if (newValue.length === 0) {
+              promises.push(deleteExternalApiKeys.mutateAsync(key));
+            } else {
+             promises.push(patchExternalApiKeys.mutateAsync({
+                serviceName: key,
+                externalApiKeysUpdate: {
+                  api_key: newValue,
+                },
+              }));
+            }
+          } else if (newValue.length > 0) {
+            promises.push(createExternalApiKeys.mutateAsync({
+              service_name: key,
+              api_key: newValue,
+            }));
           }
         }
       }
-      await updateUserKeys.mutateAsync(data);
+
+      await Promise.all(promises);
+
+      // Only call updateUserKeys if any field was actually changed.
+      // This might be necessary if user.keys needs to be synced or for other side effects.
+      if (Object.keys(dirtyFields).length > 0) {
+         await updateUserKeys.mutateAsync(data); // Pass the full data as original logic did
+      }
+
       toast({
         title: "LLM Keys Updated",
-        description: "Your LLM API keys have been updated.",
+        description: "Your LLM API keys have been successfully updated.",
       });
     } catch (error) {
-      console.error(error);
+      console.error("Failed to update keys:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not update LLM API keys. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -149,10 +173,27 @@ export const KeysSettings = () => {
           </div>
           <Button
             type='submit'
-            loading={methods.formState.isSubmitting}
+            // Use mutation pending states for more accurate loading indication
+            loading={
+              patchExternalApiKeys.isPending ||
+              createExternalApiKeys.isPending ||
+              deleteExternalApiKeys.isPending ||
+              updateUserKeys.isPending
+            }
+            disabled={
+              patchExternalApiKeys.isPending ||
+              createExternalApiKeys.isPending ||
+              deleteExternalApiKeys.isPending ||
+              updateUserKeys.isPending
+            }
             className='w-full'
           >
-            {methods.formState.isSubmitting ? "Saving..." : "Save Keys"}
+            {(patchExternalApiKeys.isPending ||
+              createExternalApiKeys.isPending ||
+              deleteExternalApiKeys.isPending ||
+              updateUserKeys.isPending)
+              ? "Saving..."
+              : "Save Keys"}
           </Button>
         </form>
       </Form>

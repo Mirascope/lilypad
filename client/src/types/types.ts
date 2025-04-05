@@ -692,6 +692,56 @@ export interface OrganizationUpdate {
 }
 
 /**
+ * PlaygroundErrorDetail
+ * Detailed information about a playground error.
+ */
+export interface PlaygroundErrorDetail {
+  /**
+   * Type
+   * Category of the error (Enum value) or specific Python Exception type name.
+   */
+  type: PlaygroundErrorType | string;
+  /**
+   * Reason
+   * User-friendly description of the error.
+   */
+  reason: string;
+  /**
+   * Details
+   * Additional technical details, if available.
+   */
+  details?: string | null;
+}
+
+/**
+ * PlaygroundErrorResponse
+ * Standard structure for playground error responses.
+ */
+export interface PlaygroundErrorResponse {
+  /** Detailed information about a playground error. */
+  error: PlaygroundErrorDetail;
+}
+
+/**
+ * PlaygroundErrorType
+ * Categorizes the types of errors that can occur during playground execution.
+ */
+export enum PlaygroundErrorType {
+  TIMEOUT_ERROR = "TimeoutError",
+  CONFIGURATION_ERROR = "ConfigurationError",
+  SUBPROCESS_ERROR = "SubprocessError",
+  OUTPUT_PARSING_ERROR = "OutputParsingError",
+  OUTPUT_MARKER_ERROR = "OutputMarkerError",
+  INTERNAL_PLAYGROUND_ERROR = "InternalPlaygroundError",
+  EXECUTION_ERROR = "ExecutionError",
+  BAD_REQUEST_ERROR = "BadRequestError",
+  NOT_FOUND_ERROR = "NotFoundError",
+  INVALID_INPUT_ERROR = "InvalidInputError",
+  API_KEY_ISSUE = "ApiKeyIssue",
+  UNEXPECTED_SERVER_ERROR = "UnexpectedServerError",
+}
+
+/**
  * PlaygroundParameters
  * Playground parameters model.
  */
@@ -707,6 +757,20 @@ export interface PlaygroundParameters {
   /** Prompt Template */
   prompt_template: string;
   call_params: CommonCallParams | null;
+}
+
+/**
+ * PlaygroundSuccessResponse
+ * Standard structure for successful playground execution responses.
+ */
+export interface PlaygroundSuccessResponse {
+  /**
+   * Result
+   * The result returned by the executed function. Can be any JSON-serializable type.
+   */
+  result: any;
+  /** Tracing context associated with the execution. */
+  trace_context?: TraceContextModel | null;
 }
 
 /**
@@ -862,7 +926,7 @@ export interface SpanPublic {
   project_uuid: string;
   /** Display Name */
   display_name?: string | null;
-  function?: FunctionPublic | null;
+  function: FunctionPublic | null;
   /** Annotations */
   annotations: AnnotationTable[];
   /** Child Spans */
@@ -872,8 +936,6 @@ export interface SpanPublic {
    * @format date-time
    */
   created_at: string;
-  /** Version */
-  version?: number | null;
   /** Status */
   status?: string | null;
 }
@@ -907,6 +969,18 @@ export enum TimeFrame {
   WEEK = "week",
   MONTH = "month",
   LIFETIME = "lifetime",
+}
+
+/**
+ * TraceContextModel
+ * Represents the tracing context information provided by Lilypad.
+ */
+export interface TraceContextModel {
+  /**
+   * Span Uuid
+   * The unique identifier for the current span within the trace.
+   */
+  span_uuid?: string | null;
 }
 
 /**

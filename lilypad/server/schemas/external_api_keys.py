@@ -9,13 +9,14 @@ class ExternalAPIKeyCreate(BaseModel):
     """Request model for creating a secret."""
 
     service_name: str
-    api_key: str
+    api_key: str = Field(..., description="New API key", min_length=1)
+
 
 
 class ExternalAPIKeyUpdate(BaseModel):
     """Request model for updating a secret."""
 
-    api_key: str
+    api_key: str = Field(..., description="New API key", min_length=1)
 
 
 class ExternalAPIKeyPublic(BaseModel):

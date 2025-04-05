@@ -7,6 +7,7 @@ import {
   FunctionCreate,
   FunctionPublic,
   PlaygroundParameters,
+  PlaygroundErrorDetail,
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -19,9 +20,9 @@ import {
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
+import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { LexicalEditor } from "lexical";
 import { BaseSyntheticEvent, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 
@@ -38,10 +39,8 @@ export type EditorParameters = PlaygroundParameters & FormValues;
  */
 export const usePlaygroundContainer = ({
   version,
-  isCompare = false,
 }: {
   version: FunctionPublic | null;
-  isCompare?: boolean;
 }) => {
   const { projectUuid, functionName } = useParams({
     strict: false,
@@ -52,7 +51,6 @@ export const usePlaygroundContainer = ({
   const runMutation = useRunPlaygroundMutation();
   const patchFunction = usePatchFunctionMutation();
   const { toast } = useToast();
-  // Initialize form with base editor form
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -66,15 +64,12 @@ export const usePlaygroundContainer = ({
     },
   });
 
-  // Watch inputs for changes
   const inputs = methods.watch("inputs");
 
-  // Process input values
   const inputValues = inputs.reduce(
     (acc, input) => {
       if (input.type === "list" || input.type === "dict") {
         try {
-          // Type narrowing happens here
           const simplifiedValue = simplifyFormItem(input as any);
           acc[input.key] = simplifiedValue;
         } catch {
@@ -87,14 +82,14 @@ export const usePlaygroundContainer = ({
     },
     {} as Record<string, any>
   );
-  // Editor state
+
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
   const [openInputDrawer, setOpenInputDrawer] = useState<boolean>(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<PlaygroundErrorDetail | null>(null);
+  const [executedSpanUuid, setExecutedSpanUuid] = useState<string | null>(null); // Add state for executed span UUID
   const editorRef = useRef<LexicalEditor>(null);
   const doesProviderExist = getAvailableProviders(user).length > 0;
 
-  // Handler for form submission
   const onSubmit = async (
     data: EditorParameters,
     event?: BaseSyntheticEvent
@@ -102,45 +97,63 @@ export const usePlaygroundContainer = ({
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
+    setError(null);
+    setExecutedSpanUuid(null);
+
     if (!editorRef?.current || !projectUuid || !functionName) return;
-    // Determine which button was clicked
+
     let buttonName = "";
-    if (
-      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
-        ?.submitter
-    ) {
-      buttonName = (
-        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
-      ).submitter.name;
+    if ((event?.nativeEvent as unknown as { submitter: HTMLButtonElement })?.submitter) {
+      buttonName = (event?.nativeEvent as unknown as { submitter: HTMLButtonElement }).submitter.name;
     } else if (event?.target && "name" in event.target) {
       buttonName = (event.target as { name: string }).name;
     }
 
-    // Check for errors in editor
-    const editorErrors = $findErrorTemplateNodes(editorRef.current);
-    if (editorErrors.length > 0) {
+    const templateErrors = $findErrorTemplateNodes(editorRef.current);
+    if (templateErrors.length > 0) {
       setEditorErrors(
-        editorErrors.map(
-          (node) => `'${node.getValue()}' is not a function argument.`
-        )
+        templateErrors.map((node) => `'${node.getValue()}' is not a valid function argument.`)
       );
       return;
     }
-    // Read editor state
+
     const editorState = editorRef.current.getEditorState();
 
     return new Promise<void>((resolve) => {
       void editorState.read(async () => {
-        // Convert editor content to markdown
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+
+        let isEmpty = false;
+        if (!markdown || markdown.trim().length === 0) {
+          isEmpty = true;
+        } else {
+          const root = $getRoot();
+          const firstChild = root.getFirstChild();
+          if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
+            isEmpty = true;
+          }
+        }
+
+        if (isEmpty) {
+          toast({
+            title: "Empty Prompt",
+            description: "The prompt template cannot be empty. Please enter some text.",
+            variant: "destructive",
+          });
+          resolve();
+          return;
+        }
+
         const argTypes = inputs.reduce(
           (acc, input) => {
-            acc[input.key] = input.type;
+            if (input.key && input.key.trim().length > 0) {
+              acc[input.key] = input.type;
+            }
             return acc;
           },
           {} as Record<string, string>
         );
-        // Create function object
+
         const functionCreate: FunctionCreate = {
           prompt_template: markdown,
           call_params: data.call_params ?? undefined,
@@ -153,16 +166,17 @@ export const usePlaygroundContainer = ({
           code: "",
         };
 
-        // Validate form
         const isValid = await methods.trigger();
         if (!isValid) {
           resolve();
           return;
         }
+
         if (buttonName !== "run") {
+          resolve();
           return;
         }
-        // Validate inputs
+
         if (!validateInputs(methods, data.inputs)) {
           setOpenInputDrawer(true);
           resolve();
@@ -170,34 +184,33 @@ export const usePlaygroundContainer = ({
         }
 
         try {
-          // Create new version
           const newVersion = await createVersionedFunction.mutateAsync({
             projectUuid,
             functionCreate,
           });
 
-          // Process input values for the run
-          const inputValues = inputs.reduce(
+          const runInputValues = inputs.reduce(
             (acc, input) => {
-              if (input.type === "list" || input.type === "dict") {
-                try {
-                  const simplifiedValue = simplifyFormItem(
-                    input as FormItemValue
-                  );
-                  acc[input.key] = simplifiedValue;
-                } catch {
+              if (input.key && input.key.trim().length > 0) {
+                if (input.type === "list" || input.type === "dict") {
+                  try {
+                    const simplifiedValue = simplifyFormItem(input as FormItemValue);
+                    acc[input.key] = simplifiedValue;
+                  } catch (parseError) {
+                    console.warn(`Could not parse input '${input.key}':`, parseError);
+                    acc[input.key] = input.value;
+                  }
+                } else {
                   acc[input.key] = input.value;
                 }
-              } else {
-                acc[input.key] = input.value;
               }
               return acc;
             },
             {} as Record<string, any>
           );
-          // TODO: Update this to only pass in arg_values
+
           const playgroundParameters: PlaygroundParameters = {
-            arg_values: inputValues,
+            arg_values: runInputValues,
             provider: data.provider,
             model: data.model,
             arg_types: argTypes,
@@ -205,33 +218,51 @@ export const usePlaygroundContainer = ({
             prompt_template: markdown,
           };
 
-          // Run function
-          const res = await runMutation.mutateAsync({
+          const response = await runMutation.mutateAsync({
             projectUuid,
             functionUuid: newVersion.uuid,
             playgroundParameters,
           });
-          setResult(res);
+
+          if (response.success) {
+            setExecutedSpanUuid(response.data.trace_context?.span_uuid ?? null); // Set the executed span UUID
+            setError(null);
+          } else {
+            setError(response.error);
+            setExecutedSpanUuid(null);
+          }
 
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
             replace: true,
-          }).catch(() => {
+          }).catch((navError) => {
+            console.error("Navigation failed:", navError);
             toast({
-              title: "Error",
-              description: "Failed to navigate to playground.",
+              title: "Navigation Error",
+              description: "Failed to update the URL after running the playground.",
             });
           });
-        } catch (error) {
-          console.error(error);
+        } catch (apiError) {
+          console.error("API Error during create/run:", apiError);
+          const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
+          setError({
+            type: 'ApiError',
+            reason: 'Failed to create or run the function version via API.',
+            details: message
+          });
+          setExecutedSpanUuid(null);
+          toast({
+            title: "API Error",
+            description: message,
+            variant: "destructive",
+          });
+        } finally {
+          resolve();
         }
-
-        resolve();
       });
     });
   };
 
-  // Handle setting function as default
   const handleSetDefault = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (version && projectUuid) {
@@ -245,6 +276,9 @@ export const usePlaygroundContainer = ({
 
   const handleReset = () => {
     methods.reset();
+    setError(null);
+    setExecutedSpanUuid(null); // Clear span UUID on reset
+    setEditorErrors([]);
   };
 
   const { fields, append, remove } = useFieldArray<EditorParameters>({
@@ -257,38 +291,27 @@ export const usePlaygroundContainer = ({
   };
 
   return {
-    // Form state
     methods,
     editorRef,
     inputs,
     inputValues,
     editorErrors,
-
-    // UI state
     openInputDrawer,
     setOpenInputDrawer,
     doesProviderExist,
-
-    // Loading states
     isRunLoading: runMutation.isPending,
     isCreateLoading: createVersionedFunction.isPending,
     isPatchLoading: patchFunction.isPending,
-
-    // Handlers
     onSubmit,
     handleSetDefault,
     handleReset,
     fields,
     addInput,
     removeInput: remove,
-
-    // Navigation
     projectUuid,
     functionName,
-
-    isDisabled: isCompare,
-
-    // Execution result
-    result
+    executedSpanUuid,
+    error,
+    setError,
   };
 };
