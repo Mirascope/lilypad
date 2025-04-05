@@ -516,7 +516,6 @@ finally:
                     "error": PlaygroundErrorDetail(  # Use imported model
                         type=PlaygroundErrorType.API_KEY_ISSUE,
                         reason="Failed to retrieve external API keys.",
-                        details=str(key_error),
                     ).model_dump()
                 },
             )
@@ -546,12 +545,17 @@ finally:
 
         if "error" not in execution_result:
             spand_id = execution_result.pop("span_id", None)
-            if isinstance(spand_id, str) and (spand := span_service.get_record_by_span_id(project_uuid, spand_id)):
-                return PlaygroundSuccessResponse.model_validate({"trace_context": {"span_uuid": str(spand.uuid)}, **execution_result})
+            if isinstance(spand_id, str) and (
+                spand := span_service.get_record_by_span_id(project_uuid, spand_id)
+            ):
+                return PlaygroundSuccessResponse.model_validate(
+                    {
+                        "trace_context": {"span_uuid": str(spand.uuid)},
+                        **execution_result,
+                    }
+                )
 
-            logger.warning(
-                "Playground function did not return a span_id."
-            )
+            logger.warning("Playground function did not return a span_id.")
             execution_result = {
                 "error": PlaygroundErrorDetail(
                     type=PlaygroundErrorType.INTERNAL,
@@ -560,11 +564,8 @@ finally:
                 ).model_dump()
             }
 
-
         try:
-            error_detail_validated = PlaygroundErrorDetail(
-                **execution_result["error"]
-            )
+            error_detail_validated = PlaygroundErrorDetail(**execution_result["error"])
             error_type = error_detail_validated.type
         except Exception as validation_error:
             logger.error(
@@ -576,7 +577,6 @@ finally:
                     "error": PlaygroundErrorDetail(
                         type=PlaygroundErrorType.INTERNAL,
                         reason="Playground returned an invalid error structure.",
-                        details=str(validation_error),
                     ).model_dump()
                 },
             )
@@ -609,7 +609,6 @@ finally:
                 "error": PlaygroundErrorDetail(
                     type=PlaygroundErrorType.UNEXPECTED,
                     reason="An unexpected server error occurred.",
-                    details=str(e),
                 ).model_dump()
             },
         )
@@ -719,7 +718,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                                 # Return the unvalidated structure but still wrapped in "error" key if possible
                                 return {"error": parsed_output["error"]}
 
-
                         return parsed_output
                     except json.JSONDecodeError as json_err:
                         logger.error(
@@ -729,7 +727,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                             "error": PlaygroundErrorDetail(
                                 type=PlaygroundErrorType.OUTPUT_PARSING,
                                 reason="Playground produced invalid JSON output between markers.",
-                                details=str(json_err),
                             ).model_dump()
                         }
                 else:
@@ -769,7 +766,6 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                     "error": PlaygroundErrorDetail(  # Use imported model
                         type=error_type_str,
                         reason=error_reason,
-                        details=f"Subprocess failed with return code {result.returncode}. Check server logs for full stderr.",
                     ).model_dump()
                 }
 
@@ -795,13 +791,12 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                     details="Check server environment setup and executable path.",
                 ).model_dump()
             }
-        except Exception as sub_err:
+        except Exception:
             logger.exception("Subprocess execution failed unexpectedly.")
             return {
                 "error": PlaygroundErrorDetail(  # Use imported model
                     type=PlaygroundErrorType.SUBPROCESS,
                     reason="An unexpected error occurred while managing the playground process.",
-                    details=str(sub_err),
                 ).model_dump()
             }
 
