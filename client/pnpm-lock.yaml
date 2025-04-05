@@ -149,6 +149,9 @@ importers:
       json-edit-react:
         specifier: 1.22.2
         version: 1.22.2(react@19.0.0)
+      json5:
+        specifier: ^2.2.3
+        version: 2.2.3
       lexical:
         specifier: ^0.18.0
         version: 0.18.0
@@ -158,6 +161,9 @@ importers:
       lucide-react:
         specifier: ^0.441.0
         version: 0.441.0(react@19.0.0)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       posthog-js:
         specifier: ^1.205.1
         version: 1.229.5
@@ -179,6 +185,9 @@ importers:
       recharts:
         specifier: ^2.15.1
         version: 2.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      sonner:
+        specifier: ^2.0.3
+        version: 2.0.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       tailwind-merge:
         specifier: ^2.5.2
         version: 2.6.0
@@ -1165,8 +1174,8 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@rollup/wasm-node@4.37.0':
-    resolution: {integrity: sha512-Nzbex+bqQ2wffHfAX5nHUMhcAUwedzE02arkETjt/ybjD0ieWtXwRUgIipB7giMRqKLdopDmkSIWow0mxzWmLg==}
+  '@rollup/wasm-node@4.39.0':
+    resolution: {integrity: sha512-hSzvI7Rd7mCw1OI/pkkmwPAlzSTJ2uspxti8yZR0ZRSoHLJuuWCTxGnbdCC3U9bSxtLQwvE0DyXSrj3BtoIl5g==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
@@ -1431,6 +1440,9 @@ packages:
 
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
+
+  '@types/estree@1.0.7':
+    resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -2627,6 +2639,12 @@ packages:
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
+  next-themes@0.4.6:
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   node-fetch-h2@2.3.0:
     resolution: {integrity: sha512-ofRW94Ab0T4AOh5Fk8t0h8OBWrmjb0SSB20xh1H8YnPV9EJ+f5AMoYSUQ2zgJ4Iq2HAK0I2l5/Nequ8YzFS3Hg==}
     engines: {node: 4.x || >=6.0.0}
@@ -3104,6 +3122,12 @@ packages:
 
   solid-js@1.9.5:
     resolution: {integrity: sha512-ogI3DaFcyn6UhYhrgcyRAMbu/buBJitYQASZz5WzfQVPP10RD2AbCoRZ517psnezrasyCbWzIxZ6kVqet768xw==}
+
+  sonner@2.0.3:
+    resolution: {integrity: sha512-njQ4Hht92m0sMqqHVDL32V2Oun9W1+PHO9NDv9FHfJjT3JT22IG4Jpo3FPQy+mouRKCXFWO+r67v6MrHX2zeIA==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -4437,9 +4461,9 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@rollup/wasm-node@4.37.0':
+  '@rollup/wasm-node@4.39.0':
     dependencies:
-      '@types/estree': 1.0.6
+      '@types/estree': 1.0.7
     optionalDependencies:
       fsevents: 2.3.3
 
@@ -4693,9 +4717,11 @@ snapshots:
 
   '@types/estree-jsx@1.0.5':
     dependencies:
-      '@types/estree': 1.0.6
+      '@types/estree': 1.0.7
 
   '@types/estree@1.0.6': {}
+
+  '@types/estree@1.0.7': {}
 
   '@types/hast@3.0.4':
     dependencies:
@@ -5638,7 +5664,7 @@ snapshots:
 
   hast-util-to-jsx-runtime@2.3.6:
     dependencies:
-      '@types/estree': 1.0.6
+      '@types/estree': 1.0.7
       '@types/hast': 3.0.4
       '@types/unist': 3.0.3
       comma-separated-tokens: 2.0.3
@@ -6173,6 +6199,11 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
+  next-themes@0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   node-fetch-h2@2.3.0:
     dependencies:
       http2-client: 1.3.5
@@ -6702,6 +6733,11 @@ snapshots:
       seroval: 1.2.1
       seroval-plugins: 1.2.1(seroval@1.2.1)
 
+  sonner@2.0.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   source-map-js@1.2.1: {}
 
   space-separated-tokens@2.0.2: {}
@@ -7068,7 +7104,7 @@ snapshots:
     dependencies:
       esbuild: 0.25.0
       postcss: 8.5.3
-      rollup: '@rollup/wasm-node@4.37.0'
+      rollup: '@rollup/wasm-node@4.39.0'
     optionalDependencies:
       '@types/node': 22.13.10
       fsevents: 2.3.3

@@ -10,7 +10,6 @@ import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
 import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
-
 export interface MessageCardProps {
   role: string;
   sanitizedHtml?: string;

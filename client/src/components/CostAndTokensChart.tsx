@@ -170,7 +170,7 @@ export const CostAndTokensChart = ({
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <Typography variant='muted'>No Data</Typography>
+            <Typography affects='muted'>No Data</Typography>
           )}
         </div>
       </CardContent>

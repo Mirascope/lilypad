@@ -142,3 +142,28 @@ export const LilypadPanel = ({
     </div>
   );
 };
+
+// const TagPopover = () => {
+//   const { data: tags } = useSuspenseQuery(tagsQueryOptions());
+//   const createTag = useCreateTagMutation();
+//   const [spanTags, setSpanTags] = useState<string[] | null>(null);
+//   const handleTagChange = (values: string[]) => {
+//     setSpanTags(values);
+//   };
+//   return (
+//     <Combobox
+//       multiple={true}
+//       customTrigger={
+//         <Button size='icon' variant='outline'>
+//           <Plus />
+//         </Button>
+//       }
+//       items={tags.map((tag) => ({
+//         value: tag.uuid,
+//         label: tag.name,
+//       }))}
+//       value={spanTags ?? []}
+//       onChange={(values: string[]) => setSpanTags(values)}
+//     />
+//   );
+// };
