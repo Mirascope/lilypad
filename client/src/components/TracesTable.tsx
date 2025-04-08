@@ -1,4 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
+import { Comment } from "@/components/Comment";
 import { DataTable } from "@/components/DataTable";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
@@ -20,10 +21,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  CreateAnnotationForm,
-  UpdateAnnotationForm,
-} from "@/ee/components/AnnotationForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { Scope, SpanPublic, TagPublic } from "@/types/types";
@@ -128,17 +125,8 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
   }, [data, path]);
   return (
     <Suspense fallback={<CardSkeleton items={5} className='flex flex-col' />}>
-      <div>
-        {data.annotations.length > 0 ? (
-          <UpdateAnnotationForm
-            annotation={data.annotations[0]}
-            spanUuid={data.uuid}
-          />
-        ) : (
-          <CreateAnnotationForm spanUuid={data.uuid} />
-        )}
-      </div>
-      <div className='p-4 border rounded-md overflow-auto flex-1'>
+      <Comment spanUuid={data.uuid} />
+      <div className='p-4 border rounded-md mt-4 overflow-auto min-h-0'>
         <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
         {data.scope === Scope.LILYPAD ? (
           <LilypadPanel spanUuid={data.uuid} />

@@ -11,6 +11,7 @@ from .table_names import USER_TABLE_NAME
 if TYPE_CHECKING:
     from ...ee.server.models.user_organizations import UserOrganizationTable
     from .api_keys import APIKeyTable
+    from .comments import CommentTable
     from .external_api_keys import ExternalAPIKeyTable
     from .organization_invites import OrganizationInviteTable
     from .user_consents import UserConsentTable
@@ -44,5 +45,8 @@ class UserTable(UserBase, BaseSQLModel, table=True):
         back_populates="user", cascade_delete=True
     )
     user_consents: "UserConsentTable" = Relationship(
+        back_populates="user", cascade_delete=True
+    )
+    comments: list["CommentTable"] = Relationship(
         back_populates="user", cascade_delete=True
     )

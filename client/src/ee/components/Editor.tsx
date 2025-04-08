@@ -9,8 +9,9 @@ import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transf
 import { TemplateNode } from "@/ee/components/lexical/template-node";
 import { TemplatePlugin } from "@/ee/components/lexical/template-plugin";
 import { TemplateSuggestionPlugin } from "@/ee/components/lexical/template-suggestion-plugin";
-import ToolbarPlugin from "@/ee/components/lexical/toolbar-plugin";
+import { ToolbarPlugin } from "@/ee/components/lexical/toolbar-plugin";
 import { UneditableParagraphNode } from "@/ee/components/lexical/uneditable-paragraph-node";
+import { cn } from "@/lib/utils";
 import exampleTheme from "@/utils/lexical-theme";
 import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { LinkNode } from "@lexical/link";
@@ -29,111 +30,114 @@ import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { TableCellNode, TableNode, TableRowNode } from "@lexical/table";
 import { LexicalEditor } from "lexical";
-import { ForwardedRef, forwardRef, RefObject, useMemo } from "react";
-export const Editor = forwardRef(
-  (
-    {
-      inputs,
-      promptTemplate,
-      inputValues,
-      isDisabled,
-    }: {
-      inputs: string[];
-      promptTemplate: string;
-      inputValues: Record<string, any>;
-      isDisabled: boolean;
-    },
-    ref: ForwardedRef<LexicalEditor>
-  ) => {
-    const loadContent = () => {
-      // 'empty' editor
-      const value =
-        '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+import { Ref, RefObject, useMemo } from "react";
 
-      return value;
-    };
-    const editorState = promptTemplate
-      ? () =>
-          $convertFromMarkdownString(promptTemplate, PLAYGROUND_TRANSFORMERS)
-      : loadContent();
-    const config = useMemo(
-      () => ({
-        namespace: "editor",
-        editorState,
-        theme: exampleTheme,
-        nodes: [
-          HeadingNode,
-          ListNode,
-          ListItemNode,
-          QuoteNode,
-          CodeNode,
-          CodeHighlightNode,
-          TableNode,
-          TableCellNode,
-          TableRowNode,
-          LinkNode,
-          TemplateNode,
-          CollapsibleContainerNode,
-          CollapsibleContentNode,
-          CollapsibleTitleNode,
-          UneditableParagraphNode,
-        ],
-        onError: (error: Error) => {
-          console.error(error);
-        },
-      }),
-      [promptTemplate]
-    );
-    return (
-      <LexicalComposer key={promptTemplate} initialConfig={config}>
-        <div
-          className={`flex flex-col border shadow rounded-lg prose max-w-none`}
-        >
-          {!isDisabled && <ToolbarPlugin />}
+export const Editor = ({
+  inputs,
+  template,
+  inputValues,
+  editorClassName,
+  isDisabled = false,
+  isLLM = false,
+  placeholderText = "Enter some text...",
+  ref,
+}: {
+  inputs?: string[];
+  template?: string;
+  inputValues?: Record<string, any>;
+  editorClassName?: string;
+  isDisabled?: boolean;
+  isLLM?: boolean;
+  placeholderText?: string;
+  ref?: Ref<LexicalEditor>;
+}) => {
+  const loadContent = () => {
+    // 'empty' editor
+    const value =
+      '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
 
-          <div className='relative'>
-            <RichTextPlugin
-              contentEditable={
-                <ContentEditable
-                  id='prompt-template'
-                  className='focus:outline-none w-full px-8 py-4 h-[500px] overflow-auto relative'
-                />
-              }
-              placeholder={
-                <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
-                  Enter some text...
-                </p>
-              }
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-            <HistoryPlugin />
-          </div>
-          <EditorRefPlugin
-            editorRef={
-              ref as
-                | ((instance: LexicalEditor | null) => void)
-                | RefObject<LexicalEditor | null | undefined>
+    return value;
+  };
+  const editorState = template
+    ? () => $convertFromMarkdownString(template, PLAYGROUND_TRANSFORMERS)
+    : loadContent();
+  const config = useMemo(
+    () => ({
+      namespace: "editor",
+      editorState,
+      theme: exampleTheme,
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        CodeHighlightNode,
+        TableNode,
+        TableCellNode,
+        TableRowNode,
+        LinkNode,
+        TemplateNode,
+        CollapsibleContainerNode,
+        CollapsibleContentNode,
+        CollapsibleTitleNode,
+        UneditableParagraphNode,
+      ],
+      onError: (error: Error) => {
+        console.error(error);
+      },
+    }),
+    [template]
+  );
+  return (
+    <LexicalComposer key={template} initialConfig={config}>
+      <div
+        className={`flex flex-col border shadow rounded-lg prose max-w-none`}
+      >
+        {!isDisabled && <ToolbarPlugin isLLM={isLLM} />}
+
+        <div className='relative'>
+          <RichTextPlugin
+            contentEditable={
+              <ContentEditable
+                id='prompt-template'
+                className={cn(
+                  "focus:outline-none w-full px-8 py-4 h-[500px] overflow-auto relative",
+                  editorClassName
+                )}
+              />
             }
+            placeholder={
+              <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
+                {placeholderText}
+              </p>
+            }
+            ErrorBoundary={LexicalErrorBoundary}
           />
-          <ListPlugin />
-          <LinkPlugin />
-          {inputs && (
-            <TemplatePlugin inputs={inputs} inputValues={inputValues} />
-          )}
-          {inputs && (
-            <TemplateSuggestionPlugin
-              inputs={inputs}
-              inputValues={inputValues}
-            />
-          )}
-          <CodeHighlightPlugin />
-          <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-          <CollapsiblePlugin />
-          <TabIndentationPlugin />
-          <ClearEditorPlugin />
-          <ActionsPlugin isDisabled={isDisabled} />
+          <HistoryPlugin />
         </div>
-      </LexicalComposer>
-    );
-  }
-);
+        <EditorRefPlugin
+          editorRef={
+            ref as
+              | ((instance: LexicalEditor | null) => void)
+              | RefObject<LexicalEditor | null | undefined>
+          }
+        />
+        <ListPlugin />
+        <LinkPlugin />
+        {inputs && inputValues !== undefined && (
+          <TemplatePlugin inputs={inputs} inputValues={inputValues} />
+        )}
+        {inputs && inputValues !== undefined && (
+          <TemplateSuggestionPlugin inputs={inputs} inputValues={inputValues} />
+        )}
+        <CodeHighlightPlugin />
+        <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+        <CollapsiblePlugin />
+        <TabIndentationPlugin />
+        <ClearEditorPlugin />
+        {isLLM && <ActionsPlugin isDisabled={isDisabled} />}
+      </div>
+    </LexicalComposer>
+  );
+};
