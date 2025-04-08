@@ -10,8 +10,8 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
-from ..models import FunctionTable, SpanTable
-from ..schemas import SpanCreate
+from ..models import FunctionTable, SpanTable, SpanTagLink
+from ..schemas import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
 
 
@@ -79,6 +79,41 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
         ).one_or_none()
+
+    def update_tags(self, uuid: UUID, span_update: SpanUpdate) -> SpanTable:
+        """Updates a record based on the uuid, efficiently syncing with span_update.tags"""
+        record_table = self.find_record_by_uuid(uuid)
+
+        # Only update tags if span_update.tags is not None
+        if span_update.tags is not None:
+            # Get existing tag links
+            existing_links = self.session.exec(
+                select(SpanTagLink).where(SpanTagLink.span_uuid == uuid)
+            ).all()
+
+            existing_tag_uuids = {link.tag_uuid for link in existing_links}
+
+            new_tag_uuids = {tag.uuid for tag in span_update.tags}
+
+            to_add = new_tag_uuids - existing_tag_uuids
+            to_remove = existing_tag_uuids - new_tag_uuids
+
+            if to_remove:
+                delete_statement = delete(SpanTagLink).where(
+                    SpanTagLink.span_uuid == uuid,  # pyright: ignore [reportArgumentType]
+                    SpanTagLink.tag_uuid.in_(to_remove),  # type: ignore
+                )
+                self.session.connection().execute(delete_statement)
+
+            # Add links that need to be added
+            for tag_uuid in to_add:
+                new_link = SpanTagLink(
+                    span_uuid=uuid, tag_uuid=tag_uuid, created_by=self.user.uuid
+                )
+                self.session.add(new_link)
+
+        self.session.flush()
+        return record_table
 
     def _get_date_trunc(self, timeframe: TimeFrame) -> TextClause | None:
         """Get the appropriate date truncation for the timeframe"""

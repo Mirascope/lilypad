@@ -7,23 +7,38 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
+import { CheckIcon } from "@radix-ui/react-icons";
+import { Emoji } from "frimousse";
+import { SmileIcon } from "lucide-react";
 import { useState } from "react";
 
+// You can use this generic type to customize the item type
+export interface ComboboxItem {
+  value: string;
+  label: string;
+}
+
 interface ComboboxBaseProps {
-  items: { value: string; label: string }[];
+  items: ComboboxItem[];
   popoverText?: string;
   helperText?: string;
   emptyText?: string;
   disabled?: boolean;
   disableAdd?: boolean;
   customTrigger?: React.ReactNode;
+  withEmoji?: boolean; // Flag to enable emoji picker
+  onAddItem?: (value: string) => void; // Handler for adding new items
+  onEmojiSelect?: (emoji: Emoji) => void; // Handler for emoji selection
+  // Add controlled open state props
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface SingleComboboxProps extends ComboboxBaseProps {
@@ -45,16 +60,34 @@ export function Combobox({
   value,
   onChange,
   customTrigger,
+  withEmoji = false,
+  onEmojiSelect,
   popoverText = "Select item...",
   helperText = "Search item...",
   emptyText = "No item found.",
   disabled = false,
   disableAdd = false,
   multiple = false,
+  onAddItem,
+  // Add controlled open state props with defaults
+  open: controlledOpen,
+  onOpenChange,
 }: ComboboxProps) {
-  // Type guard to help TypeScript understand our types better
   const isMultiple = multiple === true;
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen = controlledOpen ?? internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
+  const [emojiIsOpen, setEmojiIsOpen] = useState(false);
+
   const [inputValue, setInputValue] = useState("");
 
   // Ensure value is always an array for multiple select
@@ -66,6 +99,15 @@ export function Combobox({
       const multipleValue = (value as string[]) || [];
       const newValue = [...multipleValue];
 
+      // Check if the value exists in the items array
+      const isExistingValue = items.some((item) => item.value === currentValue);
+
+      // If it's a new item and we have an onAddItem handler
+      if (!isExistingValue && onAddItem && !newValue.includes(currentValue)) {
+        onAddItem(currentValue);
+        return; // Return early as the new item will be added to the list through API
+      }
+
       if (newValue.includes(currentValue)) {
         (onChange as (value: string[]) => void)(
           newValue.filter((v) => v !== currentValue)
@@ -73,8 +115,6 @@ export function Combobox({
       } else {
         (onChange as (value: string[]) => void)([...newValue, currentValue]);
       }
-
-      // Don't close when handling multiple selections
     } else {
       // Type assertion is safe here because we've ensured multiple is false
       (onChange as (value: string) => void)(
@@ -111,15 +151,26 @@ export function Combobox({
     }
   };
 
+  // Handle emoji selection by appending it to the current input value
+  const handleEmojiSelect = (emojiData: Emoji) => {
+    const updatedInput = inputValue + emojiData.emoji;
+    setInputValue(updatedInput);
+
+    // Also call the external handler if provided
+    if (onEmojiSelect) {
+      onEmojiSelect(emojiData);
+    }
+  };
+
   return (
     <div className='flex flex-col gap-2'>
-      <Popover open={disabled ? false : open} onOpenChange={setOpen}>
+      <Popover open={disabled ? false : isOpen} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           {customTrigger ?? (
             <Button
               variant='outline'
               role='combobox'
-              aria-expanded={open}
+              aria-expanded={isOpen}
               disabled={disabled}
               className={cn(
                 "w-full justify-between",
@@ -127,7 +178,6 @@ export function Combobox({
               )}
             >
               {getDisplayValue()}
-              <CaretSortIcon className='ml-2 h-4 w-4 shrink-0 opacity-50' />
             </Button>
           )}
         </PopoverTrigger>
@@ -142,6 +192,26 @@ export function Combobox({
               value={inputValue}
               onValueChange={setInputValue}
               className='h-9'
+              {...(withEmoji && {
+                customContent: (
+                  <Popover open={emojiIsOpen} onOpenChange={setEmojiIsOpen}>
+                    <PopoverTrigger asChild>
+                      <SmileIcon className='cursor-pointer h-4 w-4 opacity-70 hover:opacity-100' />
+                    </PopoverTrigger>
+                    <PopoverContent className='w-fit p-0'>
+                      <EmojiPicker
+                        className='h-[342px]'
+                        onEmojiSelect={(emojiData) => {
+                          handleEmojiSelect(emojiData);
+                          setEmojiIsOpen(false);
+                        }}
+                      >
+                        <EmojiPickerContent />
+                      </EmojiPicker>
+                    </PopoverContent>
+                  </Popover>
+                ),
+              })}
             />
             <CommandList>
               <CommandEmpty>{emptyText}</CommandEmpty>
@@ -206,7 +276,7 @@ export function Combobox({
                         className={cn(
                           "mr-2 h-4 w-4",
                           isMultiple
-                            ? (value as string[]).includes(inputValue)
+                            ? safeValue.includes(inputValue)
                               ? "opacity-100"
                               : "opacity-0"
                             : value === inputValue

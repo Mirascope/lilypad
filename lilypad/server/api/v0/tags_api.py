@@ -22,6 +22,15 @@ async def get_tags(
     return tag_service.find_all_records()
 
 
+@tags_router.get("/projects/{project_uuid}/tags", response_model=Sequence[TagPublic])
+async def get_tags_by_project(
+    project_uuid: UUID,
+    tag_service: Annotated[TagService, Depends(TagService)],
+) -> Sequence[TagTable]:
+    """Get all tags by project."""
+    return tag_service.find_all_records(project_uuid=project_uuid)
+
+
 @tags_router.get("/tags/{tag_uuid}", response_model=TagPublic)
 async def get_tag(
     tag_uuid: UUID,

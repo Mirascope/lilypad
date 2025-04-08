@@ -1,5 +1,6 @@
 import { ArgsCards } from "@/components/ArgsCards";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { TagPopover } from "@/components/TagPopover";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,6 +60,20 @@ export const LilypadPanel = ({
       <Typography variant='h3'>
         {span.display_name} {versionNum && `v${versionNum}`}
       </Typography>
+      <div className='flex gap-1 flex-wrap'>
+        {span.tags?.map((tag) => (
+          <Badge pill variant='outline' size='lg' key={tag.uuid}>
+            {tag.name}
+          </Badge>
+        ))}
+        {span.project_uuid && (
+          <TagPopover
+            spanUuid={span.uuid}
+            projectUuid={span.project_uuid}
+            key='add-tag'
+          />
+        )}
+      </div>
       <div className='flex gap-1 flex-wrap'>
         {span.input_tokens != 0 &&
           span.input_tokens &&
@@ -142,28 +157,3 @@ export const LilypadPanel = ({
     </div>
   );
 };
-
-// const TagPopover = () => {
-//   const { data: tags } = useSuspenseQuery(tagsQueryOptions());
-//   const createTag = useCreateTagMutation();
-//   const [spanTags, setSpanTags] = useState<string[] | null>(null);
-//   const handleTagChange = (values: string[]) => {
-//     setSpanTags(values);
-//   };
-//   return (
-//     <Combobox
-//       multiple={true}
-//       customTrigger={
-//         <Button size='icon' variant='outline'>
-//           <Plus />
-//         </Button>
-//       }
-//       items={tags.map((tag) => ({
-//         value: tag.uuid,
-//         label: tag.name,
-//       }))}
-//       value={spanTags ?? []}
-//       onChange={(values: string[]) => setSpanTags(values)}
-//     />
-//   );
-// };

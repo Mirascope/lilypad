@@ -25,3 +25,4 @@ class TagPublic(_TagBase):
 
     uuid: UUID
     created_at: datetime
+    organization_uuid: UUID

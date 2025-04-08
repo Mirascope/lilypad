@@ -13,22 +13,31 @@ const badgeVariants = {
   size: {
     default: "px-2.5 py-0.5 text-xs",
     sm: "px-2 py-0.5 text-[10px]",
+    lg: "px-3 py-1 text-sm",
+  },
+  shape: {
+    default: "rounded-md",
+    pill: "rounded-full",
   },
 };
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: keyof typeof badgeVariants.variant;
   size?: keyof typeof badgeVariants.size;
+  pill?: boolean;
 }
 
 function Badge({
   className = "",
   variant = "default",
   size = "default",
+  pill = false,
   ...props
 }: BadgeProps) {
-  const baseClasses =
-    "inline-flex items-center rounded-md border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
+  const shapeClass = pill
+    ? badgeVariants.shape.pill
+    : badgeVariants.shape.default;
+  const baseClasses = `inline-flex items-center ${shapeClass} border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
   const variantClasses = badgeVariants.variant[variant];
   const sizeClasses = badgeVariants.size[size];
 
