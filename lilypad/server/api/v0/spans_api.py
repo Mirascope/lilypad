@@ -32,9 +32,7 @@ async def update_span(
     span_service: Annotated[SpanService, Depends(SpanService)],
 ) -> SpanTable:
     """Update span by uuid."""
-    return span_service.update_record_by_uuid(
-        span_uuid, span_update.model_dump(exclude_unset=True)
-    )
+    return span_service.update_tags(span_uuid, span_update)
 
 
 @spans_router.get(

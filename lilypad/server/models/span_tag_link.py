@@ -4,7 +4,12 @@ from uuid import UUID
 
 from sqlmodel import Field, SQLModel
 
-from .table_names import SPAN_TABLE_NAME, SPAN_TAG_LINK_TABLE_NAME, TAG_TABLE_NAME
+from .table_names import (
+    SPAN_TABLE_NAME,
+    SPAN_TAG_LINK_TABLE_NAME,
+    TAG_TABLE_NAME,
+    USER_TABLE_NAME,
+)
 
 
 class SpanTagLink(SQLModel, table=True):
@@ -16,4 +21,7 @@ class SpanTagLink(SQLModel, table=True):
     )
     tag_uuid: UUID | None = Field(
         default=None, foreign_key=f"{TAG_TABLE_NAME}.uuid", primary_key=True
+    )
+    created_by: UUID = Field(
+        index=True, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
     )

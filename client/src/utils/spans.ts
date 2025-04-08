@@ -3,9 +3,14 @@ import {
   AggregateMetrics,
   SpanMoreDetails,
   SpanPublic,
+  SpanUpdate,
   TimeFrame,
 } from "@/types/types";
-import { queryOptions } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 export const fetchSpan = async (spanUuid: string) => {
   return (await api.get<SpanMoreDetails>(`/spans/${spanUuid}`)).data;
@@ -37,6 +42,10 @@ export const fetchAggregatesByProjectUuid = async (
       `/projects/${projectUuid}/spans/metadata?time_frame=${timeFrame}`
     )
   ).data;
+};
+
+export const patchSpan = async (spanUuid: string, spanUpdate: SpanUpdate) => {
+  return (await api.patch<SpanPublic>(`/spans/${spanUuid}`, spanUpdate)).data;
 };
 
 export const fetchAggregatesByFunctionUuid = async (
@@ -88,3 +97,21 @@ export const aggregatesByFunctionQueryOptions = (
     queryFn: () =>
       fetchAggregatesByFunctionUuid(projectUuid, functionUuid, timeFrame),
   });
+
+export const useUpdateSpanMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      spanUuid,
+      spanUpdate,
+    }: {
+      spanUuid: string;
+      spanUpdate: SpanUpdate;
+    }) => await patchSpan(spanUuid, spanUpdate),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["spans"],
+      });
+    },
+  });
+};

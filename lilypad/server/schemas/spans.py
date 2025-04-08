@@ -644,6 +644,7 @@ class SpanMoreDetails(BaseModel):
         return SpanMoreDetails.model_validate(
             {
                 **span.model_dump(),
+                "tags": span.tags,
                 "display_name": display_name,
                 "model": attributes.get(
                     gen_ai_attributes.GEN_AI_REQUEST_MODEL, "unknown"

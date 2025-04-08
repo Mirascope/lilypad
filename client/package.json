@@ -56,6 +56,7 @@
     "cmdk": "^1.0.4",
     "diff": "^7.0.0",
     "eventsource": "^3.0.5",
+    "frimousse": "^0.2.0",
     "highlight.js": "^11.10.0",
     "highlightjs-line-numbers.js": "2.9.0",
     "json-edit-react": "1.22.2",

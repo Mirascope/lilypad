@@ -1006,6 +1006,11 @@ export interface TagPublic {
    * @format date-time
    */
   created_at: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
 }
 
 /**

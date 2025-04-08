@@ -140,6 +140,9 @@ importers:
       eventsource:
         specifier: ^3.0.5
         version: 3.0.5
+      frimousse:
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.0.0)
       highlight.js:
         specifier: ^11.10.0
         version: 11.11.1
@@ -2118,6 +2121,11 @@ packages:
 
   fraction.js@4.3.7:
     resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
+
+  frimousse@0.2.0:
+    resolution: {integrity: sha512-viSrsVQWKR4Q7xzC0lkx3Wu9i1+IHrth0QXn0nlIIJXpltwUnjkGXSTuoW7WHI5aJ4z49WR8E/pyQizFjlNtTA==}
+    peerDependencies:
+      react: ^18 || ^19
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -5553,6 +5561,10 @@ snapshots:
       mime-types: 2.1.35
 
   fraction.js@4.3.7: {}
+
+  frimousse@0.2.0(react@19.0.0):
+    dependencies:
+      react: 19.0.0
 
   fsevents@2.3.3:
     optional: true
