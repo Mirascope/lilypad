@@ -5,10 +5,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from .....server._utils import (
-    validate_api_key_project_strict,
+from ...schemas.experiments import (
+    ExperimentDefinitionPublic,
+    ExperimentRunCreate,
+    ExperimentRunPublic,
+    ExperimentRunSummaryPublic,
 )
-from ...schemas.experiments import ExperimentRunCreate, ExperimentRunPublic
 from ...services.experiments import ExperimentDefinitionService, ExperimentRunService
 
 experiments_router = APIRouter()
@@ -23,7 +25,6 @@ experiments_router = APIRouter()
 async def record_experiment_run(
     project_uuid: UUID,
     run_data: ExperimentRunCreate,
-    _match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     definition_service: Annotated[
         ExperimentDefinitionService, Depends(ExperimentDefinitionService)
     ],
@@ -49,17 +50,38 @@ async def record_experiment_run(
 
 
 @experiments_router.get(
-    "/experiments/runs/{run_uuid}",
-    response_model=ExperimentRunPublic,
-    summary="Get details of a specific experiment run (EE)",
+    "/projects/{project_uuid}/experiments/{definition_uuid}/runs",
+    response_model=list[ExperimentRunSummaryPublic],
+    summary="List experiment runs for a definition",
 )
-async def get_experiment_run(
-    run_uuid: UUID,
+async def list_experiment_runs(
     run_service: Annotated[ExperimentRunService, Depends(ExperimentRunService)],
-) -> ExperimentRunPublic:
-    """Retrieves details of a specific experiment run, including its sample results (EE)."""
-    run_with_results = run_service.find_run_with_results(run_uuid)
-    return ExperimentRunPublic.model_validate(run_with_results)
+    project_uuid: UUID,
+    definition_uuid: UUID,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[ExperimentRunSummaryPublic]:
+    """Retrieves a list of experiment runs associated with a specific experiment definition."""
+    runs = run_service.find_runs_by_definition_uuid(
+        definition_uuid=definition_uuid, limit=limit, offset=offset
+    )
+    return [ExperimentRunSummaryPublic.model_validate(run) for run in runs]
+
+
+@experiments_router.get(
+    "/projects/{project_uuid}/experiments",
+    response_model=list[ExperimentDefinitionPublic],
+    summary="List experiment definitions in a project",
+)
+async def list_experiment_definitions(
+    project_uuid: UUID,
+    definition_service: Annotated[
+        ExperimentDefinitionService, Depends(ExperimentDefinitionService)
+    ],
+) -> list[ExperimentDefinitionPublic]:
+    """Retrieves a list of all experiment definitions within the specified project."""
+    definitions = definition_service.find_all_records(project_uuid=project_uuid)
+    return [ExperimentDefinitionPublic.model_validate(d) for d in definitions]
 
 
 __all__ = ["experiments_router"]

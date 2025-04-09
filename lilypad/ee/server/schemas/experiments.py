@@ -47,8 +47,16 @@ class ExperimentRunCreate(BaseModel):
     samples: list[SampleResultCreate]
 
 
+class ExperimentRunSummaryPublic(ExperimentRunBase):  # NEW Schema for lists
+    """Public schema for experiment run summaries (excluding detailed samples)."""
+
+    uuid: UUID
+    organization_uuid: UUID
+    created_at: datetime
+
+
 class ExperimentRunPublic(ExperimentRunBase):
-    """Public schema for experiment runs."""
+    """Public schema for a single experiment run including sample results."""
 
     uuid: UUID
     organization_uuid: UUID
