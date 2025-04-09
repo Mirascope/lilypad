@@ -18,6 +18,7 @@ from .table_names import (
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
+    from .comments import CommentTable
     from .functions import FunctionTable
     from .tags import TagTable
 
@@ -79,6 +80,11 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
     )
     annotations: list["AnnotationTable"] = Relationship(
+        back_populates="span",
+        sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
+        cascade_delete=True,
+    )
+    comments: list["CommentTable"] = Relationship(
         back_populates="span",
         sa_relationship_kwargs={"lazy": "selectin"},  # codespell:ignore selectin
         cascade_delete=True,

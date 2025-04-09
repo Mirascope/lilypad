@@ -2,6 +2,7 @@ import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { OrgSettings } from "@/components/OrgSettings";
+import { TagSettings } from "@/components/TagSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -43,6 +44,15 @@ const Settings = () => {
       component: (
         <Suspense fallback={<LilypadLoading />}>
           <OrgSettings />
+        </Suspense>
+      ),
+    },
+    {
+      label: "Tags",
+      value: "tags",
+      component: (
+        <Suspense fallback={<LilypadLoading />}>
+          <TagSettings />
         </Suspense>
       ),
     },

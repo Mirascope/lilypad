@@ -28,6 +28,7 @@ import {
   getSortedRowModel,
   Row,
   SortingState,
+  Table as TanStackTable,
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -48,7 +49,7 @@ interface GenericDataTableProps<T> {
   filterColumn?: string;
   getRowCanExpand?: (row: T) => boolean;
   getSubRows?: (row: T) => T[];
-  DetailPanel?: React.ComponentType<{ data: T }>;
+  DetailPanel?: React.ComponentType<{ data: T; path?: string }>;
   onRowClick?: (row: T) => void;
   defaultPanelSize?: number;
   virtualizerRef?: React.RefObject<HTMLDivElement | null>;
@@ -56,12 +57,13 @@ interface GenericDataTableProps<T> {
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
-  customControls?: (row: Row<T>[]) => React.ReactNode;
+  customControls?: (table: TanStackTable<T>) => React.ReactNode;
   defaultSelectedRow?: T | null;
   selectRow?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
   onDetailPanelClose?: () => void;
+  path?: string;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -84,6 +86,7 @@ export const DataTable = <T extends { uuid: string }>({
   customGetRowId = undefined,
   customExpanded = {},
   onDetailPanelClose,
+  path,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
     customExpanded
@@ -187,22 +190,24 @@ export const DataTable = <T extends { uuid: string }>({
       >
         <div className='flex items-center rounded-md gap-2'>
           {filterColumn && (
-            <Input
-              placeholder='Filter...'
-              value={
-                (table.getColumn(filterColumn)?.getFilterValue() as string) ??
-                ""
-              }
-              onChange={(event) => {
-                onFilterChange?.(event.target.value);
-                table
-                  .getColumn(filterColumn)
-                  ?.setFilterValue(event.target.value);
-              }}
-              className='max-w-sm'
-            />
+            <>
+              <Input
+                placeholder='Filter...'
+                value={
+                  (table.getColumn(filterColumn)?.getFilterValue() as string) ??
+                  ""
+                }
+                onChange={(event) => {
+                  onFilterChange?.(event.target.value);
+                  table
+                    .getColumn(filterColumn)
+                    ?.setFilterValue(event.target.value);
+                }}
+                className='max-w-sm'
+              />
+            </>
           )}
-          {customControls?.(table.getSelectedRowModel().rows)}
+          {customControls?.(table)}
           {!hideColumnButton && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -299,12 +304,12 @@ export const DataTable = <T extends { uuid: string }>({
           <ResizablePanel
             defaultSize={defaultPanelSize}
             order={2}
-            className='flex flex-col overflow-hidden h-full p-4 gap-4'
+            className='flex flex-col h-full p-4'
             collapsible={true}
             minSize={12}
             onCollapse={onCollapse}
           >
-            <DetailPanel data={detailRow} />
+            <DetailPanel data={detailRow} path={path} />
           </ResizablePanel>
         </>
       )}

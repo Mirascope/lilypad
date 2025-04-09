@@ -8,6 +8,9 @@ import {
 
 export const fetchTags = async () => (await api.get<TagPublic[]>("/tags")).data;
 
+export const fetchTagsByProject = async (projectUuid: string) =>
+  (await api.get<TagPublic[]>(`/projects/${projectUuid}/tags`)).data;
+
 export const fetchTag = async (tagUuid: string) => {
   return (await api.get<TagPublic>(`/tags/${tagUuid}`)).data;
 };
@@ -34,6 +37,12 @@ export const tagQueryOptions = (tagUuid: string) =>
   queryOptions({
     queryKey: ["tags", tagUuid],
     queryFn: () => fetchTag(tagUuid),
+  });
+
+export const tagsByProjectsQueryOptions = (projectUuid: string) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "tags"],
+    queryFn: () => fetchTagsByProject(projectUuid),
   });
 
 export const useCreateTagMutation = () => {

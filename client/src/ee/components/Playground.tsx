@@ -1,4 +1,3 @@
-import { Editor } from "@/ee/components/Editor";
 import { AddCardButton } from "@/components/AddCardButton";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Editor } from "@/ee/components/Editor";
 import {
   EditorParameters,
   usePlaygroundContainer,
@@ -41,7 +41,7 @@ import { TypedInput } from "@/ee/utils/input-utils";
 import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
 import { X } from "lucide-react";
-import {Dispatch, SetStateAction, useEffect} from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";
 
 export const Playground = ({
@@ -107,8 +107,8 @@ export const Playground = ({
 
   return (
     <Form {...methods}>
-      <div className="h-full">
-        <div className="flex flex-col h-full">
+      <div className='h-full'>
+        <div className='flex flex-col h-full'>
           <form
             id={`playground-form-${version?.uuid ?? Math.random().toString(36).substring(7)}`}
             onSubmit={methods.handleSubmit(onSubmit)}
@@ -139,8 +139,9 @@ export const Playground = ({
                 inputs={inputs.map((input) => input.key)}
                 inputValues={inputValues}
                 ref={editorRef}
-                promptTemplate={version?.prompt_template ?? ""}
+                template={version?.prompt_template ?? ""}
                 isDisabled={isRunLoading}
+                isLLM={true}
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
@@ -175,7 +176,7 @@ const CallParamsDrawer = ({
         <Button
           className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
           variant='outline'
-           disabled={isDisabled}
+          disabled={isDisabled}
         >
           Configure Call Params
         </Button>
@@ -236,10 +237,9 @@ const InputsDrawer = ({
 
   const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     if (!validateInputs(methods, inputs)) {
-        return;
+      return;
     }
     await methods.handleSubmit((data) => onSubmit(data, event))();
-
   };
 
   useEffect(() => {
@@ -254,7 +254,7 @@ const InputsDrawer = ({
         <Button
           className='border border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
           variant='outline'
-           disabled={isDisabled}
+          disabled={isDisabled}
         >
           Inputs
         </Button>
@@ -291,7 +291,7 @@ const InputsDrawer = ({
 };
 
 const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
-   const methods = useFormContext<EditorParameters>();
+  const methods = useFormContext<EditorParameters>();
   const { fields, append, remove } = useFieldArray<EditorParameters>({
     control: methods.control,
     name: "inputs",
@@ -305,23 +305,23 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
           const type = methods.watch(`inputs.${index}.type`);
           return (
             <Card key={field.id} className='w-full flex-shrink-0 relative'>
-               {!isDisabled && (
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => remove(index)}
-                    className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
-                  >
-                    <X className='h-4 w-4' />
-                  </Button>
+              {!isDisabled && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  onClick={() => remove(index)}
+                  className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
+                >
+                  <X className='h-4 w-4' />
+                </Button>
               )}
               <CardContent className='pt-6 space-y-4'>
                 <div className='w-full'>
                   <FormField
                     control={methods.control}
                     name={`inputs.${index}.key`}
-                    rules={{ required: 'Argument name is required' }}
+                    rules={{ required: "Argument name is required" }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Args</FormLabel>
@@ -341,9 +341,9 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
                   <FormField
                     control={methods.control}
                     name={`inputs.${index}.type`}
-                     rules={{ required: 'Type is required' }}
+                    rules={{ required: "Type is required" }}
                     render={({ field }) => (
-                      <FormItem className="flex-1">
+                      <FormItem className='flex-1'>
                         <FormLabel>Type</FormLabel>
                         <FormControl>
                           <Select
@@ -367,11 +367,11 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
                       </FormItem>
                     )}
                   />
-                  <div className="flex-1">
-                      <TypedInput<EditorParameters>
-                        name={`inputs.${index}.value`}
-                        type={type as any}
-                      />
+                  <div className='flex-1'>
+                    <TypedInput<EditorParameters>
+                      name={`inputs.${index}.value`}
+                      type={type as any}
+                    />
                   </div>
                 </div>
               </CardContent>
