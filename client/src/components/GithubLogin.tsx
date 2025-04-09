@@ -1,7 +1,10 @@
+import { useAuth } from "@/auth";
 import { Button, ButtonProps } from "@/components/ui/button";
+import { UserConsentDialog } from "@/components/UserConsentDialog";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/constants";
 import { settingsQueryOptions } from "@/utils/settings";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 interface GithubButtonProps extends ButtonProps {
   iconSize?: number;
   iconColor?: string;
@@ -34,6 +37,11 @@ const GithubButton = ({
 
 export const GithubLogin = ({ redirect }: { redirect?: string }) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const { loadPrivacyPolicyVersion, loadTermsVersion } = useAuth();
+  const showModal =
+    loadPrivacyPolicyVersion() !== PRIVACY_VERSION ||
+    loadTermsVersion() !== TERMS_VERSION;
+  const [open, setOpen] = useState<boolean>(false);
   const getAuthUrl = () => {
     const githubAuthUrl = "https://github.com/login/oauth/authorize";
     const params = new URLSearchParams({
@@ -51,13 +59,27 @@ export const GithubLogin = ({ redirect }: { redirect?: string }) => {
     params.append("state", state);
     return `${githubAuthUrl}?${params.toString()}`;
   };
+  const handleGithubLogin = () => {
+    window.location.href = getAuthUrl();
+  };
   return (
-    <GithubButton
-      onClick={() => {
-        window.location.href = getAuthUrl();
-      }}
-    >
-      Login with GitHub
-    </GithubButton>
+    <>
+      <GithubButton
+        onClick={() => {
+          if (showModal) {
+            setOpen(true);
+          } else {
+            handleGithubLogin();
+          }
+        }}
+      >
+        Login with GitHub
+      </GithubButton>
+      <UserConsentDialog
+        open={open}
+        setOpen={setOpen}
+        onClick={handleGithubLogin}
+      />
+    </>
   );
 };

@@ -6,11 +6,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Typography } from "@/components/ui/typography";
 
 interface LoginSearchParam {
   redirect?: string;
@@ -35,7 +33,6 @@ export const Route = createFileRoute("/auth/login")({
 
 const LoginComponent = () => {
   const { redirect } = Route.useSearch();
-
   return (
     <div className='flex items-center justify-center h-screen'>
       <Card className='w-[600px] m-0'>
@@ -47,27 +44,6 @@ const LoginComponent = () => {
           <GithubLogin redirect={redirect} />
           <GoogleLogin redirect={redirect} />
         </CardContent>
-        <CardFooter>
-          <Typography variant='p' affects='muted'>
-            By signing in, you agree to our{" "}
-            <a
-              href='https://mirascope.com/terms/service'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a
-              href='https://mirascope.com/privacy'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              Privacy Policy
-            </a>
-            .
-          </Typography>
-        </CardFooter>
       </Card>
     </div>
   );
