@@ -1,6 +1,7 @@
 """Services for the `lilypad` server."""
 
 from .api_keys import APIKeyService
+from .comments import CommentService
 from .deployments import DeploymentService
 from .environments import EnvironmentService
 from .functions import FunctionService
@@ -14,6 +15,7 @@ from .users import UserService
 
 __all__ = [
     "APIKeyService",
+    "CommentService",
     "DeploymentService",
     "EnvironmentService",
     "FunctionService",

@@ -68,3 +68,35 @@ export const formatDate = (utcDateString?: string, dateOnly = true): string => {
     timeZoneName: "short",
   }).format(date);
 };
+
+export const formatRelativeTime = (utcDateString?: string): string => {
+  if (!utcDateString) {
+    return "";
+  }
+
+  const date = new Date(utcDateString);
+  const now = new Date();
+
+  // Time difference in milliseconds
+  const diffMs = now.getTime() - date.getTime();
+
+  // Convert to different time units
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30); // Approximate
+
+  // Choose appropriate unit
+  if (diffMinutes < 60) {
+    return `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  } else if (diffDays < 7) {
+    return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+  } else if (diffWeeks < 5) {
+    return `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
+  } else {
+    return `${diffMonths} ${diffMonths === 1 ? "month" : "months"} ago`;
+  }
+};

@@ -206,6 +206,76 @@ export interface AnnotationUpdate {
 }
 
 /**
+ * CommentCreate
+ * Comment Create Model.
+ */
+export interface CommentCreate {
+  /** Text */
+  text: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+  /** Parent Comment Uuid */
+  parent_comment_uuid?: string | null;
+}
+
+/**
+ * CommentPublic
+ * Comment Public Model.
+ */
+export interface CommentPublic {
+  /** Text */
+  text: string;
+  /**
+   * User Uuid
+   * @format uuid
+   */
+  user_uuid: string;
+  /**
+   * Span Uuid
+   * @format uuid
+   */
+  span_uuid: string;
+  /** Parent Comment Uuid */
+  parent_comment_uuid?: string | null;
+  /** Updated At */
+  updated_at?: string | null;
+  /**
+   * Is Edited
+   * @default false
+   */
+  is_edited?: boolean;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+  /**
+   * Child Comments
+   * @default []
+   */
+  child_comments?: CommentPublic[];
+}
+
+/**
+ * CommentUpdate
+ * Comment Update Model.
+ */
+export interface CommentUpdate {
+  /** Text */
+  text?: string | null;
+  /** Is Edited */
+  is_edited?: boolean | null;
+}
+
+/**
  * CommonCallParams
  * Common parameters shared across LLM providers.
  *
