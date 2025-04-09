@@ -34,19 +34,18 @@ export const blockTypeToBlockName: Record<string, string> = {
   bullet: "Bulleted List",
   number: "Numbered List",
   code: "Code Block",
-  system: "System",
-  assistant: "Assistant",
-  user: "User",
 };
 
 interface BlockTypeDropdownProps {
   blockType: keyof typeof blockTypeToBlockName;
   isEditable: boolean;
+  isLLM?: boolean;
 }
 
 export const BlockTypeDropdown = ({
   blockType,
   isEditable,
+  isLLM = false,
 }: BlockTypeDropdownProps) => {
   const [editor] = useLexicalComposerContext();
 
@@ -98,6 +97,12 @@ export const BlockTypeDropdown = ({
   const formatSection = (role: string) => {
     editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, role);
   };
+
+  if (isLLM) {
+    blockTypeToBlockName.system = "System";
+    blockTypeToBlockName.assistant = "Assistant";
+    blockTypeToBlockName.user = "User";
+  }
 
   return (
     <Select

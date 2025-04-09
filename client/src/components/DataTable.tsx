@@ -304,7 +304,7 @@ export const DataTable = <T extends { uuid: string }>({
           <ResizablePanel
             defaultSize={defaultPanelSize}
             order={2}
-            className='flex flex-col overflow-hidden h-full p-4 gap-4'
+            className='flex flex-col h-full p-4'
             collapsible={true}
             minSize={12}
             onCollapse={onCollapse}

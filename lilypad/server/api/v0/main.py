@@ -9,6 +9,7 @@ from ....ee.server.api import v0_ee_router
 from ...settings import Settings, get_settings
 from .api_keys_api import api_keys_api
 from .auth import auth_router
+from .comments_api import comments_router
 from .environments_api import environments_router
 from .external_api_keys_api import external_api_key_router
 from .functions_api import functions_router
@@ -37,6 +38,7 @@ api.include_router(external_api_key_router)
 api.include_router(environments_router)
 api.include_router(user_consents_router)
 api.include_router(tags_router)
+api.include_router(comments_router)
 
 
 class SettingsPublic(BaseModel):
