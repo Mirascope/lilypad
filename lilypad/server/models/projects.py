@@ -9,6 +9,9 @@ from .table_names import PROJECT_TABLE_NAME
 
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
+    from ...ee.server.models.experiments import (
+        ExperimentDefinitionTable,
+    )
     from .api_keys import APIKeyTable
     from .deployments import DeploymentTable
     from .functions import FunctionTable
@@ -39,6 +42,10 @@ class ProjectTable(_ProjectBase, BaseOrganizationSQLModel, table=True):
     annotations: list["AnnotationTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
+    experiment_definitions: list["ExperimentDefinitionTable"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+
     deployments: list["DeploymentTable"] = Relationship(
         back_populates="project", cascade_delete=True
     )
