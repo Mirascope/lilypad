@@ -1,7 +1,10 @@
+import { useAuth } from "@/auth";
 import { Button, ButtonProps } from "@/components/ui/button";
+import { UserConsentDialog } from "@/components/UserConsentDialog";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/constants";
 import { settingsQueryOptions } from "@/utils/settings";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 interface GoogleButtonProps extends ButtonProps {
   iconSize?: number;
@@ -104,6 +107,11 @@ const GoogleButton = ({
 
 export const GoogleLogin = ({ redirect }: { redirect?: string }) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const { loadPrivacyPolicyVersion, loadTermsVersion } = useAuth();
+  const showModal =
+    loadPrivacyPolicyVersion() !== PRIVACY_VERSION ||
+    loadTermsVersion() !== TERMS_VERSION;
+  const [open, setOpen] = useState<boolean>(false);
   const getAuthUrl = () => {
     const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth";
     const params = new URLSearchParams({
@@ -124,13 +132,27 @@ export const GoogleLogin = ({ redirect }: { redirect?: string }) => {
     params.append("state", state);
     return `${googleAuthUrl}?${params.toString()}`;
   };
+  const handleGoogleLogin = () => {
+    window.location.href = getAuthUrl();
+  };
   return (
-    <GoogleButton
-      onClick={() => {
-        window.location.href = getAuthUrl();
-      }}
-    >
-      Login with Google
-    </GoogleButton>
+    <>
+      <GoogleButton
+        onClick={() => {
+          if (showModal) {
+            setOpen(true);
+          } else {
+            handleGoogleLogin();
+          }
+        }}
+      >
+        Login with Google
+      </GoogleButton>
+      <UserConsentDialog
+        open={open}
+        setOpen={setOpen}
+        onClick={handleGoogleLogin}
+      />
+    </>
   );
 };
