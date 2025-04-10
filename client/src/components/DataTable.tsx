@@ -129,6 +129,9 @@ export const DataTable = <T extends { uuid: string }>({
     getScrollElement: () => virtualizerRef?.current || null,
     estimateSize: virtualizerOptions.estimateSize ?? (() => 45),
     overscan: virtualizerOptions.overscan ?? 10,
+    // Use container height from options or default to undefined
+    scrollPaddingStart: 0,
+    scrollPaddingEnd: 0,
   });
 
   const toggleRowSelection = (row: T) => {
@@ -181,12 +184,12 @@ export const DataTable = <T extends { uuid: string }>({
   return (
     <ResizablePanelGroup
       direction='horizontal'
-      className='flex-1 rounded-lg w-full'
+      className='flex-1 rounded-lg w-full h-full'
     >
       <ResizablePanel
         defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
-        className='flex flex-col p-2 gap-2'
+        className='flex flex-col p-2 gap-2 h-full'
       >
         <div className='flex items-center rounded-md gap-2'>
           {filterColumn && (
@@ -238,8 +241,15 @@ export const DataTable = <T extends { uuid: string }>({
           )}
         </div>
 
-        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border'>
-          <div ref={virtualizerRef} className='rounded-md flex-1'>
+        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border flex-1'>
+          {/* Adding h-full ensures the table container takes full height */}
+          <div
+            ref={virtualizerRef}
+            className='rounded-md overflow-auto h-full'
+            style={{
+              height: virtualizerOptions.containerHeight || "100%",
+            }}
+          >
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
