@@ -38,7 +38,7 @@ import { useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
-const CommentCards = ({ spanUuid }: { spanUuid: string }) => {
+export const CommentCards = ({ spanUuid }: { spanUuid: string }) => {
   const { data: spanComments } = useSuspenseQuery(
     commentsBySpanQueryOptions(spanUuid)
   );
@@ -300,15 +300,29 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
     </Form>
   );
 };
-
 export const Comment = ({ spanUuid }: { spanUuid: string }) => {
+  return (
+    <>
+      <div className='flex-1 min-h-0'>
+        <CommentCards spanUuid={spanUuid} />
+      </div>
+      <div className='mt-4 flex-shrink-0'>
+        <Separator />
+        <div className='mt-4'>
+          <AddComment spanUuid={spanUuid} />
+        </div>
+      </div>
+    </>
+  );
+};
+export const CommentButton = ({ spanUuid }: { spanUuid: string }) => {
   const [showComments, setShowComments] = useState(false);
   const { data: spanComments } = useSuspenseQuery(
     commentsBySpanQueryOptions(spanUuid)
   );
   return (
     <div className={`flex flex-col ${showComments ? "h-full" : ""}`}>
-      <div className='flex justify-end flex-shrink-0'>
+      <div className='flex-shrink-0'>
         <Button
           size='icon'
           className='h-8 w-8 relative'
@@ -323,19 +337,7 @@ export const Comment = ({ spanUuid }: { spanUuid: string }) => {
           )}
         </Button>
       </div>
-      {showComments && (
-        <>
-          <div className='flex-1 min-h-0'>
-            <CommentCards spanUuid={spanUuid} />
-          </div>
-          <div className='mt-4 flex-shrink-0'>
-            <Separator />
-            <div className='mt-4'>
-              <AddComment spanUuid={spanUuid} />
-            </div>
-          </div>
-        </>
-      )}
+      {showComments && <Comment spanUuid={spanUuid} />}
     </div>
   );
 };

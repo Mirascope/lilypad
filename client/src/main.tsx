@@ -10,7 +10,53 @@ import ReactDOM from "react-dom/client";
 import { AuthProvider, useAuth } from "@/auth";
 import { routeTree } from "./routeTree.gen";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry 403 errors
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "status" in error &&
+            error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "statusCode" in error &&
+            error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        // Default behavior: retry failed queries 3 times
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      // Same logic for mutations
+      retry: (failureCount, error) => {
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "status" in error &&
+            error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "statusCode" in error &&
+            error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        return failureCount < 3;
+      },
+    },
+  },
+});
 
 // Create a new router instance
 const router = createRouter({

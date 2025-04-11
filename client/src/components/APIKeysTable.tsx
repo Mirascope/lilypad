@@ -149,7 +149,7 @@ const GenerateAPIKeyForm = ({
     defaultValues: {
       name: "",
       project_uuid: activeProject?.uuid,
-      environment_uuid: "",
+      environment_uuid: environments[0]?.uuid || null,
     },
   });
   const createApiKey = useCreateApiKeyMutation();

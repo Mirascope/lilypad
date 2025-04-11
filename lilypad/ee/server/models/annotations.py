@@ -45,15 +45,15 @@ class AnnotationBase(SQLModel):
     reasoning: str | None = Field(default=None)
     type: EvaluationType | None = Field(default=EvaluationType.MANUAL)
     data: dict[str, Any] | None = Field(sa_column=get_json_column(), default=None)
+    assigned_to: UUID | None = Field(
+        default=None, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
+    )
 
 
 class AnnotationTable(AnnotationBase, BaseOrganizationSQLModel, table=True):
     """Annotation table."""
 
     __tablename__ = ANNOTATION_TABLE_NAME  # type: ignore
-    assigned_to: UUID | None = Field(
-        default=None, foreign_key=f"{USER_TABLE_NAME}.uuid", ondelete="CASCADE"
-    )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )

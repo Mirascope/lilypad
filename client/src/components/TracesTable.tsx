@@ -1,6 +1,7 @@
 import CardSkeleton from "@/components/CardSkeleton";
-import { Comment } from "@/components/Comment";
+import { AddComment, CommentCards } from "@/components/Comment";
 import { DataTable } from "@/components/DataTable";
+import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadPanel } from "@/components/LilypadPanel";
 import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +22,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { Typography } from "@/components/ui/typography";
+import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
+import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
-import { Scope, SpanPublic, TagPublic } from "@/types/types";
+import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
+import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { formatDate } from "@/utils/strings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row, Table } from "@tanstack/react-table";
 import {
@@ -32,8 +39,11 @@ import {
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
+  MessageSquareMore,
   MoreHorizontal,
+  NotebookPen,
   SmileIcon,
+  Users,
 } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -112,6 +122,11 @@ const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
 
 const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
   const navigate = useNavigate();
+  const [showComments, setShowComments] = useState(false);
+  const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
+  const { data: spanComments } = useSuspenseQuery(
+    commentsBySpanQueryOptions(data.uuid)
+  );
   useEffect(() => {
     if (path) {
       navigate({
@@ -123,18 +138,76 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
       });
     }
   }, [data, path]);
+  const filteredAnnotations = data.annotations.filter(
+    (annotation) => annotation.label
+  );
   return (
-    <Suspense fallback={<CardSkeleton items={5} className='flex flex-col' />}>
-      <Comment spanUuid={data.uuid} />
-      <div className='p-4 border rounded-md mt-4 overflow-auto min-h-0'>
-        <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
-        {data.scope === Scope.LILYPAD ? (
-          <LilypadPanel spanUuid={data.uuid} />
-        ) : (
-          <LlmPanel spanUuid={data.uuid} />
-        )}
+    <div className='flex flex-col h-full max-h-screen overflow-hidden'>
+      {/* Controls remain at top */}
+      <div className='flex justify-end gap-2 p-2 flex-shrink-0'>
+        <Button
+          size='icon'
+          className='h-8 w-8 relative'
+          variant='outline'
+          onClick={() => setShowComments(!showComments)}
+        >
+          <MessageSquareMore />
+          {spanComments.length > 0 && (
+            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+              {spanComments.length > 9 ? "9+" : spanComments.length}
+            </div>
+          )}
+        </Button>
+        <Button
+          size='icon'
+          className='h-8 w-8 relative'
+          variant='outline'
+          onClick={() => setShowAnnotations(!showAnnotations)}
+        >
+          <NotebookPen />
+          {filteredAnnotations.length > 0 && (
+            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+              {filteredAnnotations.length > 9
+                ? "9+"
+                : filteredAnnotations.length}
+            </div>
+          )}
+        </Button>
       </div>
-    </Suspense>
+
+      {/* Scrollable content area */}
+      <div className='flex-1 overflow-auto pb-4'>
+        {/* Comments section with max height and scrolling */}
+        {showComments && (
+          <div className='mb-4'>
+            <div className='max-h-64 overflow-y-auto mb-4'>
+              <CommentCards spanUuid={data.uuid} />
+            </div>
+            <Separator />
+            <div className='mt-4'>
+              <AddComment spanUuid={data.uuid} />
+            </div>
+          </div>
+        )}
+
+        {/* Annotations section with max height and scrolling */}
+        {showAnnotations && (
+          <div className='mb-4 max-h-64 overflow-y-auto'>
+            <AnnotationsTable data={filteredAnnotations} />
+          </div>
+        )}
+
+        {/* Row details panel */}
+        <div className='p-4 border overflow-auto rounded-md mt-4'>
+          <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
+          {data.scope === Scope.LILYPAD ? (
+            <LilypadPanel spanUuid={data.uuid} />
+          ) : (
+            <LlmPanel spanUuid={data.uuid} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -163,10 +236,6 @@ export const TracesTable = ({
   // Function to handle checkbox changes
   const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
     if (checked) {
-      // If already have 2 selected rows and trying to add another, prevent it
-      if (selectedRows.length >= 2) {
-        return;
-      }
       setSelectedRows([...selectedRows, row]);
     } else {
       setSelectedRows(
@@ -179,7 +248,33 @@ export const TracesTable = ({
       accessorKey: "display_name",
       enableHiding: false,
       filterFn: onlyParentFilter,
-      header: "Name",
+      header: () => {
+        return hideCompare ? (
+          "Name"
+        ) : (
+          <>
+            <Checkbox
+              checked={
+                selectedRows.length > 0 && selectedRows.length < data.length
+                  ? "indeterminate"
+                  : selectedRows.length > 0
+              }
+              onCheckedChange={() => {
+                if (selectedRows.length > 0) {
+                  setSelectedRows([]);
+                } else {
+                  setSelectedRows(
+                    data.filter((row) => row.scope === Scope.LILYPAD)
+                  );
+                }
+              }}
+              aria-label='Select all'
+              className='mr-2'
+            />
+            Name
+          </>
+        );
+      },
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
@@ -187,11 +282,13 @@ export const TracesTable = ({
           (item) => item.span_id === row.original.span_id
         );
         const displayName: string = row.getValue("display_name");
+        const scope = row.original.scope;
+        const isLilypad = scope === Scope.LILYPAD;
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
-              {!hideCompare && (
+              {!hideCompare && isLilypad && (
                 <Checkbox
                   onClick={(e) => e.stopPropagation()}
                   checked={isSelected}
@@ -308,10 +405,52 @@ export const TracesTable = ({
       },
       cell: ({ row }) => {
         return (
-          <span className='truncate'>
+          <Typography variant='span' affects='xs' className='truncate'>
             {formatDate(row.getValue("timestamp"))}
-          </span>
+          </Typography>
         );
+      },
+    },
+    {
+      accessorKey: "annotations",
+      header: ({ table }) => {
+        const isFiltered = !!table.getColumn("annotations")?.getFilterValue();
+
+        return (
+          <div className='flex items-center'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='p-0 h-8'
+              onClick={() => {
+                table
+                  .getColumn("annotations")
+                  ?.setFilterValue(isFiltered ? undefined : true);
+              }}
+              title={isFiltered ? "Show all rows" : "Show only annotated rows"}
+            >
+              <NotebookPen
+                className={`w-4 h-4 mr-2 ${isFiltered ? "text-primary" : "text-muted-foreground"}`}
+              />
+              Annotated
+            </Button>
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        const annotations: AnnotationPublic[] = row.getValue("annotations");
+        if (annotations.length > 0) {
+          return <NotebookPen className='w-4 h-4' />;
+        }
+        return null;
+      },
+      filterFn: (row, id, filterValue) => {
+        // If no filter value is set, show all rows
+        if (filterValue === undefined) return true;
+
+        // If filter is applied, only show rows with annotations
+        const annotations: AnnotationPublic[] = row.getValue(id);
+        return annotations.length > 0;
       },
     },
     {
@@ -449,6 +588,17 @@ export const TracesTable = ({
             </PopoverContent>
           </Popover>
         </div>
+        <LilypadDialog
+          icon={<Users />}
+          title={"Annotate selected traces"}
+          description={`${selectedRows.length} trace(s) selected.`}
+          buttonProps={{
+            disabled: selectedRows.length === 0,
+          }}
+          tooltipContent={"Add selected traces to your annotation queue."}
+        >
+          <QueueForm spans={selectedRows} />
+        </LilypadDialog>
         {!hideCompare && (
           <>
             <Button
@@ -460,18 +610,9 @@ export const TracesTable = ({
                 )
               }
               className='whitespace-nowrap'
-              disabled={selectedRows.length === 0}
+              disabled={selectedRows.length === 0 || selectedRows.length > 2}
             >
               Compare
-            </Button>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setSelectedRows([])}
-              className='whitespace-nowrap'
-              disabled={selectedRows.length === 0}
-            >
-              Clear Selection ({selectedRows.length}/2)
             </Button>
           </>
         )}

@@ -50,11 +50,20 @@ export const safelyParseJSON = (json: string): object | undefined => {
 
   return parsed;
 };
-export const formatDate = (utcDateString?: string, dateOnly = true): string => {
+export const formatDate = (
+  utcDateString?: string | Date,
+  dateOnly = true
+): string => {
   if (!utcDateString) {
     return "";
   }
-  const date = new Date(utcDateString);
+  let date;
+  // Convert to Date object if it's a string
+  if (typeof utcDateString === "string") {
+    date = new Date(utcDateString);
+  } else {
+    date = utcDateString;
+  }
   return new Intl.DateTimeFormat(navigator.language, {
     year: "numeric",
     month: "2-digit",
@@ -69,12 +78,21 @@ export const formatDate = (utcDateString?: string, dateOnly = true): string => {
   }).format(date);
 };
 
-export const formatRelativeTime = (utcDateString?: string): string => {
+export const formatRelativeTime = (
+  utcDateString?: string | Date,
+  shorthand = false
+): string => {
   if (!utcDateString) {
     return "";
   }
 
-  const date = new Date(utcDateString);
+  let date;
+  // Convert to Date object if it's a string
+  if (typeof utcDateString === "string") {
+    date = new Date(utcDateString);
+  } else {
+    date = utcDateString;
+  }
   const now = new Date();
 
   // Time difference in milliseconds
@@ -89,14 +107,24 @@ export const formatRelativeTime = (utcDateString?: string): string => {
 
   // Choose appropriate unit
   if (diffMinutes < 60) {
-    return `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
+    return shorthand
+      ? `${diffMinutes}m`
+      : `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
   } else if (diffHours < 24) {
-    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    return shorthand
+      ? `${diffHours}h`
+      : `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
   } else if (diffDays < 7) {
-    return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+    return shorthand
+      ? `${diffDays}d`
+      : `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
   } else if (diffWeeks < 5) {
-    return `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
+    return shorthand
+      ? `${diffWeeks}w`
+      : `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
   } else {
-    return `${diffMonths} ${diffMonths === 1 ? "month" : "months"} ago`;
+    return shorthand
+      ? `${diffMonths}mo`
+      : `${diffMonths} ${diffMonths === 1 ? "month" : "months"} ago`;
   }
 };
