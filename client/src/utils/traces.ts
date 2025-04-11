@@ -9,5 +9,5 @@ export const tracesQueryOptions = (projectUuid: string) =>
   queryOptions({
     queryKey: ["projects", projectUuid, "traces"],
     queryFn: () => fetchTraces(projectUuid),
-    refetchInterval: 1000,
+    refetchInterval: 10000,
   });

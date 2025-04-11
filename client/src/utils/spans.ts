@@ -67,7 +67,7 @@ export const spansByFunctionQueryOptions = (
   queryOptions({
     queryKey: ["projects", projectUuid, "functions", functionUuid, "spans"],
     queryFn: () => fetchSpansByFunctionUuid(projectUuid, functionUuid),
-    refetchInterval: 1000,
+    refetchInterval: 10000,
   });
 
 export const aggregatesByProjectQueryOptions = (

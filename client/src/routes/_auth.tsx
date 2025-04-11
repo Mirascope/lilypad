@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { diffDays } from "@/utils/dates";
+import { fetchUsersByOrganization } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
@@ -13,7 +14,7 @@ import { usePostHog } from "posthog-js/react";
 import { Suspense, useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_auth")({
-  beforeLoad: async ({ context }) => {
+  beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
       const currentPath = window.location.pathname + window.location.search;
       throw redirect({
@@ -23,6 +24,12 @@ export const Route = createFileRoute("/_auth")({
         },
       });
     }
+  },
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.prefetchQuery({
+      queryKey: ["usersByOrganization"],
+      queryFn: () => fetchUsersByOrganization(),
+    });
   },
   component: () => (
     <Suspense fallback={<LayoutSkeleton />}>

@@ -1,5 +1,5 @@
 import LilypadDialog from "@/components/LilypadDialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
@@ -183,7 +183,6 @@ export const CommentCard = ({
   return (
     <div className='flex items-start gap-4 group'>
       <Avatar className='h-10 w-10 border'>
-        <AvatarImage src='/placeholder-user.jpg' alt='@shadcn' />
         <AvatarFallback>
           {commentUser.first_name.charAt(0)}
           {commentUser.last_name?.charAt(0)}

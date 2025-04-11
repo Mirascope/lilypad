@@ -54,6 +54,7 @@ interface GenericDataTableProps<T> {
   getSubRows?: (row: T) => T[];
   DetailPanel?: React.ComponentType<{ data: T; path?: string }>;
   onRowClick?: (row: T) => void;
+  onRowHover?: (row: T) => void;
   defaultPanelSize?: number;
   virtualizerRef?: React.RefObject<HTMLDivElement | null>;
   virtualizerOptions: VirtualizerOptions;
@@ -79,6 +80,7 @@ export const DataTable = <T extends { uuid: string }>({
   getSubRows,
   DetailPanel,
   onRowClick,
+  onRowHover,
   defaultPanelSize = 50,
   virtualizerRef,
   virtualizerOptions,
@@ -175,6 +177,8 @@ export const DataTable = <T extends { uuid: string }>({
           className={`cursor-pointer hover:bg-secondary ${
             detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
           }`}
+          onMouseEnter={() => onRowHover?.(row.original)}
+          onFocus={() => onRowHover?.(row.original)}
           onClick={() => toggleRowSelection(row.original)}
         >
           {row.getVisibleCells().map((cell) => (
