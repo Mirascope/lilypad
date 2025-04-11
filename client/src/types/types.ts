@@ -100,13 +100,6 @@ export interface AggregateMetrics {
  * Annotation create model.
  */
 export interface AnnotationCreate {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Data */
-  data?: object | null;
   /** Span Uuid */
   span_uuid?: string | null;
   /** Project Uuid */
@@ -129,6 +122,8 @@ export interface AnnotationPublic {
   type?: EvaluationType | null;
   /** Data */
   data?: object | null;
+  /** Assigned To */
+  assigned_to?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -151,42 +146,11 @@ export interface AnnotationPublic {
   function_uuid: string;
   /** Span more details model. */
   span: SpanMoreDetails;
-  /** Assigned To */
-  assigned_to: string | null;
-}
-
-/**
- * AnnotationTable
- * Annotation table.
- */
-export interface AnnotationTable {
-  /** Uuid */
-  uuid?: string | null;
   /**
    * Created At
    * @format date-time
    */
-  created_at?: string;
-  /**
-   * Organization Uuid
-   * @format uuid
-   */
-  organization_uuid: string;
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Data */
-  data?: object | null;
-  /** Assigned To */
-  assigned_to?: string | null;
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Span Uuid */
-  span_uuid?: string | null;
-  /** Function Uuid */
-  function_uuid?: string | null;
+  created_at: string;
 }
 
 /**
@@ -1008,7 +972,7 @@ export interface SpanPublic {
   display_name?: string | null;
   function: FunctionPublic | null;
   /** Annotations */
-  annotations: AnnotationTable[];
+  annotations: AnnotationPublic[];
   /** Child Spans */
   child_spans: SpanPublic[];
   /**

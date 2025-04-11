@@ -1,7 +1,7 @@
 import { baseURL } from "@/api";
 import { Button } from "@/components/ui/button";
 import { useEventSource } from "@/hooks/use-eventsource";
-import { AnnotationCreate } from "@/types/types";
+import { AnnotationUpdate } from "@/types/types";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -13,7 +13,7 @@ export const GenerateAnnotationButton = ({
   spanUuid: string;
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const methods = useFormContext<AnnotationCreate>();
+  const methods = useFormContext<AnnotationUpdate>();
   const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate-annotation`;
   const { data, startConnection, stopConnection, isConnected, status } =
     useEventSource(url);

@@ -106,7 +106,7 @@ async def update_annotation(
     response_model=Sequence[AnnotationPublic],
 )
 @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
-async def get_annotations(
+async def get_annotations_by_functions(
     project_uuid: UUID,
     function_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -119,6 +119,24 @@ async def get_annotations(
         for annotation in annotations_service.find_records_by_function_uuid(
             function_uuid
         )
+    ]
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/annotations",
+    response_model=Sequence[AnnotationPublic],
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotations_by_project(
+    project_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> Sequence[AnnotationPublic]:
+    """Get annotations by project."""
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations_service.find_records_by_project_uuid(project_uuid)
     ]
 
 

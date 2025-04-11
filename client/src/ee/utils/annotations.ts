@@ -36,6 +36,13 @@ export const fetchAnnotationsByFunctionUuid = async (
   ).data;
 };
 
+export const fetchAnnotationsByProjectUuid = async (projectUuid?: string) => {
+  if (!projectUuid) return [];
+  return (
+    await api.get<AnnotationPublic[]>(`/ee/projects/${projectUuid}/annotations`)
+  ).data;
+};
+
 export const postAnnotations = async (
   projectUuid: string,
   annotationsCreate: AnnotationCreate[]
@@ -61,10 +68,10 @@ export const useUpdateAnnotationMutation = () => {
       annotationUuid: string;
       annotationUpdate: AnnotationUpdate;
     }) => await updateAnnotation(projectUuid, annotationUuid, annotationUpdate),
-    onSuccess: async (_, { annotationUuid }) => {
+    onSuccess: async (_, { projectUuid }) => {
       posthog.capture("annotationUpdated");
       await queryClient.invalidateQueries({
-        queryKey: ["annotations", annotationUuid],
+        queryKey: ["projects", projectUuid, "annotations"],
       });
     },
   });
@@ -104,4 +111,11 @@ export const annotationsByFunctionQueryOptions = (
     ],
     queryFn: () => fetchAnnotationsByFunctionUuid(projectUuid, functionUuid),
     refetchInterval: 1000,
+  });
+
+export const annotationsByProjectQueryOptions = (projectUuid?: string) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "annotations"],
+    queryFn: () => fetchAnnotationsByProjectUuid(projectUuid),
+    refetchInterval: 60000,
   });

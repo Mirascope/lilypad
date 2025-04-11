@@ -24,6 +24,7 @@ import { Route as AuthProjectsProjectUuidIndexImport } from './routes/_auth/proj
 import { Route as AuthProjectsProjectsProjectUuidImport } from './routes/_auth/projects/projects.$projectUuid'
 import { Route as AuthProjectsProjectUuidPlaygroundRouteImport } from './routes/_auth/projects/$projectUuid/playground/route'
 import { Route as AuthProjectsProjectUuidFunctionsIndexImport } from './routes/_auth/projects/$projectUuid/functions/index'
+import { Route as AuthProjectsProjectUuidAnnotationsIndexImport } from './routes/_auth/projects/$projectUuid/annotations/index'
 import { Route as AuthProjectsProjectUuidTracesSplatImport } from './routes/_auth/projects/$projectUuid/traces.$'
 import { Route as AuthProjectsProjectUuidPlaygroundFunctionNameLayoutImport } from './routes/_auth/projects/$projectUuid/playground/$functionName/_layout'
 import { Route as AuthProjectsProjectUuidFunctionsFunctionNameWorkbenchRouteImport } from './routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route'
@@ -124,6 +125,13 @@ const AuthProjectsProjectUuidFunctionsIndexRoute =
   AuthProjectsProjectUuidFunctionsIndexImport.update({
     id: '/projects/$projectUuid/functions/',
     path: '/projects/$projectUuid/functions/',
+    getParentRoute: () => AuthRoute,
+  } as any)
+
+const AuthProjectsProjectUuidAnnotationsIndexRoute =
+  AuthProjectsProjectUuidAnnotationsIndexImport.update({
+    id: '/projects/$projectUuid/annotations/',
+    path: '/projects/$projectUuid/annotations/',
     getParentRoute: () => AuthRoute,
   } as any)
 
@@ -272,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$projectUuid/traces/$'
       fullPath: '/projects/$projectUuid/traces/$'
       preLoaderRoute: typeof AuthProjectsProjectUuidTracesSplatImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/projects/$projectUuid/annotations/': {
+      id: '/_auth/projects/$projectUuid/annotations/'
+      path: '/projects/$projectUuid/annotations'
+      fullPath: '/projects/$projectUuid/annotations'
+      preLoaderRoute: typeof AuthProjectsProjectUuidAnnotationsIndexImport
       parentRoute: typeof AuthImport
     }
     '/_auth/projects/$projectUuid/functions/': {
@@ -440,6 +455,7 @@ interface AuthRouteChildren {
   AuthProjectsProjectsProjectUuidRoute: typeof AuthProjectsProjectsProjectUuidRoute
   AuthProjectsProjectUuidIndexRoute: typeof AuthProjectsProjectUuidIndexRoute
   AuthProjectsProjectUuidTracesSplatRoute: typeof AuthProjectsProjectUuidTracesSplatRoute
+  AuthProjectsProjectUuidAnnotationsIndexRoute: typeof AuthProjectsProjectUuidAnnotationsIndexRoute
   AuthProjectsProjectUuidFunctionsIndexRoute: typeof AuthProjectsProjectUuidFunctionsIndexRoute
   AuthProjectsProjectUuidFunctionsFunctionNameRoute: typeof AuthProjectsProjectUuidFunctionsFunctionNameRouteWithChildren
 }
@@ -453,6 +469,8 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProjectsProjectUuidIndexRoute: AuthProjectsProjectUuidIndexRoute,
   AuthProjectsProjectUuidTracesSplatRoute:
     AuthProjectsProjectUuidTracesSplatRoute,
+  AuthProjectsProjectUuidAnnotationsIndexRoute:
+    AuthProjectsProjectUuidAnnotationsIndexRoute,
   AuthProjectsProjectUuidFunctionsIndexRoute:
     AuthProjectsProjectUuidFunctionsIndexRoute,
   AuthProjectsProjectUuidFunctionsFunctionNameRoute:
@@ -473,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidIndexRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
+  '/projects/$projectUuid/annotations': typeof AuthProjectsProjectUuidAnnotationsIndexRoute
   '/projects/$projectUuid/functions': typeof AuthProjectsProjectUuidFunctionsIndexRoute
   '/projects/$projectUuid/functions/$functionName': typeof AuthProjectsProjectUuidFunctionsFunctionNameWorkbenchRouteRouteWithChildren
   '/projects/$projectUuid/playground/$functionName': typeof AuthProjectsProjectUuidPlaygroundFunctionNameLayoutRouteWithChildren
@@ -495,6 +514,7 @@ export interface FileRoutesByTo {
   '/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
   '/projects/$projectUuid': typeof AuthProjectsProjectUuidIndexRoute
   '/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
+  '/projects/$projectUuid/annotations': typeof AuthProjectsProjectUuidAnnotationsIndexRoute
   '/projects/$projectUuid/functions': typeof AuthProjectsProjectUuidFunctionsIndexRoute
   '/projects/$projectUuid/functions/$functionName': typeof AuthProjectsProjectUuidFunctionsFunctionNameWorkbenchRouteRouteWithChildren
   '/projects/$projectUuid/playground/$functionName': typeof AuthProjectsProjectUuidPlaygroundFunctionNameLayoutIndexRoute
@@ -517,6 +537,7 @@ export interface FileRoutesById {
   '/_auth/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
   '/_auth/projects/$projectUuid/': typeof AuthProjectsProjectUuidIndexRoute
   '/_auth/projects/$projectUuid/traces/$': typeof AuthProjectsProjectUuidTracesSplatRoute
+  '/_auth/projects/$projectUuid/annotations/': typeof AuthProjectsProjectUuidAnnotationsIndexRoute
   '/_auth/projects/$projectUuid/functions/': typeof AuthProjectsProjectUuidFunctionsIndexRoute
   '/_auth/projects/$projectUuid/functions/$functionName': typeof AuthProjectsProjectUuidFunctionsFunctionNameRouteWithChildren
   '/_auth/projects/$projectUuid/functions/$functionName/_workbench': typeof AuthProjectsProjectUuidFunctionsFunctionNameWorkbenchRouteRouteWithChildren
@@ -543,6 +564,7 @@ export interface FileRouteTypes {
     | '/projects/projects/$projectUuid'
     | '/projects/$projectUuid'
     | '/projects/$projectUuid/traces/$'
+    | '/projects/$projectUuid/annotations'
     | '/projects/$projectUuid/functions'
     | '/projects/$projectUuid/functions/$functionName'
     | '/projects/$projectUuid/playground/$functionName'
@@ -564,6 +586,7 @@ export interface FileRouteTypes {
     | '/projects/projects/$projectUuid'
     | '/projects/$projectUuid'
     | '/projects/$projectUuid/traces/$'
+    | '/projects/$projectUuid/annotations'
     | '/projects/$projectUuid/functions'
     | '/projects/$projectUuid/functions/$functionName'
     | '/projects/$projectUuid/playground/$functionName'
@@ -584,6 +607,7 @@ export interface FileRouteTypes {
     | '/_auth/projects/projects/$projectUuid'
     | '/_auth/projects/$projectUuid/'
     | '/_auth/projects/$projectUuid/traces/$'
+    | '/_auth/projects/$projectUuid/annotations/'
     | '/_auth/projects/$projectUuid/functions/'
     | '/_auth/projects/$projectUuid/functions/$functionName'
     | '/_auth/projects/$projectUuid/functions/$functionName/_workbench'
@@ -642,6 +666,7 @@ export const routeTree = rootRoute
         "/_auth/projects/projects/$projectUuid",
         "/_auth/projects/$projectUuid/",
         "/_auth/projects/$projectUuid/traces/$",
+        "/_auth/projects/$projectUuid/annotations/",
         "/_auth/projects/$projectUuid/functions/",
         "/_auth/projects/$projectUuid/functions/$functionName"
       ]
@@ -680,6 +705,10 @@ export const routeTree = rootRoute
     },
     "/_auth/projects/$projectUuid/traces/$": {
       "filePath": "_auth/projects/$projectUuid/traces.$.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/projects/$projectUuid/annotations/": {
+      "filePath": "_auth/projects/$projectUuid/annotations/index.tsx",
       "parent": "/_auth"
     },
     "/_auth/projects/$projectUuid/functions/": {
