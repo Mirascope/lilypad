@@ -572,7 +572,6 @@ export const TracesTable = ({
     );
   };
   const customControls = (table: Table<SpanPublic>) => {
-    console.log(selectedRows);
     return (
       <>
         <div className='relative max-w-sm'>
