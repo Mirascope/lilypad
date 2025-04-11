@@ -1,9 +1,7 @@
 import { ArgsCards } from "@/components/ArgsCards";
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { TagPopover } from "@/components/TagPopover";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import {
   renderCardOutput,
@@ -11,6 +9,7 @@ import {
   renderEventsContainer,
   renderMessagesContainer,
   renderMetadata,
+  TraceCodeTab,
 } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -18,15 +17,8 @@ import JsonView, { JsonViewProps } from "@uiw/react-json-view";
 import hljs from "highlight.js/lib/core";
 import markdown from "highlight.js/lib/languages/markdown";
 import python from "highlight.js/lib/languages/python";
-import { JSX } from "react";
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("markdown", markdown);
-
-interface Tab {
-  label: string;
-  value: string;
-  component?: JSX.Element | null;
-}
 
 export const LilypadPanel = ({
   spanUuid,
@@ -38,23 +30,12 @@ export const LilypadPanel = ({
   dataProps?: JsonViewProps<object>;
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const tabs: Tab[] = [
-    {
-      label: "Code",
-      value: "code",
-      component: <CodeSnippet code={span.code ?? ""} />,
-    },
-    {
-      label: "Signature",
-      value: "signature",
-      component: <CodeSnippet code={span.signature ?? ""} />,
-    },
-  ];
   const data: Record<string, unknown> = span.data as Record<string, unknown>;
   const attributes: Record<string, string> | undefined =
     data.attributes as Record<string, string>;
   const lilypadType = attributes?.["lilypad.type"];
   const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
+
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>
@@ -92,35 +73,7 @@ export const LilypadPanel = ({
           <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
         )}
       </div>
-      {(span.code ?? span.signature) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Code"}</CardTitle>
-          </CardHeader>
-          <CardContent className='overflow-x-auto'>
-            <Tabs defaultValue='code' className='w-full'>
-              <div className='flex w-full'>
-                <TabsList className={`w-[160px]`}>
-                  {tabs.map((tab) => (
-                    <TabsTrigger key={tab.value} value={tab.value}>
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-              {tabs.map((tab) => (
-                <TabsContent
-                  key={tab.value}
-                  value={tab.value}
-                  className='w-full bg-gray-50'
-                >
-                  {tab.component}
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+      <TraceCodeTab span={span} />
       {span.events &&
         span.events.length > 0 &&
         renderEventsContainer(span.events)}

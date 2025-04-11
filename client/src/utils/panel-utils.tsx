@@ -1,3 +1,5 @@
+import { useAuth } from "@/auth";
+import { CodeSnippet } from "@/components/CodeSnippet";
 import {
   Card,
   CardContent,
@@ -5,7 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Event, MessageParam } from "@/types/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tab, TraceTab } from "@/types/traces";
+import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
 import JsonView, { JsonViewProps } from "@uiw/react-json-view";
@@ -70,6 +74,56 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
   } catch (e) {
     return null;
   }
+};
+
+export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
+  const { userConfig, updateUserConfig } = useAuth();
+  if (!span.code && !span.signature) return null;
+  const tabs: Tab[] = [
+    {
+      label: "Code",
+      value: TraceTab.CODE,
+      component: <CodeSnippet code={span.code ?? ""} />,
+    },
+    {
+      label: "Signature",
+      value: TraceTab.SIGNATURE,
+      component: <CodeSnippet code={span.signature ?? ""} />,
+    },
+  ];
+  return (
+    <Tabs
+      defaultValue={userConfig?.defaultTraceTab ?? "signature"}
+      className='w-full'
+    >
+      <div className='flex w-full'>
+        <TabsList className={`w-[160px]`}>
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              onClick={() =>
+                updateUserConfig({
+                  defaultTraceTab: tab.value,
+                })
+              }
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+      {tabs.map((tab) => (
+        <TabsContent
+          key={tab.value}
+          value={tab.value}
+          className='w-full bg-gray-50'
+        >
+          {tab.component}
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
 };
 
 export const renderEventsContainer = (messages: Event[]) => {

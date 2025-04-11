@@ -158,13 +158,15 @@ export const AppSidebar = () => {
     auth.setSession(newSession);
   };
   const handleLogout = () => {
-    auth.logout().then(() => {
-      router.invalidate().finally(() => {
+    auth.logout();
+    router
+      .invalidate()
+      .catch(() => toast.error("Failed to invalidate."))
+      .finally(() => {
         navigate({
           to: "/auth/login",
-        });
+        }).catch(() => toast.error("Failed to navigate"));
       });
-    });
   };
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
