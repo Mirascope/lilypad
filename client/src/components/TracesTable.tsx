@@ -138,6 +138,9 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
       });
     }
   }, [data, path]);
+  const filteredAnnotations = data.annotations.filter(
+    (annotation) => annotation.label
+  );
   return (
     <div className='flex flex-col h-full max-h-screen overflow-hidden'>
       {/* Controls remain at top */}
@@ -162,9 +165,11 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
           <NotebookPen />
-          {data.annotations.length > 0 && (
+          {filteredAnnotations.length > 0 && (
             <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
-              {data.annotations.length > 9 ? "9+" : data.annotations.length}
+              {filteredAnnotations.length > 9
+                ? "9+"
+                : filteredAnnotations.length}
             </div>
           )}
         </Button>
@@ -188,9 +193,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         {/* Annotations section with max height and scrolling */}
         {showAnnotations && (
           <div className='mb-4 max-h-64 overflow-y-auto'>
-            <AnnotationsTable
-              data={data.annotations.filter((annotation) => annotation.label)}
-            />
+            <AnnotationsTable data={filteredAnnotations} />
           </div>
         )}
 
