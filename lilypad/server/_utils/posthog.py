@@ -54,17 +54,23 @@ class PosthogMiddleware:
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         path = request.url.path
+        start_time = time.time()
         if path in self.exclude_paths:
-            return await call_next(request)
+            response = await call_next(request)
+            duration = time.time() - start_time
+            print("duration", duration)  # noqa: T201
+            return response
 
         if not self.should_capture(request) or request.method in ["OPTIONS", "GET"]:
-            return await call_next(request)
-
-        start_time = time.time()
+            response = await call_next(request)
+            duration = time.time() - start_time
+            print("duration", duration)  # noqa: T201
+            return response
 
         response = await call_next(request)
 
         duration = time.time() - start_time
+        print("duration", duration)  # noqa: T201
         try:
             user = request.state.user
             distinct_id = user.email if user else "anonymous"
