@@ -27,11 +27,14 @@ import { Typography } from "@/components/ui/typography";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
-import { commentsBySpanQueryOptions } from "@/utils/comments";
+import {
+  commentsBySpanQueryOptions,
+  fetchCommentsBySpan,
+} from "@/utils/comments";
+import { fetchSpan } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row, Table } from "@tanstack/react-table";
 import {
@@ -138,6 +141,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
       });
     }
   }, [data, path]);
+
   const filteredAnnotations = data.annotations.filter(
     (annotation) => annotation.label
   );
@@ -222,11 +226,11 @@ export const TracesTable = ({
   path?: string;
   hideCompare?: boolean;
 }) => {
-  const { toast } = useToast();
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const features = useFeatureAccess();
+  const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
 
   // State to track selected rows
@@ -242,6 +246,22 @@ export const TracesTable = ({
         selectedRows.filter((item) => item.span_id !== row.span_id)
       );
     }
+  };
+  const prefetch = (row: SpanPublic) => {
+    queryClient
+      .prefetchQuery({
+        queryKey: ["spans", row.uuid],
+        queryFn: () => fetchSpan(row.uuid),
+        staleTime: 60000,
+      })
+      .catch(() => toast.error("Failed to prefetch"));
+    queryClient
+      .prefetchQuery({
+        queryKey: ["spans", row.uuid, "comments"],
+        queryFn: () => fetchCommentsBySpan(row.uuid),
+        staleTime: 60000,
+      })
+      .catch(() => toast.error("Failed to prefetch"));
   };
   const columns: ColumnDef<SpanPublic>[] = [
     {
@@ -477,9 +497,7 @@ export const TracesTable = ({
                       navigate({
                         to: `/projects/${project_uuid}/functions/${fn.name}/${fn.uuid}/overview`,
                       }).catch(() => {
-                        toast({
-                          title: "Failed to navigate",
-                        });
+                        toast.error("Failed to navigate");
                       });
                     }}
                   >
@@ -503,9 +521,7 @@ export const TracesTable = ({
         replace: true,
         params: { _splat: undefined },
       }).catch(() => {
-        toast({
-          title: "Failed to navigate",
-        });
+        toast.error("Failed to navigate");
       });
     }
   };
@@ -556,6 +572,7 @@ export const TracesTable = ({
     );
   };
   const customControls = (table: Table<SpanPublic>) => {
+    console.log(selectedRows);
     return (
       <>
         <div className='relative max-w-sm'>
@@ -610,7 +627,7 @@ export const TracesTable = ({
                 )
               }
               className='whitespace-nowrap'
-              disabled={selectedRows.length === 0 || selectedRows.length > 2}
+              disabled={selectedRows.length !== 2}
             >
               Compare
             </Button>
@@ -633,6 +650,7 @@ export const TracesTable = ({
         estimateSize: () => 45,
         overscan: 20,
       }}
+      onRowHover={prefetch}
       customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
       customGetRowId={(row) => row.span_id}
       DetailPanel={DetailPanel}

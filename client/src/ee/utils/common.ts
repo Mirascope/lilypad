@@ -1,5 +1,8 @@
 export const isLilypadCloud = (): boolean => {
   const hostname = window.location.hostname;
   const domainSuffix = ".lilypad.so";
-  return hostname.endsWith(domainSuffix);
+  const mirascopeDomainSuffix = ".mirascope.com";
+  return (
+    hostname.endsWith(domainSuffix) || hostname.endsWith(mirascopeDomainSuffix)
+  );
 };
