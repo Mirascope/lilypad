@@ -13,12 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { GenerateAnnotationButton } from "@/ee/components/GenerateAnnotationButton";
 import { useUpdateAnnotationMutation } from "@/ee/utils/annotations";
-import {
-  AnnotationPublic,
-  AnnotationTable,
-  AnnotationUpdate,
-  Label,
-} from "@/types/types";
+import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
 import { settingsQueryOptions } from "@/utils/settings";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -133,7 +128,7 @@ export const UpdateAnnotationForm = ({
   spanUuid,
   onSubmit,
 }: {
-  annotation: AnnotationTable | AnnotationPublic;
+  annotation: AnnotationPublic;
   spanUuid: string;
   onSubmit?: (data: AnnotationPublic) => void;
 }) => {
@@ -173,7 +168,9 @@ export const UpdateAnnotationForm = ({
       });
     toast.success("Annotation submitted");
     methods.reset();
-    onSubmit?.(newData);
+    if (newData) {
+      onSubmit?.(newData);
+    }
   };
 
   return (

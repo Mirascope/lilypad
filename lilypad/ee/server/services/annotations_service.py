@@ -16,6 +16,21 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
     table: type[AnnotationTable] = AnnotationTable
     create_model: type[AnnotationCreate] = AnnotationCreate
 
+    def find_records_by_project_uuid(
+        self, project_uuid: UUID
+    ) -> Sequence[AnnotationTable]:
+        """Find records."""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.project_uuid == project_uuid,
+                self.table.label.is_(None),  # type: ignore
+                or_(
+                    self.table.assigned_to == self.user.uuid,
+                    self.table.assigned_to.is_(None),  # type: ignore
+                ),
+            )
+        ).all()
+
     def find_records_by_function_uuid(
         self, function_uuid: UUID
     ) -> Sequence[AnnotationTable]:

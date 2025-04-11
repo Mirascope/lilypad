@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
+
+from pydantic import BaseModel
 
 from ....server.schemas.spans import SpanMoreDetails
 from ..models import AnnotationBase
@@ -15,11 +18,11 @@ class AnnotationPublic(AnnotationBase):
     project_uuid: UUID
     span_uuid: UUID
     function_uuid: UUID
+    created_at: datetime
     span: SpanMoreDetails
-    assigned_to: UUID | None
 
 
-class AnnotationCreate(AnnotationBase):
+class AnnotationCreate(BaseModel):
     """Annotation create model."""
 
     span_uuid: UUID | None = None
@@ -31,4 +34,4 @@ class AnnotationCreate(AnnotationBase):
 class AnnotationUpdate(AnnotationBase):
     """Annotation update model."""
 
-    assigned_to: UUID | None = None
+    ...

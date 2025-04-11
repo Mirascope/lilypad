@@ -410,7 +410,7 @@ export const TracesTable = ({
     },
     {
       accessorKey: "annotations",
-      header: ({ table, column }) => {
+      header: ({ table }) => {
         const isFiltered = !!table.getColumn("annotations")?.getFilterValue();
 
         return (
