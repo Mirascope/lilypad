@@ -25,7 +25,6 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast";
 import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
@@ -44,6 +43,7 @@ import {
   ChevronDown,
   ChevronUp,
   Home,
+  NotebookPen,
   ScrollText,
   Settings,
   SquareTerminal,
@@ -51,6 +51,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 interface Item {
   title: string;
   url: string;
@@ -118,7 +119,6 @@ export const AppSidebar = () => {
   const params = useParams({ strict: false });
   const auth = useAuth();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
-  const { toast } = useToast();
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
@@ -137,6 +137,11 @@ export const AppSidebar = () => {
           title: "Functions",
           url: `/projects/${activeProject.uuid}/functions`,
           icon: Wrench,
+        },
+        {
+          title: "Annotations",
+          url: `/projects/${activeProject.uuid}/annotations`,
+          icon: NotebookPen,
         },
         {
           title: "Playground",
@@ -175,15 +180,11 @@ export const AppSidebar = () => {
         : `/projects/${project.uuid}`;
 
       navigate({ to: newPath, replace: true }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
+        toast.error("Failed to navigate")
       );
     } else {
       navigate({ to: currentPath, replace: true }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
+        toast.error("Failed to navigate")
       );
     }
   };

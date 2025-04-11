@@ -1,3 +1,4 @@
+import CardSkeleton from "@/components/CardSkeleton";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,7 +27,9 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  OnChangeFn,
   Row,
+  RowSelectionState,
   SortingState,
   Table as TanStackTable,
   useReactTable,
@@ -34,7 +37,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, Suspense, useEffect, useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -63,7 +66,9 @@ interface GenericDataTableProps<T> {
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
   onDetailPanelClose?: () => void;
+  onRowSelectionChange?: (row: RowSelectionState) => void;
   path?: string;
+  customComponent?: ReactNode;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -86,6 +91,7 @@ export const DataTable = <T extends { uuid: string }>({
   customGetRowId = undefined,
   customExpanded = {},
   onDetailPanelClose,
+  onRowSelectionChange,
   path,
 }: GenericDataTableProps<T>) => {
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
@@ -94,10 +100,24 @@ export const DataTable = <T extends { uuid: string }>({
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [detailRow, setDetailRow] = useState<T | null | undefined>(
     defaultSelectedRow
   );
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (
+    updaterOrValue
+  ) => {
+    if (typeof updaterOrValue === "function") {
+      setRowSelection((prev) => {
+        const newSelection = updaterOrValue(prev);
+        onRowSelectionChange?.(newSelection);
+        return newSelection;
+      });
+    } else {
+      setRowSelection(updaterOrValue);
+      onRowSelectionChange?.(updaterOrValue);
+    }
+  };
   const table = useReactTable({
     data,
     columns,
@@ -110,7 +130,7 @@ export const DataTable = <T extends { uuid: string }>({
     getFilteredRowModel: getFilteredRowModel(),
     getRowCanExpand: getRowCanExpand ? () => true : undefined,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
     state: {
       sorting,
       columnFilters,
@@ -120,6 +140,7 @@ export const DataTable = <T extends { uuid: string }>({
     },
     getSubRows,
   });
+
   const { rows } = table.getRowModel();
   useEffect(() => {
     setDetailRow(selectRow);
@@ -309,7 +330,11 @@ export const DataTable = <T extends { uuid: string }>({
             minSize={12}
             onCollapse={onCollapse}
           >
-            <DetailPanel data={detailRow} path={path} />
+            <Suspense
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+            >
+              <DetailPanel data={detailRow} path={path} />
+            </Suspense>
           </ResizablePanel>
         </>
       )}

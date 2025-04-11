@@ -1,37 +1,18 @@
 import { DataTable } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Typography } from "@/components/ui/typography";
-import { labelNodeDefinition } from "@/ee/components/LabelNode";
 import { AnnotationPublic, Label } from "@/types/types";
-import { renderCardOutput } from "@/utils/panel-utils";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import JsonView from "@uiw/react-json-view";
-import { JsonData, JsonEditor } from "json-edit-react";
-import { MoreHorizontal } from "lucide-react";
-import { useRef } from "react";
-import ReactMarkdown from "react-markdown";
+import { NotebookPen } from "lucide-react";
+import { useRef, useState } from "react";
 
 export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data: usersInOrg } = useSuspenseQuery(
     usersByOrganizationQueryOptions()
   );
-  const mappedUsers: { [key: string]: string } = usersInOrg.reduce(
+  const mappedUsers: Record<string, string> = usersInOrg.reduce(
     (acc, user) => ({
       ...acc,
       [user.uuid]: user.first_name,
@@ -39,41 +20,49 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
     {}
   );
   const columns: ColumnDef<AnnotationPublic>[] = [
+    // {
+    //   header: "Input",
+    //   enableHiding: false,
+    //   cell: ({ row }) => {
+    //     if (!row.original.span.arg_values) return "N/A";
+    //     return (
+    //       <Tooltip>
+    //         <TooltipTrigger asChild>
+    //           <div className='line-clamp-1'>
+    //             {JSON.stringify(row.original.span.arg_values)}
+    //           </div>
+    //         </TooltipTrigger>
+    //         <TooltipContent className='bg-white text-black'>
+    //           {<JsonView value={row.original.span.arg_values} />}
+    //         </TooltipContent>
+    //       </Tooltip>
+    //     );
+    //   },
+    // },
+    // {
+    //   accessorKey: "output",
+    //   header: "Output",
+    //   cell: ({ row }) => {
+    //     return (
+    //       <Tooltip>
+    //         <TooltipTrigger asChild>
+    //           <div className='line-clamp-1'>
+    //             {<ReactMarkdown>{row.original.span.output}</ReactMarkdown>}
+    //           </div>
+    //         </TooltipTrigger>
+    //         <TooltipContent className='bg-white text-black'>
+    //           {renderCardOutput(row.original.span.output)}
+    //         </TooltipContent>
+    //       </Tooltip>
+    //     );
+    //   },
+    // },
     {
-      header: "Input",
-      enableHiding: false,
+      accessorKey: "assigned_to",
+      header: "Annotated By",
       cell: ({ row }) => {
-        if (!row.original.span.arg_values) return "N/A";
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className='line-clamp-1'>
-                {JSON.stringify(row.original.span.arg_values)}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className='bg-white text-black'>
-              {<JsonView value={row.original.span.arg_values} />}
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      accessorKey: "output",
-      header: "Output",
-      cell: ({ row }) => {
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className='line-clamp-1'>
-                {<ReactMarkdown>{row.original.span.output}</ReactMarkdown>}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className='bg-white text-black'>
-              {renderCardOutput(row.original.span.output)}
-            </TooltipContent>
-          </Tooltip>
-        );
+        const annotatedBy: string = row.getValue("assigned_to");
+        return mappedUsers[annotatedBy] || "N/A";
       },
     },
     {
@@ -95,36 +84,35 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
       },
     },
     {
-      accessorKey: "assigned_to",
-      header: "Annotated By",
+      accessorKey: "reasoning",
+      header: "Reasoning",
       cell: ({ row }) => {
-        const annotatedBy: string = row.getValue("assigned_to");
-        return mappedUsers[annotatedBy] || "N/A";
+        const reasoning: string = row.getValue("reasoning") || "";
+        return <div>{reasoning}</div>;
       },
     },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: () => {
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='ghost' className='h-8 w-8 p-0'>
-                <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>View more details</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
+    // {
+    //   id: "actions",
+    //   enableHiding: false,
+    //   cell: () => {
+    //     return (
+    //       <DropdownMenu>
+    //         <DropdownMenuTrigger asChild>
+    //           <Button variant='ghost' className='h-8 w-8 p-0'>
+    //             <span className='sr-only'>Open menu</span>
+    //             <MoreHorizontal className='h-4 w-4' />
+    //           </Button>
+    //         </DropdownMenuTrigger>
+    //         <DropdownMenuContent align='end'>
+    //           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+    //           <DropdownMenuSeparator />
+    //           <DropdownMenuItem>View more details</DropdownMenuItem>
+    //         </DropdownMenuContent>
+    //       </DropdownMenu>
+    //     );
+    //   },
+    // },
   ];
-
   return (
     <DataTable<AnnotationPublic>
       columns={columns}
@@ -135,23 +123,53 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
         estimateSize: () => 45,
         overscan: 20,
       }}
-      DetailPanel={AnnotationMoreDetails}
+      hideColumnButton
+      // DetailPanel={AnnotationMoreDetails}
       defaultPanelSize={50}
     />
   );
 };
 
-const AnnotationMoreDetails = ({ data }: { data: AnnotationPublic }) => {
+// const AnnotationMoreDetails = ({ data }: { data: AnnotationPublic }) => {
+//   return (
+//     <>
+//       <Typography variant='h3'>Data</Typography>
+//       <JsonEditor
+//         data={data.data as JsonData}
+//         restrictDelete={true}
+//         restrictAdd={true}
+//         restrictEdit={true}
+//         customNodeDefinitions={[labelNodeDefinition]}
+//       />
+//     </>
+//   );
+// };
+
+export const AnnotationsButton = ({
+  annotations,
+}: {
+  annotations: AnnotationPublic[];
+}) => {
+  console.log(annotations);
+  const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   return (
-    <>
-      <Typography variant='h3'>Data</Typography>
-      <JsonEditor
-        data={data.data as JsonData}
-        restrictDelete={true}
-        restrictAdd={true}
-        restrictEdit={true}
-        customNodeDefinitions={[labelNodeDefinition]}
-      />
-    </>
+    <div className={`flex flex-col ${showAnnotations ? "h-full" : ""}`}>
+      <div className='flex-shrink-0'>
+        <Button
+          size='icon'
+          className='h-8 w-8 relative'
+          variant='outline'
+          onClick={() => setShowAnnotations(!showAnnotations)}
+        >
+          <NotebookPen />
+          {annotations.length > 0 && (
+            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+              {annotations.length > 9 ? "9+" : annotations.length}
+            </div>
+          )}
+        </Button>
+      </div>
+      {showAnnotations && <AnnotationsTable data={annotations} />}
+    </div>
   );
 };
