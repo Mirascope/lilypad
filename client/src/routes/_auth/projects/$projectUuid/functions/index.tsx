@@ -28,15 +28,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import { FunctionTab } from "@/types/functions";
 import { FunctionPublic } from "@/types/types";
 import {
+  fetchFunctionsByName,
+  functionKeys,
   uniqueLatestVersionFunctionNamesQueryOptions,
   useArchiveFunctionByNameMutation,
 } from "@/utils/functions";
 import { FormattedText } from "@/utils/strings";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
@@ -44,6 +45,7 @@ import {
 } from "@tanstack/react-router";
 import { MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
   {
@@ -73,25 +75,29 @@ const FunctionCards = () => {
 };
 const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [hover, setHover] = useState(false);
   const { projectUuid } = useParams({ from: Route.id });
-  const { toast } = useToast();
   const archiveFunctionName = useArchiveFunctionByNameMutation();
   const handleClick = () => {
     navigate({
       to: `/projects/${projectUuid}/functions/${fn.name}/${fn.uuid}/${FunctionTab.OVERVIEW}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate"));
   };
   const handleArchive = async () => {
     await archiveFunctionName.mutateAsync({
       projectUuid,
       functionName: fn.name,
     });
-    toast({ title: `Successfully deleted function ${fn.name}` });
+    toast.success(`Successfully deleted function ${fn.name}`);
+  };
+  const prefetch = () => {
+    queryClient
+      .prefetchQuery({
+        queryKey: functionKeys.list(fn.name),
+        queryFn: async () => await fetchFunctionsByName(fn.name, projectUuid),
+      })
+      .catch(() => toast.error("Failed to prefetch function"));
   };
   return (
     <Card
@@ -100,8 +106,16 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
       <CardHeader
         className='px-6 py-4 cursor-pointer'
         onClick={handleClick}
-        onMouseEnter={() => setHover(true)}
+        onMouseEnter={() => {
+          setHover(true);
+          prefetch();
+        }}
         onMouseLeave={() => setHover(false)}
+        onFocus={() => {
+          setHover(true);
+          prefetch();
+        }}
+        onBlur={() => setHover(false)}
       >
         <CardTitle className='flex justify-between items-center'>
           {fn.name}

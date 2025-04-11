@@ -25,14 +25,20 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { fetchAnnotationsByProjectUuid } from "@/ee/utils/annotations";
 import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
+import {
+  fetchLatestVersionUniqueFunctionNames,
+  functionKeys,
+} from "@/utils/functions";
 import { projectsQueryOptions } from "@/utils/projects";
+import { fetchTraces } from "@/utils/traces";
 import {
   userQueryOptions,
   useUpdateActiveOrganizationMutation,
 } from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Link,
   useNavigate,
@@ -57,18 +63,24 @@ interface Item {
   url: string;
   icon?: React.ElementType;
   children?: Item[];
+  onHover?: () => void;
 }
 const RecursiveMenuContent = ({
   item,
   depth = 0,
+  onHover,
 }: {
   item: Item;
   depth?: number;
+  onHover?: () => void;
 }) => {
   const hasChildren = item.children && item.children.length > 0;
   if (!hasChildren) {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem
+        onMouseEnter={() => onHover?.()}
+        onFocus={() => onHover?.()}
+      >
         <SidebarMenuButton className={depth > 0 ? "ml-4" : ""} asChild>
           <Link
             to={item.url}
@@ -118,6 +130,7 @@ export const AppSidebar = () => {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
   const auth = useAuth();
+  const queryClient = useQueryClient();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
   useEffect(() => {
     if (!params?.projectUuid) return;
@@ -132,16 +145,48 @@ export const AppSidebar = () => {
           title: "Home",
           url: `/projects/${activeProject.uuid}/traces`,
           icon: Home,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: ["projects", activeProject.uuid, "traces"],
+                queryFn: () => fetchTraces(activeProject.uuid),
+              })
+              .catch(() => toast.error("Failed to prefetch traces"));
+          },
         },
         {
           title: "Functions",
           url: `/projects/${activeProject.uuid}/functions`,
           icon: Wrench,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: [
+                  "projects",
+                  activeProject.uuid,
+                  ...functionKeys.list("unique"),
+                ],
+                queryFn: async () =>
+                  await fetchLatestVersionUniqueFunctionNames(
+                    activeProject.uuid
+                  ),
+              })
+              .catch(() => toast.error("Failed to prefetch functions"));
+          },
         },
         {
           title: "Annotations",
           url: `/projects/${activeProject.uuid}/annotations`,
           icon: NotebookPen,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: ["projects", activeProject.uuid, "annotations"],
+                queryFn: () =>
+                  fetchAnnotationsByProjectUuid(activeProject.uuid),
+              })
+              .catch(() => toast.error("Failed to prefetch annotations"));
+          },
         },
         {
           title: "Playground",
@@ -221,6 +266,7 @@ export const AppSidebar = () => {
                 <RecursiveMenuContent
                   key={`${item.title}-${index}`}
                   item={item}
+                  onHover={item.onHover}
                 />
               ))}
             </SidebarMenu>
