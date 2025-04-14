@@ -22,7 +22,7 @@ from ...schemas import (
     FunctionCreate,
     FunctionPublic,
 )
-from ...services import DeploymentService, FunctionService, SpanService
+from ...services import DeploymentService, FunctionService, SpanService, TagService
 
 functions_router = APIRouter()
 
@@ -205,6 +205,7 @@ async def create_new_function(
     project_uuid: UUID,
     function_create: FunctionCreate,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
+    tag_service: Annotated[TagService, Depends(TagService)],
 ) -> FunctionTable:
     """Create a new function version."""
     function_create = function_create.model_copy(
@@ -218,7 +219,9 @@ async def create_new_function(
     try:
         return function_service.find_record_by_hash(project_uuid, function_create.hash)
     except HTTPException:
-        new_function = function_service.create_record(function_create)
+        new_function = function_service.create_record(
+            function_create, tag_service=tag_service
+        )
         return new_function
 
 

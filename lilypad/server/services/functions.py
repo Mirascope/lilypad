@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Any, TYPE_CHECKING
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -21,6 +21,7 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
     create_model: type[FunctionCreate] = FunctionCreate
 
     def create_record(self, data: FunctionCreate, **kwargs: Any) -> FunctionTable:
+        tag_service = kwargs["tag_service"]
         decorator_tags_names = data.decorator_tags
         data_dict = data.model_dump(exclude={"decorator_tags"})
 
@@ -29,7 +30,6 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
         self.session.flush()
 
         if decorator_tags_names and record_table.uuid:
-            tag_service = TagService(self.session, self.user)
             project_uuid = kwargs.get("project_uuid") or getattr(
                 record_table, "project_uuid", None
             )
