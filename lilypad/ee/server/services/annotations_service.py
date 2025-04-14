@@ -51,6 +51,12 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
             select(self.table).where(self.table.span_uuid == span_uuid)
         ).first()
 
+    def find_records_by_span_uuid(self, span_uuid: UUID) -> Sequence[AnnotationTable]:
+        """Find records by function UUID."""
+        return self.session.exec(
+            select(self.table).where(self.table.span_uuid == span_uuid)
+        ).all()
+
     def check_bulk_duplicates(self, checks: list[dict]) -> list[UUID]:
         """Check for duplicates in bulk and return list of duplicate span_uuids."""
         if not checks:

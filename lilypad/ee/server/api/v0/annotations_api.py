@@ -202,24 +202,15 @@ async def generate_annotation(
 async def list_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
-    span_uuid: UUID | None = None,
+    span_uuid: UUID,
 ) -> Sequence[AnnotationPublic]:
     """Get annotations by project. Optionally filter by a specific span_uuid."""
-    if span_uuid:
-        annotation = annotations_service.find_record_by_span_uuid(span_uuid)
-        if not annotation:
+    annotations = annotations_service.find_records_by_span_uuid(span_uuid)
+    if not annotations:
             return []
-        return [
+    return [
             AnnotationPublic.model_validate(
                 annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
             )
-        ]
-    else:
-        return [
-            AnnotationPublic.model_validate(
-                annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
-            )
-            for annotation in annotations_service.find_records_by_project_uuid(
-                project_uuid
-            )
+            for annotation in annotations
         ]
