@@ -117,7 +117,7 @@ async def assign_span_annotation(
 
     return [
         AnnotationPublic.model_validate(
-            refreshed_annotation, update={"span": SpanMoreDetails.from_span(span_uuid)}
+            refreshed_annotation, update={"span": SpanMoreDetails.from_span(refreshed_annotation.span)}
         )
         for refreshed_annotation in refreshed_annotations
     ]
