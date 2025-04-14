@@ -1,14 +1,14 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..._utils import get_current_user
 from ...models import SpanTable
-from ...schemas import SpanMoreDetails, SpanPublic, UserPublic, SpanUpdate
+from ...schemas import SpanMoreDetails, SpanPublic, SpanUpdate, UserPublic
 from ...services import TagService
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
@@ -37,7 +37,10 @@ async def update_span(
 ) -> SpanTable:
     """Update span by uuid."""
     return await span_service.update_span_tags(
-        span_uuid=span_uuid, tag_names=span_update.tags, user_uuid=current_user.uuid, tag_service=tag_service
+        span_uuid=span_uuid,
+        tag_names=span_update.tags,
+        user_uuid=current_user.uuid,
+        tag_service=tag_service,
     )
 
 
