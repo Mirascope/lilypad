@@ -220,7 +220,7 @@ async def create_new_function(
         return function_service.find_record_by_hash(project_uuid, function_create.hash)
     except HTTPException:
         new_function = function_service.create_record(
-            function_create, tag_service=tag_service
+            function_create, tag_service=tag_service, project_uuid=project_uuid
         )
         return new_function
 
@@ -235,12 +235,14 @@ async def update_function(
     function_uuid: UUID,
     function_update: FunctionUpdate,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
+    tag_service: Annotated[TagService, Depends(TagService)],
 ) -> FunctionTable:
     """Update a function."""
     return function_service.update_record_by_uuid(
         function_uuid,
         function_update.model_dump(exclude_unset=True),
         project_uuid=project_uuid,
+        tag_service=tag_service,
     )
 
 
