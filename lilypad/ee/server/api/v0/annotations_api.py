@@ -192,25 +192,3 @@ async def generate_annotation(
             "Connection": "keep-alive",
         },
     )
-
-
-@annotations_router.get(
-    "/projects/{project_uuid}/annotations",
-    response_model=Sequence[AnnotationPublic],
-)
-@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
-async def list_annotations(
-    project_uuid: UUID,
-    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
-    span_uuid: UUID,
-) -> Sequence[AnnotationPublic]:
-    """Get annotations by project. Optionally filter by a specific span_uuid."""
-    annotations = annotations_service.find_records_by_span_uuid(span_uuid)
-    if not annotations:
-            return []
-    return [
-            AnnotationPublic.model_validate(
-                annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
-            )
-            for annotation in annotations
-        ]
