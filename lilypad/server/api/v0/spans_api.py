@@ -32,13 +32,25 @@ async def update_span(
     span_uuid: UUID,
     span_update: SpanUpdate,
     span_service: Annotated[SpanService, Depends(SpanService)],
+) -> SpanTable:
+    """Update span by uuid."""
+    return span_service.update_tags(span_uuid, span_update)
+
+
+@spans_router.patch(
+    "/projects/{project_uuid}/spans/{span_uuid}", response_model=SpanPublic
+)
+async def update_span_tags(
+    span_uuid: UUID,
+    tags: list[str],
+    span_service: Annotated[SpanService, Depends(SpanService)],
     tag_service: Annotated[TagService, Depends(TagService)],
     current_user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> SpanTable:
-    """Update span by uuid."""
+    """Update span tags by uuid."""
     return await span_service.update_span_tags(
         span_uuid=span_uuid,
-        tag_names=span_update.tags,
+        tag_names=tags,
         user_uuid=current_user.uuid,
         tag_service=tag_service,
     )
