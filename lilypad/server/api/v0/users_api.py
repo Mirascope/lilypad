@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette import status
 
 from ..._utils import create_jwt_token, get_current_user
@@ -45,14 +45,14 @@ async def get_user(
     return user_service.user
 
 
-@users_router.get("/users", response_model=UserPublic | None)
+@users_router.get("/users", response_model=UserPublic)
 async def get_user_by_email(
     user_service: Annotated[UserService, Depends(UserService)],
-    email: str,
-    current_user: Annotated[UserPublic, Depends(get_current_user)] = None,
-) -> UserTable | None:
+    user: Annotated[UserPublic, Depends(get_current_user)],
+    email: str = Query(..., description="Email address of the user to find."),
+) -> UserTable:
     """Get user by email address within the current user's active organization."""
-    if not current_user.active_organization_uuid:
+    if not user.active_organization_uuid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current user does not have an active organization selected.",
@@ -61,7 +61,7 @@ async def get_user_by_email(
         email,
         [
             user_organizations.organization_uuid
-            for user_organizations in current_user.user_organizations
+            for user_organizations in user.user_organizations
         ],
     )
 
