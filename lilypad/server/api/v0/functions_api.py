@@ -243,6 +243,7 @@ async def update_function(
         function_update.model_dump(exclude_unset=True),
         project_uuid=project_uuid,
         tag_service=tag_service,
+        decorator_tags=function_update.decorator_tags,
     )
 
 

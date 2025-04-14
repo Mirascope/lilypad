@@ -167,7 +167,7 @@ class _FunctionBase(SQLModel):
 class FunctionUpdate(BaseModel):
     """Function update model."""
 
-    ...
+    decorator_tags: list[str] | None = Field(default=None)
 
 
 class FunctionTable(_FunctionBase, BaseOrganizationSQLModel, table=True):
