@@ -1,14 +1,14 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..._utils import get_current_user
 from ...models import SpanTable
-from ...schemas import SpanMoreDetails, SpanPublic, SpanUpdate, UserPublic
+from ...schemas import SpanMoreDetails, SpanPublic, UserPublic, SpanUpdate
 from ...services import TagService
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
