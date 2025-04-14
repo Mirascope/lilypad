@@ -17,7 +17,7 @@ spans_router = APIRouter()
 
 
 @spans_router.patch(
-    "/spans/{span_uuid}/assignment",
+    "/projects/{project_uuid}/spans/{span_uuid}/assignment",
     response_model=list[AnnotationPublic],
     summary="Assign Annotation to User",
     description="Assigns the annotation associated with the given span to a user specified by email. If no annotation exists, it will be created.",
