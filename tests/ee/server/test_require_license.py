@@ -82,7 +82,10 @@ async def test_invalid_license_none():
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(
-                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+                request,
+                project_uuid,
+                project_service,
+                organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert (
@@ -120,7 +123,10 @@ async def test_license_mismatch():
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(
-                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+                request,
+                project_uuid,
+                project_service,
+                organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert exc_info.value.detail == "License key does not match organization"
@@ -154,7 +160,10 @@ async def test_wrong_license_tier():
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(
-                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+                request,
+                project_uuid,
+                project_service,
+                organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert (
@@ -190,7 +199,10 @@ async def test_valid_license():
 
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         result = await dependency(
-            request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            request,
+            project_uuid,
+            project_service,
+            organization_service,  # pyright: ignore [reportArgumentType]
         )
         assert result == license_info
 
@@ -222,7 +234,10 @@ async def test_free_tier_returns_none():
 
         dependency = RequireLicense(tier=Tier.FREE)
         result = await dependency(
-            request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+            request,
+            project_uuid,
+            project_service,
+            organization_service,  # pyright: ignore [reportArgumentType]
         )
         assert result is None
 
@@ -247,7 +262,10 @@ async def test_license_validator_exception():
         dependency = RequireLicense(tier=Tier.ENTERPRISE)
         with pytest.raises(HTTPException) as exc_info:
             await dependency(
-                request, project_uuid, project_service, organization_service  # pyright: ignore [reportArgumentType]
+                request,
+                project_uuid,
+                project_service,
+                organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
         assert "Validation failed" in exc_info.value.detail

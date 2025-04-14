@@ -54,6 +54,7 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
         return record_table
 
     def create_record(self, data: FunctionCreate, **kwargs: Any) -> FunctionTable:
+        """Create a new record."""
         decorator_tags_names = data.decorator_tags
         data_dict = data.model_dump(exclude={"decorator_tags"})
         organization_uuid = kwargs.pop(

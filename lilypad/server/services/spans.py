@@ -343,6 +343,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         user_uuid: UUID,
         tag_service: "TagService",
     ) -> SpanTable:
+        """Update span tags by uuid."""
         span = self.find_record_by_uuid(span_uuid)
         if tag_names is None:
             return span
