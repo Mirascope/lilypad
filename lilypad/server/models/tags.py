@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
+from .function_tag_link import FunctionTagLink
 from .span_tag_link import SpanTagLink
 from .table_names import PROJECT_TABLE_NAME, TAG_TABLE_NAME
 
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from .organizations import OrganizationTable
     from .projects import ProjectTable
     from .spans import SpanTable
-
+    from .functions import FunctionTable
 
 class _TagBase(SQLModel):
     """Base Tag Model."""
@@ -41,4 +42,7 @@ class TagTable(_TagBase, BaseOrganizationSQLModel, table=True):
     organization: "OrganizationTable" = Relationship(back_populates="tags")
     spans: list["SpanTable"] = Relationship(
         back_populates="tags", link_model=SpanTagLink
+    )
+    functions: list["FunctionTable"] = Relationship(
+        back_populates="tags", link_model=FunctionTagLink
     )

@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -13,6 +14,9 @@ from sqlmodel import and_, delete, func, select, text
 from ..models import FunctionTable, SpanTable, SpanTagLink
 from ..schemas import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
+
+if TYPE_CHECKING:
+    from . import TagService
 
 
 class TimeFrame(str, Enum):
@@ -268,21 +272,57 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self, spans_create: Sequence[SpanCreate], project_uuid: UUID
     ) -> list[SpanTable]:
         """Create multiple annotation records in bulk."""
-        spans = []
+        spans_to_add = []
+        function_cache: dict[UUID, FunctionTable | None] = {}
+
         for span_create in spans_create:
-            span = self.table.model_validate(
+            db_span = self.table.model_validate(
                 span_create,
                 update={
                     "organization_uuid": self.user.active_organization_uuid,
-                    "user_uuid": self.user.uuid,
                     "project_uuid": project_uuid,
                 },
             )
-            spans.append(span)
+            spans_to_add.append(db_span)
 
-        self.session.add_all(spans)
+            if db_span.function_uuid:
+                if db_span.function_uuid not in function_cache:
+                    function = self.session.exec(
+                        select(FunctionTable)
+                        .where(FunctionTable.uuid == db_span.function_uuid)
+                        .options(selectinload(FunctionTable.tags))
+                    ).first()
+                    function_cache[db_span.function_uuid] = function
+                else:
+                    function = function_cache[db_span.function_uuid]
+
+                if function and function.tags:
+                    if not hasattr(db_span, "_temp_links_to_add"):
+                        db_span._temp_links_to_add = []  # type: ignore
+                    for tag in function.tags:
+                        db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
+
+        self.session.add_all(spans_to_add)
         self.session.flush()
-        return spans
+
+        final_links_to_add = []
+        for db_span in spans_to_add:
+            if hasattr(db_span, "_temp_links_to_add") and db_span.uuid:
+                for tag_uuid in db_span._temp_links_to_add:  # type: ignore
+                    final_links_to_add.append(
+                        SpanTagLink(
+                            span_uuid=db_span.uuid,
+                            tag_uuid=tag_uuid,
+                            created_by=self.user.uuid,
+                        )
+                    )
+                del db_span._temp_links_to_add  # type: ignore
+
+        if final_links_to_add:
+            self.session.add_all(final_links_to_add)
+            self.session.flush()
+
+        return spans_to_add
 
     def delete_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -298,3 +338,43 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.exec(delete_stmt)  # type: ignore
         self.session.flush()
         return True
+
+    async def update_span_tags(
+        self,
+        span_uuid: UUID,
+        tag_names: list[str] | None,
+        user_uuid: UUID,
+        tag_service: "TagService",
+    ) -> SpanTable:
+        span = self.find_record_by_uuid(span_uuid)
+        if tag_names is None:
+            return span
+        target_tag_uuids: set[UUID] = set()
+        if tag_names:
+            if not span.project_uuid:
+                raise ValueError(f"Span {span_uuid} missing project_uuid")
+            for name in tag_names:
+                tag = tag_service.find_or_create_tag(name, span.project_uuid)
+                target_tag_uuids.add(tag.uuid)
+        existing_links = self.session.exec(
+            select(SpanTagLink).where(SpanTagLink.span_uuid == span_uuid)
+        ).all()
+        existing_tag_uuids = {link.tag_uuid for link in existing_links if link.tag_uuid}
+        to_add = target_tag_uuids - existing_tag_uuids
+        to_remove = existing_tag_uuids - target_tag_uuids
+        if to_remove:
+            self.session.exec(
+                delete(SpanTagLink).where(
+                    SpanTagLink.span_uuid == span_uuid,
+                    SpanTagLink.tag_uuid.in_(to_remove),
+                )
+            )
+        for tag_uuid in to_add:
+            self.session.add(
+                SpanTagLink(
+                    span_uuid=span_uuid, tag_uuid=tag_uuid, created_by=user_uuid
+                )
+            )
+        self.session.commit()
+        self.session.refresh(span)
+        return span

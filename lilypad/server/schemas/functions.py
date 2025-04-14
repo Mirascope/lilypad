@@ -1,7 +1,7 @@
 """Functions schemas."""
 
 from enum import Enum
-from typing import Annotated, Any, TypeVar, overload
+from typing import Annotated, Any, TypeVar, overload, TYPE_CHECKING
 from uuid import UUID
 
 from mirascope.core.base import CommonCallParams
@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from ..models.functions import _FunctionBase
 
+if TYPE_CHECKING:
+    from . import TagPublic
 
 class Provider(str, Enum):
     """Provider name enum"""
@@ -22,11 +24,13 @@ class Provider(str, Enum):
 class FunctionCreate(_FunctionBase):
     """Function create model."""
 
+    decorator_tags: list[str] | None = Field(default=None)
 
 class FunctionPublic(_FunctionBase):
     """Function public model."""
 
     uuid: UUID
+    tags: list["TagPublic"] = []
 
 
 # Security constraints

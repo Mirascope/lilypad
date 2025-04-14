@@ -2,12 +2,14 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from typing import Any, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlmodel import and_, asc, desc, func, select
 
 from ..models import FunctionTable
+from ..models.function_tag_link import FunctionTagLink
 from ..schemas import FunctionCreate
 from .base_organization import BaseOrganizationService
 
@@ -17,6 +19,36 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
 
     table: type[FunctionTable] = FunctionTable
     create_model: type[FunctionCreate] = FunctionCreate
+
+    def create_record(self, data: FunctionCreate, **kwargs: Any) -> FunctionTable:
+        decorator_tags_names = data.decorator_tags
+        data_dict = data.model_dump(exclude={"decorator_tags"})
+
+        record_table = self.table.model_validate({**data_dict, **kwargs})
+        self.session.add(record_table)
+        self.session.flush()
+
+        if decorator_tags_names and record_table.uuid:
+            tag_service = TagService(self.session, self.user)
+            project_uuid = kwargs.get("project_uuid") or getattr(
+                record_table, "project_uuid", None
+            )
+            if not project_uuid:
+                raise ValueError("project_uuid required for tags")
+
+            links_to_add = []
+            for tag_name in decorator_tags_names:
+                tag = tag_service.find_or_create_tag(tag_name, project_uuid)
+                link = FunctionTagLink(
+                    function_uuid=record_table.uuid, tag_uuid=tag.uuid
+                )
+                links_to_add.append(link)
+            if links_to_add:
+                self.session.add_all(links_to_add)
+                self.session.flush()
+
+        self.session.refresh(record_table)
+        return record_table
 
     def find_latest_function_by_name(
         self, project_uuid: UUID, name: str
