@@ -3,9 +3,10 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
 
-from ..._utils import create_jwt_token
+from ..._utils import create_jwt_token, get_current_user
 from ...models import (
     UserTable,
 )
@@ -42,6 +43,27 @@ async def get_user(
 ) -> UserPublic:
     """Get user."""
     return user_service.user
+
+
+@users_router.get("/users", response_model=UserPublic | None)
+async def get_user_by_email(
+    user_service: Annotated[UserService, Depends(UserService)],
+    email: str,
+    current_user: Annotated[UserPublic, Depends(get_current_user)] = None,
+) -> UserTable | None:
+    """Get user by email address within the current user's active organization."""
+    if not current_user.active_organization_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current user does not have an active organization selected.",
+        )
+    return user_service.find_record_by_email_in_organizations(
+        email,
+        [
+            user_organizations.organization_uuid
+            for user_organizations in current_user.user_organizations
+        ],
+    )
 
 
 __all__ = ["users_router"]

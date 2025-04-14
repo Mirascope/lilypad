@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
+from ...ee.server.models import UserOrganizationTable
 from ..models import UserTable
 from ..schemas import UserCreate
 from .base import BaseService
@@ -49,3 +50,19 @@ class UserService(BaseService[UserTable, UserCreate]):
         self.session.flush()
         self.session.refresh(user)
         return user
+
+    def find_record_by_email_in_organizations(
+        self, email: str, organization_uuids: list[UUID]
+    ) -> UserTable | None:
+        """Find a user record by email address within a specific organization."""
+        statement = (
+            select(UserTable)
+            .join(
+                UserOrganizationTable, UserTable.uuid == UserOrganizationTable.user_uuid
+            )
+            .where(
+                UserTable.email == email,
+                UserOrganizationTable.organization_uuid.in_(organization_uuids),  # type: ignore
+            )
+        )
+        return self.session.exec(statement).first()
