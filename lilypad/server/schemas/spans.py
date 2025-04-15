@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, model_validator
 
 from ...ee.server.schemas.annotations import AnnotationPublic
+from ...server.schemas.span_more_details import SpanMoreDetails
 from ..models.spans import Scope, SpanBase, SpanTable
 from ..schemas.tags import TagPublic
 from .functions import FunctionPublic
@@ -68,11 +69,17 @@ class SpanPublic(SpanBase):
             cls._convert_span_table_to_public(child_span)
             for child_span in span.child_spans
         ]
+        annotations = [
+            AnnotationPublic.model_validate(
+                annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+            )
+            for annotation in span.annotations
+        ]
         return {
             "display_name": display_name,
             "child_spans": child_spans,
             "function": span.function,
-            "annotations": span.annotations,
+            "annotations": annotations,
             "status": span.data.get("status"),
             "tags": span.tags,
             **span.model_dump(exclude={"child_spans", "data"}),
