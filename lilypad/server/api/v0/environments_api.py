@@ -7,10 +7,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from lilypad.server.models import FunctionTable
-from lilypad.server.schemas import FunctionPublic
+from lilypad.server.schemas.functions import FunctionPublic
 
-from ....server.schemas import (
+from ....server.schemas.deployments import (
     DeploymentPublic,
+)
+from ....server.schemas.environments import (
     EnvironmentCreate,
     EnvironmentPublic,
 )

@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import and_, asc, desc, func, select
 
-from ..models import FunctionTable
-from ..schemas import FunctionCreate
+from ..models.functions import FunctionTable
+from ..schemas.functions import FunctionCreate
 from .base_organization import BaseOrganizationService
 
 

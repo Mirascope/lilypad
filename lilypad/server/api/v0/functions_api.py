@@ -18,7 +18,7 @@ from ...models import (
     FunctionUpdate,
 )
 from ...models.environments import Environment
-from ...schemas import (
+from ...schemas.functions import (
     FunctionCreate,
     FunctionPublic,
 )

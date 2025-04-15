@@ -9,7 +9,8 @@ from lilypad.server.models import (
     Scope,
     SpanTable,
 )
-from lilypad.server.schemas import ProjectPublic, UserPublic
+from lilypad.server.schemas.projects import ProjectPublic
+from lilypad.server.schemas.users import UserPublic
 from lilypad.server.services import SpanService
 
 
