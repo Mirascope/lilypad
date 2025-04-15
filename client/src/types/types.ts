@@ -111,6 +111,22 @@ export interface AnnotationCreate {
 }
 
 /**
+ * AnnotationMetrics
+ * Annotation metrics model.
+ */
+export interface AnnotationMetrics {
+  /**
+   * Function Uuid
+   * @format uuid
+   */
+  function_uuid: string;
+  /** Total Count */
+  total_count: number;
+  /** Success Count */
+  success_count: number;
+}
+
+/**
  * AnnotationPublic
  * Annotation public model.
  */
@@ -144,13 +160,13 @@ export interface AnnotationPublic {
    * @format uuid
    */
   function_uuid: string;
-  /** Span more details model. */
-  span: SpanMoreDetails;
   /**
    * Created At
    * @format date-time
    */
   created_at: string;
+  /** Span more details model. */
+  span: SpanMoreDetails;
 }
 
 /**

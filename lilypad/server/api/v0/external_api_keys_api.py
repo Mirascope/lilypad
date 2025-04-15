@@ -5,12 +5,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from ..._utils.auth import require_scopes
-from ...schemas import UserPublic
 from ...schemas.external_api_keys import (
     ExternalAPIKeyCreate,
     ExternalAPIKeyPublic,
     ExternalAPIKeyUpdate,
 )
+from ...schemas.users import UserPublic
 from ...services.user_external_api_key_service import UserExternalAPIKeyService
 
 external_api_key_router = APIRouter()

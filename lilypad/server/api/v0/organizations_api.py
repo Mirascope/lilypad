@@ -12,11 +12,13 @@ from ..._utils import get_current_user
 from ...models import (
     OrganizationTable,
 )
-from ...schemas import (
+from ...schemas.organizations import (
     OrganizationPublic,
+    OrganizationUpdate,
+)
+from ...schemas.users import (
     UserPublic,
 )
-from ...schemas.organizations import OrganizationUpdate
 from ...services import OrganizationService
 
 organization_router = APIRouter()

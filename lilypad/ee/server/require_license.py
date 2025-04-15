@@ -15,7 +15,7 @@ from ee.validate import LicenseError
 from ...ee.server import ALT_HOST_NAME, HOST_NAME
 from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
-from ...server.schemas import UserPublic
+from ...server.schemas.users import UserPublic
 from ...server.services import OrganizationService, ProjectService
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])

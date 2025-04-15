@@ -9,12 +9,12 @@ from pydantic import BaseModel
 
 from .....server._utils import get_current_user
 from .....server.models import UserTable
-from .....server.schemas import (
+from .....server.schemas.users import (
     UserPublic,
 )
 from .....server.services import OrganizationInviteService, OrganizationService
 from ...models import UserOrganizationTable, UserRole
-from ...schemas import UserOrganizationCreate, UserOrganizationUpdate
+from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
 
 user_organizations_router = APIRouter()

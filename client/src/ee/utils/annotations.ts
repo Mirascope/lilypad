@@ -1,6 +1,7 @@
 import api from "@/api";
 import {
   AnnotationCreate,
+  AnnotationMetrics,
   AnnotationPublic,
   AnnotationUpdate,
 } from "@/types/types";
@@ -40,6 +41,17 @@ export const fetchAnnotationsByProjectUuid = async (projectUuid?: string) => {
   if (!projectUuid) return [];
   return (
     await api.get<AnnotationPublic[]>(`/ee/projects/${projectUuid}/annotations`)
+  ).data;
+};
+
+export const fetchAnnotationMetricsByFunctionUuid = async (
+  projectUuid: string,
+  functionUuid: string
+) => {
+  return (
+    await api.get<AnnotationMetrics>(
+      `/ee/projects/${projectUuid}/functions/${functionUuid}/annotations/metrics`
+    )
   ).data;
 };
 
@@ -118,4 +130,21 @@ export const annotationsByProjectQueryOptions = (projectUuid?: string) =>
     queryKey: ["projects", projectUuid, "annotations"],
     queryFn: () => fetchAnnotationsByProjectUuid(projectUuid),
     refetchInterval: 60000,
+  });
+
+export const annotationMetricsByFunctionQueryOptions = (
+  projectUuid: string,
+  functionUuid: string
+) =>
+  queryOptions({
+    queryKey: [
+      "projects",
+      projectUuid,
+      "functions",
+      functionUuid,
+      "annotations",
+      "metrics",
+    ],
+    queryFn: () =>
+      fetchAnnotationMetricsByFunctionUuid(projectUuid, functionUuid),
   });

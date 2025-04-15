@@ -1,6 +1,6 @@
 """Test cases for the spans schema."""
 
-from lilypad.server.schemas.spans import (
+from lilypad.server.schemas.span_more_details import (
     convert_anthropic_messages,
     convert_azure_messages,
     convert_events,
