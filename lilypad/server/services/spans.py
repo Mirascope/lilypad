@@ -284,19 +284,14 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
             spans_to_add.append(db_span)
 
-            # Check for decorator tags in OTel attributes
             otel_attributes = db_span.data.get("attributes", {})
-            decorator_tags_json = otel_attributes.get("lilypad.decorator.tags")
-
-            if decorator_tags_json and isinstance(decorator_tags_json, str):
-                decorator_tag_names = json.loads(decorator_tags_json)
-                if isinstance(decorator_tag_names, list):
-                    if not hasattr(db_span, "_temp_links_to_add"):
-                        db_span._temp_links_to_add = []  # type: ignore
-                    for tag_name in decorator_tag_names:
-                        if isinstance(tag_name, str):
-                            tag = tag_service.find_or_create_tag(tag_name, project_uuid)
-                            db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
+            if  (decorator_tag_names := otel_attributes.get("lilypad.decorator.tags")) and isinstance(decorator_tag_names, list):
+                if not hasattr(db_span, "_temp_links_to_add"):
+                    db_span._temp_links_to_add = []  # type: ignore
+                for tag_name in decorator_tag_names:
+                    if isinstance(tag_name, str):
+                        tag = tag_service.find_or_create_tag(tag_name, project_uuid)
+                        db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
 
         self.session.add_all(spans_to_add)
         self.session.flush()
