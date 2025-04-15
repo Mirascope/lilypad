@@ -10,7 +10,6 @@ from .span_tag_link import SpanTagLink
 from .table_names import PROJECT_TABLE_NAME, TAG_TABLE_NAME
 
 if TYPE_CHECKING:
-    from .functions import FunctionTable
     from .organizations import OrganizationTable
     from .projects import ProjectTable
     from .spans import SpanTable

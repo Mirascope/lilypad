@@ -8,7 +8,6 @@ from mirascope.core.base import CommonCallParams
 from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from ..models.functions import _FunctionBase
-from .tags import TagPublic
 
 
 class Provider(str, Enum):
@@ -23,7 +22,6 @@ class Provider(str, Enum):
 class FunctionCreate(_FunctionBase):
     """Function create model."""
 
-    ...
 
 class FunctionPublic(_FunctionBase):
     """Function public model."""

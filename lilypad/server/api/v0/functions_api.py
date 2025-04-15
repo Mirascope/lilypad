@@ -22,7 +22,7 @@ from ...schemas import (
     FunctionCreate,
     FunctionPublic,
 )
-from ...services import DeploymentService, FunctionService, SpanService, TagService
+from ...services import DeploymentService, FunctionService, SpanService
 
 functions_router = APIRouter()
 
@@ -218,9 +218,7 @@ async def create_new_function(
     try:
         return function_service.find_record_by_hash(project_uuid, function_create.hash)
     except HTTPException:
-        new_function = function_service.create_record(
-            function_create, project_uuid=project_uuid
-        )
+        new_function = function_service.create_record(function_create)
         return new_function
 
 

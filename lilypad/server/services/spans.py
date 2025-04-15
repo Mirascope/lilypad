@@ -82,7 +82,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         ).one_or_none()
 
-    def update_tags(self, uuid: UUID, span_update: "SpanUpdate") -> SpanTable:
+    def update_tags(self, uuid: UUID, span_update: SpanUpdate) -> SpanTable:
         """Updates a record based on the uuid, efficiently syncing with span_update.tags"""
         record_table = self.find_record_by_uuid(uuid)
 
@@ -341,6 +341,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         update_data: SpanUpdate,
         user_uuid: UUID,
     ) -> SpanTable:
+        """Update a span record by UUID"""
         span_to_update = self.find_record_by_uuid(span_uuid)
         tag_names = update_data.tags
         other_update_data = update_data.model_dump(exclude={"tags"}, exclude_none=True)

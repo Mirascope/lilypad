@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from .deployments import DeploymentTable
     from .projects import ProjectTable
     from .spans import SpanTable
-    from .tags import TagTable
 
 MAX_ARG_NAME_LENGTH = 100
 MAX_TYPE_NAME_LENGTH = 100
@@ -166,7 +165,7 @@ class _FunctionBase(SQLModel):
 class FunctionUpdate(BaseModel):
     """Function update model."""
 
-    decorator_tags: list[str] | None = Field(default=None)
+    ...
 
 
 class FunctionTable(_FunctionBase, BaseOrganizationSQLModel, table=True):

@@ -82,13 +82,19 @@ class UserExternalAPIKeyService(BaseOrganizationService):
         name = self.get_secret_name(service_name)
         # Create a new secret in SecretManager and store its secret_id in the DB
         try:
-            secret_id = self.secret_manager.store_secret(name, api_key, description)
+            secret_id = self.secret_manager.store_secret(
+                name, api_key, description
+            )
         except IntegrityError:
             # If a duplicate key error occurs, delete the existing secret and retry storing
-            duplicate_secret_id = self.secret_manager.get_secret_id_by_name(name)
+            duplicate_secret_id = self.secret_manager.get_secret_id_by_name(
+                name
+            )
             if duplicate_secret_id:
                 self.secret_manager.delete_secret(duplicate_secret_id)
-            secret_id = self.secret_manager.store_secret(name, api_key, description)
+            secret_id = self.secret_manager.store_secret(
+                name, api_key, description
+            )
 
         new_key = ExternalAPIKeyTable(
             user_id=user.uuid,  # pyright: ignore [reportArgumentType]
