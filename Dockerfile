@@ -39,4 +39,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT []
 
 # Run the FastAPI application by default
-CMD ["fastapi", "run", "--workers", "8", "lilypad/server/main.py"]
+CMD ["fastapi", "run", "--workers", "32", "lilypad/server/main.py"]
