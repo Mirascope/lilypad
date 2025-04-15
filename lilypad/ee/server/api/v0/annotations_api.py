@@ -13,7 +13,7 @@ from ee import Tier
 from .....server._utils import get_current_user
 from .....server.schemas import UserPublic
 from .....server.schemas.spans import SpanMoreDetails
-from .....server.services import SpanService, UserService
+from .....server.services import ProjectService, SpanService, UserService
 from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from ....server.services import AnnotationService
 from ...generations.annotate_trace import annotate_trace
@@ -30,8 +30,7 @@ annotations_router = APIRouter()
 async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
-    user_service: Annotated[UserService, Depends(UserService)],
-    current_user: Annotated[UserPublic, Depends(get_current_user)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
     annotations_create: Sequence[AnnotationCreate],
 ) -> Sequence[AnnotationPublic]:
     """Create an annotation.
@@ -70,12 +69,14 @@ async def create_annotations(
             processed_creates.append(annotation.model_copy())
 
     if emails_to_lookup:
+        project = project_service.find_record_by_uuid(project_uuid)
+        email_to_uuid_lookup = {
+            user_organizations.user.email: user_organizations.user.uuid
+            for user_organizations in project.organization.user_organizations
+        }
         for email in emails_to_lookup:
-            user = user_service.find_all_records(
-                **{"email": email, "organization_uuid": current_user.user_organizations}
-            )
-            if user and user[0].uuid:
-                email_to_uuid_map[email] = user[0].uuid
+            if email in email_to_uuid_lookup:
+                email_to_uuid_map[email] = email_to_uuid_lookup[email]
             else:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
@@ -114,7 +115,7 @@ async def create_annotations(
 
     # Create all records in bulk
     annotations = annotations_service.create_bulk_records(
-        annotations_create, project_uuid
+        final_creates, project_uuid
     )
     return [
         AnnotationPublic.model_validate(
