@@ -1,5 +1,6 @@
 """The `SpanService` class for spans."""
 
+import json
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
@@ -270,34 +271,32 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     ) -> list[SpanTable]:
         """Create multiple annotation records in bulk."""
         spans_to_add = []
-        function_cache: dict[UUID, FunctionTable | None] = {}
+        tag_service = TagService(self.session, self.user)
 
         for span_create in spans_create:
             db_span = self.table.model_validate(
                 span_create,
                 update={
                     "organization_uuid": self.user.active_organization_uuid,
+                    "user_uuid": self.user.uuid,
                     "project_uuid": project_uuid,
                 },
             )
             spans_to_add.append(db_span)
 
-            if db_span.function_uuid:
-                if db_span.function_uuid not in function_cache:
-                    function = self.session.exec(
-                        select(FunctionTable)
-                        .where(FunctionTable.uuid == db_span.function_uuid)
-                        .options(selectinload(FunctionTable.tags))
-                    ).first()
-                    function_cache[db_span.function_uuid] = function
-                else:
-                    function = function_cache[db_span.function_uuid]
+            # Check for decorator tags in OTel attributes
+            otel_attributes = db_span.data.get("attributes", {})
+            decorator_tags_json = otel_attributes.get("lilypad.decorator.tags")
 
-                if function and function.tags:
+            if decorator_tags_json and isinstance(decorator_tags_json, str):
+                decorator_tag_names = json.loads(decorator_tags_json)
+                if isinstance(decorator_tag_names, list):
                     if not hasattr(db_span, "_temp_links_to_add"):
                         db_span._temp_links_to_add = []  # type: ignore
-                    for tag in function.tags:
-                        db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
+                    for tag_name in decorator_tag_names:
+                        if isinstance(tag_name, str):
+                            tag = tag_service.find_or_create_tag(tag_name, project_uuid)
+                            db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
 
         self.session.add_all(spans_to_add)
         self.session.flush()
@@ -336,43 +335,59 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.flush()
         return True
 
-    async def update_span_tags(
+    async def update_span(
         self,
         span_uuid: UUID,
-        tag_names: list[str] | None,
+        update_data: SpanUpdate,
         user_uuid: UUID,
-        tag_service: "TagService",
     ) -> SpanTable:
-        """Update span tags by uuid."""
-        span = self.find_record_by_uuid(span_uuid)
+        span_to_update = self.find_record_by_uuid(span_uuid)
+        tag_names = update_data.tags
+        other_update_data = update_data.model_dump(exclude={"tags"}, exclude_none=True)
+        tags_modified = self._sync_span_tags(span_to_update, tag_names, user_uuid)
+        other_fields_modified = False
+        if other_update_data:
+            span_to_update.sqlmodel_update(other_update_data)
+            self.session.add(span_to_update)
+            other_fields_modified = True
+        if tags_modified or other_fields_modified:
+            self.session.commit()
+            self.session.refresh(span_to_update)
+        return span_to_update
+
+    def _sync_span_tags(
+        self, span: SpanTable, tag_names: list[str] | None, user_uuid: UUID
+    ) -> bool:
         if tag_names is None:
-            return span
+            return False
+        tag_service = TagService(self.session, self.user)
         target_tag_uuids: set[UUID] = set()
         if tag_names:
             if not span.project_uuid:
-                raise ValueError(f"Span {span_uuid} missing project_uuid")
+                raise ValueError(...)
             for name in tag_names:
                 tag = tag_service.find_or_create_tag(name, span.project_uuid)
                 target_tag_uuids.add(tag.uuid)
         existing_links = self.session.exec(
-            select(SpanTagLink).where(SpanTagLink.span_uuid == span_uuid)
+            select(SpanTagLink).where(SpanTagLink.span_uuid == span.uuid)
         ).all()
         existing_tag_uuids = {link.tag_uuid for link in existing_links if link.tag_uuid}
         to_add = target_tag_uuids - existing_tag_uuids
         to_remove = existing_tag_uuids - target_tag_uuids
+        modified = False
         if to_remove:
             self.session.exec(
                 delete(SpanTagLink).where(
-                    SpanTagLink.span_uuid == span_uuid,
+                    SpanTagLink.span_uuid == span.uuid,
                     SpanTagLink.tag_uuid.in_(to_remove),
                 )
             )
+            modified = True
         for tag_uuid in to_add:
             self.session.add(
                 SpanTagLink(
-                    span_uuid=span_uuid, tag_uuid=tag_uuid, created_by=user_uuid
+                    span_uuid=span.uuid, tag_uuid=tag_uuid, created_by=user_uuid
                 )
             )
-        self.session.commit()
-        self.session.refresh(span)
-        return span
+            modified = True
+        return modified

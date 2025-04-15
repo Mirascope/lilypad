@@ -521,7 +521,7 @@ class SpanCreate(SpanBase):
 class SpanUpdate(BaseModel):
     """Span update model"""
 
-    tags: list[TagPublic] | None = None
+    tags: list[str] | None = None
 
 
 class SpanPublic(SpanBase):

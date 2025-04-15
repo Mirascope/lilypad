@@ -2,22 +2,14 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlmodel import and_, asc, desc, func, select
 
 from ..models import FunctionTable
-from ..models.function_tag_link import FunctionTagLink
 from ..schemas import FunctionCreate
 from .base_organization import BaseOrganizationService
-
-if TYPE_CHECKING:
-    from ..services.tags import TagService
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
@@ -25,67 +17,6 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
 
     table: type[FunctionTable] = FunctionTable
     create_model: type[FunctionCreate] = FunctionCreate
-
-    def _link_tags(
-        self,
-        record_table: FunctionTable,
-        decorator_tags_names: list[str],
-        project_uuid: UUID,
-        tag_service: "TagService",
-    ) -> FunctionTable:
-        logger.error(
-            f"Linking tags to function {record_table.name} with UUID {record_table.uuid}"
-        )
-        """Link tags to the function."""
-        if decorator_tags_names and record_table.uuid:
-            links_to_add = []
-            for tag_name in decorator_tags_names:
-                tag = tag_service.find_or_create_tag(tag_name, project_uuid)
-                link = FunctionTagLink(
-                    function_uuid=record_table.uuid, tag_uuid=tag.uuid
-                )
-                links_to_add.append(link)
-            logger.error(links_to_add)
-            if links_to_add:
-                self.session.add_all(links_to_add)
-                self.session.flush()
-
-        self.session.refresh(record_table)
-        return record_table
-
-    def create_record(self, data: FunctionCreate, **kwargs: Any) -> FunctionTable:
-        """Create a new record."""
-        decorator_tags_names = data.decorator_tags
-        data_dict = data.model_dump(exclude={"decorator_tags"})
-        organization_uuid = kwargs.pop(
-            "organization_uuid", self.user.active_organization_uuid
-        )
-        record_table = self.table.model_validate(
-            {**data_dict, **kwargs, "organization_uuid": organization_uuid}
-        )
-        self.session.add(record_table)
-        self.session.flush()
-
-        return self._link_tags(
-            record_table,
-            decorator_tags_names,
-            kwargs["project_uuid"],
-            kwargs["tag_service"],
-        )
-
-    def update_record_by_uuid(
-        self, uuid: UUID, data: dict, **kwargs: Any
-    ) -> FunctionTable:
-        """Updates a record based on the uuid"""
-        tag_service = kwargs.pop("tag_service")
-        decorator_tags = kwargs.pop("decorator_tags", [])
-        record_table = self.find_record_by_uuid(uuid, **kwargs)
-        record_table.sqlmodel_update(data)
-        self.session.add(record_table)
-
-        return self._link_tags(
-            record_table, decorator_tags, kwargs["project_uuid"], tag_service
-        )
 
     def find_latest_function_by_name(
         self, project_uuid: UUID, name: str

@@ -7,7 +7,6 @@ from .comments import CommentTable
 from .deployments import DeploymentTable
 from .environments import EnvironmentTable
 from .external_api_keys import ExternalAPIKeyTable
-from .function_tag_link import FunctionTagLink
 from .functions import (
     FunctionTable,
     FunctionUpdate,
@@ -30,7 +29,6 @@ __all__ = [
     "EnvironmentTable",
     "DeploymentTable",
     "FunctionTable",
-    "FunctionTagLink",
     "FunctionUpdate",
     "JSONTypeDecorator",
     "OrganizationInviteBase",

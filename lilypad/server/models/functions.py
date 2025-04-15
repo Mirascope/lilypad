@@ -15,7 +15,6 @@ from typing_extensions import Self, TypedDict
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import JSONTypeDecorator, get_json_column
-from .function_tag_link import FunctionTagLink
 from .table_names import (
     FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
@@ -185,7 +184,4 @@ class FunctionTable(_FunctionBase, BaseOrganizationSQLModel, table=True):
     )
     deployments: list["DeploymentTable"] = Relationship(
         back_populates="function", cascade_delete=True
-    )
-    tags: list["TagTable"] = Relationship(
-        back_populates="functions", link_model=FunctionTagLink
     )

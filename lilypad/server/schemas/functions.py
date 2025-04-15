@@ -23,14 +23,12 @@ class Provider(str, Enum):
 class FunctionCreate(_FunctionBase):
     """Function create model."""
 
-    decorator_tags: list[str] | None = Field(default=None)
-
+    ...
 
 class FunctionPublic(_FunctionBase):
     """Function public model."""
 
     uuid: UUID
-    tags: list[TagPublic] = []
 
 
 # Security constraints
