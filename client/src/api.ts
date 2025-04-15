@@ -11,7 +11,6 @@ if (import.meta.env.MODE === "production") {
 const api = axios.create({
   baseURL,
   withCredentials: true,
-  headers: { Connection: "keep-alive" },
 });
 
 api.interceptors.request.use(
