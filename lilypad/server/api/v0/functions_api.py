@@ -179,6 +179,7 @@ async def get_functions(
     function_service: Annotated[FunctionService, Depends(FunctionService)],
 ) -> Sequence[FunctionTable]:
     """Grab all functions."""
+    print("TEST")  # noqa: T201
     return function_service.find_all_records(project_uuid=project_uuid)
 
 
