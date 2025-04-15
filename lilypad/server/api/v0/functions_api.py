@@ -172,7 +172,7 @@ async def get_function_by_hash(
 
 
 @functions_router.get(
-    "/projects/{project_uuid}/functions/foo", response_model=Sequence[FunctionPublic]
+    "/projects/{project_uuid}/functions", response_model=Sequence[FunctionPublic]
 )
 async def get_functions(
     project_uuid: UUID,

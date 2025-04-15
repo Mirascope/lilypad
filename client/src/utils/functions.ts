@@ -41,9 +41,8 @@ export const fetchFunctionsByName = async (
 };
 
 export const fetchFunctions = async (projectUuid: string) => {
-  return (
-    await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions/foo`)
-  ).data;
+  return (await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions`))
+    .data;
 };
 
 export const fetchLatestVersionUniqueFunctionNames = async (
