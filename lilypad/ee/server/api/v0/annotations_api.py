@@ -25,7 +25,6 @@ annotations_router = APIRouter()
 @annotations_router.post(
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
-    status_code=status.HTTP_201_CREATED,  # Use 201 for successful creation
 )
 @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def create_annotations(

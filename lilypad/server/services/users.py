@@ -5,7 +5,6 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ...ee.server.models import UserOrganizationTable
 from ..models import UserTable
 from ..schemas import UserCreate
 from .base import BaseService
