@@ -343,32 +343,28 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     ) -> SpanTable:
         """Update a span record by UUID"""
         span_to_update = self.find_record_by_uuid(span_uuid)
-        tag_names = update_data.tags
-        other_update_data = update_data.model_dump(exclude={"tags"}, exclude_none=True)
-        tags_modified = self._sync_span_tags(span_to_update, tag_names, user_uuid)
+
+        tags_modified = self._sync_span_tags(span_to_update, update_data, user_uuid)
         other_fields_modified = False
-        if other_update_data:
-            span_to_update.sqlmodel_update(other_update_data)
-            self.session.add(span_to_update)
-            other_fields_modified = True
         if tags_modified or other_fields_modified:
             self.session.commit()
             self.session.refresh(span_to_update)
         return span_to_update
 
     def _sync_span_tags(
-        self, span: SpanTable, tag_names: list[str] | None, user_uuid: UUID
+        self, span: SpanTable, span_update: SpanUpdate, user_uuid: UUID
     ) -> bool:
-        if tag_names is None:
-            return False
-        tag_service = TagService(self.session, self.user)
         target_tag_uuids: set[UUID] = set()
-        if tag_names:
-            if not span.project_uuid:
-                raise ValueError(...)
-            for name in tag_names:
+        if span_update.tags_by_uuid is not None:
+            target_tag_uuids.update(span_update.tags_by_uuid)
+        elif span_update.tags_by_name is not None:
+            tag_service = TagService(self.session, self.user)
+            for name in span_update.tags_by_name:
                 tag = tag_service.find_or_create_tag(name, span.project_uuid)
                 target_tag_uuids.add(tag.uuid)
+        else:
+            return False
+
         existing_links = self.session.exec(
             select(SpanTagLink).where(SpanTagLink.span_uuid == span.uuid)
         ).all()

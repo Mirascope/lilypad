@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..._utils import get_current_user
 from ...models import SpanTable
 from ...schemas import SpanMoreDetails, SpanPublic, SpanUpdate, UserPublic
-from ...services import TagService
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()
@@ -39,25 +38,6 @@ async def update_span(
         span_uuid=span_uuid,
         update_data=span_update,
         user_uuid=current_user.uuid,
-    )
-
-
-@spans_router.patch(
-    "/projects/{project_uuid}/spans/{span_uuid}", response_model=SpanPublic
-)
-async def update_span_tags(
-    span_uuid: UUID,
-    tags: list[str],
-    span_service: Annotated[SpanService, Depends(SpanService)],
-    tag_service: Annotated[TagService, Depends(TagService)],
-    current_user: Annotated[UserPublic, Depends(get_current_user)],
-) -> SpanTable:
-    """Update span tags by uuid."""
-    return await span_service.update_span_tags(
-        span_uuid=span_uuid,
-        tag_names=tags,
-        user_uuid=current_user.uuid,
-        tag_service=tag_service,
     )
 
 
