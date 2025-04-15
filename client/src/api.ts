@@ -11,6 +11,7 @@ if (import.meta.env.MODE === "production") {
 const api = axios.create({
   baseURL,
   withCredentials: true,
+  headers: { Connection: "keep-alive" },
 });
 
 api.interceptors.request.use(
@@ -31,7 +32,9 @@ api.interceptors.request.use(
     }
   },
   (error) => {
-    return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
 );
 export default api;
