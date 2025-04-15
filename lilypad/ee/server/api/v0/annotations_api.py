@@ -126,7 +126,7 @@ async def get_annotations_by_functions(
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
-@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+# @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def get_annotations_by_project(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
