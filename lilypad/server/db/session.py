@@ -44,7 +44,11 @@ class DatabaseEngine:
                 )
             else:
                 self._engine = create_engine(
-                    database_url, pool_size=5, max_overflow=10, pool_pre_ping=True
+                    database_url,
+                    pool_size=16,
+                    max_overflow=8,
+                    pool_pre_ping=True,
+                    pool_recycle=1800,
                 )
         return self._engine
 
