@@ -1,6 +1,5 @@
 """The `SpanService` class for spans."""
 
-import json
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
@@ -285,7 +284,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             spans_to_add.append(db_span)
 
             otel_attributes = db_span.data.get("attributes", {})
-            if  (decorator_tag_names := otel_attributes.get("lilypad.decorator.tags")) and isinstance(decorator_tag_names, list):
+            if (
+                decorator_tag_names := otel_attributes.get("lilypad.decorator.tags")
+            ) and isinstance(decorator_tag_names, list):
                 if not hasattr(db_span, "_temp_links_to_add"):
                     db_span._temp_links_to_add = []  # type: ignore
                 for tag_name in decorator_tag_names:
