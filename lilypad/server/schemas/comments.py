@@ -28,4 +28,3 @@ class CommentPublic(_CommentBase):
 
     uuid: UUID
     created_at: datetime
-    child_comments: list["CommentPublic"] = []
