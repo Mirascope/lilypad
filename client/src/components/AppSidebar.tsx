@@ -313,6 +313,7 @@ export const AppSidebar = () => {
             <SidebarMenuButton asChild>
               <Link
                 to={"/settings/$"}
+                params={{ _splat: "overview" }}
                 className='flex items-center w-full gap-2 [&.active]:font-bold'
               >
                 <Settings />

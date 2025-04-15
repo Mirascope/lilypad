@@ -45,20 +45,12 @@ const Settings = () => {
     {
       label: "Organization",
       value: "org",
-      component: (
-        <Suspense fallback={<LilypadLoading />}>
-          <OrgSettings />
-        </Suspense>
-      ),
+      component: <OrgSettings />,
     },
     {
       label: "Tags",
       value: "tags",
-      component: (
-        <Suspense fallback={<LilypadLoading />}>
-          <TagSettings />
-        </Suspense>
-      ),
+      component: <TagSettings />,
     },
   ];
   useEffect(() => {
@@ -121,7 +113,7 @@ const Settings = () => {
             value={tab.value}
             className='w-full bg-gray-50 absolute inset-0 overflow-auto'
           >
-            {tab.component}
+            <Suspense fallback={<LilypadLoading />}>{tab.component}</Suspense>
           </TabsContent>
         ))}
       </div>
