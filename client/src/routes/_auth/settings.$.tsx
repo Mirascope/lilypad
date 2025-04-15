@@ -36,7 +36,11 @@ const Settings = () => {
     {
       label: "LLM Keys",
       value: "keys",
-      component: <KeysSettings />,
+      component: (
+        <Suspense fallback={<LilypadLoading />}>
+          <KeysSettings />
+        </Suspense>
+      ),
     },
     {
       label: "Organization",
