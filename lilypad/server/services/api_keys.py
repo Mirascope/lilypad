@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from typing import Any
 from uuid import UUID
 
-from ..models import APIKeyTable
-from ..schemas import APIKeyCreate
+from ..models.api_keys import APIKeyTable
+from ..schemas.api_keys import APIKeyCreate
 from .base_organization import BaseOrganizationService
 
 

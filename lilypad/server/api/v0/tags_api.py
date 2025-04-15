@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.exc import IntegrityError
 
-from ...models import TagTable
-from ...schemas import TagCreate, TagPublic
+from ...models.tags import TagTable
+from ...schemas.tags import TagCreate, TagPublic
 from ...services import TagService
 
 tags_router = APIRouter()

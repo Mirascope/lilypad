@@ -4,8 +4,8 @@ from uuid import UUID
 
 from sqlmodel import select
 
-from ..models import OrganizationTable
-from ..schemas import OrganizationCreate
+from ..models.organizations import OrganizationTable
+from ..schemas.organizations import OrganizationCreate
 from .base import BaseService
 
 

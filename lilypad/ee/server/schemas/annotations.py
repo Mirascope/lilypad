@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from ....server.schemas.spans import SpanMoreDetails
-from ..models import AnnotationBase
+from ....server.schemas.span_more_details import SpanMoreDetails
+from ..models.annotations import AnnotationBase
 
 
 class AnnotationPublic(AnnotationBase):

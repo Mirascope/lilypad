@@ -6,10 +6,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from ..._utils import create_jwt_token
-from ...models import (
+from ...models.users import (
     UserTable,
 )
-from ...schemas import UserPublic
+from ...schemas.users import UserPublic
 from ...services import UserService
 
 users_router = APIRouter()

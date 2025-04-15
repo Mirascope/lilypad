@@ -310,6 +310,7 @@ export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
       cell: ({ row }) => {
         const functionUuid: string = row.getValue("function_uuid");
         const fn = mappedFunctions[functionUuid];
+        if (!fn) return <div>Unknown function</div>;
         return (
           <div>
             {fn.name} v{fn.version_num}

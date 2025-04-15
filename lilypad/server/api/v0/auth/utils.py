@@ -7,7 +7,8 @@ from sqlmodel import Session, select
 from .....ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from ...._utils import create_jwt_token
 from ....models import EnvironmentTable, OrganizationTable, UserTable
-from ....schemas import OrganizationPublic, UserPublic
+from ....schemas.organizations import OrganizationPublic
+from ....schemas.users import UserPublic
 
 
 def handle_user(

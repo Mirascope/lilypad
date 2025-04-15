@@ -9,7 +9,7 @@ import resend
 import resend.exceptions
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ....server.schemas import (
+from ....server.schemas.users import (
     UserPublic,
 )
 from ....server.services import OrganizationService

@@ -5,8 +5,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models import UserTable
-from ..schemas import UserCreate
+from ..models.users import UserTable
+from ..schemas.users import UserCreate
 from .base import BaseService
 
 
