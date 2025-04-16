@@ -84,7 +84,7 @@ async def test_invalid_license_none():
             await dependency(
                 request,
                 project_uuid,
-                project_service,
+                project_service,  # pyright: ignore [reportArgumentType]
                 organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
@@ -125,7 +125,7 @@ async def test_license_mismatch():
             await dependency(
                 request,
                 project_uuid,
-                project_service,
+                project_service,  # pyright: ignore [reportArgumentType]
                 organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
@@ -162,7 +162,7 @@ async def test_wrong_license_tier():
             await dependency(
                 request,
                 project_uuid,
-                project_service,
+                project_service,  # pyright: ignore [reportArgumentType]
                 organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
@@ -201,7 +201,7 @@ async def test_valid_license():
         result = await dependency(
             request,
             project_uuid,
-            project_service,
+            project_service,  # pyright: ignore [reportArgumentType]
             organization_service,  # pyright: ignore [reportArgumentType]
         )
         assert result == license_info
@@ -236,7 +236,7 @@ async def test_free_tier_returns_none():
         result = await dependency(
             request,
             project_uuid,
-            project_service,
+            project_service,  # pyright: ignore [reportArgumentType]
             organization_service,  # pyright: ignore [reportArgumentType]
         )
         assert result is None
@@ -264,7 +264,7 @@ async def test_license_validator_exception():
             await dependency(
                 request,
                 project_uuid,
-                project_service,
+                project_service,  # pyright: ignore [reportArgumentType]
                 organization_service,  # pyright: ignore [reportArgumentType]
             )
         assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
