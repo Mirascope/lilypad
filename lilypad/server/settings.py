@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     db_user: str | None = None
     db_password: str | None = None
     db_port: int | None = None
+    db_pool_size: int = 8
+    db_max_overflow: int = 2
+    db_pool_recycle: int = 1800
+    db_pool_pre_ping: bool = True
 
     @property
     def config(self) -> dict[str, Any]:

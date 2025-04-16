@@ -1,7 +1,7 @@
 """The `UserConsentService` class for user_consents."""
 
 from ..models.user_consents import UserConsentTable
-from ..schemas import UserConsentCreate
+from ..schemas.user_consents import UserConsentCreate
 from .base import BaseService
 
 

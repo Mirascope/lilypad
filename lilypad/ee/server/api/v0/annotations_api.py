@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from ee import Tier
 
@@ -15,6 +16,13 @@ from .....server.schemas import UserPublic
 from .....server.schemas.spans import SpanMoreDetails
 from .....server.services import ProjectService, SpanService, UserService
 from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
+from .....server.schemas.span_more_details import SpanMoreDetails
+from .....server.services import SpanService
+from ....server.schemas.annotations import (
+    AnnotationCreate,
+    AnnotationPublic,
+    AnnotationUpdate,
+)
 from ....server.services import AnnotationService
 from ...generations.annotate_trace import annotate_trace
 from ...require_license import require_license
@@ -181,6 +189,34 @@ async def get_annotations_by_project(
         )
         for annotation in annotations_service.find_records_by_project_uuid(project_uuid)
     ]
+
+
+class AnnotationMetrics(BaseModel):
+    """Annotation metrics model."""
+
+    function_uuid: UUID
+    total_count: int
+    success_count: int
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/functions/{function_uuid}/annotations/metrics",
+    response_model=AnnotationMetrics,
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotation_metrics_by_function(
+    function_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> AnnotationMetrics:
+    """Get annotation metrics by function."""
+    success_count, total_count = annotations_service.find_metrics_by_function_uuid(
+        function_uuid
+    )
+    return AnnotationMetrics(
+        function_uuid=function_uuid,
+        total_count=total_count,
+        success_count=success_count,
+    )
 
 
 @annotations_router.get(

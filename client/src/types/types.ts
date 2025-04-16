@@ -106,8 +106,30 @@ export interface AnnotationCreate {
   project_uuid?: string | null;
   /** Function Uuid */
   function_uuid?: string | null;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
   /** Assigned To */
   assigned_to?: string[] | null;
+}
+
+/**
+ * AnnotationMetrics
+ * Annotation metrics model.
+ */
+export interface AnnotationMetrics {
+  /**
+   * Function Uuid
+   * @format uuid
+   */
+  function_uuid: string;
+  /** Total Count */
+  total_count: number;
+  /** Success Count */
+  success_count: number;
 }
 
 /**
@@ -144,13 +166,13 @@ export interface AnnotationPublic {
    * @format uuid
    */
   function_uuid: string;
-  /** Span more details model. */
-  span: SpanMoreDetails;
   /**
    * Created At
    * @format date-time
    */
   created_at: string;
+  /** Span more details model. */
+  span: SpanMoreDetails;
 }
 
 /**
@@ -221,11 +243,6 @@ export interface CommentPublic {
    * @format date-time
    */
   created_at: string;
-  /**
-   * Child Comments
-   * @default []
-   */
-  child_comments?: CommentPublic[];
 }
 
 /**

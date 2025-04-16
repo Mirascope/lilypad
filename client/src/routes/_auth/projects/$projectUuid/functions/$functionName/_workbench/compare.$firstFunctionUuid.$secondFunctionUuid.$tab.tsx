@@ -12,7 +12,9 @@ import { CompareTracesTable } from "@/components/CompareTracesTable";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { Button } from "@/components/ui/button";
+import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { DiffTool } from "@/ee/components/DiffTool";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
@@ -59,6 +61,7 @@ const FunctionOverview = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
+  const features = useFeatureAccess();
   const firstFunction = functions.find((f) => f.uuid === functionUuid);
   const secondFunction = functions.find((f) => f.uuid === secondFunctionUuid);
   const navigate = useNavigate();
@@ -77,6 +80,24 @@ const FunctionOverview = () => {
   } else {
     return (
       <div className='p-4 flex flex-col gap-6'>
+        <div className='flex gap-2'>
+          {features.annotations && (
+            <AnnotationMetrics
+              projectUuid={projectUuid}
+              functionUuid={functionUuid}
+              title={`${firstFunction.name} v${firstFunction.version_num}`}
+              description={"Annotation Pass Rate"}
+            />
+          )}
+          {features.annotations && (
+            <AnnotationMetrics
+              projectUuid={projectUuid}
+              functionUuid={secondFunctionUuid}
+              title={`${secondFunction.name} v${secondFunction.version_num}`}
+              description={"Annotation Pass Rate"}
+            />
+          )}
+        </div>
         <Suspense fallback={<CardSkeleton />}>
           <MetricCharts
             firstFunction={firstFunction}

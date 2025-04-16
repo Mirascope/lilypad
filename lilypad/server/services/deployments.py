@@ -8,8 +8,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import desc, select
 
-from ..models import DeploymentTable, FunctionTable
-from ..schemas import DeploymentCreate
+from ..models.deployments import DeploymentTable
+from ..models.functions import FunctionTable
+from ..schemas.deployments import DeploymentCreate
 from .base_organization import BaseOrganizationService
 
 
