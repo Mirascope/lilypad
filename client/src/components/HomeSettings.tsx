@@ -1,5 +1,4 @@
 import LilypadDialog from "@/components/LilypadDialog";
-import { SettingsLayout } from "@/components/SettingsLayout";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
@@ -18,7 +17,6 @@ import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SettingsIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 const tier = {
@@ -34,7 +32,7 @@ export const HomeSettings = () => {
     (userOrg) => userOrg.organization.uuid === user?.active_organization_uuid
   );
   return (
-    <SettingsLayout title='Overview' icon={SettingsIcon}>
+    <>
       <Typography variant='h4'>Personal Information</Typography>
       <div className='grid gap-4'>
         <UneditableInput label='Name' value={user.first_name} />
@@ -65,7 +63,7 @@ export const HomeSettings = () => {
           </div>
         )}
       </div>
-    </SettingsLayout>
+    </>
   );
 };
 

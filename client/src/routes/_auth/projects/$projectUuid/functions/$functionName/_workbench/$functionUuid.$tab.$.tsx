@@ -13,6 +13,7 @@ import { FunctionSpans } from "@/components/FunctionSpans";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
+import TableSkeleton from "@/components/TableSkeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
@@ -25,7 +26,7 @@ import { CheckCircle, CircleX, SquareTerminal } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid/$tab"
+  "/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid/$tab/$"
 )({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
@@ -35,7 +36,13 @@ export const Route = createFileRoute(
 });
 
 const Function = () => {
-  const { projectUuid, functionName, functionUuid, tab } = useParams({
+  const {
+    projectUuid,
+    functionName,
+    functionUuid,
+    tab,
+    _splat: traceUuid,
+  } = useParams({
     from: FunctionRoute.id,
   });
   const { data: functions } = useSuspenseQuery(
@@ -46,7 +53,13 @@ const Function = () => {
     return <FunctionOverview />;
   } else if (tab === FunctionTab.TRACES) {
     return fn ? (
-      <FunctionSpans projectUuid={projectUuid} functionUuid={fn.uuid} />
+      <Suspense fallback={<TableSkeleton />}>
+        <FunctionSpans
+          projectUuid={projectUuid}
+          functionUuid={fn.uuid}
+          traceUuid={traceUuid}
+        />
+      </Suspense>
     ) : (
       <div>No function selected</div>
     );

@@ -95,7 +95,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
     queryClient
       .prefetchQuery({
         queryKey: functionKeys.list(fn.name),
-        queryFn: async () => await fetchFunctionsByName(fn.name, projectUuid),
+        queryFn: () => fetchFunctionsByName(fn.name, projectUuid),
       })
       .catch(() => toast.error("Failed to prefetch function"));
   };
@@ -186,15 +186,11 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
 const FunctionsList = () => {
   return (
     <div className='p-4 flex flex-col lg:items-center gap-2'>
-      <div className='text-left'>
-        <h1 className='text-4xl font-bold text-left mb-2 flex gap-2'>
-          Functions
-        </h1>
-        <div className='flex gap-2 max-w-full flex-wrap'>
-          <Suspense fallback={<CardSkeleton items={2} />}>
-            <FunctionCards />
-          </Suspense>
-        </div>
+      <Typography variant='h2'>Functions</Typography>
+      <div className='flex gap-2 max-w-full flex-wrap'>
+        <Suspense fallback={<CardSkeleton items={2} />}>
+          <FunctionCards />
+        </Suspense>
       </div>
     </div>
   );

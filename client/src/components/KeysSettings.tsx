@@ -1,5 +1,3 @@
-import { NotFound } from "@/components/NotFound";
-import { SettingsLayout } from "@/components/SettingsLayout";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,9 +16,9 @@ import {
   useDeleteExternalApiKeyMutation,
   usePatchExternalApiKeyMutation,
 } from "@/utils/external-api-keys";
-import { userQueryOptions, useUpdateUserKeysMutation } from "@/utils/users";
+import { useUpdateUserKeysMutation } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
 
@@ -75,7 +73,6 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
 };
 
 export const KeysSettings = () => {
-  const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: externalApiKeys } = useSuspenseQuery(
     externalApiKeysQueryOptions()
   );
@@ -116,18 +113,22 @@ export const KeysSettings = () => {
             if (newValue.length === 0) {
               promises.push(deleteExternalApiKeys.mutateAsync(key));
             } else {
-             promises.push(patchExternalApiKeys.mutateAsync({
-                serviceName: key,
-                externalApiKeysUpdate: {
-                  api_key: newValue,
-                },
-              }));
+              promises.push(
+                patchExternalApiKeys.mutateAsync({
+                  serviceName: key,
+                  externalApiKeysUpdate: {
+                    api_key: newValue,
+                  },
+                })
+              );
             }
           } else if (newValue.length > 0) {
-            promises.push(createExternalApiKeys.mutateAsync({
-              service_name: key,
-              api_key: newValue,
-            }));
+            promises.push(
+              createExternalApiKeys.mutateAsync({
+                service_name: key,
+                api_key: newValue,
+              })
+            );
           }
         }
       }
@@ -137,7 +138,7 @@ export const KeysSettings = () => {
       // Only call updateUserKeys if any field was actually changed.
       // This might be necessary if user.keys needs to be synced or for other side effects.
       if (Object.keys(dirtyFields).length > 0) {
-         await updateUserKeys.mutateAsync(data); // Pass the full data as original logic did
+        await updateUserKeys.mutateAsync(data); // Pass the full data as original logic did
       }
 
       toast({
@@ -160,9 +161,8 @@ export const KeysSettings = () => {
     { id: "gemini", label: "Gemini" },
     { id: "openrouter", label: "OpenRouter" },
   ];
-  if (!user) return <NotFound />;
   return (
-    <SettingsLayout title={`${user.first_name}'s Keys`} icon={KeyRound}>
+    <>
       <Typography variant='h4'>API Keys</Typography>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
@@ -188,15 +188,15 @@ export const KeysSettings = () => {
             }
             className='w-full'
           >
-            {(patchExternalApiKeys.isPending ||
-              createExternalApiKeys.isPending ||
-              deleteExternalApiKeys.isPending ||
-              updateUserKeys.isPending)
+            {patchExternalApiKeys.isPending ||
+            createExternalApiKeys.isPending ||
+            deleteExternalApiKeys.isPending ||
+            updateUserKeys.isPending
               ? "Saving..."
               : "Save Keys"}
           </Button>
         </form>
       </Form>
-    </SettingsLayout>
+    </>
   );
 };
