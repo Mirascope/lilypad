@@ -6,7 +6,6 @@ from sqlmodel import select
 
 from ..models.tags import TagTable
 from ..schemas.tags import TagCreate
-
 from .base_organization import BaseOrganizationService
 
 
