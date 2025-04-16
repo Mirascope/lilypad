@@ -31,7 +31,9 @@ api.interceptors.request.use(
     }
   },
   (error) => {
-    return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
 );
 export default api;
