@@ -7,8 +7,8 @@ from fastapi import HTTPException, status
 from sqlmodel import func, select
 
 from ....server.services.base_organization import BaseOrganizationService
-from ...server.models import UserOrganizationTable
-from ...server.schemas import UserOrganizationCreate
+from ...server.models.user_organizations import UserOrganizationTable
+from ...server.schemas.user_organizations import UserOrganizationCreate
 
 
 class UserOrganizationService(

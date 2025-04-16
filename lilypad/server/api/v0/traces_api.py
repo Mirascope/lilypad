@@ -18,8 +18,8 @@ from ..._utils import (
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable
-from ...schemas import SpanCreate, SpanPublic
-from ...schemas.spans import calculate_openrouter_cost
+from ...schemas.span_more_details import calculate_openrouter_cost
+from ...schemas.spans import SpanCreate, SpanPublic
 from ...services import SpanService
 
 traces_router = APIRouter()

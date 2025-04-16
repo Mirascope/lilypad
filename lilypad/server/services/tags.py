@@ -4,8 +4,9 @@ from uuid import UUID
 
 from sqlmodel import select
 
-from ..models import TagTable
-from ..schemas import TagCreate
+from ..models.tags import TagTable
+from ..schemas.tags import TagCreate
+
 from .base_organization import BaseOrganizationService
 
 

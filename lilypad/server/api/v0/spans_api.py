@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..._utils import get_current_user
 from ...models import SpanTable
-from ...schemas import SpanMoreDetails, SpanPublic, SpanUpdate, UserPublic
+from ...schemas.span_more_details import SpanMoreDetails
+from ...schemas.spans import SpanPublic, SpanUpdate
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()

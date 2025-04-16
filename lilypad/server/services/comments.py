@@ -5,8 +5,8 @@ from uuid import UUID
 
 from sqlmodel import asc, select
 
-from ..models import CommentTable
-from ..schemas import CommentCreate
+from ..models.comments import CommentTable
+from ..schemas.comments import CommentCreate
 from .base_organization import BaseOrganizationService
 
 

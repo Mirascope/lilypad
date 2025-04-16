@@ -16,15 +16,9 @@ from lilypad.server.models import (
     SpanTable,
     SpanType,
 )
-from lilypad.server.schemas import (
-    FunctionCreate,
-    FunctionPublic,
-    ProjectCreate,
-    ProjectPublic,
-    Provider,
-    SpanCreate,
-    SpanPublic,
-)
+from lilypad.server.schemas.functions import FunctionCreate, FunctionPublic, Provider
+from lilypad.server.schemas.projects import ProjectCreate, ProjectPublic
+from lilypad.server.schemas.spans import SpanCreate, SpanPublic
 
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 

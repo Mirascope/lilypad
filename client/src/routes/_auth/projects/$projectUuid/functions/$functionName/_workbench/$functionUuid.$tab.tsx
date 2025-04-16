@@ -14,7 +14,9 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { NotFound } from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
+import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
@@ -63,6 +65,7 @@ const FunctionOverview = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
+  const features = useFeatureAccess();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fn = functions.find((f) => f.uuid === functionUuid);
@@ -80,6 +83,12 @@ const FunctionOverview = () => {
   } else {
     return (
       <div className='p-2 flex flex-1 flex-col gap-2 max-w-4xl mx-auto'>
+        {features.annotations && (
+          <AnnotationMetrics
+            projectUuid={projectUuid}
+            functionUuid={functionUuid}
+          />
+        )}
         <Suspense fallback={<CardSkeleton />}>
           <MetricCharts firstFunction={fn} projectUuid={projectUuid} />
         </Suspense>

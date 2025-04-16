@@ -10,7 +10,8 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
-from ..models import FunctionTable, SpanTable, SpanTagLink
+from ..models.functions import FunctionTable
+from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
 from .tags import TagService
