@@ -18,7 +18,7 @@ class AnnotationPublic(AnnotationBase):
     uuid: UUID
     project_uuid: UUID
     span_uuid: UUID
-    function_uuid: UUID
+    function_uuid: UUID | None = None
     created_at: datetime
     span: SpanMoreDetails
 
