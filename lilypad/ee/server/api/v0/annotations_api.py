@@ -11,13 +11,8 @@ from pydantic import BaseModel
 
 from ee import Tier
 
-from .....server._utils import get_current_user
-from .....server.schemas import UserPublic
-from .....server.schemas.spans import SpanMoreDetails
-from .....server.services import ProjectService, SpanService, UserService
-from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
 from .....server.schemas.span_more_details import SpanMoreDetails
-from .....server.services import SpanService
+from .....server.services import ProjectService, SpanService
 from ....server.schemas.annotations import (
     AnnotationCreate,
     AnnotationPublic,
@@ -46,6 +41,7 @@ async def create_annotations(
     Args:
         project_uuid: The project UUID.
         annotations_service: The annotation service.
+        project_service: The project service.
         annotations_create: The annotation create model.
 
     Returns:
@@ -122,9 +118,7 @@ async def create_annotations(
         )
 
     # Create all records in bulk
-    annotations = annotations_service.create_bulk_records(
-        final_creates, project_uuid
-    )
+    annotations = annotations_service.create_bulk_records(final_creates, project_uuid)
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
