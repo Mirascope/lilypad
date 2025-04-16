@@ -106,6 +106,12 @@ export interface AnnotationCreate {
   project_uuid?: string | null;
   /** Function Uuid */
   function_uuid?: string | null;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
   /** Assigned To */
   assigned_to?: string[] | null;
 }
@@ -237,11 +243,6 @@ export interface CommentPublic {
    * @format date-time
    */
   created_at: string;
-  /**
-   * Child Comments
-   * @default []
-   */
-  child_comments?: CommentPublic[];
 }
 
 /**

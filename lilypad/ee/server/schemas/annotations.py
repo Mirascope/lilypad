@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from ....server.schemas.span_more_details import SpanMoreDetails
-from ..models.annotations import AnnotationBase
+from ..models.annotations import AnnotationBase, EvaluationType, Label
 
 
 class AnnotationPublic(AnnotationBase):
@@ -28,6 +29,10 @@ class AnnotationCreate(BaseModel):
     span_uuid: UUID | None = None
     project_uuid: UUID | None = None
     function_uuid: UUID | None = None
+    label: Label | None = None
+    reasoning: str | None = None
+    type: EvaluationType | None = None
+    data: dict[str, Any] | None = None
     assigned_to: list[UUID] | None = None
 
 
