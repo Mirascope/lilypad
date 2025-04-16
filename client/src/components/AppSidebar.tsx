@@ -166,10 +166,8 @@ export const AppSidebar = () => {
                   activeProject.uuid,
                   ...functionKeys.list("unique"),
                 ],
-                queryFn: async () =>
-                  await fetchLatestVersionUniqueFunctionNames(
-                    activeProject.uuid
-                  ),
+                queryFn: () =>
+                  fetchLatestVersionUniqueFunctionNames(activeProject.uuid),
               })
               .catch(() => toast.error("Failed to prefetch functions"));
           },
