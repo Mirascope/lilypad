@@ -36,6 +36,7 @@ export interface FunctionRouteParams {
   secondFunctionUuid?: string;
   isCompare: boolean;
   tab: FunctionTab;
+  _splat?: string;
 }
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/functions/$functionName/_workbench"
@@ -261,17 +262,15 @@ const FunctionWorkbench = () => {
         </div>
 
         <div className='flex-1 min-h-0 relative'>
-          <Suspense fallback={<LilypadLoading />}>
-            {tabs.map((tab) => (
-              <TabsContent
-                key={tab.value}
-                value={tab.value}
-                className='absolute inset-0 overflow-auto'
-              >
-                <Outlet />
-              </TabsContent>
-            ))}
-          </Suspense>
+          {tabs.map((tab) => (
+            <TabsContent
+              key={tab.value}
+              value={tab.value}
+              className='absolute inset-0 overflow-auto'
+            >
+              <Outlet />
+            </TabsContent>
+          ))}
         </div>
       </Tabs>
     </div>

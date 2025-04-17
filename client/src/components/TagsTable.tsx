@@ -1,6 +1,4 @@
 import { DataTable } from "@/components/DataTable";
-import { NotFound } from "@/components/NotFound";
-import { SettingsLayout } from "@/components/SettingsLayout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,31 +38,14 @@ import {
   useDeleteTagMutation,
   useUpdateTagMutation,
 } from "@/utils/tags";
-import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { KeyRound, PencilLine, Trash } from "lucide-react";
+import { PencilLine, Trash } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 
-export const TagSettings = () => {
-  const { data: user } = useSuspenseQuery(userQueryOptions());
-  const activeUserOrg = user.user_organizations?.find(
-    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
-  );
-  if (!activeUserOrg) return <NotFound />;
-  return (
-    <SettingsLayout
-      title={`${activeUserOrg.organization.name}'s Settings`}
-      icon={KeyRound}
-    >
-      <TagsTable />
-    </SettingsLayout>
-  );
-};
-
-const TagsTable = () => {
+export const TagsTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data } = useSuspenseQuery(tagsQueryOptions());
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());

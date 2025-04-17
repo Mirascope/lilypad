@@ -1017,8 +1017,10 @@ export enum SpanType {
  * Span update model
  */
 export interface SpanUpdate {
-  /** Tags */
-  tags?: TagPublic[] | null;
+  /** Tags By Uuid */
+  tags_by_uuid?: string[] | null;
+  /** Tags By Name */
+  tags_by_name?: string[] | null;
 }
 
 /**

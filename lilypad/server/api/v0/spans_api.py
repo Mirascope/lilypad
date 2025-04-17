@@ -6,9 +6,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from ..._utils import get_current_user
 from ...models import SpanTable
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
+from ...schemas.users import UserPublic
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()
@@ -46,9 +48,14 @@ async def update_span(
     span_uuid: UUID,
     span_update: SpanUpdate,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    current_user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> SpanTable:
     """Update span by uuid."""
-    return span_service.update_tags(span_uuid, span_update)
+    return await span_service.update_span(
+        span_uuid=span_uuid,
+        update_data=span_update,
+        user_uuid=current_user.uuid,
+    )
 
 
 @spans_router.get(
