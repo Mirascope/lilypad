@@ -58,7 +58,7 @@ async def create_annotations(
 
     for annotation in annotations_create:
         if annotation.assignee_email:
-            emails_to_lookup.add(annotation.assignee_email)
+            emails_to_lookup.update(annotation.assignee_email)
             processed_creates.append(
                 annotation.model_copy(update={"assignee_email": None})
             )
@@ -98,15 +98,16 @@ async def create_annotations(
             None,
         )
         if original_input and original_input.assignee_email:
-            assignee_uuid = email_to_uuid_map.get(original_input.assignee_email)
-            if assignee_uuid:
-                ann_create_processed.assigned_to = [assignee_uuid]
-                duplicate_checks.append(
-                    {
-                        "span_uuid": ann_create_processed.span_uuid,
-                        "assigned_to": assignee_uuid,
-                    }
-                )
+            for assignee_email in original_input.assignee_email:
+                assignee_uuid = email_to_uuid_map.get(assignee_email)
+                if assignee_uuid:
+                    ann_create_processed.assigned_to = [assignee_uuid]
+                    duplicate_checks.append(
+                        {
+                            "span_uuid": ann_create_processed.span_uuid,
+                            "assigned_to": assignee_uuid,
+                        }
+                    )
         final_creates.append(ann_create_processed)
 
     # Check for duplicates in bulk

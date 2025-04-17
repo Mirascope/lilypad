@@ -34,7 +34,7 @@ class AnnotationCreate(BaseModel):
     type: EvaluationType | None = None
     data: dict[str, Any] | None = None
     assigned_to: list[UUID] | None = None
-    assignee_email: str | None = None
+    assignee_email: list[str] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -47,7 +47,7 @@ class AnnotationCreate(BaseModel):
             assignee_email_present = data.get("assignee_email") is not None
             if assigned_to_present and assignee_email_present:
                 raise ValueError(
-                    "Provide either 'assigned_to' (list of UUIDs) or 'assignee_email', not both."
+                    "Provide either 'assigned_to' (list of UUIDs) or 'assignee_email' (list of email) , not both."
                 )
         return data
 
