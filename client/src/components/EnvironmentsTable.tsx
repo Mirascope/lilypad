@@ -32,7 +32,7 @@ import {
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Trash } from "lucide-react";
+import { PlusCircle, Trash } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 
@@ -66,7 +66,10 @@ export const EnvironmentsTable = () => {
 
   return (
     <>
-      <Typography variant='h4'>Environments</Typography>
+      <div className='flex gap-2 items-center'>
+        <Typography variant='h4'>Environment</Typography>
+        <CreateEnvironmentButton />
+      </div>
       <DataTable<EnvironmentPublic>
         columns={columns}
         data={data}
@@ -78,7 +81,6 @@ export const EnvironmentsTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateEnvironmentButton />}
       />
     </>
   );
@@ -88,7 +90,13 @@ const CreateEnvironmentButton = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Create Environment</Button>
+        <Button
+          variant='ghost'
+          size='iconSm'
+          className='text-primary hover:text-primary/80 hover:bg-white'
+        >
+          <PlusCircle />
+        </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         <CreateEnvironmentForm />

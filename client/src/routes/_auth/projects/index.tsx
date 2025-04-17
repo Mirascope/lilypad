@@ -2,17 +2,19 @@ import { useAuth } from "@/auth";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Typography } from "@/components/ui/typography";
 import { toast } from "@/hooks/use-toast";
 import { Route as FunctionsRoute } from "@/routes/_auth/projects/$projectUuid/functions/index";
 import { projectsQueryOptions } from "@/utils/projects";
+import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 
-type SearchParams = {
+interface SearchParams {
   redirect?: string;
   joined?: boolean;
-};
+}
 export const Route = createFileRoute("/_auth/projects/")({
   validateSearch: (search): SearchParams => {
     return {
@@ -40,10 +42,14 @@ const Projects = () => {
     }
   }, [joined]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const activeUserOrg = user.user_organizations?.find(
+    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
+  );
   return (
     <div className='p-4 flex flex-col items-center gap-2'>
       <div className='text-left'>
-        <h1 className='text-4xl font-bold text-left'>Projects</h1>
+        <Typography variant='h3'>Projects</Typography>
         <p className='text-lg'>Select a project to view functions.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
@@ -61,17 +67,24 @@ const Projects = () => {
               </Card>
             </Link>
           ))
+        ) : !activeUserOrg ? (
+          <div>
+            No organization found.
+            <Button variant='ghost' asChild>
+              <Link to='/settings/$' params={{ _splat: "overview" }}>
+                Create an organization here
+              </Link>
+            </Button>
+          </div>
         ) : (
-          <>
-            <div>
-              No projects found.
-              <Button variant='ghost' asChild>
-                <Link to='/settings/$' params={{ _splat: "org" }}>
-                  Create a project here
-                </Link>
-              </Button>
-            </div>
-          </>
+          <div>
+            No projects found.
+            <Button variant='ghost' asChild>
+              <Link to='/settings/$' params={{ _splat: "org" }}>
+                Create a project here
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
     </div>

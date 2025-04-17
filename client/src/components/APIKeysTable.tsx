@@ -44,7 +44,7 @@ import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Trash, TriangleAlert } from "lucide-react";
+import { PlusCircle, Trash, TriangleAlert } from "lucide-react";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -90,7 +90,10 @@ export const APIKeysTable = () => {
   ];
   return (
     <>
-      <Typography variant='h4'>API Keys</Typography>
+      <div className='flex gap-2 items-center'>
+        <Typography variant='h4'>API Keys</Typography>
+        <CreateKeyButton />
+      </div>
       <DataTable<APIKeyPublic>
         columns={columns}
         data={data}
@@ -102,7 +105,6 @@ export const APIKeysTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateKeyButton />}
       />
     </>
   );
@@ -114,7 +116,13 @@ const CreateKeyButton = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Create API Key</Button>
+        <Button
+          variant='ghost'
+          size='iconSm'
+          className='text-primary hover:text-primary/80 hover:bg-white'
+        >
+          <PlusCircle />
+        </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         {apiKey ? (

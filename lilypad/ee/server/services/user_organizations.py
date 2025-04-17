@@ -34,6 +34,15 @@ class UserOrganizationService(
             )
         return user_organization
 
+    def find_user_organizations(self) -> Sequence[UserOrganizationTable]:
+        """Find all user organizations."""
+        user_organizations = self.session.exec(
+            select(self.table).where(
+                self.table.user_uuid == self.user.uuid,
+            )
+        ).all()
+        return user_organizations
+
     def get_users_by_active_organization(self) -> Sequence[UserOrganizationTable]:
         """Get all users from the active organization."""
         user_organizations = self.session.exec(

@@ -32,7 +32,7 @@ export const fetchUserOrganizations = async () => {
 
 export const createUserOrganization = async (token: string) => {
   return (
-    await api.post<UserOrganizationTable>(`/ee/user-organizations`, {
+    await api.post<UserPublic>(`/ee/user-organizations`, {
       token,
     })
   ).data;
@@ -64,7 +64,7 @@ export const userQueryOptions = () =>
 
 export const userOrganizationsQueryOptions = () =>
   queryOptions({
-    queryKey: ["user-organizations"],
+    queryKey: ["userOrganizations"],
     queryFn: () => fetchUserOrganizations(),
   });
 
@@ -81,6 +81,9 @@ export const useCreateUserOrganizationMutation = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["usersByOrganization"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["user"],
       });
     },
   });
@@ -109,8 +112,8 @@ export const useUpdateActiveOrganizationMutation = () => {
   return useMutation({
     mutationFn: async ({ organizationUuid }: { organizationUuid: string }) =>
       await updateActiveOrganization(organizationUuid),
-    onSuccess: (_data) => {
-      queryClient.invalidateQueries({ queryKey: [] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [] });
     },
   });
 };
@@ -119,8 +122,8 @@ export const useUpdateUserKeysMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: object) => await updateUserKeys(data),
-    onSuccess: (_data) => {
-      queryClient.invalidateQueries({ queryKey: ["user"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
 };

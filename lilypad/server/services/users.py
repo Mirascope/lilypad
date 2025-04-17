@@ -31,7 +31,7 @@ class UserService(BaseService[UserTable, UserCreate]):
         return user
 
     def update_user_active_organization_uuid(
-        self, organization_uuid: UUID
+        self, organization_uuid: UUID | None
     ) -> UserTable:
         """Update the active organization UUID for a user."""
         user = self.get_user()

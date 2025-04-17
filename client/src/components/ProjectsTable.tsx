@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import { ProjectPublic } from "@/types/types";
 import {
   projectsQueryOptions,
@@ -33,19 +32,19 @@ import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, PencilLine, Trash } from "lucide-react";
+import { Copy, PencilLine, PlusCircle, Trash } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export const ProjectsTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data } = useSuspenseQuery(projectsQueryOptions());
-  const { toast } = useToast();
   const handleProjectCopy = (project: ProjectPublic) => {
     navigator.clipboard.writeText(project.uuid);
-    toast({
-      title: `Successfully copied Project ID to clipboard for project ${project.name}`,
-    });
+    toast.success(
+      `Successfully copied Project ID to clipboard for project ${project.name}`
+    );
   };
   const columns: ColumnDef<ProjectPublic>[] = [
     {
@@ -85,7 +84,10 @@ export const ProjectsTable = () => {
   ];
   return (
     <>
-      <Typography variant='h4'>Projects</Typography>
+      <div className='flex gap-2 items-center'>
+        <Typography variant='h4'>Projects</Typography>
+        <CreateProjectButton />
+      </div>
       <DataTable<ProjectPublic>
         columns={columns}
         data={data}
@@ -97,7 +99,6 @@ export const ProjectsTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateProjectButton />}
       />
     </>
   );
@@ -114,26 +115,15 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
     },
   });
   const deleteProject = useDeleteProjectMutation();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const onSubmit = async () => {
-    const successfullyDeleted = await deleteProject.mutateAsync(project.uuid);
-    let title = "Failed to delete project. Please try again.";
-    if (successfullyDeleted) {
-      title = "Successfully deleted project";
-    }
-    toast({
-      title,
-    });
+    await deleteProject
+      .mutateAsync(project.uuid)
+      .catch(() => toast.error("Failed to delete project. Please try again."));
+    toast.success("Successfully deleted project");
     navigate({
       to: "/projects",
-    }).catch(() => {
-      toast({
-        title: "Error",
-        description: "Failed to navigate after deletion.",
-        variant: "destructive",
-      });
-    });
+    }).catch(() => toast.error("Failed to navigate after deletion."));
   };
 
   return (
@@ -161,7 +151,7 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
               control={methods.control}
               name='projectName'
               rules={{
-                required: "Prompt name is required",
+                required: "Project name is required",
                 validate: (value) =>
                   value === project.name || "Project name doesn't match",
               }}
@@ -222,24 +212,20 @@ const ProjectForm = ({
   submitButtonText,
   submittingText,
 }: ProjectFormProps) => {
-  const { toast } = useToast();
   const methods = useForm<ProjectFormData>({
-    defaultValues: initialData || { name: "" },
+    defaultValues: initialData ?? { name: "" },
   });
 
   const handleSubmit = async (data: ProjectFormData) => {
-    try {
-      await onSubmit(data);
-      toast({
-        title: `Successfully ${mode === "create" ? "created" : "updated"} project`,
-      });
-      methods.reset();
-    } catch (error) {
-      toast({
-        title: `Failed to ${mode === "create" ? "create" : "update"} project`,
-        variant: "destructive",
-      });
-    }
+    await onSubmit(data).catch(() =>
+      toast.error(
+        `Failed to ${mode === "create" ? "create" : "update"} project`
+      )
+    );
+    toast.success(
+      `Successfully ${mode === "create" ? "created" : "updated"} project`
+    );
+    methods.reset();
   };
 
   return (
@@ -304,7 +290,15 @@ export const CreateProjectButton = () => {
     <ProjectForm
       mode='create'
       onSubmit={handleCreate}
-      trigger={<Button>Create Project</Button>}
+      trigger={
+        <Button
+          variant='ghost'
+          size='iconSm'
+          className='text-primary hover:text-primary/80 hover:bg-white'
+        >
+          <PlusCircle />
+        </Button>
+      }
       title='Create a new project'
       description='Create a new project for your organization.'
       submitButtonText='Create Project'

@@ -160,9 +160,12 @@ async def get_organization_license(
 ) -> LicenseInfo:
     """Get the license information for the organization"""
     if not user.active_organization_uuid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an active organization.",
+        return LicenseInfo(
+            customer="",
+            license_id="",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.FREE,
+            organization_uuid=None,
         )
     validator = LicenseValidator()
     license_info = validator.validate_license(
