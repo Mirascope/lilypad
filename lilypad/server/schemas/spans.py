@@ -24,7 +24,22 @@ class SpanCreate(SpanBase):
 class SpanUpdate(BaseModel):
     """Span update model"""
 
-    tags: list[TagPublic] | None = None
+    tags_by_uuid: list[UUID] | None = None
+    tags_by_name: list[str] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_exclusive_tags(cls, data: Any) -> Any:
+        """Ensure that only one of 'tags_by_uuid' or 'tags_by_name' is provided."""
+        if (
+            isinstance(data, dict)
+            and data.get("tags_by_uuid") is not None
+            and data.get("tags_by_name") is not None
+        ):
+            raise ValueError(
+                "Provide either 'tags_by_uuid' or 'tags_by_name', not both."
+            )
+        return data
 
 
 class SpanPublic(SpanBase):
