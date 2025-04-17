@@ -23,17 +23,24 @@ class BaseService(Generic[_TableT, _CreateT]):
     table: type[_TableT]
     create_model: type[_CreateT]
 
-    def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
-        """Find record by uuid"""
+    def find_record(self, **filters: Any) -> _TableT | None:
+        """Find record by filters"""
         filter_conditions = [
             getattr(self.table, key) == value for key, value in filters.items()
         ]
         record_table = self.session.exec(
             select(self.table).where(
-                self.table.uuid == uuid,
                 *filter_conditions,
             )
         ).first()
+        return record_table
+
+    def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
+        """Find record by uuid"""
+        record_table = self.find_record(
+            uuid=uuid,
+            **filters,
+        )
         if not record_table:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

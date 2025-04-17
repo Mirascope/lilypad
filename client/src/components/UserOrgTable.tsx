@@ -43,7 +43,6 @@ import {
   organizationInvitesQueryOptions,
   useCreateOrganizationInviteMutation,
   useDeleteOrganizationInviteMutation,
-  useResendOrganizationInviteMutation,
 } from "@/utils/organizations";
 import {
   useDeleteUserOrganizationMutation,
@@ -53,7 +52,7 @@ import {
 } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Mail, PencilLine, Trash } from "lucide-react";
+import { Copy, Mail, PencilLine, PlusCircle, Trash } from "lucide-react";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -197,7 +196,15 @@ export const UserOrgTable = () => {
 
   return (
     <>
-      <Typography variant='h4'>Users</Typography>
+      <div className='flex gap-2 items-center'>
+        <Typography variant='h4'>Users</Typography>
+        {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
+          <InviteUserButton
+            organization={userOrganization.organization}
+            user={user}
+          />
+        )}
+      </div>
       <DataTable
         columns={columns}
         data={combinedData}
@@ -209,16 +216,6 @@ export const UserOrgTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => (
-          <>
-            {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
-              <InviteUserButton
-                organization={userOrganization.organization}
-                user={user}
-              />
-            )}
-          </>
-        )}
       />
       {activeInvite && (
         <ResendInviteDialog
@@ -243,7 +240,7 @@ const ResendInviteDialog = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   onClose: () => void;
 }) => {
-  const resendInvite = useResendOrganizationInviteMutation();
+  const resendInvite = useCreateOrganizationInviteMutation();
   const [newOrganizationInvite, setNewOrganizationInvite] =
     useState<OrganizationInvitePublic | null>(null);
 
@@ -254,21 +251,21 @@ const ResendInviteDialog = ({
   };
 
   const handleResend = async () => {
-    try {
-      const result = await resendInvite.mutateAsync({
-        organizationInviteUuid: invite.uuid,
-        data: {
-          email: invite.email,
-          organization_uuid: invite.organization_uuid,
-          invited_by: invite.invited_by,
-        },
+    const result = await resendInvite
+      .mutateAsync({
+        email: invite.email,
+        organization_uuid: invite.organization_uuid,
+        invited_by: invite.invited_by,
+      })
+      .catch(() => {
+        toast.error("Failed to resend invitation");
+        return null;
       });
-
-      setNewOrganizationInvite(result);
-      toast.success(`Invitation successfully resent to ${invite.email}.`);
-    } catch (error) {
-      toast.error("Failed to resend invitation");
+    if (!result) {
+      return;
     }
+    setNewOrganizationInvite(result);
+    toast.success(`Invitation successfully resent to ${invite.email}.`);
   };
 
   return (
@@ -422,7 +419,13 @@ const InviteUserButton = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Invite user</Button>
+        <Button
+          variant='ghost'
+          size='iconSm'
+          className='text-primary hover:text-primary/80 hover:bg-white'
+        >
+          <PlusCircle />
+        </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         <Form {...methods}>
