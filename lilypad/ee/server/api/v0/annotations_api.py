@@ -77,6 +77,7 @@ async def create_annotations(
         email_to_uuid_lookup = {
             user_organizations.user.email: user_organizations.user.uuid
             for user_organizations in project.organization.user_organizations
+            if user_organizations.user.uuid
         }
         for email in emails_to_lookup:
             if email in email_to_uuid_lookup:
