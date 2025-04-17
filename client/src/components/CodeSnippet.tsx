@@ -9,8 +9,9 @@ import { useEffect, useRef, useState } from "react";
 // Register the language
 hljs.registerLanguage("python", python);
 
-const renderLineNumbers = (
+const renderCode = (
   code: string,
+  showLineNumbers: boolean,
   lineHighlights: Record<string, string>
 ) => {
   const lines = code.split("\n");
@@ -18,6 +19,22 @@ const renderLineNumbers = (
   const maxLineNumber = lines.length;
   const digits = maxLineNumber.toString().length;
 
+  if (!showLineNumbers) {
+    // If line numbers are disabled, just return the code with highlighting
+    return lines.map((line, i) => {
+      // Line numbers are 1-based, but array indices are 0-based
+      const lineNumber = i + 1;
+      const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
+
+      return (
+        <div key={i} className={`hljs-line ${lineClass}`}>
+          <span className='hljs-line-code'>{line}</span>
+        </div>
+      );
+    });
+  }
+
+  // Return with line numbers
   return lines.map((line, i) => {
     // Line numbers are 1-based, but array indices are 0-based
     const lineNumber = i + 1;
@@ -41,11 +58,13 @@ export const CodeSnippet = ({
   code,
   className,
   showCopyButton = true,
+  showLineNumbers = true,
   lineHighlights = {},
 }: {
   code: string;
   className?: string;
   showCopyButton?: boolean;
+  showLineNumbers?: boolean;
   lineHighlights?: Record<string, string>;
 }) => {
   const preRef = useRef<HTMLPreElement>(null);
@@ -65,11 +84,9 @@ export const CodeSnippet = ({
       }
     });
 
-    // Get the number of digits in the maximum line number
-    const digits = code.split("\n").length.toString().length;
-
-    // Add line number styles if they don't exist yet
-    if (!document.getElementById("line-number-styles")) {
+    // Add line number styles if they don't exist yet and line numbers are shown
+    if (showLineNumbers && !document.getElementById("line-number-styles")) {
+      const digits = code.split("\n").length.toString().length;
       const styleEl = document.createElement("style");
       styleEl.id = "line-number-styles";
       styleEl.textContent = `
@@ -109,7 +126,7 @@ export const CodeSnippet = ({
       `;
       document.head.appendChild(styleEl);
     }
-  }, [code]);
+  }, [code, showLineNumbers]);
 
   const handleCopy = () => {
     navigator.clipboard
@@ -135,7 +152,7 @@ export const CodeSnippet = ({
       });
   };
 
-  const formattedCode = renderLineNumbers(code, lineHighlights);
+  const formattedCode = renderCode(code, showLineNumbers, lineHighlights);
 
   return (
     <div className='relative'>
