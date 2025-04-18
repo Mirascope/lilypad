@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { SearchComponent } from "@/components/SearchComponent";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
@@ -36,6 +37,9 @@ export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
   return (
-    <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+    <>
+      <SearchComponent projectUuid={projectUuid} />
+      <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+    </>
   );
 };

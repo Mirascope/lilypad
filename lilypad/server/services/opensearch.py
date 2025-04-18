@@ -1,6 +1,7 @@
 """The `OpenSearchClass` class for opensearch."""
 
 import logging
+from typing import Any
 from uuid import UUID
 
 from opensearchpy import OpenSearch, RequestsHttpConnection
@@ -155,12 +156,10 @@ class OpenSearchService:
                 return False
         return False
 
-    def search_traces(
-        self, project_uuid: UUID, search_query: SearchQuery
-    ) -> SearchResult:
+    def search_traces(self, project_uuid: UUID, search_query: SearchQuery) -> Any:
         """Search for traces in OpenSearch."""
         if not self.client:
-            return SearchResult(traces=[], total_hits=0)
+            return []
         index_name = self.get_index_name(project_uuid)
 
         # Check if index exists
@@ -213,35 +212,8 @@ class OpenSearchService:
 
         # Process results
         hits = response["hits"]["hits"]
-        total_hits = response["hits"]["total"]["value"]
 
-        # Convert OpenSearch results back to SpanPublic objects
-        traces = []
-        for hit in hits:
-            source = hit["_source"]
-            # Convert the OpenSearch document back to a SpanPublic object
-            # You may need to adjust this based on your actual data structure
-            trace = SpanPublic(
-                uuid=hit["_id"],
-                project_uuid=project_uuid,
-                span_id=source["span_id"],
-                parent_span_id=source["parent_span_id"],
-                type=source["type"],
-                function_uuid=UUID(source["function_uuid"])
-                if source["function_uuid"]
-                else None,
-                scope=Scope(source["scope"]) if source["scope"] else None,
-                cost=source["cost"],
-                input_tokens=source["input_tokens"],
-                output_tokens=source["output_tokens"],
-                duration_ms=source["duration_ms"],
-                created_at=source["created_at"],
-                updated_at=source["updated_at"],  # type: ignore
-                data=source["data"],
-            )
-            traces.append(trace)
-
-        return SearchResult(traces=traces, total_hits=total_hits)
+        return hits
 
 
 # Function to get OpenSearch service instance

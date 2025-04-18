@@ -48,6 +48,32 @@ export const patchSpan = async (spanUuid: string, spanUpdate: SpanUpdate) => {
   return (await api.patch<SpanPublic>(`/spans/${spanUuid}`, spanUpdate)).data;
 };
 
+export const searchSpans = async (
+  projectUuid: string,
+  params: {
+    query_string: string;
+    time_range_start?: number;
+    time_range_end?: number;
+    limit?: number;
+    scope?: string; // Assuming Scope is a string enum
+    type?: string;
+  }
+) => {
+  // Convert params object into URL search params
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined) {
+      searchParams.append(key, value.toString());
+    }
+  });
+
+  return (
+    await api.get<SpanPublic[]>(
+      `/projects/${projectUuid}/spans?${searchParams.toString()}`
+    )
+  ).data;
+};
+
 export const fetchAggregatesByFunctionUuid = async (
   projectUuid: string,
   functionUuid: string,
@@ -115,3 +141,20 @@ export const useUpdateSpanMutation = () => {
     },
   });
 };
+
+export const spansSearchQueryOptions = (
+  projectUuid: string,
+  params: {
+    query_string: string;
+    time_range_start?: number;
+    time_range_end?: number;
+    limit?: number;
+    scope?: string;
+    type?: string;
+  }
+) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "spans", params],
+    queryFn: () => searchSpans(projectUuid, params),
+    enabled: !!params.query_string,
+  });

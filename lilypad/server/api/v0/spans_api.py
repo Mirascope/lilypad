@@ -4,13 +4,19 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..._utils import get_current_user
 from ...models import SpanTable
+from ...models.spans import Scope
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
 from ...schemas.users import UserPublic
+from ...services.opensearch import (
+    OpenSearchService,
+    SearchQuery,
+    get_opensearch_service,
+)
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
 spans_router = APIRouter()
@@ -81,6 +87,67 @@ async def get_aggregates_by_project_uuid(
 ) -> Sequence[AggregateMetrics]:
     """Get aggregated span by project uuid."""
     return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
+
+
+@spans_router.get("/projects/{project_uuid}/spans", response_model=Sequence[SpanPublic])
+async def search_traces(
+    project_uuid: UUID,
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    query_string: Annotated[str, Query(description="Search query string")],
+    time_range_start: Annotated[
+        int | None, Query(description="Start time range in milliseconds")
+    ] = None,
+    time_range_end: Annotated[
+        int | None, Query(description="End time range in milliseconds")
+    ] = None,
+    limit: Annotated[
+        int, Query(description="Maximum number of results to return")
+    ] = 100,
+    scope: Annotated[Scope | None, Query(description="Scope of the search")] = None,
+    type: Annotated[
+        str | None, Query(description="Type of spans to search for")
+    ] = None,
+) -> Sequence[SpanTable]:
+    """Search for traces in OpenSearch."""
+    if not opensearch_service.is_enabled:
+        return []
+
+    search_query = SearchQuery(
+        query_string=query_string,
+        time_range_start=time_range_start,
+        time_range_end=time_range_end,
+        limit=limit,
+        scope=scope,
+        type=type,
+    )
+
+    hits = opensearch_service.search_traces(project_uuid, search_query)
+    traces = []
+    for hit in hits:
+        source = hit["_source"]
+        # Convert the OpenSearch document back to a SpanPublic object
+        # You may need to adjust this based on your actual data structure
+        trace = SpanTable(
+            uuid=hit["_id"],
+            organization_uuid=source["organization_uuid"],
+            project_uuid=project_uuid,
+            span_id=source["span_id"],
+            parent_span_id=source["parent_span_id"],
+            type=source["type"],
+            function_uuid=UUID(source["function_uuid"])
+            if source["function_uuid"]
+            else None,
+            scope=Scope(source["scope"]) if source["scope"] else Scope.LILYPAD,
+            cost=source["cost"],
+            input_tokens=source["input_tokens"],
+            output_tokens=source["output_tokens"],
+            duration_ms=source["duration_ms"],
+            created_at=source["created_at"],
+            data=source["data"],
+        )
+        traces.append(trace)
+
+    return traces
 
 
 __all__ = ["spans_router"]
