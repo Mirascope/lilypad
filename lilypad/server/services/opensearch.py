@@ -168,17 +168,16 @@ class OpenSearchService:
 
         # Build the query
         query_parts = []
-        print("EWGWEGE")  # noqa: T201
-        print(search_query.query_string)  # noqa: T201
+
         # Add query string if provided
         if search_query.query_string:
-            # Use match query instead of multi_match to avoid parsing errors
             query_parts.append(
                 {
-                    "query_string": {
+                    "multi_match": {
                         "query": search_query.query_string,
-                        "fields": ["span_id", "type", "data.*"],
-                        "default_operator": "AND",
+                        "fields": ["span_id^2", "type^2", "name^2", "data.*"],
+                        "type": "best_fields",
+                        "lenient": True,  # This is important - makes the query lenient with type mismatches
                     }
                 }
             )
@@ -201,6 +200,7 @@ class OpenSearchService:
         if search_query.type:
             query_parts.append({"term": {"type": search_query.type}})
 
+        # Create the final query
         query = {"bool": {"must": query_parts}} if query_parts else {"match_all": {}}
 
         # Execute the search
@@ -211,13 +211,14 @@ class OpenSearchService:
         }
 
         try:
-            response = self.client.search(index=index_name, body=search_body)
+            response = self.client.search(body=search_body, index=index_name)
             # Process results
             hits = response["hits"]["hits"]
             return hits
         except Exception as e:
             # Log the error for debugging
-            logger.error(f"OpenSearch error: {e}")
+            logger.error(f"OpenSearch error: {str(e)}")
+            logger.info(f"Query used: {search_body}")
             return []
 
 
