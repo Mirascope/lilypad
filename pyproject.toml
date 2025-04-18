@@ -60,6 +60,7 @@ dependencies = [
     "starlette>=0.26.0",
     "python-jose[cryptography]>=3.3.0",
     "cryptography>=43.0.3",
+    "opensearch-py>=2.8.0",
 ]
 
 [project.urls]

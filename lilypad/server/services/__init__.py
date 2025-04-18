@@ -5,6 +5,7 @@ from .comments import CommentService
 from .deployments import DeploymentService
 from .environments import EnvironmentService
 from .functions import FunctionService
+from .opensearch import OpenSearchService, get_opensearch_service
 from .organization_invites import OrganizationInviteService
 from .organizations import OrganizationService
 from .projects import ProjectService
@@ -19,6 +20,8 @@ __all__ = [
     "DeploymentService",
     "EnvironmentService",
     "FunctionService",
+    "OpenSearchService",
+    "get_opensearch_service",
     "OrganizationInviteService",
     "OrganizationService",
     "ProjectService",

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
@@ -20,7 +20,7 @@ from ..._utils import (
 from ...models.spans import Scope, SpanTable
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
-from ...services import SpanService
+from ...services import OpenSearchService, SpanService, get_opensearch_service
 
 traces_router = APIRouter()
 
@@ -118,6 +118,15 @@ async def _process_span(
     return span_create
 
 
+async def index_traces_in_opensearch(
+    project_uuid: UUID,
+    traces: list[SpanTable],
+    opensearch_service: OpenSearchService,
+) -> None:
+    """Index traces in OpenSearch."""
+    opensearch_service.bulk_index_traces(project_uuid, traces)
+
+
 @traces_router.post(
     "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
 )
@@ -128,6 +137,8 @@ async def traces(
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    background_tasks: BackgroundTasks,
 ) -> Sequence[SpanTable]:
     """Create span traces."""
     # OPEN BETA: Check if the number of traces exceeds the limit
@@ -156,6 +167,10 @@ async def traces(
         await _process_span(root_span, parent_to_children, span_creates)
 
     span_tables = span_service.create_bulk_records(span_creates, project_uuid)
+    if opensearch_service.is_enabled:
+        background_tasks.add_task(
+            index_traces_in_opensearch, project_uuid, span_tables, opensearch_service
+        )
     return [span for span in span_tables if span.parent_span_id is None]
 
 

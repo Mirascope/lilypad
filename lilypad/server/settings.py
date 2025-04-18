@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # Resend
     resend_api_key: str | None = None
 
+    # OpenSearch
+    opensearch_host: str | None = None
+    opensearch_port: int | None = None
+    opensearch_user: str | None = None
+    opensearch_password: str | None = None
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None
