@@ -1,5 +1,6 @@
 """The `OpenSearchClass` class for opensearch."""
 
+import logging
 from uuid import UUID
 
 from opensearchpy import OpenSearch, RequestsHttpConnection
@@ -7,9 +8,10 @@ from pydantic import BaseModel
 
 from lilypad.server.settings import get_settings
 
-from ..models.spans import Scope, SpanTable
+from ..models.spans import Scope
 from ..schemas.spans import SpanPublic
 
+logger = logging.getLogger(__name__)
 OPENSEARCH_INDEX_PREFIX = "traces_"
 
 
@@ -60,14 +62,18 @@ class OpenSearchService:
         """Get the index name for a project."""
         return f"{OPENSEARCH_INDEX_PREFIX}{str(project_uuid)}"
 
-    def ensure_index_exists(self, project_uuid: UUID) -> None:
-        """Create the index if it doesn't exist."""
+    def ensure_index_exists(self, project_uuid: UUID) -> bool:
+        """Create the index if it doesn't exist. Returns True if successful."""
+        if not self.client:
+            return False
+
         index_name = self.get_index_name(project_uuid)
-        if self.client and not self.client.indices.exists(index=index_name):
+        if not self.client.indices.exists(index=index_name):
             # Define the mapping for the trace documents
             mapping = {
                 "mappings": {
                     "properties": {
+                        "uuid": {"type": "keyword"},  # Add uuid field
                         "span_id": {"type": "keyword"},
                         "parent_span_id": {"type": "keyword"},
                         "type": {"type": "keyword"},
@@ -85,71 +91,69 @@ class OpenSearchService:
                 "settings": {"number_of_shards": 1, "number_of_replicas": 1},
             }
             self.client.indices.create(index=index_name, body=mapping)
+        return True
 
-    def index_trace(self, project_uuid: UUID, trace: SpanTable) -> None:
-        """Index a trace in OpenSearch."""
-        if not self.client:
-            return
-        self.ensure_index_exists(project_uuid)
-        index_name = self.get_index_name(project_uuid)
+    def index_traces(self, project_uuid: UUID, trace: dict) -> bool:
+        """Bulk index traces in OpenSearch. Returns True if successful.
 
-        # Convert the trace to a dictionary for indexing
-        trace_dict = {
-            "span_id": trace.span_id,
-            "parent_span_id": trace.parent_span_id,
-            "type": trace.type,
-            "function_uuid": str(trace.function_uuid) if trace.function_uuid else None,
-            "scope": trace.scope.value if trace.scope else None,
-            "cost": trace.cost,
-            "input_tokens": trace.input_tokens,
-            "output_tokens": trace.output_tokens,
-            "duration_ms": trace.duration_ms,
-            "created_at": trace.created_at.isoformat() if trace.created_at else None,
-            "data": trace.data,
-        }
+        Args:
+            project_uuid: The UUID of the project.
+            trace: A dictionary created from model_dump().
+        """
+        if not self.client or not trace:
+            return False
 
-        # Index the document
-        self.client.index(
-            index=index_name,
-            body=trace_dict,
-            id=trace.uuid,  # Use trace ID as document ID
-        )
+        if not self.ensure_index_exists(project_uuid):
+            return False
 
-    def bulk_index_traces(self, project_uuid: UUID, traces: list[SpanTable]) -> None:
-        """Bulk index traces in OpenSearch."""
-        if not self.client:
-            return
-        self.ensure_index_exists(project_uuid)
+        try:
+            self.client.index(
+                index=self.get_index_name(project_uuid),
+                body=trace,
+                id=str(trace.get("uuid")),
+            )
+            return True
+        except Exception:
+            return False
+
+    def bulk_index_traces(self, project_uuid: UUID, traces: list[dict]) -> bool:
+        """Bulk index traces in OpenSearch. Returns True if successful.
+
+        Args:
+            project_uuid: The UUID of the project.
+            traces: A list of dictionaries created from model_dump().
+        """
+        if not self.client or not traces:
+            return False
+
+        if not self.ensure_index_exists(project_uuid):
+            return False
+
         index_name = self.get_index_name(project_uuid)
 
         # Prepare bulk indexing actions
         actions = []
-        for trace in traces:
-            trace_dict = {
-                "span_id": trace.span_id,
-                "parent_span_id": trace.parent_span_id,
-                "type": trace.type,
-                "function_uuid": str(trace.function_uuid)
-                if trace.function_uuid
-                else None,
-                "scope": trace.scope.value if trace.scope else None,
-                "cost": trace.cost,
-                "input_tokens": trace.input_tokens,
-                "output_tokens": trace.output_tokens,
-                "duration_ms": trace.duration_ms,
-                "created_at": trace.created_at.isoformat()
-                if trace.created_at
-                else None,
-                "data": trace.data,
-            }
+        for trace_dict in traces:
+            # trace_dict is already a dictionary from model_dump(), so we can use it directly
+
+            # Extract the UUID for the document ID (using "uuid" instead of "id")
+            trace_id = str(trace_dict.get("uuid"))
+            if not trace_id:
+                continue
 
             # Add the index action
-            actions.append({"index": {"_index": index_name, "_id": str(trace.uuid)}})
+            actions.append({"index": {"_index": index_name, "_id": trace_id}})
             actions.append(trace_dict)
 
         if actions:
             # Execute the bulk operation
-            self.client.bulk(body=actions)
+            try:
+                self.client.bulk(body=actions)
+                return True
+            except Exception as e:
+                logger.error(f"Error in bulk indexing: {str(e)}")
+                return False
+        return False
 
     def search_traces(
         self, project_uuid: UUID, search_query: SearchQuery

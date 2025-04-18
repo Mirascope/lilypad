@@ -120,7 +120,7 @@ async def _process_span(
 
 async def index_traces_in_opensearch(
     project_uuid: UUID,
-    traces: list[SpanTable],
+    traces: list[dict],
     opensearch_service: OpenSearchService,
 ) -> None:
     """Index traces in OpenSearch."""
@@ -168,8 +168,9 @@ async def traces(
 
     span_tables = span_service.create_bulk_records(span_creates, project_uuid)
     if opensearch_service.is_enabled:
+        trace_dicts = [span.model_dump() for span in span_tables]
         background_tasks.add_task(
-            index_traces_in_opensearch, project_uuid, span_tables, opensearch_service
+            index_traces_in_opensearch, project_uuid, trace_dicts, opensearch_service
         )
     return [span for span in span_tables if span.parent_span_id is None]
 
