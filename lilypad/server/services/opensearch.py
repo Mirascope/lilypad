@@ -164,19 +164,21 @@ class OpenSearchService:
 
         # Check if index exists
         if not self.client.indices.exists(index=index_name):
-            return SearchResult(traces=[], total_hits=0)
+            return []
 
         # Build the query
         query_parts = []
-
+        print("EWGWEGE")  # noqa: T201
+        print(search_query.query_string)  # noqa: T201
         # Add query string if provided
         if search_query.query_string:
+            # Use match query instead of multi_match to avoid parsing errors
             query_parts.append(
                 {
-                    "multi_match": {
+                    "query_string": {
                         "query": search_query.query_string,
                         "fields": ["span_id", "type", "data.*"],
-                        "type": "best_fields",
+                        "default_operator": "AND",
                     }
                 }
             )
@@ -208,12 +210,15 @@ class OpenSearchService:
             "sort": [{"created_at": {"order": "desc"}}],
         }
 
-        response = self.client.search(index=index_name, body=search_body)
-
-        # Process results
-        hits = response["hits"]["hits"]
-
-        return hits
+        try:
+            response = self.client.search(index=index_name, body=search_body)
+            # Process results
+            hits = response["hits"]["hits"]
+            return hits
+        except Exception as e:
+            # Log the error for debugging
+            logger.error(f"OpenSearch error: {e}")
+            return []
 
 
 # Function to get OpenSearch service instance
