@@ -40,7 +40,7 @@ export const TraceBody = () => {
     tracesQueryOptions(projectUuid)
   );
   const { spans: searchResults, isLoading } = useSearch(projectUuid);
-
+  console.log(defaultData, searchResults);
   // Use search results if they exist, otherwise use default data
   const displayData =
     searchResults && searchResults.length > 0 ? searchResults : defaultData;
