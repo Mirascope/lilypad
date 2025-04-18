@@ -5,6 +5,7 @@ import { SearchComponent } from "@/components/SearchComponent";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
+import { useSearch } from "@/hooks/use-search";
 import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
@@ -35,11 +36,27 @@ export const Trace = () => {
 
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
+  const { data: defaultData } = useSuspenseQuery(
+    tracesQueryOptions(projectUuid)
+  );
+  const { spans: searchResults, isLoading } = useSearch(projectUuid);
+
+  // Use search results if they exist, otherwise use default data
+  const displayData =
+    searchResults && searchResults.length > 0 ? searchResults : defaultData;
+
   return (
     <>
       <SearchComponent projectUuid={projectUuid} />
-      <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+      {isLoading ? (
+        <div>Loading search results...</div>
+      ) : (
+        <TracesTable
+          data={displayData}
+          traceUuid={traceUuid}
+          path={Route.fullPath}
+        />
+      )}
     </>
   );
 };

@@ -7,7 +7,7 @@ interface SearchComponentProps {
   projectUuid: string;
 }
 export const SearchComponent = ({ projectUuid }: SearchComponentProps) => {
-  const { spans, isLoading, isError, error, search } = useSearch(projectUuid);
+  const { isLoading, isError, error, search } = useSearch(projectUuid);
 
   const [inputValue, setInputValue] = useState("");
 
@@ -15,7 +15,6 @@ export const SearchComponent = ({ projectUuid }: SearchComponentProps) => {
     e.preventDefault();
     search(inputValue);
   };
-  console.log(spans);
 
   return (
     <div>

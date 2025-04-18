@@ -125,8 +125,6 @@ async def search_traces(
     traces = []
     for hit in hits:
         source = hit["_source"]
-        # Convert the OpenSearch document back to a SpanPublic object
-        # You may need to adjust this based on your actual data structure
         trace = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],
