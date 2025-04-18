@@ -7,7 +7,7 @@ interface SearchComponentProps {
   projectUuid: string;
 }
 export const SearchComponent = ({ projectUuid }: SearchComponentProps) => {
-  const { isLoading, isError, error, search } = useSearch(projectUuid);
+  const { search } = useSearch(projectUuid);
 
   const [inputValue, setInputValue] = useState("");
 
@@ -26,9 +26,6 @@ export const SearchComponent = ({ projectUuid }: SearchComponentProps) => {
         />
         <Button type='submit'>Search</Button>
       </form>
-
-      {isLoading && <div>Loading...</div>}
-      {isError && error && <div>Error: {error.message}</div>}
     </div>
   );
 };
