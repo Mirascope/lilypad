@@ -125,9 +125,11 @@ class OpenSearchService:
             traces: A list of dictionaries created from model_dump().
         """
         if not self.client or not traces:
+            logger.warning("OpenSearch client not initialized or empty traces list")
             return False
 
         if not self.ensure_index_exists(project_uuid):
+            logger.error(f"Failed to ensure index exists for project {project_uuid}")
             return False
 
         index_name = self.get_index_name(project_uuid)
@@ -138,6 +140,7 @@ class OpenSearchService:
             # Extract the UUID for the document ID
             trace_id = str(trace_dict.get("uuid"))
             if not trace_id:
+                logger.warning("Skipping trace without UUID")
                 continue
 
             # Add the index action
@@ -146,7 +149,19 @@ class OpenSearchService:
 
         if actions:
             try:
-                self.client.bulk(body=actions)
+                response = self.client.bulk(body=actions)
+
+                # Check for errors in the response
+                if response.get("errors", False):
+                    error_items = [
+                        item
+                        for item in response.get("items", [])
+                        if "error" in item.get("index", {})
+                    ]
+                    logger.error(f"Bulk indexing had errors: {error_items[:5]}")
+                    return False
+
+                logger.info(f"Successfully indexed {len(actions) // 2} traces")
                 return True
             except Exception as e:
                 logger.error(f"Error in bulk indexing: {str(e)}")
