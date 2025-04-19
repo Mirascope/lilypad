@@ -83,7 +83,7 @@ class OpenSearchService:
                         "cost": {"type": "float"},
                         "input_tokens": {"type": "integer"},
                         "output_tokens": {"type": "integer"},
-                        "duration_ms": {"type": "integer"},
+                        "duration_ms": {"type": "long"},
                         "created_at": {"type": "date"},
                         "updated_at": {"type": "date"},
                         "data": {"type": "object", "enabled": True},
