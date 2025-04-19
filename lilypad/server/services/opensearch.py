@@ -135,9 +135,7 @@ class OpenSearchService:
         # Prepare bulk indexing actions
         actions = []
         for trace_dict in traces:
-            # trace_dict is already a dictionary from model_dump(), so we can use it directly
-
-            # Extract the UUID for the document ID (using "uuid" instead of "id")
+            # Extract the UUID for the document ID
             trace_id = str(trace_dict.get("uuid"))
             if not trace_id:
                 continue
@@ -147,7 +145,6 @@ class OpenSearchService:
             actions.append(trace_dict)
 
         if actions:
-            # Execute the bulk operation
             try:
                 self.client.bulk(body=actions)
                 return True
@@ -177,7 +174,7 @@ class OpenSearchService:
                         "query": search_query.query_string,
                         "fields": ["span_id^2", "type^2", "name^2", "data.*"],
                         "type": "best_fields",
-                        "lenient": True,  # This is important - makes the query lenient with type mismatches
+                        "lenient": True,  # Makes the query lenient with type mismatches
                     }
                 }
             )
@@ -212,17 +209,14 @@ class OpenSearchService:
 
         try:
             response = self.client.search(body=search_body, index=index_name)
-            # Process results
             hits = response["hits"]["hits"]
             return hits
         except Exception as e:
-            # Log the error for debugging
             logger.error(f"OpenSearch error: {str(e)}")
             logger.info(f"Query used: {search_body}")
             return []
 
 
-# Function to get OpenSearch service instance
 def get_opensearch_service() -> OpenSearchService:
     """Get the OpenSearch service instance."""
     return OpenSearchService()
