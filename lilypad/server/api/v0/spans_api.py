@@ -122,10 +122,12 @@ async def search_traces(
     )
 
     hits = opensearch_service.search_traces(project_uuid, search_query)
-    traces = []
+
+    # Create all span objects without child relationships
+    spans_by_id: dict[str, SpanTable] = {}
     for hit in hits:
         source = hit["_source"]
-        trace = SpanTable(
+        span = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],
             project_uuid=project_uuid,
@@ -142,10 +144,24 @@ async def search_traces(
             duration_ms=source["duration_ms"],
             created_at=source["created_at"],
             data=source["data"],
+            child_spans=[],
         )
-        traces.append(trace)
+        spans_by_id[source["span_id"]] = span
 
-    return traces
+    # Build the parent-child relationships
+    for span in spans_by_id.values():
+        if span.parent_span_id and span.parent_span_id in spans_by_id:
+            parent_span = spans_by_id[span.parent_span_id]
+            parent_span.child_spans.append(span)
+
+    # Return only root spans (those without parents or with parents not in the result set)
+    root_spans = [
+        span
+        for span in spans_by_id.values()
+        if not span.parent_span_id or span.parent_span_id not in spans_by_id
+    ]
+
+    return root_spans
 
 
 __all__ = ["spans_router"]
