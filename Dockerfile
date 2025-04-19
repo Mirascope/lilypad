@@ -38,3 +38,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
+# Run the FastAPI application by default
+CMD ["fastapi", "run", "--workers", "32", "lilypad/server/main.py"]
