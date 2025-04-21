@@ -223,12 +223,12 @@ class OpenSearchService:
         }
 
         try:
+            logger.info(f"Query used: {search_body}")
             response = self.client.search(body=search_body, index=index_name)
             hits = response["hits"]["hits"]
             return hits
         except Exception as e:
             logger.error(f"OpenSearch error: {str(e)}")
-            logger.info(f"Query used: {search_body}")
             return []
 
 
