@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,12 +8,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tab, TraceTab } from "@/types/traces";
 import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
 import JsonView, { JsonViewProps } from "@uiw/react-json-view";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
   role: string;
@@ -78,7 +86,10 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
 
 export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
   const { userConfig, updateUserConfig } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+
   if (!span.code && !span.signature) return null;
+
   const tabs: Tab[] = [
     {
       label: "Code",
@@ -91,41 +102,54 @@ export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
       component: <CodeSnippet code={span.signature ?? ""} />,
     },
   ];
+
   return (
-    <Tabs
-      defaultValue={userConfig?.defaultTraceTab ?? "signature"}
-      className='w-full'
-    >
-      <div className='flex w-full'>
-        <TabsList className={`w-[160px]`}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className='w-full'>
+      <Tabs
+        defaultValue={userConfig?.defaultTraceTab ?? "signature"}
+        className='w-full'
+      >
+        <div className='flex w-full'>
+          <TabsList className={`w-[160px]`}>
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                onClick={() =>
+                  updateUserConfig({
+                    defaultTraceTab: tab.value,
+                  })
+                }
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant='ghost'
+              className='p-1 rounded-md hover:bg-gray-100 h-9'
+            >
+              {isOpen ? "Hide" : "Show"}
+              {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
           {tabs.map((tab) => (
-            <TabsTrigger
+            <TabsContent
               key={tab.value}
               value={tab.value}
-              onClick={() =>
-                updateUserConfig({
-                  defaultTraceTab: tab.value,
-                })
-              }
+              className='w-full bg-gray-50'
             >
-              {tab.label}
-            </TabsTrigger>
+              {tab.component}
+            </TabsContent>
           ))}
-        </TabsList>
-      </div>
-      {tabs.map((tab) => (
-        <TabsContent
-          key={tab.value}
-          value={tab.value}
-          className='w-full bg-gray-50'
-        >
-          {tab.component}
-        </TabsContent>
-      ))}
-    </Tabs>
+        </CollapsibleContent>
+      </Tabs>
+    </Collapsible>
   );
 };
-
 export const renderEventsContainer = (messages: Event[]) => {
   return (
     <Card>

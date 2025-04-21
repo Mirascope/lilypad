@@ -73,7 +73,6 @@ export const LilypadPanel = ({
           <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
         )}
       </div>
-      <TraceCodeTab span={span} />
       {span.events &&
         span.events.length > 0 &&
         renderEventsContainer(span.events)}
@@ -102,6 +101,7 @@ export const LilypadPanel = ({
       )}
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
       {renderCardOutput(span.output)}
+      <TraceCodeTab span={span} />
       {renderMetadata(span.data)}
       {renderData({
         value: span.data,
