@@ -1,4 +1,5 @@
 import LilypadDialog from "@/components/LilypadDialog";
+import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
@@ -17,6 +18,7 @@ import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 const tier = {
@@ -27,10 +29,11 @@ const tier = {
 };
 export const HomeSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const userOrganization = user.user_organizations?.find(
     (userOrg) => userOrg.organization.uuid === user?.active_organization_uuid
   );
+  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
+  const [open, setOpen] = useState<boolean>(false);
   return (
     <>
       <Typography variant='h4'>Personal Information</Typography>
@@ -38,31 +41,36 @@ export const HomeSettings = () => {
         <UneditableInput label='Name' value={user.first_name} />
         <UneditableInput label='Email' value={user.email} />
         <Typography variant='h4'>Organization</Typography>
-        {userOrganization && (
-          <UneditableInput
-            label='Name'
-            value={userOrganization.organization.name}
-          />
-        )}
-        <UneditableInput
-          label='Plan'
-          value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
-        />
-        {!isLilypadCloud() && (
-          <div>
-            <LilypadDialog
-              title='Change Plan'
-              description='Contact william@mirascope.com to obtain a new license key.'
-              buttonProps={{
-                variant: "default",
-              }}
-              text={"Upgrade plan"}
-            >
-              <ChangePlan />
-            </LilypadDialog>
-          </div>
+        {userOrganization ? (
+          <>
+            <UneditableInput
+              label='Name'
+              value={userOrganization.organization.name}
+            />
+            <UneditableInput
+              label='Plan'
+              value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
+            />
+            {!isLilypadCloud() && (
+              <div>
+                <LilypadDialog
+                  title='Change Plan'
+                  description='Contact william@mirascope.com to obtain a new license key.'
+                  buttonProps={{
+                    variant: "default",
+                  }}
+                  text={"Upgrade plan"}
+                >
+                  <ChangePlan />
+                </LilypadDialog>
+              </div>
+            )}
+          </>
+        ) : (
+          <Button onClick={() => setOpen(true)}>Create Organization</Button>
         )}
       </div>
+      <CreateOrganizationDialog open={open} setOpen={setOpen} />
     </>
   );
 };

@@ -31,6 +31,7 @@ export const LilypadDialog = ({
   open,
   onOpenChange,
   dialogContentProps = {},
+  noTrigger = false,
 }: {
   icon?: ReactNode;
   text?: string;
@@ -45,6 +46,7 @@ export const LilypadDialog = ({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   dialogContentProps?: React.ComponentProps<typeof DialogContent>;
+  noTrigger?: boolean;
 }) => {
   const ButtonComponent = (
     <Button
@@ -69,7 +71,7 @@ export const LilypadDialog = ({
           </TooltipTrigger>
           <TooltipContent {...tooltipProps}>{tooltipContent}</TooltipContent>
         </Tooltip>
-      ) : (
+      ) : noTrigger ? null : (
         TriggerButton
       )}
       <DialogContent

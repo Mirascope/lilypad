@@ -657,6 +657,18 @@ export interface MessageParam {
 }
 
 /**
+ * OrganizationCreate
+ * Organization create model
+ */
+export interface OrganizationCreate {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
+}
+
+/**
  * OrganizationInviteCreate
  * OrganizationInvite create model
  */

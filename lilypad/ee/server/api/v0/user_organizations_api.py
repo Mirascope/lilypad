@@ -8,11 +8,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from .....server._utils import get_current_user
+from .....server._utils.auth import create_jwt_token
 from .....server.models import UserTable
 from .....server.schemas.users import (
     UserPublic,
 )
-from .....server.services import OrganizationInviteService, OrganizationService
+from .....server.services import (
+    OrganizationInviteService,
+    OrganizationService,
+    UserService,
+)
 from ...models import UserOrganizationTable, UserRole
 from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
@@ -53,9 +58,7 @@ class CreateUserOrganizationToken(BaseModel):
     token: str
 
 
-@user_organizations_router.post(
-    "/user-organizations", response_model=UserOrganizationTable
-)
+@user_organizations_router.post("/user-organizations", response_model=UserPublic)
 async def create_user_organization(
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
@@ -66,7 +69,8 @@ async def create_user_organization(
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     create_user_organization_token: CreateUserOrganizationToken,
     user: Annotated[UserPublic, Depends(get_current_user)],
-) -> UserOrganizationTable:
+    user_service: Annotated[UserService, Depends(UserService)],
+) -> UserPublic:
     """Create user organization"""
     org_invite = organization_invites_service.find_record_by_token(
         create_user_organization_token.token
@@ -112,7 +116,13 @@ async def create_user_organization(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user organization.",
         )
-    return user_organization
+    # Update user active organization
+    new_user = user_service.update_user_active_organization_uuid(
+        user_organization.organization_uuid
+    )
+    user_public = UserPublic.model_validate(new_user)
+    user_public.access_token = create_jwt_token(user_public)
+    return user_public
 
 
 @user_organizations_router.patch(

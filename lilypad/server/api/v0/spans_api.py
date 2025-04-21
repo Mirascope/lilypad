@@ -34,6 +34,21 @@ async def get_span(
     return SpanMoreDetails.from_span(span)
 
 
+@spans_router.get(
+    "/projects/{project_uuid}/spans/{span_id}", response_model=SpanMoreDetails
+)
+async def get_span_by_span_id(
+    project_uuid: UUID,
+    span_id: str,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> SpanMoreDetails:
+    """Get span by project_uuid and span_id."""
+    span = span_service.get_record_by_span_id(project_uuid, span_id)
+    if not span:
+        raise HTTPException(status_code=404, detail="Span not found")
+    return SpanMoreDetails.from_span(span)
+
+
 @spans_router.patch("/spans/{span_uuid}", response_model=SpanPublic)
 async def update_span(
     span_uuid: UUID,

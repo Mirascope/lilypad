@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { LilypadIcon } from "@/components/LilypadIcon";
+import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import {
   Collapsible,
   CollapsibleContent,
@@ -50,13 +51,14 @@ import {
   ChevronUp,
   Home,
   NotebookPen,
+  Plus,
   ScrollText,
   Settings,
   SquareTerminal,
   User2,
   Wrench,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 interface Item {
   title: string;
@@ -128,6 +130,8 @@ export const AppSidebar = () => {
   const { activeProject, setProject } = useAuth();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const navigate = useNavigate();
+  const [createOrganizationOpen, setCreateOrganizationOpen] =
+    useState<boolean>(false);
   const params = useParams({ strict: false });
   const auth = useAuth();
   const queryClient = useQueryClient();
@@ -274,74 +278,95 @@ export const AppSidebar = () => {
     );
   };
   const renderOrganizationsDropdownItems = () => {
-    return user?.user_organizations?.map((user_organization) => (
-      <DropdownMenuCheckboxItem
-        key={user_organization.uuid}
-        onClick={() =>
-          void handleOrganizationSwitch(user_organization.organization.uuid)
-        }
-        checked={
-          user_organization.organization.uuid === user.active_organization_uuid
-        }
-      >
-        {user_organization.organization.name}
-      </DropdownMenuCheckboxItem>
-    ));
+    return (
+      <>
+        {user?.user_organizations?.map((user_organization) => (
+          <DropdownMenuCheckboxItem
+            key={user_organization.uuid}
+            onClick={() =>
+              void handleOrganizationSwitch(user_organization.organization.uuid)
+            }
+            checked={
+              user_organization.organization.uuid ===
+              user.active_organization_uuid
+            }
+          >
+            {user_organization.organization.name}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </>
+    );
   };
   return (
-    <Sidebar collapsible='icon' className='lilypad-sidebar'>
-      <SidebarHeader>
-        <SidebarMenuButton asChild>
-          <Link
-            {...(activeProject
-              ? {
-                  to: ProjectRoute.fullPath,
-                  params: { projectUuid: activeProject.uuid },
-                }
-              : { to: "/" })}
-          >
-            <LilypadIcon /> Lilypad
-          </Link>
-        </SidebarMenuButton>
-      </SidebarHeader>
-      <SidebarContent>{renderProjectSelector()}</SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link
-                to={"/settings/$"}
-                params={{ _splat: "overview" }}
-                className='flex items-center w-full gap-2 [&.active]:font-bold'
-              >
-                <Settings />
-                Settings
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 /> {user?.first_name}
-                  <ChevronUp className='ml-auto' />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side='top'
-                className='w-[--radix-popper-anchor-width]'
-              >
-                {renderOrganizationsDropdownItems()}
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+    <>
+      <Sidebar collapsible='icon' className='lilypad-sidebar'>
+        <SidebarHeader>
+          <SidebarMenuButton asChild>
+            <Link
+              {...(activeProject
+                ? {
+                    to: ProjectRoute.fullPath,
+                    params: { projectUuid: activeProject.uuid },
+                  }
+                : { to: "/" })}
+            >
+              <LilypadIcon /> Lilypad
+            </Link>
+          </SidebarMenuButton>
+        </SidebarHeader>
+        <SidebarContent>{renderProjectSelector()}</SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link
+                  to={"/settings/$"}
+                  params={{ _splat: "overview" }}
+                  className='flex items-center w-full gap-2 [&.active]:font-bold'
+                >
+                  <Settings />
+                  Settings
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 /> {user?.first_name}
+                    <ChevronUp className='ml-auto' />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side='top'
+                  className='min-w-[--radix-popper-anchor-width]'
+                >
+                  {renderOrganizationsDropdownItems()}
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setCreateOrganizationOpen(true);
+                    }}
+                    className='flex gap-2'
+                  >
+                    <Plus className='w-4 h-4' />
+                    Create Organization
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+      <CreateOrganizationDialog
+        key='create-organization'
+        open={createOrganizationOpen}
+        setOpen={setCreateOrganizationOpen}
+      />
+    </>
   );
 };
 

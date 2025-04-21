@@ -1,6 +1,5 @@
 import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
-import { NotFound } from "@/components/NotFound";
 import { OrgSettings } from "@/components/OrgSettings";
 import { SettingsLayout } from "@/components/SettingsLayout";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -18,10 +17,11 @@ import {
   Building2,
   KeyRound,
   LucideIcon,
+  Pencil,
   SettingsIcon,
   Tag,
 } from "lucide-react";
-import { JSX, Suspense, useEffect } from "react";
+import { JSX, ReactNode, Suspense, useEffect, useState } from "react";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
@@ -29,22 +29,26 @@ interface Tab {
   label: string;
   value: string;
   component: JSX.Element;
-  title: string;
+  title: string | ReactNode;
   icon: LucideIcon;
+  disabled?: boolean;
 }
 
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const activeUserOrg = user.user_organizations?.find(
-    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
-  );
   const params = useParams({
     from: Route.id,
   });
-  if (!activeUserOrg) return <NotFound />;
   let { _splat: tab } = params;
+
+  const activeUserOrg = user.user_organizations?.find(
+    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
+  );
+  const [open, setOpen] = useState<boolean>(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+
   const tabs: Tab[] = [
     {
       label: "Overview",
@@ -82,11 +86,28 @@ const Settings = () => {
             </div>
           }
         >
-          <OrgSettings />
+          <OrgSettings open={open} setOpen={setOpen} />
         </Suspense>
       ),
-      title: `${activeUserOrg.organization.name}'s Settings`,
+      title: (
+        <div
+          className='flex items-center gap-2 cursor-pointer'
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <h1 className='text-xl font-semibold'>
+            {activeUserOrg?.organization.name}&apos;s Settings
+          </h1>
+          {isHovered && (
+            <Pencil
+              className='h-4 w-4 text-gray-500'
+              onClick={() => setOpen(true)}
+            />
+          )}
+        </div>
+      ),
       icon: Building2,
+      disabled: !activeUserOrg,
     },
     {
       label: "Tags",
@@ -96,10 +117,14 @@ const Settings = () => {
           <TagsTable />
         </Suspense>
       ),
-      title: `${activeUserOrg.organization.name}'s Tags`,
+      title: `${activeUserOrg?.organization.name}'s Tags`,
       icon: Tag,
+      disabled: !activeUserOrg,
     },
   ];
+  if (tab && !tabs.some((t) => t.value === tab)) {
+    tab = "overview";
+  }
   useEffect(() => {
     if (tab) {
       navigate({
@@ -122,9 +147,6 @@ const Settings = () => {
       );
     }
   }, [tab, navigate, toast]);
-  if (tab && !tabs.some((t) => t.value === tab)) {
-    tab = "overview";
-  }
   const handleTabChange = (value: string) => {
     navigate({
       to: `/settings/$`,
@@ -147,7 +169,11 @@ const Settings = () => {
       <div className='flex justify-center w-full'>
         <TabsList className={`w-[${tabWidth}px]`}>
           {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              disabled={tab.disabled}
+            >
               {tab.label}
             </TabsTrigger>
           ))}

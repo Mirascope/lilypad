@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from ee import Tier
 
 from .....server.schemas.span_more_details import SpanMoreDetails
-from .....server.services import SpanService
+from .....server.services import ProjectService, SpanService
 from ....server.schemas.annotations import (
     AnnotationCreate,
     AnnotationPublic,
@@ -33,6 +33,7 @@ annotations_router = APIRouter()
 async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
     annotations_create: Sequence[AnnotationCreate],
 ) -> Sequence[AnnotationPublic]:
     """Create an annotation.
@@ -40,6 +41,7 @@ async def create_annotations(
     Args:
         project_uuid: The project UUID.
         annotations_service: The annotation service.
+        project_service: The project service.
         annotations_create: The annotation create model.
 
     Returns:
@@ -50,22 +52,64 @@ async def create_annotations(
         not been labeled yet.
     """
     duplicate_checks = []
+    processed_creates: list[AnnotationCreate] = []
+    emails_to_lookup: set[str] = set()
+    email_to_uuid_map: dict[str, UUID] = {}
+
     for annotation in annotations_create:
-        annotation.project_uuid = project_uuid
-        if annotation.span_uuid and annotation.assigned_to:
-            for assigned_to in annotation.assigned_to:
-                duplicate_checks.append(
-                    {
-                        "assigned_to": assigned_to,
-                        "span_uuid": annotation.span_uuid,
-                    }
-                )
-        else:
-            duplicate_checks.append(
-                {
-                    "span_uuid": annotation.span_uuid,
-                }
+        if annotation.assignee_email:
+            emails_to_lookup.update(annotation.assignee_email)
+            processed_creates.append(
+                annotation.model_copy(update={"assignee_email": None})
             )
+        elif annotation.assigned_to:
+            for user_uuid in annotation.assigned_to:
+                duplicate_checks.append(
+                    {"span_uuid": annotation.span_uuid, "assigned_to": user_uuid}
+                )
+            processed_creates.append(annotation.model_copy())
+        else:
+            duplicate_checks.append({"span_uuid": annotation.span_uuid})
+            processed_creates.append(annotation.model_copy())
+
+    if emails_to_lookup:
+        project = project_service.find_record_by_uuid(project_uuid)
+        email_to_uuid_lookup = {
+            user_organizations.user.email: user_organizations.user.uuid
+            for user_organizations in project.organization.user_organizations
+            if user_organizations.user.uuid
+        }
+        for email in emails_to_lookup:
+            if email in email_to_uuid_lookup:
+                email_to_uuid_map[email] = email_to_uuid_lookup[email]
+            else:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND,
+                    f"User with email '{email}' not found in accessible organizations.",
+                )
+
+    final_creates: list[AnnotationCreate] = []
+    for ann_create_processed in processed_creates:
+        original_input = next(
+            (
+                item
+                for item in annotations_create
+                if item.span_uuid == ann_create_processed.span_uuid
+            ),
+            None,
+        )
+        if original_input and original_input.assignee_email:
+            for assignee_email in original_input.assignee_email:
+                assignee_uuid = email_to_uuid_map.get(assignee_email)
+                if assignee_uuid:
+                    ann_create_processed.assigned_to = [assignee_uuid]
+                    duplicate_checks.append(
+                        {
+                            "span_uuid": ann_create_processed.span_uuid,
+                            "assigned_to": assignee_uuid,
+                        }
+                    )
+        final_creates.append(ann_create_processed)
 
     # Check for duplicates in bulk
     duplicates = annotations_service.check_bulk_duplicates(duplicate_checks)
@@ -76,9 +120,7 @@ async def create_annotations(
         )
 
     # Create all records in bulk
-    annotations = annotations_service.create_bulk_records(
-        annotations_create, project_uuid
-    )
+    annotations = annotations_service.create_bulk_records(final_creates, project_uuid)
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
