@@ -12,6 +12,7 @@ from ...models.spans import Scope
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
 from ...schemas.users import UserPublic
+from ...services.functions import FunctionService
 from ...services.opensearch import (
     OpenSearchService,
     SearchQuery,
@@ -108,6 +109,7 @@ async def get_aggregates_by_project_uuid(
 async def search_traces(
     project_uuid: UUID,
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    function_service: Annotated[FunctionService, Depends(FunctionService)],
     query_string: Annotated[str, Query(description="Search query string")],
     time_range_start: Annotated[
         int | None, Query(description="Start time range in milliseconds")
@@ -135,13 +137,26 @@ async def search_traces(
         scope=scope,
         type=type,
     )
-
     hits = opensearch_service.search_traces(project_uuid, search_query)
 
-    # Create all span objects without child relationships
+    # Extract function UUIDs and fetch functions in batch
+    function_uuids = {
+        UUID(hit["_source"]["function_uuid"])
+        for hit in hits
+        if hit["_source"].get("function_uuid")
+    }
+
+    functions = function_service.find_records_by_uuids(
+        project_uuid=project_uuid, uuids=function_uuids
+    )
+    functions_by_id = {str(func.uuid): func for func in functions if func.uuid}
+
+    # Build spans from search results
     spans_by_id: dict[str, SpanTable] = {}
     for hit in hits:
         source = hit["_source"]
+        function_uuid_str = source.get("function_uuid")
+
         span = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],
@@ -149,9 +164,8 @@ async def search_traces(
             span_id=source["span_id"],
             parent_span_id=source["parent_span_id"],
             type=source["type"],
-            function_uuid=UUID(source["function_uuid"])
-            if source["function_uuid"]
-            else None,
+            function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
+            function=functions_by_id.get(function_uuid_str),
             scope=Scope(source["scope"]) if source["scope"] else Scope.LILYPAD,
             cost=source["cost"],
             input_tokens=source["input_tokens"],
@@ -163,20 +177,17 @@ async def search_traces(
         )
         spans_by_id[source["span_id"]] = span
 
-    # Build the parent-child relationships
+    # Establish parent-child relationships
     for span in spans_by_id.values():
         if span.parent_span_id and span.parent_span_id in spans_by_id:
-            parent_span = spans_by_id[span.parent_span_id]
-            parent_span.child_spans.append(span)
+            spans_by_id[span.parent_span_id].child_spans.append(span)
 
-    # Return only root spans (those without parents or with parents not in the result set)
-    root_spans = [
+    # Return only root spans
+    return [
         span
         for span in spans_by_id.values()
         if not span.parent_span_id or span.parent_span_id not in spans_by_id
     ]
-
-    return root_spans
 
 
 __all__ = ["spans_router"]

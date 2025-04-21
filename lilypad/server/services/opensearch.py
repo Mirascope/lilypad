@@ -50,8 +50,8 @@ class OpenSearchService:
                 http_auth=(settings.opensearch_user, settings.opensearch_password)
                 if settings.opensearch_user and settings.opensearch_password
                 else None,
-                use_ssl=False,
-                verify_certs=False,  # For development. Set to True in production with proper certificates
+                use_ssl=settings.opensearch_use_ssl,
+                verify_certs=False,  # TODO Set to True in production with proper certificates
                 connection_class=RequestsHttpConnection,
                 timeout=30,
             )

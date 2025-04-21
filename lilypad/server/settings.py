@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     opensearch_port: int | None = None
     opensearch_user: str | None = None
     opensearch_password: str | None = None
+    opensearch_use_ssl: bool = False
 
     # Database settings
     db_host: str | None = None
