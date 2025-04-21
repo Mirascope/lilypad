@@ -251,11 +251,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
             otel_attributes = db_span.data.get("attributes", {})
             if (
-                decorator_tag_names := otel_attributes.get("lilypad.decorator.tags")
-            ) and isinstance(decorator_tag_names, list):
+                trace_tag_names := otel_attributes.get("lilypad.trace.tags")
+            ) and isinstance(trace_tag_names, list):
                 if not hasattr(db_span, "_temp_links_to_add"):
                     db_span._temp_links_to_add = []  # type: ignore
-                for tag_name in decorator_tag_names:
+                for tag_name in trace_tag_names:
                     if isinstance(tag_name, str):
                         tag = tag_service.find_or_create_tag(tag_name, project_uuid)
                         db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
