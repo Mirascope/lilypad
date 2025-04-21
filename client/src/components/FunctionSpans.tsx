@@ -37,7 +37,7 @@ export const FunctionSpans = ({
       <TracesTable
         data={
           displayData?.filter((data) => data.function_uuid === functionUuid) ??
-          []
+          defaultData
         }
         traceUuid={traceUuid}
         path={Route.fullPath}

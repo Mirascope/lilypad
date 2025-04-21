@@ -56,7 +56,7 @@ export const TraceBody = () => {
       />
 
       <TracesTable
-        data={displayData ?? []}
+        data={displayData ?? defaultData}
         traceUuid={traceUuid}
         path={Route.fullPath}
       />
