@@ -310,7 +310,7 @@ export const AppSidebar = () => {
                   }
                 : { to: "/" })}
             >
-              <LilypadIcon /> Lilypad
+              <LilypadIcon /> Lilypad Beta
             </Link>
           </SidebarMenuButton>
         </SidebarHeader>
