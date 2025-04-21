@@ -8,10 +8,13 @@ WORKDIR /app
 # Copy package.json and pnpm-lock.yaml (if available)
 COPY package*.json pnpm-lock.yaml* ./
 
-# Set the working directory for following commands
-WORKDIR /app
+# Install tini for better signal handling
+RUN apt-get update && apt-get install -y tini
 
 # Expose the port the app runs on
 EXPOSE 5173
 
-CMD ["sh", "-c", "pnpm i && pnpm run dev -- --host 0.0.0.0"]
+# Use tini as entrypoint to properly handle signals
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["sh", "-c", "pnpm i && exec pnpm run dev -- --host 0.0.0.0"]
