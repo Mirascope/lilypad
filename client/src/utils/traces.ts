@@ -14,20 +14,27 @@ export const fetchTraces = async (
   return data;
 };
 
+export interface TracePageParam {
+  offset: number;
+  limit: number;
+}
+
 export const tracesInfiniteQueryOptions = (projectUuid: string) => ({
   queryKey: ["projects", projectUuid, "traces"],
-  queryFn: ({ pageParam = 0 }: QueryFunctionContext) =>
-    fetchTraces(projectUuid, pageParam as number, PAGE_SIZE),
-
+  queryFn: ({ pageParam }: QueryFunctionContext) => {
+    const { offset = 0, limit = PAGE_SIZE } = pageParam as TracePageParam;
+    return fetchTraces(projectUuid, offset, limit);
+  },
   getNextPageParam: (
     lastPage: PaginatedSpanPublic,
     _allPages: PaginatedSpanPublic[],
-    lastOffset: number
+    lastPageParam: TracePageParam
   ) => {
-    const nextOffset = lastOffset + lastPage.items.length;
-    return nextOffset < lastPage.total ? nextOffset : undefined;
+    const nextOffset = lastPageParam.offset + lastPage.items.length;
+    if (nextOffset >= lastPage.total) return undefined;
+    return { offset: nextOffset, limit: lastPageParam.limit };
   },
-
-  initialPageParam: 0,
+  
+  initialPageParam: { offset: 0, limit: PAGE_SIZE },
   staleTime: 30_000,
 });

@@ -50,8 +50,16 @@ import {
   SmileIcon,
   Users,
 } from "lucide-react";
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const ROW_HEIGHT = 45;
+const MIN_PAGE = 20;
+
+function calcPageSize(viewportEl: HTMLDivElement | null) {
+  const vh = viewportEl?.clientHeight ?? window.innerHeight;
+  return Math.max(MIN_PAGE, Math.ceil((vh / ROW_HEIGHT) * 2));
+}
 
 const tagFilter = (
   row: Row<SpanPublic>,
@@ -59,20 +67,20 @@ const tagFilter = (
   filterValue: string
 ): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
-
+  
   // If there's no filter value, return true (show all rows)
   if (!filterValue || filterValue.trim() === "") {
     return true;
   }
-
+  
   // If there are no tags or tags is not an array, return false
   if (!Array.isArray(tags) || tags.length === 0) {
     return false;
   }
-
+  
   // Convert filter value to lowercase for case-insensitive comparison
   const filterLower = filterValue.toLowerCase();
-
+  
   // Check if any tag name includes the filter value
   return tags.some((tag) => tag.name.toLowerCase().includes(filterLower));
 };
@@ -81,13 +89,13 @@ const tagFilter = (
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, value) => {
   const query = String(value).trim().toLowerCase();
   if (!query) return true;
-
+  
   if (row.depth > 0) return true;
-
+  
   const hit = (span: SpanPublic): boolean =>
     span.display_name.toLowerCase().includes(query) ||
     (span.child_spans ?? []).some(hit);
-
+  
   return hit(row.original);
 };
 
@@ -100,7 +108,7 @@ const findRowWithUuid = (
     if (row.uuid === targetUuid) {
       return row;
     }
-
+    
     if (row.child_spans?.length) {
       const found = findRowWithUuid(row.child_spans, targetUuid);
       if (found) return found;
@@ -142,7 +150,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
       });
     }
   }, [data, path]);
-
+  
   const filteredAnnotations = data.annotations.filter(
     (annotation) => annotation.label
   );
@@ -181,7 +189,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           )}
         </Button>
       </div>
-
+      
       {/* Scrollable content area */}
       <div className='flex-1 overflow-auto pb-4'>
         {/* Comments section with max height and scrolling */}
@@ -196,14 +204,14 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
             </div>
           </div>
         )}
-
+        
         {/* Annotations section with max height and scrolling */}
         {showAnnotations && (
           <div className='mb-4 max-h-64 overflow-y-auto'>
             <AnnotationsTable data={filteredAnnotations}/>
           </div>
         )}
-
+        
         {/* Row details panel */}
         <div className='p-4 border overflow-auto rounded-md mt-4'>
           <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
@@ -223,7 +231,7 @@ interface TracesTableProps {
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
-
+  
   /** infinite‑scroll sentinel callback */
   onReachEnd?: () => void;
   /** explicit refresh (Load newer) */
@@ -236,31 +244,31 @@ interface TracesTableProps {
 
 
 export const TracesTable = ({
-                              data,
-                              traceUuid,
-                              path,
-                              hideCompare = false,
-                              onReachEnd,
-                              onLoadNewer,
-                              isLoadingNewer = false,
-                              isFetchingNextPage = false,
-                            }: TracesTableProps) => {
+  data,
+  traceUuid,
+  path,
+  hideCompare = false,
+  onReachEnd,
+  onLoadNewer,
+  isLoadingNewer = false,
+  isFetchingNextPage = false,
+}: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<DataTableHandle>(null);
-
+  
   const [nameFilter, setName] = useState("");
-
+  
   useEffect(() => {
     tableRef.current?.scrollTop();
   }, [nameFilter]);
-
+  
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
-
+  
   // Function to handle checkbox changes
   const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
     if (checked) {
@@ -271,7 +279,7 @@ export const TracesTable = ({
       );
     }
   };
-
+  
   const sentinelRef = useRef<HTMLTableRowElement>(null);
   const prevLenRef = useRef<number>(data.length);
   useLayoutEffect(() => {
@@ -280,14 +288,14 @@ export const TracesTable = ({
     }
     prevLenRef.current = data.length;
   }, [data.length])
-
+  
   const findRow = (rows: SpanPublic[], uuid?: string) =>
     rows.find((r) => r.uuid === uuid) ??
     rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
-
+  
   const selectRow = findRow(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
-
+  
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
@@ -296,13 +304,13 @@ export const TracesTable = ({
         staleTime: 60000,
       })
       .catch(() => toast.error("Failed to prefetch"));
-    queryClient
-      .prefetchQuery({
-        queryKey: ["spans", row.uuid, "comments"],
-        queryFn: () => fetchCommentsBySpan(row.uuid),
-        staleTime: 60000,
-      })
-      .catch(() => toast.error("Failed to prefetch"));
+    // queryClient
+    //   .prefetchQuery({
+    //     queryKey: ["spans", row.uuid, "comments"],
+    //     queryFn: () => fetchCommentsBySpan(row.uuid),
+    //     staleTime: 60000,
+    //   })
+    //   .catch(() => toast.error("Failed to prefetch"));
   };
   const columns: ColumnDef<SpanPublic>[] = [
     {
@@ -377,11 +385,11 @@ export const TracesTable = ({
       filterFn: tagFilter,
       cell: ({ row }) => {
         const tags: TagPublic[] = row.getValue("tags");
-
+        
         if (!Array.isArray(tags) || tags.length === 0) {
           return null;
         }
-
+        
         return (
           <div className='flex items-center gap-1'>
             <Badge pill variant='outline' size='sm' key={tags[0].uuid}>
@@ -397,8 +405,9 @@ export const TracesTable = ({
       },
     },
     {
-      accessorKey: "function.version_num",
+      accessorFn: (row) => row.function?.version_num ?? null,
       id: "version",
+      meta: { sortUndefined: -1 },
       header: ({ column }) => {
         return (
           <Button
@@ -476,7 +485,7 @@ export const TracesTable = ({
       accessorKey: "annotations",
       header: ({ table }) => {
         const isFiltered = !!table.getColumn("annotations")?.getFilterValue();
-
+        
         return (
           <div className='flex items-center'>
             <Button
@@ -512,7 +521,7 @@ export const TracesTable = ({
       filterFn: (row, id, filterValue) => {
         // If no filter value is set, show all rows
         if (filterValue === undefined) return true;
-
+        
         // If filter is applied, only show rows with annotations
         const annotations: AnnotationPublic[] = row.getValue(id);
         return annotations.length > 0;
@@ -709,11 +718,11 @@ export const TracesTable = ({
       </div>
     </div>
   );
-
+  
   if (toggleCompareMode) {
     return <CompareDetailPanel/>;
   }
-
+  
   return (
     <DataTable<SpanPublic>
       columns={columns}

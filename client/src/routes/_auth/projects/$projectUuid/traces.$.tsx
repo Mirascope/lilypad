@@ -56,13 +56,21 @@ export const TraceBody = () => {
 
   const pages = data?.pages ?? [];
   const flattened = pages.flatMap((p) => p.items);
-
-  const handleReachEnd = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage();
-    }
-  };
-
+  
+   const ROW_HEIGHT = 45;
+ 
+   const calcPageSize = () =>
+     Math.max(20, Math.ceil((window.innerHeight / ROW_HEIGHT) * 4));
+ 
+   const handleReachEnd = () => {
+     if (!hasNextPage || isFetchingNextPage) return;
+ 
+     const pageSize = calcPageSize();
+ 
+     void fetchNextPage({
+       pageParam: { limit: pageSize },
+     });
+   };
   const handleLoadNewer = async () => {
     await refetch(); // refetch all pages (refetchPage not supported)
     queryClient.removeQueries({

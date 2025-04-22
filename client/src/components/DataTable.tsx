@@ -5,7 +5,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CardSkeleton from "@/components/CardSkeleton";
-import Spinner from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import {
   ResizableHandle,
@@ -114,6 +113,9 @@ function DataTableInner<T extends { uuid: string }>({
   const [detailRow, setDetail] = useState<T | null | undefined>(defaultSelectedRow);
   const internalScrollElRef = useRef<HTMLDivElement>(null);
   const scrollElRef = virtualizerRef ?? internalScrollElRef;
+  const MIN_LOADER_MS = 600;
+  const [showLoader, setShowLoader] = useState(false);
+  const loaderTimer = useRef<NodeJS.Timeout | null>(null);
   
   const table = useReactTable({
     data,
@@ -152,15 +154,51 @@ function DataTableInner<T extends { uuid: string }>({
   const internalSentinel = useRef<HTMLTableRowElement>(null);
   const sentinelRef = (endRef as React.RefObject<HTMLTableRowElement>) ?? internalSentinel;
   
+  const fetchLockRef = useRef(false);
+  
+  const BOUNCE_PX = 60;
   useEffect(() => {
     if (!onReachEnd || !sentinelRef.current) return;
-    const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && onReachEnd(),
-      { root: scrollElRef.current, threshold: 0.15 },
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isFetchingNextPage && !fetchLockRef.current) {
+          fetchLockRef.current = true;
+          onReachEnd();
+        }
+        scrollElRef.current?.scrollBy({
+          top: -BOUNCE_PX,
+          behavior: "smooth",
+        });
+        
+        if (!entry.isIntersecting) {
+          fetchLockRef.current = false;
+        }
+      },
+      { root: scrollElRef.current, threshold: 0.15 }
     );
-    io.observe(sentinelRef.current);
-    return () => io.disconnect();
-  }, [onReachEnd, scrollElRef, sentinelRef]);
+    
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [onReachEnd, isFetchingNextPage, sentinelRef, scrollElRef]);
+  
+  
+  useEffect(() => {
+    if (isFetchingNextPage) {
+      setShowLoader(true);
+      if (loaderTimer.current) clearTimeout(loaderTimer.current);
+    } else {
+      loaderTimer.current = setTimeout(
+        () => setShowLoader(false),
+        MIN_LOADER_MS
+      );
+    }
+    return () => {
+      if (loaderTimer.current) {
+        clearTimeout(loaderTimer.current);
+      }
+    };
+  }, [isFetchingNextPage]);
   
   const paddingTop =
     rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
@@ -234,66 +272,76 @@ function DataTableInner<T extends { uuid: string }>({
             </DropdownMenu>
           )}
         </div>
-        <div className="flex flex-col border rounded-md overflow-hidden h-full min-h-0">
-          <div
-            ref={scrollElRef}
-            className="overflow-auto h-full"
-            style={{ height: virtualizerOptions.containerHeight ?? "100%" }}
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {paddingTop > 0 && (
-                  <TableRow>
-                    <TableCell style={{ height: paddingTop, padding: 0 }} colSpan={columns.length}/>
-                  </TableRow>
-                )}
-                
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const row = rows[virtualRow.index];
-                  if (!row) return null;
-                  // eslint-disable-next-line react/prop-types
-                  return <Collapsible key={row?.id} row={row}/>;
-                })}
-                
-                {paddingBottom > 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      style={{ height: `${paddingBottom}px`, padding: 0 }}
-                    />
-                  </TableRow>
-                )}
-                
-                <TableRow ref={sentinelRef}>
-                  <TableCell colSpan={columns.length} className="h-1 p-0"/>
+        <div
+          ref={scrollElRef}
+          className="relative overflow-auto h-full"
+          style={{
+            height: virtualizerOptions.containerHeight ?? "100%",
+            pointerEvents: isFetchingNextPage ? "none" : "auto",
+          }}
+          aria-busy={isFetchingNextPage}
+        >
+          {showLoader && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-16
+                              flex items-center justify-center rounded-md
+                              bg-background/90 px-3 py-1 shadow pointer-events-none">
+                <span className="text-sm text-muted-foreground">
+                  Fetching more results…
+                </span>
+            </div>
+          )}
+          
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
+                  ))}
                 </TableRow>
-                
-                {isFetchingNextPage && (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} align="center">
-                      <Spinner className="mx-auto my-3 h-6 w-6 animate-spin"/>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {paddingTop > 0 && (
+                <TableRow>
+                  <TableCell style={{ height: paddingTop, padding: 0 }} colSpan={columns.length}/>
+                </TableRow>
+              )}
+              
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const row = rows[virtualRow.index];
+                if (!row) return null;
+                // eslint-disable-next-line react/prop-types
+                return <Collapsible key={row?.id} row={row}/>;
+              })}
+              
+              {paddingBottom > 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    style={{ height: `${paddingBottom}px`, padding: 0 }}
+                  />
+                </TableRow>
+              )}
+              {isFetchingNextPage && (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="py-2 text-center text-muted-foreground text-sm italic">
+                    Fetching more results...
+                  </TableCell>
+                </TableRow>
+              )}
+              <TableRow ref={sentinelRef}>
+                <TableCell colSpan={columns.length} className="h-24 p-0"/>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </ResizablePanel>
       
