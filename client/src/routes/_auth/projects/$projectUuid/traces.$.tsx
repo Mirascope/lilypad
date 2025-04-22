@@ -7,7 +7,7 @@ import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
 import { SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
-import { tracesQueryOptions } from "@/utils/traces";
+import { spansQueryOptions } from "@/utils/spans";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
@@ -36,26 +36,19 @@ export const Trace = () => {
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const { data: defaultData } = useSuspenseQuery(
-    tracesQueryOptions(projectUuid)
+    spansQueryOptions(projectUuid)
   );
 
-  const [displayData, setDisplayData] = useState<SpanPublic[] | undefined>(
-    defaultData
-  );
-
+  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   return (
-    <div className='space-y-4'>
-      <SearchBar
-        projectUuid={projectUuid}
-        defaultData={defaultData}
-        onDataChange={setDisplayData}
-      />
-
+    <div className='py-4'>
+      <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
       <TracesTable
         data={displayData ?? defaultData}
         traceUuid={traceUuid}
         path={Route.fullPath}
         isSearch={Boolean(displayData)}
+        projectUuid={projectUuid}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Route } from "@/routes/_auth/projects/$projectUuid/functions/$functionN
 import { SpanPublic } from "@/types/types";
 import { spansByFunctionQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 export const FunctionSpans = ({
   projectUuid,
   functionUuid,
@@ -18,29 +18,22 @@ export const FunctionSpans = ({
     spansByFunctionQueryOptions(projectUuid, functionUuid)
   );
 
-  const [displayData, setDisplayData] = useState<SpanPublic[] | undefined>(
-    defaultData
-  );
-
-  useEffect(() => {
-    setDisplayData(defaultData);
-  }, [defaultData]);
+  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
 
   return (
     <div className='space-y-4'>
       <SearchBar
         projectUuid={projectUuid}
-        defaultData={defaultData}
         onDataChange={setDisplayData}
-      />
-
-      <TracesTable
-        data={
-          displayData?.filter((data) => data.function_uuid === functionUuid) ??
-          defaultData
+        filterFunction={(data) =>
+          data.filter((item) => item.function_uuid === functionUuid)
         }
+      />
+      <TracesTable
+        data={displayData ?? defaultData}
         traceUuid={traceUuid}
         path={Route.fullPath}
+        projectUuid={projectUuid}
       />
     </div>
   );

@@ -12,8 +12,25 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+export const fetchSpans = async (projectUuid: string) => {
+  return (await api.get<SpanPublic[]>(`/projects/${projectUuid}/traces`)).data;
+};
+
+export const spansQueryOptions = (projectUuid: string) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "spans"],
+    queryFn: () => fetchSpans(projectUuid),
+    refetchInterval: 10000,
+  });
+
 export const fetchSpan = async (spanUuid: string) => {
   return (await api.get<SpanMoreDetails>(`/spans/${spanUuid}`)).data;
+};
+
+export const deleteSpan = async (projectUuid: string, spanUuid: string) => {
+  return (
+    await api.delete<boolean>(`/projects/${projectUuid}/spans/${spanUuid}`)
+  ).data;
 };
 
 export const spanQueryOptions = (spanUuid: string) =>
@@ -134,9 +151,67 @@ export const useUpdateSpanMutation = () => {
       spanUuid: string;
       spanUpdate: SpanUpdate;
     }) => await patchSpan(spanUuid, spanUpdate),
-    onSuccess: async () => {
+    onSuccess: async (data, { spanUuid }) => {
+      queryClient.setQueryData(
+        ["spans", spanUuid],
+        (oldData: SpanMoreDetails | undefined) => {
+          if (!oldData) return oldData;
+          return { ...oldData, ...data };
+        }
+      );
+
       await queryClient.invalidateQueries({
-        queryKey: ["spans"],
+        queryKey: ["spans", spanUuid],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.includes("spans") && !queryKey.includes("metadata");
+        },
+      });
+    },
+  });
+};
+
+export const useDeleteSpanMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      spanUuid,
+    }: {
+      projectUuid: string;
+      spanUuid: string;
+    }) => await deleteSpan(projectUuid, spanUuid),
+    onSuccess: async (_, { projectUuid, spanUuid }) => {
+      queryClient.removeQueries({
+        queryKey: ["spans", spanUuid],
+      });
+
+      queryClient.setQueriesData<SpanPublic[]>(
+        { queryKey: ["projects", projectUuid, "spans"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.filter((span) => span.uuid !== spanUuid);
+        }
+      );
+
+      queryClient.setQueriesData<SpanPublic[]>(
+        { queryKey: ["projects", projectUuid, "functions"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.filter((span) => span.uuid !== spanUuid);
+        }
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.includes("spans") && !queryKey.includes("metadata");
+        },
       });
     },
   });

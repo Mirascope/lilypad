@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 from ..._utils import get_current_user
 from ...models import SpanTable
@@ -193,18 +193,31 @@ async def search_traces(
     ]
 
 
+async def delete_span_in_opensearch(
+    project_uuid: UUID,
+    span_uuid: UUID,
+    opensearch_service: OpenSearchService,
+) -> None:
+    """Delete span in OpenSearch."""
+    if opensearch_service.is_enabled:
+        opensearch_service.delete_trace_by_uuid(project_uuid, span_uuid)
+
+
 @spans_router.delete("/projects/{project_uuid}/spans/{span_uuid}")
 async def delete_spans(
     project_uuid: UUID,
     span_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    background_tasks: BackgroundTasks,
 ) -> bool:
     """Delete spans by UUID."""
     try:
         span_service.delete_record_by_uuid(span_uuid)
         if opensearch_service.is_enabled:
-            opensearch_service.delete_trace_by_uuid(project_uuid, span_uuid)
+            background_tasks.add_task(
+                delete_span_in_opensearch, project_uuid, span_uuid, opensearch_service
+            )
     except Exception:
         return False
     return True

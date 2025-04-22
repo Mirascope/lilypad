@@ -46,7 +46,7 @@ export const useSearch = (projectUuid: string) => {
 
   return {
     // Query state
-    spans: queryResult.data,
+    spans: queryResult.data ?? null,
     isLoading: queryResult.isLoading,
     isError: queryResult.isError,
     error: queryResult.error,

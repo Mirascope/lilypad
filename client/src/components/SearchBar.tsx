@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearch } from "@/hooks/use-search";
@@ -5,27 +6,31 @@ import { SpanPublic } from "@/types/types";
 import { Loader, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Create a reusable SearchBar component
 export const SearchBar = ({
   projectUuid,
-  defaultData,
   onDataChange,
+  filterFunction,
 }: {
   projectUuid: string;
-  defaultData: SpanPublic[];
-  onDataChange: (data: SpanPublic[] | undefined) => void;
+  onDataChange: (data: SpanPublic[] | null) => void;
+  filterFunction?: (data: SpanPublic[]) => SpanPublic[];
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const { spans: searchResults, isLoading, search } = useSearch(projectUuid);
 
-  // Update parent component when search results change
   useEffect(() => {
-    if (searchResults !== null) {
-      onDataChange(searchResults);
+    if (searchResults) {
+      const filtered = filterFunction?.(searchResults) ?? searchResults;
+      onDataChange(filtered);
     } else {
-      onDataChange(defaultData);
+      onDataChange(null);
     }
-  }, [searchResults, defaultData, onDataChange]);
+  }, [searchResults, onDataChange]);
+
+  const displayCount =
+    searchResults && filterFunction
+      ? filterFunction(searchResults).length
+      : (searchResults?.length ?? 0);
 
   const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,17 +44,21 @@ export const SearchBar = ({
   };
 
   return (
-    <div className='px-2 pt-4'>
-      <form onSubmit={handleSearchSubmit} className='flex gap-2'>
+    <form onSubmit={handleSearchSubmit} className='p-3'>
+      <div className='flex flex-col gap-3 md:flex-row md:items-center'>
+        {/* Search input and button */}
         <div className='relative flex-grow'>
+          <div className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'>
+            <Search size={16} />
+          </div>
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder='Search spans...'
             disabled={isLoading}
-            className='pr-10 w-full'
+            className='pl-10 pr-10 w-full h-10 focus-visible:ring-primary'
           />
-          {searchResults && (
+          {searchQuery && (
             <Button
               variant='ghost'
               size='icon'
@@ -62,30 +71,50 @@ export const SearchBar = ({
             </Button>
           )}
         </div>
+
         <Button
           type='submit'
           disabled={isLoading}
-          className='bg-primary hover:bg-primary/80 text-white h-9'
+          className='bg-primary hover:bg-primary/90 text-white h-10 px-4 min-w-[100px]'
         >
           {isLoading ? (
-            <span className='flex items-center gap-2'>
+            <span className='flex items-center justify-center gap-2'>
               <Loader size={16} className='animate-spin' />
               Searching...
             </span>
           ) : (
-            <span className='flex items-center gap-2'>
-              <Search size={16} />
+            <span className='flex items-center justify-center gap-2'>
               Search
             </span>
           )}
         </Button>
-      </form>
+      </div>
 
+      {/* Results counter */}
       {searchResults && (
-        <div className='mt-2 text-sm text-gray-600'>
-          Found {searchResults.length} results
+        <div className='mt-3 flex items-center justify-between border-t border-gray-200 pt-3'>
+          <div className='flex items-center gap-2'>
+            <Badge
+              variant='outline'
+              className='bg-gray-50 text-gray-700 font-medium'
+            >
+              {displayCount} results found
+            </Badge>
+          </div>
+
+          {searchResults.length > 0 && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={handleClearSearch}
+              className='text-gray-500 hover:text-gray-700 text-sm'
+            >
+              <X size={14} className='mr-1' />
+              Clear results
+            </Button>
+          )}
         </div>
       )}
-    </div>
+    </form>
   );
 };
