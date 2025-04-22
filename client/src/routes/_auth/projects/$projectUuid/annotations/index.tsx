@@ -24,8 +24,8 @@ export const Route = createFileRoute(
 )({
   component: () => {
     return (
-      <Suspense fallback={<LilypadLoading />}>
-        <AnnotationLayout />
+      <Suspense fallback={<LilypadLoading/>}>
+        <AnnotationLayout/>
       </Suspense>
     );
   },
@@ -42,18 +42,18 @@ const AnnotationLayout = () => {
     <div className='h-screen'>
       <ResizablePanelGroup direction='horizontal'>
         <ResizablePanel defaultSize={20}>
-          <Suspense fallback={<LilypadLoading />}>
+          <Suspense fallback={<LilypadLoading/>}>
             <AnnotationList
               activeAnnotation={activeAnnotation}
               setActiveAnnotation={setActiveAnnotation}
             />
           </Suspense>
         </ResizablePanel>
-        <ResizableHandle />
+        <ResizableHandle/>
         <ResizablePanel defaultSize={75}>
           {activeAnnotation ? (
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
             >
               <ResizablePanelGroup direction='horizontal'>
                 <ResizablePanel defaultSize={50}>
@@ -63,9 +63,9 @@ const AnnotationLayout = () => {
                     setActiveAnnotation={setActiveAnnotation}
                   />
                 </ResizablePanel>
-                <ResizableHandle />
+                <ResizableHandle/>
                 <ResizablePanel defaultSize={50}>
-                  <AnnotationComment spanUuid={activeAnnotation.span_uuid} />
+                  <AnnotationComment spanUuid={activeAnnotation.span_uuid}/>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </Suspense>
@@ -122,7 +122,9 @@ const AnnotationList = ({
       </div>
       <div className='flex flex-col gap-2 overflow-auto'>
         {annotations.map((annotation) => {
-          const fn = functionsMap[annotation.function_uuid];
+          const fn = annotation.function_uuid
+            ? functionsMap[annotation.function_uuid]
+            : undefined;
           return (
             <div
               key={annotation.uuid}
@@ -138,10 +140,10 @@ const AnnotationList = ({
               <div className='flex items-center justify-between'>
                 <div>
                   <Typography variant='span' affects='small' className='mr-1'>
-                    {fn.name}
+                    {fn?.name}
                   </Typography>
                   <Typography affects='muted' variant='span'>
-                    {fn.version_num}
+                    {fn?.version_num}
                   </Typography>
                 </div>
                 <Typography variant='span' affects='muted'>
@@ -183,7 +185,7 @@ const AnnotationView = ({
         />
       </div>
       <div className='flex-grow overflow-auto'>
-        <LilypadPanel spanUuid={annotation.span_uuid} />
+        <LilypadPanel spanUuid={annotation.span_uuid}/>
       </div>
     </div>
   );
@@ -195,7 +197,7 @@ const AnnotationComment = ({ spanUuid }: { spanUuid: string }) => {
       <div className='flex-shrink-0 mb-2'>
         <Typography variant='h4'>Comments</Typography>
       </div>
-      <Comment spanUuid={spanUuid} />
+      <Comment spanUuid={spanUuid}/>
     </div>
   );
 };

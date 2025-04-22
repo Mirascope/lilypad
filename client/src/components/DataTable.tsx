@@ -69,7 +69,7 @@ interface GenericDataTableProps<T> {
   path?: string;
   isFetchingNextPage?: boolean;
   onReachEnd?: () => void;
-  virtualizerRef?: React.RefObject<HTMLDivElement>;
+  virtualizerRef?: React.RefObject<HTMLDivElement | null>;
   endRef?: React.Ref<HTMLTableRowElement>;
 }
 

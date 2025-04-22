@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import {
   useInfiniteQuery,
@@ -13,6 +13,8 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
+
+const INIT_LIMIT = 80;
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/traces/$",
@@ -31,7 +33,7 @@ const Trace = () => {
   return (
     <div className="h-screen flex flex-col px-2 pt-4 pb-1">
       <Typography variant="h2">{project.name}</Typography>
-
+      
       <div className="flex-1 overflow-auto">
         <Suspense fallback={<TableSkeleton/>}>
           <TraceBody/>
@@ -41,10 +43,13 @@ const Trace = () => {
   );
 };
 
+
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const queryClient = useQueryClient();
-
+  
+  const [pageSize, setPageSize] = useState(INIT_LIMIT);
+  
   const {
     data,
     fetchNextPage,
@@ -52,25 +57,22 @@ export const TraceBody = () => {
     isFetchingNextPage,
     refetch,
     isRefetching,
-  } = useInfiniteQuery(tracesInfiniteQueryOptions(projectUuid));
-
+  } = useInfiniteQuery(tracesInfiniteQueryOptions(projectUuid, pageSize));
+  
   const pages = data?.pages ?? [];
   const flattened = pages.flatMap((p) => p.items);
   
-   const ROW_HEIGHT = 45;
- 
-   const calcPageSize = () =>
-     Math.max(20, Math.ceil((window.innerHeight / ROW_HEIGHT) * 4));
- 
-   const handleReachEnd = () => {
-     if (!hasNextPage || isFetchingNextPage) return;
- 
-     const pageSize = calcPageSize();
- 
-     void fetchNextPage({
-       pageParam: { limit: pageSize },
-     });
-   };
+  const ROW_HEIGHT = 45;
+  
+  const calcPageSize = () =>
+    Math.max(20, Math.ceil((window.innerHeight / ROW_HEIGHT) * 4));
+  
+  const handleReachEnd = () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    
+    setPageSize(calcPageSize());
+    void fetchNextPage();
+  };
   const handleLoadNewer = async () => {
     await refetch(); // refetch all pages (refetchPage not supported)
     queryClient.removeQueries({

@@ -19,22 +19,28 @@ export interface TracePageParam {
   limit: number;
 }
 
-export const tracesInfiniteQueryOptions = (projectUuid: string) => ({
-  queryKey: ["projects", projectUuid, "traces"],
+export const tracesInfiniteQueryOptions = (
+  projectUuid: string,
+  pageSize: number
+) => ({
+  queryKey: ["projects", projectUuid, "traces", pageSize],
+  
   queryFn: ({ pageParam }: QueryFunctionContext) => {
-    const { offset = 0, limit = PAGE_SIZE } = pageParam as TracePageParam;
+    const { offset = 0, limit = pageSize } = pageParam as TracePageParam;
     return fetchTraces(projectUuid, offset, limit);
   },
+  
   getNextPageParam: (
     lastPage: PaginatedSpanPublic,
-    _allPages: PaginatedSpanPublic[],
-    lastPageParam: TracePageParam
+    _pages: PaginatedSpanPublic[],
+    lastParams: TracePageParam
   ) => {
-    const nextOffset = lastPageParam.offset + lastPage.items.length;
-    if (nextOffset >= lastPage.total) return undefined;
-    return { offset: nextOffset, limit: lastPageParam.limit };
+    const nextOffset = lastParams.offset + lastPage.items.length;
+    return nextOffset < lastPage.total
+      ? { offset: nextOffset, limit: lastParams.limit }
+      : undefined;
   },
   
-  initialPageParam: { offset: 0, limit: PAGE_SIZE },
+  initialPageParam: { offset: 0, limit: pageSize },
   staleTime: 30_000,
 });

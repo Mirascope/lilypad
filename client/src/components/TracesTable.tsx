@@ -31,7 +31,6 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
 import {
   commentsBySpanQueryOptions,
-  fetchCommentsBySpan,
 } from "@/utils/comments";
 import { fetchSpan } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
@@ -50,16 +49,8 @@ import {
   SmileIcon,
   Users,
 } from "lucide-react";
-import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
-const ROW_HEIGHT = 45;
-const MIN_PAGE = 20;
-
-function calcPageSize(viewportEl: HTMLDivElement | null) {
-  const vh = viewportEl?.clientHeight ?? window.innerHeight;
-  return Math.max(MIN_PAGE, Math.ceil((vh / ROW_HEIGHT) * 2));
-}
 
 const tagFilter = (
   row: Row<SpanPublic>,
@@ -86,14 +77,14 @@ const tagFilter = (
 };
 
 // Custom filter function
-const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, value) => {
+const onlyParentFilter: FilterFn<SpanPublic> = (row, _columnId, value) => {
   const query = String(value).trim().toLowerCase();
   if (!query) return true;
   
   if (row.depth > 0) return true;
   
   const hit = (span: SpanPublic): boolean =>
-    span.display_name.toLowerCase().includes(query) ||
+    span.display_name?.toLowerCase().includes(query) ??
     (span.child_spans ?? []).some(hit);
   
   return hit(row.original);
