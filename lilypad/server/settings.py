@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     remote_client_url: str = Field(default=REMOTE_CLIENT_URL)
     api_key: str | None = None
     project_id: str | None = None
-    serve_frontend: str | None = Field(
+    serve_frontend: bool | None = Field(
         default=None, description="Serve the client in the root"
     )
     experimental: bool = Field(default=False)
