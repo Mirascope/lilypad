@@ -153,7 +153,7 @@ export const AppSidebar = () => {
             queryClient
               .prefetchQuery({
                 queryKey: ["projects", activeProject.uuid, "traces"],
-                queryFn: () => fetchTraces(activeProject.uuid),
+                queryFn: () => fetchTraces(activeProject.uuid, 0),
               })
               .catch(() => toast.error("Failed to prefetch traces"));
           },

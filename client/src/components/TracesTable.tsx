@@ -7,6 +7,7 @@ import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DataTableHandle } from "@/components/DataTable";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,13 +43,14 @@ import {
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
+  Loader2,
   MessageSquareMore,
   MoreHorizontal,
   NotebookPen,
   SmileIcon,
   Users,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const tagFilter = (
@@ -76,20 +78,19 @@ const tagFilter = (
 };
 
 // Custom filter function
-const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
-  const isParent =
-    row.original.child_spans && row.original.child_spans.length > 0;
+const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, value) => {
+  const query = String(value).trim().toLowerCase();
+  if (!query) return true;
 
-  if (isParent) {
-    const cellValue = row.getValue(columnId);
-    return String(cellValue)
-      .toLowerCase()
-      .includes(String(filterValue).toLowerCase());
-  }
+  if (row.depth > 0) return true;
 
-  // Always include child rows
-  return true;
+  const hit = (span: SpanPublic): boolean =>
+    span.display_name.toLowerCase().includes(query) ||
+    (span.child_spans ?? []).some(hit);
+
+  return hit(row.original);
 };
+
 const findRowWithUuid = (
   rows: SpanPublic[],
   targetUuid: string | undefined
@@ -108,7 +109,7 @@ const findRowWithUuid = (
   return undefined;
 };
 
-const Spacer = () => <div className='w-4 h-4' />;
+const Spacer = () => <div className='w-4 h-4'/>;
 const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   return (
     <ChevronRight
@@ -155,9 +156,10 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           variant='outline'
           onClick={() => setShowComments(!showComments)}
         >
-          <MessageSquareMore />
+          <MessageSquareMore/>
           {spanComments.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div
+              className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
@@ -168,9 +170,10 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           variant='outline'
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
-          <NotebookPen />
+          <NotebookPen/>
           {filteredAnnotations.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div
+              className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
               {filteredAnnotations.length > 9
                 ? "9+"
                 : filteredAnnotations.length}
@@ -185,11 +188,11 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         {showComments && (
           <div className='mb-4'>
             <div className='max-h-64 overflow-y-auto mb-4'>
-              <CommentCards spanUuid={data.uuid} />
+              <CommentCards spanUuid={data.uuid}/>
             </div>
-            <Separator />
+            <Separator/>
             <div className='mt-4'>
-              <AddComment spanUuid={data.uuid} />
+              <AddComment spanUuid={data.uuid}/>
             </div>
           </div>
         )}
@@ -197,7 +200,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         {/* Annotations section with max height and scrolling */}
         {showAnnotations && (
           <div className='mb-4 max-h-64 overflow-y-auto'>
-            <AnnotationsTable data={filteredAnnotations} />
+            <AnnotationsTable data={filteredAnnotations}/>
           </div>
         )}
 
@@ -205,9 +208,9 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         <div className='p-4 border overflow-auto rounded-md mt-4'>
           <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
           {data.scope === Scope.LILYPAD ? (
-            <LilypadPanel spanUuid={data.uuid} />
+            <LilypadPanel spanUuid={data.uuid}/>
           ) : (
-            <LlmPanel spanUuid={data.uuid} />
+            <LlmPanel spanUuid={data.uuid}/>
           )}
         </div>
       </div>
@@ -215,23 +218,44 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
   );
 };
 
-export const TracesTable = ({
-  data,
-  traceUuid,
-  path,
-  hideCompare = false,
-}: {
+interface TracesTableProps {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
-}) => {
-  const selectRow = findRowWithUuid(data, traceUuid);
-  const isSubRow = selectRow?.parent_span_id;
+
+  /** infinite‑scroll sentinel callback */
+  onReachEnd?: () => void;
+  /** explicit refresh (Load newer) */
+  onLoadNewer?: () => Promise<void> | void;
+  /** true while onLoadNewer runs */
+  isLoadingNewer?: boolean;
+  /** true while useInfiniteQuery is fetching next page */
+  isFetchingNextPage?: boolean;
+}
+
+
+export const TracesTable = ({
+                              data,
+                              traceUuid,
+                              path,
+                              hideCompare = false,
+                              onReachEnd,
+                              onLoadNewer,
+                              isLoadingNewer = false,
+                              isFetchingNextPage = false,
+                            }: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<DataTableHandle>(null);
+
+  const [nameFilter, setName] = useState("");
+
+  useEffect(() => {
+    tableRef.current?.scrollTop();
+  }, [nameFilter]);
 
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
@@ -247,6 +271,23 @@ export const TracesTable = ({
       );
     }
   };
+
+  const sentinelRef = useRef<HTMLTableRowElement>(null);
+  const prevLenRef = useRef<number>(data.length);
+  useLayoutEffect(() => {
+    if (data.length < prevLenRef.current) {
+      virtualizerRef?.current?.scrollTo({ top: 0, behavior: "auto" });
+    }
+    prevLenRef.current = data.length;
+  }, [data.length])
+
+  const findRow = (rows: SpanPublic[], uuid?: string) =>
+    rows.find((r) => r.uuid === uuid) ??
+    rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
+
+  const selectRow = findRow(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
+
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
@@ -307,7 +348,7 @@ export const TracesTable = ({
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
-              {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
+              {hasSubRows ? <ExpandRowButton row={row}/> : <Spacer/>}
               {!hideCompare && isLilypad && (
                 <Checkbox
                   onClick={(e) => e.stopPropagation()}
@@ -368,12 +409,12 @@ export const TracesTable = ({
             Version
             {column.getIsSorted() ? (
               column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
+                <ArrowUp className='ml-2 h-4 w-4'/>
               ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
+                <ArrowDown className='ml-2 h-4 w-4'/>
               )
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4' />
+              <ArrowUpDown className='ml-2 h-4 w-4'/>
             )}
           </Button>
         );
@@ -413,12 +454,12 @@ export const TracesTable = ({
             Timestamp
             {column.getIsSorted() ? (
               column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
+                <ArrowUp className='ml-2 h-4 w-4'/>
               ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
+                <ArrowDown className='ml-2 h-4 w-4'/>
               )
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4' />
+              <ArrowUpDown className='ml-2 h-4 w-4'/>
             )}
           </Button>
         );
@@ -464,7 +505,7 @@ export const TracesTable = ({
           (annotation) => annotation.label
         );
         if (filteredAnnotations.length > 0) {
-          return <NotebookPen className='w-4 h-4' />;
+          return <NotebookPen className='w-4 h-4'/>;
         }
         return null;
       },
@@ -486,7 +527,7 @@ export const TracesTable = ({
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='h-8 w-8 p-0'>
                 <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4' />
+                <MoreHorizontal className='h-4 w-4'/>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -508,7 +549,7 @@ export const TracesTable = ({
                     Open Playground
                   </DropdownMenuItem>
                 )}
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator/>
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -550,24 +591,24 @@ export const TracesTable = ({
           <div className='w-1/2'>
             <h3 className='text-lg font-semibold'>Row 1</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
             >
               {selectedRows[0].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+                <LilypadPanel spanUuid={selectedRows[0].uuid}/>
               ) : (
-                <LlmPanel spanUuid={selectedRows[0].uuid} />
+                <LlmPanel spanUuid={selectedRows[0].uuid}/>
               )}
             </Suspense>
           </div>
           <div className='w-1/2'>
             <h3 className='text-lg font-semibold'>Row 2</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
             >
               {selectedRows[1].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+                <LilypadPanel spanUuid={selectedRows[1].uuid}/>
               ) : (
-                <LlmPanel spanUuid={selectedRows[1].uuid} />
+                <LlmPanel spanUuid={selectedRows[1].uuid}/>
               )}
             </Suspense>
           </div>
@@ -575,10 +616,20 @@ export const TracesTable = ({
       </div>
     );
   };
-  const customControls = (table: Table<SpanPublic>) => {
-    return (
-      <>
-        <div className='relative max-w-sm'>
+  const customControls = (table: Table<SpanPublic>) => (
+    <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Filter names…"
+          value={nameFilter}
+          onChange={(e) => {
+            const v = e.target.value;
+            setName(v);
+            table.getColumn("display_name")?.setFilterValue(v);
+          }}
+          className="max-w-[200px]"
+        />
+        <div className="relative flex items-center">
           <Input
             key={`tags-input`}
             placeholder='Filter tags...'
@@ -586,11 +637,12 @@ export const TracesTable = ({
             onChange={(event) => {
               table.getColumn("tags")?.setFilterValue(event.target.value);
             }}
-            className='pr-10' // Add right padding to make room for the icon
+            className="pr-10 max-w-[200px]"
           />
           <Popover>
             <PopoverTrigger asChild>
-              <SmileIcon className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100' />
+              <SmileIcon
+                className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100'/>
             </PopoverTrigger>
             <PopoverContent className='w-fit p-0'>
               <EmojiPicker
@@ -603,13 +655,13 @@ export const TracesTable = ({
                     ?.setFilterValue(currFilter + emojiData.emoji);
                 }}
               >
-                <EmojiPickerContent />
+                <EmojiPickerContent/>
               </EmojiPicker>
             </PopoverContent>
           </Popover>
         </div>
         <LilypadDialog
-          icon={<Users />}
+          icon={<Users/>}
           title={"Annotate selected traces"}
           description={`${selectedRows.length} trace(s) selected.`}
           buttonProps={{
@@ -617,7 +669,7 @@ export const TracesTable = ({
           }}
           tooltipContent={"Add selected traces to your annotation queue."}
         >
-          <QueueForm spans={selectedRows} />
+          <QueueForm spans={selectedRows}/>
         </LilypadDialog>
         {!hideCompare && (
           <>
@@ -636,11 +688,30 @@ export const TracesTable = ({
             </Button>
           </>
         )}
-      </>
-    );
-  };
+        {onLoadNewer && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void onLoadNewer();
+            }}
+            disabled={isLoadingNewer}
+            className="flex items-center gap-1 ml-4"
+          >
+            {isLoadingNewer ? (
+              <Loader2 className="h-4 w-4 animate-spin"/>
+            ) : (
+              <ArrowUp className="h-4 w-4"/>
+            )}
+            Load newer
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
   if (toggleCompareMode) {
-    return <CompareDetailPanel />;
+    return <CompareDetailPanel/>;
   }
 
   return (
@@ -648,6 +719,7 @@ export const TracesTable = ({
       columns={columns}
       data={data}
       virtualizerRef={virtualizerRef}
+      ref={tableRef}
       virtualizerOptions={{
         count: data.length,
         estimateSize: () => 45,
@@ -658,12 +730,15 @@ export const TracesTable = ({
       customGetRowId={(row) => row.span_id}
       DetailPanel={DetailPanel}
       defaultPanelSize={50}
-      filterColumn={!hideCompare ? undefined : "display_name"}
+      filterColumn={hideCompare ? "display_name" : undefined}
       selectRow={selectRow}
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       customControls={customControls}
       defaultSorting={[{ id: "timestamp", desc: true }]}
+      endRef={sentinelRef}
+      onReachEnd={onReachEnd}
+      isFetchingNextPage={isFetchingNextPage}
       onDetailPanelClose={handleDetailPanelClose}
       path={path}
     />
