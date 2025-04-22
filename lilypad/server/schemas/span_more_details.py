@@ -569,13 +569,9 @@ class SpanMoreDetails(BaseModel):
             if lilypad_type:
                 signature = attributes.get(f"lilypad.{lilypad_type}.signature", None)
                 code = attributes.get(f"lilypad.{lilypad_type}.code", None)
-                try:
-                    arg_values = json.loads(
+                arg_values = json.loads(
                         attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
                     )
-                except Exception:
-                    r = attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
-                    raise ValueError(f"Invalid JSON in {r=}.")
                 output = attributes.get(f"lilypad.{lilypad_type}.output", None)
                 messages = convert_mirascope_messages(
                     attributes.get(f"lilypad.{lilypad_type}.common_messages", [])
