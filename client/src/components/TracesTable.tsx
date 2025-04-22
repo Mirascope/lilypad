@@ -304,13 +304,6 @@ export const TracesTable = ({
         staleTime: 60000,
       })
       .catch(() => toast.error("Failed to prefetch"));
-    // queryClient
-    //   .prefetchQuery({
-    //     queryKey: ["spans", row.uuid, "comments"],
-    //     queryFn: () => fetchCommentsBySpan(row.uuid),
-    //     staleTime: 60000,
-    //   })
-    //   .catch(() => toast.error("Failed to prefetch"));
   };
   const columns: ColumnDef<SpanPublic>[] = [
     {
