@@ -76,7 +76,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.project_uuid == project_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
             )
-            .order_by(self.table.created_at.desc())
+            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
             .offset(offset)
             .options(
                 selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]

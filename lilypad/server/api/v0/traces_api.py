@@ -35,14 +35,14 @@ def _convert_system_to_provider(system: str) -> Provider:
 
 
 @traces_router.get(
-    "/projects/{project_uuid}/traces", response_model=Paginated[SpanPublic]
+    "/projects/{project_uuid}/traces", response_model=Paginated[SpanTable]
 )
 async def get_traces_by_project_uuid(
     project_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-) -> Paginated[SpanPublic]:
+) -> Paginated[SpanTable]:
     """Get traces by project UUID."""
     items = span_service.find_all_no_parent_spans(
         project_uuid, limit=limit, offset=offset
