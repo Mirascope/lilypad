@@ -220,11 +220,13 @@ export const TracesTable = ({
   traceUuid,
   path,
   hideCompare = false,
+  isSearch = false,
 }: {
   data: SpanPublic[];
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
+  isSearch?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
@@ -232,7 +234,6 @@ export const TracesTable = ({
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
@@ -325,6 +326,44 @@ export const TracesTable = ({
         );
       },
     },
+    ...(isSearch
+      ? ([
+          {
+            accessorKey: "score",
+            id: "score",
+            header: ({ column }) => {
+              return (
+                <Button
+                  className='p-0'
+                  variant='ghost'
+                  onClick={() =>
+                    column.toggleSorting(column.getIsSorted() === "asc")
+                  }
+                >
+                  Score
+                  {column.getIsSorted() ? (
+                    column.getIsSorted() === "asc" ? (
+                      <ArrowUp className='ml-2 h-4 w-4' />
+                    ) : (
+                      <ArrowDown className='ml-2 h-4 w-4' />
+                    )
+                  ) : (
+                    <ArrowUpDown className='ml-2 h-4 w-4' />
+                  )}
+                </Button>
+              );
+            },
+            cell: ({ row }) => {
+              const score: number = row.getValue("score");
+              return (
+                <Typography variant='span' affects='xs' className='truncate'>
+                  {score?.toFixed(2)}
+                </Typography>
+              );
+            },
+          },
+        ] as ColumnDef<SpanPublic>[])
+      : []),
     {
       accessorKey: "scope",
       header: "Scope",
@@ -663,7 +702,11 @@ export const TracesTable = ({
       getRowCanExpand={getRowCanExpand}
       getSubRows={getSubRows}
       customControls={customControls}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
+      defaultSorting={
+        isSearch
+          ? [{ id: "score", desc: true }]
+          : [{ id: "timestamp", desc: true }]
+      }
       onDetailPanelClose={handleDetailPanelClose}
       path={path}
     />

@@ -187,7 +187,7 @@ class OpenSearchService:
                 {
                     "multi_match": {
                         "query": search_query.query_string,
-                        "fields": ["span_id^2", "type^2", "name^2", "data.*"],
+                        "fields": ["span_id^2", "name^2", "data.*"],
                         "type": "best_fields",
                         "lenient": True,  # Makes the query lenient with type mismatches
                     }
@@ -219,7 +219,7 @@ class OpenSearchService:
         search_body = {
             "query": query,
             "size": search_query.limit,
-            "sort": [{"created_at": {"order": "desc"}}],
+            "track_scores": True,
         }
 
         try:
@@ -230,6 +230,117 @@ class OpenSearchService:
         except Exception as e:
             logger.error(f"OpenSearch error: {str(e)}")
             return []
+
+    def delete_trace_by_uuid(self, project_uuid: UUID, span_uuid: UUID) -> bool:
+        """Delete a single trace by its UUID.
+
+        Args:
+            project_uuid: The UUID of the project.
+            span_uuid: The UUID of the span to delete.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        if not self.client:
+            logger.warning("OpenSearch client not initialized")
+            return False
+
+        index_name = self.get_index_name(project_uuid)
+
+        if not self.client.indices.exists(index=index_name):
+            logger.info(f"Index {index_name} does not exist, nothing to delete")
+            return True
+
+        try:
+            response = self.client.delete(
+                index=index_name,
+                id=str(span_uuid),
+            )
+
+            result = response.get("result")
+            if result == "deleted":
+                logger.info(f"Successfully deleted trace with UUID {span_uuid}")
+                return True
+            elif result == "not_found":
+                logger.info(f"Trace with UUID {span_uuid} not found, nothing to delete")
+                return True
+            else:
+                logger.warning(
+                    f"Unexpected result when deleting trace {span_uuid}: {result}"
+                )
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting trace with UUID {span_uuid}: {str(e)}")
+            return False
+
+    def delete_traces_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
+    ) -> bool:
+        """Delete all traces associated with a specific function UUID.
+
+        Args:
+            project_uuid: The UUID of the project.
+            function_uuid: The UUID of the function whose traces should be deleted.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        if not self.client:
+            logger.warning("OpenSearch client not initialized")
+            return False
+
+        index_name = self.get_index_name(project_uuid)
+        if not self.client.indices.exists(index=index_name):
+            logger.info(f"Index {index_name} does not exist, nothing to delete")
+            return True
+
+        try:
+            # First, find all span_ids with this function_uuid
+            search_query = {
+                "query": {"term": {"function_uuid": str(function_uuid)}},
+                "_source": ["span_id"],
+                "size": 10000,  # Adjust based on expected number of spans
+            }
+
+            search_response = self.client.search(index=index_name, body=search_query)
+
+            # Extract all span_ids from the result
+            span_ids = [
+                hit["_source"]["span_id"]
+                for hit in search_response.get("hits", {}).get("hits", [])
+            ]
+
+            if not span_ids:
+                logger.info(f"No traces found for function {function_uuid}")
+                return True
+
+            # Delete all spans that have function_uuid or have parent_span_id in the list of span_ids
+            delete_query = {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {"term": {"function_uuid": str(function_uuid)}},
+                            {"terms": {"parent_span_id": span_ids}},
+                        ]
+                    }
+                }
+            }
+
+            response = self.client.delete_by_query(
+                index=index_name,
+                body=delete_query,
+            )
+
+            deleted_count = response.get("deleted", 0)
+            logger.info(
+                f"Successfully deleted {deleted_count} traces and child traces for function {function_uuid}"
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error deleting traces and child traces for function {function_uuid}: {str(e)}"
+            )
+            return False
 
 
 def get_opensearch_service() -> OpenSearchService:

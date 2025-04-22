@@ -54,6 +54,7 @@ class SpanPublic(SpanBase):
     created_at: datetime
     status: str | None = None
     tags: list[TagPublic]
+    score: float | None = None
 
     @model_validator(mode="before")
     @classmethod

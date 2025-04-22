@@ -114,6 +114,8 @@ export interface AnnotationCreate {
   data?: object | null;
   /** Assigned To */
   assigned_to?: string[] | null;
+  /** Assignee Email */
+  assignee_email?: string[] | null;
 }
 
 /**
@@ -161,11 +163,8 @@ export interface AnnotationPublic {
    * @format uuid
    */
   span_uuid: string;
-  /**
-   * Function Uuid
-   * @format uuid
-   */
-  function_uuid: string;
+  /** Function Uuid */
+  function_uuid?: string | null;
   /**
    * Created At
    * @format date-time
@@ -633,11 +632,8 @@ export interface LicenseInfo {
   expires_at: string;
   /** License tier enum. */
   tier: Tier;
-  /**
-   * Organization Uuid
-   * @format uuid
-   */
-  organization_uuid: string;
+  /** Organization Uuid */
+  organization_uuid: string | null;
   /**
    * Is Expired
    * Check if the license has expired
@@ -1013,6 +1009,8 @@ export interface SpanPublic {
   status?: string | null;
   /** Tags */
   tags: TagPublic[];
+  /** Score */
+  score?: number | null;
 }
 
 /**

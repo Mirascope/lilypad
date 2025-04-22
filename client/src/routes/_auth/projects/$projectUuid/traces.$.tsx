@@ -9,7 +9,7 @@ import { SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
 import { tracesQueryOptions } from "@/utils/traces";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
@@ -43,10 +43,6 @@ export const TraceBody = () => {
     defaultData
   );
 
-  useEffect(() => {
-    setDisplayData(defaultData);
-  }, [defaultData]);
-
   return (
     <div className='space-y-4'>
       <SearchBar
@@ -59,6 +55,7 @@ export const TraceBody = () => {
         data={displayData ?? defaultData}
         traceUuid={traceUuid}
         path={Route.fullPath}
+        isSearch={Boolean(displayData)}
       />
     </div>
   );

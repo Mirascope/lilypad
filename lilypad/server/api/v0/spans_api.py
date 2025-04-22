@@ -36,6 +36,20 @@ async def get_span(
 
 
 @spans_router.get(
+    "/projects/{project_uuid}/spans/metadata",
+    response_model=Sequence[AggregateMetrics],
+)
+async def get_aggregates_by_project_uuid(
+    project_uuid: UUID,
+    time_frame: TimeFrame,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> Sequence[AggregateMetrics]:
+    """Get aggregated span by project uuid."""
+    return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
+
+
+# Order matters, this endpoint should be last
+@spans_router.get(
     "/projects/{project_uuid}/spans/{span_id}", response_model=SpanMoreDetails
 )
 async def get_span_by_span_id(
@@ -92,19 +106,6 @@ async def get_aggregates_by_function_uuid(
     return span_service.get_aggregated_metrics(project_uuid, function_uuid, time_frame)
 
 
-@spans_router.get(
-    "/projects/{project_uuid}/spans/metadata",
-    response_model=Sequence[AggregateMetrics],
-)
-async def get_aggregates_by_project_uuid(
-    project_uuid: UUID,
-    time_frame: TimeFrame,
-    span_service: Annotated[SpanService, Depends(SpanService)],
-) -> Sequence[AggregateMetrics]:
-    """Get aggregated span by project uuid."""
-    return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
-
-
 @spans_router.get("/projects/{project_uuid}/spans", response_model=Sequence[SpanPublic])
 async def search_traces(
     project_uuid: UUID,
@@ -124,7 +125,7 @@ async def search_traces(
     type: Annotated[
         str | None, Query(description="Type of spans to search for")
     ] = None,
-) -> Sequence[SpanTable]:
+) -> Sequence[SpanPublic]:
     """Search for traces in OpenSearch."""
     if not opensearch_service.is_enabled:
         return []
@@ -138,7 +139,6 @@ async def search_traces(
         type=type,
     )
     hits = opensearch_service.search_traces(project_uuid, search_query)
-
     # Extract function UUIDs and fetch functions in batch
     function_uuids = {
         UUID(hit["_source"]["function_uuid"])
@@ -152,7 +152,7 @@ async def search_traces(
     functions_by_id = {str(func.uuid): func for func in functions if func.uuid}
 
     # Build spans from search results
-    spans_by_id: dict[str, SpanTable] = {}
+    spans_by_id: dict[str, SpanPublic] = {}
     for hit in hits:
         source = hit["_source"]
         function_uuid_str = source.get("function_uuid")
@@ -175,7 +175,10 @@ async def search_traces(
             data=source["data"],
             child_spans=[],
         )
-        spans_by_id[source["span_id"]] = span
+
+        span_public = SpanPublic.model_validate(span)
+        span_public.score = hit.get("_score")
+        spans_by_id[source["span_id"]] = span_public
 
     # Establish parent-child relationships
     for span in spans_by_id.values():
@@ -188,6 +191,23 @@ async def search_traces(
         for span in spans_by_id.values()
         if not span.parent_span_id or span.parent_span_id not in spans_by_id
     ]
+
+
+@spans_router.delete("/projects/{project_uuid}/spans/{span_uuid}")
+async def delete_spans(
+    project_uuid: UUID,
+    span_uuid: UUID,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+) -> bool:
+    """Delete spans by UUID."""
+    try:
+        span_service.delete_record_by_uuid(span_uuid)
+        if opensearch_service.is_enabled:
+            opensearch_service.delete_trace_by_uuid(project_uuid, span_uuid)
+    except Exception:
+        return False
+    return True
 
 
 __all__ = ["spans_router"]
