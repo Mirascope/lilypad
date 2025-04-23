@@ -458,8 +458,12 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        const annotations: AnnotationPublic[] = row.getValue("annotations");
-        if (annotations.length > 0) {
+        const annotations: AnnotationPublic[] =
+          row.getValue("annotations") ?? [];
+        const filteredAnnotations = annotations.filter(
+          (annotation) => annotation.label
+        );
+        if (filteredAnnotations.length > 0) {
           return <NotebookPen className='w-4 h-4' />;
         }
         return null;

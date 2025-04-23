@@ -1,9 +1,11 @@
 import api from "@/api";
 import {
+  OrganizationCreate,
   OrganizationInviteCreate,
   OrganizationInvitePublic,
   OrganizationPublic,
   OrganizationUpdate,
+  UserPublic,
 } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -50,8 +52,16 @@ export const deleteOrganizationInvite = async (
   ).data;
 };
 
+export const postOrganization = async (data: OrganizationCreate) => {
+  return (await api.post<OrganizationPublic>(`/organizations`, data)).data;
+};
+
 export const updateOrganization = async (data: OrganizationUpdate) => {
   return (await api.patch<OrganizationPublic>(`/organizations`, data)).data;
+};
+
+export const deleteOrganization = async () => {
+  return (await api.delete<UserPublic>(`/organizations`)).data;
 };
 
 export const organizationInviteQueryOptions = (inviteToken: string) => ({
@@ -69,24 +79,6 @@ export const useDeleteOrganizationInviteMutation = () => {
   return useMutation({
     mutationFn: async (organizationInviteUuid: string) =>
       await deleteOrganizationInvite(organizationInviteUuid),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["organization-invites"],
-      });
-    },
-  });
-};
-
-export const useResendOrganizationInviteMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      organizationInviteUuid,
-      data,
-    }: {
-      organizationInviteUuid: string;
-      data: OrganizationInviteCreate;
-    }) => await resendOrganizationInvite(organizationInviteUuid, data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["organization-invites"],
@@ -116,6 +108,37 @@ export const useUpdateOrganizationMutation = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["license"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["user"],
+      });
+    },
+  });
+};
+
+export const useCreateOrganizationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: OrganizationCreate) =>
+      await postOrganization(data),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organizations"],
+      });
+    },
+  });
+};
+
+export const useDeleteOrganizationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => await deleteOrganization(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organizations"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["user"],
       });
     },
   });

@@ -69,7 +69,7 @@ class LicenseInfo(BaseModel):
     license_id: str
     expires_at: datetime
     tier: Tier
-    organization_uuid: UUID
+    organization_uuid: UUID | None
 
     @computed_field
     @property

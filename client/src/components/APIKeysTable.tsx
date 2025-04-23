@@ -1,4 +1,5 @@
 import { useAuth } from "@/auth";
+import { CodeSnippet } from "@/components/CodeSnippet";
 import { DataTable } from "@/components/DataTable";
 import { NotFound } from "@/components/NotFound";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,6 +20,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,11 +44,9 @@ import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Check, Copy, Trash } from "lucide-react";
+import { PlusCircle, Trash, TriangleAlert } from "lucide-react";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-const API_MODE = "api";
-const PROJECT_MODE = "project";
 
 export const APIKeysTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
@@ -90,7 +90,10 @@ export const APIKeysTable = () => {
   ];
   return (
     <>
-      <Typography variant='h4'>API Keys</Typography>
+      <div className='flex gap-2 items-center'>
+        <Typography variant='h4'>API Keys</Typography>
+        <CreateKeyButton />
+      </div>
       <DataTable<APIKeyPublic>
         columns={columns}
         data={data}
@@ -102,7 +105,6 @@ export const APIKeysTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateKeyButton />}
       />
     </>
   );
@@ -114,7 +116,13 @@ const CreateKeyButton = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Create API Key</Button>
+        <Button
+          variant='ghost'
+          size='iconSm'
+          className='text-primary hover:text-primary/80 hover:bg-white'
+        >
+          <PlusCircle />
+        </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         {apiKey ? (
@@ -171,12 +179,19 @@ const GenerateAPIKeyForm = ({
           key='name'
           control={methods.control}
           name='name'
+          rules={{
+            required: {
+              value: true,
+              message: "Name is required",
+            },
+          }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -184,6 +199,12 @@ const GenerateAPIKeyForm = ({
           key='project_uuid'
           control={methods.control}
           name='project_uuid'
+          rules={{
+            required: {
+              value: true,
+              message: "Project is required",
+            },
+          }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Project</FormLabel>
@@ -204,6 +225,7 @@ const GenerateAPIKeyForm = ({
                   </SelectContent>
                 </Select>
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -211,6 +233,12 @@ const GenerateAPIKeyForm = ({
           key='environment_uuid'
           control={methods.control}
           name='environment_uuid'
+          rules={{
+            required: {
+              value: true,
+              message: "Environment is required",
+            },
+          }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Environment</FormLabel>
@@ -234,6 +262,7 @@ const GenerateAPIKeyForm = ({
                   </SelectContent>
                 </Select>
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -262,26 +291,6 @@ const CopyKeyButton = ({
   projectUuid: string | null;
   setProjectUuid: Dispatch<SetStateAction<string | null>>;
 }) => {
-  const { toast } = useToast();
-  const [projectCopied, setProjectCopied] = useState<boolean>(false);
-  const [apiCopied, setApiCopied] = useState<boolean>(false);
-  const copyToClipboard = async (mode: string) => {
-    let title = "";
-    if (apiKey && mode === API_MODE) {
-      await navigator.clipboard.writeText(apiKey);
-      setApiCopied(true);
-      title = "Successfully copied API key to clipboard";
-    } else if (projectUuid && mode === PROJECT_MODE) {
-      await navigator.clipboard.writeText(projectUuid);
-      setProjectCopied(true);
-      title = "Successfully copied project ID to clipboard";
-    }
-    if (title) {
-      toast({
-        title,
-      });
-    }
-  };
   const handleCleanup = () => {
     setApiKey(null);
     setProjectUuid(null);
@@ -289,61 +298,30 @@ const CopyKeyButton = ({
 
   if (!projectUuid) return <NotFound />;
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 max-w-full overflow-hidden'>
       <DialogHeader className='flex-shrink-0'>
         <DialogTitle>API Key Created</DialogTitle>
         <DialogDescription className='space-y-4'>
           Copy your project ID and API key into your environment
-          <div className='bg-muted rounded-md p-4 font-mono text-sm'>
-            LILYPAD_PROJECT_ID=&quot;...&quot;
-            {"\n"}
-            LILYPAD_API_KEY=&quot;...&quot;
-          </div>
         </DialogDescription>
-        <p className='text-red-500'>
-          WARNING: You won&apos;t be able to see your API key again.
-        </p>
       </DialogHeader>
-      <Alert>
-        <AlertTitle>LILYPAD_PROJECT ID</AlertTitle>
-        <AlertDescription className='flex items-center justify-between break-all font-mono text-sm'>
-          {projectUuid}
-          <Button
-            size='icon'
-            variant='ghost'
-            onClick={() => copyToClipboard(PROJECT_MODE)}
-            className='h-8 w-8'
-          >
-            {projectCopied ? (
-              <Check className='h-4 w-4' />
-            ) : (
-              <Copy className='h-4 w-4' />
-            )}
-          </Button>
+      <div className='overflow-x-auto'>
+        <CodeSnippet
+          code={`LILYPAD_PROJECT_ID="${projectUuid}"
+LILYPAD_API_KEY="${apiKey}"`}
+          showLineNumbers={false}
+        />
+      </div>
+      <Alert variant='destructive'>
+        <TriangleAlert className='h-4 w-4' />
+        <AlertTitle>Warning</AlertTitle>
+        <AlertDescription>
+          You won&apos;t be able to see your API key again.
         </AlertDescription>
       </Alert>
-      <Alert>
-        <AlertTitle>LILYPAD_API_KEY</AlertTitle>
-        <AlertDescription className='flex items-center justify-between break-all font-mono text-sm'>
-          {apiKey}
-          <Button
-            size='icon'
-            variant='ghost'
-            onClick={() => copyToClipboard(API_MODE)}
-            className='h-8 w-8'
-          >
-            {apiCopied ? (
-              <Check className='h-4 w-4' />
-            ) : (
-              <Copy className='h-4 w-4' />
-            )}
-          </Button>
-        </AlertDescription>
-      </Alert>
-
       <DialogFooter>
         <DialogClose asChild>
-          <Button type='button' variant='secondary' onClick={handleCleanup}>
+          <Button type='button' variant='outline' onClick={handleCleanup}>
             Close
           </Button>
         </DialogClose>

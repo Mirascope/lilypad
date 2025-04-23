@@ -46,6 +46,7 @@ class UserConsentTable(UserConsentBase, BaseSQLModel, table=True):
         foreign_key=f"{USER_TABLE_NAME}.uuid",
         nullable=False,
         description="ID of the user",
+        ondelete="CASCADE",
     )
 
     user: "UserTable" = Relationship(back_populates="user_consents")

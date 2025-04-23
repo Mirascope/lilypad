@@ -185,9 +185,9 @@ export const useArchiveFunctionByNameMutation = () => {
       projectUuid: string;
       functionName: string;
     }) => await archiveFunctionByName(projectUuid, functionName),
-    onSuccess: async () => {
+    onSuccess: async (_, { projectUuid }) => {
       await queryClient.invalidateQueries({
-        queryKey: functionKeys.all,
+        queryKey: ["projects", projectUuid, ...functionKeys.list("unique")],
       });
     },
   });

@@ -70,7 +70,7 @@ export const TagPopover = ({
       await updateSpan.mutateAsync({
         spanUuid,
         spanUpdate: {
-          tags: tagObjects,
+          tags_by_uuid: tagObjects.map(tag => tag.uuid),
         },
       });
 
@@ -104,7 +104,7 @@ export const TagPopover = ({
         await updateSpan.mutateAsync({
           spanUuid,
           spanUpdate: {
-            tags: updatedTags,
+            tags_by_uuid: updatedTags.map(tag => tag.uuid),
           },
         });
       }

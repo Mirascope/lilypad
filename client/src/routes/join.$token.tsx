@@ -35,12 +35,13 @@ const JoinPage = () => {
   } = useQuery(organizationInviteQueryOptions(token));
   const createUserOrganization = useCreateUserOrganizationMutation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setSession } = useAuth();
 
   useEffect(() => {
     const processInvite = async () => {
       if (user && organizationInvite) {
-        await createUserOrganization.mutateAsync(token);
+        const newSession = await createUserOrganization.mutateAsync(token);
+        setSession(newSession);
         navigate({
           to: "/projects",
           search: { joined: true },

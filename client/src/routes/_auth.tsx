@@ -12,6 +12,7 @@ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context }) => {
@@ -25,11 +26,13 @@ export const Route = createFileRoute("/_auth")({
       });
     }
   },
-  loader: async ({ context: { queryClient } }) => {
-    await queryClient.prefetchQuery({
-      queryKey: ["usersByOrganization"],
-      queryFn: () => fetchUsersByOrganization(),
-    });
+  loader: ({ context: { queryClient } }) => {
+    queryClient
+      .prefetchQuery({
+        queryKey: ["usersByOrganization"],
+        queryFn: () => fetchUsersByOrganization(),
+      })
+      .catch(() => toast.error("Failed to fetch users"));
   },
   component: () => (
     <Suspense fallback={<LayoutSkeleton />}>

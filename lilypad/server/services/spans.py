@@ -14,6 +14,7 @@ from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
+from .tags import TagService
 
 
 class TimeFrame(str, Enum):
@@ -80,41 +81,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
         ).one_or_none()
-
-    def update_tags(self, uuid: UUID, span_update: SpanUpdate) -> SpanTable:
-        """Updates a record based on the uuid, efficiently syncing with span_update.tags"""
-        record_table = self.find_record_by_uuid(uuid)
-
-        # Only update tags if span_update.tags is not None
-        if span_update.tags is not None:
-            # Get existing tag links
-            existing_links = self.session.exec(
-                select(SpanTagLink).where(SpanTagLink.span_uuid == uuid)
-            ).all()
-
-            existing_tag_uuids = {link.tag_uuid for link in existing_links}
-
-            new_tag_uuids = {tag.uuid for tag in span_update.tags}
-
-            to_add = new_tag_uuids - existing_tag_uuids
-            to_remove = existing_tag_uuids - new_tag_uuids
-
-            if to_remove:
-                delete_statement = delete(SpanTagLink).where(
-                    SpanTagLink.span_uuid == uuid,  # pyright: ignore [reportArgumentType]
-                    SpanTagLink.tag_uuid.in_(to_remove),  # type: ignore
-                )
-                self.session.connection().execute(delete_statement)
-
-            # Add links that need to be added
-            for tag_uuid in to_add:
-                new_link = SpanTagLink(
-                    span_uuid=uuid, tag_uuid=tag_uuid, created_by=self.user.uuid
-                )
-                self.session.add(new_link)
-
-        self.session.flush()
-        return record_table
 
     def _get_date_trunc(self, timeframe: TimeFrame) -> TextClause | None:
         """Get the appropriate date truncation for the timeframe"""
@@ -269,9 +235,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self, spans_create: Sequence[SpanCreate], project_uuid: UUID
     ) -> list[SpanTable]:
         """Create multiple annotation records in bulk."""
-        spans = []
+        spans_to_add = []
+        tag_service = TagService(self.session, self.user)
+
         for span_create in spans_create:
-            span = self.table.model_validate(
+            db_span = self.table.model_validate(
                 span_create,
                 update={
                     "organization_uuid": self.user.active_organization_uuid,
@@ -279,11 +247,40 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                     "project_uuid": project_uuid,
                 },
             )
-            spans.append(span)
+            spans_to_add.append(db_span)
 
-        self.session.add_all(spans)
+            otel_attributes = db_span.data.get("attributes", {})
+            if (
+                trace_tag_names := otel_attributes.get("lilypad.trace.tags")
+            ) and isinstance(trace_tag_names, list):
+                if not hasattr(db_span, "_temp_links_to_add"):
+                    db_span._temp_links_to_add = []  # type: ignore
+                for tag_name in trace_tag_names:
+                    if isinstance(tag_name, str):
+                        tag = tag_service.find_or_create_tag(tag_name, project_uuid)
+                        db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
+
+        self.session.add_all(spans_to_add)
         self.session.flush()
-        return spans
+
+        final_links_to_add = []
+        for db_span in spans_to_add:
+            if hasattr(db_span, "_temp_links_to_add") and db_span.uuid:
+                for tag_uuid in db_span._temp_links_to_add:  # type: ignore
+                    final_links_to_add.append(
+                        SpanTagLink(
+                            span_uuid=db_span.uuid,
+                            tag_uuid=tag_uuid,
+                            created_by=self.user.uuid,
+                        )
+                    )
+                del db_span._temp_links_to_add  # type: ignore
+
+        if final_links_to_add:
+            self.session.add_all(final_links_to_add)
+            self.session.flush()
+
+        return spans_to_add
 
     def delete_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -299,3 +296,57 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.exec(delete_stmt)  # type: ignore
         self.session.flush()
         return True
+
+    async def update_span(
+        self,
+        span_uuid: UUID,
+        update_data: SpanUpdate,
+        user_uuid: UUID,
+    ) -> SpanTable:
+        """Update a span record by UUID"""
+        span_to_update = self.find_record_by_uuid(span_uuid)
+
+        tags_modified = self._sync_span_tags(span_to_update, update_data, user_uuid)
+        other_fields_modified = False
+        if tags_modified or other_fields_modified:
+            self.session.commit()
+            self.session.refresh(span_to_update)
+        return span_to_update
+
+    def _sync_span_tags(
+        self, span: SpanTable, span_update: SpanUpdate, user_uuid: UUID
+    ) -> bool:
+        target_tag_uuids: set[UUID] = set()
+        if span_update.tags_by_uuid is not None:
+            target_tag_uuids.update(span_update.tags_by_uuid)
+        elif span_update.tags_by_name is not None:
+            tag_service = TagService(self.session, self.user)
+            for name in span_update.tags_by_name:
+                tag = tag_service.find_or_create_tag(name, span.project_uuid)  # pyright: ignore [reportArgumentType]
+                target_tag_uuids.add(tag.uuid)  # pyright: ignore [reportArgumentType]
+        else:
+            return False
+
+        existing_links = self.session.exec(
+            select(SpanTagLink).where(SpanTagLink.span_uuid == span.uuid)
+        ).all()
+        existing_tag_uuids = {link.tag_uuid for link in existing_links if link.tag_uuid}
+        to_add = target_tag_uuids - existing_tag_uuids
+        to_remove = existing_tag_uuids - target_tag_uuids
+        modified = False
+        if to_remove:
+            self.session.exec(
+                delete(SpanTagLink).where(
+                    SpanTagLink.span_uuid == span.uuid,  # pyright: ignore [reportArgumentType]
+                    SpanTagLink.tag_uuid.in_(to_remove),  # type: ignore
+                )
+            )
+            modified = True
+        for tag_uuid in to_add:
+            self.session.add(
+                SpanTagLink(
+                    span_uuid=span.uuid, tag_uuid=tag_uuid, created_by=user_uuid
+                )
+            )
+            modified = True
+        return modified
