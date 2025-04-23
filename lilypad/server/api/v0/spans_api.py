@@ -122,4 +122,5 @@ async def get_spans_by_function_uuid_paginated(
         total=total,
     )
 
+
 __all__ = ["spans_router"]

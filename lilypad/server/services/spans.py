@@ -392,7 +392,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),
+                self.table.parent_span_id.is_(None),   # type: ignore
             )
         )
         return self.session.exec(stmt).one()
@@ -414,7 +414,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.function_uuid == function_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
-            .order_by(self.table.created_at.desc())
+            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
             .limit(limit)
             .offset(offset)
         )
