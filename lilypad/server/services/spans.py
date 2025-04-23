@@ -380,3 +380,42 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
             modified = True
         return modified
+
+    def count_records_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
+    ) -> int:
+        """Count root-level spans for a function (fast COUNT(*))."""
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),
+            )
+        )
+        return self.session.exec(stmt).one()
+
+    def find_records_by_function_uuid_paged(
+        self,
+        project_uuid: UUID,
+        function_uuid: UUID,
+        *,
+        limit: int,
+        offset: int = 0,
+    ) -> Sequence[SpanTable]:
+        """Find root-level spans for a function with pagination."""
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+            .order_by(self.table.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return self.session.exec(stmt).all()

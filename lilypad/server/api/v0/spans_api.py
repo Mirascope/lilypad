@@ -4,10 +4,11 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..._utils import get_current_user
 from ...models import SpanTable
+from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
 from ...schemas.users import UserPublic
@@ -97,5 +98,28 @@ async def get_aggregates_by_project_uuid(
     """Get aggregated span by project uuid."""
     return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
 
+
+@spans_router.get(
+    "/projects/{project_uuid}/functions/{function_uuid}/spans/paginated",
+    response_model=Paginated[SpanPublic],
+)
+async def get_spans_by_function_uuid_paginated(
+    project_uuid: UUID,
+    function_uuid: UUID,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> Paginated[SpanPublic]:
+    """Get spans for a function with pagination (new, non-breaking)."""
+    items = span_service.find_records_by_function_uuid_paged(
+        project_uuid, function_uuid, limit=limit, offset=offset
+    )
+    total = span_service.count_records_by_function_uuid(project_uuid, function_uuid)
+    return Paginated(
+        items=[SpanPublic.model_validate(i) for i in items],
+        limit=limit,
+        offset=offset,
+        total=total,
+    )
 
 __all__ = ["spans_router"]

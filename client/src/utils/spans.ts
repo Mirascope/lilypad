@@ -1,6 +1,7 @@
 import api from "@/api";
 import {
   AggregateMetrics,
+  PaginatedSpanPublic,
   SpanMoreDetails,
   SpanPublic,
   SpanUpdate,
@@ -60,15 +61,6 @@ export const fetchAggregatesByFunctionUuid = async (
   ).data;
 };
 
-export const spansByFunctionQueryOptions = (
-  projectUuid: string,
-  functionUuid: string
-) =>
-  queryOptions({
-    queryKey: ["projects", projectUuid, "functions", functionUuid, "spans"],
-    queryFn: () => fetchSpansByFunctionUuid(projectUuid, functionUuid),
-    refetchInterval: 10000,
-  });
 
 export const aggregatesByProjectQueryOptions = (
   projectUuid: string,
@@ -115,3 +107,20 @@ export const useUpdateSpanMutation = () => {
     },
   });
 };
+
+export interface PageParam {
+  offset: number;
+  limit: number;
+}
+
+export const fetchSpansByFunctionUuidPaged = async (
+  projectUuid: string,
+  functionUuid: string,
+  { offset, limit }: PageParam,
+) => (
+  await api.get<PaginatedSpanPublic>(
+    `/projects/${projectUuid}/functions/${functionUuid}/spans/paginated` +
+    `?limit=${limit}&offset=${offset}`,
+  )
+).data
+
