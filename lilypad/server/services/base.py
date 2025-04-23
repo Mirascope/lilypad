@@ -48,6 +48,29 @@ class BaseService(Generic[_TableT, _CreateT]):
             )
         return record_table
 
+    def find_records_by_uuids(
+        self, uuids: set[UUID], **filters: Any
+    ) -> Sequence[_TableT]:
+        """Find multiple records by their UUIDs in a single query.
+
+        Args:
+            uuids: Set of UUIDs to fetch
+            filters: Additional filters to apply to the query.
+
+        Returns:
+            A sequence of records matching the UUIDs.
+        """
+        if not uuids:
+            return []
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
+        records = self.session.exec(
+            select(self.table).where(self.table.uuid.in_(uuids), *filter_conditions)  # type: ignore
+        ).all()
+
+        return records
+
     def find_all_records(self, **filters: Any) -> Sequence[_TableT]:
         """Find all records"""
         filter_conditions = [

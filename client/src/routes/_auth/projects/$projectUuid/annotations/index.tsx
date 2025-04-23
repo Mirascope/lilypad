@@ -122,7 +122,12 @@ const AnnotationList = ({
       </div>
       <div className='flex flex-col gap-2 overflow-auto'>
         {annotations.map((annotation) => {
-          const fn = functionsMap[annotation.function_uuid];
+          const fn = annotation.function_uuid
+            ? functionsMap[annotation.function_uuid]
+            : null;
+          if (!fn) {
+            return null;
+          }
           return (
             <div
               key={annotation.uuid}
@@ -138,10 +143,10 @@ const AnnotationList = ({
               <div className='flex items-center justify-between'>
                 <div>
                   <Typography variant='span' affects='small' className='mr-1'>
-                    {fn.name}
+                    {fn?.name}
                   </Typography>
                   <Typography affects='muted' variant='span'>
-                    {fn.version_num}
+                    {fn?.version_num}
                   </Typography>
                 </div>
                 <Typography variant='span' affects='muted'>

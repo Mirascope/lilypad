@@ -1,14 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
+import { SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
-import { tracesQueryOptions } from "@/utils/traces";
+import { spansQueryOptions } from "@/utils/spans";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { Suspense } from "react";
-
+import { Suspense, useState } from "react";
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => (
     <Suspense fallback={<LilypadLoading />}>
@@ -34,8 +35,21 @@ export const Trace = () => {
 
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
+  const { data: defaultData } = useSuspenseQuery(
+    spansQueryOptions(projectUuid)
+  );
+
+  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   return (
-    <TracesTable data={data} traceUuid={traceUuid} path={Route.fullPath} />
+    <div className='py-4'>
+      <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
+      <TracesTable
+        data={displayData ?? defaultData}
+        traceUuid={traceUuid}
+        path={Route.fullPath}
+        isSearch={Boolean(displayData)}
+        projectUuid={projectUuid}
+      />
+    </div>
   );
 };

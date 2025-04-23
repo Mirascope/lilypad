@@ -150,7 +150,6 @@ export const AnnotationsButton = ({
 }: {
   annotations: AnnotationPublic[];
 }) => {
-  console.log(annotations);
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   return (
     <div className={`flex flex-col ${showAnnotations ? "h-full" : ""}`}>

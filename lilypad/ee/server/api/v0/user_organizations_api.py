@@ -7,6 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from ee.validate import LicenseValidator, Tier
+
 from .....server._utils import get_current_user
 from .....server._utils.auth import create_jwt_token
 from .....server.models import UserTable
@@ -18,6 +20,7 @@ from .....server.services import (
     OrganizationService,
     UserService,
 )
+from ....server.features import cloud_features
 from ...models import UserOrganizationTable, UserRole
 from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
@@ -81,21 +84,21 @@ async def create_user_organization(
             detail="Invite not found.",
         )
     # OPEN BETA: Limit number of users per organization based on tier
-    # validator = LicenseValidator()
-    # license_info = validator.validate_license(
-    #     org_invite.organization_uuid, organization_service
-    # )
-    # tier = Tier.FREE
-    # if license_info:
-    #     tier = license_info.tier
-    # num_users = user_organization_service.count_users_in_organization(
-    #     org_invite.organization_uuid
-    # )
-    # if num_users >= cloud_features[tier].num_users_per_organization:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-    #         detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
-    #     )
+    validator = LicenseValidator()
+    license_info = validator.validate_license(
+        org_invite.organization_uuid, organization_service
+    )
+    tier = Tier.FREE
+    if license_info:
+        tier = license_info.tier
+    num_users = user_organization_service.count_users_in_organization(
+        org_invite.organization_uuid
+    )
+    if num_users >= cloud_features[tier].num_users_per_organization:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
+        )
     invite_deleted = organization_invites_service.delete_record_by_uuid(
         org_invite.uuid,
     )

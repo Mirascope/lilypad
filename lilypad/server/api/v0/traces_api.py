@@ -1,11 +1,12 @@
 """The `/traces` API router."""
 
+import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
@@ -13,6 +14,7 @@ from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ee.validate import LicenseInfo
 
+from ....ee.server.features import cloud_features
 from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
     validate_api_key_project_strict,
@@ -20,9 +22,10 @@ from ..._utils import (
 from ...models.spans import Scope, SpanTable
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
-from ...services import SpanService
+from ...services import OpenSearchService, SpanService, get_opensearch_service
 
 traces_router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _convert_system_to_provider(system: str) -> Provider:
@@ -118,6 +121,26 @@ async def _process_span(
     return span_create
 
 
+async def index_traces_in_opensearch(
+    project_uuid: UUID,
+    traces: list[dict],
+    opensearch_service: OpenSearchService,
+) -> None:
+    """Index traces in OpenSearch."""
+    try:
+        success = opensearch_service.bulk_index_traces(project_uuid, traces)
+        if not success:
+            logger.error(
+                f"Failed to index {len(traces)} traces for project {project_uuid}"
+            )
+        else:
+            logger.info(
+                f"Successfully indexed {len(traces)} traces for project {project_uuid}"
+            )
+    except Exception as e:
+        logger.error(f"Exception during trace indexing: {str(e)}")
+
+
 @traces_router.post(
     "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
 )
@@ -128,17 +151,18 @@ async def traces(
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    background_tasks: BackgroundTasks,
 ) -> Sequence[SpanTable]:
     """Create span traces."""
-    # OPEN BETA: Check if the number of traces exceeds the limit
-    # if is_lilypad_cloud:
-    #     tier = license.tier
-    #     num_traces = span_service.count_by_current_month()
-    #     if num_traces >= cloud_features[tier].traces_per_month:
-    #         raise HTTPException(
-    #             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-    #             detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
-    #         )
+    if is_lilypad_cloud:
+        tier = license.tier
+        num_traces = span_service.count_by_current_month()
+        if num_traces >= cloud_features[tier].traces_per_month:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
+            )
 
     # Process the traces
     traces_json: list[dict] = await request.json()
@@ -156,6 +180,11 @@ async def traces(
         await _process_span(root_span, parent_to_children, span_creates)
 
     span_tables = span_service.create_bulk_records(span_creates, project_uuid)
+    if opensearch_service.is_enabled:
+        trace_dicts = [span.model_dump() for span in span_tables]
+        background_tasks.add_task(
+            index_traces_in_opensearch, project_uuid, trace_dicts, opensearch_service
+        )
     return [span for span in span_tables if span.parent_span_id is None]
 
 

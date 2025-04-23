@@ -34,7 +34,7 @@ import {
   functionKeys,
 } from "@/utils/functions";
 import { projectsQueryOptions } from "@/utils/projects";
-import { fetchTraces } from "@/utils/traces";
+import { fetchSpans } from "@/utils/spans";
 import {
   userQueryOptions,
   useUpdateActiveOrganizationMutation,
@@ -153,7 +153,7 @@ export const AppSidebar = () => {
             queryClient
               .prefetchQuery({
                 queryKey: ["projects", activeProject.uuid, "traces"],
-                queryFn: () => fetchTraces(activeProject.uuid),
+                queryFn: () => fetchSpans(activeProject.uuid),
               })
               .catch(() => toast.error("Failed to prefetch traces"));
           },

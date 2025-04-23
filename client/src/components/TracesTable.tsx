@@ -7,6 +7,7 @@ import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +33,7 @@ import {
   commentsBySpanQueryOptions,
   fetchCommentsBySpan,
 } from "@/utils/comments";
-import { fetchSpan } from "@/utils/spans";
+import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -48,7 +49,14 @@ import {
   SmileIcon,
   Users,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 const tagFilter = (
@@ -217,14 +225,18 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
 
 export const TracesTable = ({
   data,
+  projectUuid,
   traceUuid,
   path,
   hideCompare = false,
+  isSearch = false,
 }: {
   data: SpanPublic[];
+  projectUuid: string;
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
+  isSearch?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
@@ -232,10 +244,10 @@ export const TracesTable = ({
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
+  const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
 
   // Function to handle checkbox changes
   const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
@@ -325,6 +337,44 @@ export const TracesTable = ({
         );
       },
     },
+    ...(isSearch
+      ? ([
+          {
+            accessorKey: "score",
+            id: "score",
+            header: ({ column }) => {
+              return (
+                <Button
+                  className='p-0'
+                  variant='ghost'
+                  onClick={() =>
+                    column.toggleSorting(column.getIsSorted() === "asc")
+                  }
+                >
+                  Score
+                  {column.getIsSorted() ? (
+                    column.getIsSorted() === "asc" ? (
+                      <ArrowUp className='ml-2 h-4 w-4' />
+                    ) : (
+                      <ArrowDown className='ml-2 h-4 w-4' />
+                    )
+                  ) : (
+                    <ArrowUpDown className='ml-2 h-4 w-4' />
+                  )}
+                </Button>
+              );
+            },
+            cell: ({ row }) => {
+              const score: number = row.getValue("score");
+              return (
+                <Typography variant='span' affects='xs' className='truncate'>
+                  {score?.toFixed(2)}
+                </Typography>
+              );
+            },
+          },
+        ] as ColumnDef<SpanPublic>[])
+      : []),
     {
       accessorKey: "scope",
       header: "Scope",
@@ -508,6 +558,14 @@ export const TracesTable = ({
                     Open Playground
                   </DropdownMenuItem>
                 )}
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteSpan(row.original.uuid);
+                }}
+              >
+                Delete Span
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
@@ -644,28 +702,79 @@ export const TracesTable = ({
   }
 
   return (
-    <DataTable<SpanPublic>
-      columns={columns}
-      data={data}
-      virtualizerRef={virtualizerRef}
-      virtualizerOptions={{
-        count: data.length,
-        estimateSize: () => 45,
-        overscan: 20,
-      }}
-      onRowHover={prefetch}
-      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
-      customGetRowId={(row) => row.span_id}
-      DetailPanel={DetailPanel}
-      defaultPanelSize={50}
-      filterColumn={!hideCompare ? undefined : "display_name"}
-      selectRow={selectRow}
-      getRowCanExpand={getRowCanExpand}
-      getSubRows={getSubRows}
-      customControls={customControls}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
-      onDetailPanelClose={handleDetailPanelClose}
-      path={path}
-    />
+    <>
+      <DataTable<SpanPublic>
+        columns={columns}
+        data={data}
+        virtualizerRef={virtualizerRef}
+        virtualizerOptions={{
+          count: data.length,
+          estimateSize: () => 45,
+          overscan: 20,
+        }}
+        onRowHover={prefetch}
+        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customGetRowId={(row) => row.span_id}
+        DetailPanel={DetailPanel}
+        defaultPanelSize={50}
+        filterColumn={!hideCompare ? undefined : "display_name"}
+        selectRow={selectRow}
+        getRowCanExpand={getRowCanExpand}
+        getSubRows={getSubRows}
+        customControls={customControls}
+        defaultSorting={
+          isSearch
+            ? [{ id: "score", desc: true }]
+            : [{ id: "timestamp", desc: true }]
+        }
+        onDetailPanelClose={handleDetailPanelClose}
+        path={path}
+      />
+      {deleteSpan && (
+        <DeleteSpanDialog
+          setOpen={setDeleteSpan}
+          spanUuid={deleteSpan}
+          projectUuid={projectUuid}
+        />
+      )}
+    </>
+  );
+};
+
+interface DeleteSpanDialogProps {
+  projectUuid: string;
+  spanUuid: string;
+  setOpen: Dispatch<SetStateAction<string | null>>;
+}
+const DeleteSpanDialog = ({
+  projectUuid,
+  spanUuid,
+  setOpen,
+}: DeleteSpanDialogProps) => {
+  const deleteSpanMutation = useDeleteSpanMutation();
+  const handleSpanDelete = async () => {
+    await deleteSpanMutation
+      .mutateAsync({
+        projectUuid,
+        spanUuid,
+      })
+      .catch(() => toast.error("Failed to delete span"));
+    toast.success("Span deleted successfully");
+    setOpen(null);
+  };
+  return (
+    <LilypadDialog
+      open={Boolean(spanUuid)}
+      onOpenChange={() => setOpen(null)}
+      noTrigger
+      title={"Delete Span"}
+      description={"Are you sure you want to delete this span?"}
+    >
+      <DialogFooter>
+        <Button key='submit' onClick={handleSpanDelete} className='w-full'>
+          Delete Span
+        </Button>
+      </DialogFooter>
+    </LilypadDialog>
   );
 };
