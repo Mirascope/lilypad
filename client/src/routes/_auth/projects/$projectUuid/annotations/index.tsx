@@ -2,6 +2,7 @@ import CardSkeleton from "@/components/CardSkeleton";
 import { Comment } from "@/components/Comment";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { LilypadPanel } from "@/components/LilypadPanel";
+import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import {
   ResizableHandle,
@@ -11,7 +12,12 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { UpdateAnnotationForm } from "@/ee/components/AnnotationForm";
 import { annotationsByProjectQueryOptions } from "@/ee/utils/annotations";
-import { AnnotationPublic, FunctionPublic, UserPublic } from "@/types/types";
+import {
+  AnnotationPublic,
+  FunctionPublic,
+  Scope,
+  UserPublic,
+} from "@/types/types";
 import { functionsQueryOptions } from "@/utils/functions";
 import { formatRelativeTime } from "@/utils/strings";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
@@ -38,10 +44,11 @@ const AnnotationLayout = () => {
   );
   const [activeAnnotation, setActiveAnnotation] =
     useState<AnnotationPublic | null>(annotations[0] || null);
+  console.log(activeAnnotation?.span.display_name, activeAnnotation?.span_uuid);
   return (
     <div className='h-screen'>
       <ResizablePanelGroup direction='horizontal'>
-        <ResizablePanel defaultSize={20}>
+        <ResizablePanel defaultSize={20} id='annotation-list' order={1}>
           <Suspense fallback={<LilypadLoading />}>
             <AnnotationList
               activeAnnotation={activeAnnotation}
@@ -50,13 +57,17 @@ const AnnotationLayout = () => {
           </Suspense>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={75}>
+        <ResizablePanel defaultSize={80} id='annotation-view' order={2}>
           {activeAnnotation ? (
             <Suspense
               fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
               <ResizablePanelGroup direction='horizontal'>
-                <ResizablePanel defaultSize={50}>
+                <ResizablePanel
+                  defaultSize={60}
+                  id='annotation-view-panel'
+                  order={1}
+                >
                   <AnnotationView
                     annotation={activeAnnotation}
                     annotations={annotations}
@@ -64,14 +75,22 @@ const AnnotationLayout = () => {
                   />
                 </ResizablePanel>
                 <ResizableHandle />
-                <ResizablePanel defaultSize={50}>
+                <ResizablePanel
+                  defaultSize={40}
+                  id='annotation-comment'
+                  order={2}
+                >
                   <AnnotationComment spanUuid={activeAnnotation.span_uuid} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </Suspense>
           ) : (
             <div className='w-full h-full flex justify-center items-center'>
-              <Typography variant='h3'>No more annotations</Typography>
+              <Typography variant='h3'>
+                {annotations.length < 1
+                  ? "No more annotations"
+                  : "Select a trace"}
+              </Typography>
             </div>
           )}
         </ResizablePanel>
@@ -125,9 +144,6 @@ const AnnotationList = ({
           const fn = annotation.function_uuid
             ? functionsMap[annotation.function_uuid]
             : null;
-          if (!fn) {
-            return null;
-          }
           return (
             <div
               key={annotation.uuid}
@@ -143,11 +159,13 @@ const AnnotationList = ({
               <div className='flex items-center justify-between'>
                 <div>
                   <Typography variant='span' affects='small' className='mr-1'>
-                    {fn?.name}
+                    {annotation.span.display_name}
                   </Typography>
-                  <Typography affects='muted' variant='span'>
-                    {fn?.version_num}
-                  </Typography>
+                  {fn && (
+                    <Typography affects='muted' variant='span'>
+                      v{fn.version_num}
+                    </Typography>
+                  )}
                 </div>
                 <Typography variant='span' affects='muted'>
                   {formatRelativeTime(annotation.created_at, true)}
@@ -176,7 +194,7 @@ const AnnotationView = ({
   setActiveAnnotation: Dispatch<SetStateAction<AnnotationPublic | null>>;
 }) => {
   const handleSubmit = () => {
-    setActiveAnnotation(annotations[1] || null);
+    setActiveAnnotation(annotations[0] || null);
   };
   return (
     <div className='p-4 flex flex-col h-full'>
@@ -188,7 +206,11 @@ const AnnotationView = ({
         />
       </div>
       <div className='flex-grow overflow-auto'>
-        <LilypadPanel spanUuid={annotation.span_uuid} />
+        {annotation.span.scope === Scope.LILYPAD ? (
+          <LilypadPanel spanUuid={annotation.span_uuid} />
+        ) : (
+          <LlmPanel spanUuid={annotation.span_uuid} />
+        )}
       </div>
     </div>
   );

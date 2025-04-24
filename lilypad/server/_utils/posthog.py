@@ -19,7 +19,7 @@ def get_posthog_client() -> posthog.Posthog:
         api_key="",
         project_api_key=settings.posthog_api_key,
         host=settings.posthog_host,
-        disabled=settings.environment != "production",
+        disabled=not settings.posthog_api_key and not settings.posthog_host,
     )
 
 
