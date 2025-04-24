@@ -18,11 +18,10 @@ import { Dispatch, ReactNode, SetStateAction, useState } from "react";
 
 const { Stepper } = defineStepper(
   { id: "step-1", title: "Welcome" },
-  { id: "step-2", title: "Organization" },
   { id: "step-3", title: "Project" },
-  { id: "step-3-1", title: "Environment" },
   { id: "step-3-2", title: "API Key" },
-  { id: "step-4", title: "Function" }
+  { id: "step-4", title: "Function" },
+  { id: "step-5", title: "Trace" }
 );
 
 // Reusable Panel component
@@ -197,8 +196,6 @@ const renderStepPanel = (
   switch (stepId) {
     case "step-1":
       return <LilypadWelcome />;
-    case "step-2":
-      return <OnboardCreateOrganization />;
     case "step-3":
       return <OnboardCreateProject />;
     case "step-3-1":
@@ -220,6 +217,11 @@ const renderStepPanel = (
 };
 
 const LilypadWelcome = () => {
+  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const activeOrganization = user.user_organizations?.find(
+    (userOrg) => userOrg.organization.uuid === user.active_organization_uuid
+  );
+
   return (
     <StepperPanel title='Welcome to Lilypad' className='welcome-panel'>
       <p>We are excited to have you here!</p>
@@ -228,21 +230,6 @@ const LilypadWelcome = () => {
         developers, business users, and domain experts while maintaining quality
         and reproducibility in your AI applications.
       </p>
-    </StepperPanel>
-  );
-};
-
-const OnboardCreateOrganization = () => {
-  const { data: user } = useSuspenseQuery(userQueryOptions());
-  const activeOrganization = user.user_organizations?.find(
-    (userOrg) => userOrg.organization.uuid === user.active_organization_uuid
-  );
-
-  return (
-    <StepperPanel
-      title='Create a new organization'
-      description='Create a new organization to get started with Lilypad.'
-    >
       {activeOrganization ? (
         <div className='p-6 rounded-lg border text-center'>
           <div className='flex flex-col items-center space-y-3'>
@@ -375,10 +362,12 @@ const OnboardRunFunction = ({
 import lilypad
 from openai import OpenAI
 
-os.environ["LILYPAD_API_KEY"] = "${apiKey ?? "YOUR_API_KEY"}"
-os.environ["LILYPAD_PROJECT_ID"] = "${projectUuid ?? "YOUR_PROJECT_ID"}"
+os.environ["OPENAI_API_KEY"] = "YOUR_API_KEY"
 
-lilypad.configure()
+lilypad.configure(
+    api_key="${apiKey ?? "YOUR_API_KEY"}",
+    project_id="${projectUuid ?? "YOUR_PROJECT_ID"}"
+)
 client = OpenAI()
 
 @lilypad.trace(versioning="automatic")
