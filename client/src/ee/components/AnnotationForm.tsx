@@ -11,10 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { GenerateAnnotationButton } from "@/ee/components/GenerateAnnotationButton";
 import { useUpdateAnnotationMutation } from "@/ee/utils/annotations";
 import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
-import { settingsQueryOptions } from "@/utils/settings";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
@@ -37,17 +35,12 @@ interface AnnotationFormFieldsProps<T extends BaseAnnotation> {
 }
 
 export const AnnotationFormFields = <T extends BaseAnnotation>({
-  spanUuid,
   methods,
   onSubmit,
   renderButtons,
 }: AnnotationFormFieldsProps<T>) => {
-  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   return (
     <Form {...methods}>
-      {settings.experimental && (
-        <GenerateAnnotationButton spanUuid={spanUuid} />
-      )}
       <form
         className='flex flex-col gap-2'
         onSubmit={methods.handleSubmit(onSubmit)}

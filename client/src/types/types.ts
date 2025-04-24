@@ -929,6 +929,8 @@ export interface SpanMoreDetails {
   provider: string;
   /** Model */
   model: string;
+  /** Instrumentation Scope name of the span */
+  scope: Scope;
   /** Input Tokens */
   input_tokens?: number | null;
   /** Output Tokens */

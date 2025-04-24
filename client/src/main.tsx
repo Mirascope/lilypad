@@ -89,24 +89,33 @@ const InnerApp = () => {
 const rootElement = document.getElementById("root")!;
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
+
+  const appContent = (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider delayDuration={200}>
+          <InnerApp />
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
   root.render(
     <StrictMode>
-      <PostHogProvider
-        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
-        options={{
-          api_host: import.meta.env.VITE_POSTHOG_HOST,
-          autocapture: false,
-          capture_performance: false,
-        }}
-      >
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider delayDuration={200}>
-              <InnerApp />
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </PostHogProvider>
+      {import.meta.env.VITE_PUBLIC_POSTHOG_KEY &&
+      import.meta.env.VITE_POSTHOG_HOST ? (
+        <PostHogProvider
+          apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string}
+          options={{
+            api_host: import.meta.env.VITE_POSTHOG_HOST as string,
+            autocapture: false,
+            capture_performance: false,
+          }}
+        >
+          {appContent}
+        </PostHogProvider>
+      ) : (
+        appContent
+      )}
     </StrictMode>
   );
 }

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSearch } from "@/hooks/use-search";
 import { SpanPublic } from "@/types/types";
+import { settingsQueryOptions } from "@/utils/settings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Loader, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -17,7 +19,7 @@ export const SearchBar = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const { spans: searchResults, isLoading, search } = useSearch(projectUuid);
-
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   useEffect(() => {
     if (searchResults) {
       const filtered = filterFunction?.(searchResults) ?? searchResults;
@@ -42,7 +44,7 @@ export const SearchBar = ({
     setSearchQuery("");
     search("");
   };
-
+  if (!settings.experimental) return null;
   return (
     <form onSubmit={handleSearchSubmit} className='p-3'>
       <div className='flex flex-col gap-3 md:flex-row md:items-center'>
