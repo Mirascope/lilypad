@@ -1,8 +1,10 @@
 import { useAuth } from "@/auth";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
+import { Onboarding } from "@/components/Onboarding";
 import SidebarSkeleton from "@/components/SidebarSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { diffDays } from "@/utils/dates";
@@ -45,8 +47,8 @@ function AuthLayout() {
   const posthog = usePostHog();
   const { user } = useAuth();
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
-  const [showAlert, setShowAlert] = useState(true);
-
+  const [showAlert, setShowAlert] = useState<boolean>(true);
+  const [onboardingOpen, setOnboardingOpen] = useState<boolean>(true);
   const daysLeft = diffDays(new Date(licenseInfo.expires_at));
 
   useEffect(() => {
@@ -70,6 +72,11 @@ function AuthLayout() {
               <AlertDescription>{`Your license will expire in ${daysLeft} days.`}</AlertDescription>
             </Alert>
           )}
+          <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
+            <DialogContent className='max-w-[90%] max-h-[90%]'>
+              <Onboarding />
+            </DialogContent>
+          </Dialog>
           <Outlet />
         </main>
       </SidebarProvider>

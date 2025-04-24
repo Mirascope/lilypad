@@ -67,7 +67,7 @@ def create_new_user(
         email=email,
         first_name=name,
         last_name=last_name,
-        active_organization_uuid=organization_public.uuid,
+        active_organization_uuid=None,
     )
     session.add(user)
     session.flush()

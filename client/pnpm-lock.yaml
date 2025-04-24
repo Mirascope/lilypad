@@ -101,6 +101,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.8
         version: 1.1.8(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@stepperize/react':
+        specifier: ^5.1.5
+        version: 5.1.5(react@19.0.0)(typescript@5.8.2)
       '@tailwindcss/typography':
         specifier: ^0.5.15
         version: 0.5.16(tailwindcss@3.4.17)
@@ -1255,6 +1258,16 @@ packages:
     resolution: {integrity: sha512-TrH9Uwkd+ZAZIaZAceS842hZFig6s7cWJTFmrj/VqMgCmqgkxFjpMqlk8s3cdrIrsCXRshxWlKeys8xpqqA6xg==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  '@stepperize/core@1.2.5':
+    resolution: {integrity: sha512-2jk/yG4aZla+i67zcsXrTfzBbBx/ILtuaafsBpwZCnfVhPcvoKAPQvSm55p0Q6nQPcRVJ3nKexcR8/k5V+XQBA==}
+    peerDependencies:
+      typescript: '>=5.0.2'
+
+  '@stepperize/react@5.1.5':
+    resolution: {integrity: sha512-2g3rWY9j4aViH3ppVHxnGHhSOy3TSUlj/F0h9bG6PKcrmmes85mMHMB1lMjA7vUtkdedczZSn90ybrwv4LT8lw==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@swc/core-darwin-arm64@1.11.8':
     resolution: {integrity: sha512-rrSsunyJWpHN+5V1zumndwSSifmIeFQBK9i2RMQQp15PgbgUNxHK5qoET1n20pcUrmZeT6jmJaEWlQchkV//Og==}
@@ -4608,6 +4621,17 @@ snapshots:
       '@types/estree': 1.0.7
     optionalDependencies:
       fsevents: 2.3.3
+
+  '@stepperize/core@1.2.5(typescript@5.8.2)':
+    dependencies:
+      typescript: 5.8.2
+
+  '@stepperize/react@5.1.5(react@19.0.0)(typescript@5.8.2)':
+    dependencies:
+      '@stepperize/core': 1.2.5(typescript@5.8.2)
+      react: 19.0.0
+    transitivePeerDependencies:
+      - typescript
 
   '@swc/core-darwin-arm64@1.11.8':
     optional: true

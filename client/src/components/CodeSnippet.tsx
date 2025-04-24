@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import "highlight.js/styles/atom-one-light.min.css";
@@ -27,7 +28,7 @@ const renderCode = (
       const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
 
       return (
-        <div key={i} className={`hljs-line ${lineClass}`}>
+        <div key={i} className={`hljs-line ${lineClass} w-full`}>
           <span className='hljs-line-code'>{line}</span>
         </div>
       );
@@ -43,7 +44,7 @@ const renderCode = (
     return (
       <div
         key={i}
-        className={`hljs-line ${lineClass}`}
+        className={`hljs-line ${lineClass} w-full`}
         data-line-number={lineNumber}
         data-digits={digits}
       >
@@ -112,6 +113,8 @@ export const CodeSnippet = ({
         }
         .hljs-line-code {
           flex: 1;
+          word-break: break-all;
+          white-space: pre-wrap;
           background: transparent !important; /* Ensure HLJS doesn't override our backgrounds */
         }
         /* Ensure our custom highlighting takes precedence */
@@ -155,11 +158,11 @@ export const CodeSnippet = ({
   const formattedCode = renderCode(code, showLineNumbers, lineHighlights);
 
   return (
-    <div className='relative'>
-      <pre className={className} ref={preRef}>
+    <div className='relative w-full overflow-x-auto'>
+      <pre className={cn("whitespace-pre overflow-visible", className)} ref={preRef}>
         <code
           ref={codeRef}
-          className='language-python text-sm overflow-x-auto flex flex-col'
+          className='language-python text-sm flex flex-col w-full'
           key={code}
         >
           {formattedCode}

@@ -10,6 +10,7 @@
     "build:notypescript": "vite build --emptyOutDir",
     "build:local": "NODE_ENV=development vite build --mode development --emptyOutDir",
     "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.app.json",
     "preview": "vite preview",
     "generate:api:v0": "node scripts/generate-api-types.js generate --url http://127.0.0.1:8000/v0/openapi.json --output src/types",
     "generate:api:pipe:v0": "node scripts/generate-api-types.js generate --stdin --output src/types"
@@ -43,6 +44,7 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-toggle": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "@stepperize/react": "^5.1.5",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-query-devtools": "^5.74.4",
