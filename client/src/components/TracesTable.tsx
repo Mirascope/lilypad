@@ -50,7 +50,6 @@ import {
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
-  Loader2,
   MessageSquareMore,
   MoreHorizontal,
   NotebookPen,
