@@ -303,19 +303,8 @@ export const TracesTable = ({
   }, [nameFilter]);
   
   // State to track selected rows
-  const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
-
-  // Function to handle checkbox changes
-  const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
-    if (checked) {
-      setSelectedRows([...selectedRows, row]);
-    } else {
-      setSelectedRows(
-        selectedRows.filter((item) => item.span_id !== row.span_id)
-      );
-    }
-  };
+  
   
   const sentinelRef = useRef<HTMLTableRowElement>(null);
   const prevLenRef = useRef<number>(data.length);
@@ -377,9 +366,7 @@ export const TracesTable = ({
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
-        const isSelected = selectedRows.some(
-          (item) => item.span_id === row.original.span_id
-        );
+        const isSelected = row.getIsSelected();
         const displayName: string = row.getValue("display_name");
         const scope = row.original.scope;
         const isLilypad = scope === Scope.LILYPAD;
@@ -391,11 +378,11 @@ export const TracesTable = ({
                 <Checkbox
                   onClick={(e) => e.stopPropagation()}
                   checked={isSelected}
-                  onCheckedChange={(checked) => {
-                    handleCheckboxChange(row.original, checked === true);
-                  }}
+                  onCheckedChange={(checked) =>
+                    row.toggleSelected(!!checked)
+                  }
                   aria-label={`Select ${displayName}`}
-                  className='mr-2'
+                  className="mr-2"
                 />
               )}
               <span className='truncate'>{displayName}</span>
@@ -608,9 +595,17 @@ export const TracesTable = ({
     }
   };
   const CompareDetailPanel = () => {
+    const rows = selectedRowsRef.current               // ★ ここだけ
+    if (rows.length !== 2) {
+      return (
+        <div className="p-6 text-muted-foreground italic">
+          Select exactly two rows to compare.
+        </div>
+      );
+    }
     return (
       <div className='p-4 border rounded-md overflow-auto'>
-        {selectedRows.length === 2 && (
+        {rows.length === 2 && (
           <Button
             variant='outline'
             size='sm'
@@ -630,10 +625,10 @@ export const TracesTable = ({
             <Suspense
               fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
-              {selectedRows[0].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              {rows[0].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={rows[0].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[0].uuid} />
+                <LlmPanel spanUuid={rows[0].uuid} />
               )}
             </Suspense>
           </div>
@@ -642,10 +637,10 @@ export const TracesTable = ({
             <Suspense
               fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
-              {selectedRows[1].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              {rows[1].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={rows[1].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[1].uuid} />
+                <LlmPanel spanUuid={rows[1].uuid} />
               )}
             </Suspense>
           </div>
