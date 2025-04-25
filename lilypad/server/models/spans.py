@@ -57,7 +57,7 @@ class SpanBase(SQLModel):
         foreign_key=f"{SPAN_TABLE_NAME}.span_id",
         ondelete="CASCADE",
     )
-
+    run_id: str | None = Field(default=None,index=True,)
 
 class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     """Span table"""
