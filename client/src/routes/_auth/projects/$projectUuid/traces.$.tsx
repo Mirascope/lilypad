@@ -1,6 +1,5 @@
 import {
   useSuspenseQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -47,7 +46,6 @@ const Trace = () => {
 
 export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
-  const queryClient = useQueryClient();
   
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
@@ -56,8 +54,6 @@ export const TraceBody = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    refetch,
-    isRefetching,
     defaultData,
   } = useInfiniteTraces(projectUuid, pageSize);
   
@@ -65,14 +61,6 @@ export const TraceBody = () => {
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
     await fetchNextPage();
-  };
-  const handleLoadNewer = async () => {
-    await refetch(); // refetch all pages (refetchPage not supported)
-    queryClient.removeQueries({
-      queryKey: ["projects", projectUuid, "traces", "infinite"],
-      exact: false,
-      type: "inactive",
-    });
   };
   return (
     <div className='flex flex-col h-full'>
@@ -88,8 +76,6 @@ export const TraceBody = () => {
           onReachEnd={handleReachEnd}
           isFetchingNextPage={isFetchingNextPage}
           projectUuid={projectUuid}
-          onLoadNewer={handleLoadNewer}
-          isLoadingNewer={isRefetching}
         />
       </div>
     </div>
