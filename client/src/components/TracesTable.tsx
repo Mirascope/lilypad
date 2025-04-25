@@ -7,6 +7,7 @@ import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,11 +33,17 @@ import {
   commentsBySpanQueryOptions,
   fetchCommentsBySpan,
 } from "@/utils/comments";
-import { fetchSpan } from "@/utils/spans";
+import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ColumnDef, FilterFn, Row, Table } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  FilterFn,
+  Row,
+  RowSelectionState,
+  Table,
+} from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
@@ -48,7 +55,15 @@ import {
   SmileIcon,
   Users,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 const tagFilter = (
@@ -140,7 +155,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         toast.error("Failed to navigate");
       });
     }
-  }, [data, path]);
+  }, [data, navigate, path]);
 
   const filteredAnnotations = data.annotations.filter(
     (annotation) => annotation.label
@@ -217,14 +232,18 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
 
 export const TracesTable = ({
   data,
+  projectUuid,
   traceUuid,
   path,
   hideCompare = false,
+  isSearch = false,
 }: {
   data: SpanPublic[];
+  projectUuid: string;
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
+  isSearch?: boolean;
 }) => {
   const selectRow = findRowWithUuid(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
@@ -232,20 +251,37 @@ export const TracesTable = ({
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
   // State to track selected rows
-  const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
+  const selectedRowsRef = useRef<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
+  const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
 
-  // Function to handle checkbox changes
-  const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
-    if (checked) {
-      setSelectedRows([...selectedRows, row]);
-    } else {
-      setSelectedRows(
-        selectedRows.filter((item) => item.span_id !== row.span_id)
-      );
+  const dataMapping = useMemo(() => {
+    const mapping = {} as Record<string, SpanPublic>;
+
+    const addToMapping = (spans: SpanPublic[]) => {
+      for (const span of spans) {
+        mapping[span.span_id] = span;
+        if (span.child_spans && span.child_spans.length > 0) {
+          addToMapping(span.child_spans);
+        }
+      }
+    };
+
+    if (data) {
+      addToMapping(data);
     }
+
+    return mapping;
+  }, [data]);
+
+  const handleRowSelectionChange = (row: RowSelectionState) => {
+    const selectedRows = Object.keys(row)
+      .filter((key) => row[key])
+      .map((key) => dataMapping[key] ?? null)
+      .filter((item) => item !== null);
+
+    selectedRowsRef.current = selectedRows;
   };
   const prefetch = (row: SpanPublic) => {
     queryClient
@@ -268,26 +304,19 @@ export const TracesTable = ({
       accessorKey: "display_name",
       enableHiding: false,
       filterFn: onlyParentFilter,
-      header: () => {
+      header: ({ table }) => {
         return hideCompare ? (
           "Name"
         ) : (
           <>
             <Checkbox
               checked={
-                selectedRows.length > 0 && selectedRows.length < data.length
-                  ? "indeterminate"
-                  : selectedRows.length > 0
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={() => {
-                if (selectedRows.length > 0) {
-                  setSelectedRows([]);
-                } else {
-                  setSelectedRows(
-                    data.filter((row) => row.scope === Scope.LILYPAD)
-                  );
-                }
-              }}
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
               aria-label='Select all'
               className='mr-2'
             />
@@ -298,26 +327,26 @@ export const TracesTable = ({
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
-        const isSelected = selectedRows.some(
-          (item) => item.span_id === row.original.span_id
-        );
         const displayName: string = row.getValue("display_name");
-        const scope = row.original.scope;
-        const isLilypad = scope === Scope.LILYPAD;
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
-              {!hideCompare && isLilypad && (
-                <Checkbox
-                  onClick={(e) => e.stopPropagation()}
-                  checked={isSelected}
-                  onCheckedChange={(checked) => {
-                    handleCheckboxChange(row.original, checked === true);
+              {!hideCompare && (
+                <div
+                  onMouseDown={() => {
+                    row.toggleSelected(!row.getIsSelected(), {
+                      selectChildren: false,
+                    });
                   }}
-                  aria-label={`Select ${displayName}`}
                   className='mr-2'
-                />
+                >
+                  <Checkbox
+                    checked={row.getIsSelected()}
+                    className='pointer-events-none' // Disable direct interaction with checkbox
+                    aria-label={`Select ${displayName}`}
+                  />
+                </div>
               )}
               <span className='truncate'>{displayName}</span>
             </div>
@@ -325,6 +354,44 @@ export const TracesTable = ({
         );
       },
     },
+    ...(isSearch
+      ? ([
+          {
+            accessorKey: "score",
+            id: "score",
+            header: ({ column }) => {
+              return (
+                <Button
+                  className='p-0'
+                  variant='ghost'
+                  onClick={() =>
+                    column.toggleSorting(column.getIsSorted() === "asc")
+                  }
+                >
+                  Score
+                  {column.getIsSorted() ? (
+                    column.getIsSorted() === "asc" ? (
+                      <ArrowUp className='ml-2 h-4 w-4' />
+                    ) : (
+                      <ArrowDown className='ml-2 h-4 w-4' />
+                    )
+                  ) : (
+                    <ArrowUpDown className='ml-2 h-4 w-4' />
+                  )}
+                </Button>
+              );
+            },
+            cell: ({ row }) => {
+              const score: number = row.getValue("score");
+              return (
+                <Typography variant='span' affects='xs' className='truncate'>
+                  {score?.toFixed(2)}
+                </Typography>
+              );
+            },
+          },
+        ] as ColumnDef<SpanPublic>[])
+      : []),
     {
       accessorKey: "scope",
       header: "Scope",
@@ -508,6 +575,14 @@ export const TracesTable = ({
                     Open Playground
                   </DropdownMenuItem>
                 )}
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteSpan(row.original.uuid);
+                }}
+              >
+                Delete Span
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
@@ -530,6 +605,7 @@ export const TracesTable = ({
     }
   };
   const CompareDetailPanel = () => {
+    const selectedRows = selectedRowsRef.current;
     return (
       <div className='p-4 border rounded-md overflow-auto'>
         {selectedRows.length === 2 && (
@@ -576,6 +652,7 @@ export const TracesTable = ({
     );
   };
   const customControls = (table: Table<SpanPublic>) => {
+    const selectedRows = selectedRowsRef.current;
     return (
       <>
         <div className='relative max-w-sm'>
@@ -644,28 +721,80 @@ export const TracesTable = ({
   }
 
   return (
-    <DataTable<SpanPublic>
-      columns={columns}
-      data={data}
-      virtualizerRef={virtualizerRef}
-      virtualizerOptions={{
-        count: data.length,
-        estimateSize: () => 45,
-        overscan: 20,
-      }}
-      onRowHover={prefetch}
-      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
-      customGetRowId={(row) => row.span_id}
-      DetailPanel={DetailPanel}
-      defaultPanelSize={50}
-      filterColumn={!hideCompare ? undefined : "display_name"}
-      selectRow={selectRow}
-      getRowCanExpand={getRowCanExpand}
-      getSubRows={getSubRows}
-      customControls={customControls}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
-      onDetailPanelClose={handleDetailPanelClose}
-      path={path}
-    />
+    <>
+      <DataTable<SpanPublic>
+        columns={columns}
+        data={data}
+        virtualizerRef={virtualizerRef}
+        virtualizerOptions={{
+          count: data.length,
+          estimateSize: () => 45,
+          overscan: 20,
+        }}
+        onRowHover={prefetch}
+        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customGetRowId={(row) => row.span_id}
+        DetailPanel={DetailPanel}
+        defaultPanelSize={50}
+        filterColumn={!hideCompare ? undefined : "display_name"}
+        selectRow={selectRow}
+        getRowCanExpand={getRowCanExpand}
+        getSubRows={getSubRows}
+        customControls={customControls}
+        onRowSelectionChange={handleRowSelectionChange}
+        defaultSorting={
+          isSearch
+            ? [{ id: "score", desc: true }]
+            : [{ id: "timestamp", desc: true }]
+        }
+        onDetailPanelClose={handleDetailPanelClose}
+        path={path}
+      />
+      {deleteSpan && (
+        <DeleteSpanDialog
+          setOpen={setDeleteSpan}
+          spanUuid={deleteSpan}
+          projectUuid={projectUuid}
+        />
+      )}
+    </>
+  );
+};
+
+interface DeleteSpanDialogProps {
+  projectUuid: string;
+  spanUuid: string;
+  setOpen: Dispatch<SetStateAction<string | null>>;
+}
+const DeleteSpanDialog = ({
+  projectUuid,
+  spanUuid,
+  setOpen,
+}: DeleteSpanDialogProps) => {
+  const deleteSpanMutation = useDeleteSpanMutation();
+  const handleSpanDelete = async () => {
+    await deleteSpanMutation
+      .mutateAsync({
+        projectUuid,
+        spanUuid,
+      })
+      .catch(() => toast.error("Failed to delete span"));
+    toast.success("Span deleted successfully");
+    setOpen(null);
+  };
+  return (
+    <LilypadDialog
+      open={Boolean(spanUuid)}
+      onOpenChange={() => setOpen(null)}
+      noTrigger
+      title={"Delete Span"}
+      description={"Are you sure you want to delete this span?"}
+    >
+      <DialogFooter>
+        <Button key='submit' onClick={handleSpanDelete} className='w-full'>
+          Delete Span
+        </Button>
+      </DialogFooter>
+    </LilypadDialog>
   );
 };

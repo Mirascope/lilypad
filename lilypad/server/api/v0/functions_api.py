@@ -23,6 +23,7 @@ from ...schemas.functions import (
     FunctionPublic,
 )
 from ...services import DeploymentService, FunctionService, SpanService
+from ...services.opensearch import OpenSearchService, get_opensearch_service
 
 functions_router = APIRouter()
 
@@ -247,11 +248,20 @@ async def archive_functions_by_name(
     function_name: str,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     span_service: Annotated[SpanService, Depends(SpanService)],
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
 ) -> bool:
     """Archive a function by name and delete spans by function name."""
     try:
-        function_service.archive_record_by_name(project_uuid, function_name)
+        archived_functions = function_service.archive_record_by_name(
+            project_uuid, function_name
+        )
         span_service.delete_records_by_function_name(project_uuid, function_name)
+        if opensearch_service.is_enabled:
+            for function in archived_functions:
+                if function.uuid:
+                    opensearch_service.delete_traces_by_function_uuid(
+                        project_uuid, function.uuid
+                    )
     except Exception:
         return False
     return True
@@ -263,11 +273,16 @@ async def archive_function(
     function_uuid: UUID,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     span_service: Annotated[SpanService, Depends(SpanService)],
+    opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
 ) -> bool:
     """Archive a function and delete spans by function UUID."""
     try:
         function_service.archive_record_by_uuid(function_uuid)
         span_service.delete_records_by_function_uuid(project_uuid, function_uuid)
+        if opensearch_service.is_enabled:
+            opensearch_service.delete_traces_by_function_uuid(
+                project_uuid, function_uuid
+            )
     except Exception:
         return False
     return True

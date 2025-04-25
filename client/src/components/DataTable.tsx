@@ -212,6 +212,7 @@ export const DataTable = <T extends { uuid: string }>({
       className='flex-1 rounded-lg w-full h-full'
     >
       <ResizablePanel
+        id='data-table'
         defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
         className='flex flex-col p-2 gap-2 h-full'
@@ -267,12 +268,11 @@ export const DataTable = <T extends { uuid: string }>({
         </div>
 
         <div className='flex flex-col overflow-hidden min-h-0 rounded-md border flex-1'>
-          {/* Adding h-full ensures the table container takes full height */}
           <div
             ref={virtualizerRef}
             className='rounded-md overflow-auto h-full'
             style={{
-              height: virtualizerOptions.containerHeight || "100%",
+              height: virtualizerOptions.containerHeight ?? "100%",
             }}
           >
             <Table>
@@ -337,6 +337,7 @@ export const DataTable = <T extends { uuid: string }>({
         <>
           <ResizableHandle withHandle />
           <ResizablePanel
+            id='detail-panel'
             defaultSize={defaultPanelSize}
             order={2}
             className='flex flex-col h-full p-4'

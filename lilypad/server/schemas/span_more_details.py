@@ -524,6 +524,7 @@ class SpanMoreDetails(BaseModel):
     display_name: str
     provider: str
     model: str
+    scope: Scope
     input_tokens: float | None = None
     output_tokens: float | None = None
     duration_ms: float | None = None

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     remote_client_url: str = Field(default=REMOTE_CLIENT_URL)
     api_key: str | None = None
     project_id: str | None = None
-    serve_frontend: str | None = Field(
+    serve_frontend: bool | None = Field(
         default=None, description="Serve the client in the root"
     )
     experimental: bool = Field(default=False)
@@ -40,6 +40,13 @@ class Settings(BaseSettings):
 
     # Resend
     resend_api_key: str | None = None
+
+    # OpenSearch
+    opensearch_host: str | None = None
+    opensearch_port: int | None = None
+    opensearch_user: str | None = None
+    opensearch_password: str | None = None
+    opensearch_use_ssl: bool = False
 
     # Database settings
     db_host: str | None = None

@@ -191,7 +191,9 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
             )
         return record_table
 
-    def archive_record_by_name(self, project_uuid: UUID, name: str) -> bool:
+    def archive_record_by_name(
+        self, project_uuid: UUID, name: str
+    ) -> Sequence[FunctionTable]:
         """Archive records by name"""
         record_tables = self.find_functions_by_name(project_uuid, name)
         archived_date = datetime.now(timezone.utc)
@@ -199,7 +201,7 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
             record_table.archived = archived_date
             self.session.add(record_table)
         self.session.flush()
-        return True
+        return record_tables
 
     def archive_record_by_uuid(self, uuid: UUID) -> bool:
         """Archive record by uuid"""

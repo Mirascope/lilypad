@@ -33,7 +33,7 @@ import {
   Trash,
   XIcon,
 } from "lucide-react";
-import { ReactNode, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -260,26 +260,30 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
       span_uuid: spanUuid,
     },
   });
+
+  useEffect(() => {
+    methods.setValue("span_uuid", spanUuid);
+  }, [spanUuid, methods]);
+
   const commentCreate = useCreateCommentMutation();
   const commentRef = useRef<LexicalEditor>(null);
   const onSubmit = (data: CommentCreate) => {
     if (!commentRef?.current) return;
-
     const editorState = commentRef.current.getEditorState();
 
-    void editorState.read(async () => {
+    void editorState.read(() => {
       const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
       data.text = markdown;
-      await commentCreate.mutateAsync(data, {
-        onSuccess: () => {
-          methods.reset();
-          commentRef?.current?.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
-          toast.success("Comment created");
-        },
-        onError: () => {
-          toast.error("Error creating comment");
-        },
-      });
+    });
+    commentCreate.mutate(data, {
+      onSuccess: () => {
+        methods.reset();
+        commentRef?.current?.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+        toast.success("Comment created");
+      },
+      onError: () => {
+        toast.error("Error creating comment");
+      },
     });
   };
   return (
