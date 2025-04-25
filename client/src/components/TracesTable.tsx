@@ -244,6 +244,8 @@ interface TracesTableProps {
   /** true while useInfiniteQuery is fetching next page */
   isFetchingNextPage?: boolean;
   isSearch: boolean
+  order: "asc" | "desc";
+  onOrderChange: (o: "asc" | "desc") => void;
 }
 
 
@@ -255,7 +257,9 @@ export const TracesTable = ({
   hideCompare = false,
   onReachEnd,
   isFetchingNextPage = false,
-  isSearch = false
+  isSearch = false,
+  order,
+  onOrderChange
 }: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
@@ -314,7 +318,6 @@ export const TracesTable = ({
   };
   
   const sentinelRef = useRef<HTMLTableRowElement>(null);
-  console.log(data)
   const prevLenRef = useRef<number>(data.length);
   useLayoutEffect(() => {
     if (data.length < prevLenRef.current) {
@@ -480,23 +483,21 @@ export const TracesTable = ({
     {
       accessorKey: "created_at",
       id: "timestamp",
-      header: ({ column }) => {
+      header: ({ table }) => {
+        const isAsc = order === 'asc' ? 'desc' : 'asc'
         return (
           <Button
             className='p-0'
             variant='ghost'
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => {
+              const next = order === 'asc' ? 'desc' : 'asc';
+              onOrderChange(next);
+              table.setSorting([{ id: "timestamp", desc: next === "desc" }]);
+            }}
           >
             Timestamp
-            {column.getIsSorted() ? (
-              column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4' />
-            )}
+            {isAsc ? <ArrowUp className='ml-2 h-4 w-4' />
+              : <ArrowDown className='ml-2 h-4 w-4' />}
           </Button>
         );
       },

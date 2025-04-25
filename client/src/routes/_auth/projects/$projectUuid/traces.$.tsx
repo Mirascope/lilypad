@@ -1,6 +1,4 @@
-import {
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { LilypadLoading } from "@/components/LilypadLoading";
@@ -49,14 +47,17 @@ export const TraceBody = () => {
   
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
-  
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const queryKey = ["projects", projectUuid, "traces", { order }];
+
   const {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     defaultData,
-  } = useInfiniteTraces(projectUuid, pageSize);
+  } = useInfiniteTraces(projectUuid, pageSize, order, queryKey);
   
+
   
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -76,6 +77,8 @@ export const TraceBody = () => {
           onReachEnd={handleReachEnd}
           isFetchingNextPage={isFetchingNextPage}
           projectUuid={projectUuid}
+          order={order}
+          onOrderChange={setOrder}
         />
       </div>
     </div>

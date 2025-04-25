@@ -7,9 +7,15 @@ export const fetchTraces = async (
   projectUuid: string,
   offset: number,
   limit: number = PAGE_SIZE,
+  order: "desc" | "asc" = "desc"
 ) => {
+  const params = new URLSearchParams({
+  limit: String(limit),
+  offset: String(offset),
+  order: order,
+});
   const { data } = await api.get<PaginatedSpanPublic>(
-    `/projects/${projectUuid}/traces?limit=${limit}&offset=${offset}`,
+    `/projects/${projectUuid}/traces?${params}`,
   );
   return data;
 };
@@ -19,15 +25,16 @@ export interface TracePageParam {
   limit: number;
 }
 
-export const tracesInfiniteQueryOptions = (
+export const tracesInfiniteQueryOptions = <Key extends readonly unknown[] >(
   projectUuid: string,
-  pageSize: number
+  pageSize: number,
+  order: "asc" | "desc" = "desc",
+  queryKey: Key,
 ) => ({
-  queryKey: ["projects", projectUuid, "traces", pageSize],
-  
+  queryKey,
   queryFn: ({ pageParam }: QueryFunctionContext) => {
     const { offset = 0, limit = pageSize } = pageParam as TracePageParam;
-    return fetchTraces(projectUuid, offset, limit);
+    return fetchTraces(projectUuid, offset, limit, order);
   },
   
   getNextPageParam: (

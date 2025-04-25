@@ -392,7 +392,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),   # type: ignore
+                self.table.parent_span_id.is_(None),  # type: ignore
             )
         )
         return self.session.exec(stmt).one()
@@ -404,8 +404,14 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         *,
         limit: int,
         offset: int = 0,
+        order: str = "desc",
     ) -> Sequence[SpanTable]:
-        """Find root-level spans for a function with pagination."""
+        """Find root-level spans for a function with pagination + dynamic sort."""
+        if order.lower() == "asc":
+            order_by_clause = self.table.created_at.asc()  # pyright: ignore
+        else:
+            order_by_clause = self.table.created_at.desc()  # pyright: ignore
+
         stmt = (
             select(self.table)
             .where(
@@ -414,7 +420,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.function_uuid == function_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
-            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
+            .order_by(order_by_clause)
             .limit(limit)
             .offset(offset)
         )

@@ -84,7 +84,7 @@ export const searchSpans = async (
       searchParams.append(key, value.toString());
     }
   });
-
+  
   return (
     await api.get<SpanPublic[]>(
       `/projects/${projectUuid}/spans?${searchParams.toString()}`
@@ -160,11 +160,11 @@ export const useUpdateSpanMutation = () => {
           return { ...oldData, ...data };
         }
       );
-
+      
       await queryClient.invalidateQueries({
         queryKey: ["spans", spanUuid],
       });
-
+      
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
         predicate: (query) => {
@@ -190,7 +190,7 @@ export const useDeleteSpanMutation = () => {
       queryClient.removeQueries({
         queryKey: ["spans", spanUuid],
       });
-
+      
       queryClient.setQueriesData<SpanPublic[]>(
         { queryKey: ["projects", projectUuid, "spans"] },
         (oldData) => {
@@ -198,7 +198,7 @@ export const useDeleteSpanMutation = () => {
           return oldData.filter((span) => span.uuid !== spanUuid);
         }
       );
-
+      
       queryClient.setQueriesData<SpanPublic[]>(
         { queryKey: ["projects", projectUuid, "functions"] },
         (oldData) => {
@@ -206,7 +206,7 @@ export const useDeleteSpanMutation = () => {
           return oldData.filter((span) => span.uuid !== spanUuid);
         }
       );
-
+      
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
         predicate: (query) => {
@@ -244,10 +244,8 @@ export const fetchSpansByFunctionUuidPaged = async (
   projectUuid: string,
   functionUuid: string,
   { offset, limit }: PageParam,
-) => (
-  await api.get<PaginatedSpanPublic>(
-    `/projects/${projectUuid}/functions/${functionUuid}/spans/paginated` +
-    `?limit=${limit}&offset=${offset}`,
-  )
-).data
+) => {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return await api.get(`/projects/${projectUuid}/functions/${functionUuid}/spans/paginated?${params}`);
+}
 

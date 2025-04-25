@@ -34,7 +34,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { forwardRef, JSX, ReactNode, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { ReactNode, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 interface VirtualizerOptions {
   count?: number;
@@ -77,7 +77,7 @@ export interface DataTableHandle {
   scrollTop: () => void;
 }
 
-function DataTableInner<T extends { uuid: string }>({
+export function DataTable<T extends { uuid: string }>({
     data,
     columns,
     filterColumn,
@@ -110,7 +110,7 @@ function DataTableInner<T extends { uuid: string }>({
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColF] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setVis] = useState<VisibilityState>({});
-  const [rowSelection, setSel] = useState<RowSelectionState>({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [detailRow, setDetail] = useState<T | null | undefined>(defaultSelectedRow);
   const internalScrollElRef = useRef<HTMLDivElement>(null);
   const scrollElRef = virtualizerRef ?? internalScrollElRef;
@@ -124,14 +124,21 @@ function DataTableInner<T extends { uuid: string }>({
     getRowId: customGetRowId,
     getSubRows,
     getRowCanExpand: getRowCanExpand ? () => true : undefined,
-    state: { sorting, columnFilters, columnVisibility, rowSelection, expanded },
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      expanded,
+    },
     onExpandedChange: setExpanded,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColF,
     onColumnVisibilityChange: setVis,
     onRowSelectionChange: (u) => {
-      const next = typeof u === "function" ? u(rowSelection) : u;
-      setSel(next);
+      const next =
+        typeof u === "function" ? u(rowSelection) : (u as RowSelectionState);
+      setRowSelection(next);
       onRowSelectionChange?.(next);
     },
     getCoreRowModel: getCoreRowModel(),
@@ -376,8 +383,3 @@ function DataTableInner<T extends { uuid: string }>({
     </ResizablePanelGroup>
   );
 }
-
-export const DataTable = forwardRef(DataTableInner) as
-  <T extends { uuid: string }>(
-    p: GenericDataTableProps<T> & { ref?: React.Ref<DataTableHandle> }
-  ) => JSX.Element;
