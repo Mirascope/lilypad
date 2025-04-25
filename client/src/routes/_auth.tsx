@@ -73,7 +73,7 @@ function AuthLayout() {
             </Alert>
           )}
           <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
-            <DialogContent className='max-w-[90%] max-h-[90%]'>
+            <DialogContent className='max-w-[90%] h-[90vh] overflow-hidden'>
               <Onboarding />
             </DialogContent>
           </Dialog>

@@ -18,7 +18,6 @@ import { Dispatch, ReactNode, SetStateAction } from "react";
 import { DefaultValues, Path, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-// #1 - Base Form Data and Props
 interface FormData {
   name: string;
 }
@@ -31,7 +30,6 @@ interface OrganizationFormProps<T extends FormData> {
   className?: string;
 }
 
-// #1 - Base Form Component
 export const OrganizationForm = <T extends FormData>({
   defaultValues,
   onSubmit,
@@ -84,7 +82,6 @@ export const OrganizationForm = <T extends FormData>({
   );
 };
 
-// #2 - Create Organization Form
 interface CreateOrganizationFormProps {
   onSuccess?: () => void;
   className?: string;
@@ -132,7 +129,6 @@ export const CreateOrganizationForm = ({
   );
 };
 
-// #2 - Update Organization Form
 interface UpdateOrganizationFormProps {
   initialName?: string;
   onSuccess?: () => void;
@@ -171,7 +167,6 @@ export const UpdateOrganizationForm = ({
   );
 };
 
-// #3 - Base Dialog Props and Component
 interface BaseDialogProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
@@ -200,7 +195,6 @@ export const BaseOrganizationDialog = ({
   );
 };
 
-// #4 - Create Organization Dialog
 interface CreateOrganizationDialogProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
@@ -222,7 +216,6 @@ export const CreateOrganizationDialog = ({
   );
 };
 
-// #4 - Update Organization Dialog
 interface UpdateOrganizationDialogProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;

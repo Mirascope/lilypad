@@ -159,7 +159,10 @@ export const CodeSnippet = ({
 
   return (
     <div className='relative w-full overflow-x-auto'>
-      <pre className={cn("whitespace-pre overflow-visible", className)} ref={preRef}>
+      <pre
+        className={cn("whitespace-pre overflow-visible", className)}
+        ref={preRef}
+      >
         <code
           ref={codeRef}
           className='language-python text-sm flex flex-col w-full'
