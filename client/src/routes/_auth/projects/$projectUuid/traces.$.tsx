@@ -48,14 +48,13 @@ export const TraceBody = () => {
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("desc");
-  const queryKey = ["projects", projectUuid, "traces", { order }];
 
   const {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     defaultData,
-  } = useInfiniteTraces(projectUuid, pageSize, order, queryKey);
+  } = useInfiniteTraces(projectUuid, pageSize, order);
   
 
   
