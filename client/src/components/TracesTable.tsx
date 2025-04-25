@@ -62,11 +62,11 @@ import {
   SetStateAction,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const tagFilter = (
@@ -234,41 +234,71 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
 };
 
 interface TracesTableProps {
-  data: SpanPublic[];
+  data?: SpanPublic[];
   traceUuid?: string;
   path?: string;
   hideCompare?: boolean;
   
+  projectUuid: string;
   /** infinite‑scroll sentinel callback */
   onReachEnd?: () => void;
-  /** explicit refresh (Load newer) */
-  onLoadNewer?: () => Promise<void> | void;
-  /** true while onLoadNewer runs */
-  isLoadingNewer?: boolean;
   /** true while useInfiniteQuery is fetching next page */
   isFetchingNextPage?: boolean;
+  isSearch: boolean
 }
 
 
 export const TracesTable = ({
-  data,
-  projectUuid,
+  data = [],
   traceUuid,
   path,
+  projectUuid,
   hideCompare = false,
-}: {
-  data: SpanPublic[];
-  traceUuid?: string;
-  path?: string;
-  hideCompare?: boolean;
-}) => {
-  const selectRow = findRowWithUuid(data, traceUuid);
-  const isSubRow = selectRow?.parent_span_id;
+  onReachEnd,
+  isFetchingNextPage = false,
+  isSearch = false
+}: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-
+  const tableRef = useRef<DataTableHandle>(null);
+  const selectedRowsRef = useRef<SpanPublic[]>([]);
+  const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
+  
+  const dataMapping = useMemo(() => {
+    const mapping = {} as Record<string, SpanPublic>;
+    
+    const addToMapping = (spans: SpanPublic[]) => {
+      for (const span of spans) {
+        mapping[span.span_id] = span;
+        if (Array.isArray(span.child_spans) && span.child_spans.length > 0) {
+          addToMapping(span.child_spans);
+        }
+      }
+    };
+    
+    if (data) {
+      addToMapping(data);
+    }
+    
+    return mapping;
+  }, [data]);
+  
+  const handleRowSelectionChange = (row: RowSelectionState) => {
+    const selectedRows = Object.keys(row)
+      .filter((key) => row[key])
+      .map((key) => dataMapping[key] ?? null)
+      .filter((item) => item !== null);
+    
+    selectedRowsRef.current = selectedRows;
+  };
+  const [nameFilter, setName] = useState("");
+  
+  useEffect(() => {
+    tableRef.current?.scrollTop();
+  }, [nameFilter]);
+  
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
@@ -283,6 +313,24 @@ export const TracesTable = ({
       );
     }
   };
+  
+  const sentinelRef = useRef<HTMLTableRowElement>(null);
+  console.log(data)
+  const prevLenRef = useRef<number>(data.length);
+  useLayoutEffect(() => {
+    if (data.length < prevLenRef.current) {
+      virtualizerRef?.current?.scrollTo({ top: 0, behavior: "auto" });
+    }
+    prevLenRef.current = data.length;
+  }, [data.length])
+  
+  const findRow = (rows: SpanPublic[], uuid?: string) =>
+    rows.find((r) => r.uuid === uuid) ??
+    rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
+  
+  const selectRow = findRow(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
+  
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
@@ -546,7 +594,7 @@ export const TracesTable = ({
       },
     },
   ];
-  const getRowCanExpand = (row: SpanPublic) => row.child_spans.length > 0;
+  const getRowCanExpand = (row: SpanPublic) => Array.isArray(row.child_spans) && row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
   const handleDetailPanelClose = () => {
     if (path) {
@@ -633,7 +681,7 @@ export const TracesTable = ({
               />
               <Popover>
                 <PopoverTrigger asChild>
-                  <SmileIcon className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100' />
+                  <SmileIcon className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100'/>
                 </PopoverTrigger>
                 <PopoverContent className='w-fit p-0'>
                   <EmojiPicker
@@ -679,24 +727,6 @@ export const TracesTable = ({
                 </Button>
               </>
             )}
-            {onLoadNewer && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  void onLoadNewer();
-                }}
-                disabled={isLoadingNewer}
-                className="flex items-center gap-1 ml-4"
-              >
-                {isLoadingNewer ? (
-                  <Loader2 className="h-4 w-4 animate-spin"/>
-                ) : (
-                  <ArrowUp className="h-4 w-4"/>
-                )}
-                Load newer
-              </Button>
-            )}
           </div>
         </div>
       </>
@@ -739,6 +769,7 @@ export const TracesTable = ({
         isFetchingNextPage={isFetchingNextPage}
         onDetailPanelClose={handleDetailPanelClose}
         path={path}
+        bouncePx={60}
       />
       {deleteSpan && (
         <DeleteSpanDialog

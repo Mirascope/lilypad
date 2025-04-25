@@ -16,8 +16,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import {
@@ -27,7 +25,6 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  OnChangeFn,
   Row,
   RowSelectionState,
   SortingState,
@@ -37,10 +34,10 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { ReactNode, Suspense, useEffect, useState } from "react";
+import React, { forwardRef, JSX, ReactNode, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 interface VirtualizerOptions {
-  count: number;
+  count?: number;
   estimateSize?: (index: number) => number;
   overscan?: number;
   containerHeight?: number;
@@ -70,10 +67,10 @@ interface GenericDataTableProps<T> {
   onRowSelectionChange?: (row: RowSelectionState) => void;
   path?: string;
   isFetchingNextPage?: boolean;
-  onReachEnd?: () => void;
-  virtualizerRef?: React.RefObject<HTMLDivElement | null>;
+  onReachEnd?: () => Promise<void> | void;
   endRef?: React.Ref<HTMLTableRowElement>;
   customComponent?: ReactNode;
+  bouncePx?: number;
 }
 
 export interface DataTableHandle {
@@ -89,7 +86,7 @@ function DataTableInner<T extends { uuid: string }>({
     DetailPanel,
     onRowClick,
     onRowHover,
-    defaultPanelSize = 50,
+    defaultPanelSize = 10,
     virtualizerOptions = {},
     onFilterChange,
     defaultSorting = [],
@@ -105,6 +102,7 @@ function DataTableInner<T extends { uuid: string }>({
     onReachEnd,
     virtualizerRef,
     endRef,
+    bouncePx,
   }: GenericDataTableProps<T>,
   ref: React.Ref<DataTableHandle>,
 ) {
@@ -158,27 +156,34 @@ function DataTableInner<T extends { uuid: string }>({
   const sentinelRef = (endRef as React.RefObject<HTMLTableRowElement>) ?? internalSentinel;
   
   const fetchLockRef = useRef(false);
+  const bouncedRef = useRef(false);
   
-  const BOUNCE_PX = 60;
+  const BOUNCE_PX = bouncePx ?? 0;
   useEffect(() => {
     if (!onReachEnd || !sentinelRef.current) return;
     
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isFetchingNextPage && !fetchLockRef.current) {
-          fetchLockRef.current = true;
-          onReachEnd();
-        }
-        scrollElRef.current?.scrollBy({
-          top: -BOUNCE_PX,
-          behavior: "smooth",
-        });
-        
+      async ([entry]) => {
         if (!entry.isIntersecting) {
           fetchLockRef.current = false;
+          bouncedRef.current = false;
+          return;
         }
+        
+        if (isFetchingNextPage || fetchLockRef.current) return;
+        
+        if (!bouncedRef.current && BOUNCE_PX) {
+          scrollElRef.current?.scrollBy({
+            top: -BOUNCE_PX,
+            behavior: "smooth",
+          });
+          bouncedRef.current = true;
+        }
+        
+        fetchLockRef.current = true;
+        await onReachEnd?.();
       },
-      { root: scrollElRef.current, threshold: 0.15 }
+      { root: scrollElRef.current, threshold: 0.15 },
     );
     
     observer.observe(sentinelRef.current);
@@ -275,6 +280,19 @@ function DataTableInner<T extends { uuid: string }>({
             </DropdownMenu>
           )}
         </div>
+        <table className="w-full text-sm border-separate border-spacing-0">
+          <thead>
+          {table.getHeaderGroups().map(hg => (
+            <tr key={hg.id} className="bg-background sticky top-[48px] z-20">
+              {hg.headers.map(h => (
+                <th key={h.id} className="px-3 py-2 text-left font-medium">
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+          </thead>
+        </table>
         <div
           ref={scrollElRef}
           className="relative overflow-auto h-full"
@@ -294,23 +312,7 @@ function DataTableInner<T extends { uuid: string }>({
             </div>
           )}
           
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
+          <Table className="w-full caption-bottom text-sm border-separate border-spacing-0">
             <TableBody>
               {paddingTop > 0 && (
                 <TableRow>
@@ -350,7 +352,7 @@ function DataTableInner<T extends { uuid: string }>({
       
       {detailRow && DetailPanel && (
         <>
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle/>
           <ResizablePanel
             id='detail-panel'
             defaultSize={defaultPanelSize}
@@ -364,9 +366,9 @@ function DataTableInner<T extends { uuid: string }>({
             className="p-4"
           >
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
             >
-              <DetailPanel data={detailRow} path={path} />
+              <DetailPanel data={detailRow} path={path}/>
             </Suspense>
           </ResizablePanel>
         </>

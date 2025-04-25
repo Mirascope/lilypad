@@ -5,6 +5,7 @@ import {
 } from '@/utils/spans'
 import { PAGE_SIZE } from '@/utils/constants'
 import { type PaginatedSpanPublic } from '@/types/types'
+import { useMemo } from 'react'
 
 export const usePaginatedSpansByFunction = (
   projectUuid: string,
@@ -21,7 +22,7 @@ export const usePaginatedSpansByFunction = (
     'spans',
   ] as const
   
-  return useInfiniteQuery<
+  const query = useInfiniteQuery<
     PaginatedSpanPublic,
     Error,
     InfiniteData<PaginatedSpanPublic, PageParam>,
@@ -66,4 +67,9 @@ export const usePaginatedSpansByFunction = (
     
     staleTime: 30_000,
   })
+  const defaultData = useMemo(
+    () => query.data?.pages.flatMap((p) => p.items) ?? [],
+    [query.data?.pages],
+  )
+  return { ...query, defaultData }
 }

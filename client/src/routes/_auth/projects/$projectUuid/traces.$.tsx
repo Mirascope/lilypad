@@ -1,14 +1,9 @@
-import { Suspense, useState } from "react";
-import { createFileRoute, useParams } from "@tanstack/react-router";
 import {
-  useInfiniteQuery,
   useSuspenseQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { projectQueryOptions } from "@/utils/projects";
-import { tracesInfiniteQueryOptions } from "@/utils/traces";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -16,9 +11,9 @@ import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
 import { SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
-import { spansQueryOptions } from "@/utils/spans";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
+import { useInfiniteTraces } from "@/hooks/use-infinite-traces";
 
 const INIT_LIMIT = 80;
 
@@ -27,8 +22,8 @@ export const Route = createFileRoute(
 )({
   validateSearch: z.object({}).optional(),
   component: () => (
-    <Suspense fallback={<LilypadLoading />}>
-      <Trace />
+    <Suspense fallback={<LilypadLoading/>}>
+      <Trace/>
     </Suspense>
   ),
 });
@@ -54,33 +49,22 @@ export const TraceBody = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
   const queryClient = useQueryClient();
   
-  const [pageSize, setPageSize] = useState(INIT_LIMIT);
+  const [pageSize] = useState(INIT_LIMIT);
+  const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   
   const {
-    data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     refetch,
     isRefetching,
     defaultData,
-  } = useInfiniteQuery(tracesInfiniteQueryOptions(projectUuid, pageSize));
+  } = useInfiniteTraces(projectUuid, pageSize);
   
-  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   
-  const pages = data?.pages ?? [];
-  const flattened = pages.flatMap((p) => p.items);
-  
-  const ROW_HEIGHT = 45;
-  
-  const calcPageSize = () =>
-    Math.max(20, Math.ceil((window.innerHeight / ROW_HEIGHT) * 4));
-  
-  const handleReachEnd = () => {
+  const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
-    
-    setPageSize(calcPageSize());
-    void fetchNextPage();
+    await fetchNextPage();
   };
   const handleLoadNewer = async () => {
     await refetch(); // refetch all pages (refetchPage not supported)
@@ -93,14 +77,14 @@ export const TraceBody = () => {
   return (
     <div className='flex flex-col h-full'>
       <div className='flex-shrink-0 py-4'>
-        <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
+        <SearchBar projectUuid={projectUuid} onDataChange={setSearchData}/>
       </div>
       <div className='flex-1 min-h-0 overflow-auto'>
         <TracesTable
-          data={displayData ?? defaultData}
+          data={searchData ?? defaultData}
           traceUuid={traceUuid}
           path={Route.fullPath}
-          isSearch={Boolean(displayData)}
+          isSearch={Boolean(searchData)}
           onReachEnd={handleReachEnd}
           isFetchingNextPage={isFetchingNextPage}
           projectUuid={projectUuid}

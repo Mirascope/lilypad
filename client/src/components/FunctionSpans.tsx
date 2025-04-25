@@ -4,14 +4,8 @@ import {
   Route
 } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid.$tab.$.tsx";
 import { SpanPublic } from "@/types/types";
-import { spansByFunctionQueryOptions } from "@/utils/spans";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Route
-} from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid.$tab.$.tsx";
-import { usePaginatedSpansByFunction } from "@/hooks/usePaginatedQuery.tsx";
-import { useMemo } from "react";
+import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
 
 
 export const FunctionSpans = ({
@@ -24,20 +18,15 @@ export const FunctionSpans = ({
   traceUuid?: string;
 }) => {
   const {
-    data,
     fetchNextPage,
-    hasNextPage = false,
+    hasNextPage,
     isFetchingNextPage,
     isLoading,
     defaultData,
-  } = usePaginatedSpansByFunction(projectUuid, functionUuid)
+  } = usePaginatedSpansByFunction(projectUuid, functionUuid);
   
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   
-  const flattened = useMemo(
-    () => data?.pages.flatMap(p => p.items) ?? [],
-    [data?.pages],
-  )
   
   if (isLoading) {
     return <div className="p-4">Loading…</div>
@@ -66,6 +55,7 @@ export const FunctionSpans = ({
             }
           }}
           isFetchingNextPage={isFetchingNextPage}
+          isSearch={Boolean(displayData)}
         />
       </div>
     </div>
