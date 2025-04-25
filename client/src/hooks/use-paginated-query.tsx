@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 
 export const usePaginatedSpansByFunction = (
   projectUuid: string,
+  order: "asc" | "desc",
   functionUuid?: string,
   { enabled = true }: { enabled?: boolean } = {},
 ) => {
@@ -20,6 +21,7 @@ export const usePaginatedSpansByFunction = (
     'functions',
     functionUuid ?? 'disabled',
     'spans',
+    { order },
   ] as const
   
   const query = useInfiniteQuery<
@@ -31,9 +33,9 @@ export const usePaginatedSpansByFunction = (
   >({
     queryKey,
     enabled: isEnabled,
-    initialPageParam: { offset: 0, limit: PAGE_SIZE },
+    initialPageParam: { offset: 0, limit: PAGE_SIZE, order },
     
-    queryFn: ({ pageParam = { offset: 0, limit: PAGE_SIZE } }) => {
+    queryFn: async ({ pageParam = { offset: 0, limit: PAGE_SIZE } }) => {
       if (!isEnabled) {
         return Promise.resolve({
           items: [],
@@ -43,25 +45,32 @@ export const usePaginatedSpansByFunction = (
         })
       }
       
-      return fetchSpansByFunctionUuidPaged(
+      const page = await fetchSpansByFunctionUuidPaged(
         projectUuid,
-        functionUuid,
-        pageParam,
-      ).then(page => ({
+        functionUuid!,
+        { ...pageParam, order })
+      return ({
         ...page,
+        limit: page.limit ?? pageParam.limit,
+        offset: page.offset ?? pageParam.offset,
         items: page.items ?? [],
-      }))
+      })
     },
     
     getNextPageParam: lastPage => {
       if (!isEnabled) return undefined
       
-      const fetched = Array.isArray(lastPage.items) ? lastPage.items.length : 0
-      const nextOffset = lastPage.offset + fetched
       
-      return nextOffset >= lastPage.total
+      const fetched = lastPage.items?.length ?? 0
+      const nextLimit = lastPage.limit ?? PAGE_SIZE
+      const nextOff = (lastPage.offset ?? 0) + fetched
+      
+      return nextOff >= lastPage.total
         ? undefined
-        : ({ offset: nextOffset, limit: lastPage.limit } as PageParam)
+        : ({
+          offset: nextOff, limit: nextLimit,
+          order: order,
+        } satisfies PageParam)
     },
     
     

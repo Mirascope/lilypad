@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import (
@@ -53,10 +53,13 @@ async def get_traces_by_project_uuid(
     span_service: Annotated[SpanService, Depends(SpanService)],
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    order: Literal["asc", "desc"] = Query(
+        "desc", pattern="^(asc|desc)$", examples=["asc", "desc"]
+    ),
 ) -> Paginated[SpanPublic]:
     """Get traces by project UUID."""
     items = span_service.find_all_no_parent_spans(
-        project_uuid, limit=limit, offset=offset
+        project_uuid, limit=limit, offset=offset, order=order
     )
     total = span_service.count_no_parent_spans(project_uuid)
     return Paginated(

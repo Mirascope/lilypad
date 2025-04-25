@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -68,6 +69,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         *,
         limit: int | None = None,
         offset: int = 0,
+        order: Literal["asc", "desc"] = "desc",
     ) -> Sequence[SpanTable]:
         """Find all root spans for a project."""
         stmt = (
@@ -76,7 +78,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.project_uuid == project_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
             )
-            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
             .offset(offset)
             .options(
                 selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]
@@ -407,11 +413,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         order: str = "desc",
     ) -> Sequence[SpanTable]:
         """Find root-level spans for a function with pagination + dynamic sort."""
-        if order.lower() == "asc":
-            order_by_clause = self.table.created_at.asc()  # pyright: ignore
-        else:
-            order_by_clause = self.table.created_at.desc()  # pyright: ignore
-
         stmt = (
             select(self.table)
             .where(
@@ -420,7 +421,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.function_uuid == function_uuid,
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
-            .order_by(order_by_clause)
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
             .limit(limit)
             .offset(offset)
         )

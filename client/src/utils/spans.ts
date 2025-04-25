@@ -238,14 +238,15 @@ export const spansSearchQueryOptions = (
 export interface PageParam {
   offset: number;
   limit: number;
+  order: "asc" | "desc";
 }
 
 export const fetchSpansByFunctionUuidPaged = async (
   projectUuid: string,
   functionUuid: string,
-  { offset, limit }: PageParam,
+  { offset, limit, order }: PageParam,
 ) => {
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-  return await api.get(`/projects/${projectUuid}/functions/${functionUuid}/spans/paginated?${params}`);
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset), order: order });
+  return (await api.get(`/projects/${projectUuid}/functions/${functionUuid}/spans/paginated?${params}`)).data;
 }
 

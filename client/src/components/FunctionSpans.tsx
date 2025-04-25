@@ -17,13 +17,15 @@ export const FunctionSpans = ({
   functionUuid: string;
   traceUuid?: string;
 }) => {
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+ 
   const {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
     defaultData,
-  } = usePaginatedSpansByFunction(projectUuid, functionUuid);
+  } = usePaginatedSpansByFunction(projectUuid, order, functionUuid);
   
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   
@@ -56,6 +58,8 @@ export const FunctionSpans = ({
           }}
           isFetchingNextPage={isFetchingNextPage}
           isSearch={Boolean(displayData)}
+          order={order}
+          onOrderChange={setOrder}
         />
       </div>
     </div>

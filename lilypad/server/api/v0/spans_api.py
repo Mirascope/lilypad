@@ -1,7 +1,7 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -234,7 +234,9 @@ async def get_spans_by_function_uuid_paginated(
     span_service: Annotated[SpanService, Depends(SpanService)],
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    order: str = Query("desc", pattern="^(asc|desc)$", examples=["asc", "desc"]),
+    order: Literal["asc", "desc"] = Query(
+        "desc", pattern="^(asc|desc)$", examples=["asc", "desc"]
+    ),
 ) -> Paginated[SpanPublic]:
     """Get spans for a function with pagination (new, non-breaking)."""
     items = span_service.find_records_by_function_uuid_paged(

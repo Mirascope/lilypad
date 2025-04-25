@@ -13,8 +13,10 @@ export const CompareTracesTable = ({
   firstFunctionUuid: string;
   secondFunctionUuid?: string;
 }) => {
-  const q1 = usePaginatedSpansByFunction(projectUuid, firstFunctionUuid);
-  const q2 = usePaginatedSpansByFunction(projectUuid, secondFunctionUuid!, {
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  
+  const q1 = usePaginatedSpansByFunction(projectUuid, order, firstFunctionUuid);
+  const q2 = usePaginatedSpansByFunction(projectUuid, order, secondFunctionUuid!, {
     enabled: Boolean(secondFunctionUuid),
   });
   
@@ -57,6 +59,8 @@ export const CompareTracesTable = ({
           onReachEnd={handleReachEnd}
           isFetchingNextPage={isFetchingNextPage}
           isSearch={Boolean(displayData)}
+          order={order}
+          onOrderChange={setOrder}
         />
       </div>
     </div>
