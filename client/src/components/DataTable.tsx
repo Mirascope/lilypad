@@ -287,17 +287,24 @@ export function DataTable<T extends { uuid: string }>({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-          </div>
-          <div ref={scrollElRef}
-               className="flex-1 min-h-0 overflow-auto relative">
-            <Table className="w-full table-fixed caption-bottom text-sm
+         </div>
+          <div
+            ref={scrollElRef}
+            className="flex-1 min-h-0 overflow-auto relative"
+            aria-busy={isFetchingNextPage}
+          >
+            {showLoader && (
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-8
+                              flex items-center justify-center rounded-md
+                              bg-background/90 px-3 py-1 shadow pointer-events-none
+                              z-20">
+                <span className="text-sm text-muted-foreground">
+                  Fetching more results…
+                </span>
+              </div>
+            )}
+            <Table className="w-full caption-bottom text-sm
                             border-separate border-spacing-0">
-              <colgroup>
-                {table.getFlatHeaders().map(h => (
-                  <col key={h.id} style={{ width: h.getSize() }}/>
-                ))}
-              </colgroup>
-              
               <thead className="bg-background">
               {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
