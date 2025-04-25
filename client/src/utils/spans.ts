@@ -1,7 +1,6 @@
 import api from "@/api";
 import {
   AggregateMetrics,
-  PaginatedSpanPublic,
   SpanMoreDetails,
   SpanPublic,
   SpanUpdate,

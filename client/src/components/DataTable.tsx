@@ -34,7 +34,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { ReactNode, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { JSX, ReactNode, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 interface VirtualizerOptions {
   count?: number;
@@ -77,7 +77,7 @@ export interface DataTableHandle {
   scrollTop: () => void;
 }
 
-export function DataTable<T extends { uuid: string }>({
+function DataTableInner<T extends { uuid: string }>({
     data,
     columns,
     filterColumn,
@@ -386,3 +386,8 @@ export function DataTable<T extends { uuid: string }>({
     </ResizablePanelGroup>
   );
 }
+
+export const DataTable = React.forwardRef(DataTableInner) as
+  <T extends { uuid: string }>(
+    props: GenericDataTableProps<T> & { ref?: React.Ref<DataTableHandle> }
+  ) => JSX.Element;
