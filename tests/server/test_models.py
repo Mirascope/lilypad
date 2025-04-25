@@ -160,7 +160,7 @@ def test_span_models() -> None:
 
 def test_span_model_has_run_id() -> None:
     """Test Span model run_id field."""
-    span = SpanTable( # pyright: ignore [reportCallIssue]
+    span = SpanTable(  # pyright: ignore [reportCallIssue]
         span_id="s1",
         project_uuid=uuid4(),
         scope=Scope.LILYPAD,
