@@ -148,6 +148,19 @@ async def update_annotation(
     )
 
 
+@annotations_router.delete(
+    "/projects/{project_uuid}/annotations/{annotation_uuid}",
+    response_model=bool,
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def delete_annotation(
+    annotation_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> bool:
+    """Delete an annotation."""
+    return annotations_service.delete_record_by_uuid(annotation_uuid)
+
+
 @annotations_router.get(
     "/projects/{project_uuid}/functions/{function_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],

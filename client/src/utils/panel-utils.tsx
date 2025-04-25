@@ -187,11 +187,12 @@ export const renderMessagesContainer = (messages: MessageParam[]) => {
     </Card>
   );
 };
-export const renderOutput = (output: any) => {
+
+export const renderOutput = (output: string) => {
   const jsonOutput = safelyParseJSON(output);
   return (
     <>
-      {jsonOutput ? (
+      {typeof jsonOutput === "object" ? (
         <JsonView value={jsonOutput} />
       ) : (
         <ReactMarkdown>{output}</ReactMarkdown>
@@ -199,7 +200,8 @@ export const renderOutput = (output: any) => {
     </>
   );
 };
-export const renderCardOutput = (output: any) => {
+
+export const renderCardOutput = (output: string) => {
   return (
     <>
       {output && (

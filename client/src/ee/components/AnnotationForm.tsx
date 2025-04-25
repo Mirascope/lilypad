@@ -11,7 +11,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateAnnotationMutation } from "@/ee/utils/annotations";
+import {
+  useDeleteAnnotationMutation,
+  useUpdateAnnotationMutation,
+} from "@/ee/utils/annotations";
 import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -123,7 +126,7 @@ export const UpdateAnnotationForm = ({
 }: {
   annotation: AnnotationPublic;
   spanUuid: string;
-  onSubmit?: (data: AnnotationPublic) => void;
+  onSubmit: () => void;
 }) => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const methods = useForm<AnnotationUpdate>({
@@ -134,12 +137,29 @@ export const UpdateAnnotationForm = ({
     },
   });
   const updateAnnotation = useUpdateAnnotationMutation();
+  const deleteAnnotation = useDeleteAnnotationMutation();
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
-      <div>
+      <div className='flex justify-between gap-2'>
         <Button type='submit' loading={isLoading}>
           {isLoading ? "Annotating..." : "Annotate"}
+        </Button>
+        <Button
+          type='button'
+          variant='outlineDestructive'
+          onClick={() => {
+            deleteAnnotation
+              .mutateAsync({
+                projectUuid: annotation.project_uuid,
+                annotationUuid: annotation.uuid,
+              })
+              .catch(() => toast.error("Failed to delete annotation"));
+            toast.success("Annotation deleted");
+            onSubmit();
+          }}
+        >
+          {isLoading ? "Deleting..." : "Remove Annotation"}
         </Button>
       </div>
     );
@@ -150,7 +170,7 @@ export const UpdateAnnotationForm = ({
       toast.error("Failed to update annotation.");
       return;
     }
-    const newData = await updateAnnotation
+    await updateAnnotation
       .mutateAsync({
         projectUuid: annotation.project_uuid,
         annotationUuid: annotation.uuid,
@@ -161,9 +181,7 @@ export const UpdateAnnotationForm = ({
       });
     toast.success("Annotation submitted");
     methods.reset();
-    if (newData) {
-      onSubmit?.(newData);
-    }
+    onSubmit();
   };
 
   return (
