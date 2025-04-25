@@ -21,20 +21,24 @@ export const FunctionSpans = ({
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
 
   return (
-    <div className='space-y-4'>
-      <SearchBar
-        projectUuid={projectUuid}
-        onDataChange={setDisplayData}
-        filterFunction={(data) =>
-          data.filter((item) => item.function_uuid === functionUuid)
-        }
-      />
-      <TracesTable
-        data={displayData ?? defaultData}
-        traceUuid={traceUuid}
-        path={Route.fullPath}
-        projectUuid={projectUuid}
-      />
+    <div className='flex flex-col h-full'>
+      <div className='flex-shrink-0'>
+        <SearchBar
+          projectUuid={projectUuid}
+          onDataChange={setDisplayData}
+          filterFunction={(data) =>
+            data.filter((item) => item.function_uuid === functionUuid)
+          }
+        />
+      </div>
+      <div className='flex-1 min-h-0 overflow-auto'>
+        <TracesTable
+          data={displayData ?? defaultData}
+          traceUuid={traceUuid}
+          path={Route.fullPath}
+          projectUuid={projectUuid}
+        />
+      </div>
     </div>
   );
 };

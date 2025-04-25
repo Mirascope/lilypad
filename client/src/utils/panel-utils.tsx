@@ -199,7 +199,8 @@ export const renderOutput = (output: string) => {
     </>
   );
 };
-export const renderCardOutput = (output?: string | null) => {
+
+export const renderCardOutput = (output: string) => {
   return (
     <>
       {output && (

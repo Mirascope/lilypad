@@ -41,15 +41,19 @@ export const TraceBody = () => {
 
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   return (
-    <div className='py-4'>
-      <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
-      <TracesTable
-        data={displayData ?? defaultData}
-        traceUuid={traceUuid}
-        path={Route.fullPath}
-        isSearch={Boolean(displayData)}
-        projectUuid={projectUuid}
-      />
+    <div className='flex flex-col h-full'>
+      <div className='flex-shrink-0 py-4'>
+        <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
+      </div>
+      <div className='flex-1 min-h-0 overflow-auto'>
+        <TracesTable
+          data={displayData ?? defaultData}
+          traceUuid={traceUuid}
+          path={Route.fullPath}
+          isSearch={Boolean(displayData)}
+          projectUuid={projectUuid}
+        />
+      </div>
     </div>
   );
 };
