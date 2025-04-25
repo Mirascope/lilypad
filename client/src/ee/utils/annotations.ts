@@ -26,6 +26,17 @@ export const updateAnnotation = async (
   ).data;
 };
 
+export const deleteAnnotation = async (
+  projectUuid: string,
+  annotationUuid: string
+) => {
+  return (
+    await api.delete<AnnotationPublic>(
+      `/ee/projects/${projectUuid}/annotations/${annotationUuid}`
+    )
+  ).data;
+};
+
 export const fetchAnnotationsByFunctionUuid = async (
   projectUuid: string,
   functionUuid: string
@@ -85,10 +96,35 @@ export const useUpdateAnnotationMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: ["projects", projectUuid, "annotations"],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "functions"],
+        predicate: (query) => query.queryKey.includes("annotations"),
+      });
     },
   });
 };
 
+export const useDeleteAnnotationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectUuid,
+      annotationUuid,
+    }: {
+      projectUuid: string;
+      annotationUuid: string;
+    }) => await deleteAnnotation(projectUuid, annotationUuid),
+    onSuccess: async (_, { projectUuid }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "annotations"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["projects", projectUuid, "functions"],
+        predicate: (query) => query.queryKey.includes("annotations"),
+      });
+    },
+  });
+};
 export const useCreateAnnotationsMutation = () => {
   const queryClient = useQueryClient();
   const posthog = usePostHog();

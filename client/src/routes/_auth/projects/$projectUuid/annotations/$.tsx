@@ -22,11 +22,16 @@ import { functionsQueryOptions } from "@/utils/functions";
 import { formatRelativeTime } from "@/utils/strings";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
-import { Dispatch, SetStateAction, Suspense, useState } from "react";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
+import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/annotations/"
+  "/_auth/projects/$projectUuid/annotations/$"
 )({
   component: () => {
     return (
@@ -38,13 +43,36 @@ export const Route = createFileRoute(
 });
 
 const AnnotationLayout = () => {
-  const { projectUuid } = useParams({ from: Route.id });
+  const { projectUuid, _splat: annotationUuid } = useParams({ from: Route.id });
   const { data: annotations } = useSuspenseQuery(
     annotationsByProjectQueryOptions(projectUuid)
   );
+  const navigate = useNavigate();
   const [activeAnnotation, setActiveAnnotation] =
     useState<AnnotationPublic | null>(annotations[0] || null);
-  console.log(activeAnnotation?.span.display_name, activeAnnotation?.span_uuid);
+  useEffect(() => {
+    const annotation = annotations.find(
+      (annotation) => annotation.uuid === annotationUuid
+    );
+    if (annotationUuid === "next") {
+      if (annotations.length == 0) {
+        setActiveAnnotation(null);
+        navigate({
+          to: Route.fullPath,
+          replace: true,
+          params: { projectUuid, _splat: undefined },
+        }).catch(() => {
+          toast.error("Failed to navigate");
+        });
+        return;
+      }
+      setActiveAnnotation(annotations[0]);
+    } else if (annotation) {
+      setActiveAnnotation(annotation);
+    } else {
+      setActiveAnnotation(null);
+    }
+  }, [annotations, annotationUuid]);
   return (
     <div className='h-screen'>
       <ResizablePanelGroup direction='horizontal'>
@@ -70,8 +98,7 @@ const AnnotationLayout = () => {
                 >
                   <AnnotationView
                     annotation={activeAnnotation}
-                    annotations={annotations}
-                    setActiveAnnotation={setActiveAnnotation}
+                    path={Route.fullPath}
                   />
                 </ResizablePanel>
                 <ResizableHandle />
@@ -109,9 +136,11 @@ const AnnotationList = ({
   const { projectUuid } = useParams({
     from: Route.id,
   });
+  const navigate = useNavigate();
   const { data: annotations, dataUpdatedAt } = useSuspenseQuery(
     annotationsByProjectQueryOptions(projectUuid)
   );
+
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: functions } = useSuspenseQuery(
     functionsQueryOptions(projectUuid)
@@ -151,6 +180,13 @@ const AnnotationList = ({
               onClick={() => {
                 if (activeAnnotation?.uuid === annotation.uuid) {
                   setActiveAnnotation(null);
+                  navigate({
+                    to: Route.fullPath,
+                    replace: true,
+                    params: { projectUuid, _splat: undefined },
+                  }).catch(() => {
+                    toast.error("Failed to navigate");
+                  });
                 } else {
                   setActiveAnnotation(annotation);
                 }
@@ -186,15 +222,33 @@ const AnnotationList = ({
 
 const AnnotationView = ({
   annotation,
-  annotations,
-  setActiveAnnotation,
+  path,
 }: {
   annotation: AnnotationPublic;
-  annotations: AnnotationPublic[];
-  setActiveAnnotation: Dispatch<SetStateAction<AnnotationPublic | null>>;
+  path: string;
 }) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (path) {
+      navigate({
+        to: path,
+        replace: true,
+        params: { _splat: annotation.uuid },
+      }).catch(() => {
+        toast.error("Failed to navigate");
+      });
+    }
+  }, [annotation, navigate, path]);
   const handleSubmit = () => {
-    setActiveAnnotation(annotations[0] || null);
+    if (path) {
+      navigate({
+        to: path,
+        replace: true,
+        params: { _splat: "next" },
+      }).catch(() => {
+        toast.error("Failed to navigate");
+      });
+    }
   };
   return (
     <div className='p-4 flex flex-col h-full'>
