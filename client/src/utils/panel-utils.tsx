@@ -201,7 +201,7 @@ export const renderOutput = (output: string) => {
   );
 };
 
-export const renderCardOutput = (output: any) => {
+export const renderCardOutput = (output: string) => {
   return (
     <>
       {output && (
