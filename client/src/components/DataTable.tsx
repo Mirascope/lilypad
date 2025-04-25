@@ -252,108 +252,104 @@ export function DataTable<T extends { uuid: string }>({
   return (
     <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg">
       <ResizablePanel defaultSize={detailRow ? defaultPanelSize : 100} order={1}>
-        <div className="flex items-center gap-2 p-2">
-          {filterColumn && (
-            <Input
-              placeholder="Filter..."
-              value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
-              onChange={(e) => {
-                onFilterChange?.(e.target.value);
-                table.getColumn(filterColumn)?.setFilterValue(e.target.value);
-              }}
-              className="max-w-sm"
-            />
-          )}
-          {customControls?.(table)}
-          {!hideColumnButton && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  Columns <ChevronDown className="ml-2 h-4 w-4"/>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table.getAllColumns().filter((c) => c.getCanHide()).map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    className="capitalize"
-                    checked={c.getIsVisible()}
-                    onCheckedChange={(v) => c.toggleVisibility(!!v)}
-                  >
-                    {c.id}
-                  </DropdownMenuCheckboxItem>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-2 p-2">
+            {filterColumn && (
+              <Input
+                placeholder="Filter..."
+                value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
+                onChange={(e) => {
+                  onFilterChange?.(e.target.value);
+                  table.getColumn(filterColumn)?.setFilterValue(e.target.value);
+                }}
+                className="max-w-sm"
+              />
+            )}
+            {customControls?.(table)}
+            {!hideColumnButton && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="ml-auto">
+                    Columns <ChevronDown className="ml-2 h-4 w-4"/>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table.getAllColumns().filter((c) => c.getCanHide()).map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.id}
+                      className="capitalize"
+                      checked={c.getIsVisible()}
+                      onCheckedChange={(v) => c.toggleVisibility(!!v)}
+                    >
+                      {c.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          <div ref={scrollElRef}
+               className="flex-1 min-h-0 overflow-auto relative">
+            <Table className="w-full table-fixed caption-bottom text-sm
+                            border-separate border-spacing-0">
+              <colgroup>
+                {table.getFlatHeaders().map(h => (
+                  <col key={h.id} style={{ width: h.getSize() }}/>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-        <table className="w-full text-sm border-separate border-spacing-0">
-          <thead>
-          {table.getHeaderGroups().map(hg => (
-            <tr key={hg.id} className="bg-background sticky top-[48px] z-20">
-              {hg.headers.map(h => (
-                <th key={h.id} className="px-3 py-2 text-left font-medium">
-                  {flexRender(h.column.columnDef.header, h.getContext())}
-                </th>
+              </colgroup>
+              
+              <thead className="bg-background">
+              {table.getHeaderGroups().map(hg => (
+                <tr key={hg.id}>
+                  {hg.headers.map(h => (
+                    <th
+                      key={h.id}
+                      className="px-3 py-2 text-left font-medium
+                                 sticky top-0 z-10 bg-background"
+                    >
+                      {flexRender(h.column.columnDef.header, h.getContext())}
+                    </th>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-          </thead>
-        </table>
-        <div
-          ref={scrollElRef}
-          className="relative overflow-auto h-full"
-          style={{
-            height: virtualizerOptions.containerHeight ?? "100%",
-            pointerEvents: isFetchingNextPage ? "none" : "auto",
-          }}
-          aria-busy={isFetchingNextPage}
-        >
-          {showLoader && (
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-16
-                              flex items-center justify-center rounded-md
-                              bg-background/90 px-3 py-1 shadow pointer-events-none">
-                <span className="text-sm text-muted-foreground">
-                  Fetching more results…
-                </span>
-            </div>
-          )}
-          
-          <Table className="w-full caption-bottom text-sm border-separate border-spacing-0">
-            <TableBody>
-              {paddingTop > 0 && (
-                <TableRow>
-                  <TableCell style={{ height: paddingTop, padding: 0 }} colSpan={columns.length}/>
-                </TableRow>
-              )}
+              </thead>
               
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                const row = rows[virtualRow.index];
-                if (!row) return null;
-                // eslint-disable-next-line react/prop-types
-                return <Collapsible key={row?.id} row={row}/>;
-              })}
-              
-              {paddingBottom > 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    style={{ height: `${paddingBottom}px`, padding: 0 }}
-                  />
+              <TableBody>
+                {paddingTop > 0 && (
+                  <TableRow>
+                    <TableCell style={{ height: paddingTop, padding: 0 }} colSpan={columns.length}/>
+                  </TableRow>
+                )}
+                
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const row = rows[virtualRow.index];
+                  if (!row) return null;
+                  // eslint-disable-next-line react/prop-types
+                  return <Collapsible key={row?.id} row={row}/>;
+                })}
+                
+                {paddingBottom > 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      style={{ height: `${paddingBottom}px`, padding: 0 }}
+                    />
+                  </TableRow>
+                )}
+                {isFetchingNextPage && (
+                  <TableRow>
+                    <TableCell colSpan={columns.length}
+                               className="py-2 text-center text-muted-foreground text-sm italic">
+                      Fetching more results...
+                    </TableCell>
+                  </TableRow>
+                )}
+                <TableRow ref={sentinelRef}>
+                  <TableCell colSpan={columns.length} className="h-24 p-0"/>
                 </TableRow>
-              )}
-              {isFetchingNextPage && (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="py-2 text-center text-muted-foreground text-sm italic">
-                    Fetching more results...
-                  </TableCell>
-                </TableRow>
-              )}
-              <TableRow ref={sentinelRef}>
-                <TableCell colSpan={columns.length} className="h-24 p-0"/>
-              </TableRow>
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </ResizablePanel>
       
