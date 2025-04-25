@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableHandle } from "@/components/DataTable";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,12 +32,19 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
 import {
   commentsBySpanQueryOptions,
+  fetchCommentsBySpan,
 } from "@/utils/comments";
-import { fetchSpan } from "@/utils/spans";
+import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ColumnDef, FilterFn, Row, Table } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  FilterFn,
+  Row,
+  RowSelectionState,
+  Table,
+} from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
@@ -49,6 +57,15 @@ import {
   SmileIcon,
   Users,
 } from "lucide-react";
+import {
+  Dispatch,
+  SetStateAction,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,38 +75,39 @@ const tagFilter = (
   filterValue: string
 ): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
-  
+
   // If there's no filter value, return true (show all rows)
   if (!filterValue || filterValue.trim() === "") {
     return true;
   }
-  
+
   // If there are no tags or tags is not an array, return false
   if (!Array.isArray(tags) || tags.length === 0) {
     return false;
   }
-  
+
   // Convert filter value to lowercase for case-insensitive comparison
   const filterLower = filterValue.toLowerCase();
-  
+
   // Check if any tag name includes the filter value
   return tags.some((tag) => tag.name.toLowerCase().includes(filterLower));
 };
 
 // Custom filter function
-const onlyParentFilter: FilterFn<SpanPublic> = (row, _columnId, value) => {
-  const query = String(value).trim().toLowerCase();
-  if (!query) return true;
-  
-  if (row.depth > 0) return true;
-  
-  const hit = (span: SpanPublic): boolean =>
-    span.display_name?.toLowerCase().includes(query) ??
-    (span.child_spans ?? []).some(hit);
-  
-  return hit(row.original);
-};
+const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
+  const isParent =
+    row.original.child_spans && row.original.child_spans.length > 0;
 
+  if (isParent) {
+    const cellValue = row.getValue(columnId);
+    return String(cellValue)
+      .toLowerCase()
+      .includes(String(filterValue).toLowerCase());
+  }
+
+  // Always include child rows
+  return true;
+};
 const findRowWithUuid = (
   rows: SpanPublic[],
   targetUuid: string | undefined
@@ -99,7 +117,7 @@ const findRowWithUuid = (
     if (row.uuid === targetUuid) {
       return row;
     }
-    
+
     if (row.child_spans?.length) {
       const found = findRowWithUuid(row.child_spans, targetUuid);
       if (found) return found;
@@ -108,7 +126,7 @@ const findRowWithUuid = (
   return undefined;
 };
 
-const Spacer = () => <div className='w-4 h-4'/>;
+const Spacer = () => <div className='w-4 h-4' />;
 const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   return (
     <ChevronRight
@@ -140,8 +158,8 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
         toast.error("Failed to navigate");
       });
     }
-  }, [data, path]);
-  
+  }, [data, navigate, path]);
+
   const filteredAnnotations = data.annotations.filter(
     (annotation) => annotation.label
   );
@@ -155,10 +173,9 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           variant='outline'
           onClick={() => setShowComments(!showComments)}
         >
-          <MessageSquareMore/>
+          <MessageSquareMore />
           {spanComments.length > 0 && (
-            <div
-              className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
@@ -169,10 +186,9 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           variant='outline'
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
-          <NotebookPen/>
+          <NotebookPen />
           {filteredAnnotations.length > 0 && (
-            <div
-              className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
               {filteredAnnotations.length > 9
                 ? "9+"
                 : filteredAnnotations.length}
@@ -180,36 +196,36 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
           )}
         </Button>
       </div>
-      
+
       {/* Scrollable content area */}
       <div className='flex-1 overflow-auto pb-4'>
         {/* Comments section with max height and scrolling */}
         {showComments && (
           <div className='mb-4'>
             <div className='max-h-64 overflow-y-auto mb-4'>
-              <CommentCards spanUuid={data.uuid}/>
+              <CommentCards spanUuid={data.uuid} />
             </div>
-            <Separator/>
+            <Separator />
             <div className='mt-4'>
-              <AddComment spanUuid={data.uuid}/>
+              <AddComment spanUuid={data.uuid} />
             </div>
           </div>
         )}
-        
+
         {/* Annotations section with max height and scrolling */}
         {showAnnotations && (
           <div className='mb-4 max-h-64 overflow-y-auto'>
-            <AnnotationsTable data={filteredAnnotations}/>
+            <AnnotationsTable data={filteredAnnotations} />
           </div>
         )}
-        
+
         {/* Row details panel */}
         <div className='p-4 border overflow-auto rounded-md mt-4'>
           <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
           {data.scope === Scope.LILYPAD ? (
-            <LilypadPanel spanUuid={data.uuid}/>
+            <LilypadPanel spanUuid={data.uuid} />
           ) : (
-            <LlmPanel spanUuid={data.uuid}/>
+            <LlmPanel spanUuid={data.uuid} />
           )}
         </div>
       </div>
@@ -236,30 +252,27 @@ interface TracesTableProps {
 
 export const TracesTable = ({
   data,
+  projectUuid,
   traceUuid,
   path,
   hideCompare = false,
-  onReachEnd,
-  onLoadNewer,
-  isLoadingNewer = false,
-  isFetchingNextPage = false,
-}: TracesTableProps) => {
+}: {
+  data: SpanPublic[];
+  traceUuid?: string;
+  path?: string;
+  hideCompare?: boolean;
+}) => {
+  const selectRow = findRowWithUuid(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const tableRef = useRef<DataTableHandle>(null);
-  
-  const [nameFilter, setName] = useState("");
-  
-  useEffect(() => {
-    tableRef.current?.scrollTop();
-  }, [nameFilter]);
-  
+
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<SpanPublic[]>([]);
   const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
-  
+
   // Function to handle checkbox changes
   const handleCheckboxChange = (row: SpanPublic, checked: boolean) => {
     if (checked) {
@@ -270,28 +283,18 @@ export const TracesTable = ({
       );
     }
   };
-  
-  const sentinelRef = useRef<HTMLTableRowElement>(null);
-  const prevLenRef = useRef<number>(data.length);
-  useLayoutEffect(() => {
-    if (data.length < prevLenRef.current) {
-      virtualizerRef?.current?.scrollTo({ top: 0, behavior: "auto" });
-    }
-    prevLenRef.current = data.length;
-  }, [data.length])
-  
-  const findRow = (rows: SpanPublic[], uuid?: string) =>
-    rows.find((r) => r.uuid === uuid) ??
-    rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
-  
-  const selectRow = findRow(data, traceUuid);
-  const isSubRow = selectRow?.parent_span_id;
-  
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
         queryKey: ["spans", row.uuid],
         queryFn: () => fetchSpan(row.uuid),
+        staleTime: 60000,
+      })
+      .catch(() => toast.error("Failed to prefetch"));
+    queryClient
+      .prefetchQuery({
+        queryKey: ["spans", row.uuid, "comments"],
+        queryFn: () => fetchCommentsBySpan(row.uuid),
         staleTime: 60000,
       })
       .catch(() => toast.error("Failed to prefetch"));
@@ -301,26 +304,19 @@ export const TracesTable = ({
       accessorKey: "display_name",
       enableHiding: false,
       filterFn: onlyParentFilter,
-      header: () => {
+      header: ({ table }) => {
         return hideCompare ? (
           "Name"
         ) : (
           <>
             <Checkbox
               checked={
-                selectedRows.length > 0 && selectedRows.length < data.length
-                  ? "indeterminate"
-                  : selectedRows.length > 0
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={() => {
-                if (selectedRows.length > 0) {
-                  setSelectedRows([]);
-                } else {
-                  setSelectedRows(
-                    data.filter((row) => row.scope === Scope.LILYPAD)
-                  );
-                }
-              }}
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
               aria-label='Select all'
               className='mr-2'
             />
@@ -340,7 +336,7 @@ export const TracesTable = ({
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }}>
             <div className='flex items-center gap-2'>
-              {hasSubRows ? <ExpandRowButton row={row}/> : <Spacer/>}
+              {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
               {!hideCompare && isLilypad && (
                 <Checkbox
                   onClick={(e) => e.stopPropagation()}
@@ -369,11 +365,11 @@ export const TracesTable = ({
       filterFn: tagFilter,
       cell: ({ row }) => {
         const tags: TagPublic[] = row.getValue("tags");
-        
+
         if (!Array.isArray(tags) || tags.length === 0) {
           return null;
         }
-        
+
         return (
           <div className='flex items-center gap-1'>
             <Badge pill variant='outline' size='sm' key={tags[0].uuid}>
@@ -402,12 +398,12 @@ export const TracesTable = ({
             Version
             {column.getIsSorted() ? (
               column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4'/>
+                <ArrowUp className='ml-2 h-4 w-4' />
               ) : (
-                <ArrowDown className='ml-2 h-4 w-4'/>
+                <ArrowDown className='ml-2 h-4 w-4' />
               )
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4'/>
+              <ArrowUpDown className='ml-2 h-4 w-4' />
             )}
           </Button>
         );
@@ -447,12 +443,12 @@ export const TracesTable = ({
             Timestamp
             {column.getIsSorted() ? (
               column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4'/>
+                <ArrowUp className='ml-2 h-4 w-4' />
               ) : (
-                <ArrowDown className='ml-2 h-4 w-4'/>
+                <ArrowDown className='ml-2 h-4 w-4' />
               )
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4'/>
+              <ArrowUpDown className='ml-2 h-4 w-4' />
             )}
           </Button>
         );
@@ -469,7 +465,7 @@ export const TracesTable = ({
       accessorKey: "annotations",
       header: ({ table }) => {
         const isFiltered = !!table.getColumn("annotations")?.getFilterValue();
-        
+
         return (
           <div className='flex items-center'>
             <Button
@@ -498,14 +494,14 @@ export const TracesTable = ({
           (annotation) => annotation.label
         );
         if (filteredAnnotations.length > 0) {
-          return <NotebookPen className='w-4 h-4'/>;
+          return <NotebookPen className='w-4 h-4' />;
         }
         return null;
       },
       filterFn: (row, id, filterValue) => {
         // If no filter value is set, show all rows
         if (filterValue === undefined) return true;
-        
+
         // If filter is applied, only show rows with annotations
         const annotations: AnnotationPublic[] = row.getValue(id);
         return annotations.length > 0;
@@ -520,7 +516,7 @@ export const TracesTable = ({
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' className='h-8 w-8 p-0'>
                 <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4'/>
+                <MoreHorizontal className='h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -542,7 +538,7 @@ export const TracesTable = ({
                     Open Playground
                   </DropdownMenuItem>
                 )}
-              <DropdownMenuSeparator/>
+              <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -584,24 +580,24 @@ export const TracesTable = ({
           <div className='w-1/2'>
             <h3 className='text-lg font-semibold'>Row 1</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
               {selectedRows[0].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[0].uuid}/>
+                <LilypadPanel spanUuid={selectedRows[0].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[0].uuid}/>
+                <LlmPanel spanUuid={selectedRows[0].uuid} />
               )}
             </Suspense>
           </div>
           <div className='w-1/2'>
             <h3 className='text-lg font-semibold'>Row 2</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
               {selectedRows[1].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[1].uuid}/>
+                <LilypadPanel spanUuid={selectedRows[1].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[1].uuid}/>
+                <LlmPanel spanUuid={selectedRows[1].uuid} />
               )}
             </Suspense>
           </div>
@@ -609,131 +605,186 @@ export const TracesTable = ({
       </div>
     );
   };
-  const customControls = (table: Table<SpanPublic>) => (
-    <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Filter names…"
-          value={nameFilter}
-          onChange={(e) => {
-            const v = e.target.value;
-            setName(v);
-            table.getColumn("display_name")?.setFilterValue(v);
-          }}
-          className="max-w-[200px]"
-        />
-        <div className="relative flex items-center">
-          <Input
-            key={`tags-input`}
-            placeholder='Filter tags...'
-            value={(table.getColumn("tags")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => {
-              table.getColumn("tags")?.setFilterValue(event.target.value);
-            }}
-            className="pr-10 max-w-[200px]"
-          />
-          <Popover>
-            <PopoverTrigger asChild>
-              <SmileIcon
-                className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100'/>
-            </PopoverTrigger>
-            <PopoverContent className='w-fit p-0'>
-              <EmojiPicker
-                className='h-[342px]'
-                onEmojiSelect={(emojiData) => {
-                  const currFilter =
-                    (table.getColumn("tags")?.getFilterValue() as string) ?? "";
-                  table
-                    .getColumn("tags")
-                    ?.setFilterValue(currFilter + emojiData.emoji);
+  const customControls = (table: Table<SpanPublic>) => {
+    const selectedRows = selectedRowsRef.current;
+    return (
+      <>
+        <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Filter names…"
+              value={nameFilter}
+              onChange={(e) => {
+                const v = e.target.value;
+                setName(v);
+                table.getColumn("display_name")?.setFilterValue(v);
+              }}
+              className="max-w-[200px]"
+            />
+            <div className="relative flex items-center">
+              <Input
+                key={`tags-input`}
+                placeholder='Filter tags...'
+                value={(table.getColumn("tags")?.getFilterValue() as string) ?? ""}
+                onChange={(event) => {
+                  table.getColumn("tags")?.setFilterValue(event.target.value);
                 }}
-              >
-                <EmojiPickerContent/>
-              </EmojiPicker>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <LilypadDialog
-          icon={<Users/>}
-          title={"Annotate selected traces"}
-          description={`${selectedRows.length} trace(s) selected.`}
-          buttonProps={{
-            disabled: selectedRows.length === 0,
-          }}
-          tooltipContent={"Add selected traces to your annotation queue."}
-        >
-          <QueueForm spans={selectedRows}/>
-        </LilypadDialog>
-        {!hideCompare && (
-          <>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() =>
-                setToggleCompareMode(
-                  (prevToggleCompareMode) => !prevToggleCompareMode
-                )
-              }
-              className='whitespace-nowrap'
-              disabled={selectedRows.length !== 2}
+                className='pr-10' // Add right padding to make room for the icon
+              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <SmileIcon className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100' />
+                </PopoverTrigger>
+                <PopoverContent className='w-fit p-0'>
+                  <EmojiPicker
+                    className='h-[342px]'
+                    onEmojiSelect={(emojiData) => {
+                      const currFilter =
+                        (table.getColumn("tags")?.getFilterValue() as string) ?? "";
+                      table
+                        .getColumn("tags")
+                        ?.setFilterValue(currFilter + emojiData.emoji);
+                    }}
+                  >
+                    <EmojiPickerContent />
+                  </EmojiPicker>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <LilypadDialog
+              icon={<Users />}
+              title={"Annotate selected traces"}
+              description={`${selectedRows.length} trace(s) selected.`}
+              buttonProps={{
+                disabled: selectedRows.length === 0,
+              }}
+              tooltipContent={"Add selected traces to your annotation queue."}
             >
-              Compare
-            </Button>
-          </>
-        )}
-        {onLoadNewer && (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              void onLoadNewer();
-            }}
-            disabled={isLoadingNewer}
-            className="flex items-center gap-1 ml-4"
-          >
-            {isLoadingNewer ? (
-              <Loader2 className="h-4 w-4 animate-spin"/>
-            ) : (
-              <ArrowUp className="h-4 w-4"/>
+              <QueueForm spans={selectedRows} />
+            </LilypadDialog>
+            {!hideCompare && (
+              <>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() =>
+                    setToggleCompareMode(
+                      (prevToggleCompareMode) => !prevToggleCompareMode
+                    )
+                  }
+                  className='whitespace-nowrap'
+                  disabled={selectedRows.length !== 2}
+                >
+                  Compare
+                </Button>
+              </>
             )}
-            Load newer
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-  
+            {onLoadNewer && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  void onLoadNewer();
+                }}
+                disabled={isLoadingNewer}
+                className="flex items-center gap-1 ml-4"
+              >
+                {isLoadingNewer ? (
+                  <Loader2 className="h-4 w-4 animate-spin"/>
+                ) : (
+                  <ArrowUp className="h-4 w-4"/>
+                )}
+                Load newer
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  };
   if (toggleCompareMode) {
-    return <CompareDetailPanel/>;
+    return <CompareDetailPanel />;
   }
-  
+
   return (
-    <DataTable<SpanPublic>
-      columns={columns}
-      data={data}
-      virtualizerRef={virtualizerRef}
-      ref={tableRef}
-      virtualizerOptions={{
-        count: data.length,
-        estimateSize: () => 45,
-        overscan: 20,
-      }}
-      onRowHover={prefetch}
-      customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
-      customGetRowId={(row) => row.span_id}
-      DetailPanel={DetailPanel}
-      defaultPanelSize={50}
-      filterColumn={hideCompare ? "display_name" : undefined}
-      selectRow={selectRow}
-      getRowCanExpand={getRowCanExpand}
-      getSubRows={getSubRows}
-      customControls={customControls}
-      defaultSorting={[{ id: "timestamp", desc: true }]}
-      endRef={sentinelRef}
-      onReachEnd={onReachEnd}
-      isFetchingNextPage={isFetchingNextPage}
-      onDetailPanelClose={handleDetailPanelClose}
-      path={path}
-    />
+    <>
+      <DataTable<SpanPublic>
+        columns={columns}
+        data={data}
+        virtualizerRef={virtualizerRef}
+        ref={tableRef}
+        virtualizerOptions={{
+          count: data.length,
+          estimateSize: () => 45,
+          overscan: 20,
+        }}
+        onRowHover={prefetch}
+        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customGetRowId={(row) => row.span_id}
+        DetailPanel={DetailPanel}
+        defaultPanelSize={50}
+        filterColumn={!hideCompare ? undefined : "display_name"}
+        selectRow={selectRow}
+        getRowCanExpand={getRowCanExpand}
+        getSubRows={getSubRows}
+        customControls={customControls}
+        onRowSelectionChange={handleRowSelectionChange}
+        defaultSorting={
+          isSearch
+            ? [{ id: "score", desc: true }]
+            : [{ id: "timestamp", desc: true }]
+        }
+        endRef={sentinelRef}
+        onReachEnd={onReachEnd}
+        isFetchingNextPage={isFetchingNextPage}
+        onDetailPanelClose={handleDetailPanelClose}
+        path={path}
+      />
+      {deleteSpan && (
+        <DeleteSpanDialog
+          setOpen={setDeleteSpan}
+          spanUuid={deleteSpan}
+          projectUuid={projectUuid}
+        />
+      )}
+    </>
+  );
+};
+
+interface DeleteSpanDialogProps {
+  projectUuid: string;
+  spanUuid: string;
+  setOpen: Dispatch<SetStateAction<string | null>>;
+}
+const DeleteSpanDialog = ({
+  projectUuid,
+  spanUuid,
+  setOpen,
+}: DeleteSpanDialogProps) => {
+  const deleteSpanMutation = useDeleteSpanMutation();
+  const handleSpanDelete = async () => {
+    await deleteSpanMutation
+      .mutateAsync({
+        projectUuid,
+        spanUuid,
+      })
+      .catch(() => toast.error("Failed to delete span"));
+    toast.success("Span deleted successfully");
+    setOpen(null);
+  };
+  return (
+    <LilypadDialog
+      open={Boolean(spanUuid)}
+      onOpenChange={() => setOpen(null)}
+      noTrigger
+      title={"Delete Span"}
+      description={"Are you sure you want to delete this span?"}
+    >
+      <DialogFooter>
+        <Button key='submit' onClick={handleSpanDelete} className='w-full'>
+          Delete Span
+        </Button>
+      </DialogFooter>
+    </LilypadDialog>
   );
 };

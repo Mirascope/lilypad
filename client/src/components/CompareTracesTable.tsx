@@ -1,6 +1,9 @@
+import { SearchBar } from "@/components/SearchBar";
 import { TracesTable } from "@/components/TracesTable";
-import { usePaginatedSpansByFunction } from "@/hooks/usePaginatedQuery.tsx";
-import { useMemo } from "react";
+import { SpanPublic } from "@/types/types";
+import { spansByFunctionQueryOptions } from "@/utils/spans";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { useState } from "react";
 
 export const CompareTracesTable = ({
   projectUuid,
@@ -11,34 +14,32 @@ export const CompareTracesTable = ({
   firstFunctionUuid: string;
   secondFunctionUuid?: string;
 }) => {
-  const first = usePaginatedSpansByFunction(projectUuid, firstFunctionUuid);
-  const second = usePaginatedSpansByFunction(
-    projectUuid,
-    secondFunctionUuid ?? "__none__",
-    { enabled: !!secondFunctionUuid }
-  );
-  
-  const flattened = useMemo(() => {
-    const firstPages = first.data?.pages ?? []
-    const secondPages = second.data?.pages ?? []
-    return [...firstPages.flatMap(p => p.items), ...secondPages.flatMap(p => p.items)]
-  }, [first.data, second.data])
-  
-  const isFetchingNextPage =
-    first.isFetchingNextPage || second.isFetchingNextPage;
-  
+  const data = useSuspenseQueries({
+    queries: [firstFunctionUuid, secondFunctionUuid]
+      .filter((uuid) => uuid !== undefined)
+      .map((uuid) => ({
+        ...spansByFunctionQueryOptions(projectUuid, uuid),
+      })),
+  });
+  const defaultData = data.map((result) => result.data).flat();
+  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   return (
-    <TracesTable
-      data={flattened}
-      isFetchingNextPage={isFetchingNextPage}
-      onReachEnd={() => {
-        if (first.hasNextPage && !first.isFetchingNextPage) {
-          void first.fetchNextPage();
+    <div className='py-2'>
+      <SearchBar
+        projectUuid={projectUuid}
+        onDataChange={setDisplayData}
+        filterFunction={(data) =>
+          data.filter(
+            (item) =>
+              item.function_uuid === firstFunctionUuid ||
+              item.function_uuid === secondFunctionUuid
+          )
         }
-        if (second.hasNextPage && !second.isFetchingNextPage) {
-          void second.fetchNextPage();
-        }
-      }}
-    />
+      />
+      <TracesTable
+        data={displayData ?? defaultData}
+        projectUuid={projectUuid}
+      />
+    </div>
   );
 };

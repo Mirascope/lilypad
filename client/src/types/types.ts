@@ -956,6 +956,8 @@ export interface SpanMoreDetails {
   provider: string;
   /** Model */
   model: string;
+  /** Instrumentation Scope name of the span */
+  scope: Scope;
   /** Input Tokens */
   input_tokens?: number | null;
   /** Output Tokens */
@@ -1036,6 +1038,8 @@ export interface SpanPublic {
   status?: string | null;
   /** Tags */
   tags: TagPublic[];
+  /** Score */
+  score?: number | null;
 }
 
 /**

@@ -10,9 +10,15 @@ import { z } from "zod";
 import { projectQueryOptions } from "@/utils/projects";
 import { tracesInfiniteQueryOptions } from "@/utils/traces";
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TracesTable } from "@/components/TracesTable";
 import { Typography } from "@/components/ui/typography";
+import { SpanPublic } from "@/types/types";
+import { projectQueryOptions } from "@/utils/projects";
+import { spansQueryOptions } from "@/utils/spans";
+import { createFileRoute, useParams } from "@tanstack/react-router";
+import { Suspense, useState } from "react";
 
 const INIT_LIMIT = 80;
 
@@ -21,8 +27,8 @@ export const Route = createFileRoute(
 )({
   validateSearch: z.object({}).optional(),
   component: () => (
-    <Suspense fallback={<LilypadLoading/>}>
-      <Trace/>
+    <Suspense fallback={<LilypadLoading />}>
+      <Trace />
     </Suspense>
   ),
 });
@@ -57,7 +63,10 @@ export const TraceBody = () => {
     isFetchingNextPage,
     refetch,
     isRefetching,
+    defaultData,
   } = useInfiniteQuery(tracesInfiniteQueryOptions(projectUuid, pageSize));
+  
+  const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
   
   const pages = data?.pages ?? [];
   const flattened = pages.flatMap((p) => p.items);
@@ -82,14 +91,23 @@ export const TraceBody = () => {
     });
   };
   return (
-    <TracesTable
-      data={flattened}
-      traceUuid={traceUuid}
-      path={Route.fullPath}
-      onReachEnd={handleReachEnd}
-      isFetchingNextPage={isFetchingNextPage}
-      onLoadNewer={handleLoadNewer}
-      isLoadingNewer={isRefetching}
-    />
+    <div className='flex flex-col h-full'>
+      <div className='flex-shrink-0 py-4'>
+        <SearchBar projectUuid={projectUuid} onDataChange={setDisplayData} />
+      </div>
+      <div className='flex-1 min-h-0 overflow-auto'>
+        <TracesTable
+          data={displayData ?? defaultData}
+          traceUuid={traceUuid}
+          path={Route.fullPath}
+          isSearch={Boolean(displayData)}
+          onReachEnd={handleReachEnd}
+          isFetchingNextPage={isFetchingNextPage}
+          projectUuid={projectUuid}
+          onLoadNewer={handleLoadNewer}
+          isLoadingNewer={isRefetching}
+        />
+      </div>
+    </div>
   );
 };

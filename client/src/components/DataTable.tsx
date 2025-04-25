@@ -1,10 +1,11 @@
+import CardSkeleton from "@/components/CardSkeleton";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import CardSkeleton from "@/components/CardSkeleton";
 import { Input } from "@/components/ui/input";
 import {
   ResizableHandle,
@@ -26,6 +27,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  OnChangeFn,
   Row,
   RowSelectionState,
   SortingState,
@@ -35,11 +37,10 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { forwardRef, JSX, Suspense, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Button } from "@/components/ui/button.tsx";
+import React, { ReactNode, Suspense, useEffect, useState } from "react";
 
 interface VirtualizerOptions {
-  count?: number;
+  count: number;
   estimateSize?: (index: number) => number;
   overscan?: number;
   containerHeight?: number;
@@ -55,7 +56,8 @@ interface GenericDataTableProps<T> {
   onRowClick?: (row: T) => void;
   onRowHover?: (row: T) => void;
   defaultPanelSize?: number;
-  virtualizerOptions?: VirtualizerOptions;
+  virtualizerRef?: React.RefObject<HTMLDivElement | null>;
+  virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
@@ -71,6 +73,7 @@ interface GenericDataTableProps<T> {
   onReachEnd?: () => void;
   virtualizerRef?: React.RefObject<HTMLDivElement | null>;
   endRef?: React.Ref<HTMLTableRowElement>;
+  customComponent?: ReactNode;
 }
 
 export interface DataTableHandle {
@@ -347,8 +350,9 @@ function DataTableInner<T extends { uuid: string }>({
       
       {detailRow && DetailPanel && (
         <>
-          <ResizableHandle withHandle/>
+          <ResizableHandle withHandle />
           <ResizablePanel
+            id='detail-panel'
             defaultSize={defaultPanelSize}
             order={2}
             collapsible
@@ -360,9 +364,9 @@ function DataTableInner<T extends { uuid: string }>({
             className="p-4"
           >
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col'/>}
+              fallback={<CardSkeleton items={5} className='flex flex-col' />}
             >
-              <DetailPanel data={detailRow} path={path}/>
+              <DetailPanel data={detailRow} path={path} />
             </Suspense>
           </ResizablePanel>
         </>

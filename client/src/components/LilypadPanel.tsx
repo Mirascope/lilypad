@@ -1,4 +1,3 @@
-import { ArgsCards } from "@/components/ArgsCards";
 import { TagPopover } from "@/components/TagPopover";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +21,9 @@ hljs.registerLanguage("markdown", markdown);
 
 export const LilypadPanel = ({
   spanUuid,
-  showJsonArgs,
   dataProps,
 }: {
   spanUuid: string;
-  showJsonArgs?: boolean;
   dataProps?: JsonViewProps<object>;
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
@@ -76,19 +73,6 @@ export const LilypadPanel = ({
       {span.events &&
         span.events.length > 0 &&
         renderEventsContainer(span.events)}
-      {span.arg_values &&
-        (showJsonArgs ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{"Input"}</CardTitle>
-            </CardHeader>
-            <CardContent className='flex flex-col'>
-              <JsonView value={span.arg_values} />
-            </CardContent>
-          </Card>
-        ) : (
-          <ArgsCards args={span.arg_values} />
-        ))}
       {span.template && (
         <Card>
           <CardHeader>
@@ -100,7 +84,23 @@ export const LilypadPanel = ({
         </Card>
       )}
       {span.messages.length > 0 && renderMessagesContainer(span.messages)}
-      {renderCardOutput(span.output)}
+      <div className='flex gap-4 flex-wrap'>
+        {span.arg_values && (
+          <Card className='w-[calc(50%-0.5rem)] min-w-[300px] flex-grow'>
+            <CardHeader>
+              <CardTitle>{"Input"}</CardTitle>
+            </CardHeader>
+            <CardContent className='overflow-x-auto'>
+              <JsonView value={span.arg_values} />
+            </CardContent>
+          </Card>
+        )}
+        {span.output && (
+          <Card className='w-[calc(50%-0.5rem)] min-w-[300px] flex-grow'>
+            {renderCardOutput(span.output)}
+          </Card>
+        )}
+      </div>
       <TraceCodeTab span={span} />
       {renderMetadata(span.data)}
       {renderData({
