@@ -473,13 +473,13 @@ export const TracesTable = ({
       accessorKey: "created_at",
       id: "timestamp",
       header: ({ table }) => {
-        const isAsc = order === 'asc' ? 'desc' : 'asc'
+        const isAsc = order === 'asc'
         return (
           <Button
             className='p-0'
             variant='ghost'
             onClick={() => {
-              const next = order === 'asc' ? 'desc' : 'asc';
+              const next = isAsc ? 'desc' : 'asc';
               onOrderChange(next);
               table.setSorting([{ id: "timestamp", desc: next === "desc" }]);
             }}
