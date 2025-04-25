@@ -599,6 +599,5 @@ class SpanMoreDetails(BaseModel):
                 "data": data,
                 "status": status,
                 "events": events,
-                "run_id": span.run_id,
             },
         )
