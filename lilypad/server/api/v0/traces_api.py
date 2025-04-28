@@ -23,6 +23,7 @@ from ...models.spans import Scope, SpanTable
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...services import OpenSearchService, SpanService, get_opensearch_service
+from ...services.projects import ProjectService
 
 traces_router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -153,6 +154,7 @@ async def traces(
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
     background_tasks: BackgroundTasks,
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
 ) -> Sequence[SpanTable]:
     """Create span traces."""
     if is_lilypad_cloud:
@@ -178,8 +180,10 @@ async def traces(
 
     for root_span in root_spans:
         await _process_span(root_span, parent_to_children, span_creates)
-
-    span_tables = span_service.create_bulk_records(span_creates, project_uuid)
+    project = project_service.find_record_no_organization(project_uuid)
+    span_tables = span_service.create_bulk_records(
+        span_creates, project_uuid, project.organization_uuid
+    )
     if opensearch_service.is_enabled:
         trace_dicts = [span.model_dump() for span in span_tables]
         background_tasks.add_task(

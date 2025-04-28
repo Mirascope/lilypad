@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Typography } from "@/components/ui/typography";
-import { renderData, renderMessagesContainer } from "@/utils/panel-utils";
+import { MessagesContainer, renderData } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import hljs from "highlight.js/lib/core";
@@ -12,7 +12,6 @@ hljs.registerLanguage("markdown", markdown);
 
 export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-
   return (
     <div className='flex flex-col gap-4'>
       <Typography variant='h3'>{span.display_name}</Typography>
@@ -28,12 +27,14 @@ export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
             <span>{span.input_tokens + span.output_tokens}</span>
           </Badge>
         )}
-        {span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
+        <Badge>${span.cost?.toFixed(5)}</Badge>
         {span.duration_ms && (
           <Badge>{(span.duration_ms / 1_000_000_000).toFixed(3)}s</Badge>
         )}
       </div>
-      {span.messages.length > 0 && renderMessagesContainer(span.messages)}
+      {span.messages.length > 0 && (
+        <MessagesContainer messages={span.messages} />
+      )}
       {renderData({
         value: span.data,
       })}

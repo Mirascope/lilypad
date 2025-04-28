@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
 import {
+  MessagesContainer,
   renderCardOutput,
   renderData,
   renderEventsContainer,
-  renderMessagesContainer,
   renderMetadata,
   TraceCodeTab,
 } from "@/utils/panel-utils";
@@ -83,7 +83,9 @@ export const LilypadPanel = ({
           </CardContent>
         </Card>
       )}
-      {span.messages.length > 0 && renderMessagesContainer(span.messages)}
+      {span.messages.length > 0 && (
+        <MessagesContainer messages={span.messages} />
+      )}
       <div className='flex gap-4 flex-wrap'>
         {span.arg_values && (
           <Card className='w-[calc(50%-0.5rem)] min-w-[300px] flex-grow'>

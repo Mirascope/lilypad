@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tab, TraceTab } from "@/types/traces";
 import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
@@ -38,7 +40,10 @@ const MessageCard = ({ role, content }: MessageCardProps) => {
   );
 };
 
-export const renderMessagesCard = (messages: MessageParam[]) => {
+export const renderMessagesCard = (
+  messages: MessageParam[],
+  renderer: "raw" | "markdown"
+) => {
   try {
     return messages.map((message: MessageParam, index: number) => {
       const contents: ReactNode[] = [];
@@ -46,9 +51,15 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
       for (const content of message.content) {
         const key = `messages-${index}-${contentIndex}`;
         if (content.type === "text") {
-          contents.push(
-            <ReactMarkdown key={key}>{content.text}</ReactMarkdown>
-          );
+          if (renderer === "raw") {
+            contents.push(
+              <div key={key} className='whitespace-pre-line'>
+                {content.text}
+              </div>
+            );
+          } else {
+            contents.push(<LilypadMarkdown content={content.text} key={key} />);
+          }
         } else if (content.type === "image") {
           const imgSrc = `data:${content.media_type};base64,${content.image}`;
           contents.push(<img key={key} src={imgSrc} alt='image' />);
@@ -175,14 +186,32 @@ export const renderEventsContainer = (messages: Event[]) => {
   );
 };
 
-export const renderMessagesContainer = (messages: MessageParam[]) => {
+export const MessagesContainer = ({
+  messages,
+}: {
+  messages: MessageParam[];
+}) => {
+  const { updateUserConfig, userConfig } = useAuth();
+  const defaultMessageRenderer =
+    userConfig?.defaultMessageRenderer ?? "markdown";
+  const handleChange = (checked: boolean) => {
+    updateUserConfig({
+      defaultMessageRenderer: checked ? "markdown" : "raw",
+    });
+  };
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{"Messages"}</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          {"Messages"}
+          <Switch
+            checked={defaultMessageRenderer === "markdown"}
+            onCheckedChange={handleChange}
+          />
+        </CardTitle>
       </CardHeader>
       <CardContent className='flex flex-col gap-4'>
-        {renderMessagesCard(messages)}
+        {renderMessagesCard(messages, defaultMessageRenderer)}
       </CardContent>
     </Card>
   );
