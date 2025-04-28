@@ -11,6 +11,7 @@ import {
 
 interface UserConfig {
   defaultTraceTab?: TraceTab;
+  defaultMessageRenderer?: "raw" | "markdown";
 }
 
 export interface AuthContext {
