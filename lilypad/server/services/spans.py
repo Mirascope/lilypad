@@ -232,7 +232,10 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         return count
 
     def create_bulk_records(
-        self, spans_create: Sequence[SpanCreate], project_uuid: UUID
+        self,
+        spans_create: Sequence[SpanCreate],
+        project_uuid: UUID,
+        organization_uuid: UUID,
     ) -> list[SpanTable]:
         """Create multiple annotation records in bulk."""
         spans_to_add = []
@@ -242,7 +245,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             db_span = self.table.model_validate(
                 span_create,
                 update={
-                    "organization_uuid": self.user.active_organization_uuid,
+                    "organization_uuid": organization_uuid,
                     "user_uuid": self.user.uuid,
                     "project_uuid": project_uuid,
                 },

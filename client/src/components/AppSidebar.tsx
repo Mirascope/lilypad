@@ -35,10 +35,7 @@ import {
 } from "@/utils/functions";
 import { projectsQueryOptions } from "@/utils/projects";
 import { fetchSpans } from "@/utils/spans";
-import {
-  userQueryOptions,
-  useUpdateActiveOrganizationMutation,
-} from "@/utils/users";
+import { useUpdateActiveOrganizationMutation } from "@/utils/users";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Link,
@@ -127,8 +124,7 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { activeProject, setProject } = useAuth();
-  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { activeProject, setProject, user } = useAuth();
   const navigate = useNavigate();
   const [createOrganizationOpen, setCreateOrganizationOpen] =
     useState<boolean>(false);
@@ -199,6 +195,16 @@ export const AppSidebar = () => {
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
     if (user?.active_organization_uuid == organizationUuid) return;
+    router
+      .invalidate()
+      .catch(() => toast.error("Failed to invalidate."))
+      .finally(() => {
+        navigate({
+          to: "/projects",
+          replace: true,
+        }).catch(() => toast.error("Failed to navigate"));
+      });
+    setProject(null);
     const newSession = await organizationMutation.mutateAsync({
       organizationUuid,
     });
@@ -218,7 +224,6 @@ export const AppSidebar = () => {
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
     const currentPath = window.location.pathname;
-
     const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
       currentPath
     );
@@ -284,7 +289,7 @@ export const AppSidebar = () => {
           <DropdownMenuCheckboxItem
             key={user_organization.uuid}
             onClick={() =>
-              void handleOrganizationSwitch(user_organization.organization.uuid)
+              handleOrganizationSwitch(user_organization.organization.uuid)
             }
             checked={
               user_organization.organization.uuid ===
