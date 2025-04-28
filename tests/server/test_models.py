@@ -158,6 +158,18 @@ def test_span_models() -> None:
     assert llm_span_public.display_name == "test_system with 'test_model'"
 
 
+def test_span_model_has_run_id() -> None:
+    """Test Span model run_id field."""
+    span = SpanTable(  # pyright: ignore [reportCallIssue]
+        span_id="s1",
+        project_uuid=uuid4(),
+        scope=Scope.LILYPAD,
+        run_id="RUN-XYZ",
+        data={},
+    )
+    assert span.run_id == "RUN-XYZ"
+
+
 def test_relationships(session) -> None:
     """Test model relationships and cascading deletes."""
     # Create test project
