@@ -4,10 +4,8 @@ import posthog
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from .....ee.server.models.user_organizations import UserOrganizationTable, UserRole
 from ...._utils import create_jwt_token
-from ....models import EnvironmentTable, OrganizationTable, UserTable
-from ....schemas.organizations import OrganizationPublic
+from ....models import UserTable
 from ....schemas.users import UserPublic
 
 
@@ -45,29 +43,12 @@ def create_new_user(
     posthog: posthog.Posthog,
 ) -> UserPublic:
     """Create a new user and organization."""
-    organization = OrganizationTable(
-        name=f"{name}'s Workspace",
-    )
-    session.add(organization)
-    session.flush()
-    organization_public = OrganizationPublic.model_validate(organization)
-
-    # Create default environment
-    environment = EnvironmentTable(
-        organization_uuid=organization_public.uuid,
-        name="Default",
-        description="Default environment",
-        is_default=True,
-    )
-    session.add(environment)
-    session.flush()
-
     # Create new user
     user = UserTable(
         email=email,
         first_name=name,
         last_name=last_name,
-        active_organization_uuid=organization_public.uuid,
+        active_organization_uuid=None,
     )
     session.add(user)
     session.flush()
@@ -76,15 +57,6 @@ def create_new_user(
         raise HTTPException(
             status_code=500, detail="User creation failed, please try again"
         )
-
-    # Create user-organization relationship
-    user_organization = UserOrganizationTable(
-        user_uuid=user.uuid,
-        organization_uuid=organization_public.uuid,
-        role=UserRole.OWNER,
-    )
-    session.add(user_organization)
-    session.flush()
 
     # Generate JWT token for new user
     user_public = UserPublic.model_validate(user)

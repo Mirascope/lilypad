@@ -1,7 +1,7 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from ..._utils import get_current_user
 from ...models import SpanTable
 from ...models.spans import Scope
+from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
 from ...schemas.users import UserPublic
@@ -221,6 +222,37 @@ async def delete_spans(
     except Exception:
         return False
     return True
+
+
+@spans_router.get(
+    "/projects/{project_uuid}/functions/{function_uuid}/spans/paginated",
+    response_model=Paginated[SpanPublic],
+)
+async def get_spans_by_function_uuid_paginated(
+    project_uuid: UUID,
+    function_uuid: UUID,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    order: Literal["asc", "desc"] = Query(
+        "desc", pattern="^(asc|desc)$", examples=["asc", "desc"]
+    ),
+) -> Paginated[SpanPublic]:
+    """Get spans for a function with pagination (new, non-breaking)."""
+    items = span_service.find_records_by_function_uuid_paged(
+        project_uuid,
+        function_uuid,
+        limit=limit,
+        offset=offset,
+        order=order,
+    )
+    total = span_service.count_records_by_function_uuid(project_uuid, function_uuid)
+    return Paginated(
+        items=[SpanPublic.model_validate(i) for i in items],
+        limit=limit,
+        offset=offset,
+        total=total,
+    )
 
 
 __all__ = ["spans_router"]

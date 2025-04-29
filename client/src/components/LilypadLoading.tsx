@@ -25,7 +25,7 @@ export const LilypadLoading: React.FC<LilypadLoadingProps> = ({
   }
 
   return (
-    <div className='h-full inset-0 flex items-center justify-center'>
+    <div className="h-full inset-0 flex items-center justify-center">
       <div
         className={cn("flex items-center justify-center", className)}
         style={{ width: size, height: size }}

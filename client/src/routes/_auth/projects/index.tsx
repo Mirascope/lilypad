@@ -3,13 +3,13 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { toast } from "@/hooks/use-toast";
 import { Route as FunctionsRoute } from "@/routes/_auth/projects/$projectUuid/functions/index";
 import { projectsQueryOptions } from "@/utils/projects";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
+import { toast } from "sonner";
 
 interface SearchParams {
   redirect?: string;
@@ -36,9 +36,7 @@ const Projects = () => {
 
   useEffect(() => {
     if (joined) {
-      toast({
-        title: "Successfully joined organization",
-      });
+      toast.success("Successfully joined organization");
     }
   }, [joined]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
@@ -47,10 +45,10 @@ const Projects = () => {
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   return (
-    <div className='p-4 flex flex-col items-center gap-2'>
-      <div className='text-left'>
-        <Typography variant='h3'>Projects</Typography>
-        <p className='text-lg'>Select a project to view functions.</p>
+    <div className="p-4 flex flex-col items-center gap-2">
+      <div className="text-left">
+        <Typography variant="h3">Projects</Typography>
+        <p className="text-lg">Select a project to view functions.</p>
         {projects.length > 0 ? (
           projects.map((project) => (
             <Link
@@ -60,18 +58,18 @@ const Projects = () => {
             >
               <Card
                 key={project.uuid}
-                className='flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'
+                className="flex items-center justify-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={() => setProject(project)}
               >
-                <CardContent className='p-4'>{project.name}</CardContent>
+                <CardContent className="p-4">{project.name}</CardContent>
               </Card>
             </Link>
           ))
         ) : !activeUserOrg ? (
           <div>
             No organization found.
-            <Button variant='ghost' asChild>
-              <Link to='/settings/$' params={{ _splat: "overview" }}>
+            <Button variant="ghost" asChild>
+              <Link to="/settings/$" params={{ _splat: "overview" }}>
                 Create an organization here
               </Link>
             </Button>
@@ -79,8 +77,8 @@ const Projects = () => {
         ) : (
           <div>
             No projects found.
-            <Button variant='ghost' asChild>
-              <Link to='/settings/$' params={{ _splat: "org" }}>
+            <Button variant="ghost" asChild>
+              <Link to="/settings/$" params={{ _splat: "org" }}>
                 Create a project here
               </Link>
             </Button>

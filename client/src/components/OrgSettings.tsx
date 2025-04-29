@@ -1,10 +1,10 @@
 import { useAuth } from "@/auth";
-import { APIKeysTable } from "@/components/APIKeysTable";
-import { EnvironmentsTable } from "@/components/EnvironmentsTable";
+import { APIKeysTable } from "@/components/apiKeys/APIKeysTable";
+import { EnvironmentsTable } from "@/components/environments/EnvironmentsTable";
 import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { UpdateOrganizationDialog } from "@/components/OrganizationDialog";
-import { ProjectsTable } from "@/components/ProjectsTable";
+import { ProjectsTable } from "@/components/projects/ProjectsTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserOrgTable } from "@/components/UserOrgTable";
+import { UserTable } from "@/components/users/UserTable";
 import { UserRole } from "@/types/types";
 import { useDeleteOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
@@ -42,17 +42,17 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
   return (
     <>
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
-      <UserOrgTable />
+      <UserTable />
       <ProjectsTable />
       <EnvironmentsTable />
       <APIKeysTable />
       {activeUserOrg.role === UserRole.OWNER && (
-        <Alert variant='destructive' className='mt-8'>
-          <TriangleAlert className='h-4 w-4 ' />
-          <div className='flex flex-col gap-2'>
+        <Alert variant="destructive" className="mt-8">
+          <TriangleAlert className="h-4 w-4 " />
+          <div className="flex flex-col gap-2">
             <AlertTitle>Danger Zone</AlertTitle>
             <AlertDescription>This action is permanent.</AlertDescription>
-            <div className='mt-2'>
+            <div className="mt-2">
               <DeleteOrganizationButton
                 name={activeUserOrg.organization.name}
               />
@@ -92,8 +92,8 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
   return (
     <LilypadDialog
       customTrigger={
-        <Button variant='destructive'>
-          <Trash className='w-4 h-4 mr-2' /> Delete Organization
+        <Button variant="destructive">
+          <Trash className="w-4 h-4 mr-2" /> Delete Organization
         </Button>
       }
       title={`Delete ${name}`}
@@ -102,13 +102,13 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
       <Form {...methods}>
         <form
           onSubmit={methods.handleSubmit(handleSubmit)}
-          className='space-y-6'
+          className="space-y-6"
         >
-          <p className='text-red-500'>WARNING: This action is final.</p>
+          <p className="text-red-500">WARNING: This action is final.</p>
           <FormField
-            key='organizationName'
+            key="organizationName"
             control={methods.control}
-            name='organizationName'
+            name="organizationName"
             rules={{
               required: "Organization name is required",
               validate: (value) =>
@@ -129,11 +129,11 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
           />
           <DialogFooter>
             <Button
-              key='submit'
-              type='submit'
-              variant='outlineDestructive'
+              key="submit"
+              type="submit"
+              variant="outlineDestructive"
               disabled={methods.formState.isSubmitting}
-              className='w-full'
+              className="w-full"
             >
               {methods.formState.isSubmitting ? "Deleting..." : "Delete"}
             </Button>

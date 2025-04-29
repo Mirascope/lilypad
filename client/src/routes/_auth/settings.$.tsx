@@ -5,7 +5,6 @@ import { SettingsLayout } from "@/components/SettingsLayout";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TagsTable } from "@/components/TagsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -22,6 +21,7 @@ import {
   Tag,
 } from "lucide-react";
 import { JSX, ReactNode, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
@@ -36,7 +36,6 @@ interface Tab {
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const params = useParams({
     from: Route.id,
@@ -78,7 +77,7 @@ const Settings = () => {
       component: (
         <Suspense
           fallback={
-            <div className='flex flex-col gap-10'>
+            <div className="flex flex-col gap-10">
               <TableSkeleton rows={2} columns={3} />
               <TableSkeleton rows={2} columns={2} />
               <TableSkeleton rows={2} columns={3} />
@@ -91,16 +90,16 @@ const Settings = () => {
       ),
       title: (
         <div
-          className='flex items-center gap-2 cursor-pointer'
+          className="flex items-center gap-2 cursor-pointer"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <h1 className='text-xl font-semibold'>
+          <h1 className="text-xl font-semibold">
             {activeUserOrg?.organization.name}&apos;s Settings
           </h1>
           {isHovered && (
             <Pencil
-              className='h-4 w-4 text-gray-500'
+              className="h-4 w-4 text-gray-500"
               onClick={() => setOpen(true)}
             />
           )}
@@ -130,21 +129,13 @@ const Settings = () => {
       navigate({
         to: `/settings/${tab}`,
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     } else {
       navigate({
         to: `/settings/$`,
         params: { _splat: "overview" },
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     }
   }, [tab, navigate, toast]);
   const handleTabChange = (value: string) => {
@@ -152,11 +143,7 @@ const Settings = () => {
       to: `/settings/$`,
       params: { _splat: value },
       replace: true,
-    }).catch(() =>
-      toast({
-        title: "Navigation failed",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to settings page."));
   };
   const tabWidth = 90 * tabs.length;
 
@@ -164,9 +151,9 @@ const Settings = () => {
     <Tabs
       value={tab ?? "overview"}
       onValueChange={handleTabChange}
-      className='flex flex-col h-full'
+      className="flex flex-col h-full"
     >
-      <div className='flex justify-center w-full'>
+      <div className="flex justify-center w-full">
         <TabsList className={`w-[${tabWidth}px]`}>
           {tabs.map((tab) => (
             <TabsTrigger
@@ -179,12 +166,12 @@ const Settings = () => {
           ))}
         </TabsList>
       </div>
-      <div className='flex-1 min-h-0 relative'>
+      <div className="flex-1 min-h-0 relative">
         {tabs.map((tab) => (
           <TabsContent
             key={tab.value}
             value={tab.value}
-            className='w-full bg-gray-50 absolute inset-0 overflow-auto'
+            className="w-full bg-gray-50 absolute inset-0 overflow-auto"
           >
             <SettingsLayout title={tab.title} icon={tab.icon}>
               {tab.component}

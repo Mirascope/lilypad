@@ -6,7 +6,7 @@ interface MarkdownRendererProps {
 
 export const LilypadMarkdown = ({ content }: MarkdownRendererProps) => {
   return (
-    <div className='prose'>
+    <div className="prose">
       <ReactMarkdown remarkPlugins={[remarkBreaks]}>{content}</ReactMarkdown>
     </div>
   );

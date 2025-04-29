@@ -1,12 +1,13 @@
-import { useAuth } from "@/auth";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
+import { Onboarding } from "@/components/Onboarding";
 import SidebarSkeleton from "@/components/SidebarSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { diffDays } from "@/utils/dates";
-import { fetchUsersByOrganization } from "@/utils/users";
+import { fetchUsersByOrganization, userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
@@ -43,10 +44,10 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
   const posthog = usePostHog();
-  const { user } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
-  const [showAlert, setShowAlert] = useState(true);
-
+  const [showAlert, setShowAlert] = useState<boolean>(true);
+  const [onboardingOpen, setOnboardingOpen] = useState<boolean>(true);
   const daysLeft = diffDays(new Date(licenseInfo.expires_at));
 
   useEffect(() => {
@@ -57,18 +58,26 @@ function AuthLayout() {
     }
   }, [posthog, user?.uuid, user?.email]);
   return (
-    <div className='flex flex-col border-collapse overflow-hidden'>
+    <div className="flex flex-col border-collapse overflow-hidden">
       <SidebarProvider>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
-        <main className='flex-1 overflow-hidden bg-secondary/10'>
+        <main className="flex-1 overflow-hidden bg-secondary/10">
           {daysLeft < 14 && showAlert && (
-            <Alert variant='warning' onClose={() => setShowAlert(false)}>
-              <AlertTriangle className='h-4 w-4' />
+            <Alert variant="warning" onClose={() => setShowAlert(false)}>
+              <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Warning</AlertTitle>
               <AlertDescription>{`Your license will expire in ${daysLeft} days.`}</AlertDescription>
             </Alert>
+          )}
+          {!user?.user_organizations?.length && (
+            <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
+              <DialogTitle className="sr-only">Welcome</DialogTitle>
+              <DialogContent className="max-w-[90%] h-[90vh] overflow-hidden">
+                <Onboarding />
+              </DialogContent>
+            </Dialog>
           )}
           <Outlet />
         </main>

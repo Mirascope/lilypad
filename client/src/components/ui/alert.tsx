@@ -23,21 +23,19 @@ const alertVariants = cva(
   }
 );
 
-const alertCloseButtonVariants = cva(
-  "absolute top-2 right-2 h-6 w-6 p-0",
-  {
-    variants: {
-      variant: {
-        default: "hover:bg-muted/80",
-        destructive: "hover:bg-destructive/20 text-destructive",
-        warning: "hover:bg-amber-100 dark:hover:bg-amber-800/30 text-amber-800 dark:text-amber-400",
-      },
+const alertCloseButtonVariants = cva("absolute top-2 right-2 h-6 w-6 p-0", {
+  variants: {
+    variant: {
+      default: "hover:bg-muted/80",
+      destructive: "hover:bg-destructive/20 text-destructive",
+      warning:
+        "hover:bg-amber-100 dark:hover:bg-amber-800/30 text-amber-800 dark:text-amber-400",
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-);
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 interface AlertProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -49,20 +47,20 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   ({ className, variant, children, onClose, ...props }, ref) => (
     <div
       ref={ref}
-      role='alert'
+      role="alert"
       className={cn(alertVariants({ variant }), className)}
       {...props}
     >
       {children}
       {onClose && (
         <Button
-          size='icon'
-          variant='ghost'
+          size="icon"
+          variant="ghost"
           onClick={onClose}
           className={cn(alertCloseButtonVariants({ variant }))}
-          aria-label='Close alert'
+          aria-label="Close alert"
         >
-          <X className='h-4 w-4' />
+          <X className="h-4 w-4" />
         </Button>
       )}
     </div>

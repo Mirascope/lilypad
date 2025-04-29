@@ -17,7 +17,7 @@ export const LabelNode: React.FC<CustomNodeProps> = ({
 
   const exact = (parentData as { exact: boolean })?.exact;
   return isEditing ? (
-    <div className='flex gap-2'>
+    <div className="flex gap-2">
       <SuccessButton
         variant={value === Label.PASS ? "success" : "outline"}
         onClick={() => setValue(Label.PASS)}
@@ -34,11 +34,11 @@ export const LabelNode: React.FC<CustomNodeProps> = ({
   ) : (
     <div
       onDoubleClick={() => setIsEditing(true)}
-      className='jer-value-string'
+      className="jer-value-string"
       style={stringStyle}
     >
-      {value === Label.PASS && <CircleCheck color='#00a741' />}
-      {value === Label.FAIL && <CircleX color='#e7000b' />}
+      {value === Label.PASS && <CircleCheck color="#00a741" />}
+      {value === Label.FAIL && <CircleX color="#e7000b" />}
       {!value && (
         <div>
           {exact ? (

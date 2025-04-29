@@ -15,11 +15,11 @@ import { Button } from "@/components/ui/button";
 import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { DiffTool } from "@/ee/components/DiffTool";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
 import { Construction, SquareTerminal } from "lucide-react";
 import { Suspense } from "react";
+import { toast } from "sonner";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/functions/$functionName/_workbench/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
 )({
@@ -46,9 +46,9 @@ const Function = () => {
     );
   } else if (tab === FunctionTab.ANNOTATIONS) {
     return (
-      <div className='flex justify-center items-center h-96'>
-        <Construction color='orange' /> This page is under construction{" "}
-        <Construction color='orange' />
+      <div className="flex justify-center items-center h-96">
+        <Construction color="orange" /> This page is under construction{" "}
+        <Construction color="orange" />
       </div>
     );
   }
@@ -65,22 +65,17 @@ const FunctionOverview = () => {
   const firstFunction = functions.find((f) => f.uuid === functionUuid);
   const secondFunction = functions.find((f) => f.uuid === secondFunctionUuid);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const handleComparePlaygroundButtonClick = () => {
     navigate({
       to: `/projects/${projectUuid}/playground/${functionName}/compare/${functionUuid}/${secondFunctionUuid}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to playground"));
   };
   if (!firstFunction || !secondFunction) {
     return <div>Please select two functions to compare.</div>;
   } else {
     return (
-      <div className='p-4 flex flex-col gap-6'>
-        <div className='flex gap-2'>
+      <div className="p-4 flex flex-col gap-6">
+        <div className="flex gap-2">
           {features.annotations && (
             <AnnotationMetrics
               projectUuid={projectUuid}
@@ -105,8 +100,8 @@ const FunctionOverview = () => {
             projectUuid={projectUuid}
           />
         </Suspense>
-        <div className='text-left'>
-          <Label className='text-lg font-semibold'>Code Comparison</Label>
+        <div className="text-left">
+          <Label className="text-lg font-semibold">Code Comparison</Label>
           <DiffTool
             firstLexicalClosure={firstFunction.code}
             secondLexicalClosure={secondFunction.code}
@@ -114,10 +109,10 @@ const FunctionOverview = () => {
         </div>
         <div>
           <Button
-            variant='outline'
+            variant="outline"
             onClick={handleComparePlaygroundButtonClick}
           >
-            <SquareTerminal className='w-4 h-4 mr-2' />
+            <SquareTerminal className="w-4 h-4 mr-2" />
             Go to playground
           </Button>
         </div>

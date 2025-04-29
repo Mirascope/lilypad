@@ -2,12 +2,11 @@ import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transf
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
-import { useToast } from "@/hooks/use-toast";
 import {
   FunctionCreate,
   FunctionPublic,
-  PlaygroundParameters,
   PlaygroundErrorDetail,
+  PlaygroundParameters,
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -20,11 +19,12 @@ import {
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
-import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { BaseSyntheticEvent, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
+import { toast } from "sonner";
 
 // Define the form values type
 export interface FormValues {
@@ -50,7 +50,6 @@ export const usePlaygroundContainer = ({
   const createVersionedFunction = useCreateVersionedFunctionMutation();
   const runMutation = useRunPlaygroundMutation();
   const patchFunction = usePatchFunctionMutation();
-  const { toast } = useToast();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -103,8 +102,13 @@ export const usePlaygroundContainer = ({
     if (!editorRef?.current || !projectUuid || !functionName) return;
 
     let buttonName = "";
-    if ((event?.nativeEvent as unknown as { submitter: HTMLButtonElement })?.submitter) {
-      buttonName = (event?.nativeEvent as unknown as { submitter: HTMLButtonElement }).submitter.name;
+    if (
+      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
+        ?.submitter
+    ) {
+      buttonName = (
+        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
+      ).submitter.name;
     } else if (event?.target && "name" in event.target) {
       buttonName = (event.target as { name: string }).name;
     }
@@ -112,7 +116,9 @@ export const usePlaygroundContainer = ({
     const templateErrors = $findErrorTemplateNodes(editorRef.current);
     if (templateErrors.length > 0) {
       setEditorErrors(
-        templateErrors.map((node) => `'${node.getValue()}' is not a valid function argument.`)
+        templateErrors.map(
+          (node) => `'${node.getValue()}' is not a valid function argument.`
+        )
       );
       return;
     }
@@ -129,17 +135,20 @@ export const usePlaygroundContainer = ({
         } else {
           const root = $getRoot();
           const firstChild = root.getFirstChild();
-          if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
+          if (
+            root.getChildrenSize() === 1 &&
+            firstChild &&
+            $isParagraphNode(firstChild) &&
+            firstChild.getTextContent().trim() === ""
+          ) {
             isEmpty = true;
           }
         }
 
         if (isEmpty) {
-          toast({
-            title: "Empty Prompt",
-            description: "The prompt template cannot be empty. Please enter some text.",
-            variant: "destructive",
-          });
+          toast.error(
+            "The prompt template cannot be empty. Please enter some text."
+          );
           resolve();
           return;
         }
@@ -194,10 +203,15 @@ export const usePlaygroundContainer = ({
               if (input.key && input.key.trim().length > 0) {
                 if (input.type === "list" || input.type === "dict") {
                   try {
-                    const simplifiedValue = simplifyFormItem(input as FormItemValue);
+                    const simplifiedValue = simplifyFormItem(
+                      input as FormItemValue
+                    );
                     acc[input.key] = simplifiedValue;
                   } catch (parseError) {
-                    console.warn(`Could not parse input '${input.key}':`, parseError);
+                    console.warn(
+                      `Could not parse input '${input.key}':`,
+                      parseError
+                    );
                     acc[input.key] = input.value;
                   }
                 } else {
@@ -235,27 +249,22 @@ export const usePlaygroundContainer = ({
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
             replace: true,
-          }).catch((navError) => {
-            console.error("Navigation failed:", navError);
-            toast({
-              title: "Navigation Error",
-              description: "Failed to update the URL after running the playground.",
-            });
+          }).catch(() => {
+            toast.error("Failed to navigate.");
           });
         } catch (apiError) {
           console.error("API Error during create/run:", apiError);
-          const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
+          const message =
+            apiError instanceof Error
+              ? apiError.message
+              : "An unexpected API error occurred.";
           setError({
-            type: 'ApiError',
-            reason: 'Failed to create or run the function version via API.',
-            details: message
+            type: "ApiError",
+            reason: "Failed to create or run the function version via API.",
+            details: message,
           });
           setExecutedSpanUuid(null);
-          toast({
-            title: "API Error",
-            description: message,
-            variant: "destructive",
-          });
+          toast.error(message);
         } finally {
           resolve();
         }

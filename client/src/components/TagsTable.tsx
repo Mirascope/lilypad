@@ -28,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import { TagPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
@@ -44,6 +43,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { PencilLine, Trash } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export const TagsTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
@@ -99,7 +99,7 @@ export const TagsTable = () => {
 
   return (
     <>
-      <Typography variant='h4'>Tags</Typography>
+      <Typography variant="h4">Tags</Typography>
       <DataTable<TagPublic>
         columns={columns}
         data={data}
@@ -128,34 +128,26 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
     },
   });
   const deleteTag = useDeleteTagMutation();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const onSubmit = async () => {
-    const successfullyDeleted = await deleteTag.mutateAsync(tag.uuid);
-    let title = "Failed to delete tag. Please try again.";
-    if (successfullyDeleted) {
-      title = "Successfully deleted tag";
-    }
-    toast({
-      title,
+    await deleteTag.mutateAsync(tag.uuid).catch(() => {
+      toast.error("Failed to delete tag");
+      return;
     });
+    toast.success("Successfully deleted tag");
     navigate({
       to: "/settings/$",
       params: { _splat: "tags" },
     }).catch(() => {
-      toast({
-        title: "Error",
-        description: "Failed to navigate after deletion.",
-        variant: "destructive",
-      });
+      toast.error("Failed to navigate after deletion.");
     });
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
@@ -164,18 +156,18 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{`Delete ${tag.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
               {`Deleting ${tag.name} will remove this tag from all associated resources.`}
             </DialogDescription>
-            <p className='text-red-500'>WARNING: This action is final.</p>
+            <p className="text-red-500">WARNING: This action is final.</p>
             <FormField
-              key='tagName'
+              key="tagName"
               control={methods.control}
-              name='tagName'
+              name="tagName"
               rules={{
                 required: "Tag name is required",
                 validate: (value) =>
@@ -196,10 +188,10 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
             />
             <DialogFooter>
               <Button
-                type='submit'
-                variant='destructive'
+                type="submit"
+                variant="destructive"
                 loading={methods.formState.isSubmitting}
-                className='w-full'
+                className="w-full"
               >
                 {methods.formState.isSubmitting ? "Deleting..." : "Delete Tag"}
               </Button>
@@ -237,7 +229,6 @@ const TagForm = ({
   submitButtonText,
   submittingText,
 }: TagFormProps) => {
-  const { toast } = useToast();
   const methods = useForm<TagFormData>({
     defaultValues: initialData ?? { name: "", project_uuid: null },
   });
@@ -246,15 +237,12 @@ const TagForm = ({
   const handleSubmit = async (data: TagFormData) => {
     try {
       await onSubmit(data);
-      toast({
-        title: `Successfully ${mode === "create" ? "created" : "updated"} tag`,
-      });
+      toast.success(
+        `Successfully ${mode === "create" ? "created" : "updated"} tag`
+      );
       methods.reset();
     } catch (error) {
-      toast({
-        title: `Failed to ${mode === "create" ? "create" : "update"} tag`,
-        variant: "destructive",
-      });
+      toast.error(`Failed to ${mode === "create" ? "create" : "update"} tag`);
     }
   };
 
@@ -264,22 +252,22 @@ const TagForm = ({
         {trigger}
       </DialogTrigger>
       <DialogContent
-        className='max-w-md overflow-x-auto'
+        className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
           <form
             onSubmit={methods.handleSubmit(handleSubmit)}
-            className='space-y-6'
+            className="space-y-6"
           >
-            <DialogHeader className='flex-shrink-0'>
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             <FormField
               control={methods.control}
-              name='name'
+              name="name"
               rules={{ required: "Tag name is required", minLength: 1 }}
               render={({ field }) => (
                 <FormItem>
@@ -294,7 +282,7 @@ const TagForm = ({
 
             <FormField
               control={methods.control}
-              name='project_uuid'
+              name="project_uuid"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project (Optional)</FormLabel>
@@ -305,11 +293,11 @@ const TagForm = ({
                         field.onChange(value === "<none>" ? null : value)
                       }
                     >
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a project' />
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='<none>'>None</SelectItem>
+                        <SelectItem value="<none>">None</SelectItem>
                         {projects.map((project) => (
                           <SelectItem key={project.uuid} value={project.uuid}>
                             {project.name}
@@ -329,9 +317,9 @@ const TagForm = ({
             <DialogFooter>
               <DialogClose asChild>
                 <Button
-                  type='submit'
+                  type="submit"
                   disabled={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
                   {methods.formState.isSubmitting
                     ? submittingText
@@ -354,13 +342,13 @@ export const CreateTagButton = () => {
 
   return (
     <TagForm
-      mode='create'
+      mode="create"
       onSubmit={handleCreate}
       trigger={<Button>Create Tag</Button>}
-      title='Create a new tag'
-      description='Create a new tag to organize your resources.'
-      submitButtonText='Create Tag'
-      submittingText='Creating...'
+      title="Create a new tag"
+      description="Create a new tag to organize your resources."
+      submitButtonText="Create Tag"
+      submittingText="Creating..."
     />
   );
 };
@@ -381,18 +369,18 @@ export const EditTagButton = ({
   };
   return (
     <TagForm
-      mode='edit'
+      mode="edit"
       initialData={defaultTagFormData}
       onSubmit={handleEdit}
       trigger={
-        <Button variant='outline' size='icon' className='h-8 w-8'>
+        <Button variant="outline" size="icon" className="h-8 w-8">
           <PencilLine />
         </Button>
       }
-      title='Edit tag'
-      description='Update your tag details.'
-      submitButtonText='Save Changes'
-      submittingText='Saving...'
+      title="Edit tag"
+      description="Update your tag details."
+      submitButtonText="Save Changes"
+      submittingText="Saving..."
     />
   );
 };

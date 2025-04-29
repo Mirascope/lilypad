@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import {
   externalApiKeysQueryOptions,
   useCreateExternalApiKeyMutation,
@@ -21,6 +20,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 
 interface UserKeysFormValues {
   openai: string;
@@ -44,7 +44,7 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
         <FormItem>
           <FormLabel>{input.label}</FormLabel>
           <FormControl>
-            <div className='relative'>
+            <div className="relative">
               <Input
                 type={isView ? "text" : "password"}
                 id={input.id}
@@ -52,14 +52,14 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
               />
               {isView ? (
                 <Eye
-                  className='absolute right-2 top-2 z-10 cursor-pointer text-gray-500'
+                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => {
                     setIsView(!isView);
                   }}
                 />
               ) : (
                 <EyeOff
-                  className='absolute right-2 top-2 z-10 cursor-pointer text-gray-500'
+                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => setIsView(!isView)}
                 />
               )}
@@ -76,7 +76,6 @@ export const KeysSettings = () => {
   const { data: externalApiKeys } = useSuspenseQuery(
     externalApiKeysQueryOptions()
   );
-  const { toast } = useToast();
   const externalApiKeysMap = externalApiKeys.reduce(
     (acc, key) => {
       acc[key.service_name] = key.masked_api_key;
@@ -140,18 +139,9 @@ export const KeysSettings = () => {
       if (Object.keys(dirtyFields).length > 0) {
         await updateUserKeys.mutateAsync(data); // Pass the full data as original logic did
       }
-
-      toast({
-        title: "LLM Keys Updated",
-        description: "Your LLM API keys have been successfully updated.",
-      });
+      toast.success("Your keys have been successfully updated.");
     } catch (error) {
-      console.error("Failed to update keys:", error);
-      toast({
-        title: "Update Failed",
-        description: "Could not update LLM API keys. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update keys. Please try again.");
     }
   };
 
@@ -163,16 +153,16 @@ export const KeysSettings = () => {
   ];
   return (
     <>
-      <Typography variant='h4'>API Keys</Typography>
+      <Typography variant="h4">API Keys</Typography>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-          <div className='space-y-4'>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
             {inputs.map((input) => (
               <PasswordField key={input.id} input={input} />
             ))}
           </div>
           <Button
-            type='submit'
+            type="submit"
             // Use mutation pending states for more accurate loading indication
             loading={
               patchExternalApiKeys.isPending ||
@@ -186,7 +176,7 @@ export const KeysSettings = () => {
               deleteExternalApiKeys.isPending ||
               updateUserKeys.isPending
             }
-            className='w-full'
+            className="w-full"
           >
             {patchExternalApiKeys.isPending ||
             createExternalApiKeys.isPending ||

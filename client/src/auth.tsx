@@ -1,6 +1,7 @@
 import { TraceTab } from "@/types/traces";
 import { ProjectPublic, UserPublic } from "@/types/types";
 import { AUTH_STORAGE_KEY, USER_CONFIG_STORAGE_KEY } from "@/utils/constants";
+import { VisibilityState } from "@tanstack/react-table";
 import {
   createContext,
   ReactNode,
@@ -9,9 +10,10 @@ import {
   useState,
 } from "react";
 
-interface UserConfig {
+export interface UserConfig {
   defaultTraceTab?: TraceTab;
   defaultMessageRenderer?: "raw" | "markdown";
+  tracesTableVisibilityState?: VisibilityState;
 }
 
 export interface AuthContext {

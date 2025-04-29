@@ -70,7 +70,7 @@ export const TagPopover = ({
       await updateSpan.mutateAsync({
         spanUuid,
         spanUpdate: {
-          tags_by_uuid: tagObjects.map(tag => tag.uuid),
+          tags_by_uuid: tagObjects.map((tag) => tag.uuid),
         },
       });
 
@@ -104,7 +104,7 @@ export const TagPopover = ({
         await updateSpan.mutateAsync({
           spanUuid,
           spanUpdate: {
-            tags_by_uuid: updatedTags.map(tag => tag.uuid),
+            tags_by_uuid: updatedTags.map((tag) => tag.uuid),
           },
         });
       }
@@ -117,7 +117,7 @@ export const TagPopover = ({
     <Combobox
       multiple={true}
       customTrigger={
-        <Badge pill variant='outline' size='lg'>
+        <Badge pill variant="outline" size="lg">
           <Plus />
         </Badge>
       }
@@ -130,9 +130,9 @@ export const TagPopover = ({
       onChange={handleTagChange}
       onAddItem={handleAddNewTag}
       disableAdd={false}
-      popoverText='Add tags...'
-      helperText='Search or create tags...'
-      emptyText='No matching tags found. Type to create a new one.'
+      popoverText="Add tags..."
+      helperText="Search or create tags..."
+      emptyText="No matching tags found. Type to create a new one."
       open={isOpen}
       onOpenChange={setIsOpen}
     />

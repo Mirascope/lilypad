@@ -13,13 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
 import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { toast } from "@/hooks/use-toast";
 import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const tier = {
   [Tier.FREE]: "Free",
@@ -36,26 +36,26 @@ export const HomeSettings = () => {
   const [open, setOpen] = useState<boolean>(false);
   return (
     <>
-      <Typography variant='h4'>Personal Information</Typography>
-      <div className='grid gap-4'>
-        <UneditableInput label='Name' value={user.first_name} />
-        <UneditableInput label='Email' value={user.email} />
-        <Typography variant='h4'>Organization</Typography>
+      <Typography variant="h4">Personal Information</Typography>
+      <div className="grid gap-4">
+        <UneditableInput label="Name" value={user.first_name} />
+        <UneditableInput label="Email" value={user.email} />
+        <Typography variant="h4">Organization</Typography>
         {userOrganization ? (
           <>
             <UneditableInput
-              label='Name'
+              label="Name"
               value={userOrganization.organization.name}
             />
             <UneditableInput
-              label='Plan'
+              label="Plan"
               value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
             />
             {!isLilypadCloud() && (
               <div>
                 <LilypadDialog
-                  title='Change Plan'
-                  description='Contact william@mirascope.com to obtain a new license key.'
+                  title="Change Plan"
+                  description="Contact william@mirascope.com to obtain a new license key."
                   buttonProps={{
                     variant: "default",
                   }}
@@ -83,28 +83,21 @@ const ChangePlan = () => {
   });
   const updateOrganization = useUpdateOrganizationMutation();
   const onSubmit = async (data: OrganizationUpdate) => {
-    try {
-      await updateOrganization.mutateAsync(data);
-      toast({
-        title: "Successfully upgraded plan.",
-      });
-    } catch (e) {
-      toast({
-        title: "Failed to upgrade plan.",
-        variant: "destructive",
-      });
-    }
+    await updateOrganization
+      .mutateAsync(data)
+      .catch(() => toast.error("Failed to upgrade plan."));
+    toast.success("Successfully upgraded plan.");
   };
   return (
     <Form {...methods}>
       <form
         onSubmit={methods.handleSubmit(onSubmit)}
-        className='flex flex-col gap-3'
+        className="flex flex-col gap-3"
       >
         <FormField
-          key='licenseKey'
+          key="licenseKey"
           control={methods.control}
-          name='license'
+          name="license"
           render={({ field }) => (
             <FormItem>
               <FormLabel>License</FormLabel>
@@ -117,9 +110,9 @@ const ChangePlan = () => {
         <DialogFooter>
           <DialogClose asChild>
             <Button
-              type='submit'
+              type="submit"
               loading={methods.formState.isSubmitting}
-              className='w-full'
+              className="w-full"
             >
               {methods.formState.isSubmitting ? "Upgrading..." : "Upgrade Plan"}
             </Button>
@@ -137,9 +130,9 @@ const UneditableInput = ({
   value: string;
 }) => {
   return (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium text-gray-700'>{label}</label>
-      <div className='p-2 bg-gray-100 rounded-md text-gray-800'>{value}</div>
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div className="p-2 bg-gray-100 rounded-md text-gray-800">{value}</div>
     </div>
   );
 };

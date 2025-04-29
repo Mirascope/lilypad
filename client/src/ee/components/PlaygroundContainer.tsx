@@ -21,12 +21,18 @@ const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {
           <AlertTriangle className="h-4 w-4 text-red-500" />
         </div>
         <div className="ml-2">
-          <p className="text-sm text-red-700">{error.reason || "An unknown error occurred"}</p>
+          <p className="text-sm text-red-700">
+            {error.reason || "An unknown error occurred"}
+          </p>
           {error.details && (
             <details className="mt-2">
-              <summary className="cursor-pointer text-xs font-medium">Technical details</summary>
+              <summary className="cursor-pointer text-xs font-medium">
+                Technical details
+              </summary>
               <pre className="mt-2 text-xs p-2 bg-red-100 rounded overflow-auto whitespace-pre-wrap break-all">
-                {typeof error.details === 'object' ? JSON.stringify(error.details, null, 2) : error.details}
+                {typeof error.details === "object"
+                  ? JSON.stringify(error.details, null, 2)
+                  : error.details}
               </pre>
             </details>
           )}
@@ -49,11 +55,7 @@ export const PlaygroundContainer = ({
     version,
   });
 
-  const {
-    executedSpanUuid,
-    error,
-    isRunLoading
-  } = playgroundContainer;
+  const { executedSpanUuid, error, isRunLoading } = playgroundContainer;
 
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const showRightPanel = Boolean(executedSpanUuid ?? error);
@@ -68,7 +70,10 @@ export const PlaygroundContainer = ({
   }, [showRightPanel, executedSpanUuid, error]);
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="border rounded-lg overflow-hidden">
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="border rounded-lg overflow-hidden"
+    >
       <ResizablePanel
         defaultSize={showRightPanel ? 50 : 100}
         minSize={30}
@@ -103,7 +108,11 @@ export const PlaygroundContainer = ({
                     <SimpleErrorDisplay error={error} />
                   )}
                   {!isRunLoading && !error && executedSpanUuid && (
-                    <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
+                    <Suspense
+                      fallback={
+                        <CardSkeleton items={5} className="flex flex-col" />
+                      }
+                    >
                       <LilypadPanel spanUuid={executedSpanUuid} />
                     </Suspense>
                   )}

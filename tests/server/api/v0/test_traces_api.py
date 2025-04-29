@@ -89,7 +89,7 @@ def test_get_empty_traces(client: TestClient, test_project: ProjectTable):
     """Test getting traces when no traces exist."""
     response = client.get(f"/projects/{test_project.uuid}/traces")
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"items": [], "limit": 100, "offset": 0, "total": 0}
 
 
 def test_get_traces_by_project(
@@ -99,8 +99,8 @@ def test_get_traces_by_project(
     response = client.get(f"/projects/{test_project.uuid}/traces")
     assert response.status_code == 200
     traces = response.json()
-    assert len(traces) == 1
-    assert traces[0]["span_id"] == test_span.span_id
+    assert len(traces["items"]) == 1
+    assert traces["items"][0]["span_id"] == test_span.span_id
 
 
 def test_post_traces(

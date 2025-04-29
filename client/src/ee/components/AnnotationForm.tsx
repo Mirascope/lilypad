@@ -45,7 +45,7 @@ export const AnnotationFormFields = <T extends BaseAnnotation>({
   return (
     <Form {...methods}>
       <form
-        className='flex flex-col gap-2'
+        className="flex flex-col gap-2"
         onSubmit={methods.handleSubmit(onSubmit)}
       >
         <Suspense fallback={<CardSkeleton />}>
@@ -62,7 +62,7 @@ const AnnotationFields = () => {
   return (
     <>
       <FormField
-        key='label'
+        key="label"
         control={methods.control}
         rules={{
           validate: (value) => {
@@ -72,13 +72,13 @@ const AnnotationFields = () => {
             return true;
           },
         }}
-        name='label'
+        name="label"
         render={({ field }) => {
           return (
             <FormItem>
               <FormLabel>Label</FormLabel>
               <FormControl>
-                <div className='flex gap-2'>
+                <div className="flex gap-2">
                   <SuccessButton
                     variant={field.value === Label.PASS ? "success" : "outline"}
                     onClick={() => field.onChange(Label.PASS)}
@@ -101,9 +101,9 @@ const AnnotationFields = () => {
         }}
       />
       <FormField
-        key='reasoning'
+        key="reasoning"
         control={methods.control}
-        name='reasoning'
+        name="reasoning"
         render={({ field }) => {
           return (
             <FormItem>
@@ -141,13 +141,13 @@ export const UpdateAnnotationForm = ({
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
-      <div className='flex justify-between gap-2'>
-        <Button type='submit' loading={isLoading}>
+      <div className="flex justify-between gap-2">
+        <Button type="submit" loading={isLoading}>
           {isLoading ? "Annotating..." : "Annotate"}
         </Button>
         <Button
-          type='button'
-          variant='outlineDestructive'
+          type="button"
+          variant="outlineDestructive"
           onClick={() => {
             deleteAnnotation
               .mutateAsync({

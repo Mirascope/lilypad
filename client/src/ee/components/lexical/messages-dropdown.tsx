@@ -69,8 +69,8 @@ export const MessageTypeDropdown = ({
       }}
       disabled={!isEditable}
     >
-      <SelectTrigger className='w-40' disabled={isCursorInsideCollapsible}>
-        <SelectValue placeholder='Messages' />
+      <SelectTrigger className="w-40" disabled={isCursorInsideCollapsible}>
+        <SelectValue placeholder="Messages" />
       </SelectTrigger>
 
       <SelectContent onCloseAutoFocus={() => editor.focus()}>

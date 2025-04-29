@@ -87,23 +87,23 @@ export const ResponseTimeChart = ({
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
 
   return (
-    <Card className='w-full'>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className='h-64'>
+        <div className="h-64">
           {combinedData.length > 0 ? (
-            <ResponsiveContainer width='100%' height='100%'>
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={combinedData} margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray='3 3' />
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey='start_date'
+                  dataKey="start_date"
                   tickFormatter={(value: string) => formatDate(value, false)}
                 />
                 <YAxis
-                  yAxisId='duration'
-                  orientation='left'
+                  yAxisId="duration"
+                  orientation="left"
                   label={{
                     value: "Duration (ms)",
                     angle: -90,
@@ -135,8 +135,8 @@ export const ResponseTimeChart = ({
                 {metricsData.map((_, index) => (
                   <Line
                     key={index}
-                    yAxisId='duration'
-                    type='monotone'
+                    yAxisId="duration"
+                    type="monotone"
                     dataKey={`duration_${index}`}
                     stroke={colors[index % colors.length]}
                     name={labels[index]}
@@ -146,7 +146,7 @@ export const ResponseTimeChart = ({
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <Typography affects='muted'>No Data</Typography>
+            <Typography affects="muted">No Data</Typography>
           )}
         </div>
       </CardContent>

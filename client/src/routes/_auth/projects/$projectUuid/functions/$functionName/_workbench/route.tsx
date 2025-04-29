@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { FunctionTab } from "@/types/functions";
 import {
   functionsByNameQueryOptions,
@@ -27,6 +26,7 @@ import {
 } from "@tanstack/react-router";
 import { GitCompare, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
+import { toast } from "sonner";
 import { validate } from "uuid";
 
 export interface FunctionRouteParams {
@@ -98,7 +98,6 @@ const FunctionWorkbench = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
-  const { toast } = useToast();
   const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const features = useFeatureAccess();
   const navigate = useNavigate();
@@ -129,9 +128,7 @@ const FunctionWorkbench = () => {
       functionName,
     });
     navigate({ to: `/projects/${projectUuid}/functions` }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
+      toast.error("Failed to navigate")
     );
   };
 
@@ -144,31 +141,23 @@ const FunctionWorkbench = () => {
           secondFunctionUuid,
           tab: newTab as FunctionTab,
         },
-      }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate"));
     } else {
       navigate({
         to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${newTab}`,
-      }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate"));
     }
   };
 
   const tabWidth = 80 * tabs.length;
   return (
-    <div className='pt-4 pb-1 h-screen flex flex-col px-2'>
-      <Typography variant='h2'>{functionName}</Typography>
-      <div className='flex gap-2 items-center'>
+    <div className="pt-4 pb-1 h-screen flex flex-col px-2">
+      <Typography variant="h2">{functionName}</Typography>
+      <div className="flex gap-2 items-center">
         {fn && (
           <Button
-            variant='outline'
-            size='icon'
+            variant="outline"
+            size="icon"
             onClick={() => {
               if (!compareMode) {
                 navigate({
@@ -179,17 +168,13 @@ const FunctionWorkbench = () => {
                     tab,
                   },
                 }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
+                  toast.error("Failed to navigate to compare page")
                 );
               } else {
                 navigate({
                   to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${tab}`,
                 }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
+                  toast.error("Failed to navigate to function page")
                 );
               }
               setCompareMode((prevCompareMode) => !prevCompareMode);
@@ -203,7 +188,7 @@ const FunctionWorkbench = () => {
           <LilypadDialog
             icon={<Trash />}
             title={`Delete ${fn.name} v${fn.version_num}`}
-            description=''
+            description=""
             dialogContentProps={{
               className: "max-w-[600px]",
             }}
@@ -213,17 +198,17 @@ const FunctionWorkbench = () => {
             }}
             dialogButtons={[
               <Button
-                key='delete-function'
-                type='button'
-                variant='destructive'
+                key="delete-function"
+                type="button"
+                variant="destructive"
                 onClick={handleArchive}
               >
                 Delete
               </Button>,
               <Button
-                key='cancel-delete-button'
-                type='button'
-                variant='outline'
+                key="cancel-delete-button"
+                type="button"
+                variant="outline"
               >
                 Cancel
               </Button>,
@@ -234,18 +219,18 @@ const FunctionWorkbench = () => {
         )}
       </div>
       {compareMode && (
-        <div className='flex gap-2 items-center'>
-          <div className='w-10 h-10'></div>
+        <div className="flex gap-2 items-center">
+          <div className="w-10 h-10"></div>
           <SelectFunction compareMode={compareMode} isFirstFunction={false} />
         </div>
       )}
       <Tabs
         value={tab}
         onValueChange={handleTabChange}
-        className='w-full h-full flex flex-col'
+        className="w-full h-full flex flex-col"
       >
         <div>
-          <div className='flex justify-center w-full'>
+          <div className="flex justify-center w-full">
             <TabsList className={`w-[${tabWidth}px]`}>
               {tabs.map((tab) => (
                 <TabsTrigger
@@ -258,15 +243,15 @@ const FunctionWorkbench = () => {
               ))}
             </TabsList>
           </div>
-          <Separator className='my-2' />
+          <Separator className="my-2" />
         </div>
 
-        <div className='flex-1 min-h-0 relative'>
+        <div className="flex-1 min-h-0 relative">
           {tabs.map((tab) => (
             <TabsContent
               key={tab.value}
               value={tab.value}
-              className='absolute inset-0 overflow-auto'
+              className="absolute inset-0 overflow-auto"
             >
               <Outlet />
             </TabsContent>
@@ -296,7 +281,6 @@ const SelectFunction = ({
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
-  const { toast } = useToast();
   const navigate = useNavigate();
   return (
     <Select
@@ -310,24 +294,16 @@ const SelectFunction = ({
               secondFunctionUuid: isFirstFunction ? secondFunctionUuid : uuid,
               tab,
             },
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         } else {
           navigate({
             to: `/projects/${projectUuid}/functions/${functionName}/${uuid}/${tab}`,
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         }
       }}
     >
-      <SelectTrigger className='w-[200px]'>
-        <SelectValue placeholder='Select a function' />
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select a function" />
       </SelectTrigger>
       <SelectContent>
         {functions.map((fn) => (

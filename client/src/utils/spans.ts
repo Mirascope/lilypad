@@ -1,6 +1,7 @@
 import api from "@/api";
 import {
   AggregateMetrics,
+  PaginatedSpanPublic,
   SpanMoreDetails,
   SpanPublic,
   SpanUpdate,
@@ -12,15 +13,25 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-export const fetchSpans = async (projectUuid: string) => {
-  return (await api.get<SpanPublic[]>(`/projects/${projectUuid}/traces`)).data;
+export const fetchSpans = async (projectUuid?: string) => {
+  if (!projectUuid) {
+    return {
+      items: [],
+      limit: 0,
+      total: 0,
+      offset: 0,
+    };
+  }
+  return (await api.get<PaginatedSpanPublic>(`/projects/${projectUuid}/traces`))
+    .data;
 };
 
-export const spansQueryOptions = (projectUuid: string) =>
+export const spansQueryOptions = (projectUuid?: string) =>
   queryOptions({
     queryKey: ["projects", projectUuid, "spans"],
     queryFn: () => fetchSpans(projectUuid),
     refetchInterval: 10000,
+    enabled: !!projectUuid,
   });
 
 export const fetchSpan = async (spanUuid: string) => {
@@ -233,3 +244,26 @@ export const spansSearchQueryOptions = (
     queryFn: () => searchSpans(projectUuid, params),
     enabled: !!params.query_string,
   });
+
+export interface PageParam {
+  offset: number;
+  limit: number;
+  order: "asc" | "desc";
+}
+
+export const fetchSpansByFunctionUuidPaged = async (
+  projectUuid: string,
+  functionUuid: string,
+  { offset, limit, order }: PageParam
+) => {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    order: order,
+  });
+  return (
+    await api.get<PaginatedSpanPublic>(
+      `/projects/${projectUuid}/functions/${functionUuid}/spans/paginated?${params}`
+    )
+  ).data;
+};
