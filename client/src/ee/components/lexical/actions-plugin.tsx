@@ -57,13 +57,13 @@ export const ActionsPlugin = ({
   };
 
   return (
-    <div className='flex justify-end gap-2 p-2'>
+    <div className="flex justify-end gap-2 p-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            type='button'
-            variant='outline'
-            size='icon'
+            type="button"
+            variant="outline"
+            size="icon"
             onClick={() => {
               editor.dispatchCommand(
                 TOGGLE_SHOW_VARIABLE_COMMAND,
@@ -86,9 +86,9 @@ export const ActionsPlugin = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            type='button'
-            variant='outline'
-            size='icon'
+            type="button"
+            variant="outline"
+            size="icon"
             disabled={isDisabled === true}
             onClick={toggleEditable}
           >
@@ -105,8 +105,8 @@ export const ActionsPlugin = ({
       </Tooltip>
       <LilypadDialog
         icon={<ListRestart strokeWidth={1.5} />}
-        tooltipContent='Clear editor'
-        title='Clear editor'
+        tooltipContent="Clear editor"
+        title="Clear editor"
         description="This will clear the editor's contents."
         buttonProps={{
           type: "button",
@@ -122,12 +122,12 @@ export const ActionsPlugin = ({
 function ShowClearDialog({ editor }: { editor: LexicalEditor }): JSX.Element {
   return (
     <>
-      <div className='py-4'>Are you sure you want to clear the editor?</div>
+      <div className="py-4">Are you sure you want to clear the editor?</div>
       <DialogFooter>
         <DialogClose asChild>
           <Button
-            type='button'
-            variant='destructive'
+            type="button"
+            variant="destructive"
             onClick={() => {
               editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
               editor.focus();
@@ -138,8 +138,8 @@ function ShowClearDialog({ editor }: { editor: LexicalEditor }): JSX.Element {
         </DialogClose>
         <DialogClose asChild>
           <Button
-            type='button'
-            variant='outline'
+            type="button"
+            variant="outline"
             onClick={() => {
               editor.focus();
             }}

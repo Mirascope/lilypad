@@ -48,8 +48,8 @@ const renderCode = (
         data-line-number={lineNumber}
         data-digits={digits}
       >
-        <span className='hljs-line-number'>{lineNumber}</span>
-        <span className='hljs-line-code'>{line}</span>
+        <span className="hljs-line-number">{lineNumber}</span>
+        <span className="hljs-line-code">{line}</span>
       </div>
     );
   });
@@ -173,11 +173,11 @@ export const CodeSnippet = ({
       </pre>
       {showCopyButton && (
         <Button
-          variant='outline'
-          size='icon'
+          variant="outline"
+          size="icon"
           onClick={handleCopy}
-          className='w-6 h-6 absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors'
-          aria-label='Copy code'
+          className="w-6 h-6 absolute top-2 right-2 p-1 rounded bg-gray-200 hover:bg-gray-300 transition-colors"
+          aria-label="Copy code"
         >
           {copied ? <Check size={16} /> : <Copy size={16} />}
         </Button>

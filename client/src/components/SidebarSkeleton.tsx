@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const SidebarSkeleton = () => {
   return (
-    <Sidebar collapsible='icon' className='lilypad-sidebar'>
+    <Sidebar collapsible="icon" className="lilypad-sidebar">
       <SidebarHeader>
         <SidebarHeader>
           <SidebarMenuButton>
@@ -28,10 +28,10 @@ const SidebarSkeleton = () => {
         <SidebarMenu>
           <SidebarGroup>
             <SidebarMenuItem>
-              <div className='flex items-center gap-2 px-3 py-2'>
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 w-32' />
-                <Skeleton className='h-4 w-4 ml-auto' />{" "}
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-4 ml-auto" />{" "}
               </div>
             </SidebarMenuItem>
 
@@ -39,9 +39,9 @@ const SidebarSkeleton = () => {
               <SidebarMenu>
                 {["Home", "Functions", "Prompts"].map((_, index) => (
                   <SidebarMenuItem key={index}>
-                    <div className='flex items-center gap-2 px-3 py-2'>
-                      <Skeleton className='h-4 w-4' />
-                      <Skeleton className='h-4 w-24' />
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-4 w-24" />
                     </div>
                   </SidebarMenuItem>
                 ))}
@@ -54,17 +54,17 @@ const SidebarSkeleton = () => {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className='flex items-center gap-2 px-3 py-2'>
-              <Skeleton className='h-4 w-4' />
-              <Skeleton className='h-4 w-16' />
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-16" />
             </div>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <div className='flex items-center gap-2 px-3 py-2'>
-              <Skeleton className='h-4 w-4' />
-              <Skeleton className='h-4 w-20' />
-              <Skeleton className='h-4 w-4 ml-auto' />
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-4 ml-auto" />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

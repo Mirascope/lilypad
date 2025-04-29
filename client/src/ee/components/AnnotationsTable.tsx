@@ -153,16 +153,16 @@ export const AnnotationsButton = ({
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   return (
     <div className={`flex flex-col ${showAnnotations ? "h-full" : ""}`}>
-      <div className='flex-shrink-0'>
+      <div className="flex-shrink-0">
         <Button
-          size='icon'
-          className='h-8 w-8 relative'
-          variant='outline'
+          size="icon"
+          className="h-8 w-8 relative"
+          variant="outline"
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
           <NotebookPen />
           {annotations.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {annotations.length > 9 ? "9+" : annotations.length}
             </div>
           )}

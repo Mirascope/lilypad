@@ -1,14 +1,15 @@
 import api from "@/api";
 import {
-    PlaygroundParameters,
-    PlaygroundSuccessResponse,
-    PlaygroundErrorResponse, PlaygroundErrorDetail
+  PlaygroundParameters,
+  PlaygroundSuccessResponse,
+  PlaygroundErrorResponse,
+  PlaygroundErrorDetail,
 } from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 
 interface PlaygroundErrorRawResponse {
-  detail: PlaygroundErrorResponse
+  detail: PlaygroundErrorResponse;
 }
 
 export type PlaygroundResult =
@@ -35,7 +36,7 @@ export const runPlayground = async (
 
     return {
       success: true,
-      data: response.data
+      data: response.data,
     };
   } catch (error) {
     if (error instanceof AxiosError && error.response?.data) {
@@ -43,17 +44,17 @@ export const runPlayground = async (
 
       return {
         success: false,
-        error: errorResponse.detail.error
+        error: errorResponse.detail.error,
       };
     }
 
     return {
       success: false,
       error: {
-          type: "UnexpectedServerError",
-          reason: "An error occurred on the client side",
-          details: error instanceof Error ? error.message : String(error)
-      }
+        type: "UnexpectedServerError",
+        reason: "An error occurred on the client side",
+        details: error instanceof Error ? error.message : String(error),
+      },
     };
   }
 };
@@ -72,10 +73,7 @@ export const useRunPlaygroundMutation = () => {
       playgroundParameters: PlaygroundParameters;
     }
   >({
-    mutationFn: async ({
-      projectUuid,
-      functionUuid,
-      playgroundParameters,
-    }) => await runPlayground(projectUuid, functionUuid, playgroundParameters),
+    mutationFn: async ({ projectUuid, functionUuid, playgroundParameters }) =>
+      await runPlayground(projectUuid, functionUuid, playgroundParameters),
   });
 };

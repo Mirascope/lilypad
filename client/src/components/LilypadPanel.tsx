@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
 import {
+  MessagesContainer,
   renderCardOutput,
   renderData,
   renderEventsContainer,
-  renderMessagesContainer,
   renderMetadata,
   TraceCodeTab,
 } from "@/utils/panel-utils";
@@ -34,13 +34,13 @@ export const LilypadPanel = ({
   const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
 
   return (
-    <div className='flex flex-col gap-4'>
-      <Typography variant='h3'>
+    <div className="flex flex-col gap-4">
+      <Typography variant="h3">
         {span.display_name} {versionNum && `v${versionNum}`}
       </Typography>
-      <div className='flex gap-1 flex-wrap'>
+      <div className="flex gap-1 flex-wrap">
         {span.tags?.map((tag) => (
-          <Badge pill variant='outline' size='lg' key={tag.uuid}>
+          <Badge pill variant="outline" size="lg" key={tag.uuid}>
             {tag.name}
           </Badge>
         ))}
@@ -48,20 +48,20 @@ export const LilypadPanel = ({
           <TagPopover
             spanUuid={span.uuid}
             projectUuid={span.project_uuid}
-            key='add-tag'
+            key="add-tag"
           />
         )}
       </div>
-      <div className='flex gap-1 flex-wrap'>
+      <div className="flex gap-1 flex-wrap">
         {span.input_tokens != 0 &&
           span.input_tokens &&
           span.output_tokens != 0 &&
           span.output_tokens && (
-            <Badge className='text-xs font-medium m-0'>
+            <Badge className="text-xs font-medium m-0">
               <span>{span.input_tokens}</span>
-              <span className='mx-1'>&#8594;</span>
+              <span className="mx-1">&#8594;</span>
               <span>{span.output_tokens}</span>
-              <span className='mx-1'>=</span>
+              <span className="mx-1">=</span>
               <span>{span.input_tokens + span.output_tokens}</span>
             </Badge>
           )}
@@ -78,25 +78,27 @@ export const LilypadPanel = ({
           <CardHeader>
             <CardTitle>{"Prompt Template"}</CardTitle>
           </CardHeader>
-          <CardContent className='whitespace-pre-wrap'>
+          <CardContent className="whitespace-pre-wrap">
             {span.template}
           </CardContent>
         </Card>
       )}
-      {span.messages.length > 0 && renderMessagesContainer(span.messages)}
-      <div className='flex gap-4 flex-wrap'>
+      {span.messages.length > 0 && (
+        <MessagesContainer messages={span.messages} />
+      )}
+      <div className="flex gap-4 flex-wrap">
         {span.arg_values && (
-          <Card className='w-[calc(50%-0.5rem)] min-w-[300px] flex-grow'>
+          <Card className="w-[calc(50%-0.5rem)] min-w-[300px] flex-grow">
             <CardHeader>
               <CardTitle>{"Input"}</CardTitle>
             </CardHeader>
-            <CardContent className='overflow-x-auto'>
+            <CardContent className="overflow-x-auto">
               <JsonView value={span.arg_values} />
             </CardContent>
           </Card>
         )}
         {span.output && (
-          <Card className='w-[calc(50%-0.5rem)] min-w-[300px] flex-grow'>
+          <Card className="w-[calc(50%-0.5rem)] min-w-[300px] flex-grow">
             {renderCardOutput(span.output)}
           </Card>
         )}

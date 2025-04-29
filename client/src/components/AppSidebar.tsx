@@ -35,10 +35,7 @@ import {
 } from "@/utils/functions";
 import { projectsQueryOptions } from "@/utils/projects";
 import { fetchSpans } from "@/utils/spans";
-import {
-  userQueryOptions,
-  useUpdateActiveOrganizationMutation,
-} from "@/utils/users";
+import { useUpdateActiveOrganizationMutation } from "@/utils/users";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Link,
@@ -86,9 +83,9 @@ const RecursiveMenuContent = ({
         <SidebarMenuButton className={depth > 0 ? "ml-4" : ""} asChild>
           <Link
             to={item.url}
-            className='flex items-center w-full gap-2 [&.active]:font-bold'
+            className="flex items-center w-full gap-2 [&.active]:font-bold"
           >
-            {item.icon && <item.icon className='w-4 h-4' />}
+            {item.icon && <item.icon className="w-4 h-4" />}
             <span>{item.title}</span>
           </Link>
         </SidebarMenuButton>
@@ -103,7 +100,7 @@ const RecursiveMenuContent = ({
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton className={depth > 0 ? "ml-4" : ""}>
-            {item.icon && <item.icon className='w-4 h-4' />}
+            {item.icon && <item.icon className="w-4 h-4" />}
             <span>{item.title}</span>
             <ChevronDown
               className={`ml-auto transition-transform group-data-[state=open]/collapsible-${depth.toString()}:rotate-180`}
@@ -111,7 +108,7 @@ const RecursiveMenuContent = ({
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarMenuSub className='nested-menu'>
+          <SidebarMenuSub className="nested-menu">
             {item.children?.map((child, index) => (
               <RecursiveMenuContent
                 key={`${child.title}-${index}`}
@@ -127,8 +124,7 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { activeProject, setProject } = useAuth();
-  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { activeProject, setProject, user } = useAuth();
   const navigate = useNavigate();
   const [createOrganizationOpen, setCreateOrganizationOpen] =
     useState<boolean>(false);
@@ -199,6 +195,16 @@ export const AppSidebar = () => {
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
     if (user?.active_organization_uuid == organizationUuid) return;
+    router
+      .invalidate()
+      .catch(() => toast.error("Failed to invalidate."))
+      .finally(() => {
+        navigate({
+          to: "/projects",
+          replace: true,
+        }).catch(() => toast.error("Failed to navigate"));
+      });
+    setProject(null);
     const newSession = await organizationMutation.mutateAsync({
       organizationUuid,
     });
@@ -218,7 +224,6 @@ export const AppSidebar = () => {
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
     const currentPath = window.location.pathname;
-
     const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
       currentPath
     );
@@ -247,10 +252,10 @@ export const AppSidebar = () => {
                 <SidebarMenuButton>
                   <ScrollText />
                   {activeProject ? activeProject.name : "Select Project"}
-                  <ChevronDown className='ml-auto' />
+                  <ChevronDown className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className='w-[--radix-popper-anchor-width]'>
+              <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.uuid}
@@ -284,7 +289,7 @@ export const AppSidebar = () => {
           <DropdownMenuCheckboxItem
             key={user_organization.uuid}
             onClick={() =>
-              void handleOrganizationSwitch(user_organization.organization.uuid)
+              handleOrganizationSwitch(user_organization.organization.uuid)
             }
             checked={
               user_organization.organization.uuid ===
@@ -299,7 +304,7 @@ export const AppSidebar = () => {
   };
   return (
     <>
-      <Sidebar collapsible='icon' className='lilypad-sidebar'>
+      <Sidebar collapsible="icon" className="lilypad-sidebar">
         <SidebarHeader>
           <SidebarMenuButton asChild>
             <Link
@@ -322,7 +327,7 @@ export const AppSidebar = () => {
                 <Link
                   to={"/settings/$"}
                   params={{ _splat: "overview" }}
-                  className='flex items-center w-full gap-2 [&.active]:font-bold'
+                  className="flex items-center w-full gap-2 [&.active]:font-bold"
                 >
                   <Settings />
                   Settings
@@ -334,21 +339,21 @@ export const AppSidebar = () => {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton>
                     <User2 /> {user?.first_name}
-                    <ChevronUp className='ml-auto' />
+                    <ChevronUp className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  side='top'
-                  className='min-w-[--radix-popper-anchor-width]'
+                  side="top"
+                  className="min-w-[--radix-popper-anchor-width]"
                 >
                   {renderOrganizationsDropdownItems()}
                   <DropdownMenuItem
                     onSelect={() => {
                       setCreateOrganizationOpen(true);
                     }}
-                    className='flex gap-2'
+                    className="flex gap-2"
                   >
-                    <Plus className='w-4 h-4' />
+                    <Plus className="w-4 h-4" />
                     Create Organization
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout}>
@@ -362,7 +367,7 @@ export const AppSidebar = () => {
         <SidebarRail />
       </Sidebar>
       <CreateOrganizationDialog
-        key='create-organization'
+        key="create-organization"
         open={createOrganizationOpen}
         setOpen={setCreateOrganizationOpen}
       />

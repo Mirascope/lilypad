@@ -37,31 +37,31 @@ const LoginComponent = () => {
   const { redirect } = Route.useSearch();
 
   return (
-    <div className='flex items-center justify-center h-screen'>
-      <Card className='w-[600px] m-0'>
+    <div className="flex items-center justify-center h-screen">
+      <Card className="w-[600px] m-0">
         <CardHeader>
           <CardTitle>Welcome to Lilypad</CardTitle>
           <CardDescription>Sign in to continue</CardDescription>
         </CardHeader>
-        <CardContent className='flex flex-col gap-2'>
+        <CardContent className="flex flex-col gap-2">
           <GithubLogin redirect={redirect} />
           <GoogleLogin redirect={redirect} />
         </CardContent>
         <CardFooter>
-          <Typography variant='p' affects='muted'>
+          <Typography variant="p" affects="muted">
             By signing in, you agree to our{" "}
             <a
-              href='https://mirascope.com/terms/service'
-              target='_blank'
-              rel='noopener noreferrer'
+              href="https://mirascope.com/terms/service"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Terms of Service
             </a>{" "}
             and{" "}
             <a
-              href='https://mirascope.com/privacy'
-              target='_blank'
-              rel='noopener noreferrer'
+              href="https://mirascope.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Privacy Policy
             </a>

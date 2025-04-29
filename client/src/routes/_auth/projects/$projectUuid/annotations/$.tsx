@@ -74,9 +74,9 @@ const AnnotationLayout = () => {
     }
   }, [annotations, annotationUuid]);
   return (
-    <div className='h-screen'>
-      <ResizablePanelGroup direction='horizontal'>
-        <ResizablePanel defaultSize={20} id='annotation-list' order={1}>
+    <div className="h-screen">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel defaultSize={20} id="annotation-list" order={1}>
           <Suspense fallback={<LilypadLoading />}>
             <AnnotationList
               activeAnnotation={activeAnnotation}
@@ -85,15 +85,15 @@ const AnnotationLayout = () => {
           </Suspense>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={80} id='annotation-view' order={2}>
+        <ResizablePanel defaultSize={80} id="annotation-view" order={2}>
           {activeAnnotation ? (
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className="flex flex-col" />}
             >
-              <ResizablePanelGroup direction='horizontal'>
+              <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel
                   defaultSize={60}
-                  id='annotation-view-panel'
+                  id="annotation-view-panel"
                   order={1}
                 >
                   <AnnotationView
@@ -104,7 +104,7 @@ const AnnotationLayout = () => {
                 <ResizableHandle />
                 <ResizablePanel
                   defaultSize={40}
-                  id='annotation-comment'
+                  id="annotation-comment"
                   order={2}
                 >
                   <AnnotationComment spanUuid={activeAnnotation.span_uuid} />
@@ -112,8 +112,8 @@ const AnnotationLayout = () => {
               </ResizablePanelGroup>
             </Suspense>
           ) : (
-            <div className='w-full h-full flex justify-center items-center'>
-              <Typography variant='h3'>
+            <div className="w-full h-full flex justify-center items-center">
+              <Typography variant="h3">
                 {annotations.length < 1
                   ? "No more annotations"
                   : "Select a trace"}
@@ -160,15 +160,15 @@ const AnnotationList = ({
     {} as Record<string, UserPublic>
   );
   return (
-    <div className='p-4 flex flex-col h-full'>
-      <div className='flex-shrink-0 mb-2'>
-        <Typography variant='h4'>Annotations</Typography>
-        <Typography affects='muted' variant='span'>
+    <div className="p-4 flex flex-col h-full">
+      <div className="flex-shrink-0 mb-2">
+        <Typography variant="h4">Annotations</Typography>
+        <Typography affects="muted" variant="span">
           {annotations.length > 0 && `${annotations.length} item(s) remaining`}
         </Typography>
-        <Typography affects='muted'>{`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}</Typography>
+        <Typography affects="muted">{`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}</Typography>
       </div>
-      <div className='flex flex-col gap-2 overflow-auto'>
+      <div className="flex flex-col gap-2 overflow-auto">
         {annotations.map((annotation) => {
           const fn = annotation.function_uuid
             ? functionsMap[annotation.function_uuid]
@@ -192,18 +192,18 @@ const AnnotationList = ({
                 }
               }}
             >
-              <div className='flex items-center justify-between'>
+              <div className="flex items-center justify-between">
                 <div>
-                  <Typography variant='span' affects='small' className='mr-1'>
+                  <Typography variant="span" affects="small" className="mr-1">
                     {annotation.span.display_name}
                   </Typography>
                   {fn && (
-                    <Typography affects='muted' variant='span'>
+                    <Typography affects="muted" variant="span">
                       v{fn.version_num}
                     </Typography>
                   )}
                 </div>
-                <Typography variant='span' affects='muted'>
+                <Typography variant="span" affects="muted">
                   {formatRelativeTime(annotation.created_at, true)}
                 </Typography>
               </div>
@@ -251,15 +251,15 @@ const AnnotationView = ({
     }
   };
   return (
-    <div className='p-4 flex flex-col h-full'>
-      <div className='flex-shrink-0 mb-2'>
+    <div className="p-4 flex flex-col h-full">
+      <div className="flex-shrink-0 mb-2">
         <UpdateAnnotationForm
           annotation={annotation}
           spanUuid={annotation.span_uuid}
           onSubmit={handleSubmit}
         />
       </div>
-      <div className='flex-grow overflow-auto'>
+      <div className="flex-grow overflow-auto">
         {annotation.span.scope === Scope.LILYPAD ? (
           <LilypadPanel spanUuid={annotation.span_uuid} />
         ) : (
@@ -272,9 +272,9 @@ const AnnotationView = ({
 
 const AnnotationComment = ({ spanUuid }: { spanUuid: string }) => {
   return (
-    <div className='flex flex-col h-full p-4'>
-      <div className='flex-shrink-0 mb-2'>
-        <Typography variant='h4'>Comments</Typography>
+    <div className="flex flex-col h-full p-4">
+      <div className="flex-shrink-0 mb-2">
+        <Typography variant="h4">Comments</Typography>
       </div>
       <Comment spanUuid={spanUuid} />
     </div>

@@ -70,13 +70,13 @@ export const VersionedPlayground = ({
   };
 
   return (
-    <div className='w-full p-6 flex flex-col gap-1'>
-      <Typography variant='h3'>Playground</Typography>
-      <div className='flex gap-2'>
+    <div className="w-full p-6 flex flex-col gap-1">
+      <Typography variant="h3">Playground</Typography>
+      <div className="flex gap-2">
         <Combobox
-          popoverText='Select or create a new playground'
-          helperText='Search for a playground...'
-          emptyText='Type to create a new function'
+          popoverText="Select or create a new playground"
+          helperText="Search for a playground..."
+          emptyText="Type to create a new function"
           items={functionNames.map((fn) => ({
             value: fn.name,
             label: fn.name,
@@ -87,10 +87,10 @@ export const VersionedPlayground = ({
           }}
         />
       </div>
-      <div className='flex gap-2 items-center'>
+      <div className="flex gap-2 items-center">
         <Button
-          variant='outline'
-          size='icon'
+          variant="outline"
+          size="icon"
           disabled={!fn}
           onClick={() => {
             if (!compareMode) {
@@ -131,7 +131,7 @@ export const VersionedPlayground = ({
           <LilypadDialog
             icon={<Trash />}
             title={`Delete ${fn.name} v${fn.version_num}`}
-            description=''
+            description=""
             dialogContentProps={{
               className: "max-w-[600px]",
             }}
@@ -141,17 +141,17 @@ export const VersionedPlayground = ({
             }}
             dialogButtons={[
               <Button
-                key='delete-function'
-                type='button'
-                variant='destructive'
+                key="delete-function"
+                type="button"
+                variant="destructive"
                 onClick={handleArchive}
               >
                 Delete
               </Button>,
               <Button
-                key='cancel-delete-button'
-                type='button'
-                variant='outline'
+                key="cancel-delete-button"
+                type="button"
+                variant="outline"
               >
                 Cancel
               </Button>,
@@ -162,8 +162,8 @@ export const VersionedPlayground = ({
         )}
       </div>
       {functionName && functionUuid && compareMode && (
-        <div className='flex gap-2 items-center'>
-          <div className='w-10 h-10'></div>
+        <div className="flex gap-2 items-center">
+          <div className="w-10 h-10"></div>
           <SelectFunction
             projectUuid={projectUuid}
             functionName={functionName}
@@ -228,8 +228,8 @@ const SelectFunction = ({
         }
       }}
     >
-      <SelectTrigger className='w-[200px]'>
-        <SelectValue placeholder='Select a version' />
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select a version" />
       </SelectTrigger>
       <SelectContent>
         {functions.map((fn) => (

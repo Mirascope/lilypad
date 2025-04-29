@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tab, TraceTab } from "@/types/traces";
 import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
@@ -33,12 +35,15 @@ const MessageCard = ({ role, content }: MessageCardProps) => {
       <CardHeader>
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className='overflow-x-auto'>{content}</CardContent>
+      <CardContent className="overflow-x-auto">{content}</CardContent>
     </Card>
   );
 };
 
-export const renderMessagesCard = (messages: MessageParam[]) => {
+export const renderMessagesCard = (
+  messages: MessageParam[],
+  renderer: "raw" | "markdown"
+) => {
   try {
     return messages.map((message: MessageParam, index: number) => {
       const contents: ReactNode[] = [];
@@ -46,12 +51,18 @@ export const renderMessagesCard = (messages: MessageParam[]) => {
       for (const content of message.content) {
         const key = `messages-${index}-${contentIndex}`;
         if (content.type === "text") {
-          contents.push(
-            <ReactMarkdown key={key}>{content.text}</ReactMarkdown>
-          );
+          if (renderer === "raw") {
+            contents.push(
+              <div key={key} className="whitespace-pre-line">
+                {content.text}
+              </div>
+            );
+          } else {
+            contents.push(<LilypadMarkdown content={content.text} key={key} />);
+          }
         } else if (content.type === "image") {
           const imgSrc = `data:${content.media_type};base64,${content.image}`;
-          contents.push(<img key={key} src={imgSrc} alt='image' />);
+          contents.push(<img key={key} src={imgSrc} alt="image" />);
         } else if (content.type === "audio") {
           const data = stringToBytes(content.audio);
           const blob = new Blob([data], { type: content.media_type });
@@ -104,12 +115,12 @@ export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
   ];
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className='w-full'>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <Tabs
         defaultValue={userConfig?.defaultTraceTab ?? "signature"}
-        className='w-full'
+        className="w-full"
       >
-        <div className='flex w-full'>
+        <div className="flex w-full">
           <TabsList className={`w-[160px]`}>
             {tabs.map((tab) => (
               <TabsTrigger
@@ -127,8 +138,8 @@ export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
           </TabsList>
           <CollapsibleTrigger asChild>
             <Button
-              variant='ghost'
-              className='p-1 rounded-md hover:bg-gray-100 h-9'
+              variant="ghost"
+              className="p-1 rounded-md hover:bg-gray-100 h-9"
             >
               {isOpen ? "Hide" : "Show"}
               {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -140,7 +151,7 @@ export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
             <TabsContent
               key={tab.value}
               value={tab.value}
-              className='w-full bg-gray-50'
+              className="w-full bg-gray-50"
             >
               {tab.component}
             </TabsContent>
@@ -156,7 +167,7 @@ export const renderEventsContainer = (messages: Event[]) => {
       <CardHeader>
         <CardTitle>{"Events"}</CardTitle>
       </CardHeader>
-      <CardContent className='flex flex-col gap-4'>
+      <CardContent className="flex flex-col gap-4">
         {messages.map((event: Event, index: number) => (
           <Card key={`events-${index}`}>
             <CardHeader>
@@ -165,7 +176,7 @@ export const renderEventsContainer = (messages: Event[]) => {
               </CardTitle>
               <CardDescription>{event.timestamp}</CardDescription>
             </CardHeader>
-            <CardContent className='overflow-x-auto'>
+            <CardContent className="overflow-x-auto">
               {event.message}
             </CardContent>
           </Card>
@@ -175,14 +186,32 @@ export const renderEventsContainer = (messages: Event[]) => {
   );
 };
 
-export const renderMessagesContainer = (messages: MessageParam[]) => {
+export const MessagesContainer = ({
+  messages,
+}: {
+  messages: MessageParam[];
+}) => {
+  const { updateUserConfig, userConfig } = useAuth();
+  const defaultMessageRenderer =
+    userConfig?.defaultMessageRenderer ?? "markdown";
+  const handleChange = (checked: boolean) => {
+    updateUserConfig({
+      defaultMessageRenderer: checked ? "markdown" : "raw",
+    });
+  };
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{"Messages"}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {"Messages"}
+          <Switch
+            checked={defaultMessageRenderer === "markdown"}
+            onCheckedChange={handleChange}
+          />
+        </CardTitle>
       </CardHeader>
-      <CardContent className='flex flex-col gap-4'>
-        {renderMessagesCard(messages)}
+      <CardContent className="flex flex-col gap-4">
+        {renderMessagesCard(messages, defaultMessageRenderer)}
       </CardContent>
     </Card>
   );
@@ -208,7 +237,7 @@ export const renderCardOutput = (output: string) => {
           <CardHeader>
             <CardTitle>{"Output"}</CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col overflow-x-auto'>
+          <CardContent className="flex flex-col overflow-x-auto">
             {renderOutput(output)}
           </CardContent>
         </Card>
@@ -227,7 +256,7 @@ export const renderMetadata = (data: Record<string, any>) => {
         <CardTitle>{"Metadata"}</CardTitle>
       </CardHeader>
       {attributes && (
-        <CardContent className='overflow-x-auto'>
+        <CardContent className="overflow-x-auto">
           <JsonView value={attributes} />
         </CardContent>
       )}
@@ -241,7 +270,7 @@ export const renderData = ({ ...props }: JsonViewProps<object>) => {
         <CardTitle>{"Data"}</CardTitle>
       </CardHeader>
       {props.value && (
-        <CardContent className='overflow-x-auto'>
+        <CardContent className="overflow-x-auto">
           <JsonView value={props.value} collapsed={props.collapsed} />
         </CardContent>
       )}

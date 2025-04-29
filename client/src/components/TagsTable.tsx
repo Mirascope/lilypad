@@ -99,7 +99,7 @@ export const TagsTable = () => {
 
   return (
     <>
-      <Typography variant='h4'>Tags</Typography>
+      <Typography variant="h4">Tags</Typography>
       <DataTable<TagPublic>
         columns={columns}
         data={data}
@@ -155,7 +155,7 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
@@ -164,18 +164,18 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{`Delete ${tag.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
               {`Deleting ${tag.name} will remove this tag from all associated resources.`}
             </DialogDescription>
-            <p className='text-red-500'>WARNING: This action is final.</p>
+            <p className="text-red-500">WARNING: This action is final.</p>
             <FormField
-              key='tagName'
+              key="tagName"
               control={methods.control}
-              name='tagName'
+              name="tagName"
               rules={{
                 required: "Tag name is required",
                 validate: (value) =>
@@ -196,10 +196,10 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
             />
             <DialogFooter>
               <Button
-                type='submit'
-                variant='destructive'
+                type="submit"
+                variant="destructive"
                 loading={methods.formState.isSubmitting}
-                className='w-full'
+                className="w-full"
               >
                 {methods.formState.isSubmitting ? "Deleting..." : "Delete Tag"}
               </Button>
@@ -264,22 +264,22 @@ const TagForm = ({
         {trigger}
       </DialogTrigger>
       <DialogContent
-        className='max-w-md overflow-x-auto'
+        className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
           <form
             onSubmit={methods.handleSubmit(handleSubmit)}
-            className='space-y-6'
+            className="space-y-6"
           >
-            <DialogHeader className='flex-shrink-0'>
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             <FormField
               control={methods.control}
-              name='name'
+              name="name"
               rules={{ required: "Tag name is required", minLength: 1 }}
               render={({ field }) => (
                 <FormItem>
@@ -294,7 +294,7 @@ const TagForm = ({
 
             <FormField
               control={methods.control}
-              name='project_uuid'
+              name="project_uuid"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project (Optional)</FormLabel>
@@ -305,11 +305,11 @@ const TagForm = ({
                         field.onChange(value === "<none>" ? null : value)
                       }
                     >
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a project' />
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='<none>'>None</SelectItem>
+                        <SelectItem value="<none>">None</SelectItem>
                         {projects.map((project) => (
                           <SelectItem key={project.uuid} value={project.uuid}>
                             {project.name}
@@ -329,9 +329,9 @@ const TagForm = ({
             <DialogFooter>
               <DialogClose asChild>
                 <Button
-                  type='submit'
+                  type="submit"
                   disabled={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
                   {methods.formState.isSubmitting
                     ? submittingText
@@ -354,13 +354,13 @@ export const CreateTagButton = () => {
 
   return (
     <TagForm
-      mode='create'
+      mode="create"
       onSubmit={handleCreate}
       trigger={<Button>Create Tag</Button>}
-      title='Create a new tag'
-      description='Create a new tag to organize your resources.'
-      submitButtonText='Create Tag'
-      submittingText='Creating...'
+      title="Create a new tag"
+      description="Create a new tag to organize your resources."
+      submitButtonText="Create Tag"
+      submittingText="Creating..."
     />
   );
 };
@@ -381,18 +381,18 @@ export const EditTagButton = ({
   };
   return (
     <TagForm
-      mode='edit'
+      mode="edit"
       initialData={defaultTagFormData}
       onSubmit={handleEdit}
       trigger={
-        <Button variant='outline' size='icon' className='h-8 w-8'>
+        <Button variant="outline" size="icon" className="h-8 w-8">
           <PencilLine />
         </Button>
       }
-      title='Edit tag'
-      description='Update your tag details.'
-      submitButtonText='Save Changes'
-      submittingText='Saving...'
+      title="Edit tag"
+      description="Update your tag details."
+      submitButtonText="Save Changes"
+      submittingText="Saving..."
     />
   );
 };

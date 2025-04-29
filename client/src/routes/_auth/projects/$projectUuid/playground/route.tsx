@@ -57,8 +57,8 @@ const VersionedPlaygroundRoute = () => {
   );
   if (!features.playground) {
     return (
-      <div className='p-4'>
-        <Typography variant='h4'>
+      <div className="p-4">
+        <Typography variant="h4">
           Not available for your current plan. Please upgrade to use this
           feature.
         </Typography>

@@ -46,9 +46,9 @@ const Function = () => {
     );
   } else if (tab === FunctionTab.ANNOTATIONS) {
     return (
-      <div className='flex justify-center items-center h-96'>
-        <Construction color='orange' /> This page is under construction{" "}
-        <Construction color='orange' />
+      <div className="flex justify-center items-center h-96">
+        <Construction color="orange" /> This page is under construction{" "}
+        <Construction color="orange" />
       </div>
     );
   }
@@ -79,8 +79,8 @@ const FunctionOverview = () => {
     return <div>Please select two functions to compare.</div>;
   } else {
     return (
-      <div className='p-4 flex flex-col gap-6'>
-        <div className='flex gap-2'>
+      <div className="p-4 flex flex-col gap-6">
+        <div className="flex gap-2">
           {features.annotations && (
             <AnnotationMetrics
               projectUuid={projectUuid}
@@ -105,8 +105,8 @@ const FunctionOverview = () => {
             projectUuid={projectUuid}
           />
         </Suspense>
-        <div className='text-left'>
-          <Label className='text-lg font-semibold'>Code Comparison</Label>
+        <div className="text-left">
+          <Label className="text-lg font-semibold">Code Comparison</Label>
           <DiffTool
             firstLexicalClosure={firstFunction.code}
             secondLexicalClosure={secondFunction.code}
@@ -114,10 +114,10 @@ const FunctionOverview = () => {
         </div>
         <div>
           <Button
-            variant='outline'
+            variant="outline"
             onClick={handleComparePlaygroundButtonClick}
           >
-            <SquareTerminal className='w-4 h-4 mr-2' />
+            <SquareTerminal className="w-4 h-4 mr-2" />
             Go to playground
           </Button>
         </div>

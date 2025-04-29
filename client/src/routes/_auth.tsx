@@ -59,15 +59,15 @@ function AuthLayout() {
     }
   }, [posthog, user?.uuid, user?.email]);
   return (
-    <div className='flex flex-col border-collapse overflow-hidden'>
+    <div className="flex flex-col border-collapse overflow-hidden">
       <SidebarProvider>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
-        <main className='flex-1 overflow-hidden bg-secondary/10'>
+        <main className="flex-1 overflow-hidden bg-secondary/10">
           {daysLeft < 14 && showAlert && (
-            <Alert variant='warning' onClose={() => setShowAlert(false)}>
-              <AlertTriangle className='h-4 w-4' />
+            <Alert variant="warning" onClose={() => setShowAlert(false)}>
+              <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Warning</AlertTitle>
               <AlertDescription>{`Your license will expire in ${daysLeft} days.`}</AlertDescription>
             </Alert>

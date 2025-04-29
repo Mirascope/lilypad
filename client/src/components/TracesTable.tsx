@@ -24,6 +24,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { QueueForm } from "@/ee/components/QueueForm";
@@ -105,6 +110,7 @@ const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
   // Always include child rows
   return true;
 };
+
 const findRowWithUuid = (
   rows: SpanPublic[],
   targetUuid: string | undefined
@@ -123,7 +129,7 @@ const findRowWithUuid = (
   return undefined;
 };
 
-const Spacer = () => <div className='w-4 h-4' />;
+const Spacer = () => <div className="w-4 h-4" />;
 const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   return (
     <ChevronRight
@@ -161,31 +167,31 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
     (annotation) => annotation.label
   );
   return (
-    <div className='flex flex-col h-full max-h-screen overflow-hidden'>
+    <div className="flex flex-col h-full max-h-screen overflow-hidden">
       {/* Controls remain at top */}
-      <div className='flex justify-end gap-2 p-2 flex-shrink-0'>
+      <div className="flex justify-end gap-2 p-2 flex-shrink-0">
         <Button
-          size='icon'
-          className='h-8 w-8 relative'
-          variant='outline'
+          size="icon"
+          className="h-8 w-8 relative"
+          variant="outline"
           onClick={() => setShowComments(!showComments)}
         >
           <MessageSquareMore />
           {spanComments.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
         </Button>
         <Button
-          size='icon'
-          className='h-8 w-8 relative'
-          variant='outline'
+          size="icon"
+          className="h-8 w-8 relative"
+          variant="outline"
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
           <NotebookPen />
           {filteredAnnotations.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {filteredAnnotations.length > 9
                 ? "9+"
                 : filteredAnnotations.length}
@@ -195,15 +201,15 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
       </div>
 
       {/* Scrollable content area */}
-      <div className='flex-1 overflow-auto pb-4'>
+      <div className="flex-1 overflow-auto pb-4">
         {/* Comments section with max height and scrolling */}
         {showComments && (
-          <div className='mb-4'>
-            <div className='max-h-64 overflow-y-auto mb-4'>
+          <div className="mb-4">
+            <div className="max-h-64 overflow-y-auto mb-4">
               <CommentCards spanUuid={data.uuid} />
             </div>
             <Separator />
-            <div className='mt-4'>
+            <div className="mt-4">
               <AddComment spanUuid={data.uuid} />
             </div>
           </div>
@@ -211,14 +217,14 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
 
         {/* Annotations section with max height and scrolling */}
         {showAnnotations && (
-          <div className='mb-4 max-h-64 overflow-y-auto'>
+          <div className="mb-4 max-h-64 overflow-y-auto">
             <AnnotationsTable data={filteredAnnotations} />
           </div>
         )}
 
         {/* Row details panel */}
-        <div className='p-4 border overflow-auto rounded-md mt-4'>
-          <h2 className='text-lg font-semibold mb-2'>Row Details</h2>
+        <div className="p-4 border overflow-auto rounded-md mt-4">
+          <h2 className="text-lg font-semibold mb-2">Row Details</h2>
           {data.scope === Scope.LILYPAD ? (
             <LilypadPanel spanUuid={data.uuid} />
           ) : (
@@ -230,30 +236,41 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
   );
 };
 
-export const TracesTable = ({
-  data,
-  projectUuid,
-  traceUuid,
-  path,
-  hideCompare = false,
-  isSearch = false,
-}: {
-  data: SpanPublic[];
-  projectUuid: string;
+interface TracesTableProps {
+  data?: SpanPublic[];
   traceUuid?: string;
   path?: string;
-  hideCompare?: boolean;
-  isSearch?: boolean;
-}) => {
-  const selectRow = findRowWithUuid(data, traceUuid);
-  const isSubRow = selectRow?.parent_span_id;
+
+  projectUuid: string;
+  /** true while useInfiniteQuery is fetching next page */
+  isFetchingNextPage?: boolean;
+  isSearch: boolean;
+  order: "asc" | "desc";
+  onOrderChange: (
+    o: "asc" | "desc",
+    order_by_column: "version" | "created_at"
+  ) => void;
+  fetchNextPage?: () => void;
+  filterColumn?: string;
+}
+
+export const TracesTable = ({
+  data = [],
+  traceUuid,
+  path,
+  projectUuid,
+  isFetchingNextPage = false,
+  isSearch = false,
+  order,
+  onOrderChange,
+  fetchNextPage,
+  filterColumn,
+}: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  // State to track selected rows
   const selectedRowsRef = useRef<SpanPublic[]>([]);
-  const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
   const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
 
   const dataMapping = useMemo(() => {
@@ -262,7 +279,7 @@ export const TracesTable = ({
     const addToMapping = (spans: SpanPublic[]) => {
       for (const span of spans) {
         mapping[span.span_id] = span;
-        if (span.child_spans && span.child_spans.length > 0) {
+        if (Array.isArray(span.child_spans) && span.child_spans.length > 0) {
           addToMapping(span.child_spans);
         }
       }
@@ -283,6 +300,17 @@ export const TracesTable = ({
 
     selectedRowsRef.current = selectedRows;
   };
+
+  // State to track selected rows
+  const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
+
+  const findRow = (rows: SpanPublic[], uuid?: string) =>
+    rows.find((r) => r.uuid === uuid) ??
+    rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
+
+  const selectRow = findRow(data, traceUuid);
+  const isSubRow = selectRow?.parent_span_id;
+
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
@@ -304,11 +332,11 @@ export const TracesTable = ({
       accessorKey: "display_name",
       enableHiding: false,
       filterFn: onlyParentFilter,
+      size: 250,
       header: ({ table }) => {
-        return hideCompare ? (
-          "Name"
-        ) : (
-          <>
+        return (
+          <div className="flex items-center gap-2">
+            <Spacer />
             <Checkbox
               checked={
                 table.getIsAllPageRowsSelected() ||
@@ -317,38 +345,34 @@ export const TracesTable = ({
               onCheckedChange={(value) =>
                 table.toggleAllPageRowsSelected(!!value)
               }
-              aria-label='Select all'
-              className='mr-2'
+              aria-label="Select all"
+              className="mr-2"
             />
             Name
-          </>
+          </div>
         );
       },
       cell: ({ row }) => {
         const depth = row.depth;
         const hasSubRows = row.subRows.length > 0;
+        const isSelected = row.getIsSelected();
         const displayName: string = row.getValue("display_name");
+        const scope = row.original.scope;
+        const isLilypad = scope === Scope.LILYPAD;
         return (
-          <div style={{ marginLeft: `${depth * 1.5}rem` }}>
-            <div className='flex items-center gap-2'>
+          <div style={{ marginLeft: `${depth * 1.5}rem` }} className="w-full">
+            <div className="flex items-center gap-2">
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
-              {!hideCompare && (
-                <div
-                  onMouseDown={() => {
-                    row.toggleSelected(!row.getIsSelected(), {
-                      selectChildren: false,
-                    });
-                  }}
-                  className='mr-2'
-                >
-                  <Checkbox
-                    checked={row.getIsSelected()}
-                    className='pointer-events-none' // Disable direct interaction with checkbox
-                    aria-label={`Select ${displayName}`}
-                  />
-                </div>
+              {isLilypad && (
+                <Checkbox
+                  onClick={(e) => e.stopPropagation()}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => row.toggleSelected(!!checked)}
+                  aria-label={`Select ${displayName}`}
+                  className="mr-2"
+                />
               )}
-              <span className='truncate'>{displayName}</span>
+              <span className="truncate">{displayName}</span>
             </div>
           </div>
         );
@@ -359,11 +383,12 @@ export const TracesTable = ({
           {
             accessorKey: "score",
             id: "score",
+            size: 100,
             header: ({ column }) => {
               return (
                 <Button
-                  className='p-0'
-                  variant='ghost'
+                  className="p-0"
+                  variant="ghost"
                   onClick={() =>
                     column.toggleSorting(column.getIsSorted() === "asc")
                   }
@@ -371,12 +396,12 @@ export const TracesTable = ({
                   Score
                   {column.getIsSorted() ? (
                     column.getIsSorted() === "asc" ? (
-                      <ArrowUp className='ml-2 h-4 w-4' />
+                      <ArrowUp className="ml-2 h-4 w-4" />
                     ) : (
-                      <ArrowDown className='ml-2 h-4 w-4' />
+                      <ArrowDown className="ml-2 h-4 w-4" />
                     )
                   ) : (
-                    <ArrowUpDown className='ml-2 h-4 w-4' />
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
                   )}
                 </Button>
               );
@@ -384,7 +409,7 @@ export const TracesTable = ({
             cell: ({ row }) => {
               const score: number = row.getValue("score");
               return (
-                <Typography variant='span' affects='xs' className='truncate'>
+                <Typography variant="span" affects="xs" className="truncate">
                   {score?.toFixed(2)}
                 </Typography>
               );
@@ -395,11 +420,13 @@ export const TracesTable = ({
     {
       accessorKey: "scope",
       header: "Scope",
+      size: 100,
     },
     {
       accessorKey: "tags",
       header: "Tags",
       id: "tags",
+      size: 150,
       filterFn: tagFilter,
       cell: ({ row }) => {
         const tags: TagPublic[] = row.getValue("tags");
@@ -409,12 +436,12 @@ export const TracesTable = ({
         }
 
         return (
-          <div className='flex items-center gap-1'>
-            <Badge pill variant='outline' size='sm' key={tags[0].uuid}>
+          <div className="flex items-center gap-1">
+            <Badge pill variant="outline" size="sm" key={tags[0].uuid}>
               {tags[0].name}
             </Badge>
             {tags.length > 1 && (
-              <Badge pill variant='secondary' size='sm' className='px-1.5'>
+              <Badge pill variant="secondary" size="sm" className="px-1.5">
                 +{tags.length - 1}
               </Badge>
             )}
@@ -423,24 +450,27 @@ export const TracesTable = ({
       },
     },
     {
-      accessorKey: "function.version_num",
+      accessorFn: (row) => row.function?.version_num ?? null,
       id: "version",
-      header: ({ column }) => {
+      size: 100,
+      meta: { sortUndefined: -1 },
+      header: ({ table }) => {
+        const isAsc = order === "asc";
         return (
           <Button
-            className='p-0'
-            variant='ghost'
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0"
+            variant="ghost"
+            onClick={() => {
+              const next = isAsc ? "desc" : "asc";
+              onOrderChange(next, "version");
+              table.setSorting([{ id: "version", desc: next === "desc" }]);
+            }}
           >
             Version
-            {column.getIsSorted() ? (
-              column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
+            {isAsc ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4' />
+              <ArrowDown className="ml-2 h-4 w-4" />
             )}
           </Button>
         );
@@ -450,18 +480,19 @@ export const TracesTable = ({
       accessorKey: "status",
       id: "status",
       header: "Status",
+      size: 100,
       cell: ({ row }) => {
         const status: string = row.getValue("status");
         if (status === "UNSET") return null;
         else if (status === "ERROR") {
           return (
-            <Badge variant='destructive' size='sm'>
+            <Badge variant="destructive" size="sm">
               {status}
             </Badge>
           );
         } else
           return (
-            <Badge variant='destructive' size='sm'>
+            <Badge variant="destructive" size="sm">
               {status}
             </Badge>
           );
@@ -470,29 +501,31 @@ export const TracesTable = ({
     {
       accessorKey: "created_at",
       id: "timestamp",
-      header: ({ column }) => {
+      size: 200,
+      header: ({ table }) => {
+        const isAsc = order === "asc";
         return (
           <Button
-            className='p-0'
-            variant='ghost'
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-0"
+            variant="ghost"
+            onClick={() => {
+              const next = isAsc ? "desc" : "asc";
+              onOrderChange(next, "created_at");
+              table.setSorting([{ id: "timestamp", desc: next === "desc" }]);
+            }}
           >
             Timestamp
-            {column.getIsSorted() ? (
-              column.getIsSorted() === "asc" ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
+            {isAsc ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
             ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4' />
+              <ArrowDown className="ml-2 h-4 w-4" />
             )}
           </Button>
         );
       },
       cell: ({ row }) => {
         return (
-          <Typography variant='span' affects='xs' className='truncate'>
+          <Typography variant="span" affects="xs" className="truncate">
             {formatDate(row.getValue("timestamp"))}
           </Typography>
         );
@@ -500,27 +533,34 @@ export const TracesTable = ({
     },
     {
       accessorKey: "annotations",
+      size: 100,
       header: ({ table }) => {
         const isFiltered = !!table.getColumn("annotations")?.getFilterValue();
 
         return (
-          <div className='flex items-center'>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='p-0 h-8'
-              onClick={() => {
-                table
-                  .getColumn("annotations")
-                  ?.setFilterValue(isFiltered ? undefined : true);
-              }}
-              title={isFiltered ? "Show all rows" : "Show only annotated rows"}
-            >
-              <NotebookPen
-                className={`w-4 h-4 mr-2 ${isFiltered ? "text-primary" : "text-muted-foreground"}`}
-              />
-              Annotated
-            </Button>
+          <div className="flex items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-0 h-8"
+                  onClick={() => {
+                    table
+                      .getColumn("annotations")
+                      ?.setFilterValue(isFiltered ? undefined : true);
+                  }}
+                  title={
+                    isFiltered ? "Show all rows" : "Show only annotated rows"
+                  }
+                >
+                  <NotebookPen
+                    className={`w-4 h-4 mr-2 ${isFiltered ? "text-primary" : "text-muted-foreground"}`}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Annotations</TooltipContent>
+            </Tooltip>
           </div>
         );
       },
@@ -531,7 +571,7 @@ export const TracesTable = ({
           (annotation) => annotation.label
         );
         if (filteredAnnotations.length > 0) {
-          return <NotebookPen className='w-4 h-4' />;
+          return <NotebookPen className="w-4 h-4" />;
         }
         return null;
       },
@@ -546,17 +586,18 @@ export const TracesTable = ({
     },
     {
       id: "actions",
+      size: 50,
       enableHiding: false,
       cell: ({ row }) => {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' className='h-8 w-8 p-0'>
-                <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4' />
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               {row.original.scope === Scope.LILYPAD &&
                 row.original.function?.is_versioned &&
@@ -575,14 +616,6 @@ export const TracesTable = ({
                     Open Playground
                   </DropdownMenuItem>
                 )}
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteSpan(row.original.uuid);
-                }}
-              >
-                Delete Span
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>View more details</DropdownMenuItem>
             </DropdownMenuContent>
@@ -591,7 +624,8 @@ export const TracesTable = ({
       },
     },
   ];
-  const getRowCanExpand = (row: SpanPublic) => row.child_spans.length > 0;
+  const getRowCanExpand = (row: SpanPublic) =>
+    Array.isArray(row.child_spans) && row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
   const handleDetailPanelClose = () => {
     if (path) {
@@ -605,13 +639,20 @@ export const TracesTable = ({
     }
   };
   const CompareDetailPanel = () => {
-    const selectedRows = selectedRowsRef.current;
+    const rows = selectedRowsRef.current; // ★ ここだけ
+    if (rows.length !== 2) {
+      return (
+        <div className="p-6 text-muted-foreground italic">
+          Select exactly two rows to compare.
+        </div>
+      );
+    }
     return (
-      <div className='p-4 border rounded-md overflow-auto'>
-        {selectedRows.length === 2 && (
+      <div className="p-4 border rounded-md overflow-auto">
+        {rows.length === 2 && (
           <Button
-            variant='outline'
-            size='sm'
+            variant="outline"
+            size="sm"
             onClick={() =>
               setToggleCompareMode(
                 (prevToggleCompareMode) => !prevToggleCompareMode
@@ -621,29 +662,29 @@ export const TracesTable = ({
             Go back
           </Button>
         )}
-        <h2 className='text-lg font-semibold mb-2'>Compare Details</h2>
-        <div className='flex gap-4'>
-          <div className='w-1/2'>
-            <h3 className='text-lg font-semibold'>Row 1</h3>
+        <h2 className="text-lg font-semibold mb-2">Compare Details</h2>
+        <div className="flex gap-4">
+          <div className="w-1/2">
+            <h3 className="text-lg font-semibold">Row 1</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className="flex flex-col" />}
             >
-              {selectedRows[0].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[0].uuid} />
+              {rows[0].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={rows[0].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[0].uuid} />
+                <LlmPanel spanUuid={rows[0].uuid} />
               )}
             </Suspense>
           </div>
-          <div className='w-1/2'>
-            <h3 className='text-lg font-semibold'>Row 2</h3>
+          <div className="w-1/2">
+            <h3 className="text-lg font-semibold">Row 2</h3>
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className="flex flex-col" />}
             >
-              {selectedRows[1].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={selectedRows[1].uuid} />
+              {rows[1].scope === Scope.LILYPAD ? (
+                <LilypadPanel spanUuid={rows[1].uuid} />
               ) : (
-                <LlmPanel spanUuid={selectedRows[1].uuid} />
+                <LlmPanel spanUuid={rows[1].uuid} />
               )}
             </Suspense>
           </div>
@@ -655,71 +696,73 @@ export const TracesTable = ({
     const selectedRows = selectedRowsRef.current;
     return (
       <>
-        <div className='relative max-w-sm'>
-          <Input
-            key={`tags-input`}
-            placeholder='Filter tags...'
-            value={(table.getColumn("tags")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => {
-              table.getColumn("tags")?.setFilterValue(event.target.value);
-            }}
-            className='pr-10' // Add right padding to make room for the icon
-          />
-          <Popover>
-            <PopoverTrigger asChild>
-              <SmileIcon className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100' />
-            </PopoverTrigger>
-            <PopoverContent className='w-fit p-0'>
-              <EmojiPicker
-                className='h-[342px]'
-                onEmojiSelect={(emojiData) => {
-                  const currFilter =
-                    (table.getColumn("tags")?.getFilterValue() as string) ?? "";
-                  table
-                    .getColumn("tags")
-                    ?.setFilterValue(currFilter + emojiData.emoji);
+        <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex items-center">
+              <Input
+                key={`tags-input`}
+                placeholder="Filter tags..."
+                value={
+                  (table.getColumn("tags")?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) => {
+                  table.getColumn("tags")?.setFilterValue(event.target.value);
                 }}
-              >
-                <EmojiPickerContent />
-              </EmojiPicker>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <LilypadDialog
-          icon={<Users />}
-          title={"Annotate selected traces"}
-          description={`${selectedRows.length} trace(s) selected.`}
-          buttonProps={{
-            disabled: selectedRows.length === 0,
-          }}
-          tooltipContent={"Add selected traces to your annotation queue."}
-        >
-          <QueueForm spans={selectedRows} />
-        </LilypadDialog>
-        {!hideCompare && (
-          <>
+                className="pr-10" // Add right padding to make room for the icon
+              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <SmileIcon className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100" />
+                </PopoverTrigger>
+                <PopoverContent className="w-fit p-0">
+                  <EmojiPicker
+                    className="h-[342px]"
+                    onEmojiSelect={(emojiData) => {
+                      const currFilter =
+                        (table.getColumn("tags")?.getFilterValue() as string) ??
+                        "";
+                      table
+                        .getColumn("tags")
+                        ?.setFilterValue(currFilter + emojiData.emoji);
+                    }}
+                  >
+                    <EmojiPickerContent />
+                  </EmojiPicker>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <LilypadDialog
+              icon={<Users />}
+              title={"Annotate selected traces"}
+              description={`${selectedRows.length} trace(s) selected.`}
+              buttonProps={{
+                disabled: selectedRows.length === 0,
+              }}
+              tooltipContent={"Add selected traces to your annotation queue."}
+            >
+              <QueueForm spans={selectedRows} />
+            </LilypadDialog>
             <Button
-              variant='outline'
-              size='sm'
+              variant="outline"
+              size="sm"
               onClick={() =>
                 setToggleCompareMode(
                   (prevToggleCompareMode) => !prevToggleCompareMode
                 )
               }
-              className='whitespace-nowrap'
+              className="whitespace-nowrap"
               disabled={selectedRows.length !== 2}
             >
               Compare
             </Button>
-          </>
-        )}
+          </div>
+        </div>
       </>
     );
   };
   if (toggleCompareMode) {
     return <CompareDetailPanel />;
   }
-
   return (
     <>
       <DataTable<SpanPublic>
@@ -736,7 +779,7 @@ export const TracesTable = ({
         customGetRowId={(row) => row.span_id}
         DetailPanel={DetailPanel}
         defaultPanelSize={50}
-        filterColumn={!hideCompare ? undefined : "display_name"}
+        filterColumn={filterColumn}
         selectRow={selectRow}
         getRowCanExpand={getRowCanExpand}
         getSubRows={getSubRows}
@@ -747,8 +790,11 @@ export const TracesTable = ({
             ? [{ id: "score", desc: true }]
             : [{ id: "timestamp", desc: true }]
         }
+        isFetching={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
         onDetailPanelClose={handleDetailPanelClose}
         path={path}
+        columnVisibilityStateKey="tracesTableVisibilityState"
       />
       {deleteSpan && (
         <DeleteSpanDialog
@@ -766,6 +812,7 @@ interface DeleteSpanDialogProps {
   spanUuid: string;
   setOpen: Dispatch<SetStateAction<string | null>>;
 }
+
 const DeleteSpanDialog = ({
   projectUuid,
   spanUuid,
@@ -791,7 +838,7 @@ const DeleteSpanDialog = ({
       description={"Are you sure you want to delete this span?"}
     >
       <DialogFooter>
-        <Button key='submit' onClick={handleSpanDelete} className='w-full'>
+        <Button key="submit" onClick={handleSpanDelete} className="w-full">
           Delete Span
         </Button>
       </DialogFooter>

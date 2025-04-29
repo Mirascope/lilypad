@@ -50,7 +50,7 @@ export const LilypadDialog = ({
 }) => {
   const ButtonComponent = (
     <Button
-      variant='outline'
+      variant="outline"
       {...buttonProps}
       size={icon ? "icon" : buttonProps.size}
     >
@@ -81,7 +81,7 @@ export const LilypadDialog = ({
         )}
         {...dialogContentProps}
       >
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>

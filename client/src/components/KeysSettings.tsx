@@ -44,7 +44,7 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
         <FormItem>
           <FormLabel>{input.label}</FormLabel>
           <FormControl>
-            <div className='relative'>
+            <div className="relative">
               <Input
                 type={isView ? "text" : "password"}
                 id={input.id}
@@ -52,14 +52,14 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
               />
               {isView ? (
                 <Eye
-                  className='absolute right-2 top-2 z-10 cursor-pointer text-gray-500'
+                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => {
                     setIsView(!isView);
                   }}
                 />
               ) : (
                 <EyeOff
-                  className='absolute right-2 top-2 z-10 cursor-pointer text-gray-500'
+                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => setIsView(!isView)}
                 />
               )}
@@ -163,16 +163,16 @@ export const KeysSettings = () => {
   ];
   return (
     <>
-      <Typography variant='h4'>API Keys</Typography>
+      <Typography variant="h4">API Keys</Typography>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-          <div className='space-y-4'>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
             {inputs.map((input) => (
               <PasswordField key={input.id} input={input} />
             ))}
           </div>
           <Button
-            type='submit'
+            type="submit"
             // Use mutation pending states for more accurate loading indication
             loading={
               patchExternalApiKeys.isPending ||
@@ -186,7 +186,7 @@ export const KeysSettings = () => {
               deleteExternalApiKeys.isPending ||
               updateUserKeys.isPending
             }
-            className='w-full'
+            className="w-full"
           >
             {patchExternalApiKeys.isPending ||
             createExternalApiKeys.isPending ||

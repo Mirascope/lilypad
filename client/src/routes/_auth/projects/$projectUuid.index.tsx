@@ -132,43 +132,43 @@ const ProjectDashboard = () => {
   const COLORS: string[] = ["#6366f1", "#2f7f3e"];
 
   return (
-    <div className='p-4 w-full'>
-      <Card className='shadow-md'>
+    <div className="p-4 w-full">
+      <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className='text-2xl font-bold'>
+          <CardTitle className="text-2xl font-bold">
             {`${project.name} Dashboard`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
                   Total Cost
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>${totalCost}</div>
+                <div className="text-2xl font-bold">${totalCost}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
                   Total Tokens
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>{totalTokens}</div>
+                <div className="text-2xl font-bold">{totalTokens}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
                   Total API Calls
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>{totalSpans}</div>
+                <div className="text-2xl font-bold">{totalSpans}</div>
               </CardContent>
             </Card>
           </div>
@@ -176,16 +176,16 @@ const ProjectDashboard = () => {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className='w-full'
+            className="w-full"
           >
-            <TabsList className='grid grid-cols-3 mb-4'>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='tokens'>Token Usage</TabsTrigger>
-              <TabsTrigger value='details'>Details</TabsTrigger>
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="tokens">Token Usage</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
             </TabsList>
 
-            <TabsContent value='overview'>
-              <div className='grid grid-cols-1 gap-6'>
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 gap-6">
                 <CostAndTokensChart
                   metricsData={[data]}
                   labels={["Total Cost"]}
@@ -194,27 +194,27 @@ const ProjectDashboard = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value='tokens'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <TabsContent value="tokens">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Token Usage by Type</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className='h-64'>
-                      <ResponsiveContainer width='100%' height='100%'>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={pieData}
-                            cx='50%'
-                            cy='50%'
+                            cx="50%"
+                            cy="50%"
                             labelLine={false}
                             label={({ name, percent }) =>
                               `${name}: ${(percent * 100).toFixed(0)}%`
                             }
                             outerRadius={80}
-                            fill='#6366f1'
-                            dataKey='value'
+                            fill="#6366f1"
+                            dataKey="value"
                           >
                             {pieData.map((_, index) => (
                               <Cell
@@ -237,26 +237,26 @@ const ProjectDashboard = () => {
                     <CardTitle>Daily Token Usage</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className='h-64'>
-                      <ResponsiveContainer width='100%' height='100%'>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray='3 3' />
-                          <XAxis dataKey='date' />
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
                           <YAxis />
                           <Tooltip />
                           <Legend />
                           <Line
-                            type='monotone'
-                            dataKey='total_input_tokens'
-                            name='Input Tokens'
-                            stroke='#6366f1'
+                            type="monotone"
+                            dataKey="total_input_tokens"
+                            name="Input Tokens"
+                            stroke="#6366f1"
                             activeDot={{ r: 8 }}
                           />
                           <Line
-                            type='monotone'
-                            dataKey='total_output_tokens'
-                            name='Output Tokens'
-                            stroke='#2f7f3e'
+                            type="monotone"
+                            dataKey="total_output_tokens"
+                            name="Output Tokens"
+                            stroke="#2f7f3e"
                             activeDot={{ r: 8 }}
                           />
                         </LineChart>
@@ -267,13 +267,13 @@ const ProjectDashboard = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value='details'>
+            <TabsContent value="details">
               <Card>
                 <CardHeader>
                   <CardTitle>Detailed Usage</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className='overflow-x-auto'>
+                  <div className="overflow-x-auto">
                     <ProjectDetailsTable data={processedData} />
                   </div>
                 </CardContent>
