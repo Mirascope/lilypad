@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DialogClose } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -28,12 +29,12 @@ export const AlternativeInviteLink = ({
   return (
     <>
       <div>Alternatively, give the invited user this link:</div>
-      <div className='flex items-center space-x-2'>
+      <div className="flex items-center space-x-2">
         <Input value={inviteLink} readOnly />
         <Button
-          variant='outline'
-          size='icon'
-          type='button'
+          variant="outline"
+          size="icon"
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(inviteLink).catch(() => {
@@ -85,9 +86,9 @@ export const InviteUserForm = ({
         className={`space-y-6 ${className}`}
       >
         <FormField
-          key='email'
+          key="email"
           control={methods.control}
-          name='email'
+          name="email"
           rules={{
             required: "Email is required",
             pattern: {
@@ -110,20 +111,23 @@ export const InviteUserForm = ({
           <AlternativeInviteLink inviteLink={organizationInvite.invite_link} />
         )}
 
-        <div className='flex justify-end'>
+        <div className="flex justify-end">
           {!organizationInvite ? (
-            <Button type='submit' disabled={methods.formState.isSubmitting}>
+            <Button type="submit" disabled={methods.formState.isSubmitting}>
               {methods.formState.isSubmitting
                 ? "Sending invite..."
                 : "Send invite"}
             </Button>
           ) : (
-            <Button
-              variant='outline'
-              onClick={() => setOrganizationInvite(null)}
-            >
-              Close
-            </Button>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOrganizationInvite(null)}
+              >
+                Close
+              </Button>
+            </DialogClose>
           )}
         </div>
       </form>

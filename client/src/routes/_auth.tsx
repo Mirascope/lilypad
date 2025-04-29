@@ -1,14 +1,13 @@
-import { useAuth } from "@/auth";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
 import { Onboarding } from "@/components/Onboarding";
 import SidebarSkeleton from "@/components/SidebarSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
 import { diffDays } from "@/utils/dates";
-import { fetchUsersByOrganization } from "@/utils/users";
+import { fetchUsersByOrganization, userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
@@ -45,7 +44,7 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
   const posthog = usePostHog();
-  const { user } = useAuth();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const [showAlert, setShowAlert] = useState<boolean>(true);
   const [onboardingOpen, setOnboardingOpen] = useState<boolean>(true);
@@ -72,11 +71,14 @@ function AuthLayout() {
               <AlertDescription>{`Your license will expire in ${daysLeft} days.`}</AlertDescription>
             </Alert>
           )}
-          <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
-            <DialogContent className='max-w-[90%] h-[90vh] overflow-hidden'>
-              <Onboarding />
-            </DialogContent>
-          </Dialog>
+          {!user?.user_organizations?.length && (
+            <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
+              <DialogTitle className="sr-only">Welcome</DialogTitle>
+              <DialogContent className="max-w-[90%] h-[90vh] overflow-hidden">
+                <Onboarding />
+              </DialogContent>
+            </Dialog>
+          )}
           <Outlet />
         </main>
       </SidebarProvider>

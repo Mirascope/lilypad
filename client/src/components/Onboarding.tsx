@@ -2,6 +2,7 @@ import { CopyKeyContent } from "@/components/apiKeys/CreateAPIKeyDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { defineStepper } from "@/components/stepper";
 import { Button } from "@/components/ui/button";
+import { DialogClose } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -22,21 +23,23 @@ import { useCreateApiKeyMutation } from "@/utils/api-keys";
 import { useCreateEnvironmentMutation } from "@/utils/environments";
 import { useCreateOrganizationMutation } from "@/utils/organizations";
 import { useCreateProjectMutation } from "@/utils/projects";
+import { spansQueryOptions } from "@/utils/spans";
 import { userQueryOptions } from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { ExternalLink } from "lucide-react";
 import { JSX, ReactNode, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 const stepper = defineStepper(
   { id: "step-1", title: "Welcome" },
-  { id: "step-2", title: "Function" },
-  { id: "step-3", title: "Trace" }
+  { id: "step-2", title: "Run a Function" },
+  { id: "step-3", title: "Next Steps" }
 );
 
 const { Stepper, useStepper } = stepper;
 
-// Reusable Panel component
 interface StepperPanelProps {
   title: string;
   description?: string;
@@ -58,9 +61,9 @@ const StepperPanel = ({
         className
       )}
     >
-      <Typography variant='h4'>{title}</Typography>
+      <Typography variant="h4">{title}</Typography>
       {description && (
-        <p className='text-sm text-slate-500 mt-2'>{description}</p>
+        <p className="text-sm text-slate-500 mt-2">{description}</p>
       )}
       {children}
     </Stepper.Panel>
@@ -87,7 +90,7 @@ const OnboardingDesktop = () => {
               </Stepper.Step>
             ))}
           </Stepper.Navigation>
-          <div className='flex-1 overflow-hidden min-h-0 flex flex-col'>
+          <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
             {renderStepPanel(methods)}
           </div>
         </>
@@ -97,7 +100,7 @@ const OnboardingDesktop = () => {
 };
 const OnboardingMobile = () => {
   return (
-    <Stepper.Provider className='space-y-4' variant='circle'>
+    <Stepper.Provider className="space-y-4" variant="circle">
       {({ methods }) => (
         <>
           <Stepper.Navigation>
@@ -115,7 +118,7 @@ export const Onboarding = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className="flex flex-col h-full">
       {isMobile ? <OnboardingMobile /> : <OnboardingDesktop />}
     </div>
   );
@@ -128,21 +131,77 @@ const renderStepPanel = (methods: StepperMethods) => {
       return <LilypadWelcome />;
     case "step-2":
       return <OnboardRunFunction />;
-    default:
-      return null;
+    case "step-3":
+      return <OnboardNextSteps />;
   }
 };
 
 const LilypadWelcome = () => {
   return (
-    <StepperPanel title='Welcome to Lilypad' className='welcome-panel'>
+    <StepperPanel title="Welcome to Lilypad" className="welcome-panel">
       <p>We are excited to have you here!</p>
-      <p className='text-sm text-slate-500 mt-4'>
+      <p className="text-sm text-slate-500 mt-4">
         Lilypad is a platform that enables seamless collaboration between
         developers, business users, and domain experts while maintaining quality
         and reproducibility in your AI applications.
       </p>
       <LilypadOnboarding />
+    </StepperPanel>
+  );
+};
+
+const OnboardNextSteps = () => {
+  const navigate = useNavigate();
+  const stepperMethods = useStepper();
+  const metadata = stepperMethods.getMetadata("step-3");
+  const handleViewTrace = () => {
+    navigate({
+      to: `/projects/${metadata?.projectUuid}/traces`,
+    }).catch(() => toast.error("Failed to navigate to traces"));
+  };
+
+  const handleReadDocs = () => {
+    window.open("https://lilypad.so/docs", "_blank");
+  };
+
+  return (
+    <StepperPanel
+      title="Next Steps"
+      description="Congratulations! You have successfully traced your first function."
+    >
+      <div className="flex flex-col gap-4">
+        <Typography variant="span" affects="small" className="block mb-2">
+          You can now:
+        </Typography>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DialogClose asChild>
+            <div
+              onClick={handleViewTrace}
+              className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm flex flex-col"
+            >
+              <div className="font-medium mb-2">View your trace</div>
+              <p className="text-sm text-gray-600">
+                View the trace of your function
+              </p>
+            </div>
+          </DialogClose>
+
+          <div
+            onClick={handleReadDocs}
+            className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm flex flex-col"
+          >
+            <div className="font-medium mb-2 flex items-center">
+              Read documentation
+              <ExternalLink className="ml-1 h-4 w-4 text-gray-500" />
+            </div>
+            <p className="text-sm text-gray-600">Learn more about Lilypad</p>
+          </div>
+        </div>
+        <DialogClose asChild>
+          <Button>Close</Button>
+        </DialogClose>
+      </div>
     </StepperPanel>
   );
 };
@@ -191,10 +250,10 @@ const LilypadOnboarding = () => {
   };
   return (
     <Form {...methods}>
-      <form className='space-y-6' onSubmit={methods.handleSubmit(handleSubmit)}>
+      <form className="space-y-6" onSubmit={methods.handleSubmit(handleSubmit)}>
         <FormField
           control={methods.control}
-          name='organization.name'
+          name="organization.name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Organization Name</FormLabel>
@@ -206,7 +265,7 @@ const LilypadOnboarding = () => {
         />
         <FormField
           control={methods.control}
-          name='project.name'
+          name="project.name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Project Name</FormLabel>
@@ -216,10 +275,10 @@ const LilypadOnboarding = () => {
             </FormItem>
           )}
         />
-        <div className='flex justify-end'>
+        <div className="flex justify-end">
           <Button
-            key='submit'
-            type='submit'
+            key="submit"
+            type="submit"
             disabled={methods.formState.isSubmitting}
           >
             {methods.formState.isSubmitting ? "Creating..." : "Create"}
@@ -242,32 +301,39 @@ const OnboardCodeSnippet = () => {
   const stepperMethods = useStepper();
   const metadata = stepperMethods.getMetadata("step-3");
   return (
-    <div className='flex flex-col overflow-auto'>
-      <Typography variant={"span"} affects='small' className='block mb-2'>
+    <div className="flex flex-col">
+      <Typography variant={"span"} affects="small" className="block mb-2">
         Copy the code below or run your own function
       </Typography>
       <CodeSnippet
-        className='w-full flex-1'
+        className="w-full flex-1"
         code={`import os
+
 import lilypad
+from mirascope import llm, prompt_template
 
 os.environ["GOOGLE_API_KEY"] = "YOUR_API_KEY"
 
 lilypad.configure(
-    project_id="${metadata?.projectUuid ?? "YOUR_PROJECT_ID"}",
-    api_key="${metadata?.apiKey ?? "YOUR_API_KEY"}"
+    auto_llm=True,
+    project_id="${metadata?.projectUuid}",
+    api_key="${metadata?.apiKey}",
 )
 
+
 @lilypad.trace(versioning="automatic")
-@google.call("gemini-2.5-flash-preview-04-17")
+@llm.call(provider="google", model="gemini-2.5-flash-preview-04-17")
 @prompt_template("Answer this question: {question}")
 def answer_question(question: str): ...
 
-response = answer_question("What is the capital of France?")`}
+
+answer_question("What is the capital of France?")
+`}
       />
     </div>
   );
 };
+
 const OnboardCreateAPIKey = () => {
   const createApiKey = useCreateApiKeyMutation();
   const stepperMethods = useStepper();
@@ -307,7 +373,78 @@ interface Tab {
   component?: JSX.Element | null;
   isDisabled?: boolean;
 }
-const OnboardRunFunction = () => {
+
+const OnboardInstallLilypad = () => {
+  const tabs: Tab[] = [
+    {
+      label: "pip",
+      value: "pip",
+      component: (
+        <div className="flex flex-col min-h-20">
+          <Typography variant={"span"} affects="small" className="block mb-2">
+            Replace `google` with any provider, `openai`, `anthropic`, etc.
+          </Typography>
+          <CodeSnippet
+            className="w-full flex-1"
+            code={`pip install lilypad-python[google]`}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "uv",
+      value: "uv",
+      component: (
+        <div className="flex flex-col min-h-20">
+          <Typography variant={"span"} affects="small" className="block mb-2">
+            Replace `google` with any provider, `openai`, `anthropic`, etc.
+          </Typography>
+          <CodeSnippet
+            className="w-full flex-1"
+            code={`uv add lilypad-python[google]`}
+          />
+        </div>
+      ),
+    },
+  ];
+  const [tab, setTab] = useState<string>(tabs[0].value);
+  return (
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value)}
+      className="w-full flex-shrink flex flex-col"
+    >
+      <div className="flex justify-center w-full">
+        <TabsList className={`w-[80px]`}>
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              disabled={tab.isDisabled}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+      <Separator className="my-2" />
+
+      <div className="flex-1 min-h-20 relative">
+        {tabs.map((tab) => (
+          <TabsContent
+            key={tab.value}
+            value={tab.value}
+            className="absolute inset-0"
+          >
+            {tab.component}
+          </TabsContent>
+        ))}
+      </div>
+    </Tabs>
+  );
+};
+
+const OnboardRunLilypad = () => {
   const tabs: Tab[] = [
     {
       label: "Function",
@@ -323,46 +460,61 @@ const OnboardRunFunction = () => {
   ];
   const [tab, setTab] = useState<string>(tabs[0].value);
   return (
-    <StepperPanel
-      title='Run a function'
-      description='Now run a function and observe the results. You can use the API key and Project ID you just created to authenticate your requests.'
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value)}
+      className="w-full flex-1 min-h-0 flex flex-col"
     >
-      <div className='flex flex-col h-full'>
-        <OnboardCreateAPIKey />
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value)}
-          className='w-full flex-1 min-h-0 flex flex-col'
-        >
-          <div>
-            <div className='flex justify-center w-full'>
-              <TabsList className={`w-[80px]`}>
-                {tabs.map((tab) => (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    disabled={tab.isDisabled}
-                  >
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            <Separator className='my-2' />
-          </div>
+      <div className="flex justify-center w-full">
+        <TabsList className={`w-[180px]`}>
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              disabled={tab.isDisabled}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+      <Separator className="my-2" />
 
-          <div className='flex-1 min-h-0 relative'>
-            {tabs.map((tab) => (
-              <TabsContent
-                key={tab.value}
-                value={tab.value}
-                className='absolute inset-0 min-h-0 overflow-auto'
-              >
-                {tab.component}
-              </TabsContent>
-            ))}
-          </div>
-        </Tabs>
+      <div className="flex-1 min-h-0 relative">
+        {tabs.map((tab) => (
+          <TabsContent
+            key={tab.value}
+            value={tab.value}
+            className="absolute inset-0 min-h-0 overflow-auto"
+          >
+            {tab.component}
+          </TabsContent>
+        ))}
+      </div>
+    </Tabs>
+  );
+};
+const OnboardRunFunction = () => {
+  const stepperMethods = useStepper();
+  const metadata = stepperMethods.getMetadata("step-3");
+  const { data: traces } = useQuery({
+    ...spansQueryOptions(metadata?.projectUuid as string),
+    refetchInterval: 1000,
+  });
+  useEffect(() => {
+    if (traces?.items.length) {
+      stepperMethods.next();
+    }
+  }, [traces?.items.length]);
+  return (
+    <StepperPanel
+      title="Run a function"
+      description="Now run a function and observe the results. You can use the API key and Project ID you just created to authenticate your requests."
+    >
+      <div className="flex flex-col h-full">
+        <OnboardCreateAPIKey />
+        <OnboardInstallLilypad />
+        <OnboardRunLilypad />
       </div>
     </StepperPanel>
   );

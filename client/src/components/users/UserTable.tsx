@@ -68,6 +68,7 @@ export const UserTable = () => {
     {
       accessorKey: "email",
       header: "Email",
+      size: 200,
       cell: ({ row }) => {
         const rowData = row.original;
         if ("isInvite" in rowData) {
@@ -109,11 +110,11 @@ export const UserTable = () => {
           }
 
           return (
-            <div className='flex gap-2'>
+            <div className="flex gap-2">
               <Button
-                variant='outline'
-                size='icon'
-                className='h-8 w-8'
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenResendDialog(rowData);
@@ -140,7 +141,7 @@ export const UserTable = () => {
           return null;
 
         return (
-          <div className='flex gap-2'>
+          <div className="flex gap-2">
             <EditUserPermissionsDialog
               userOrganization={rowUserOrganization}
               user={rowData}
@@ -157,13 +158,13 @@ export const UserTable = () => {
 
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Users</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Users</Typography>
         {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
           <InviteUserDialog
             title={`Invite user to ${userOrganization.organization.name}`}
-            description='An email will be sent to the user with an invitation to join the
-              team.'
+            description="An email will be sent to the user with an invitation to join the
+              team."
           />
         )}
       </div>

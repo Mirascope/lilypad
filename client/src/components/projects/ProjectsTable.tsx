@@ -35,6 +35,7 @@ export const ProjectsTable = () => {
       cell: ({ row }) => {
         return <div>{formatDate(row.getValue("created_at"))}</div>;
       },
+      minSize: 250,
     },
     {
       id: "actions",
@@ -43,9 +44,9 @@ export const ProjectsTable = () => {
         return (
           <>
             <Button
-              variant='outline'
-              size='icon'
-              className='h-8 w-8'
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => handleProjectCopy(row.original)}
             >
               <Copy />
@@ -62,8 +63,8 @@ export const ProjectsTable = () => {
   ];
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Projects</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Projects</Typography>
         <CreateProjectDialog />
       </div>
       <DataTable<ProjectPublic>

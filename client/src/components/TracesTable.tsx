@@ -731,17 +731,19 @@ export const TracesTable = ({
                 </PopoverContent>
               </Popover>
             </div>
-            <LilypadDialog
-              icon={<Users />}
-              title={"Annotate selected traces"}
-              description={`${selectedRows.length} trace(s) selected.`}
-              buttonProps={{
-                disabled: selectedRows.length === 0,
-              }}
-              tooltipContent={"Add selected traces to your annotation queue."}
-            >
-              <QueueForm spans={selectedRows} />
-            </LilypadDialog>
+            {features.annotations && (
+              <LilypadDialog
+                icon={<Users />}
+                title={"Annotate selected traces"}
+                description={`${selectedRows.length} trace(s) selected.`}
+                buttonProps={{
+                  disabled: selectedRows.length === 0,
+                }}
+                tooltipContent={"Add selected traces to your annotation queue."}
+              >
+                <QueueForm spans={selectedRows} />
+              </LilypadDialog>
+            )}
             <Button
               variant="outline"
               size="sm"
