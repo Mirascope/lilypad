@@ -1,5 +1,4 @@
 import { useAuth } from "@/auth";
-import { useToast } from "@/hooks/use-toast";
 import { UserConsentUpdate } from "@/types/types";
 import { callbackCodeQueryOptions } from "@/utils/auth";
 import {
@@ -9,6 +8,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 type SearchParam = {
   code: string;
@@ -38,7 +38,6 @@ type State = {
 const CallbackPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { code, state } = Route.useSearch();
   let stateJson: State = {};
 
@@ -93,11 +92,7 @@ const CallbackPage = () => {
         to: stateJson?.redirect ?? "/projects",
         from: "/",
       }).catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to navigate after login.",
-          variant: "destructive",
-        });
+        toast.error("Failed to navigate after login.");
       });
     }
   }, [stateJson.redirect, auth.user]);

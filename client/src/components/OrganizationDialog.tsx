@@ -1,7 +1,6 @@
 import { useAuth } from "@/auth";
 import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -15,39 +14,29 @@ import {
   useUpdateOrganizationMutation,
 } from "@/utils/organizations";
 import { useUpdateActiveOrganizationMutation } from "@/utils/users";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, ReactNode, SetStateAction } from "react";
 import { DefaultValues, Path, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-// Base props for organization dialogs
-interface BaseOrganizationDialogProps {
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-}
-
-// Form data interface with generic extension capability
 interface FormData {
   name: string;
 }
 
-// Base component for organization dialogs
-function BaseOrganizationDialog<T extends FormData>({
-  open,
-  setOpen,
-  title,
-  description,
-  defaultValues,
-  onSubmit,
-  submitButtonText,
-  submitButtonLoadingText,
-}: BaseOrganizationDialogProps & {
-  title: string;
-  description: string;
+interface OrganizationFormProps<T extends FormData> {
   defaultValues: T;
   onSubmit: (data: T) => Promise<void>;
   submitButtonText: string;
   submitButtonLoadingText: string;
-}) {
+  className?: string;
+}
+
+export const OrganizationForm = <T extends FormData>({
+  defaultValues,
+  onSubmit,
+  submitButtonText,
+  submitButtonLoadingText,
+  className = "",
+}: OrganizationFormProps<T>) => {
   const methods = useForm<T>({
     defaultValues: defaultValues as DefaultValues<T>,
   });
@@ -60,55 +49,48 @@ function BaseOrganizationDialog<T extends FormData>({
   };
 
   return (
-    <LilypadDialog
-      open={open}
-      onOpenChange={setOpen}
-      noTrigger
-      title={title}
-      description={description}
-    >
-      <Form {...methods}>
-        <form
-          className="space-y-6"
-          onSubmit={methods.handleSubmit(handleSubmit)}
-        >
-          <FormField
-            control={methods.control}
-            name={"name" as Path<T>}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <DialogFooter>
-            <Button
-              key="submit"
-              type="submit"
-              disabled={methods.formState.isSubmitting}
-              className="w-full"
-            >
-              {methods.formState.isSubmitting
-                ? submitButtonLoadingText
-                : submitButtonText}
-            </Button>
-          </DialogFooter>
-        </form>
-      </Form>
-    </LilypadDialog>
+    <Form {...methods}>
+      <form
+        className={`space-y-6 ${className}`}
+        onSubmit={methods.handleSubmit(handleSubmit)}
+      >
+        <FormField
+          control={methods.control}
+          name={"name" as Path<T>}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Organization Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <div className='flex justify-end'>
+          <Button
+            key='submit'
+            type='submit'
+            disabled={methods.formState.isSubmitting}
+          >
+            {methods.formState.isSubmitting
+              ? submitButtonLoadingText
+              : submitButtonText}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
+};
+
+interface CreateOrganizationFormProps {
+  onSuccess?: () => void;
+  className?: string;
 }
 
-// Create Organization Dialog
-type CreateOrganizationDialogProps = BaseOrganizationDialogProps;
-
-export const CreateOrganizationDialog = ({
-  open,
-  setOpen,
-}: CreateOrganizationDialogProps) => {
+export const CreateOrganizationForm = ({
+  onSuccess,
+  className,
+}: CreateOrganizationFormProps) => {
   const auth = useAuth();
   const organizationCreateMutation = useCreateOrganizationMutation();
   const updateActiveOrganizationMutation =
@@ -133,29 +115,31 @@ export const CreateOrganizationDialog = ({
     });
 
     auth.setSession(newSession);
-    setOpen(false);
+    onSuccess?.();
   };
 
   return (
-    <BaseOrganizationDialog
-      open={open}
-      setOpen={setOpen}
-      title="New Organization"
-      description="Create a new organization"
+    <OrganizationForm
       defaultValues={{ name: "" }}
       onSubmit={handleCreateSubmit}
-      submitButtonText="Create"
-      submitButtonLoadingText="Creating..."
+      submitButtonText='Create'
+      submitButtonLoadingText='Creating...'
+      className={className}
     />
   );
 };
 
-// Update Organization Dialog
-type UpdateOrganizationDialogProps = BaseOrganizationDialogProps;
-export const UpdateOrganizationDialog = ({
-  open,
-  setOpen,
-}: UpdateOrganizationDialogProps) => {
+interface UpdateOrganizationFormProps {
+  initialName?: string;
+  onSuccess?: () => void;
+  className?: string;
+}
+
+export const UpdateOrganizationForm = ({
+  initialName = "",
+  onSuccess,
+  className,
+}: UpdateOrganizationFormProps) => {
   const updateOrganizationMutation = useUpdateOrganizationMutation();
 
   const handleUpdateSubmit = async (data: { name: string }) => {
@@ -165,7 +149,7 @@ export const UpdateOrganizationDialog = ({
       })
       .then(() => {
         toast.success("Organization updated");
-        setOpen(false);
+        onSuccess?.();
       })
       .catch(() => {
         toast.error("Failed to update organization");
@@ -173,15 +157,87 @@ export const UpdateOrganizationDialog = ({
   };
 
   return (
+    <OrganizationForm
+      defaultValues={{ name: initialName }}
+      onSubmit={handleUpdateSubmit}
+      submitButtonText='Update'
+      submitButtonLoadingText='Updating...'
+      className={className}
+    />
+  );
+};
+
+interface BaseDialogProps {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  title: string;
+  description: string;
+  children: ReactNode;
+}
+
+export const BaseOrganizationDialog = ({
+  open,
+  setOpen,
+  title,
+  description,
+  children,
+}: BaseDialogProps) => {
+  return (
+    <LilypadDialog
+      open={open}
+      onOpenChange={setOpen}
+      noTrigger
+      title={title}
+      description={description}
+    >
+      {children}
+    </LilypadDialog>
+  );
+};
+
+interface CreateOrganizationDialogProps {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+export const CreateOrganizationDialog = ({
+  open,
+  setOpen,
+}: CreateOrganizationDialogProps) => {
+  return (
     <BaseOrganizationDialog
       open={open}
       setOpen={setOpen}
-      title="Update Organization"
-      description="Update organization details"
-      defaultValues={{ name: "" }}
-      onSubmit={handleUpdateSubmit}
-      submitButtonText="Update"
-      submitButtonLoadingText="Updating..."
-    />
+      title='New Organization'
+      description='Create a new organization'
+    >
+      <CreateOrganizationForm onSuccess={() => setOpen(false)} />
+    </BaseOrganizationDialog>
+  );
+};
+
+interface UpdateOrganizationDialogProps {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  initialName?: string;
+}
+
+export const UpdateOrganizationDialog = ({
+  open,
+  setOpen,
+  initialName = "",
+}: UpdateOrganizationDialogProps) => {
+  return (
+    <BaseOrganizationDialog
+      open={open}
+      setOpen={setOpen}
+      title='Update Organization'
+      description='Update organization details'
+    >
+      <UpdateOrganizationForm
+        initialName={initialName}
+        onSuccess={() => setOpen(false)}
+      />
+    </BaseOrganizationDialog>
   );
 };

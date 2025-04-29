@@ -2,12 +2,11 @@ import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transf
 import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
-import { useToast } from "@/hooks/use-toast";
 import {
   FunctionCreate,
   FunctionPublic,
-  PlaygroundParameters,
   PlaygroundErrorDetail,
+  PlaygroundParameters,
 } from "@/types/types";
 import {
   useCreateVersionedFunctionMutation,
@@ -20,11 +19,12 @@ import {
 } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
-import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { $getRoot, $isParagraphNode, LexicalEditor } from "lexical";
 import { BaseSyntheticEvent, useRef, useState } from "react";
 import { useFieldArray } from "react-hook-form";
+import { toast } from "sonner";
 
 // Define the form values type
 export interface FormValues {
@@ -50,7 +50,6 @@ export const usePlaygroundContainer = ({
   const createVersionedFunction = useCreateVersionedFunctionMutation();
   const runMutation = useRunPlaygroundMutation();
   const patchFunction = usePatchFunctionMutation();
-  const { toast } = useToast();
   const methods = useBaseEditorForm<EditorParameters>({
     latestVersion: version,
     additionalDefaults: {
@@ -147,12 +146,9 @@ export const usePlaygroundContainer = ({
         }
 
         if (isEmpty) {
-          toast({
-            title: "Empty Prompt",
-            description:
-              "The prompt template cannot be empty. Please enter some text.",
-            variant: "destructive",
-          });
+          toast.error(
+            "The prompt template cannot be empty. Please enter some text."
+          );
           resolve();
           return;
         }
@@ -253,13 +249,8 @@ export const usePlaygroundContainer = ({
           navigate({
             to: `/projects/${projectUuid}/playground/${newVersion.name}/${newVersion.uuid}`,
             replace: true,
-          }).catch((navError) => {
-            console.error("Navigation failed:", navError);
-            toast({
-              title: "Navigation Error",
-              description:
-                "Failed to update the URL after running the playground.",
-            });
+          }).catch(() => {
+            toast.error("Failed to navigate.");
           });
         } catch (apiError) {
           console.error("API Error during create/run:", apiError);
@@ -273,11 +264,7 @@ export const usePlaygroundContainer = ({
             details: message,
           });
           setExecutedSpanUuid(null);
-          toast({
-            title: "API Error",
-            description: message,
-            variant: "destructive",
-          });
+          toast.error(message);
         } finally {
           resolve();
         }

@@ -80,7 +80,6 @@ interface GenericDataTableProps<T> {
   customComponent?: ReactNode;
   isFetching?: boolean;
   fetchNextPage?: () => void;
-  columnWidths?: Record<string, string>;
   columnVisibilityStateKey?: string;
 }
 
@@ -109,7 +108,6 @@ export const DataTable = <T extends { uuid: string }>({
   path,
   isFetching,
   fetchNextPage,
-  columnWidths = {},
   columnVisibilityStateKey,
 }: GenericDataTableProps<T>) => {
   const { updateUserConfig, userConfig } = useAuth();
@@ -238,20 +236,6 @@ export const DataTable = <T extends { uuid: string }>({
     }
   };
 
-  // Get column width either from columnWidths prop, columnDef.size, or a default
-  const getColumnWidth = (columnId: string) => {
-    if (columnWidths[columnId]) {
-      return columnWidths[columnId];
-    }
-
-    const column = table.getColumn(columnId);
-    if (column?.columnDef.size) {
-      return `${column.columnDef.size}px`;
-    }
-
-    return "auto";
-  };
-
   const renderRow = (
     rowInfo: {
       row: Row<T>;
@@ -266,29 +250,26 @@ export const DataTable = <T extends { uuid: string }>({
         ref={(node) => virtualRow && rowVirtualizer.measureElement(node)}
         key={row.id}
         data-state={row.getIsSelected() && "selected"}
-        className={`w-full absolute cursor-pointer hover:bg-secondary ${
+        className={`w-full cursor-pointer hover:bg-secondary ${
           detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
         }`}
         style={{
-          transform: `translateY(${virtualRow.start}px)`,
           paddingLeft: depth > 0 ? `${depth * 1.5}rem` : undefined,
         }}
         onMouseEnter={() => onRowHover?.(row.original)}
         onFocus={() => onRowHover?.(row.original)}
         onClick={() => toggleRowSelection(row.original)}
       >
-        {row.getVisibleCells().map((cell) => (
-          <TableCell
-            key={cell.id}
-            style={{
-              width: getColumnWidth(cell.column.id),
-              minWidth: getColumnWidth(cell.column.id),
-              maxWidth: getColumnWidth(cell.column.id),
-            }}
-          >
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
+        {row.getVisibleCells().map((cell) => {
+          return (
+            <TableCell
+              key={cell.id}
+              className="overflow-hidden text-ellipsis whitespace-nowrap"
+            >
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          );
+        })}
       </TableRow>
     );
   };
@@ -368,24 +349,12 @@ export const DataTable = <T extends { uuid: string }>({
               height: virtualizerOptions.containerHeight ?? "100%",
             }}
           >
-            <Table
-              className="w-full"
-              style={{
-                width: "100%",
-              }}
-            >
+            <Table className="w-full">
               <TableHeader className="sticky top-0 z-10 bg-white">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} className="w-full">
                     {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{
-                          width: getColumnWidth(header.id),
-                          minWidth: getColumnWidth(header.id),
-                          maxWidth: getColumnWidth(header.id),
-                        }}
-                      >
+                      <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -397,20 +366,39 @@ export const DataTable = <T extends { uuid: string }>({
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody
-                className="relative"
-                style={{
-                  height: `${rowVirtualizer.getTotalSize()}px`,
-                }}
-              >
+              <TableBody>
                 {flatRows.length ? (
-                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const rowInfo = flatRows[virtualRow.index];
-                    if (!rowInfo) return null;
-                    return renderRow(rowInfo, virtualRow);
-                  })
+                  <>
+                    {rowVirtualizer.getVirtualItems().length > 0 && (
+                      <TableRow
+                        style={{
+                          height: `${Math.max(0, rowVirtualizer.getVirtualItems()[0].start)}px`,
+                        }}
+                      />
+                    )}
+
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const rowInfo = flatRows[virtualRow.index];
+                      if (!rowInfo) return null;
+                      return renderRow(rowInfo, virtualRow);
+                    })}
+
+                    {rowVirtualizer.getVirtualItems().length > 0 && (
+                      <TableRow
+                        style={{
+                          height: `${Math.max(
+                            0,
+                            rowVirtualizer.getTotalSize() -
+                              (rowVirtualizer.getVirtualItems()[
+                                rowVirtualizer.getVirtualItems().length - 1
+                              ]?.end || 0)
+                          )}px`,
+                        }}
+                      />
+                    )}
+                  </>
                 ) : (
-                  <TableRow>
+                  <TableRow className="w-full">
                     <TableCell
                       colSpan={columns.length}
                       className="h-24 text-center"
@@ -421,7 +409,7 @@ export const DataTable = <T extends { uuid: string }>({
                 )}
               </TableBody>
             </Table>
-            {isFetching && <div>Fetching More...</div>}
+            {isFetching && <div className="p-2">Fetching More...</div>}
           </div>
         </div>
       </ResizablePanel>

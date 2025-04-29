@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import {
   externalApiKeysQueryOptions,
   useCreateExternalApiKeyMutation,
@@ -21,6 +20,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useForm, useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 
 interface UserKeysFormValues {
   openai: string;
@@ -76,7 +76,6 @@ export const KeysSettings = () => {
   const { data: externalApiKeys } = useSuspenseQuery(
     externalApiKeysQueryOptions()
   );
-  const { toast } = useToast();
   const externalApiKeysMap = externalApiKeys.reduce(
     (acc, key) => {
       acc[key.service_name] = key.masked_api_key;
@@ -140,18 +139,9 @@ export const KeysSettings = () => {
       if (Object.keys(dirtyFields).length > 0) {
         await updateUserKeys.mutateAsync(data); // Pass the full data as original logic did
       }
-
-      toast({
-        title: "LLM Keys Updated",
-        description: "Your LLM API keys have been successfully updated.",
-      });
+      toast.success("Your keys have been successfully updated.");
     } catch (error) {
-      console.error("Failed to update keys:", error);
-      toast({
-        title: "Update Failed",
-        description: "Could not update LLM API keys. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update keys. Please try again.");
     }
   };
 

@@ -13,13 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
 import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { toast } from "@/hooks/use-toast";
 import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const tier = {
   [Tier.FREE]: "Free",
@@ -83,17 +83,10 @@ const ChangePlan = () => {
   });
   const updateOrganization = useUpdateOrganizationMutation();
   const onSubmit = async (data: OrganizationUpdate) => {
-    try {
-      await updateOrganization.mutateAsync(data);
-      toast({
-        title: "Successfully upgraded plan.",
-      });
-    } catch (e) {
-      toast({
-        title: "Failed to upgrade plan.",
-        variant: "destructive",
-      });
-    }
+    await updateOrganization
+      .mutateAsync(data)
+      .catch(() => toast.error("Failed to upgrade plan."));
+    toast.success("Successfully upgraded plan.");
   };
   return (
     <Form {...methods}>

@@ -3,13 +3,13 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
-import { toast } from "@/hooks/use-toast";
 import { Route as FunctionsRoute } from "@/routes/_auth/projects/$projectUuid/functions/index";
 import { projectsQueryOptions } from "@/utils/projects";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
+import { toast } from "sonner";
 
 interface SearchParams {
   redirect?: string;
@@ -36,9 +36,7 @@ const Projects = () => {
 
   useEffect(() => {
     if (joined) {
-      toast({
-        title: "Successfully joined organization",
-      });
+      toast.success("Successfully joined organization");
     }
   }, [joined]);
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());

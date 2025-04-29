@@ -216,7 +216,6 @@ export const MessagesContainer = ({
     </Card>
   );
 };
-
 export const renderOutput = (output: string) => {
   const jsonOutput = safelyParseJSON(output);
   return (

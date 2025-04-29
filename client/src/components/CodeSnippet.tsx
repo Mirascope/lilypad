@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import hljs from "highlight.js/lib/core";
 import python from "highlight.js/lib/languages/python";
 import "highlight.js/styles/atom-one-light.min.css";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
+import { toast } from "sonner";
 // Register the language
 hljs.registerLanguage("python", python);
 
@@ -27,7 +27,7 @@ const renderCode = (
       const lineClass = lineHighlights[lineNumber] || "bg-gray-50";
 
       return (
-        <div key={i} className={`hljs-line ${lineClass}`}>
+        <div key={i} className={`hljs-line ${lineClass} w-full`}>
           <span className="hljs-line-code">{line}</span>
         </div>
       );
@@ -43,7 +43,7 @@ const renderCode = (
     return (
       <div
         key={i}
-        className={`hljs-line ${lineClass}`}
+        className={`hljs-line ${lineClass} w-full`}
         data-line-number={lineNumber}
         data-digits={digits}
       >
@@ -70,7 +70,6 @@ export const CodeSnippet = ({
   const preRef = useRef<HTMLPreElement>(null);
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!codeRef.current) return;
@@ -112,6 +111,8 @@ export const CodeSnippet = ({
         }
         .hljs-line-code {
           flex: 1;
+          word-break: break-all;
+          white-space: pre-wrap;
           background: transparent !important; /* Ensure HLJS doesn't override our backgrounds */
         }
         /* Ensure our custom highlighting takes precedence */
@@ -133,33 +134,25 @@ export const CodeSnippet = ({
       .writeText(code)
       .then(() => {
         setCopied(true);
-        toast({ title: "Copied to clipboard" });
+        toast.success("Copied to clipboard");
         setTimeout(() => setCopied(false), 2000);
       })
-      .catch((error: unknown) => {
-        if (error instanceof Error) {
-          toast({
-            title: "Failed to copy",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Failed to copy",
-            variant: "destructive",
-          });
-        }
+      .catch(() => {
+        toast.error("Failed to copy");
       });
   };
 
   const formattedCode = renderCode(code, showLineNumbers, lineHighlights);
 
   return (
-    <div className="relative">
-      <pre className={className} ref={preRef}>
+    <div className="relative w-full">
+      <pre
+        className={cn("whitespace-pre overflow-visible", className)}
+        ref={preRef}
+      >
         <code
           ref={codeRef}
-          className="language-python text-sm overflow-x-auto flex flex-col"
+          className="language-python text-sm flex flex-col w-full"
           key={code}
         >
           {formattedCode}

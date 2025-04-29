@@ -1,10 +1,10 @@
 import { useAuth } from "@/auth";
-import { APIKeysTable } from "@/components/APIKeysTable";
-import { EnvironmentsTable } from "@/components/EnvironmentsTable";
+import { APIKeysTable } from "@/components/apiKeys/APIKeysTable";
+import { EnvironmentsTable } from "@/components/environments/EnvironmentsTable";
 import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { UpdateOrganizationDialog } from "@/components/OrganizationDialog";
-import { ProjectsTable } from "@/components/ProjectsTable";
+import { ProjectsTable } from "@/components/projects/ProjectsTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserOrgTable } from "@/components/UserOrgTable";
+import { UserTable } from "@/components/users/UserTable";
 import { UserRole } from "@/types/types";
 import { useDeleteOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
@@ -42,7 +42,7 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
   return (
     <>
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
-      <UserOrgTable />
+      <UserTable />
       <ProjectsTable />
       <EnvironmentsTable />
       <APIKeysTable />

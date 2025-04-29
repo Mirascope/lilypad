@@ -5,7 +5,6 @@ import { SettingsLayout } from "@/components/SettingsLayout";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TagsTable } from "@/components/TagsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -22,6 +21,7 @@ import {
   Tag,
 } from "lucide-react";
 import { JSX, ReactNode, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
@@ -36,7 +36,6 @@ interface Tab {
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const params = useParams({
     from: Route.id,
@@ -130,21 +129,13 @@ const Settings = () => {
       navigate({
         to: `/settings/${tab}`,
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     } else {
       navigate({
         to: `/settings/$`,
         params: { _splat: "overview" },
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     }
   }, [tab, navigate, toast]);
   const handleTabChange = (value: string) => {
@@ -152,11 +143,7 @@ const Settings = () => {
       to: `/settings/$`,
       params: { _splat: value },
       replace: true,
-    }).catch(() =>
-      toast({
-        title: "Navigation failed",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to settings page."));
   };
   const tabWidth = 90 * tabs.length;
 

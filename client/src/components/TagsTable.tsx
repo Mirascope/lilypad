@@ -28,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import { TagPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
@@ -44,6 +43,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { PencilLine, Trash } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export const TagsTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
@@ -128,27 +128,19 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
     },
   });
   const deleteTag = useDeleteTagMutation();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const onSubmit = async () => {
-    const successfullyDeleted = await deleteTag.mutateAsync(tag.uuid);
-    let title = "Failed to delete tag. Please try again.";
-    if (successfullyDeleted) {
-      title = "Successfully deleted tag";
-    }
-    toast({
-      title,
+    await deleteTag.mutateAsync(tag.uuid).catch(() => {
+      toast.error("Failed to delete tag");
+      return;
     });
+    toast.success("Successfully deleted tag");
     navigate({
       to: "/settings/$",
       params: { _splat: "tags" },
     }).catch(() => {
-      toast({
-        title: "Error",
-        description: "Failed to navigate after deletion.",
-        variant: "destructive",
-      });
+      toast.error("Failed to navigate after deletion.");
     });
   };
 
@@ -237,7 +229,6 @@ const TagForm = ({
   submitButtonText,
   submittingText,
 }: TagFormProps) => {
-  const { toast } = useToast();
   const methods = useForm<TagFormData>({
     defaultValues: initialData ?? { name: "", project_uuid: null },
   });
@@ -246,15 +237,12 @@ const TagForm = ({
   const handleSubmit = async (data: TagFormData) => {
     try {
       await onSubmit(data);
-      toast({
-        title: `Successfully ${mode === "create" ? "created" : "updated"} tag`,
-      });
+      toast.success(
+        `Successfully ${mode === "create" ? "created" : "updated"} tag`
+      );
       methods.reset();
     } catch (error) {
-      toast({
-        title: `Failed to ${mode === "create" ? "create" : "update"} tag`,
-        variant: "destructive",
-      });
+      toast.error(`Failed to ${mode === "create" ? "create" : "update"} tag`);
     }
   };
 
