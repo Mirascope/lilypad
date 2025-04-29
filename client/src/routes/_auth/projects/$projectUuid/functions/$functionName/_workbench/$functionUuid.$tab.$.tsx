@@ -95,7 +95,7 @@ const FunctionOverview = () => {
     return <NotFound />;
   } else {
     return (
-      <div className='p-2 flex flex-1 flex-col gap-2 max-w-4xl mx-auto'>
+      <div className="p-2 flex flex-1 flex-col gap-2 max-w-4xl mx-auto">
         {features.annotations && (
           <AnnotationMetrics
             projectUuid={projectUuid}
@@ -110,8 +110,8 @@ const FunctionOverview = () => {
           <CodeSnippet code={fn.code} />
         </div>
         <div>
-          <Button variant='outline' onClick={handlePlaygroundButtonClick}>
-            <SquareTerminal className='w-4 h-4 mr-2' />
+          <Button variant="outline" onClick={handlePlaygroundButtonClick}>
+            <SquareTerminal className="w-4 h-4 mr-2" />
             Go to playground
           </Button>
         </div>

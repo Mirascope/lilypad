@@ -51,13 +51,13 @@ export const QueueForm = ({ spans }: { spans: SpanPublic[] }) => {
   return (
     <Form {...methods}>
       <form
-        className='flex flex-col gap-2'
+        className="flex flex-col gap-2"
         onSubmit={methods.handleSubmit(onSubmit)}
       >
         <SelectUsers />
         <DialogFooter>
           <DialogClose asChild>
-            <Button type='submit' loading={methods.formState.isSubmitting}>
+            <Button type="submit" loading={methods.formState.isSubmitting}>
               {methods.formState.isSubmitting
                 ? "Adding to queue..."
                 : "Add to queue"}
@@ -65,8 +65,8 @@ export const QueueForm = ({ spans }: { spans: SpanPublic[] }) => {
           </DialogClose>
           <DialogClose asChild>
             <Button
-              type='button'
-              variant='outline'
+              type="button"
+              variant="outline"
               loading={methods.formState.isSubmitting}
             >
               Cancel
@@ -83,12 +83,12 @@ export const SelectUsers = () => {
   const methods = useFormContext<AnnotationCreate>();
   return (
     <FormField
-      key='assignedTo'
+      key="assignedTo"
       control={methods.control}
       name={"assigned_to"}
       render={() => (
         <FormItem>
-          <FormLabel className='flex items-center gap-2'>Assign To</FormLabel>
+          <FormLabel className="flex items-center gap-2">Assign To</FormLabel>
           <FormDescription>
             Leave empty to allow anyone to annotate
           </FormDescription>
@@ -99,11 +99,11 @@ export const SelectUsers = () => {
                 label: user.first_name,
               }))}
               disableAdd
-              popoverText='Select users...'
-              emptyText='No user found.'
+              popoverText="Select users..."
+              emptyText="No user found."
               control={methods.control}
               name={"assigned_to"}
-              helperText='Assign users'
+              helperText="Assign users"
             />
           </FormControl>
         </FormItem>

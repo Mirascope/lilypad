@@ -1,7 +1,7 @@
 import api from "@/api";
 import { PaginatedSpanPublic } from "@/types/types";
-import type { QueryFunctionContext } from "@tanstack/react-query";
 import { PAGE_SIZE } from "@/utils/constants.ts";
+import type { QueryFunctionContext } from "@tanstack/react-query";
 
 export const fetchTraces = async (
   projectUuid: string,
@@ -10,12 +10,12 @@ export const fetchTraces = async (
   order: "desc" | "asc" = "desc"
 ) => {
   const params = new URLSearchParams({
-  limit: String(limit),
-  offset: String(offset),
-  order: order,
-});
+    limit: String(limit),
+    offset: String(offset),
+    order: order,
+  });
   const { data } = await api.get<PaginatedSpanPublic>(
-    `/projects/${projectUuid}/traces?${params}`,
+    `/projects/${projectUuid}/traces?${params}`
   );
   return data;
 };
@@ -25,18 +25,18 @@ export interface TracePageParam {
   limit: number;
 }
 
-export const tracesInfiniteQueryOptions = <Key extends readonly unknown[] >(
+export const tracesInfiniteQueryOptions = <Key extends readonly unknown[]>(
   projectUuid: string,
   pageSize: number,
   order: "asc" | "desc" = "desc",
-  queryKey: Key,
+  queryKey: Key
 ) => ({
   queryKey,
   queryFn: ({ pageParam }: QueryFunctionContext) => {
     const { offset = 0, limit = pageSize } = pageParam as TracePageParam;
     return fetchTraces(projectUuid, offset, limit, order);
   },
-  
+
   getNextPageParam: (
     lastPage: PaginatedSpanPublic,
     _pages: PaginatedSpanPublic[],
@@ -47,7 +47,7 @@ export const tracesInfiniteQueryOptions = <Key extends readonly unknown[] >(
       ? { offset: nextOffset, limit: lastParams.limit }
       : undefined;
   },
-  
+
   initialPageParam: { offset: 0, limit: pageSize },
   staleTime: 30_000,
 });

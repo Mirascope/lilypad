@@ -78,53 +78,53 @@ const SuccessMetrics = ({
   };
 
   return (
-    <Card className='w-full max-w-md'>
-      <CardHeader className='pb-2'>
+    <Card className="w-full max-w-md">
+      <CardHeader className="pb-2">
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <div className='flex flex-col items-center space-y-4'>
-          <div className='relative w-40 h-40 flex items-center justify-center'>
-            <svg className='w-full h-full' viewBox='0 0 160 160'>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            <svg className="w-full h-full" viewBox="0 0 160 160">
               <circle
-                cx='80'
-                cy='80'
+                cx="80"
+                cy="80"
                 r={radius}
-                fill='none'
-                stroke='#e6e6e6'
-                strokeWidth='12'
+                fill="none"
+                stroke="#e6e6e6"
+                strokeWidth="12"
               />
               <circle
-                cx='80'
-                cy='80'
+                cx="80"
+                cy="80"
                 r={radius}
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='12'
-                strokeLinecap='round'
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="12"
+                strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 className={getColor()}
-                transform='rotate(-90 80 80)'
+                transform="rotate(-90 80 80)"
               />
             </svg>
-            <div className='absolute flex flex-col items-center justify-center'>
-              <span className='text-3xl font-bold'>{percentage}%</span>
-              <span className='text-sm text-gray-500'>Pass Rate</span>
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-3xl font-bold">{percentage}%</span>
+              <span className="text-sm text-gray-500">Pass Rate</span>
             </div>
           </div>
 
-          <div className='flex justify-between items-center text-sm w-full'>
-            <div className='flex items-center space-x-1'>
-              <CheckCircle className='h-4 w-4 text-green-500' />
+          <div className="flex justify-between items-center text-sm w-full">
+            <div className="flex items-center space-x-1">
+              <CheckCircle className="h-4 w-4 text-green-500" />
               <span>{successCount} pass</span>
             </div>
-            <div className='flex items-center space-x-1'>
-              <CircleX className='h-4 w-4 text-destructive' />
+            <div className="flex items-center space-x-1">
+              <CircleX className="h-4 w-4 text-destructive" />
               <span>{totalCount - successCount} fail</span>
             </div>
-            <div className='font-medium'>
+            <div className="font-medium">
               {successCount} / {totalCount} total
             </div>
           </div>

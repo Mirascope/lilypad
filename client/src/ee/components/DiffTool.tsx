@@ -109,7 +109,7 @@ const CodeBlockWithLineNumbersSideBySide = ({
           lineNumbers.push(
             <div
               key={`${side}-linenumber-${lineNumber}`}
-              className='text-xs leading-5 text-gray-500 py-[1px]'
+              className="text-xs leading-5 text-gray-500 py-[1px]"
             >
               {lineNumber}
             </div>
@@ -136,7 +136,7 @@ const CodeBlockWithLineNumbersSideBySide = ({
           lineNumbers.push(
             <div
               key={`${side}-linenumber-placeholder-${blockIndex}-${lineIndex}`}
-              className='text-xs leading-5 text-gray-500 py-[1px]'
+              className="text-xs leading-5 text-gray-500 py-[1px]"
             >
               &nbsp;
             </div>
@@ -147,22 +147,22 @@ const CodeBlockWithLineNumbersSideBySide = ({
     });
 
     return (
-      <div className='flex-1 w-full overflow-x-auto'>
+      <div className="flex-1 w-full overflow-x-auto">
         <CodeSnippet
           code={codeLines.join("\n")}
           showCopyButton={false}
           lineHighlights={lineHighlights}
-          className='!p-0 !bg-transparent'
+          className="!p-0 !bg-transparent"
         />
       </div>
     );
   };
 
   return (
-    <div className='font-mono text-sm border rounded-md overflow-hidden'>
-      <div className='flex'>
+    <div className="font-mono text-sm border rounded-md overflow-hidden">
+      <div className="flex">
         {renderColumn("before")}
-        <div className='w-px bg-gray-300'></div>
+        <div className="w-px bg-gray-300"></div>
         {renderColumn("after")}
       </div>
     </div>
@@ -200,12 +200,12 @@ const CodeBlockWithLineNumbersAndHighlights = ({
   });
 
   return (
-    <div className='w-full font-mono text-sm border rounded-md overflow-hidden'>
+    <div className="w-full font-mono text-sm border rounded-md overflow-hidden">
       <CodeSnippet
         code={codeLines.join("\n")}
         showCopyButton={false}
         lineHighlights={lineHighlights}
-        className='!p-0 !bg-transparent'
+        className="!p-0 !bg-transparent"
       />
     </div>
   );
@@ -238,17 +238,17 @@ export const DiffTool = ({
     <>
       {diffed && (
         <>
-          <div className='flex items-center space-x-2'>
+          <div className="flex items-center space-x-2">
             <Switch
-              id='diff-view'
+              id="diff-view"
               checked={mode === "split"}
               onCheckedChange={handleModeChange}
             />
-            <Label htmlFor='diff-view'>
+            <Label htmlFor="diff-view">
               {mode === "split" ? "Split" : "Unified"} View
             </Label>
           </div>
-          <div className='flex w-full'>
+          <div className="flex w-full">
             {mode === "unified" ? (
               <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} />
             ) : (

@@ -1,12 +1,9 @@
 import { SearchBar } from "@/components/SearchBar";
 import { TracesTable } from "@/components/TracesTable";
-import {
-  Route
-} from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid.$tab.$.tsx";
+import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
+import { Route } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid.$tab.$.tsx";
 import { SpanPublic } from "@/types/types";
 import { useState } from "react";
-import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
-
 
 export const FunctionSpans = ({
   projectUuid,
@@ -18,7 +15,7 @@ export const FunctionSpans = ({
   traceUuid?: string;
 }) => {
   const [order, setOrder] = useState<"asc" | "desc">("desc");
- 
+
   const {
     fetchNextPage,
     hasNextPage,
@@ -26,17 +23,16 @@ export const FunctionSpans = ({
     isLoading,
     defaultData,
   } = usePaginatedSpansByFunction(projectUuid, order, functionUuid);
-  
+
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
-  
-  
+
   if (isLoading) {
-    return <div className="p-4">Loading…</div>
+    return <div className="p-4">Loading…</div>;
   }
-  
+
   return (
-    <div className='flex flex-col h-full'>
-      <div className='flex-shrink-0'>
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
         <SearchBar
           projectUuid={projectUuid}
           onDataChange={setDisplayData}
@@ -45,15 +41,15 @@ export const FunctionSpans = ({
           }
         />
       </div>
-      <div className='flex-1 min-h-0 overflow-auto'>
+      <div className="flex-1 min-h-0 overflow-auto">
         <TracesTable
           data={displayData ?? defaultData}
           traceUuid={traceUuid}
           path={Route.fullPath}
           projectUuid={projectUuid}
-          onReachEnd={() => {
+          fetchNextPage={() => {
             if (hasNextPage && !isFetchingNextPage) {
-              void fetchNextPage()
+              void fetchNextPage();
             }
           }}
           isFetchingNextPage={isFetchingNextPage}

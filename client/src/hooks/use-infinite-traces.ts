@@ -1,13 +1,22 @@
-import { useInfiniteQuery, InfiniteData } from "@tanstack/react-query";
+import { PaginatedSpanPublic } from "@/types/types";
 import {
   tracesInfiniteQueryOptions,
   type TracePageParam,
 } from "@/utils/traces";
-import { PaginatedSpanPublic } from "@/types/types";
+import { InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-export const useInfiniteTraces = (projectUuid: string, pageSize: number, order: "asc" | "desc" = "desc",) => {
-  const queryKey = ["projects", projectUuid, "traces", { order, pageSize }] as const;
+export const useInfiniteTraces = (
+  projectUuid: string,
+  pageSize: number,
+  order: "asc" | "desc" = "desc"
+) => {
+  const queryKey = [
+    "projects",
+    projectUuid,
+    "traces",
+    { order, pageSize },
+  ] as const;
   const query = useInfiniteQuery<
     PaginatedSpanPublic,
     Error,
@@ -15,11 +24,11 @@ export const useInfiniteTraces = (projectUuid: string, pageSize: number, order: 
     typeof queryKey,
     TracePageParam
   >(tracesInfiniteQueryOptions(projectUuid, pageSize, order, queryKey));
-  
+
   const defaultData = useMemo(
     () => query.data?.pages.flatMap((p) => p.items) ?? [],
-    [query.data?.pages],
+    [query.data?.pages]
   );
-  
+
   return { ...query, defaultData };
 };

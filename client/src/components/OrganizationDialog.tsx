@@ -69,7 +69,7 @@ function BaseOrganizationDialog<T extends FormData>({
     >
       <Form {...methods}>
         <form
-          className='space-y-6'
+          className="space-y-6"
           onSubmit={methods.handleSubmit(handleSubmit)}
         >
           <FormField
@@ -86,10 +86,10 @@ function BaseOrganizationDialog<T extends FormData>({
           />
           <DialogFooter>
             <Button
-              key='submit'
-              type='submit'
+              key="submit"
+              type="submit"
               disabled={methods.formState.isSubmitting}
-              className='w-full'
+              className="w-full"
             >
               {methods.formState.isSubmitting
                 ? submitButtonLoadingText
@@ -140,12 +140,12 @@ export const CreateOrganizationDialog = ({
     <BaseOrganizationDialog
       open={open}
       setOpen={setOpen}
-      title='New Organization'
-      description='Create a new organization'
+      title="New Organization"
+      description="Create a new organization"
       defaultValues={{ name: "" }}
       onSubmit={handleCreateSubmit}
-      submitButtonText='Create'
-      submitButtonLoadingText='Creating...'
+      submitButtonText="Create"
+      submitButtonLoadingText="Creating..."
     />
   );
 };
@@ -176,12 +176,12 @@ export const UpdateOrganizationDialog = ({
     <BaseOrganizationDialog
       open={open}
       setOpen={setOpen}
-      title='Update Organization'
-      description='Update organization details'
+      title="Update Organization"
+      description="Update organization details"
       defaultValues={{ name: "" }}
       onSubmit={handleUpdateSubmit}
-      submitButtonText='Update'
-      submitButtonLoadingText='Updating...'
+      submitButtonText="Update"
+      submitButtonLoadingText="Updating..."
     />
   );
 };

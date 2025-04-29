@@ -20,38 +20,38 @@ export const MetricCharts = ({
   const latencyTitle = `Latency (${timeFrame})`;
 
   return (
-    <div className='space-y-4'>
-      <div className='inline-flex items-center p-1 rounded-lg bg-muted'>
+    <div className="space-y-4">
+      <div className="inline-flex items-center p-1 rounded-lg bg-muted">
         <Button
           variant={timeFrame === TimeFrame.DAY ? "default" : "ghost"}
-          size='sm'
-          className='flex items-center gap-1'
+          size="sm"
+          className="flex items-center gap-1"
           onClick={() => setTimeFrame(TimeFrame.DAY)}
         >
-          <Clock className='h-4 w-4' />
+          <Clock className="h-4 w-4" />
           <span>Day</span>
         </Button>
         <Button
           variant={timeFrame === TimeFrame.WEEK ? "default" : "ghost"}
-          size='sm'
-          className='flex items-center gap-1'
+          size="sm"
+          className="flex items-center gap-1"
           onClick={() => setTimeFrame(TimeFrame.WEEK)}
         >
-          <Calendar className='h-4 w-4' />
+          <Calendar className="h-4 w-4" />
           <span>Week</span>
         </Button>
         <Button
           variant={timeFrame === TimeFrame.MONTH ? "default" : "ghost"}
-          size='sm'
-          className='flex items-center gap-1'
+          size="sm"
+          className="flex items-center gap-1"
           onClick={() => setTimeFrame(TimeFrame.MONTH)}
         >
-          <CalendarDays className='h-4 w-4' />
+          <CalendarDays className="h-4 w-4" />
           <span>Month</span>
         </Button>
       </div>
 
-      <div className='flex gap-2'>
+      <div className="flex gap-2">
         <Suspense fallback={<ChartSkeleton title={costTitle} />}>
           <FunctionCostAndTokensChart
             firstFunction={firstFunction}

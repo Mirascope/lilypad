@@ -23,16 +23,16 @@ const TableSkeleton = ({
   isFetchingNextPage = false,
 }: TableSkeletonProps) => {
   const endRef = useRef<HTMLTableRowElement>(null);
-  
+
   return (
-    <div className='rounded-md border'>
+    <div className="rounded-md border">
       <Table>
         {showHeader && (
           <TableHeader>
             <TableRow>
               {Array.from({ length: columns }).map((_, index) => (
                 <TableHead key={index}>
-                  <Skeleton className='h-4 w-[80px]'/>
+                  <Skeleton className="h-4 w-[80px]" />
                 </TableHead>
               ))}
             </TableRow>
@@ -51,7 +51,7 @@ const TableSkeleton = ({
             </TableRow>
           ))}
           <TableRow ref={endRef}>
-            <TableCell colSpan={columns} className="h-6 p-0"/>
+            <TableCell colSpan={columns} className="h-6 p-0" />
           </TableRow>
           {isFetchingNextPage && (
             <TableRow>

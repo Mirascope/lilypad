@@ -162,13 +162,13 @@ const FunctionWorkbench = () => {
 
   const tabWidth = 80 * tabs.length;
   return (
-    <div className='pt-4 pb-1 h-screen flex flex-col px-2'>
-      <Typography variant='h2'>{functionName}</Typography>
-      <div className='flex gap-2 items-center'>
+    <div className="pt-4 pb-1 h-screen flex flex-col px-2">
+      <Typography variant="h2">{functionName}</Typography>
+      <div className="flex gap-2 items-center">
         {fn && (
           <Button
-            variant='outline'
-            size='icon'
+            variant="outline"
+            size="icon"
             onClick={() => {
               if (!compareMode) {
                 navigate({
@@ -203,7 +203,7 @@ const FunctionWorkbench = () => {
           <LilypadDialog
             icon={<Trash />}
             title={`Delete ${fn.name} v${fn.version_num}`}
-            description=''
+            description=""
             dialogContentProps={{
               className: "max-w-[600px]",
             }}
@@ -213,17 +213,17 @@ const FunctionWorkbench = () => {
             }}
             dialogButtons={[
               <Button
-                key='delete-function'
-                type='button'
-                variant='destructive'
+                key="delete-function"
+                type="button"
+                variant="destructive"
                 onClick={handleArchive}
               >
                 Delete
               </Button>,
               <Button
-                key='cancel-delete-button'
-                type='button'
-                variant='outline'
+                key="cancel-delete-button"
+                type="button"
+                variant="outline"
               >
                 Cancel
               </Button>,
@@ -234,18 +234,18 @@ const FunctionWorkbench = () => {
         )}
       </div>
       {compareMode && (
-        <div className='flex gap-2 items-center'>
-          <div className='w-10 h-10'></div>
+        <div className="flex gap-2 items-center">
+          <div className="w-10 h-10"></div>
           <SelectFunction compareMode={compareMode} isFirstFunction={false} />
         </div>
       )}
       <Tabs
         value={tab}
         onValueChange={handleTabChange}
-        className='w-full h-full flex flex-col'
+        className="w-full h-full flex flex-col"
       >
         <div>
-          <div className='flex justify-center w-full'>
+          <div className="flex justify-center w-full">
             <TabsList className={`w-[${tabWidth}px]`}>
               {tabs.map((tab) => (
                 <TabsTrigger
@@ -258,15 +258,15 @@ const FunctionWorkbench = () => {
               ))}
             </TabsList>
           </div>
-          <Separator className='my-2' />
+          <Separator className="my-2" />
         </div>
 
-        <div className='flex-1 min-h-0 relative'>
+        <div className="flex-1 min-h-0 relative">
           {tabs.map((tab) => (
             <TabsContent
               key={tab.value}
               value={tab.value}
-              className='absolute inset-0 overflow-auto'
+              className="absolute inset-0 overflow-auto"
             >
               <Outlet />
             </TabsContent>
@@ -326,8 +326,8 @@ const SelectFunction = ({
         }
       }}
     >
-      <SelectTrigger className='w-[200px]'>
-        <SelectValue placeholder='Select a function' />
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select a function" />
       </SelectTrigger>
       <SelectContent>
         {functions.map((fn) => (

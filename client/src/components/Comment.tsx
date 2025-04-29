@@ -43,8 +43,8 @@ export const CommentCards = ({ spanUuid }: { spanUuid: string }) => {
     commentsBySpanQueryOptions(spanUuid)
   );
   return (
-    <div className='overflow-y-auto h-full'>
-      <div className='flex flex-col gap-4 pr-2'>
+    <div className="overflow-y-auto h-full">
+      <div className="flex flex-col gap-4 pr-2">
         {spanComments.map((comment) => (
           <CommentCardContainer key={comment.uuid} comment={comment} />
         ))}
@@ -96,37 +96,37 @@ const CommentCardContainer = ({ comment }: { comment: CommentPublic }) => {
     });
   };
   const renderEdit = (
-    <div className='flex flex-col gap-4'>
+    <div className="flex flex-col gap-4">
       <Form {...methods}>
         <form
           id={`comment-form-${comment.uuid}`}
           onSubmit={methods.handleSubmit(onSubmit)}
-          className='flex flex-col gap-4'
+          className="flex flex-col gap-4"
         >
           <Editor
             ref={commentRef}
-            editorClassName='h-[100px]'
-            placeholderText='Comment...'
+            editorClassName="h-[100px]"
+            placeholderText="Comment..."
             template={comment.text}
           />
-          <div className='flex justify-end gap-2'>
+          <div className="flex justify-end gap-2">
             <Button
-              type='button'
-              variant='outline'
-              size='sm'
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={handleCancel}
               disabled={updateCommentMutation.isPending}
             >
-              <XIcon className='mr-2 h-4 w-4' />
+              <XIcon className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button
-              type='submit'
-              variant='default'
-              size='sm'
+              type="submit"
+              variant="default"
+              size="sm"
               disabled={updateCommentMutation.isPending}
             >
-              <CheckIcon className='mr-2 h-4 w-4' />
+              <CheckIcon className="mr-2 h-4 w-4" />
               Update
             </Button>
           </div>
@@ -139,13 +139,13 @@ const CommentCardContainer = ({ comment }: { comment: CommentPublic }) => {
     return (
       <div>
         <Button
-          variant='ghost'
-          size='sm'
+          variant="ghost"
+          size="sm"
           onClick={handleEdit}
-          className='h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity'
+          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <PencilIcon className='h-4 w-4' />
-          <span className='sr-only'>Edit comment</span>
+          <PencilIcon className="h-4 w-4" />
+          <span className="sr-only">Edit comment</span>
         </Button>
         <DeleteComment comment={comment} />
       </div>
@@ -181,20 +181,20 @@ export const CommentCard = ({
   const commentUser = userMap[comment.user_uuid];
 
   return (
-    <div className='flex items-start gap-4 group'>
-      <Avatar className='h-10 w-10 border'>
+    <div className="flex items-start gap-4 group">
+      <Avatar className="h-10 w-10 border">
         <AvatarFallback>
           {commentUser.first_name.charAt(0)}
           {commentUser.last_name?.charAt(0)}
         </AvatarFallback>
       </Avatar>
-      <div className='flex-1 space-y-2'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <div className='font-medium'>
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="font-medium">
               {commentUser.first_name} {commentUser.last_name}
             </div>
-            <div className='text-xs text-gray-500 dark:text-gray-400'>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {comment.updated_at && "Edited "}
               {formatRelativeTime(comment.updated_at ?? comment.created_at)}
             </div>
@@ -202,7 +202,7 @@ export const CommentCard = ({
           {renderControls?.()}
         </div>
         {renderEdit ?? (
-          <div className='prose'>
+          <div className="prose">
             <ReactMarkdown>{comment.text}</ReactMarkdown>
           </div>
         )}
@@ -226,23 +226,23 @@ const DeleteComment = ({ comment }: { comment: CommentPublic }) => {
     <LilypadDialog
       customTrigger={
         <Button
-          variant='ghostDestructive'
-          size='sm'
-          className='h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity'
+          variant="ghostDestructive"
+          size="sm"
+          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <Trash className='h-4 w-4' />
-          <span className='sr-only'>Delete comment</span>
+          <Trash className="h-4 w-4" />
+          <span className="sr-only">Delete comment</span>
         </Button>
       }
-      title='Delete Comment'
-      description='This action cannot be undone. Are you sure you want to delete this comment?'
+      title="Delete Comment"
+      description="This action cannot be undone. Are you sure you want to delete this comment?"
     >
-      <div className='flex flex-col gap-4'>
+      <div className="flex flex-col gap-4">
         <CommentCard comment={comment} />
         <DialogClose asChild>
           <Button
-            variant='outlineDestructive'
-            size='sm'
+            variant="outlineDestructive"
+            size="sm"
             onClick={handleDeleteComment}
           >
             Delete
@@ -291,14 +291,14 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
       <form
         id={`comment-form-${Math.random().toString(36).substring(7)}`}
         onSubmit={methods.handleSubmit(onSubmit)}
-        className='flex flex-col gap-4'
+        className="flex flex-col gap-4"
       >
         <Editor
           ref={commentRef}
-          editorClassName='h-[100px]'
-          placeholderText='Comment...'
+          editorClassName="h-[100px]"
+          placeholderText="Comment..."
         />
-        <Button type='submit'>Comment</Button>
+        <Button type="submit">Comment</Button>
       </form>
     </Form>
   );
@@ -306,12 +306,12 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
 export const Comment = ({ spanUuid }: { spanUuid: string }) => {
   return (
     <>
-      <div className='flex-1 min-h-0'>
+      <div className="flex-1 min-h-0">
         <CommentCards spanUuid={spanUuid} />
       </div>
-      <div className='mt-4 flex-shrink-0'>
+      <div className="mt-4 flex-shrink-0">
         <Separator />
-        <div className='mt-4'>
+        <div className="mt-4">
           <AddComment spanUuid={spanUuid} />
         </div>
       </div>
@@ -325,16 +325,16 @@ export const CommentButton = ({ spanUuid }: { spanUuid: string }) => {
   );
   return (
     <div className={`flex flex-col ${showComments ? "h-full" : ""}`}>
-      <div className='flex-shrink-0'>
+      <div className="flex-shrink-0">
         <Button
-          size='icon'
-          className='h-8 w-8 relative'
-          variant='outline'
+          size="icon"
+          className="h-8 w-8 relative"
+          variant="outline"
           onClick={() => setShowComments(!showComments)}
         >
           <MessageSquareMore />
           {spanComments.length > 0 && (
-            <div className='absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium'>
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}

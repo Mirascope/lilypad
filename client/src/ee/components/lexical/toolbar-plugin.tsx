@@ -136,36 +136,36 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
   }, [editor]);
 
   return (
-    <div className='w-full border-b z-10 relative'>
-      <div className='flex space-x-2 justify-center p-1'>
+    <div className="w-full border-b z-10 relative">
+      <div className="flex space-x-2 justify-center p-1">
         <Button
-          className='h-8 px-2'
-          variant='ghost'
+          className="h-8 px-2"
+          variant="ghost"
           disabled={!canUndo || !isEditable}
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         >
           {/* reload flip to left */}
-          <ReloadIcon className='transform -scale-x-100' />
+          <ReloadIcon className="transform -scale-x-100" />
         </Button>
 
         <Button
-          className='h-8 px-2'
-          variant='ghost'
+          className="h-8 px-2"
+          variant="ghost"
           disabled={!canRedo || !isEditable}
           onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
         >
           <ReloadIcon />
         </Button>
 
-        <Separator orientation='vertical' className='h-auto my-1' />
+        <Separator orientation="vertical" className="h-auto my-1" />
 
         <BlockTypeDropdown blockType={blockType} isEditable={isEditable} />
 
-        <Separator orientation='vertical' className='h-auto my-1' />
+        <Separator orientation="vertical" className="h-auto my-1" />
 
         <Toggle
-          area-label='Bold'
-          size='sm'
+          area-label="Bold"
+          size="sm"
           pressed={isBold}
           onPressedChange={(pressed) => {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold");
@@ -177,8 +177,8 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
         </Toggle>
 
         <Toggle
-          area-label='Italic'
-          size='sm'
+          area-label="Italic"
+          size="sm"
           pressed={isItalic}
           onPressedChange={(pressed) => {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic");
@@ -190,8 +190,8 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
         </Toggle>
 
         <Toggle
-          area-label='Underline'
-          size='sm'
+          area-label="Underline"
+          size="sm"
           pressed={isUnderline}
           onPressedChange={(pressed) => {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline");
@@ -202,8 +202,8 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
           <UnderlineIcon />
         </Toggle>
         <Toggle
-          area-label='Inline Code'
-          size='sm'
+          area-label="Inline Code"
+          size="sm"
           pressed={isCode}
           onPressedChange={(pressed) => {
             editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code");
@@ -215,7 +215,7 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
         </Toggle>
         {isLLM && (
           <>
-            <Separator orientation='vertical' className='h-auto my-1' />
+            <Separator orientation="vertical" className="h-auto my-1" />
             <MessageTypeDropdown isEditable={isEditable} />
           </>
         )}

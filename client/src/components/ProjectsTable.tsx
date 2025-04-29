@@ -65,9 +65,9 @@ export const ProjectsTable = () => {
         return (
           <>
             <Button
-              variant='outline'
-              size='icon'
-              className='h-8 w-8'
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => handleProjectCopy(row.original)}
             >
               <Copy />
@@ -84,8 +84,8 @@ export const ProjectsTable = () => {
   ];
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Projects</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Projects</Typography>
         <CreateProjectButton />
       </div>
       <DataTable<ProjectPublic>
@@ -129,7 +129,7 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
@@ -138,18 +138,18 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{`Delete ${project.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
               {`Deleting ${project.name} will delete all resources tied to this project.`}
             </DialogDescription>
-            <p className='text-red-500'>WARNING: This action is final.</p>
+            <p className="text-red-500">WARNING: This action is final.</p>
             <FormField
-              key='projectName'
+              key="projectName"
               control={methods.control}
-              name='projectName'
+              name="projectName"
               rules={{
                 required: "Project name is required",
                 validate: (value) =>
@@ -170,10 +170,10 @@ const DeleteProjectButton = ({ project }: { project: ProjectPublic }) => {
             />
             <DialogFooter>
               <Button
-                type='submit'
-                variant='destructive'
+                type="submit"
+                variant="destructive"
                 loading={methods.formState.isSubmitting}
-                className='w-full'
+                className="w-full"
               >
                 {methods.formState.isSubmitting
                   ? "Deleting..."
@@ -234,22 +234,22 @@ const ProjectForm = ({
         {trigger}
       </DialogTrigger>
       <DialogContent
-        className='max-w-md overflow-x-auto'
+        className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
           <form
             onSubmit={methods.handleSubmit(handleSubmit)}
-            className='space-y-6'
+            className="space-y-6"
           >
-            <DialogHeader className='flex-shrink-0'>
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             <FormField
               control={methods.control}
-              name='name'
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
@@ -263,9 +263,9 @@ const ProjectForm = ({
             <DialogFooter>
               <DialogClose asChild>
                 <Button
-                  type='submit'
+                  type="submit"
                   disabled={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
                   {methods.formState.isSubmitting
                     ? submittingText
@@ -288,21 +288,21 @@ export const CreateProjectButton = () => {
 
   return (
     <ProjectForm
-      mode='create'
+      mode="create"
       onSubmit={handleCreate}
       trigger={
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-white"
         >
           <PlusCircle />
         </Button>
       }
-      title='Create a new project'
-      description='Create a new project for your organization.'
-      submitButtonText='Create Project'
-      submittingText='Creating...'
+      title="Create a new project"
+      description="Create a new project for your organization."
+      submitButtonText="Create Project"
+      submittingText="Creating..."
     />
   );
 };
@@ -323,18 +323,18 @@ export const EditProjectButton = ({
   };
   return (
     <ProjectForm
-      mode='edit'
+      mode="edit"
       initialData={defaultProjectFormData}
       onSubmit={handleEdit}
       trigger={
-        <Button variant='outline' size='icon' className='h-8 w-8'>
+        <Button variant="outline" size="icon" className="h-8 w-8">
           <PencilLine />
         </Button>
       }
-      title='Edit project'
-      description='Update your project details.'
-      submitButtonText='Save Changes'
-      submittingText='Saving...'
+      title="Edit project"
+      description="Update your project details."
+      submitButtonText="Save Changes"
+      submittingText="Saving..."
     />
   );
 };

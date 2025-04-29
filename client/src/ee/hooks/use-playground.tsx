@@ -103,8 +103,13 @@ export const usePlaygroundContainer = ({
     if (!editorRef?.current || !projectUuid || !functionName) return;
 
     let buttonName = "";
-    if ((event?.nativeEvent as unknown as { submitter: HTMLButtonElement })?.submitter) {
-      buttonName = (event?.nativeEvent as unknown as { submitter: HTMLButtonElement }).submitter.name;
+    if (
+      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
+        ?.submitter
+    ) {
+      buttonName = (
+        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
+      ).submitter.name;
     } else if (event?.target && "name" in event.target) {
       buttonName = (event.target as { name: string }).name;
     }
@@ -112,7 +117,9 @@ export const usePlaygroundContainer = ({
     const templateErrors = $findErrorTemplateNodes(editorRef.current);
     if (templateErrors.length > 0) {
       setEditorErrors(
-        templateErrors.map((node) => `'${node.getValue()}' is not a valid function argument.`)
+        templateErrors.map(
+          (node) => `'${node.getValue()}' is not a valid function argument.`
+        )
       );
       return;
     }
@@ -129,7 +136,12 @@ export const usePlaygroundContainer = ({
         } else {
           const root = $getRoot();
           const firstChild = root.getFirstChild();
-          if (root.getChildrenSize() === 1 && firstChild && $isParagraphNode(firstChild) && firstChild.getTextContent().trim() === '') {
+          if (
+            root.getChildrenSize() === 1 &&
+            firstChild &&
+            $isParagraphNode(firstChild) &&
+            firstChild.getTextContent().trim() === ""
+          ) {
             isEmpty = true;
           }
         }
@@ -137,7 +149,8 @@ export const usePlaygroundContainer = ({
         if (isEmpty) {
           toast({
             title: "Empty Prompt",
-            description: "The prompt template cannot be empty. Please enter some text.",
+            description:
+              "The prompt template cannot be empty. Please enter some text.",
             variant: "destructive",
           });
           resolve();
@@ -194,10 +207,15 @@ export const usePlaygroundContainer = ({
               if (input.key && input.key.trim().length > 0) {
                 if (input.type === "list" || input.type === "dict") {
                   try {
-                    const simplifiedValue = simplifyFormItem(input as FormItemValue);
+                    const simplifiedValue = simplifyFormItem(
+                      input as FormItemValue
+                    );
                     acc[input.key] = simplifiedValue;
                   } catch (parseError) {
-                    console.warn(`Could not parse input '${input.key}':`, parseError);
+                    console.warn(
+                      `Could not parse input '${input.key}':`,
+                      parseError
+                    );
                     acc[input.key] = input.value;
                   }
                 } else {
@@ -239,16 +257,20 @@ export const usePlaygroundContainer = ({
             console.error("Navigation failed:", navError);
             toast({
               title: "Navigation Error",
-              description: "Failed to update the URL after running the playground.",
+              description:
+                "Failed to update the URL after running the playground.",
             });
           });
         } catch (apiError) {
           console.error("API Error during create/run:", apiError);
-          const message = apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
+          const message =
+            apiError instanceof Error
+              ? apiError.message
+              : "An unexpected API error occurred.";
           setError({
-            type: 'ApiError',
-            reason: 'Failed to create or run the function version via API.',
-            details: message
+            type: "ApiError",
+            reason: "Failed to create or run the function version via API.",
+            details: message,
           });
           setExecutedSpanUuid(null);
           toast({

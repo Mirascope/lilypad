@@ -100,13 +100,13 @@ export function SuggestionItem({
         }
       `}
       ref={option.setRefElement}
-      role='option'
+      role="option"
       aria-selected={isSelected}
       id={`typeahead-item-${index}`}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
-      <span className='popper__reference truncate'>
+      <span className="popper__reference truncate">
         {option.metadata.value}
       </span>
     </li>
@@ -202,8 +202,8 @@ export const TemplateSuggestionPlugin = ({
     }
     return anchorElementRef.current && options.length
       ? createPortal(
-          <div className='bg-white rounded-md shadow-lg max-h-[320px] overflow-y-auto w-[180px] min-w-[90px] border border-gray-100'>
-            <ul className='px-1.5'>
+          <div className="bg-white rounded-md shadow-lg max-h-[320px] overflow-y-auto w-[180px] min-w-[90px] border border-gray-100">
+            <ul className="px-1.5">
               {options.map((option: CustomTypeaheadOption, index: number) => (
                 <SuggestionItem
                   index={index}
@@ -232,7 +232,7 @@ export const TemplateSuggestionPlugin = ({
       onSelectOption={onSelectOption}
       triggerFn={checkForTemplateTriggerMatch}
       options={options}
-      anchorClassName='z-[10000]'
+      anchorClassName="z-[10000]"
       menuRenderFn={renderSuggestionsMenu}
     />
   );

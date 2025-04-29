@@ -262,12 +262,12 @@ export const renderStopSequences = (
 
   return (
     <FormField
-      key='editor-stop-sequences'
+      key="editor-stop-sequences"
       control={method.control}
       name={name}
       render={() => (
         <FormItem>
-          <FormLabel className='flex items-center gap-2'>
+          <FormLabel className="flex items-center gap-2">
             Stop Sequences
           </FormLabel>
           <FormControl>
@@ -279,8 +279,8 @@ export const renderStopSequences = (
               control={method.control}
               name={name}
               disabled={isDisabled}
-              popoverText='Add stop sequences...'
-              helperText='Enter a stop sequence'
+              popoverText="Add stop sequences..."
+              helperText="Enter a stop sequence"
             />
           </FormControl>
           <FormDescription>
@@ -351,7 +351,7 @@ const renderSeed = (isDisabled: boolean) => {
   const method = useFormContext<PlaygroundParameters>();
   return (
     <FormField
-      key='editor-seed'
+      key="editor-seed"
       control={method.control}
       name={"call_params.seed"}
       render={({ field }) => (
@@ -360,7 +360,7 @@ const renderSeed = (isDisabled: boolean) => {
           <FormControl>
             <Input
               {...field}
-              type='number'
+              type="number"
               value={field.value ?? ""}
               disabled={isDisabled}
             />
@@ -433,20 +433,20 @@ export const BaseEditorFormFields = ({
     renderStopSequences("call_params.stop", 4, isDisabled),
   ];
   return (
-    <div className='w-full max-w-sm flex flex-col gap-3'>
+    <div className="w-full max-w-sm flex flex-col gap-3">
       {selectItems.length > 0 && (
         <>
           <FormField
-            key='editor-response-mime-type'
+            key="editor-response-mime-type"
             control={methods.control}
-            name='provider'
+            name="provider"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Provider</FormLabel>
                 <FormControl>
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className='w-full'>
-                      <SelectValue placeholder='Select a provider' />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a provider" />
                     </SelectTrigger>
                     <SelectContent>
                       {selectItems.map((item) => (
@@ -464,8 +464,8 @@ export const BaseEditorFormFields = ({
 
           <ModelCombobox<PlaygroundParameters, "model">
             control={methods.control}
-            name='model'
-            label='Choose a Model'
+            name="model"
+            label="Choose a Model"
             options={getModelOptions(provider)}
             defaultValue={methods.getValues("model")}
           />

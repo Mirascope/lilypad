@@ -986,6 +986,8 @@ export interface SpanMoreDetails {
   events?: Event[] | null;
   /** Tags */
   tags?: TagPublic[] | null;
+  /** Session Id */
+  session_id?: string | null;
 }
 
 /**
@@ -1012,6 +1014,8 @@ export interface SpanPublic {
   data?: object;
   /** Parent Span Id */
   parent_span_id?: string | null;
+  /** Session Id */
+  session_id?: string | null;
   /**
    * Uuid
    * @format uuid
