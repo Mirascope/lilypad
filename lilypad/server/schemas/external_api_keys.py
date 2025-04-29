@@ -12,7 +12,6 @@ class ExternalAPIKeyCreate(BaseModel):
     api_key: str = Field(..., description="New API key", min_length=1)
 
 
-
 class ExternalAPIKeyUpdate(BaseModel):
     """Request model for updating a secret."""
 

@@ -1,6 +1,7 @@
 import api from "@/api";
 import {
   AggregateMetrics,
+  PaginatedSpanPublic,
   SpanMoreDetails,
   SpanPublic,
   SpanUpdate,
@@ -233,3 +234,26 @@ export const spansSearchQueryOptions = (
     queryFn: () => searchSpans(projectUuid, params),
     enabled: !!params.query_string,
   });
+
+export interface PageParam {
+  offset: number;
+  limit: number;
+  order: "asc" | "desc";
+}
+
+export const fetchSpansByFunctionUuidPaged = async (
+  projectUuid: string,
+  functionUuid: string,
+  { offset, limit, order }: PageParam
+) => {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    order: order,
+  });
+  return (
+    await api.get<PaginatedSpanPublic>(
+      `/projects/${projectUuid}/functions/${functionUuid}/spans/paginated?${params}`
+    )
+  ).data;
+};

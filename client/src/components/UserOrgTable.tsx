@@ -148,11 +148,11 @@ export const UserOrgTable = () => {
           }
 
           return (
-            <div className='flex gap-2'>
+            <div className="flex gap-2">
               <Button
-                variant='outline'
-                size='icon'
-                className='h-8 w-8'
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenResendDialog(rowData);
@@ -179,7 +179,7 @@ export const UserOrgTable = () => {
           return null;
 
         return (
-          <div className='flex gap-2'>
+          <div className="flex gap-2">
             <EditUserPermissionsDialog
               userOrganization={rowUserOrganization}
               user={rowData}
@@ -196,8 +196,8 @@ export const UserOrgTable = () => {
 
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Users</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Users</Typography>
         {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
           <InviteUserButton
             organization={userOrganization.organization}
@@ -336,16 +336,16 @@ const CancelInviteButton = ({
 
   return (
     <LilypadDialog
-      title='Remove invitation'
+      title="Remove invitation"
       description={`Are you sure you want to rescind the invitation to ${invite.email}?`}
       dialogContentProps={{
         onClick: (e) => e.stopPropagation(),
       }}
       customTrigger={
         <Button
-          variant='outlineDestructive'
-          size='icon'
-          className='h-8 w-8'
+          variant="outlineDestructive"
+          size="icon"
+          className="h-8 w-8"
           onClick={(e) => e.stopPropagation()}
         >
           <Trash size={16} />
@@ -353,8 +353,8 @@ const CancelInviteButton = ({
       }
       dialogButtons={[
         <Button
-          key='remove-invitation'
-          variant='destructive'
+          key="remove-invitation"
+          variant="destructive"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -363,7 +363,7 @@ const CancelInviteButton = ({
         >
           Remove invitation
         </Button>,
-        <Button variant='outline' key='remove-invitation-close'>
+        <Button variant="outline" key="remove-invitation-close">
           Close
         </Button>,
       ]}
@@ -375,12 +375,12 @@ const AlternativeInviteLink = ({ inviteLink }: { inviteLink: string }) => {
   return (
     <>
       <div>Alternatively, give the invited user this link:</div>
-      <div className='flex items-center space-x-2'>
+      <div className="flex items-center space-x-2">
         <Input value={inviteLink} readOnly />
         <Button
-          variant='outline'
-          size='icon'
-          type='button'
+          variant="outline"
+          size="icon"
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(inviteLink).catch(() => {
@@ -420,17 +420,17 @@ const InviteUserButton = ({
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-white"
         >
           <PlusCircle />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{`Invite user to ${organization.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
@@ -438,9 +438,9 @@ const InviteUserButton = ({
               team.
             </DialogDescription>
             <FormField
-              key='email'
+              key="email"
               control={methods.control}
-              name='email'
+              name="email"
               rules={{
                 required: "Email is required",
                 pattern: {
@@ -466,9 +466,9 @@ const InviteUserButton = ({
             <DialogFooter>
               {!organizationInvite ? (
                 <Button
-                  type='submit'
+                  type="submit"
                   loading={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
                   {methods.formState.isSubmitting
                     ? "Sending invite..."
@@ -477,9 +477,9 @@ const InviteUserButton = ({
               ) : (
                 <DialogClose asChild>
                   <Button
-                    variant='outline'
+                    variant="outline"
                     onClick={() => setOrganizationInvite(null)}
-                    className='w-full'
+                    className="w-full"
                   >
                     Close
                   </Button>
@@ -522,26 +522,26 @@ const EditUserPermissionsDialog = ({
     <div onClick={(e) => e.stopPropagation()}>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant='outline' size='icon' className='h-8 w-8'>
+          <Button variant="outline" size="icon" className="h-8 w-8">
             <PencilLine />
           </Button>
         </DialogTrigger>
-        <DialogContent className='max-w-[425px] overflow-x-auto'>
+        <DialogContent className="max-w-[425px] overflow-x-auto">
           <Form {...methods}>
             <form
               onSubmit={methods.handleSubmit(onSubmit)}
-              className='space-y-6'
+              className="space-y-6"
             >
-              <DialogHeader className='flex-shrink-0'>
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>{`Edit permissions for ${user.first_name}`}</DialogTitle>
               </DialogHeader>
               <DialogDescription>
                 Update <b>{user.first_name}'s</b> role within the organization.
               </DialogDescription>
               <FormField
-                key='role'
+                key="role"
                 control={methods.control}
-                name='role'
+                name="role"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
@@ -550,8 +550,8 @@ const EditUserPermissionsDialog = ({
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className='w-full'>
-                          <SelectValue placeholder='Change role' />
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Change role" />
                         </SelectTrigger>
                         <SelectContent>
                           {roles.map((role) => (
@@ -568,9 +568,9 @@ const EditUserPermissionsDialog = ({
               <DialogFooter>
                 <DialogClose asChild>
                   <Button
-                    type='submit'
+                    type="submit"
                     loading={methods.formState.isSubmitting}
-                    className='w-full'
+                    className="w-full"
                   >
                     {methods.formState.isSubmitting ? "Updating..." : "Update"}
                   </Button>
@@ -607,7 +607,7 @@ const RemoveUserDialog = ({
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
@@ -616,8 +616,8 @@ const RemoveUserDialog = ({
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>{`Remove ${user.first_name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
@@ -627,10 +627,10 @@ const RemoveUserDialog = ({
             <DialogFooter>
               <DialogClose asChild>
                 <Button
-                  type='submit'
-                  variant='destructive'
+                  type="submit"
+                  variant="destructive"
                   loading={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
                   {methods.formState.isSubmitting
                     ? "Removing..."

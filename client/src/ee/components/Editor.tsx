@@ -96,11 +96,11 @@ export const Editor = ({
       >
         {!isDisabled && <ToolbarPlugin isLLM={isLLM} />}
 
-        <div className='relative'>
+        <div className="relative">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                id='prompt-template'
+                id="prompt-template"
                 className={cn(
                   "focus:outline-none w-full px-8 py-4 h-[500px] overflow-auto relative",
                   editorClassName
@@ -108,7 +108,7 @@ export const Editor = ({
               />
             }
             placeholder={
-              <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
+              <p className="text-muted-foreground absolute top-0 px-8 w-full pointer-events-none">
                 {placeholderText}
               </p>
             }

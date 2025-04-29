@@ -3,10 +3,18 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    status,
+)
 from mirascope.core import Provider
 from mirascope.core.base.types import CostMetadata
 from mirascope.core.costs import calculate_cost
@@ -20,6 +28,7 @@ from ..._utils import (
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable
+from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...services import OpenSearchService, SpanService, get_opensearch_service
@@ -38,17 +47,28 @@ def _convert_system_to_provider(system: str) -> Provider:
 
 
 @traces_router.get(
-    "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
+    "/projects/{project_uuid}/traces", response_model=Paginated[SpanPublic]
 )
 async def get_traces_by_project_uuid(
     project_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
-) -> Sequence[SpanTable]:
-    """Get all traces.
-
-    Child spans are not lazy loaded to avoid N+1 queries.
-    """
-    return span_service.find_all_no_parent_spans(project_uuid)
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    order: Literal["asc", "desc"] = Query(
+        "desc", pattern="^(asc|desc)$", examples=["asc", "desc"]
+    ),
+) -> Paginated[SpanPublic]:
+    """Get traces by project UUID."""
+    items = span_service.find_all_no_parent_spans(
+        project_uuid, limit=limit, offset=offset, order=order
+    )
+    total = span_service.count_no_parent_spans(project_uuid)
+    return Paginated(
+        items=[SpanPublic.model_validate(item) for item in items],
+        limit=limit,
+        offset=offset,
+        total=total,
+    )
 
 
 async def _process_span(

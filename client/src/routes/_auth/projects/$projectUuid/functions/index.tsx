@@ -104,7 +104,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
       className={`w-full lg:max-w-[400px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
     >
       <CardHeader
-        className='px-6 py-4 cursor-pointer'
+        className="px-6 py-4 cursor-pointer"
         onClick={handleClick}
         onMouseEnter={() => {
           setHover(true);
@@ -117,27 +117,27 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
         }}
         onBlur={() => setHover(false)}
       >
-        <CardTitle className='flex justify-between items-center'>
+        <CardTitle className="flex justify-between items-center">
           {fn.name}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' className='h-8 w-8 p-0'>
-                <span className='sr-only'>Open menu</span>
-                <MoreHorizontal className='h-4 w-4' />
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               {/* Prevents closing the dropdown */}
               <div onClick={(e) => e.stopPropagation()}>
                 <Dialog>
                   <DialogTrigger asChild>
                     <DropdownMenuItem
-                      className='flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive'
+                      className="flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive"
                       onSelect={(e) => e.preventDefault()}
                     >
-                      <Trash className='w-4 h-4' />
-                      <span className='font-medium'>Delete function</span>
+                      <Trash className="w-4 h-4" />
+                      <span className="font-medium">Delete function</span>
                     </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent className={"max-w-[425px] overflow-x-auto"}>
@@ -147,12 +147,12 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
                     </DialogDescription>
                     <DialogFooter>
                       <DialogClose asChild>
-                        <Button variant='destructive' onClick={handleArchive}>
+                        <Button variant="destructive" onClick={handleArchive}>
                           Delete Function
                         </Button>
                       </DialogClose>
                       <DialogClose asChild>
-                        <Button variant='outline'>Cancel</Button>
+                        <Button variant="outline">Cancel</Button>
                       </DialogClose>
                     </DialogFooter>
                   </DialogContent>
@@ -164,19 +164,19 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
         <CardDescription>Latest Version: v{fn.version_num}</CardDescription>
       </CardHeader>
       <Separator />
-      <CardContent className='p-0 m-6 overflow-auto max-h-[100px]'>
+      <CardContent className="p-0 m-6 overflow-auto max-h-[100px]">
         <CodeSnippet code={fn.code} />
       </CardContent>
-      <CardFooter className='flex flex-col gap-2 items-start'>
-        <div className='flex flex-col gap-2 w-full'>
-          <h3 className='text-sm font-medium text-gray-500'>Template</h3>
+      <CardFooter className="flex flex-col gap-2 items-start">
+        <div className="flex flex-col gap-2 w-full">
+          <h3 className="text-sm font-medium text-gray-500">Template</h3>
           {fn.is_versioned && fn.prompt_template ? (
             <FormattedText
               template={fn.prompt_template ?? ""}
               values={fn.arg_types}
             />
           ) : (
-            <Typography affects='muted'>No template</Typography>
+            <Typography affects="muted">No template</Typography>
           )}
         </div>
       </CardFooter>
@@ -185,9 +185,9 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
 };
 const FunctionsList = () => {
   return (
-    <div className='p-4 flex flex-col lg:items-center gap-2'>
-      <Typography variant='h2'>Functions</Typography>
-      <div className='flex gap-2 max-w-full flex-wrap'>
+    <div className="p-4 flex flex-col lg:items-center gap-2">
+      <Typography variant="h2">Functions</Typography>
+      <div className="flex gap-2 max-w-full flex-wrap">
         <Suspense fallback={<CardSkeleton items={2} />}>
           <FunctionCards />
         </Suspense>
@@ -198,7 +198,7 @@ const FunctionsList = () => {
 
 const FunctionNoDataPlaceholder = () => {
   return (
-    <div className='flex flex-col gap-4'>
+    <div className="flex flex-col gap-4">
       <DeveloperFunctionNoDataPlaceholder />
     </div>
   );
@@ -206,7 +206,7 @@ const FunctionNoDataPlaceholder = () => {
 
 const DeveloperFunctionNoDataPlaceholder = () => {
   return (
-    <div className='max-w-4xl mx-auto'>
+    <div className="max-w-4xl mx-auto">
       <div>
         Start by decorating your LLM powered functions with{" "}
         <code>@lilypad.trace()</code>.

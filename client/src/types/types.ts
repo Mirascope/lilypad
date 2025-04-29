@@ -758,6 +758,33 @@ export interface OrganizationUpdate {
   license?: string | null;
 }
 
+/** Paginated[SpanPublic] */
+export interface PaginatedSpanPublic {
+  /**
+   * Items
+   * Current slice of items
+   */
+  items: SpanPublic[];
+  /**
+   * Limit
+   * Requested page size (limit)
+   * @min 1
+   */
+  limit: number;
+  /**
+   * Offset
+   * Requested offset
+   * @min 0
+   */
+  offset: number;
+  /**
+   * Total
+   * Total number of items
+   * @min 0
+   */
+  total: number;
+}
+
 /**
  * PlaygroundErrorDetail
  * Detailed information about a playground error.
@@ -959,6 +986,8 @@ export interface SpanMoreDetails {
   events?: Event[] | null;
   /** Tags */
   tags?: TagPublic[] | null;
+  /** Session Id */
+  session_id?: string | null;
 }
 
 /**
@@ -985,6 +1014,8 @@ export interface SpanPublic {
   data?: object;
   /** Parent Span Id */
   parent_span_id?: string | null;
+  /** Session Id */
+  session_id?: string | null;
   /**
    * Uuid
    * @format uuid

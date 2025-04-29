@@ -54,10 +54,10 @@ const JoinPage = () => {
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4' />
-          <p className='text-gray-600'>Processing your invite...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4" />
+          <p className="text-gray-600">Processing your invite...</p>
         </div>
       </div>
     );
@@ -65,8 +65,8 @@ const JoinPage = () => {
 
   if (isError) {
     return (
-      <div className='p-4'>
-        <Alert variant='destructive'>
+      <div className="p-4">
+        <Alert variant="destructive">
           <AlertDescription>Invalid invite link</AlertDescription>
         </Alert>
       </div>

@@ -66,8 +66,8 @@ export const EnvironmentsTable = () => {
 
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Environment</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Environment</Typography>
         <CreateEnvironmentButton />
       </div>
       <DataTable<EnvironmentPublic>
@@ -91,9 +91,9 @@ const CreateEnvironmentButton = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-white"
         >
           <PlusCircle />
         </Button>
@@ -129,17 +129,17 @@ const CreateEnvironmentForm = () => {
 
   return (
     <Form {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-        <DialogHeader className='flex-shrink-0'>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create new Environment</DialogTitle>
         </DialogHeader>
         <DialogDescription>
           Create an environment for your organization
         </DialogDescription>
         <FormField
-          key='name'
+          key="name"
           control={methods.control}
-          name='name'
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Name</FormLabel>
@@ -150,9 +150,9 @@ const CreateEnvironmentForm = () => {
           )}
         />
         <FormField
-          key='description'
+          key="description"
           control={methods.control}
-          name='description'
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
@@ -163,12 +163,12 @@ const CreateEnvironmentForm = () => {
           )}
         />
         <FormField
-          key='is_default'
+          key="is_default"
           control={methods.control}
-          name='is_default'
+          name="is_default"
           render={({ field }) => (
-            <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
-              <div className='space-y-0.5'>
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
                 <FormLabel>Default Environment</FormLabel>
                 <FormDescription>
                   Set as default environment for new API keys
@@ -185,11 +185,11 @@ const CreateEnvironmentForm = () => {
         />
         <DialogFooter>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type="button" variant="secondary">
               Cancel
             </Button>
           </DialogClose>
-          <Button type='submit' loading={methods.formState.isSubmitting}>
+          <Button type="submit" loading={methods.formState.isSubmitting}>
             {methods.formState.isSubmitting
               ? "Creating..."
               : "Create Environment"}
@@ -225,12 +225,12 @@ const DeleteEnvironmentButton = ({
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{`Delete ${environment.name}`}</DialogTitle>
           <DialogDescription>
             This action is final and cannot be undone.
@@ -243,13 +243,13 @@ const DeleteEnvironmentButton = ({
 
         <DialogFooter>
           <Button
-            variant='destructive'
+            variant="destructive"
             onClick={() => handleEnvironmentDelete(environment.uuid)}
           >
             Delete
           </Button>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type="button" variant="secondary">
               Cancel
             </Button>
           </DialogClose>
@@ -261,5 +261,5 @@ const DeleteEnvironmentButton = ({
 
 // Missing FormDescription import
 const FormDescription = ({ children }: { children: React.ReactNode }) => (
-  <p className='text-sm text-muted-foreground'>{children}</p>
+  <p className="text-sm text-muted-foreground">{children}</p>
 );

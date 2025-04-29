@@ -90,8 +90,8 @@ export const APIKeysTable = () => {
   ];
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>API Keys</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">API Keys</Typography>
         <CreateKeyButton />
       </div>
       <DataTable<APIKeyPublic>
@@ -117,9 +117,9 @@ const CreateKeyButton = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-white"
         >
           <PlusCircle />
         </Button>
@@ -168,17 +168,17 @@ const GenerateAPIKeyForm = ({
   };
   return (
     <Form {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-        <DialogHeader className='flex-shrink-0'>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create new API Key</DialogTitle>
         </DialogHeader>
         <DialogDescription>
           Generate a Lilypad API Key for your organization.
         </DialogDescription>
         <FormField
-          key='name'
+          key="name"
           control={methods.control}
-          name='name'
+          name="name"
           rules={{
             required: {
               value: true,
@@ -196,9 +196,9 @@ const GenerateAPIKeyForm = ({
           )}
         />
         <FormField
-          key='project_uuid'
+          key="project_uuid"
           control={methods.control}
-          name='project_uuid'
+          name="project_uuid"
           rules={{
             required: {
               value: true,
@@ -213,8 +213,8 @@ const GenerateAPIKeyForm = ({
                   value={field.value ?? ""}
                   onValueChange={field.onChange}
                 >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Select a project' />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
                     {projects.map((project) => (
@@ -230,9 +230,9 @@ const GenerateAPIKeyForm = ({
           )}
         />
         <FormField
-          key='environment_uuid'
+          key="environment_uuid"
           control={methods.control}
-          name='environment_uuid'
+          name="environment_uuid"
           rules={{
             required: {
               value: true,
@@ -247,8 +247,8 @@ const GenerateAPIKeyForm = ({
                   value={field.value ?? ""}
                   onValueChange={field.onChange}
                 >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Select an environment' />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an environment" />
                   </SelectTrigger>
                   <SelectContent>
                     {environments.map((environment) => (
@@ -268,9 +268,9 @@ const GenerateAPIKeyForm = ({
         />
         <DialogFooter>
           <Button
-            type='submit'
+            type="submit"
             loading={methods.formState.isSubmitting}
-            className='w-full'
+            className="w-full"
           >
             {methods.formState.isSubmitting ? "Generating..." : "Generate Key"}
           </Button>
@@ -298,22 +298,22 @@ const CopyKeyButton = ({
 
   if (!projectUuid) return <NotFound />;
   return (
-    <div className='space-y-6 max-w-full overflow-hidden'>
-      <DialogHeader className='flex-shrink-0'>
+    <div className="space-y-6 max-w-full overflow-hidden">
+      <DialogHeader className="flex-shrink-0">
         <DialogTitle>API Key Created</DialogTitle>
-        <DialogDescription className='space-y-4'>
+        <DialogDescription className="space-y-4">
           Copy your project ID and API key into your environment
         </DialogDescription>
       </DialogHeader>
-      <div className='overflow-x-auto'>
+      <div className="overflow-x-auto">
         <CodeSnippet
           code={`LILYPAD_PROJECT_ID="${projectUuid}"
 LILYPAD_API_KEY="${apiKey}"`}
           showLineNumbers={false}
         />
       </div>
-      <Alert variant='destructive'>
-        <TriangleAlert className='h-4 w-4' />
+      <Alert variant="destructive">
+        <TriangleAlert className="h-4 w-4" />
         <AlertTitle>Warning</AlertTitle>
         <AlertDescription>
           You won&apos;t be able to see your API key again.
@@ -321,7 +321,7 @@ LILYPAD_API_KEY="${apiKey}"`}
       </Alert>
       <DialogFooter>
         <DialogClose asChild>
-          <Button type='button' variant='outline' onClick={handleCleanup}>
+          <Button type="button" variant="outline" onClick={handleCleanup}>
             Close
           </Button>
         </DialogClose>
@@ -349,12 +349,12 @@ const DeleteApiKeyButton = ({ apiKey }: { apiKey: APIKeyPublic }) => {
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{`Delete ${apiKey.name}`}</DialogTitle>
           <DialogDescription>
             This action is final and cannot be undone.
@@ -367,13 +367,13 @@ const DeleteApiKeyButton = ({ apiKey }: { apiKey: APIKeyPublic }) => {
 
         <DialogFooter>
           <Button
-            variant='destructive'
+            variant="destructive"
             onClick={() => handleApiKeyDelete(apiKey.uuid)}
           >
             Delete
           </Button>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type="button" variant="secondary">
               Close
             </Button>
           </DialogClose>

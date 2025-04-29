@@ -25,7 +25,7 @@ const RootComponent = () => {
       <Outlet />
       <Toaster />
       <SonnerToaster richColors />
-      <TanStackRouterDevtools position='bottom-right' />
+      <TanStackRouterDevtools position="bottom-right" />
     </>
   );
 };

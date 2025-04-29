@@ -13,17 +13,17 @@ hljs.registerLanguage("markdown", markdown);
 export const LlmPanel = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   return (
-    <div className='flex flex-col gap-4'>
-      <Typography variant='h3'>{span.display_name}</Typography>
-      <div className='flex gap-1 flex-wrap'>
+    <div className="flex flex-col gap-4">
+      <Typography variant="h3">{span.display_name}</Typography>
+      <div className="flex gap-1 flex-wrap">
         <Badge>{span.provider}</Badge>
         <Badge>{span.model}</Badge>
         {span.input_tokens && span.output_tokens && (
-          <Badge className='text-xs font-medium m-0'>
+          <Badge className="text-xs font-medium m-0">
             <span>{span.input_tokens}</span>
-            <span className='mx-1'>&#8594;</span>
+            <span className="mx-1">&#8594;</span>
             <span>{span.output_tokens}</span>
-            <span className='mx-1'>=</span>
+            <span className="mx-1">=</span>
             <span>{span.input_tokens + span.output_tokens}</span>
           </Badge>
         )}

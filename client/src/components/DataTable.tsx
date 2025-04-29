@@ -1,3 +1,4 @@
+import { useAuth, UserConfig } from "@/auth";
 import CardSkeleton from "@/components/CardSkeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,9 +36,16 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { ReactNode, Suspense, useEffect, useState } from "react";
+import React, {
+  ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -70,6 +78,10 @@ interface GenericDataTableProps<T> {
   onRowSelectionChange?: (row: RowSelectionState) => void;
   path?: string;
   customComponent?: ReactNode;
+  isFetching?: boolean;
+  fetchNextPage?: () => void;
+  columnWidths?: Record<string, string>;
+  columnVisibilityStateKey?: string;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -95,17 +107,43 @@ export const DataTable = <T extends { uuid: string }>({
   onDetailPanelClose,
   onRowSelectionChange,
   path,
+  isFetching,
+  fetchNextPage,
+  columnWidths = {},
+  columnVisibilityStateKey,
 }: GenericDataTableProps<T>) => {
+  const { updateUserConfig, userConfig } = useAuth();
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
     customExpanded
   );
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    columnVisibilityStateKey
+      ? ((userConfig?.[columnVisibilityStateKey as keyof UserConfig] as
+          | VisibilityState
+          | undefined) ?? {})
+      : {}
+  );
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [detailRow, setDetailRow] = useState<T | null | undefined>(
     defaultSelectedRow
   );
+  const fetchMoreOnBottomReached = useCallback(
+    (containerRefElement?: HTMLDivElement | null) => {
+      if (containerRefElement) {
+        const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
+        if (scrollHeight - scrollTop - clientHeight < 500) {
+          fetchNextPage?.();
+        }
+      }
+    },
+    [fetchNextPage]
+  );
+  useEffect(() => {
+    fetchMoreOnBottomReached(virtualizerRef?.current);
+  }, [fetchMoreOnBottomReached, virtualizerRef]);
+
   const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (
     updaterOrValue
   ) => {
@@ -120,6 +158,22 @@ export const DataTable = <T extends { uuid: string }>({
       onRowSelectionChange?.(updaterOrValue);
     }
   };
+  const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (
+    updaterOrValue
+  ) => {
+    const newVisibility =
+      typeof updaterOrValue === "function"
+        ? updaterOrValue(columnVisibility)
+        : updaterOrValue;
+
+    setColumnVisibility(newVisibility);
+
+    if (columnVisibilityStateKey) {
+      updateUserConfig({
+        [columnVisibilityStateKey]: newVisibility,
+      });
+    }
+  };
   const table = useReactTable({
     data,
     columns,
@@ -131,7 +185,7 @@ export const DataTable = <T extends { uuid: string }>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getRowCanExpand: getRowCanExpand ? () => true : undefined,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     onRowSelectionChange: handleRowSelectionChange,
     state: {
       sorting,
@@ -147,12 +201,28 @@ export const DataTable = <T extends { uuid: string }>({
   useEffect(() => {
     setDetailRow(selectRow);
   }, [selectRow]);
+
+  const flatRows = useMemo(() => {
+    const flat: { row: Row<T>; depth: number }[] = [];
+
+    const flattenRows = (rows: Row<T>[], depth = 0) => {
+      rows.forEach((row) => {
+        flat.push({ row, depth });
+        if (row.getIsExpanded() && row.subRows.length > 0) {
+          flattenRows(row.subRows, depth + 1);
+        }
+      });
+    };
+
+    flattenRows(table.getRowModel().rows);
+    return flat;
+  }, [rows, expanded]);
+
   const rowVirtualizer = useVirtualizer({
-    count: virtualizerOptions.count,
-    getScrollElement: () => virtualizerRef?.current || null,
+    count: flatRows.length,
+    getScrollElement: () => virtualizerRef?.current ?? null,
     estimateSize: virtualizerOptions.estimateSize ?? (() => 45),
     overscan: virtualizerOptions.overscan ?? 10,
-    // Use container height from options or default to undefined
     scrollPaddingStart: 0,
     scrollPaddingEnd: 0,
   });
@@ -168,30 +238,58 @@ export const DataTable = <T extends { uuid: string }>({
     }
   };
 
-  const CollapsibleRow = ({ row }: { row: Row<T> }) => {
+  // Get column width either from columnWidths prop, columnDef.size, or a default
+  const getColumnWidth = (columnId: string) => {
+    if (columnWidths[columnId]) {
+      return columnWidths[columnId];
+    }
+
+    const column = table.getColumn(columnId);
+    if (column?.columnDef.size) {
+      return `${column.columnDef.size}px`;
+    }
+
+    return "auto";
+  };
+
+  const renderRow = (
+    rowInfo: {
+      row: Row<T>;
+      depth: number;
+    },
+    virtualRow: VirtualItem
+  ) => {
+    const { row, depth } = rowInfo;
     return (
-      <>
-        <TableRow
-          key={row.id}
-          data-state={row.getIsSelected() && "selected"}
-          className={`cursor-pointer hover:bg-secondary ${
-            detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
-          }`}
-          onMouseEnter={() => onRowHover?.(row.original)}
-          onFocus={() => onRowHover?.(row.original)}
-          onClick={() => toggleRowSelection(row.original)}
-        >
-          {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
-          ))}
-        </TableRow>
-        {row.getIsExpanded() &&
-          row.subRows.map((subRow) => (
-            <CollapsibleRow key={subRow.id} row={subRow} />
-          ))}
-      </>
+      <TableRow
+        data-index={virtualRow?.index}
+        ref={(node) => virtualRow && rowVirtualizer.measureElement(node)}
+        key={row.id}
+        data-state={row.getIsSelected() && "selected"}
+        className={`w-full absolute cursor-pointer hover:bg-secondary ${
+          detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
+        }`}
+        style={{
+          transform: `translateY(${virtualRow.start}px)`,
+          paddingLeft: depth > 0 ? `${depth * 1.5}rem` : undefined,
+        }}
+        onMouseEnter={() => onRowHover?.(row.original)}
+        onFocus={() => onRowHover?.(row.original)}
+        onClick={() => toggleRowSelection(row.original)}
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell
+            key={cell.id}
+            style={{
+              width: getColumnWidth(cell.column.id),
+              minWidth: getColumnWidth(cell.column.id),
+              maxWidth: getColumnWidth(cell.column.id),
+            }}
+          >
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
     );
   };
 
@@ -199,29 +297,23 @@ export const DataTable = <T extends { uuid: string }>({
     setDetailRow(null);
     onDetailPanelClose?.();
   };
-  const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
-  const paddingBottom =
-    rowVirtualizer.getTotalSize() -
-    (rowVirtualizer.getVirtualItems()[
-      rowVirtualizer.getVirtualItems().length - 1
-    ]?.end ?? 0);
 
   return (
     <ResizablePanelGroup
-      direction='horizontal'
-      className='flex-1 rounded-lg w-full h-full'
+      direction="horizontal"
+      className="flex-1 rounded-lg w-full h-full"
     >
       <ResizablePanel
-        id='data-table'
+        id="data-table"
         defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
-        className='flex flex-col p-2 gap-2 h-full'
+        className="flex flex-col p-2 gap-2 h-full"
       >
-        <div className='flex items-center rounded-md gap-2'>
+        <div className="flex items-center rounded-md gap-2">
           {filterColumn && (
             <>
               <Input
-                placeholder='Filter...'
+                placeholder="Filter..."
                 value={
                   (table.getColumn(filterColumn)?.getFilterValue() as string) ??
                   ""
@@ -232,7 +324,7 @@ export const DataTable = <T extends { uuid: string }>({
                     .getColumn(filterColumn)
                     ?.setFilterValue(event.target.value);
                 }}
-                className='max-w-sm'
+                className="max-w-sm"
               />
             </>
           )}
@@ -240,11 +332,11 @@ export const DataTable = <T extends { uuid: string }>({
           {!hideColumnButton && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant='outline' className='ml-auto'>
-                  Columns <ChevronDown className='ml-2 h-4 w-4' />
+                <Button variant="outline" className="ml-auto">
+                  Columns <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align='end'>
+              <DropdownMenuContent align="end">
                 {table
                   .getAllColumns()
                   .filter((column) => column.getCanHide())
@@ -252,7 +344,7 @@ export const DataTable = <T extends { uuid: string }>({
                     return (
                       <DropdownMenuCheckboxItem
                         key={column.id}
-                        className='capitalize'
+                        className="capitalize"
                         checked={column.getIsVisible()}
                         onCheckedChange={(value) =>
                           column.toggleVisibility(!!value)
@@ -267,20 +359,33 @@ export const DataTable = <T extends { uuid: string }>({
           )}
         </div>
 
-        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border flex-1'>
+        <div className="flex flex-col overflow-hidden min-h-0 rounded-md border flex-1">
           <div
             ref={virtualizerRef}
-            className='rounded-md overflow-auto h-full'
+            onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
+            className="rounded-md overflow-auto relative"
             style={{
               height: virtualizerOptions.containerHeight ?? "100%",
             }}
           >
-            <Table>
-              <TableHeader>
+            <Table
+              className="w-full"
+              style={{
+                width: "100%",
+              }}
+            >
+              <TableHeader className="sticky top-0 z-10 bg-white">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
+                      <TableHead
+                        key={header.id}
+                        style={{
+                          width: getColumnWidth(header.id),
+                          minWidth: getColumnWidth(header.id),
+                          maxWidth: getColumnWidth(header.id),
+                        }}
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -292,36 +397,23 @@ export const DataTable = <T extends { uuid: string }>({
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody>
-                {rows.length ? (
-                  <>
-                    {paddingTop > 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          style={{ height: `${paddingTop}px`, padding: 0 }}
-                        />
-                      </TableRow>
-                    )}
-                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const row = table.getRowModel().rows[virtualRow.index];
-                      if (!row) return null;
-                      return <CollapsibleRow key={row?.id} row={row} />;
-                    })}
-                    {paddingBottom > 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          style={{ height: `${paddingBottom}px`, padding: 0 }}
-                        />
-                      </TableRow>
-                    )}
-                  </>
+              <TableBody
+                className="relative"
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                }}
+              >
+                {flatRows.length ? (
+                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowInfo = flatRows[virtualRow.index];
+                    if (!rowInfo) return null;
+                    return renderRow(rowInfo, virtualRow);
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      className='h-24 text-center'
+                      className="h-24 text-center"
                     >
                       No results.
                     </TableCell>
@@ -329,6 +421,7 @@ export const DataTable = <T extends { uuid: string }>({
                 )}
               </TableBody>
             </Table>
+            {isFetching && <div>Fetching More...</div>}
           </div>
         </div>
       </ResizablePanel>
@@ -337,16 +430,16 @@ export const DataTable = <T extends { uuid: string }>({
         <>
           <ResizableHandle withHandle />
           <ResizablePanel
-            id='detail-panel'
+            id="detail-panel"
             defaultSize={defaultPanelSize}
             order={2}
-            className='flex flex-col h-full p-4'
+            className="flex flex-col h-full p-4"
             collapsible={true}
             minSize={12}
             onCollapse={onCollapse}
           >
             <Suspense
-              fallback={<CardSkeleton items={5} className='flex flex-col' />}
+              fallback={<CardSkeleton items={5} className="flex flex-col" />}
             >
               <DetailPanel data={detailRow} path={path} />
             </Suspense>

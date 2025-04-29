@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -45,18 +46,53 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    def find_all_no_parent_spans(self, project_uuid: UUID) -> Sequence[SpanTable]:
-        """Get all spans.
-        Child spans are not lazy loaded to avoid N+1 queries.
+    def count_no_parent_spans(self, project_uuid: UUID) -> int:
+        """Return the *total* number of root‑level spans for a project.
+
+        Unlike :py:meth:`find_no_parent_spans` this query only counts rows and
+        therefore avoids the overhead of eager‑loading child spans.
         """
-        return self.session.exec(
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.project_uuid == project_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
+            )
+        )
+
+        return self.session.exec(stmt).one()
+
+    def find_all_no_parent_spans(
+        self,
+        project_uuid: UUID,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        order: Literal["asc", "desc"] = "desc",
+    ) -> Sequence[SpanTable]:
+        """Find all root spans for a project."""
+        stmt = (
             select(self.table)
             .where(
                 self.table.project_uuid == project_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
+                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
             )
-            .options(selectinload(self.table.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
-        ).all()
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
+            .offset(offset)
+            .options(
+                selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]
+            )
+        )
+
+        if limit is not None:
+            stmt = stmt.limit(limit)
+
+        return self.session.exec(stmt).all()
 
     def find_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -353,3 +389,47 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
             modified = True
         return modified
+
+    def count_records_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
+    ) -> int:
+        """Count root-level spans for a function (fast COUNT(*))."""
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+        )
+        return self.session.exec(stmt).one()
+
+    def find_records_by_function_uuid_paged(
+        self,
+        project_uuid: UUID,
+        function_uuid: UUID,
+        *,
+        limit: int,
+        offset: int = 0,
+        order: str = "desc",
+    ) -> Sequence[SpanTable]:
+        """Find root-level spans for a function with pagination + dynamic sort."""
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        return self.session.exec(stmt).all()

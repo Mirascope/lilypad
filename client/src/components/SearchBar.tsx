@@ -46,28 +46,28 @@ export const SearchBar = ({
   };
   if (!settings.experimental) return null;
   return (
-    <form onSubmit={handleSearchSubmit} className='p-3'>
-      <div className='flex flex-col gap-3 md:flex-row md:items-center'>
+    <form onSubmit={handleSearchSubmit} className="p-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Search input and button */}
-        <div className='relative flex-grow'>
-          <div className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'>
+        <div className="relative flex-grow">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <Search size={16} />
           </div>
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder='Search spans...'
+            placeholder="Search spans..."
             disabled={isLoading}
-            className='pl-10 pr-10 w-full h-10 focus-visible:ring-primary'
+            className="pl-10 pr-10 w-full h-10 focus-visible:ring-primary"
           />
           {searchQuery && (
             <Button
-              variant='ghost'
-              size='icon'
-              type='button'
+              variant="ghost"
+              size="icon"
+              type="button"
               onClick={handleClearSearch}
-              className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6'
-              aria-label='Clear search'
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6"
+              aria-label="Clear search"
             >
               <X size={16} />
             </Button>
@@ -75,17 +75,17 @@ export const SearchBar = ({
         </div>
 
         <Button
-          type='submit'
+          type="submit"
           disabled={isLoading}
-          className='bg-primary hover:bg-primary/90 text-white h-10 px-4 min-w-[100px]'
+          className="bg-primary hover:bg-primary/90 text-white h-10 px-4 min-w-[100px]"
         >
           {isLoading ? (
-            <span className='flex items-center justify-center gap-2'>
-              <Loader size={16} className='animate-spin' />
+            <span className="flex items-center justify-center gap-2">
+              <Loader size={16} className="animate-spin" />
               Searching...
             </span>
           ) : (
-            <span className='flex items-center justify-center gap-2'>
+            <span className="flex items-center justify-center gap-2">
               Search
             </span>
           )}
@@ -94,11 +94,11 @@ export const SearchBar = ({
 
       {/* Results counter */}
       {searchResults && (
-        <div className='mt-3 flex items-center justify-between border-t border-gray-200 pt-3'>
-          <div className='flex items-center gap-2'>
+        <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
+          <div className="flex items-center gap-2">
             <Badge
-              variant='outline'
-              className='bg-gray-50 text-gray-700 font-medium'
+              variant="outline"
+              className="bg-gray-50 text-gray-700 font-medium"
             >
               {displayCount} results found
             </Badge>
@@ -106,12 +106,12 @@ export const SearchBar = ({
 
           {searchResults.length > 0 && (
             <Button
-              variant='ghost'
-              size='sm'
+              variant="ghost"
+              size="sm"
               onClick={handleClearSearch}
-              className='text-gray-500 hover:text-gray-700 text-sm'
+              className="text-gray-500 hover:text-gray-700 text-sm"
             >
-              <X size={14} className='mr-1' />
+              <X size={14} className="mr-1" />
               Clear results
             </Button>
           )}
