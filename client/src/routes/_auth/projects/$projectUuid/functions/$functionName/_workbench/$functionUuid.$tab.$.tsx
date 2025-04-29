@@ -18,11 +18,11 @@ import { Button } from "@/components/ui/button";
 import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
 import { SquareTerminal } from "lucide-react";
 import { Suspense } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid/$tab/$"
@@ -80,16 +80,11 @@ const FunctionOverview = () => {
   );
   const features = useFeatureAccess();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const fn = functions.find((f) => f.uuid === functionUuid);
   const handlePlaygroundButtonClick = () => {
     navigate({
       to: `/projects/${projectUuid}/playground/${functionName}/${functionUuid}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to playground"));
   };
   if (!fn) {
     return <NotFound />;

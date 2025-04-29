@@ -15,11 +15,11 @@ import { Button } from "@/components/ui/button";
 import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { DiffTool } from "@/ee/components/DiffTool";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { Route as FunctionRoute } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/route";
 import { FunctionTab } from "@/types/functions";
 import { Construction, SquareTerminal } from "lucide-react";
 import { Suspense } from "react";
+import { toast } from "sonner";
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/functions/$functionName/_workbench/compare/$firstFunctionUuid/$secondFunctionUuid/$tab"
 )({
@@ -65,15 +65,10 @@ const FunctionOverview = () => {
   const firstFunction = functions.find((f) => f.uuid === functionUuid);
   const secondFunction = functions.find((f) => f.uuid === secondFunctionUuid);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const handleComparePlaygroundButtonClick = () => {
     navigate({
       to: `/projects/${projectUuid}/playground/${functionName}/compare/${functionUuid}/${secondFunctionUuid}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to playground"));
   };
   if (!firstFunction || !secondFunction) {
     return <div>Please select two functions to compare.</div>;

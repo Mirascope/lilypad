@@ -4,7 +4,10 @@ import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
+import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { LilypadPanel } from "@/components/LilypadPanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -16,18 +19,15 @@ import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import {
   FunctionPublic,
-  PlaygroundParameters,
   PlaygroundErrorDetail,
+  PlaygroundParameters,
 } from "@/types/types";
 import { $convertToMarkdownString } from "@lexical/markdown";
-import { Suspense, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LilypadPanel } from "@/components/LilypadPanel";
-import CardSkeleton from "@/components/CardSkeleton";
 import { AlertTriangle } from "lucide-react";
+import { Suspense, useState } from "react";
+import { toast } from "sonner";
 
 const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {
   return (
@@ -64,7 +64,6 @@ const ComparePlaygrounds = ({
   firstFunction: FunctionPublic;
   secondFunction: FunctionPublic;
 }) => {
-  const { toast } = useToast();
   const [firstSpanUuid, setFirstSpanUuid] = useState<string | null>(null);
   const [secondSpanUuid, setSecondSpanUuid] = useState<string | null>(null);
   const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(
@@ -113,11 +112,7 @@ const ComparePlaygrounds = ({
       ]);
     } catch (error) {
       console.error("Error running functions:", error);
-      toast({
-        title: "Error",
-        description: "Failed to run one or both functions",
-        variant: "destructive",
-      });
+      toast.error("Failed to run one or both functions");
     } finally {
       setIsRunning(false);
     }
@@ -185,21 +180,12 @@ const ComparePlaygrounds = ({
             console.error("Function error:", result.error);
           }
         } catch (error) {
-          console.error(error);
-          toast({
-            title: "Error running function",
-            description: error instanceof Error ? error.message : String(error),
-            variant: "destructive",
-          });
+          toast.error(error instanceof Error ? error.message : String(error));
         }
       })
       .catch((error) => {
         console.error("Editor error:", error);
-        toast({
-          title: "Failed to run function",
-          description: "Could not read editor state",
-          variant: "destructive",
-        });
+        toast.error("Failed to read editor state");
       });
   };
 

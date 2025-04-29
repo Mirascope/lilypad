@@ -9,36 +9,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { APIKeyPublic } from "@/types/types";
 import { useDeleteApiKeyMutation } from "@/utils/api-keys";
 import { Trash } from "lucide-react";
+import { toast } from "sonner";
 export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
-  const { toast } = useToast();
   const deleteApiKey = useDeleteApiKeyMutation();
   const handleApiKeyDelete = async (apiKeyUuid: string) => {
-    const res = await deleteApiKey.mutateAsync(apiKeyUuid);
-    if (res) {
-      toast({
-        title: "Successfully deleted API Key",
-      });
-    } else {
-      toast({
-        title: "Failed to delete API Key",
-        variant: "destructive",
-      });
-    }
+    await deleteApiKey
+      .mutateAsync(apiKeyUuid)
+      .catch(() => toast.error("Failed to delete API Key"));
+    toast.success("Successfully deleted API Key");
   };
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{`Delete ${apiKey.name}`}</DialogTitle>
           <DialogDescription>
             This action is final and cannot be undone.
@@ -51,13 +43,13 @@ export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
 
         <DialogFooter>
           <Button
-            variant='destructive'
+            variant="destructive"
             onClick={() => handleApiKeyDelete(apiKey.uuid)}
           >
             Delete
           </Button>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type="button" variant="secondary">
               Close
             </Button>
           </DialogClose>

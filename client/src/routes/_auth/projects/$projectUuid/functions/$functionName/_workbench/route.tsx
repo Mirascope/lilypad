@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useToast } from "@/hooks/use-toast";
 import { FunctionTab } from "@/types/functions";
 import {
   functionsByNameQueryOptions,
@@ -27,6 +26,7 @@ import {
 } from "@tanstack/react-router";
 import { GitCompare, Trash } from "lucide-react";
 import { JSX, Suspense, useState } from "react";
+import { toast } from "sonner";
 import { validate } from "uuid";
 
 export interface FunctionRouteParams {
@@ -98,7 +98,6 @@ const FunctionWorkbench = () => {
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
-  const { toast } = useToast();
   const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const features = useFeatureAccess();
   const navigate = useNavigate();
@@ -129,9 +128,7 @@ const FunctionWorkbench = () => {
       functionName,
     });
     navigate({ to: `/projects/${projectUuid}/functions` }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
+      toast.error("Failed to navigate")
     );
   };
 
@@ -144,19 +141,11 @@ const FunctionWorkbench = () => {
           secondFunctionUuid,
           tab: newTab as FunctionTab,
         },
-      }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate"));
     } else {
       navigate({
         to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${newTab}`,
-      }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate"));
     }
   };
 
@@ -179,17 +168,13 @@ const FunctionWorkbench = () => {
                     tab,
                   },
                 }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
+                  toast.error("Failed to navigate to compare page")
                 );
               } else {
                 navigate({
                   to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${tab}`,
                 }).catch(() =>
-                  toast({
-                    title: "Failed to navigate",
-                  })
+                  toast.error("Failed to navigate to function page")
                 );
               }
               setCompareMode((prevCompareMode) => !prevCompareMode);
@@ -296,7 +281,6 @@ const SelectFunction = ({
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
-  const { toast } = useToast();
   const navigate = useNavigate();
   return (
     <Select
@@ -310,19 +294,11 @@ const SelectFunction = ({
               secondFunctionUuid: isFirstFunction ? secondFunctionUuid : uuid,
               tab,
             },
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         } else {
           navigate({
             to: `/projects/${projectUuid}/functions/${functionName}/${uuid}/${tab}`,
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         }
       }}
     >

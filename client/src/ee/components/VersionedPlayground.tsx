@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Typography } from "@/components/ui/typography";
-import { useToast } from "@/hooks/use-toast";
 import { FunctionPublic } from "@/types/types";
 import {
   functionsByNameQueryOptions,
@@ -20,6 +19,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { GitCompare, Trash } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface VersionedPlaygroundProps {
   projectUuid: string;
@@ -40,7 +40,6 @@ export const VersionedPlayground = ({
   const { data: functionNames } = useSuspenseQuery(
     uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
   );
-  const { toast } = useToast();
   const [compareMode, setCompareMode] = useState<boolean>(isCompare);
   const navigate = useNavigate();
   const fn = functions?.find((f) => f.uuid === functionUuid) ?? null;
@@ -48,11 +47,7 @@ export const VersionedPlayground = ({
   const handleNewFunctionClick = (newFunctionName: string) => {
     navigate({
       to: `/projects/${projectUuid}/playground/${newFunctionName}`,
-    }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate"));
   };
 
   const handleArchive = async () => {
@@ -63,9 +58,7 @@ export const VersionedPlayground = ({
       functionName,
     });
     navigate({ to: `/projects/${projectUuid}/playground` }).catch(() =>
-      toast({
-        title: "Failed to navigate",
-      })
+      toast.error("Failed to navigate")
     );
   };
 
@@ -100,19 +93,11 @@ export const VersionedPlayground = ({
                   firstFunctionUuid: functionUuid,
                   secondFunctionUuid,
                 },
-              }).catch(() =>
-                toast({
-                  title: "Failed to navigate",
-                })
-              );
+              }).catch(() => toast.error("Failed to navigate"));
             } else {
               navigate({
                 to: `/projects/${projectUuid}/playground/${functionName}/${functionUuid}`,
-              }).catch(() =>
-                toast({
-                  title: "Failed to navigate",
-                })
-              );
+              }).catch(() => toast.error("Failed to navigate"));
             }
             setCompareMode((prevCompareMode) => !prevCompareMode);
           }}
@@ -195,7 +180,6 @@ const SelectFunction = ({
   compareMode,
   isFirstFunction,
 }: SelectFunctionProps) => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName ?? "", projectUuid)
@@ -212,19 +196,11 @@ const SelectFunction = ({
               firstFunctionUuid: isFirstFunction ? uuid : firstFunctionUuid,
               secondFunctionUuid: isFirstFunction ? secondFunctionUuid : uuid,
             },
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         } else {
           navigate({
             to: `/projects/${projectUuid}/playground/${functionName}/${uuid}`,
-          }).catch(() =>
-            toast({
-              title: "Failed to navigate",
-            })
-          );
+          }).catch(() => toast.error("Failed to navigate"));
         }
       }}
     >
