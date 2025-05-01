@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 """Script to generate model stubs for new entities."""
 
-import os
 from pathlib import Path
 from string import Template
 
@@ -84,7 +82,7 @@ MODEL_ALL_APPEND = Template(""""${Entity}Table",""")
 
 
 @app.command()
-def generate(name: str):
+def generate(name: str) -> None:
     """Generate model stubs for a new entity."""
     # Convert name to different formats
     entity = name.lower()
@@ -101,13 +99,13 @@ def generate(name: str):
 
     for directory in [services_dir, schemas_dir, models_dir]:
         if not directory.exists():
-            print(f"Creating directory: {directory}")
+            typer.echo(f"Creating directory: {directory}")
             directory.mkdir(parents=True, exist_ok=True)
 
     # Generate service file
     service_file = services_dir / f"{entity_plural}.py"
     if not service_file.exists():
-        print(f"Generating service file: {service_file}")
+        typer.echo(f"Generating service file: {service_file}")
         with open(service_file, "w") as f:
             f.write(
                 SERVICE_TEMPLATE.substitute(
@@ -117,12 +115,12 @@ def generate(name: str):
                 )
             )
     else:
-        print(f"Service file already exists: {service_file}")
+        typer.echo(f"Service file already exists: {service_file}")
 
     # Generate schema file
     schema_file = schemas_dir / f"{entity_plural}.py"
     if not schema_file.exists():
-        print(f"Generating schema file: {schema_file}")
+        typer.echo(f"Generating schema file: {schema_file}")
         with open(schema_file, "w") as f:
             f.write(
                 SCHEMA_TEMPLATE.substitute(
@@ -132,12 +130,12 @@ def generate(name: str):
                 )
             )
     else:
-        print(f"Schema file already exists: {schema_file}")
+        typer.echo(f"Schema file already exists: {schema_file}")
 
     # Generate model file
     model_file = models_dir / f"{entity_plural}.py"
     if not model_file.exists():
-        print(f"Generating model file: {model_file}")
+        typer.echo("Generating model file: {model_file}")
         with open(model_file, "w") as f:
             f.write(
                 MODEL_TEMPLATE.substitute(
@@ -149,14 +147,14 @@ def generate(name: str):
                 )
             )
     else:
-        print(f"Model file already exists: {model_file}")
+        typer.echo(f"Model file already exists: {model_file}")
 
     # Update table_names.py
     table_names_file = models_dir / "table_names.py"
     if table_names_file.exists():
-        print(f"Appending to table_names.py")
+        typer.echo("Appending to table_names.py")
         # Check if the table name already exists
-        with open(table_names_file, "r") as f:
+        with open(table_names_file) as f:
             content = f.read()
 
         table_name_line = f'{ENTITY_UPPER}_TABLE_NAME = "{entity_plural}"'
@@ -169,11 +167,11 @@ def generate(name: str):
                     )
                 )
         else:
-            print(
+            typer.echo(
                 f"Table name {ENTITY_UPPER}_TABLE_NAME already exists in table_names.py"
             )
     else:
-        print(f"Creating table_names.py")
+        typer.echo("Creating table_names.py")
         with open(table_names_file, "w") as f:
             f.write('"""Table names for the database models."""\n\n')
             f.write(
@@ -190,8 +188,8 @@ def generate(name: str):
     service_all_line = SERVICE_ALL_APPEND.substitute(Entity=Entity)
 
     if services_init_file.exists():
-        print(f"Updating services/__init__.py")
-        with open(services_init_file, "r") as f:
+        typer.echo("Updating services/__init__.py")
+        with open(services_init_file) as f:
             content = f.read()
 
         # Add import if not exists
@@ -231,7 +229,7 @@ def generate(name: str):
             with open(services_init_file, "w") as f:
                 f.write("\n".join(lines))
     else:
-        print(f"Creating services/__init__.py")
+        typer.echo("Creating services/__init__.py")
         with open(services_init_file, "w") as f:
             f.write(f"{service_import_line}\n\n")
             f.write(f"__all__ = [\n    {service_all_line}\n]\n")
@@ -244,8 +242,8 @@ def generate(name: str):
     model_all_line = MODEL_ALL_APPEND.substitute(Entity=Entity)
 
     if models_init_file.exists():
-        print(f"Updating models/__init__.py")
-        with open(models_init_file, "r") as f:
+        typer.echo("Updating models/__init__.py")
+        with open(models_init_file) as f:
             content = f.read()
 
         # Add import if not exists
@@ -285,12 +283,12 @@ def generate(name: str):
             with open(models_init_file, "w") as f:
                 f.write("\n".join(lines))
     else:
-        print(f"Creating models/__init__.py")
+        typer.echo("Creating models/__init__.py")
         with open(models_init_file, "w") as f:
             f.write(f"{model_import_line}\n\n")
             f.write(f"__all__ = [\n    {model_all_line}\n]\n")
 
-    print(f"Successfully generated stubs for entity: {name}")
+    typer.echo(f"Successfully generated stubs for entity: {name}")
 
 
 if __name__ == "__main__":
