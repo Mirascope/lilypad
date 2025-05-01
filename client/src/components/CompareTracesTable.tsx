@@ -1,3 +1,4 @@
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import { TracesTable } from "@/components/TracesTable";
 import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
@@ -41,7 +42,13 @@ export const CompareTracesTable = ({
     if (q1.hasNextPage) await q1.fetchNextPage();
     else if (q2.hasNextPage) await q2.fetchNextPage();
   };
-
+  if (q1.isLoading || q2.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LilypadLoading />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col h-full">
       <div className="py-2">
