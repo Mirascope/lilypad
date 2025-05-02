@@ -515,6 +515,22 @@ async def calculate_openrouter_cost(
     return None
 
 
+def parse_nested_json(data: Any) -> Any:
+    """Recursively parse nested JSON strings in a dict or list."""
+    if isinstance(data, dict):
+        return {k: parse_nested_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [parse_nested_json(item) for item in data]
+    elif isinstance(data, str):
+        try:
+            parsed = json.loads(data)
+            return parse_nested_json(parsed)
+        except json.JSONDecodeError:
+            return data
+    else:
+        return data
+
+
 class SpanMoreDetails(BaseModel):
     """Span more details model."""
 
@@ -571,7 +587,7 @@ class SpanMoreDetails(BaseModel):
             if lilypad_type:
                 signature = attributes.get(f"lilypad.{lilypad_type}.signature", None)
                 code = attributes.get(f"lilypad.{lilypad_type}.code", None)
-                arg_values = json.loads(
+                arg_values = parse_nested_json(
                     attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
                 )
                 output = attributes.get(f"lilypad.{lilypad_type}.output", None)

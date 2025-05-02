@@ -1,6 +1,12 @@
+import { Token } from "@/assets/TokenIcon";
 import { TagPopover } from "@/components/TagPopover";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import {
   MessagesContainer,
@@ -32,7 +38,9 @@ export const LilypadPanel = ({
     data.attributes as Record<string, string>;
   const lilypadType = attributes?.["lilypad.type"];
   const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
-
+  span.input_tokens = 100;
+  span.output_tokens = 253;
+  span.cost = 0.00001;
   return (
     <div className="flex flex-col gap-4">
       <Typography variant="h3">
@@ -57,13 +65,38 @@ export const LilypadPanel = ({
           span.input_tokens &&
           span.output_tokens != 0 &&
           span.output_tokens && (
-            <Badge className="text-xs font-medium m-0">
-              <span>{span.input_tokens}</span>
-              <span className="mx-1">&#8594;</span>
-              <span>{span.output_tokens}</span>
-              <span className="mx-1">=</span>
-              <span>{span.input_tokens + span.output_tokens}</span>
-            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="text-xs font-medium m-0 hover:cursor-pointer">
+                  <span>{span.input_tokens}</span>
+                  <span className="mx-1">&#8594;</span>
+                  <span>{span.output_tokens}</span>
+                  <span className="mx-1">=</span>
+                  <span className="flex items-center gap-1">
+                    {span.input_tokens + span.output_tokens}
+                    <Token className="h-3.5 w-3.5" />
+                  </span>
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex flex-col gap-1">
+                  <span className="flex gap-1">
+                    <span>Input Tokens:</span>
+                    <span className="font-medium">{span.input_tokens}</span>
+                  </span>
+                  <span className="flex gap-1">
+                    <span>Output Tokens:</span>
+                    <span className="font-medium">{span.output_tokens}</span>
+                  </span>
+                  <span className="flex gap-1">
+                    <span>Total Tokens:</span>
+                    <span className="font-medium">
+                      {span.input_tokens + span.output_tokens}
+                    </span>
+                  </span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           )}
         {span.cost != 0 && span.cost && <Badge>${span.cost.toFixed(5)}</Badge>}
         {span.duration_ms && (
