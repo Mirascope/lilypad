@@ -46,8 +46,13 @@ export const TraceBody = () => {
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
-  const { fetchNextPage, hasNextPage, isFetchingNextPage, defaultData } =
-    useInfiniteTraces(projectUuid, pageSize, order);
+  const {
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    defaultData,
+    isLoading,
+  } = useInfiniteTraces(projectUuid, pageSize, order);
 
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -59,6 +64,11 @@ export const TraceBody = () => {
         <SearchBar projectUuid={projectUuid} onDataChange={setSearchData} />
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
+        {isLoading && (
+          <div className="flex items-center justify-center h-full">
+            <LilypadLoading />
+          </div>
+        )}
         <TracesTable
           data={searchData ?? defaultData}
           traceUuid={traceUuid}

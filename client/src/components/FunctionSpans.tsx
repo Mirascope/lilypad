@@ -1,3 +1,4 @@
+import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import { TracesTable } from "@/components/TracesTable";
 import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
@@ -27,7 +28,11 @@ export const FunctionSpans = ({
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
 
   if (isLoading) {
-    return <div className="p-4">Loading…</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LilypadLoading />
+      </div>
+    );
   }
 
   return (
