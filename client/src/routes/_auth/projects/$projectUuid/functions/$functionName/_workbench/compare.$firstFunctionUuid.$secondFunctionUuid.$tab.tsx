@@ -103,8 +103,8 @@ const FunctionOverview = () => {
         <div className="text-left">
           <Label className="text-lg font-semibold">Code Comparison</Label>
           <DiffTool
-            firstLexicalClosure={firstFunction.code}
-            secondLexicalClosure={secondFunction.code}
+            firstCodeBlock={firstFunction.code}
+            secondCodeBlock={secondFunction.code}
           />
         </div>
         <div>

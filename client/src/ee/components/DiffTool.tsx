@@ -1,8 +1,8 @@
-import { CodeSnippet } from "@/components/CodeSnippet";
+import { CodeBlock } from "@/components/CodeBlock";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { diffArrays } from "diff";
-import { JSX, useState } from "react";
+import { useState } from "react";
 
 const PLACEHOLDER = Symbol("placeholder");
 
@@ -85,74 +85,83 @@ const processDiffData = (diffedLines: DiffPart[]): ProcessedDiffBlock[] => {
   return result;
 };
 
+/**
+ * Add line highlighting using Shiki's [!code highlight] comments
+ */
+const addHighlightComments = (
+  lines: string[],
+  lineHighlights: Record<number, string>
+): string => {
+  return lines
+    .map((line, index) => {
+      // Line numbers are 1-based
+      const lineNumber = index + 1;
+      if (lineHighlights[lineNumber]) {
+        if (lineHighlights[lineNumber] === "added") {
+          return `${line} // [!code ++]`;
+        } else if (lineHighlights[lineNumber] === "removed") {
+          return `${line} // [!code --]`;
+        } else {
+          return `${line} // [!code highlight]`;
+        }
+      }
+      return line;
+    })
+    .join("\n");
+};
+
 interface CodeBlockWithLineNumbersSideBySideProps {
   diffedLines: DiffPart[];
+  language?: string;
 }
 
 const CodeBlockWithLineNumbersSideBySide = ({
   diffedLines,
+  language = "typescript",
 }: CodeBlockWithLineNumbersSideBySideProps) => {
   const processedData = processDiffData(diffedLines);
 
   const renderColumn = (side: "before" | "after") => {
     let lineNumber = 0;
-    const lineNumbers: JSX.Element[] = [];
     const codeLines: string[] = [];
     const lineHighlights: Record<number, string> = {};
 
-    processedData.forEach((block, blockIndex) => {
+    processedData.forEach((block) => {
       const lines = side === "before" ? block.oldValue : block.newValue;
 
-      lines.forEach((line, lineIndex) => {
+      lines.forEach((line) => {
         if (line !== PLACEHOLDER) {
           lineNumber++;
-          lineNumbers.push(
-            <div
-              key={`${side}-linenumber-${lineNumber}`}
-              className="text-xs leading-5 text-gray-500 py-[1px]"
-            >
-              {lineNumber}
-            </div>
-          );
-
-          codeLines.push(typeof line === "symbol" ? "" : (line as string));
+          codeLines.push(typeof line === "symbol" ? "" : line);
 
           // Apply highlighting based on diff type
-          const bgColor =
-            block.type === "modified"
-              ? side === "before"
-                ? "bg-red-100"
-                : "bg-green-100"
-              : block.type === "added" && side === "after"
-                ? "bg-green-100"
-                : block.type === "removed" && side === "before"
-                  ? "bg-red-100"
-                  : "";
-
-          if (bgColor) {
-            lineHighlights[lineNumber] = bgColor;
+          if (
+            (block.type === "modified" &&
+              ((side === "before" &&
+                !block.oldValue.every((v) => v === PLACEHOLDER)) ||
+                (side === "after" &&
+                  !block.newValue.every((v) => v === PLACEHOLDER)))) ||
+            (block.type === "added" && side === "after") ||
+            (block.type === "removed" && side === "before")
+          ) {
+            lineHighlights[lineNumber] = "highlight";
           }
         } else {
-          lineNumbers.push(
-            <div
-              key={`${side}-linenumber-placeholder-${blockIndex}-${lineIndex}`}
-              className="text-xs leading-5 text-gray-500 py-[1px]"
-            >
-              &nbsp;
-            </div>
-          );
+          // Empty placeholder line
           codeLines.push("");
         }
       });
     });
 
+    // Add the highlight comments and generate the final code string
+    const highlightedCode = addHighlightComments(codeLines, lineHighlights);
+
     return (
       <div className="flex-1 w-full overflow-x-auto">
-        <CodeSnippet
-          code={codeLines.join("\n")}
-          showCopyButton={false}
-          lineHighlights={lineHighlights}
-          className="!p-0 !bg-transparent"
+        <CodeBlock
+          code={highlightedCode}
+          language={language}
+          className={`border-0 ${side === "before" ? "highlight-removed" : "highlight-added"}`}
         />
       </div>
     );
@@ -171,10 +180,12 @@ const CodeBlockWithLineNumbersSideBySide = ({
 
 interface CodeBlockWithLineNumbersAndHighlightsProps {
   diffedLines: DiffPart[];
+  language?: string;
 }
 
 const CodeBlockWithLineNumbersAndHighlights = ({
   diffedLines,
+  language = "python",
 }: CodeBlockWithLineNumbersAndHighlightsProps) => {
   // Generate the unified code view
   const codeLines: string[] = [];
@@ -183,43 +194,44 @@ const CodeBlockWithLineNumbersAndHighlights = ({
 
   diffedLines.forEach((part) => {
     const symbol = part.added ? "+" : part.removed ? "-" : " ";
-    const bgColor = part.added
-      ? "bg-green-100"
-      : part.removed
-        ? "bg-red-100"
-        : "";
 
     part.value.forEach((line) => {
       currentLine++;
       codeLines.push(`${symbol} ${line}`);
 
-      if (bgColor) {
-        lineHighlights[currentLine] = bgColor;
+      if (part.added) {
+        lineHighlights[currentLine] = "added";
+      }
+      if (part.removed) {
+        lineHighlights[currentLine] = "removed";
       }
     });
   });
 
+  // Add the highlight comments and generate the final code string
+  const highlightedCode = addHighlightComments(codeLines, lineHighlights);
+
   return (
     <div className="w-full font-mono text-sm border rounded-md overflow-hidden">
-      <CodeSnippet
-        code={codeLines.join("\n")}
-        showCopyButton={false}
-        lineHighlights={lineHighlights}
-        className="!p-0 !bg-transparent"
+      <CodeBlock
+        code={highlightedCode}
+        language={language}
+        className="unified-diff border-0"
       />
     </div>
   );
 };
 
 interface DiffToolProps {
-  firstLexicalClosure: string;
-  secondLexicalClosure: string;
+  firstCodeBlock: string;
+  secondCodeBlock: string;
   language?: string;
 }
 
 export const DiffTool = ({
-  firstLexicalClosure,
-  secondLexicalClosure,
+  firstCodeBlock,
+  secondCodeBlock,
+  language = "typescript",
 }: DiffToolProps) => {
   const [mode, setMode] = useState<"split" | "unified">("split");
 
@@ -228,10 +240,10 @@ export const DiffTool = ({
   };
 
   let diffed: DiffPart[] | null = null;
-  if (firstLexicalClosure && secondLexicalClosure) {
-    const firstClosure = firstLexicalClosure.split("\n");
-    const secondClosure = secondLexicalClosure.split("\n");
-    diffed = diffArrays(firstClosure, secondClosure);
+  if (firstCodeBlock && secondCodeBlock) {
+    const firstCode = firstCodeBlock.split("\n");
+    const secondCode = secondCodeBlock.split("\n");
+    diffed = diffArrays(firstCode, secondCode);
   }
 
   return (
@@ -250,9 +262,15 @@ export const DiffTool = ({
           </div>
           <div className="flex w-full">
             {mode === "unified" ? (
-              <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} />
+              <CodeBlockWithLineNumbersAndHighlights
+                diffedLines={diffed}
+                language={language}
+              />
             ) : (
-              <CodeBlockWithLineNumbersSideBySide diffedLines={diffed} />
+              <CodeBlockWithLineNumbersSideBySide
+                diffedLines={diffed}
+                language={language}
+              />
             )}
           </div>
         </>

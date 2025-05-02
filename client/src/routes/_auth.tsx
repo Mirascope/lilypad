@@ -58,7 +58,10 @@ function AuthLayout() {
     }
   }, [posthog, user?.uuid, user?.email]);
   return (
-    <div className="flex flex-col border-collapse overflow-hidden">
+    <div
+      className="flex flex-col border-collapse overflow-hidden"
+      data-product="lilypad"
+    >
       <SidebarProvider>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
