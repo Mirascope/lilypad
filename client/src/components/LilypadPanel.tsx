@@ -97,11 +97,7 @@ export const LilypadPanel = ({
             </CardContent>
           </Card>
         )}
-        {span.output && (
-          <Card className="w-[calc(50%-0.5rem)] min-w-[300px] flex-grow">
-            {renderCardOutput(span.output)}
-          </Card>
-        )}
+        {span.output && renderCardOutput(span.output)}
       </div>
       <TraceCodeTab span={span} />
       {renderMetadata(span.data)}
