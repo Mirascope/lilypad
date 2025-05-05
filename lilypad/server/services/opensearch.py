@@ -1,30 +1,90 @@
 """The `OpenSearchClass` class for opensearch."""
 
+from __future__ import annotations
+
 import logging
-from typing import Any
+from enum import Enum
+from typing import Any, Literal
 from uuid import UUID
 
 from opensearchpy import OpenSearch, RequestsHttpConnection
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from lilypad.server.settings import get_settings
 
-from ..models.spans import Scope
 from ..schemas.spans import SpanPublic
 
 logger = logging.getLogger(__name__)
 OPENSEARCH_INDEX_PREFIX = "traces_"
 
 
-class SearchQuery(BaseModel):
-    """Search query parameters."""
+class FilterType(str, Enum):
+    """Enum for filter types."""
 
-    query_string: str
-    time_range_start: int | None = None
-    time_range_end: int | None = None
+    TERM = "term"
+    RANGE = "range"
+    EXISTS = "exists"
+    WILDCARD = "wildcard"
+    NESTED = "nested"
+
+
+class TermFilter(BaseModel):
+    """Term filter model."""
+
+    field: str
+    value: Any
+
+
+class RangeFilter(BaseModel):
+    """Range filter model."""
+
+    field: str
+    gt: float | None = None
+    gte: float | None = None
+    lt: float | None = None
+    lte: float | None = None
+
+
+class ExistsFilter(BaseModel):
+    """Exists filter model."""
+
+    field: str
+
+
+class WildcardFilter(BaseModel):
+    """Wildcard filter model."""
+
+    field: str
+    value: str
+
+
+class NestedFilter(BaseModel):
+    """Nested filter model."""
+
+    path: str
+    filter: dict[str, Filter]
+
+
+class Filter(BaseModel):
+    """Filter model."""
+
+    type: FilterType
+    term: TermFilter | None = None
+    range: RangeFilter | None = None
+    exists: ExistsFilter | None = None
+    wildcard: WildcardFilter | None = None
+    nested: NestedFilter | None = None
+
+
+class OpenSearchQuery(BaseModel):
+    """OpenSearch query model."""
+
+    filters: list[Filter] = Field(default_factory=list)
+    sort_field: str = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"
     limit: int = 100
-    scope: Scope | None = None
-    type: str | None = None
+    offset: int = 0
+    query_string: str | None = None
 
 
 class SearchResult(BaseModel):
@@ -168,7 +228,74 @@ class OpenSearchService:
                 return False
         return False
 
-    def search_traces(self, project_uuid: UUID, search_query: SearchQuery) -> Any:
+    def build_filter_query(self, filter_obj: Filter, parent_path: str = "") -> dict:
+        """Build a query part for a single filter.
+
+        Args:
+            filter_obj: The filter object to process
+            parent_path: Optional parent path for nested fields
+
+        Returns:
+            A properly formatted query part for OpenSearch
+        """
+        # Prepare the field path prefix if there's a parent path
+        prefix = f"{parent_path}." if parent_path else ""
+
+        if filter_obj.type == FilterType.TERM and filter_obj.term:
+            return {"term": {f"{prefix}{filter_obj.term.field}": filter_obj.term.value}}
+
+        elif filter_obj.type == FilterType.RANGE and filter_obj.range:
+            range_dict = {}
+            if filter_obj.range.gt is not None:
+                range_dict["gt"] = filter_obj.range.gt
+            if filter_obj.range.gte is not None:
+                range_dict["gte"] = filter_obj.range.gte
+            if filter_obj.range.lt is not None:
+                range_dict["lt"] = filter_obj.range.lt
+            if filter_obj.range.lte is not None:
+                range_dict["lte"] = filter_obj.range.lte
+
+            if range_dict:  # Only add if there are range conditions
+                return {"range": {f"{prefix}{filter_obj.range.field}": range_dict}}
+
+        elif filter_obj.type == FilterType.EXISTS and filter_obj.exists:
+            return {"exists": {"field": f"{prefix}{filter_obj.exists.field}"}}
+
+        elif filter_obj.type == FilterType.WILDCARD and filter_obj.wildcard:
+            return {
+                "wildcard": {
+                    f"{prefix}{filter_obj.wildcard.field}": filter_obj.wildcard.value
+                }
+            }
+
+        elif filter_obj.type == FilterType.NESTED and filter_obj.nested:
+            # Handle nested filter type
+            nested_path = f"{prefix}{filter_obj.nested.path}"
+            nested_query_parts = []
+
+            # Process each nested filter
+            for (
+                _,
+                nested_filter_obj,
+            ) in filter_obj.nested.filter.items():
+                nested_query_part = self.build_filter_query(
+                    nested_filter_obj, nested_path
+                )
+                if nested_query_part:
+                    nested_query_parts.append(nested_query_part)
+
+            if nested_query_parts:
+                return {
+                    "nested": {
+                        "path": nested_path,
+                        "query": {"bool": {"must": nested_query_parts}},
+                    }
+                }
+
+        # Return empty dict if the filter doesn't match any type or is incomplete
+        return {}
+
+    def search_traces(self, project_uuid: UUID, search_query: OpenSearchQuery) -> Any:
         """Search for traces in OpenSearch."""
         if not self.client:
             return []
@@ -194,31 +321,24 @@ class OpenSearchService:
                 }
             )
 
-        # Add time range if provided
-        if search_query.time_range_start or search_query.time_range_end:
-            time_range = {}
-            if search_query.time_range_start:
-                time_range["gte"] = search_query.time_range_start
-            if search_query.time_range_end:
-                time_range["lte"] = search_query.time_range_end
-
-            query_parts.append({"range": {"created_at": time_range}})
-
-        # Add scope filter if provided
-        if search_query.scope:
-            query_parts.append({"term": {"scope": search_query.scope.value}})
-
-        # Add type filter if provided
-        if search_query.type:
-            query_parts.append({"term": {"type": search_query.type}})
+        # Process all filters using the unified function
+        for filter_item in search_query.filters:
+            filter_query = self.build_filter_query(filter_item)
+            if filter_query:  # Only add non-empty filter queries
+                query_parts.append(filter_query)
 
         # Create the final query
         query = {"bool": {"must": query_parts}} if query_parts else {"match_all": {}}
+
+        # Add sorting
+        sort_config = [{search_query.sort_field: {"order": search_query.sort_order}}]
 
         # Execute the search
         search_body = {
             "query": query,
             "size": search_query.limit,
+            "from": search_query.offset,
+            "sort": sort_config,
             "track_scores": True,
         }
 

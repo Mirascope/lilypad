@@ -15,8 +15,8 @@ from ...schemas.spans import SpanPublic, SpanUpdate
 from ...schemas.users import UserPublic
 from ...services.functions import FunctionService
 from ...services.opensearch import (
+    OpenSearchQuery,
     OpenSearchService,
-    SearchQuery,
     get_opensearch_service,
 )
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
@@ -112,34 +112,13 @@ async def search_traces(
     project_uuid: UUID,
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
     function_service: Annotated[FunctionService, Depends(FunctionService)],
-    query_string: Annotated[str, Query(description="Search query string")],
-    time_range_start: Annotated[
-        int | None, Query(description="Start time range in milliseconds")
-    ] = None,
-    time_range_end: Annotated[
-        int | None, Query(description="End time range in milliseconds")
-    ] = None,
-    limit: Annotated[
-        int, Query(description="Maximum number of results to return")
-    ] = 100,
-    scope: Annotated[Scope | None, Query(description="Scope of the search")] = None,
-    type: Annotated[
-        str | None, Query(description="Type of spans to search for")
-    ] = None,
+    filter_query: Annotated[OpenSearchQuery, Query()],
 ) -> Sequence[SpanPublic]:
     """Search for traces in OpenSearch."""
     if not opensearch_service.is_enabled:
         return []
 
-    search_query = SearchQuery(
-        query_string=query_string,
-        time_range_start=time_range_start,
-        time_range_end=time_range_end,
-        limit=limit,
-        scope=scope,
-        type=type,
-    )
-    hits = opensearch_service.search_traces(project_uuid, search_query)
+    hits = opensearch_service.search_traces(project_uuid, filter_query)
     # Extract function UUIDs and fetch functions in batch
     function_uuids = {
         UUID(hit["_source"]["function_uuid"])
