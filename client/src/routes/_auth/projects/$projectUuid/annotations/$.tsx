@@ -161,7 +161,7 @@ const AnnotationList = ({
   );
   return (
     <div className="p-4 flex flex-col h-full">
-      <div className="flex-shrink-0 mb-2">
+      <div className="shrink-0 mb-2">
         <Typography variant="h4">Annotations</Typography>
         <Typography affects="muted" variant="span">
           {annotations.length > 0 && `${annotations.length} item(s) remaining`}
@@ -252,14 +252,14 @@ const AnnotationView = ({
   };
   return (
     <div className="p-4 flex flex-col h-full">
-      <div className="flex-shrink-0 mb-2">
+      <div className="shrink-0 mb-2">
         <UpdateAnnotationForm
           annotation={annotation}
           spanUuid={annotation.span_uuid}
           onSubmit={handleSubmit}
         />
       </div>
-      <div className="flex-grow overflow-auto">
+      <div className="grow overflow-auto">
         {annotation.span.scope === Scope.LILYPAD ? (
           <LilypadPanel spanUuid={annotation.span_uuid} />
         ) : (
@@ -273,7 +273,7 @@ const AnnotationView = ({
 const AnnotationComment = ({ spanUuid }: { spanUuid: string }) => {
   return (
     <div className="flex flex-col h-full p-4">
-      <div className="flex-shrink-0 mb-2">
+      <div className="shrink-0 mb-2">
         <Typography variant="h4">Comments</Typography>
       </div>
       <Comment spanUuid={spanUuid} />

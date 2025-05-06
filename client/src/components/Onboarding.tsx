@@ -80,7 +80,7 @@ const OnboardingDesktop = () => {
       {({ methods }) => (
         <>
           <Stepper.Navigation
-            className={"max-w-full overflow-x-auto flex-shrink-0"}
+            className={"max-w-full overflow-x-auto shrink-0"}
           >
             {methods.all.map((step) => (
               <Stepper.Step key={step.id} of={step.id}>
@@ -412,7 +412,7 @@ const OnboardInstallLilypad = () => {
     <Tabs
       value={tab}
       onValueChange={(value) => setTab(value)}
-      className="w-full flex-shrink flex flex-col"
+      className="w-full shrink flex flex-col"
     >
       <div className="flex justify-center w-full">
         <TabsList className={`w-[80px]`}>

@@ -81,7 +81,7 @@ export const LilypadDialog = ({
         )}
         {...dialogContentProps}
       >
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>

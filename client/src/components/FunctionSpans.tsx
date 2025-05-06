@@ -37,7 +37,7 @@ export const FunctionSpans = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <SearchBar
           projectUuid={projectUuid}
           onDataChange={setDisplayData}

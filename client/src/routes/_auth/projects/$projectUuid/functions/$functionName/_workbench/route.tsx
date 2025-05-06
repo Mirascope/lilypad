@@ -1,5 +1,6 @@
 import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { TabGroup } from "@/components/TabGroup";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -8,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { FunctionTab } from "@/types/functions";
@@ -20,7 +19,6 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
-  Outlet,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
@@ -149,7 +147,6 @@ const FunctionWorkbench = () => {
     }
   };
 
-  const tabWidth = 80 * tabs.length;
   return (
     <div className="pt-4 pb-1 h-screen flex flex-col px-2">
       <Typography variant="h2">{functionName}</Typography>
@@ -224,40 +221,7 @@ const FunctionWorkbench = () => {
           <SelectFunction compareMode={compareMode} isFirstFunction={false} />
         </div>
       )}
-      <Tabs
-        value={tab}
-        onValueChange={handleTabChange}
-        className="w-full h-full flex flex-col"
-      >
-        <div>
-          <div className="flex justify-center w-full">
-            <TabsList className={`w-[${tabWidth}px]`}>
-              {tabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  disabled={!tab.isAvailable}
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          <Separator className="my-2" />
-        </div>
-
-        <div className="flex-1 min-h-0 relative">
-          {tabs.map((tab) => (
-            <TabsContent
-              key={tab.value}
-              value={tab.value}
-              className="absolute inset-0 overflow-auto"
-            >
-              <Outlet />
-            </TabsContent>
-          ))}
-        </div>
-      </Tabs>
+      <TabGroup tabs={tabs} handleTabChange={handleTabChange} />
     </div>
   );
 };

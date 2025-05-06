@@ -439,7 +439,7 @@ export const ListInput = <
                   `${String(name)}.${index}.type` as unknown as FieldPath<TFieldValues>
                 ) || "str";
               return (
-                <Card key={field.id} className="w-full flex-shrink-0 relative">
+                <Card key={field.id} className="w-full shrink-0 relative">
                   <Button
                     type="button"
                     variant="ghost"
@@ -608,7 +608,7 @@ export const ObjectInput = <
           {entries.map(({ key, type, value }, entryIndex) => {
             const valueLabel = `Value (${type})`;
             return (
-              <Card key={entryIndex} className="w-full flex-shrink-0 relative">
+              <Card key={entryIndex} className="w-full shrink-0 relative">
                 <Button
                   type="button"
                   variant="ghost"

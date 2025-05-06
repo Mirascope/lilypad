@@ -1,4 +1,3 @@
-import CardSkeleton from "@/components/CardSkeleton";
 import { AddComment, CommentCards } from "@/components/Comment";
 import { DataTable } from "@/components/DataTable";
 import LilypadDialog from "@/components/LilypadDialog";
@@ -33,6 +32,7 @@ import { Typography } from "@/components/ui/typography";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { useSelectedRows } from "@/hooks/use-selected-rows";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
 import {
   commentsBySpanQueryOptions,
@@ -47,13 +47,13 @@ import {
   FilterFn,
   Row,
   RowSelectionState,
-  Table,
 } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
+  Filter,
   MessageSquareMore,
   MoreHorizontal,
   NotebookPen,
@@ -63,7 +63,6 @@ import {
 import {
   Dispatch,
   SetStateAction,
-  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -78,12 +77,9 @@ const tagFilter = (
 ): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
 
-  // If there's no filter value, return true (show all rows)
   if (!filterValue || filterValue.trim() === "") {
     return true;
   }
-
-  // If there are no tags or tags is not an array, return false
   if (!Array.isArray(tags) || tags.length === 0) {
     return false;
   }
@@ -109,24 +105,6 @@ const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
 
   // Always include child rows
   return true;
-};
-
-const findRowWithUuid = (
-  rows: SpanPublic[],
-  targetUuid: string | undefined
-): SpanPublic | undefined => {
-  if (!targetUuid) return undefined;
-  for (const row of rows) {
-    if (row.uuid === targetUuid) {
-      return row;
-    }
-
-    if (row.child_spans?.length) {
-      const found = findRowWithUuid(row.child_spans, targetUuid);
-      if (found) return found;
-    }
-  }
-  return undefined;
 };
 
 const Spacer = () => <div className="w-4 h-4" />;
@@ -169,7 +147,7 @@ const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
   return (
     <div className="flex flex-col h-full max-h-screen overflow-hidden">
       {/* Controls remain at top */}
-      <div className="flex justify-end gap-2 p-2 flex-shrink-0">
+      <div className="flex justify-end gap-2 p-2 shrink-0">
         <Button
           size="icon"
           className="h-8 w-8 relative"
@@ -240,7 +218,6 @@ interface TracesTableProps {
   data?: SpanPublic[];
   traceUuid?: string;
   path?: string;
-
   projectUuid: string;
   /** true while useInfiniteQuery is fetching next page */
   isFetchingNextPage?: boolean;
@@ -252,6 +229,8 @@ interface TracesTableProps {
   ) => void;
   fetchNextPage?: () => void;
   filterColumn?: string;
+  /** Optional prop to access compare view state */
+  onCompareViewToggle?: (isComparing: boolean) => void;
 }
 
 export const TracesTable = ({
@@ -270,8 +249,10 @@ export const TracesTable = ({
   const features = useFeatureAccess();
   const queryClient = useQueryClient();
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const selectedRowsRef = useRef<SpanPublic[]>([]);
   const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
+  const [tagFilterOpen, setTagFilterOpen] = useState<boolean>(false);
+
+  const { rows, setSelectedRows } = useSelectedRows();
 
   const dataMapping = useMemo(() => {
     const mapping = {} as Record<string, SpanPublic>;
@@ -293,16 +274,13 @@ export const TracesTable = ({
   }, [data]);
 
   const handleRowSelectionChange = (row: RowSelectionState) => {
-    const selectedRows = Object.keys(row)
+    const rows = Object.keys(row)
       .filter((key) => row[key])
       .map((key) => dataMapping[key] ?? null)
       .filter((item) => item !== null);
 
-    selectedRowsRef.current = selectedRows;
+    setSelectedRows(rows);
   };
-
-  // State to track selected rows
-  const [toggleCompareMode, setToggleCompareMode] = useState<boolean>(false);
 
   const findRow = (rows: SpanPublic[], uuid?: string) =>
     rows.find((r) => r.uuid === uuid) ??
@@ -327,6 +305,7 @@ export const TracesTable = ({
       })
       .catch(() => toast.error("Failed to prefetch"));
   };
+
   const columns: ColumnDef<SpanPublic>[] = [
     {
       accessorKey: "display_name",
@@ -357,21 +336,21 @@ export const TracesTable = ({
         const hasSubRows = row.subRows.length > 0;
         const isSelected = row.getIsSelected();
         const displayName: string = row.getValue("display_name");
-        const scope = row.original.scope;
-        const isLilypad = scope === Scope.LILYPAD;
         return (
           <div style={{ marginLeft: `${depth * 1.5}rem` }} className="w-full">
             <div className="flex items-center gap-2">
               {hasSubRows ? <ExpandRowButton row={row} /> : <Spacer />}
-              {isLilypad && (
-                <Checkbox
-                  onClick={(e) => e.stopPropagation()}
-                  checked={isSelected}
-                  onCheckedChange={(checked) => row.toggleSelected(!!checked)}
-                  aria-label={`Select ${displayName}`}
-                  className="mr-2"
-                />
-              )}
+              <Checkbox
+                onClick={(e) => e.stopPropagation()}
+                checked={isSelected}
+                onCheckedChange={(checked) =>
+                  row.toggleSelected(!!checked, {
+                    selectChildren: false,
+                  })
+                }
+                aria-label={`Select ${displayName}`}
+                className="mr-2"
+              />
               <span className="truncate">{displayName}</span>
             </div>
           </div>
@@ -424,7 +403,71 @@ export const TracesTable = ({
     },
     {
       accessorKey: "tags",
-      header: "Tags",
+      header: ({ table }) => {
+        return (
+          <div className="flex items-center gap-1">
+            <Popover open={tagFilterOpen} onOpenChange={setTagFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-0 h-8 ml-1"
+                  title="Filter tags"
+                >
+                  Tags
+                  <Filter
+                    className={`w-4 h-4 ${
+                      table.getColumn("tags")?.getFilterValue()
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-2 w-80">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      placeholder="Filter tags..."
+                      value={
+                        (table.getColumn("tags")?.getFilterValue() as string) ??
+                        ""
+                      }
+                      onChange={(event) => {
+                        table
+                          .getColumn("tags")
+                          ?.setFilterValue(event.target.value);
+                      }}
+                      className="pr-10"
+                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <SmileIcon className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-fit p-0">
+                        <EmojiPicker
+                          className="h-[342px]"
+                          onEmojiSelect={(emojiData) => {
+                            const currFilter =
+                              (table
+                                .getColumn("tags")
+                                ?.getFilterValue() as string) ?? "";
+                            table
+                              .getColumn("tags")
+                              ?.setFilterValue(currFilter + emojiData.emoji);
+                          }}
+                        >
+                          <EmojiPickerContent />
+                        </EmojiPicker>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
+      },
       id: "tags",
       size: 150,
       filterFn: tagFilter,
@@ -624,6 +667,7 @@ export const TracesTable = ({
       },
     },
   ];
+
   const getRowCanExpand = (row: SpanPublic) =>
     Array.isArray(row.child_spans) && row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
@@ -638,133 +682,31 @@ export const TracesTable = ({
       });
     }
   };
-  const CompareDetailPanel = () => {
-    const rows = selectedRowsRef.current; // ★ ここだけ
-    if (rows.length !== 2) {
-      return (
-        <div className="p-6 text-muted-foreground italic">
-          Select exactly two rows to compare.
-        </div>
-      );
-    }
-    return (
-      <div className="p-4 border rounded-md overflow-auto">
-        {rows.length === 2 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setToggleCompareMode(
-                (prevToggleCompareMode) => !prevToggleCompareMode
-              )
-            }
-          >
-            Go back
-          </Button>
-        )}
-        <h2 className="text-lg font-semibold mb-2">Compare Details</h2>
-        <div className="flex gap-4">
-          <div className="w-1/2">
-            <h3 className="text-lg font-semibold">Row 1</h3>
-            <Suspense
-              fallback={<CardSkeleton items={5} className="flex flex-col" />}
-            >
-              {rows[0].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={rows[0].uuid} />
-              ) : (
-                <LlmPanel spanUuid={rows[0].uuid} />
-              )}
-            </Suspense>
-          </div>
-          <div className="w-1/2">
-            <h3 className="text-lg font-semibold">Row 2</h3>
-            <Suspense
-              fallback={<CardSkeleton items={5} className="flex flex-col" />}
-            >
-              {rows[1].scope === Scope.LILYPAD ? (
-                <LilypadPanel spanUuid={rows[1].uuid} />
-              ) : (
-                <LlmPanel spanUuid={rows[1].uuid} />
-              )}
-            </Suspense>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const customControls = (table: Table<SpanPublic>) => {
-    const selectedRows = selectedRowsRef.current;
+
+  const customControls = () => {
     return (
       <>
         <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
           <div className="flex items-center gap-2">
-            <div className="relative flex items-center">
-              <Input
-                key={`tags-input`}
-                placeholder="Filter tags..."
-                value={
-                  (table.getColumn("tags")?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) => {
-                  table.getColumn("tags")?.setFilterValue(event.target.value);
-                }}
-                className="pr-10" // Add right padding to make room for the icon
-              />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <SmileIcon className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100" />
-                </PopoverTrigger>
-                <PopoverContent className="w-fit p-0">
-                  <EmojiPicker
-                    className="h-[342px]"
-                    onEmojiSelect={(emojiData) => {
-                      const currFilter =
-                        (table.getColumn("tags")?.getFilterValue() as string) ??
-                        "";
-                      table
-                        .getColumn("tags")
-                        ?.setFilterValue(currFilter + emojiData.emoji);
-                    }}
-                  >
-                    <EmojiPickerContent />
-                  </EmojiPicker>
-                </PopoverContent>
-              </Popover>
-            </div>
             {features.annotations && (
               <LilypadDialog
                 icon={<Users />}
                 title={"Annotate selected traces"}
-                description={`${selectedRows.length} trace(s) selected.`}
+                description={`${rows.length} trace(s) selected.`}
                 buttonProps={{
-                  disabled: selectedRows.length === 0,
+                  disabled: rows.length === 0,
                 }}
                 tooltipContent={"Add selected traces to your annotation queue."}
               >
-                <QueueForm spans={selectedRows} />
+                <QueueForm spans={rows} />
               </LilypadDialog>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setToggleCompareMode(
-                  (prevToggleCompareMode) => !prevToggleCompareMode
-                )
-              }
-              className="whitespace-nowrap"
-              disabled={selectedRows.length !== 2}
-            >
-              Compare
-            </Button>
           </div>
         </div>
       </>
     );
   };
-  if (toggleCompareMode) {
-    return <CompareDetailPanel />;
-  }
+
   return (
     <>
       <DataTable<SpanPublic>

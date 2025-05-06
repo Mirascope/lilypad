@@ -309,7 +309,7 @@ export const Comment = ({ spanUuid }: { spanUuid: string }) => {
       <div className="flex-1 min-h-0">
         <CommentCards spanUuid={spanUuid} />
       </div>
-      <div className="mt-4 flex-shrink-0">
+      <div className="mt-4 shrink-0">
         <Separator />
         <div className="mt-4">
           <AddComment spanUuid={spanUuid} />
@@ -325,7 +325,7 @@ export const CommentButton = ({ spanUuid }: { spanUuid: string }) => {
   );
   return (
     <div className={`flex flex-col ${showComments ? "h-full" : ""}`}>
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Button
           size="icon"
           className="h-8 w-8 relative"

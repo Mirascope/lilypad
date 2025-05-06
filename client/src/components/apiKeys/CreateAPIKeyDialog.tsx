@@ -42,7 +42,7 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
         className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Create new API Key</DialogTitle>
           <DialogDescription>
             Generate a Lilypad API Key for your organization.
@@ -85,7 +85,7 @@ const CopyKeyButton = ({
   if (!projectUuid) return <NotFound />;
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
-      <DialogHeader className="flex-shrink-0">
+      <DialogHeader className="shrink-0">
         <DialogTitle>API Key Created</DialogTitle>
         <DialogDescription className="space-y-4">
           Copy your project ID and API key into your environment

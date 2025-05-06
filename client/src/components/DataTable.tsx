@@ -146,14 +146,25 @@ export const DataTable = <T extends { uuid: string }>({
     updaterOrValue
   ) => {
     if (typeof updaterOrValue === "function") {
-      setRowSelection((prev) => {
-        const newSelection = updaterOrValue(prev);
+      // First, compute the new selection
+      const currentSelection = rowSelection;
+      const newSelection = updaterOrValue(currentSelection);
+
+      // Set our local state
+      setRowSelection(newSelection);
+
+      // Then schedule the callback to run after render
+      queueMicrotask(() => {
         onRowSelectionChange?.(newSelection);
-        return newSelection;
       });
     } else {
+      // Set our local state
       setRowSelection(updaterOrValue);
-      onRowSelectionChange?.(updaterOrValue);
+
+      // Schedule the callback to run after render
+      queueMicrotask(() => {
+        onRowSelectionChange?.(updaterOrValue);
+      });
     }
   };
   const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (
@@ -250,8 +261,8 @@ export const DataTable = <T extends { uuid: string }>({
         ref={(node) => virtualRow && rowVirtualizer.measureElement(node)}
         key={row.id}
         data-state={row.getIsSelected() && "selected"}
-        className={`w-full cursor-pointer hover:bg-secondary ${
-          detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
+        className={`w-full cursor-pointer hover:bg-accent ${
+          detailRow?.uuid === row.original.uuid ? "bg-accent/50" : ""
         }`}
         style={{
           paddingLeft: depth > 0 ? `${depth * 1.5}rem` : undefined,
@@ -288,7 +299,7 @@ export const DataTable = <T extends { uuid: string }>({
         id="data-table"
         defaultSize={detailRow ? defaultPanelSize : 100}
         order={1}
-        className="flex flex-col p-2 gap-2 h-full"
+        className="flex flex-col gap-2 h-full"
       >
         <div className="flex items-center rounded-md gap-2">
           {filterColumn && (

@@ -182,7 +182,7 @@ export function Combobox({
           )}
         </PopoverTrigger>
         <PopoverContent
-          className="p-0 w-[var(--radix-popover-trigger-width)] min-w-[200px]"
+          className="p-0 w-(--radix-popover-trigger-width) min-w-[200px]"
           align="start"
           sideOffset={4}
         >

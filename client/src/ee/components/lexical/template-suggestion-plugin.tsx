@@ -232,7 +232,7 @@ export const TemplateSuggestionPlugin = ({
       onSelectOption={onSelectOption}
       triggerFn={checkForTemplateTriggerMatch}
       options={options}
-      anchorClassName="z-[10000]"
+      anchorClassName="z-10000"
       menuRenderFn={renderSuggestionsMenu}
     />
   );

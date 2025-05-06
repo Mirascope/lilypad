@@ -112,7 +112,7 @@ const DropdownMenuItem = React.forwardRef<
       // State styles
       "focus:bg-accent focus:text-accent-foreground",
       // Disabled state
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "data-disabled:pointer-events-none data-disabled:opacity-50",
       // Conditional styles
       inset && "pl-8",
       className
@@ -134,7 +134,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
       // State styles
       "focus:bg-accent focus:text-accent-foreground",
       // Disabled state
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "data-disabled:pointer-events-none data-disabled:opacity-50",
       // Custom classes
       className
     )}
@@ -164,7 +164,7 @@ const DropdownMenuRadioItem = React.forwardRef<
       // State styles
       "focus:bg-accent focus:text-accent-foreground",
       // Disabled state
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "data-disabled:pointer-events-none data-disabled:opacity-50",
       // Custom classes
       className
     )}

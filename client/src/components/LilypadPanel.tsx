@@ -121,7 +121,7 @@ export const LilypadPanel = ({
       )}
       <div className="flex gap-4 flex-wrap">
         {span.arg_values && (
-          <Card className="w-[calc(50%-0.5rem)] min-w-[300px] flex-grow">
+          <Card className="w-[calc(50%-0.5rem)] min-w-[300px] grow">
             <CardHeader>
               <CardTitle>{"Input"}</CardTitle>
             </CardHeader>

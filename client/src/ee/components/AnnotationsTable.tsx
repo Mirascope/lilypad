@@ -153,7 +153,7 @@ export const AnnotationsButton = ({
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   return (
     <div className={`flex flex-col ${showAnnotations ? "h-full" : ""}`}>
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Button
           size="icon"
           className="h-8 w-8 relative"

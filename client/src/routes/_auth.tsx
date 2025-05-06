@@ -66,7 +66,7 @@ function AuthLayout() {
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
-        <main className="flex-1 overflow-hidden bg-secondary/10">
+        <main className="flex-1 overflow-hidden">
           {daysLeft < 14 && showAlert && (
             <Alert variant="warning" onClose={() => setShowAlert(false)}>
               <AlertTriangle className="h-4 w-4" />

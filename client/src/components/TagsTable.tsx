@@ -157,7 +157,7 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
       >
         <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{`Delete ${tag.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
@@ -260,7 +260,7 @@ const TagForm = ({
             onSubmit={methods.handleSubmit(handleSubmit)}
             className="space-y-6"
           >
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
