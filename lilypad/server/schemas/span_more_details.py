@@ -49,7 +49,6 @@ class _ToolCall(BaseModel):
     arguments: dict[str, Any]
 
 
-# TODO: Add support for tools
 class MessageParam(BaseModel):
     """Message param model agnostic to providers."""
 
@@ -78,10 +77,11 @@ def convert_gemini_messages(
     for message in messages:
         name = message.get("name")
         if (
-            name == "gen_ai.user.message"
+            (name == "gen_ai.user.message" or name == "gen_ai.system.message")
             and (attributes := message.get("attributes", {}))
             and (content := attributes.get("content"))
         ):
+            role = "system" if name == "gen_ai.system.message" else "user"
             user_content = []
             try:
                 for part in json.loads(content):
@@ -114,7 +114,7 @@ def convert_gemini_messages(
             structured_messages.append(
                 MessageParam(
                     content=user_content,
-                    role="user",
+                    role=role,
                 )
             )
         elif name == "gen_ai.choice":
@@ -153,10 +153,12 @@ def convert_openai_messages(
     for message in messages:
         name = message.get("name")
         if (
-            name == "gen_ai.user.message"
+            (name == "gen_ai.user.message" or name == "gen_ai.system.message")
             and (attributes := message.get("attributes", {}))
             and (content := attributes.get("content"))
         ):
+            role = "system" if name == "gen_ai.system.message" else "user"
+
             user_content = []
             try:
                 for part in json.loads(content):
@@ -187,7 +189,7 @@ def convert_openai_messages(
             structured_messages.append(
                 MessageParam(
                     content=user_content,
-                    role="user",
+                    role=role,
                 )
             )
         elif name == "gen_ai.choice":
@@ -230,10 +232,11 @@ def convert_azure_messages(
     for message in messages:
         name = message.get("name")
         if (
-            name == "gen_ai.user.message"
+            (name == "gen_ai.user.message" or name == "gen_ai.system.message")
             and (attributes := message.get("attributes", {}))
             and (content := attributes.get("content"))
         ):
+            role = "system" if name == "gen_ai.system.message" else "user"
             user_content = []
             try:
                 for part in json.loads(content):
@@ -264,7 +267,7 @@ def convert_azure_messages(
             structured_messages.append(
                 MessageParam(
                     content=user_content,
-                    role="user",
+                    role=role,
                 )
             )
         elif name == "gen_ai.choice":
@@ -306,10 +309,11 @@ def convert_anthropic_messages(
     for message in messages:
         name = message.get("name")
         if (
-            name == "gen_ai.user.message"
+            (name == "gen_ai.user.message" or name == "gen_ai.system.message")
             and (attributes := message.get("attributes", {}))
             and (content := attributes.get("content"))
         ):
+            role = "system" if name == "gen_ai.system.message" else "user"
             user_content = []
             try:
                 for part in json.loads(content):
@@ -335,7 +339,7 @@ def convert_anthropic_messages(
             structured_messages.append(
                 MessageParam(
                     content=user_content,
-                    role="user",
+                    role=role,
                 )
             )
         elif name == "gen_ai.choice":
@@ -445,7 +449,6 @@ def convert_mirascope_messages(
                         content=content_parts,
                     )
                 )
-
     return structured_messages
 
 
