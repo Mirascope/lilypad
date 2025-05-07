@@ -1,12 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
+import CardSkeleton from "@/components/CardSkeleton";
 import { ComparePanel } from "@/components/ComparePanel";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
 import { ResizablePanels } from "@/components/traces/ResizablePanels";
-import { TraceMoreDetails } from "@/components/traces/TraceMoreDetails";
+import { SpanMoreDetails } from "@/components/traces/SpanMoreDetail";
 import { TracesTable } from "@/components/traces/TracesTable";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
@@ -154,7 +155,9 @@ const Trace = () => {
     </>
   );
   const detailContent = detailRow && (
-    <TraceMoreDetails data={detailRow} path={Route.fullPath} />
+    <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
+      <SpanMoreDetails data={detailRow} path={Route.fullPath} />
+    </Suspense>
   );
 
   return (

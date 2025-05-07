@@ -1,4 +1,4 @@
-import { JSX } from "react";
+import { JSX, ReactNode } from "react";
 
 export enum TraceTab {
   CODE = "code",
@@ -8,8 +8,13 @@ export enum TraceTab {
   DATA = "data",
 }
 
+export enum CommentTab {
+  ANNOTATIONS = "annotations",
+  COMMENTS = "comments",
+}
+
 export interface Tab {
-  label: string;
-  value: TraceTab;
+  label: string | ReactNode;
+  value: TraceTab | CommentTab;
   component?: JSX.Element | null;
 }

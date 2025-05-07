@@ -1,5 +1,7 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { CollapsibleChevronTrigger } from "@/components/CollapsibleCard";
+import { AddComment, CommentCards } from "@/components/Comment";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { TabGroup } from "@/components/TabGroup";
 import {
@@ -9,12 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Tab, TraceTab } from "@/types/traces";
-import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
+import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
+import { CommentTab, Tab, TraceTab } from "@/types/traces";
+import {
+  Event,
+  MessageParam,
+  SpanMoreDetails,
+  SpanPublic,
+} from "@/types/types";
+import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode } from "@tanstack/react-router";
 import JsonView from "@uiw/react-json-view";
+import { MessageSquareMore, NotebookPen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
   role: string;
@@ -87,6 +100,63 @@ export const renderMessagesCard = (
   }
 };
 
+export const SpanComments = ({ data }: { data: SpanPublic }) => {
+  const { data: spanComments } = useSuspenseQuery(
+    commentsBySpanQueryOptions(data.uuid)
+  );
+  const filteredAnnotations = data.annotations.filter(
+    (annotation) => annotation.label
+  );
+
+  const tabs: Tab[] = [
+    {
+      label: (
+        <>
+          <MessageSquareMore /> Comments
+          {spanComments.length > 0 && (
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              {spanComments.length > 9 ? "9+" : spanComments.length}
+            </div>
+          )}
+        </>
+      ),
+      value: CommentTab.COMMENTS,
+      component: (
+        <>
+          <div className="overflow-y-auto mb-4">
+            <CommentCards spanUuid={data.uuid} />
+          </div>
+          <Separator className="my-4" />
+          <AddComment spanUuid={data.uuid} />
+        </>
+      ),
+    },
+    {
+      label: (
+        <>
+          <NotebookPen /> Annotations
+          {filteredAnnotations.length > 0 && (
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              {filteredAnnotations.length > 9
+                ? "9+"
+                : filteredAnnotations.length}
+            </div>
+          )}
+        </>
+      ),
+      value: CommentTab.ANNOTATIONS,
+      component: <AnnotationsTable data={filteredAnnotations} />,
+    },
+  ];
+  return (
+    <Collapsible>
+      <CollapsibleChevronTrigger />
+      <CollapsibleContent>
+        <TabGroup tabs={tabs} />
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
   if (!span.code && !span.signature) return null;
 

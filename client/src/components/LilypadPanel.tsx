@@ -1,10 +1,7 @@
 import { Token } from "@/assets/TokenIcon";
 import { CollapsibleCard } from "@/components/CollapsibleCard";
-import { TagPopover } from "@/components/TagPopover";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Typography } from "@/components/ui/typography";
 import { SpanMoreDetails } from "@/types/types";
 import {
   LilypadPanelTab,
@@ -17,7 +14,7 @@ import JsonView from "@uiw/react-json-view";
 
 import React from "react";
 
-const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
+export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
   const metricSections = [
     {
       show:
@@ -109,38 +106,9 @@ const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
 
 export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const data: Record<string, unknown> = span.data as Record<string, unknown>;
-  const attributes: Record<string, string> | undefined =
-    data.attributes as Record<string, string>;
-  const lilypadType = attributes?.["lilypad.type"];
-  const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
-  span.input_tokens = 100;
-  span.output_tokens = 253;
-  span.cost = 0.00001;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex gap-2 items-center">
-          <Typography variant="h3">{span.display_name}</Typography>
-          <Typography variant="span" affects="muted">
-            {versionNum && `v${versionNum}`}
-          </Typography>
-        </div>
-        <div className="flex gap-1 flex-wrap">
-          {span.tags?.map((tag) => (
-            <Badge pill variant="outline" size="sm" key={tag.uuid}>
-              {tag.name}
-            </Badge>
-          ))}
-          {span.project_uuid && (
-            <TagPopover
-              spanUuid={span.uuid}
-              projectUuid={span.project_uuid}
-              key="add-tag"
-            />
-          )}
-        </div>
-      </div>
       <LilypadMetrics span={span} />
 
       {span.events &&

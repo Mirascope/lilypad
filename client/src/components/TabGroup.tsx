@@ -1,10 +1,10 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { JSX, useState } from "react";
+import { JSX, ReactNode, useState } from "react";
 
 export interface Tab {
-  label: string;
+  label: string | ReactNode;
   value: string;
   component?: JSX.Element | null;
   isDisabled?: boolean;
@@ -27,7 +27,7 @@ export const TabGroup = ({
   return (
     <div
       className={cn(
-        "bg-card rounded-md border-1 pt-2 shadow-md h-full flex flex-col",
+        "bg-card rounded-md border-1 p-2 shadow-md h-full flex flex-col",
         className
       )}
     >
@@ -44,6 +44,7 @@ export const TabGroup = ({
                   .filter((tab) => tab.component)
                   .map((tab) => (
                     <TabsTrigger
+                      className="relative"
                       key={tab.value}
                       value={tab.value}
                       disabled={tab.isDisabled}
@@ -56,12 +57,12 @@ export const TabGroup = ({
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          <div className="grow overflow-hidden bg-white border-t-1">
+          <div className="grow overflow-hidden bg-white border-t-1 rounded-md">
             {tabs.map((tab) => (
               <TabsContent
                 key={tab.value}
                 value={tab.value}
-                className="w-fullh-full overflow-auto m-0 p-0"
+                className="w-full h-full overflow-auto m-0 p-0"
               >
                 {tab.component}
               </TabsContent>

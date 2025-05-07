@@ -7,11 +7,18 @@ import {
 import { ChevronRight } from "lucide-react";
 import { ReactNode } from "react";
 
+export const CollapsibleChevronTrigger = () => {
+  return (
+    <CollapsibleTrigger className="data-[state=open]:rotate-90 transition-transform duration-200">
+      <ChevronRight className="h-5 w-5 text-primary hover:text-primary/80" />
+    </CollapsibleTrigger>
+  );
+};
 export const CollapsibleCard = ({
   title,
   content,
 }: {
-  title: ReactNode;
+  title?: ReactNode;
   content: ReactNode;
 }) => {
   return (
@@ -19,17 +26,13 @@ export const CollapsibleCard = ({
       <Card className="border rounded-lg">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg font-medium">
-            <CollapsibleTrigger className="data-[state=open]:rotate-90 transition-transform duration-200">
-              <ChevronRight className="h-5 w-5 text-primary hover:text-primary/80" />
-            </CollapsibleTrigger>
+            <CollapsibleChevronTrigger />
             {title}
           </CardTitle>
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="pt-0 whitespace-pre-wrap text-sm">
-            <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">
-              {content}
-            </div>
+            {content}
           </CardContent>
         </CollapsibleContent>
       </Card>

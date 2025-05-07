@@ -94,7 +94,7 @@ export const Editor = ({
       <div
         className={`flex flex-col border shadow rounded-lg prose max-w-none`}
       >
-        {!isDisabled && <ToolbarPlugin isLLM={isLLM} />}
+        {!isDisabled && isLLM && <ToolbarPlugin />}
 
         <div className="relative">
           <RichTextPlugin
