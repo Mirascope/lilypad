@@ -1,8 +1,7 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadPanel } from "@/components/LilypadPanel";
-import { LlmPanel } from "@/components/LlmPanel";
 import { Button } from "@/components/ui/button";
-import { Scope, SpanPublic } from "@/types/types";
+import { SpanPublic } from "@/types/types";
 import { Suspense } from "react";
 
 interface ComparePanelProps {
@@ -31,11 +30,7 @@ export const ComparePanel = ({ rows, onClose }: ComparePanelProps) => {
           <Suspense
             fallback={<CardSkeleton items={5} className="flex flex-col" />}
           >
-            {rows[0].scope === Scope.LILYPAD ? (
-              <LilypadPanel spanUuid={rows[0].uuid} />
-            ) : (
-              <LlmPanel spanUuid={rows[0].uuid} />
-            )}
+            <LilypadPanel spanUuid={rows[0].uuid} />
           </Suspense>
         </div>
         <div className="w-full md:w-1/2">
@@ -43,11 +38,7 @@ export const ComparePanel = ({ rows, onClose }: ComparePanelProps) => {
           <Suspense
             fallback={<CardSkeleton items={5} className="flex flex-col" />}
           >
-            {rows[1].scope === Scope.LILYPAD ? (
-              <LilypadPanel spanUuid={rows[1].uuid} />
-            ) : (
-              <LlmPanel spanUuid={rows[1].uuid} />
-            )}
+            <LilypadPanel spanUuid={rows[1].uuid} />
           </Suspense>
         </div>
       </div>

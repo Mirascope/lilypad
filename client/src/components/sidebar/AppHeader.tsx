@@ -33,13 +33,25 @@ export const AppHeader = ({ to, activeProject }: AppHeaderProps) => {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
+        {/* <SidebarMenuButton
+          size="logo"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+        >
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <GalleryVerticalEnd className="size-4" />
+          </div>
+          <div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-semibold">Acme Inc</span>
+            <span className="truncate text-xs">Enterprise</span>
+          </div>
+        </SidebarMenuButton> */}
         <SidebarMenuButton
-          size="lg"
+          size="logo"
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           onClick={handleProjectClick}
         >
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
-            <LilypadIcon className="size-10 " />
+            <LilypadIcon className="size-10" />
           </div>
           <Typography variant="h4" className="flex items-center gap-2 flex-1">
             <span className="truncate">Lilypad</span>

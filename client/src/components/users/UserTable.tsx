@@ -172,7 +172,6 @@ export const UserTable = () => {
         columns={columns}
         data={combinedData}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: combinedData.length,
           estimateSize: () => 45,

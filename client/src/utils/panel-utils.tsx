@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
-import { Button } from "@/components/ui/button";
+import { TabGroup } from "@/components/TabGroup";
 import {
   Card,
   CardContent,
@@ -9,20 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tab, TraceTab } from "@/types/traces";
 import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView, { JsonViewProps } from "@uiw/react-json-view";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import JsonView from "@uiw/react-json-view";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
   role: string;
@@ -31,11 +23,11 @@ export interface MessageCardProps {
 }
 const MessageCard = ({ role, content }: MessageCardProps) => {
   return (
-    <Card>
+    <Card className="bg-primary-foreground">
       <CardHeader>
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">{content}</CardContent>
+      <CardContent className="overflow-x-auto px-4">{content}</CardContent>
     </Card>
   );
 };
@@ -95,13 +87,37 @@ export const renderMessagesCard = (
   }
 };
 
-export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
-  const { userConfig, updateUserConfig } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-
+export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
   if (!span.code && !span.signature) return null;
 
   const tabs: Tab[] = [
+    {
+      label: "Output",
+      value: TraceTab.OUTPUT,
+      component: span.output ? (
+        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
+          {renderOutput(span.output)}
+        </div>
+      ) : null,
+    },
+    {
+      label: "Metadata",
+      value: TraceTab.METADATA,
+      component: span.data ? (
+        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
+          {renderMetadata(span.data)}
+        </div>
+      ) : null,
+    },
+    {
+      label: "Data",
+      value: TraceTab.DATA,
+      component: span.data && (
+        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
+          <JsonView value={span.data} />
+        </div>
+      ),
+    },
     {
       label: "Code",
       value: TraceTab.CODE,
@@ -114,52 +130,7 @@ export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
     },
   ];
 
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-      <Tabs
-        defaultValue={userConfig?.defaultTraceTab ?? "signature"}
-        className="w-full"
-      >
-        <div className="flex w-full">
-          <TabsList className={`w-[160px]`}>
-            {tabs.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                onClick={() =>
-                  updateUserConfig({
-                    defaultTraceTab: tab.value,
-                  })
-                }
-              >
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="p-1 rounded-md hover:bg-gray-100 h-9"
-            >
-              {isOpen ? "Hide" : "Show"}
-              {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent>
-          {tabs.map((tab) => (
-            <TabsContent
-              key={tab.value}
-              value={tab.value}
-              className="w-full bg-gray-50"
-            >
-              {tab.component}
-            </TabsContent>
-          ))}
-        </CollapsibleContent>
-      </Tabs>
-    </Collapsible>
-  );
+  return <TabGroup tabs={tabs} />;
 };
 export const renderEventsContainer = (messages: Event[]) => {
   return (
@@ -221,7 +192,7 @@ export const renderOutput = (output: string) => {
   return (
     <>
       {typeof jsonOutput === "object" ? (
-        <JsonView value={jsonOutput} />
+        <JsonView shortenTextAfterLength={100} value={jsonOutput} />
       ) : (
         <ReactMarkdown>{output}</ReactMarkdown>
       )}
@@ -229,51 +200,9 @@ export const renderOutput = (output: string) => {
   );
 };
 
-export const renderCardOutput = (output: string) => {
-  return (
-    <>
-      {output && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Output"}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col overflow-x-auto">
-            {renderOutput(output)}
-          </CardContent>
-        </Card>
-      )}
-    </>
-  );
-};
-
 export const renderMetadata = (data: Record<string, any>) => {
   const attributes = data.attributes;
-  if (!attributes) return null;
-  if (attributes.type && attributes.type !== "traces") return null;
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{"Metadata"}</CardTitle>
-      </CardHeader>
-      {attributes && (
-        <CardContent className="overflow-x-auto">
-          <JsonView value={attributes} />
-        </CardContent>
-      )}
-    </Card>
-  );
-};
-export const renderData = ({ ...props }: JsonViewProps<object>) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{"Data"}</CardTitle>
-      </CardHeader>
-      {props.value && (
-        <CardContent className="overflow-x-auto">
-          <JsonView value={props.value} collapsed={props.collapsed} />
-        </CardContent>
-      )}
-    </Card>
-  );
+  if (!attributes || typeof attributes !== "object") return null;
+  if ("type" in attributes && attributes.type !== "traces") return null;
+  return <JsonView value={attributes} />;
 };

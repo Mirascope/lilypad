@@ -1,8 +1,7 @@
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
-import { TracesTable } from "@/components/TracesTable";
+import { TracesTable } from "@/components/traces/TracesTable";
 import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
-import { Route } from "@/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid.$tab.$.tsx";
 import { SpanPublic } from "@/types/types";
 import { useState } from "react";
 
@@ -50,7 +49,6 @@ export const FunctionSpans = ({
         <TracesTable
           data={displayData ?? defaultData}
           traceUuid={traceUuid}
-          path={Route.fullPath}
           projectUuid={projectUuid}
           fetchNextPage={() => {
             if (hasNextPage && !isFetchingNextPage) {

@@ -2,7 +2,6 @@ import CardSkeleton from "@/components/CardSkeleton";
 import { Comment } from "@/components/Comment";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { LilypadPanel } from "@/components/LilypadPanel";
-import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import {
   ResizableHandle,
@@ -12,12 +11,7 @@ import {
 import { Typography } from "@/components/ui/typography";
 import { UpdateAnnotationForm } from "@/ee/components/AnnotationForm";
 import { annotationsByProjectQueryOptions } from "@/ee/utils/annotations";
-import {
-  AnnotationPublic,
-  FunctionPublic,
-  Scope,
-  UserPublic,
-} from "@/types/types";
+import { AnnotationPublic, FunctionPublic, UserPublic } from "@/types/types";
 import { functionsQueryOptions } from "@/utils/functions";
 import { formatRelativeTime } from "@/utils/strings";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
@@ -260,11 +254,7 @@ const AnnotationView = ({
         />
       </div>
       <div className="grow overflow-auto">
-        {annotation.span.scope === Scope.LILYPAD ? (
-          <LilypadPanel spanUuid={annotation.span_uuid} />
-        ) : (
-          <LlmPanel spanUuid={annotation.span_uuid} />
-        )}
+        <LilypadPanel spanUuid={annotation.span_uuid} />
       </div>
     </div>
   );

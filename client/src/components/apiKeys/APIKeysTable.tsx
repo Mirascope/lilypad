@@ -51,15 +51,14 @@ export const APIKeysTable = () => {
   ];
   return (
     <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>API Keys</Typography>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">API Keys</Typography>
         <CreateAPIKeyDialog />
       </div>
       <DataTable<APIKeyPublic>
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: data.length,
           estimateSize: () => 45,

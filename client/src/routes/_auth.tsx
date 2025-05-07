@@ -62,7 +62,7 @@ function AuthLayout() {
       className="flex flex-col border-collapse overflow-hidden"
       data-product="lilypad"
     >
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>

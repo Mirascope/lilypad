@@ -1,8 +1,5 @@
-import { AddComment, CommentCards } from "@/components/Comment";
 import { DataTable } from "@/components/DataTable";
 import LilypadDialog from "@/components/LilypadDialog";
-import { LilypadPanel } from "@/components/LilypadPanel";
-import { LlmPanel } from "@/components/LlmPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,52 +19,34 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
-import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useSelectedRows } from "@/hooks/use-selected-rows";
+import { useTable } from "@/hooks/use-table";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
-import {
-  commentsBySpanQueryOptions,
-  fetchCommentsBySpan,
-} from "@/utils/comments";
+import { fetchCommentsBySpan } from "@/utils/comments";
 import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  ColumnDef,
-  FilterFn,
-  Row,
-  RowSelectionState,
-} from "@tanstack/react-table";
+import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronRight,
   Filter,
-  MessageSquareMore,
   MoreHorizontal,
   NotebookPen,
   SmileIcon,
   Users,
 } from "lucide-react";
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const tagFilter = (
@@ -122,102 +101,9 @@ const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   );
 };
 
-const DetailPanel = ({ data, path }: { data: SpanPublic; path?: string }) => {
-  const navigate = useNavigate();
-  const [showComments, setShowComments] = useState(false);
-  const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
-  const { data: spanComments } = useSuspenseQuery(
-    commentsBySpanQueryOptions(data.uuid)
-  );
-  useEffect(() => {
-    if (path) {
-      navigate({
-        to: path,
-        replace: true,
-        params: { _splat: data.uuid },
-      }).catch(() => {
-        toast.error("Failed to navigate");
-      });
-    }
-  }, [data, navigate, path]);
-
-  const filteredAnnotations = data.annotations.filter(
-    (annotation) => annotation.label
-  );
-  return (
-    <div className="flex flex-col h-full max-h-screen overflow-hidden">
-      {/* Controls remain at top */}
-      <div className="flex justify-end gap-2 p-2 shrink-0">
-        <Button
-          size="icon"
-          className="h-8 w-8 relative"
-          variant="outline"
-          onClick={() => setShowComments(!showComments)}
-        >
-          <MessageSquareMore />
-          {spanComments.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-              {spanComments.length > 9 ? "9+" : spanComments.length}
-            </div>
-          )}
-        </Button>
-        <Button
-          size="icon"
-          className="h-8 w-8 relative"
-          variant="outline"
-          onClick={() => setShowAnnotations(!showAnnotations)}
-        >
-          <NotebookPen />
-          {filteredAnnotations.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-              {filteredAnnotations.length > 9
-                ? "9+"
-                : filteredAnnotations.length}
-            </div>
-          )}
-        </Button>
-      </div>
-
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-auto pb-4">
-        {/* Comments section with max height and scrolling */}
-        {showComments && (
-          <div className="mb-4">
-            <div className="max-h-64 overflow-y-auto mb-4">
-              <CommentCards spanUuid={data.uuid} />
-            </div>
-            <Separator />
-            <div className="mt-4">
-              <AddComment spanUuid={data.uuid} />
-            </div>
-          </div>
-        )}
-
-        {/* Annotations section with max height and scrolling */}
-        {showAnnotations && (
-          <div className="mb-4 max-h-64 overflow-y-auto">
-            <AnnotationsTable data={filteredAnnotations} />
-          </div>
-        )}
-
-        {/* Row details panel */}
-        <div className="p-4 border overflow-auto rounded-md mt-4">
-          <h2 className="text-lg font-semibold mb-2">Row Details</h2>
-          {data.scope === Scope.LILYPAD ? (
-            <LilypadPanel spanUuid={data.uuid} />
-          ) : (
-            <LlmPanel spanUuid={data.uuid} />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 interface TracesTableProps {
   data?: SpanPublic[];
   traceUuid?: string;
-  path?: string;
   projectUuid: string;
   /** true while useInfiniteQuery is fetching next page */
   isFetchingNextPage?: boolean;
@@ -236,7 +122,6 @@ interface TracesTableProps {
 export const TracesTable = ({
   data = [],
   traceUuid,
-  path,
   projectUuid,
   isFetchingNextPage = false,
   isSearch = false,
@@ -252,35 +137,7 @@ export const TracesTable = ({
   const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
   const [tagFilterOpen, setTagFilterOpen] = useState<boolean>(false);
 
-  const { rows, setSelectedRows } = useSelectedRows();
-
-  const dataMapping = useMemo(() => {
-    const mapping = {} as Record<string, SpanPublic>;
-
-    const addToMapping = (spans: SpanPublic[]) => {
-      for (const span of spans) {
-        mapping[span.span_id] = span;
-        if (Array.isArray(span.child_spans) && span.child_spans.length > 0) {
-          addToMapping(span.child_spans);
-        }
-      }
-    };
-
-    if (data) {
-      addToMapping(data);
-    }
-
-    return mapping;
-  }, [data]);
-
-  const handleRowSelectionChange = (row: RowSelectionState) => {
-    const rows = Object.keys(row)
-      .filter((key) => row[key])
-      .map((key) => dataMapping[key] ?? null)
-      .filter((item) => item !== null);
-
-    setSelectedRows(rows);
-  };
+  const { selectedRows } = useTable<SpanPublic>();
 
   const findRow = (rows: SpanPublic[], uuid?: string) =>
     rows.find((r) => r.uuid === uuid) ??
@@ -480,11 +337,11 @@ export const TracesTable = ({
 
         return (
           <div className="flex items-center gap-1">
-            <Badge pill variant="outline" size="sm" key={tags[0].uuid}>
+            <Badge pill variant="neutral" size="sm" key={tags[0].uuid}>
               {tags[0].name}
             </Badge>
             {tags.length > 1 && (
-              <Badge pill variant="secondary" size="sm" className="px-1.5">
+              <Badge pill variant="neutral" size="sm" className="px-1.5">
                 +{tags.length - 1}
               </Badge>
             )}
@@ -671,17 +528,6 @@ export const TracesTable = ({
   const getRowCanExpand = (row: SpanPublic) =>
     Array.isArray(row.child_spans) && row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
-  const handleDetailPanelClose = () => {
-    if (path) {
-      navigate({
-        to: path,
-        replace: true,
-        params: { _splat: undefined },
-      }).catch(() => {
-        toast.error("Failed to navigate");
-      });
-    }
-  };
 
   const customControls = () => {
     return (
@@ -692,13 +538,13 @@ export const TracesTable = ({
               <LilypadDialog
                 icon={<Users />}
                 title={"Annotate selected traces"}
-                description={`${rows.length} trace(s) selected.`}
+                description={`${selectedRows.length} trace(s) selected.`}
                 buttonProps={{
-                  disabled: rows.length === 0,
+                  disabled: selectedRows.length === 0,
                 }}
                 tooltipContent={"Add selected traces to your annotation queue."}
               >
-                <QueueForm spans={rows} />
+                <QueueForm spans={selectedRows} />
               </LilypadDialog>
             )}
           </div>
@@ -721,14 +567,10 @@ export const TracesTable = ({
         onRowHover={prefetch}
         customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
         customGetRowId={(row) => row.span_id}
-        DetailPanel={DetailPanel}
-        defaultPanelSize={50}
         filterColumn={filterColumn}
-        selectRow={selectRow}
         getRowCanExpand={getRowCanExpand}
         getSubRows={getSubRows}
         customControls={customControls}
-        onRowSelectionChange={handleRowSelectionChange}
         defaultSorting={
           isSearch
             ? [{ id: "score", desc: true }]
@@ -736,8 +578,6 @@ export const TracesTable = ({
         }
         isFetching={isFetchingNextPage}
         fetchNextPage={fetchNextPage}
-        onDetailPanelClose={handleDetailPanelClose}
-        path={path}
         columnVisibilityStateKey="tracesTableVisibilityState"
       />
       {deleteSpan && (

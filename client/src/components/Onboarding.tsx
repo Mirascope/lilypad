@@ -79,9 +79,7 @@ const OnboardingDesktop = () => {
     >
       {({ methods }) => (
         <>
-          <Stepper.Navigation
-            className={"max-w-full overflow-x-auto shrink-0"}
-          >
+          <Stepper.Navigation className={"max-w-full overflow-x-auto shrink-0"}>
             {methods.all.map((step) => (
               <Stepper.Step key={step.id} of={step.id}>
                 <Stepper.Title className={"text-xs"}>
@@ -306,7 +304,6 @@ const OnboardCodeSnippet = () => {
         Copy the code below or run your own function
       </Typography>
       <CodeSnippet
-        className="w-full flex-1"
         code={`import os
 
 import lilypad
@@ -384,10 +381,7 @@ const OnboardInstallLilypad = () => {
           <Typography variant={"span"} affects="small" className="block mb-2">
             Replace `google` with any provider, `openai`, `anthropic`, etc.
           </Typography>
-          <CodeSnippet
-            className="w-full flex-1"
-            code={`pip install lilypad-python[google]`}
-          />
+          <CodeSnippet code={`pip install lilypad-python[google]`} />
         </div>
       ),
     },
@@ -399,10 +393,7 @@ const OnboardInstallLilypad = () => {
           <Typography variant={"span"} affects="small" className="block mb-2">
             Replace `google` with any provider, `openai`, `anthropic`, etc.
           </Typography>
-          <CodeSnippet
-            className="w-full flex-1"
-            code={`uv add lilypad-python[google]`}
-          />
+          <CodeSnippet code={`uv add lilypad-python[google]`} />
         </div>
       ),
     },

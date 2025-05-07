@@ -82,7 +82,7 @@ const RecursiveMenuContent = ({
         onFocus={() => onHover?.()}
       >
         <SidebarMenuButton
-          className={`m-0 px-4 ${depth > 0 ? "ml-4" : ""}`}
+          className={`m-0 px-4 ${depth > 0 ? "ml-6" : ""}`}
           asChild
           size="lg"
         >
@@ -255,7 +255,7 @@ export const AppSidebar = () => {
   const renderProjectSelector = () => {
     return (
       <SidebarMenu>
-        <SidebarGroup>
+        <SidebarGroup className="flex gap-1">
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

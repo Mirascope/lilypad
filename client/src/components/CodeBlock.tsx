@@ -80,7 +80,7 @@ export function CodeBlock({
   if (isLoading) {
     return (
       <div
-        className={`code-block-wrapper border-border relative m-0 overflow-hidden border p-0 text-sm ${className}`}
+        className={`code-block-wrapper relative m-0 overflow-hidden p-0 text-sm ${className}`}
       >
         <pre className="bg-button-primary m-0 p-4">
           <code className="opacity-0">{code}</code>
@@ -93,7 +93,7 @@ export function CodeBlock({
     <div
       ref={codeRef}
       className={cn(
-        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group border-border relative m-0 overflow-hidden border p-0 text-sm`,
+        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group relative m-0 overflow-hidden p-0 text-sm`,
         className
       )}
     >

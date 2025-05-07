@@ -124,8 +124,6 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
         overscan: 20,
       }}
       hideColumnButton
-      // DetailPanel={AnnotationMoreDetails}
-      defaultPanelSize={50}
     />
   );
 };

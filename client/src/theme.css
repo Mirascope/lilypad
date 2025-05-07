@@ -7,10 +7,8 @@
   --color-mirascope-purple-dark: oklch(
     0.5254 0.2041 277.12
   ); /* Darker purple */
-  --color-lilypad-green: oklch(0.54 0.18 140); /* Vibrant lily pad green */
-  --color-lilypad-green-dark: oklch(
-    0.44 0.14 140
-  ); /* Darker version of the lily pad green */
+  --color-lilypad-green: #409b45; /* Vibrant lily pad green */
+  --color-lilypad-green-dark: #25562a; /* Darker version of the lily pad green */
 
   /* Default (Mirascope) theme colors */
 

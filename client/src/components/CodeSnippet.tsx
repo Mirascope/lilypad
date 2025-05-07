@@ -6,7 +6,6 @@ interface CodeSnippetProps {
   children?: ReactNode;
   language?: string;
   highlightLines?: string;
-  className?: string;
   showLineNumbers?: boolean;
 }
 
@@ -14,7 +13,6 @@ export const CodeSnippet = ({
   code,
   children,
   language = "python",
-  className = "",
   showLineNumbers,
 }: CodeSnippetProps) => {
   let content: string;
@@ -49,12 +47,10 @@ export const CodeSnippet = ({
   }
 
   return (
-    <div className={`my-4 ${className}`}>
-      <CodeBlock
-        code={content}
-        language={language}
-        showLineNumbers={showLineNumbers}
-      />
-    </div>
+    <CodeBlock
+      code={content}
+      language={language}
+      showLineNumbers={showLineNumbers}
+    />
   );
 };

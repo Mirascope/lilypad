@@ -341,7 +341,6 @@ export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: data.length,
           estimateSize: () => 45,
