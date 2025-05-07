@@ -39,25 +39,36 @@ class OpenSearchService:
     """Service for interacting with OpenSearch."""
 
     def __init__(self) -> None:
-        """Initialize the OpenSearch client."""
+        """Initialize the OpenSearch service with lazy connection."""
         settings = get_settings()
-        self.client = None
-        if settings.opensearch_host and settings.opensearch_port:
-            self.client = OpenSearch(
-                hosts=[
-                    {"host": settings.opensearch_host, "port": settings.opensearch_port}
-                ],
-                http_auth=(settings.opensearch_user, settings.opensearch_password)
-                if settings.opensearch_user and settings.opensearch_password
-                else None,
-                use_ssl=settings.opensearch_use_ssl,
-                verify_certs=False,  # TODO Set to True in production with proper certificates
-                connection_class=RequestsHttpConnection,
-                timeout=30,
-            )
-            self.is_enabled = True
-        else:
-            self.is_enabled = False
+        self._client: OpenSearch | None = None
+        self._host = settings.opensearch_host
+        self._port = settings.opensearch_port
+        self._user = settings.opensearch_user
+        self._password = settings.opensearch_password
+        self._use_ssl = settings.opensearch_use_ssl
+        self.is_enabled = bool(self._host and self._port)
+
+    @property
+    def client(self) -> OpenSearch | None:
+        """Get the OpenSearch client, initializing it if necessary."""
+        if self._client is None and self.is_enabled:
+            try:
+                self._client = OpenSearch(
+                    hosts=[{"host": self._host, "port": self._port}],
+                    http_auth=(self._user, self._password)
+                    if self._user and self._password
+                    else None,
+                    use_ssl=self._use_ssl,
+                    verify_certs=False,  # TODO Set to True in production with proper certificates
+                    connection_class=RequestsHttpConnection,
+                    timeout=5,
+                )
+                logger.info("Successfully connected to OpenSearch")
+            except Exception as e:
+                logger.error(f"Failed to connect to OpenSearch: {str(e)}")
+                self._client = None
+        return self._client
 
     def get_index_name(self, project_uuid: UUID) -> str:
         """Get the index name for a project."""
@@ -69,39 +80,42 @@ class OpenSearchService:
             return False
 
         index_name = self.get_index_name(project_uuid)
-        if not self.client.indices.exists(index=index_name):
-            # Define the mapping for the trace documents
-            mapping = {
-                "mappings": {
-                    "properties": {
-                        "uuid": {"type": "keyword"},  # Add uuid field
-                        "span_id": {"type": "keyword"},
-                        "parent_span_id": {"type": "keyword"},
-                        "type": {"type": "keyword"},
-                        "function_uuid": {"type": "keyword"},
-                        "scope": {"type": "keyword"},
-                        "cost": {"type": "float"},
-                        "input_tokens": {"type": "integer"},
-                        "output_tokens": {"type": "integer"},
-                        "duration_ms": {"type": "long"},
-                        "created_at": {"type": "date"},
-                        "updated_at": {"type": "date"},
-                        "data": {"type": "object", "enabled": True},
-                    }
-                },
-                "settings": {"number_of_shards": 1, "number_of_replicas": 1},
-            }
-            self.client.indices.create(index=index_name, body=mapping)
-        return True
+        try:
+            if not self.client.indices.exists(index=index_name):
+                # Define the mapping for the trace documents
+                mapping = {
+                    "mappings": {
+                        "properties": {
+                            "uuid": {"type": "keyword"},  # Add uuid field
+                            "span_id": {"type": "keyword"},
+                            "parent_span_id": {"type": "keyword"},
+                            "type": {"type": "keyword"},
+                            "function_uuid": {"type": "keyword"},
+                            "scope": {"type": "keyword"},
+                            "cost": {"type": "float"},
+                            "input_tokens": {"type": "integer"},
+                            "output_tokens": {"type": "integer"},
+                            "duration_ms": {"type": "long"},
+                            "created_at": {"type": "date"},
+                            "updated_at": {"type": "date"},
+                            "data": {"type": "object", "enabled": True},
+                        }
+                    },
+                    "settings": {"number_of_shards": 1, "number_of_replicas": 1},
+                }
+                self.client.indices.create(index=index_name, body=mapping)
+            return True
+        except Exception as e:
+            logger.error(f"Error ensuring index exists: {str(e)}")
+            return False
 
     def index_traces(self, project_uuid: UUID, trace: dict) -> bool:
-        """Bulk index traces in OpenSearch. Returns True if successful.
+        """Index a single trace in OpenSearch. Returns True if successful."""
+        if not trace:
+            return False
 
-        Args:
-            project_uuid: The UUID of the project.
-            trace: A dictionary created from model_dump().
-        """
-        if not self.client or not trace:
+        if not self.client:
+            logger.warning("OpenSearch client not available")
             return False
 
         if not self.ensure_index_exists(project_uuid):
@@ -114,18 +128,18 @@ class OpenSearchService:
                 id=str(trace.get("uuid")),
             )
             return True
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error indexing trace: {str(e)}")
             return False
 
     def bulk_index_traces(self, project_uuid: UUID, traces: list[dict]) -> bool:
-        """Bulk index traces in OpenSearch. Returns True if successful.
+        """Bulk index traces in OpenSearch. Returns True if successful."""
+        if not traces:
+            logger.warning("Empty traces list")
+            return False
 
-        Args:
-            project_uuid: The UUID of the project.
-            traces: A list of dictionaries created from model_dump().
-        """
-        if not self.client or not traces:
-            logger.warning("OpenSearch client not initialized or empty traces list")
+        if not self.client:
+            logger.warning("OpenSearch client not available")
             return False
 
         if not self.ensure_index_exists(project_uuid):
@@ -171,58 +185,62 @@ class OpenSearchService:
     def search_traces(self, project_uuid: UUID, search_query: SearchQuery) -> Any:
         """Search for traces in OpenSearch."""
         if not self.client:
+            logger.warning("OpenSearch client not available")
             return []
+
         index_name = self.get_index_name(project_uuid)
 
         # Check if index exists
-        if not self.client.indices.exists(index=index_name):
-            return []
+        try:
+            if not self.client.indices.exists(index=index_name):
+                return []
 
-        # Build the query
-        query_parts = []
+            # Build the query
+            query_parts = []
 
-        # Add query string if provided
-        if search_query.query_string:
-            query_parts.append(
-                {
-                    "multi_match": {
-                        "query": search_query.query_string,
-                        "fields": ["span_id^2", "name^2", "data.*"],
-                        "type": "best_fields",
-                        "lenient": True,  # Makes the query lenient with type mismatches
+            # Add query string if provided
+            if search_query.query_string:
+                query_parts.append(
+                    {
+                        "multi_match": {
+                            "query": search_query.query_string,
+                            "fields": ["span_id^2", "name^2", "data.*"],
+                            "type": "best_fields",
+                            "lenient": True,  # Makes the query lenient with type mismatches
+                        }
                     }
-                }
+                )
+
+            # Add time range if provided
+            if search_query.time_range_start or search_query.time_range_end:
+                time_range = {}
+                if search_query.time_range_start:
+                    time_range["gte"] = search_query.time_range_start
+                if search_query.time_range_end:
+                    time_range["lte"] = search_query.time_range_end
+
+                query_parts.append({"range": {"created_at": time_range}})
+
+            # Add scope filter if provided
+            if search_query.scope:
+                query_parts.append({"term": {"scope": search_query.scope.value}})
+
+            # Add type filter if provided
+            if search_query.type:
+                query_parts.append({"term": {"type": search_query.type}})
+
+            # Create the final query
+            query = (
+                {"bool": {"must": query_parts}} if query_parts else {"match_all": {}}
             )
 
-        # Add time range if provided
-        if search_query.time_range_start or search_query.time_range_end:
-            time_range = {}
-            if search_query.time_range_start:
-                time_range["gte"] = search_query.time_range_start
-            if search_query.time_range_end:
-                time_range["lte"] = search_query.time_range_end
+            # Execute the search
+            search_body = {
+                "query": query,
+                "size": search_query.limit,
+                "track_scores": True,
+            }
 
-            query_parts.append({"range": {"created_at": time_range}})
-
-        # Add scope filter if provided
-        if search_query.scope:
-            query_parts.append({"term": {"scope": search_query.scope.value}})
-
-        # Add type filter if provided
-        if search_query.type:
-            query_parts.append({"term": {"type": search_query.type}})
-
-        # Create the final query
-        query = {"bool": {"must": query_parts}} if query_parts else {"match_all": {}}
-
-        # Execute the search
-        search_body = {
-            "query": query,
-            "size": search_query.limit,
-            "track_scores": True,
-        }
-
-        try:
             logger.info(f"Query used: {search_body}")
             response = self.client.search(body=search_body, index=index_name)
             hits = response["hits"]["hits"]
@@ -232,26 +250,18 @@ class OpenSearchService:
             return []
 
     def delete_trace_by_uuid(self, project_uuid: UUID, span_uuid: UUID) -> bool:
-        """Delete a single trace by its UUID.
-
-        Args:
-            project_uuid: The UUID of the project.
-            span_uuid: The UUID of the span to delete.
-
-        Returns:
-            bool: True if deletion was successful, False otherwise.
-        """
+        """Delete a single trace by its UUID."""
         if not self.client:
-            logger.warning("OpenSearch client not initialized")
+            logger.warning("OpenSearch client not available")
             return False
 
         index_name = self.get_index_name(project_uuid)
 
-        if not self.client.indices.exists(index=index_name):
-            logger.info(f"Index {index_name} does not exist, nothing to delete")
-            return True
-
         try:
+            if not self.client.indices.exists(index=index_name):
+                logger.info(f"Index {index_name} does not exist, nothing to delete")
+                return True
+
             response = self.client.delete(
                 index=index_name,
                 id=str(span_uuid),
@@ -276,25 +286,18 @@ class OpenSearchService:
     def delete_traces_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
     ) -> bool:
-        """Delete all traces associated with a specific function UUID.
-
-        Args:
-            project_uuid: The UUID of the project.
-            function_uuid: The UUID of the function whose traces should be deleted.
-
-        Returns:
-            bool: True if deletion was successful, False otherwise.
-        """
+        """Delete all traces associated with a specific function UUID."""
         if not self.client:
-            logger.warning("OpenSearch client not initialized")
+            logger.warning("OpenSearch client not available")
             return False
 
         index_name = self.get_index_name(project_uuid)
-        if not self.client.indices.exists(index=index_name):
-            logger.info(f"Index {index_name} does not exist, nothing to delete")
-            return True
 
         try:
+            if not self.client.indices.exists(index=index_name):
+                logger.info(f"Index {index_name} does not exist, nothing to delete")
+                return True
+
             # First, find all span_ids with this function_uuid
             search_query = {
                 "query": {"term": {"function_uuid": str(function_uuid)}},
