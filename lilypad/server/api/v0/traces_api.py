@@ -47,6 +47,21 @@ def _convert_system_to_provider(system: str) -> Provider:
 
 
 @traces_router.get(
+    "/projects/{project_uuid}/traces/{span_id}/root", response_model=SpanPublic
+)
+async def get_trace_by_span_uuid(
+    project_uuid: UUID,
+    span_id: str,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> SpanTable:
+    """Get traces by project UUID."""
+    span = span_service.find_root_parent_span(span_id)
+    if not span:
+        raise HTTPException(status_code=404, detail="Span not found")
+    return span
+
+
+@traces_router.get(
     "/projects/{project_uuid}/traces", response_model=Paginated[SpanPublic]
 )
 async def get_traces_by_project_uuid(

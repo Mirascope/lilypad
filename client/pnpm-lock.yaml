@@ -1335,8 +1335,8 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/wasm-node@4.40.1':
-    resolution: {integrity: sha512-3nXUKfAq1nD/vgQi7ncLNyn8jx1PAsN6njSS9baCpI9JHk92Y/JOWZib7HvLJ5BBZ4MC5NSeqkpUKnmceXyzXA==}
+  '@rollup/wasm-node@4.40.2':
+    resolution: {integrity: sha512-rl60ew3oh38IrtETrAf0A0qTByOsHSi7Sx1BZH4+vrIzL/DqxFx+FgTUFVViL3ZQqs95gIOm9mZQ1fUOopnkmA==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
@@ -5560,7 +5560,7 @@ snapshots:
       estree-walker: 2.0.2
       picomatch: 4.0.2
 
-  '@rollup/wasm-node@4.40.1':
+  '@rollup/wasm-node@4.40.2':
     dependencies:
       '@types/estree': 1.0.7
     optionalDependencies:
@@ -9080,7 +9080,7 @@ snapshots:
     dependencies:
       esbuild: 0.25.0
       postcss: 8.5.3
-      rollup: '@rollup/wasm-node@4.40.1'
+      rollup: '@rollup/wasm-node@4.40.2'
     optionalDependencies:
       '@types/node': 22.13.10
       fsevents: 2.3.3

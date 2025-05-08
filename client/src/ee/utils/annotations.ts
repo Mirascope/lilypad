@@ -48,6 +48,19 @@ export const fetchAnnotationsByFunctionUuid = async (
   ).data;
 };
 
+export const fetchAnnotationsBySpanUuid = async (
+  projectUuid: string,
+  spanUuid: string,
+  enabled = true
+) => {
+  if (!enabled) return [];
+  return (
+    await api.get<AnnotationPublic[]>(
+      `/ee/projects/${projectUuid}/spans/${spanUuid}/annotations`
+    )
+  ).data;
+};
+
 export const fetchAnnotationsByProjectUuid = async (projectUuid?: string) => {
   if (!projectUuid) return [];
   return (
@@ -159,6 +172,17 @@ export const annotationsByFunctionQueryOptions = (
     ],
     queryFn: () => fetchAnnotationsByFunctionUuid(projectUuid, functionUuid),
     refetchInterval: 1000,
+  });
+
+export const annotationsBySpanQueryOptions = (
+  projectUuid: string,
+  spanUuid: string,
+  enabled = true
+) =>
+  queryOptions({
+    queryKey: ["projects", projectUuid, "spans", spanUuid, "annotations"],
+    queryFn: () => fetchAnnotationsBySpanUuid(projectUuid, spanUuid, enabled),
+    enabled,
   });
 
 export const annotationsByProjectQueryOptions = (projectUuid?: string) =>

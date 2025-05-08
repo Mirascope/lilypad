@@ -1,6 +1,5 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
-import { CollapsibleChevronTrigger } from "@/components/CollapsibleCard";
 import { AddComment, CommentCards } from "@/components/Comment";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { TabGroup } from "@/components/TabGroup";
@@ -11,17 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
+import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { CommentTab, Tab, TraceTab } from "@/types/traces";
-import {
-  Event,
-  MessageParam,
-  SpanMoreDetails,
-  SpanPublic,
-} from "@/types/types";
+import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
 import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -100,81 +95,117 @@ export const renderMessagesCard = (
   }
 };
 
-export const SpanComments = ({ data }: { data: SpanPublic }) => {
+export const SpanComments = ({
+  projectUuid,
+  spanUuid,
+}: {
+  projectUuid: string;
+  spanUuid: string;
+}) => {
+  const features = useFeatureAccess();
   const { data: spanComments } = useSuspenseQuery(
-    commentsBySpanQueryOptions(data.uuid)
+    commentsBySpanQueryOptions(spanUuid)
   );
-  const filteredAnnotations = data.annotations.filter(
+  const { data: annotations } = useSuspenseQuery(
+    annotationsBySpanQueryOptions(projectUuid, spanUuid, features.annotations)
+  );
+  const filteredAnnotations = annotations.filter(
     (annotation) => annotation.label
   );
 
   const tabs: Tab[] = [
     {
       label: (
-        <>
-          <MessageSquareMore /> Comments
+        <div className="flex items-center gap-1">
+          <MessageSquareMore />
+          <span>Comments</span>
           {spanComments.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="absolute -top-0.5 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
-        </>
+        </div>
       ),
       value: CommentTab.COMMENTS,
       component: (
-        <>
-          <div className="overflow-y-auto mb-4">
-            <CommentCards spanUuid={data.uuid} />
+        <div className="bg-primary-foreground p-2 text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
+          <div className="flex-1 overflow-auto">
+            <CommentCards spanUuid={spanUuid} />
           </div>
-          <Separator className="my-4" />
-          <AddComment spanUuid={data.uuid} />
-        </>
+          <div className="shrink-0">
+            <Separator className="my-4" />
+            <AddComment spanUuid={spanUuid} />
+          </div>
+        </div>
       ),
     },
     {
       label: (
-        <>
-          <NotebookPen /> Annotations
+        <div className="flex items-center gap-1">
+          <NotebookPen />
+          <span>Annotations</span>
           {filteredAnnotations.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="absolute -top-0.5 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {filteredAnnotations.length > 9
                 ? "9+"
                 : filteredAnnotations.length}
             </div>
           )}
-        </>
+        </div>
       ),
       value: CommentTab.ANNOTATIONS,
-      component: <AnnotationsTable data={filteredAnnotations} />,
+      component: features.annotations ? (
+        <div className="h-full overflow-hidden">
+          <AnnotationsTable data={filteredAnnotations} />
+        </div>
+      ) : null,
     },
   ];
-  return (
-    <Collapsible>
-      <CollapsibleChevronTrigger />
-      <CollapsibleContent>
-        <TabGroup tabs={tabs} />
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
-export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
-  if (!span.code && !span.signature) return null;
 
+  return <TabGroup tabs={tabs} />;
+};
+
+export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
   const tabs: Tab[] = [
     {
       label: "Output",
       value: TraceTab.OUTPUT,
       component: span.output ? (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
+        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
           {renderOutput(span.output)}
         </div>
       ) : null,
     },
     {
+      label: "Prompt Template",
+      value: TraceTab.PROMPT_TEMPLATE,
+      component: span.template ? (
+        <div className="pt-0 whitespace-pre-wrap text-sm">{span.template}</div>
+      ) : null,
+    },
+    {
+      label: "Messages",
+      value: TraceTab.MESSAGES,
+      component:
+        span.messages.length > 0 ? (
+          <MessagesContainer messages={span.messages} />
+        ) : null,
+    },
+    {
+      label: "Events",
+      value: TraceTab.EVENTS,
+      component:
+        span.events && span.events.length > 0 ? (
+          <div className="h-full overflow-hidden">
+            {renderEventsContainer(span.events)}
+          </div>
+        ) : null,
+    },
+    {
       label: "Metadata",
       value: TraceTab.METADATA,
       component: span.data ? (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
+        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
           {renderMetadata(span.data)}
         </div>
       ) : null,
@@ -183,20 +214,24 @@ export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
       label: "Data",
       value: TraceTab.DATA,
       component: span.data && (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto">
-          <JsonView value={span.data} />
+        <div className="h-full overflow-auto">
+          <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+            <JsonView value={span.data} />
+          </div>
         </div>
       ),
     },
     {
       label: "Code",
       value: TraceTab.CODE,
-      component: <CodeSnippet code={span.code ?? ""} />,
+      component: span.code ? (
+        <CodeSnippet code={span.code} className="h-full" />
+      ) : null,
     },
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
-      component: <CodeSnippet code={span.signature ?? ""} />,
+      component: span.signature ? <CodeSnippet code={span.signature} /> : null,
     },
   ];
 
@@ -241,20 +276,15 @@ export const MessagesContainer = ({
     });
   };
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {"Messages"}
-          <Switch
-            checked={defaultMessageRenderer === "markdown"}
-            onCheckedChange={handleChange}
-          />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+    <>
+      <Switch
+        checked={defaultMessageRenderer === "markdown"}
+        onCheckedChange={handleChange}
+      />
+      <div className="flex flex-col gap-4">
         {renderMessagesCard(messages, defaultMessageRenderer)}
-      </CardContent>
-    </Card>
+      </div>
+    </>
   );
 };
 export const renderOutput = (output: string) => {

@@ -556,6 +556,7 @@ class SpanMoreDetails(BaseModel):
     events: list[Event] | None = None
     tags: list[TagPublic] | None = None
     session_id: str | None = None
+    span_id: str
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:

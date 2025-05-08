@@ -1,13 +1,8 @@
 import { Token } from "@/assets/TokenIcon";
-import { CollapsibleCard } from "@/components/CollapsibleCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SpanMoreDetails } from "@/types/types";
-import {
-  LilypadPanelTab,
-  MessagesContainer,
-  renderEventsContainer,
-} from "@/utils/panel-utils";
+import { LilypadPanelTab } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import JsonView from "@uiw/react-json-view";
@@ -104,25 +99,20 @@ export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
   );
 };
 
-export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
+export const LilypadPanel = ({
+  spanUuid,
+  showMetrics = true,
+}: {
+  spanUuid: string;
+  showMetrics?: boolean;
+}) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-
   return (
-    <div className="flex flex-col gap-4">
-      <LilypadMetrics span={span} />
-
-      {span.events &&
-        span.events.length > 0 &&
-        renderEventsContainer(span.events)}
-      {span.template && (
-        <CollapsibleCard title="Prompt Template" content={span.template} />
-      )}
-      {span.messages.length > 0 && (
-        <MessagesContainer messages={span.messages} />
-      )}
-      <div className="flex gap-4 flex-wrap">
-        {span.arg_values && (
-          <Card className="w-[calc(50%-0.5rem)] grow">
+    <div className="flex flex-col gap-4 h-full">
+      {showMetrics && <LilypadMetrics span={span} />}
+      {span.arg_values && (
+        <div className="shrink-0">
+          <Card>
             <CardHeader>
               <CardTitle>{"Input"}</CardTitle>
             </CardHeader>
@@ -132,9 +122,11 @@ export const LilypadPanel = ({ spanUuid }: { spanUuid: string }) => {
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
+      )}
+      <div className="flex-1 min-h-0">
+        <LilypadPanelTab span={span} />
       </div>
-      <LilypadPanelTab span={span} />
     </div>
   );
 };

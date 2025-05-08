@@ -43,13 +43,11 @@ export const CommentCards = ({ spanUuid }: { spanUuid: string }) => {
     commentsBySpanQueryOptions(spanUuid)
   );
   return (
-    <div className="overflow-y-auto h-full">
-      <div className="flex flex-col gap-4 pr-2">
-        {spanComments.map((comment) => (
-          <CommentCardContainer key={comment.uuid} comment={comment} />
-        ))}
-      </div>
-    </div>
+    <>
+      {spanComments.map((comment) => (
+        <CommentCardContainer key={comment.uuid} comment={comment} />
+      ))}
+    </>
   );
 };
 
@@ -179,33 +177,31 @@ export const CommentCard = ({
     {} as Record<string, UserPublic>
   );
   const commentUser = userMap[comment.user_uuid];
-
   return (
-    <div className="flex items-start gap-4 group">
-      <Avatar className="h-10 w-10 border">
-        <AvatarFallback>
-          {commentUser.first_name.charAt(0)}
-          {commentUser.last_name?.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="font-medium">
-              {commentUser.first_name} {commentUser.last_name}
+    <div className="flex flex-col gap-4 pr-2">
+      <div className="flex items-start gap-4">
+        <Avatar>
+          <AvatarFallback>
+            {commentUser.first_name.charAt(0)}
+            {commentUser.last_name?.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2 flex-wrap">
+              <div className="font-medium">
+                {commentUser.first_name} {commentUser.last_name}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {comment.updated_at && "Edited "}
+                {formatRelativeTime(comment.updated_at ?? comment.created_at)}
+              </div>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {comment.updated_at && "Edited "}
-              {formatRelativeTime(comment.updated_at ?? comment.created_at)}
-            </div>
+            {renderControls?.()}
           </div>
-          {renderControls?.()}
+
+          {renderEdit ?? <ReactMarkdown>{comment.text}</ReactMarkdown>}
         </div>
-        {renderEdit ?? (
-          <div className="prose">
-            <ReactMarkdown>{comment.text}</ReactMarkdown>
-          </div>
-        )}
       </div>
     </div>
   );

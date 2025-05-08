@@ -6,6 +6,9 @@ export enum TraceTab {
   OUTPUT = "output",
   METADATA = "metadata",
   DATA = "data",
+  PROMPT_TEMPLATE = "prompt_template",
+  EVENTS = "events",
+  MESSAGES = "messages",
 }
 
 export enum CommentTab {

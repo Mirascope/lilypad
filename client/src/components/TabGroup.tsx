@@ -1,7 +1,7 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { JSX, ReactNode, useState } from "react";
+import { JSX, ReactNode, useEffect, useState } from "react";
 
 export interface Tab {
   label: string | ReactNode;
@@ -19,11 +19,31 @@ export const TabGroup = ({
   handleTabChange?: (tab: string) => void;
   className?: string;
 }) => {
-  const [tab, setTab] = useState<string>(tabs[0].value);
+  // Find the first tab that has a component and is not disabled
+  const findFirstEligibleTab = () => {
+    return tabs.find((tab) => tab.component && !tab.isDisabled)?.value || "";
+  };
+
+  // Initialize with empty string, will be set in useEffect
+  const [tab, setTab] = useState<string>("");
+
+  // Set the initial tab when the component mounts or when tabs change
+  useEffect(() => {
+    const firstEligibleTabValue = findFirstEligibleTab();
+    setTab(firstEligibleTabValue);
+    // Optionally notify parent about the initial tab selection
+    if (firstEligibleTabValue && handleTabChange) {
+      handleTabChange(firstEligibleTabValue);
+    }
+  }, [tabs]); // Re-run when tabs array changes
+
   const onTabChange = (value: string) => {
     setTab(value);
     handleTabChange?.(value);
   };
+
+  if (tabs.length === 0) return null;
+
   return (
     <div
       className={cn(
@@ -36,8 +56,8 @@ export const TabGroup = ({
         onValueChange={onTabChange}
         className="w-full flex flex-col h-full"
       >
-        <div className="flex flex-col gap-1 h-full">
-          <ScrollArea>
+        <div className="flex flex-col h-full">
+          <ScrollArea className="mb-1">
             <div className="w-full relative h-10 px-2">
               <TabsList className="h-10 flex absolute gap-x-2 bg-transparent p-0 font-handwriting">
                 {tabs
@@ -57,12 +77,12 @@ export const TabGroup = ({
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          <div className="grow overflow-hidden bg-white border-t-1 rounded-md">
+          <div className="flex-1 min-h-0 bg-white border-t-1 rounded-md">
             {tabs.map((tab) => (
               <TabsContent
                 key={tab.value}
                 value={tab.value}
-                className="w-full h-full overflow-auto m-0 p-0"
+                className="w-full h-full data-[state=active]:flex data-[state=active]:flex-col m-0 p-0"
               >
                 {tab.component}
               </TabsContent>
