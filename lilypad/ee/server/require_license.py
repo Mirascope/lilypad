@@ -169,7 +169,9 @@ async def get_organization_license(
             organization_uuid=None,
         )
 
-    organization = organization_service.find_record_by_uuid(user.active_organization_uuid)
+    organization = organization_service.find_record_by_uuid(
+        user.active_organization_uuid
+    )
     if not organization:
         return LicenseInfo(
             customer="",
@@ -197,13 +199,16 @@ async def get_organization_license(
 
         # Default to FREE tier if no subscription or if subscription is not active
         tier = Tier.FREE
-        if subscription_plan and (not subscription_status or subscription_status in ["active", "trialing"]):
+        if subscription_plan and (
+            not subscription_status or subscription_status in ["active", "trialing"]
+        ):
             tier = tier_map.get(subscription_plan.lower(), Tier.FREE)
 
         return LicenseInfo(
             customer=organization.name,
             license_id="cloud_subscription",
-            expires_at=datetime.now(timezone.utc) + timedelta(days=365),  # Cloud subscriptions don't expire
+            expires_at=datetime.now(timezone.utc)
+            + timedelta(days=365),  # Cloud subscriptions don't expire
             tier=tier,
             organization_uuid=user.active_organization_uuid,
         )

@@ -14,6 +14,7 @@ from lilypad.server.services.spans import SpanService
 
 logger = logging.getLogger(__name__)
 
+
 def apply_data_retention_policy() -> None:
     """Apply data retention policy for all organizations.
 
@@ -38,7 +39,9 @@ def apply_data_retention_policy() -> None:
                         "team": Tier.TEAM,
                         "enterprise": Tier.ENTERPRISE,
                     }
-                    tier = plan_to_tier.get(organization.subscription_plan.lower(), Tier.FREE)
+                    tier = plan_to_tier.get(
+                        organization.subscription_plan.lower(), Tier.FREE
+                    )
 
                 retention_days = cloud_features[tier].data_retention_days
 
@@ -47,13 +50,15 @@ def apply_data_retention_policy() -> None:
                     email="support@mirascope.com",
                     first_name="System",
                     active_organization_uuid=organization.uuid,
-                    user_organizations=[]
+                    user_organizations=[],
                 )
 
                 span_service = SpanService(session, system_user)
 
                 # Mark old spans as deleted (logical deletion)
-                deleted_count = span_service.delete_old_spans(organization.uuid, int(retention_days))
+                deleted_count = span_service.delete_old_spans(
+                    organization.uuid, int(retention_days)
+                )
 
                 logger.info(
                     f"Applied data retention policy for organization {organization.uuid}: "
@@ -70,6 +75,7 @@ def apply_data_retention_policy() -> None:
 
     finally:
         session.close()
+
 
 if __name__ == "__main__":
     # This allows the script to be run directly for testing or manual execution

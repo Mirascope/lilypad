@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     stripe_cloud_team_price_id: str | None = None
     stripe_cloud_pro_price_id: str | None = None
     stripe_price_id: str | None = None
+
     @property
     def config(self) -> dict[str, Any]:
         """Get the configuration for the current environment"""

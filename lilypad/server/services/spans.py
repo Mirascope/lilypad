@@ -360,7 +360,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == organization_uuid,
                 self.table.created_at < cutoff_date,
                 # Ensure we don't re-mark already deleted spans
-                ~self.table.data.contains({"is_deleted": True})  # type: ignore
+                ~self.table.data.contains({"is_deleted": True}),  # type: ignore
             )
         )
         spans_to_delete = self.session.exec(query).all()

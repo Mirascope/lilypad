@@ -1,7 +1,7 @@
 """Organizations models."""
 
-from typing import TYPE_CHECKING
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class SubscriptionPlan(str, Enum):
     """Subscription plan enum."""
+
     FREE = "free"
     PRO = "pro"
     TEAM = "team"
@@ -52,6 +53,8 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
     # Stripe billing fields
     stripe_customer_id: str | None = Field(default=None, nullable=True)
     stripe_subscription_id: str | None = Field(default=None, nullable=True)
-    subscription_plan: SubscriptionPlan = Field(default=SubscriptionPlan.FREE, nullable=False)
+    subscription_plan: SubscriptionPlan = Field(
+        default=SubscriptionPlan.FREE, nullable=False
+    )
     subscription_status: str | None = Field(default=None, nullable=True)
     subscription_current_period_end: int | None = Field(default=None, nullable=True)
