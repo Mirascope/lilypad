@@ -99,7 +99,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         span_id: str,
     ) -> SpanTable | None:
         """Find the root parent span (parent with no parent) for a given span UUID in a single query using SQLModel."""
-        # Create a recursive CTE query compatible with SQLModel
         root_span_query = text("""
             WITH RECURSIVE span_hierarchy AS (
                 -- Base case: start with the specified span
@@ -121,13 +120,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             LIMIT 1
         """).bindparams(span_id=span_id)
 
-        # Execute the raw SQL query using SQLModel's session
         result = self.session.exec(root_span_query).first()  # type: ignore
 
         if not result:
             return None
 
-        # Use SQLModel's select to get the complete span object
         root_span = self.session.exec(
             select(self.table).where(self.table.uuid == result.uuid)
         ).first()
