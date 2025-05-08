@@ -490,12 +490,7 @@ export const TracesTable = ({
               {status}
             </Badge>
           );
-        } else
-          return (
-            <Badge variant="destructive" size="sm">
-              {status}
-            </Badge>
-          );
+        } else return <Badge size="sm">{status}</Badge>;
       },
     },
     {
