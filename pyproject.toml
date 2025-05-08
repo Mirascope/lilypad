@@ -72,7 +72,7 @@ Changelog = "https://github.com/Mirascope/lilypad/releases"
 
 [project.optional-dependencies]
 sandbox-docker = ["docker>=7.1.0"]
-
+billing = ["stripe==12.1.0"]
 
 [tool.uv]
 dev-dependencies = [
@@ -83,7 +83,6 @@ dev-dependencies = [
     "pre-commit>=3.8.0",
     "datamodel-code-generator[ruff]>=0.28.4",
 ]
-
 
 [project.scripts]
 lilypad = "lilypad.cli.main:app"

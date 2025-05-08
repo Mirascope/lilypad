@@ -59,6 +59,17 @@ class Settings(BaseSettings):
     db_pool_recycle: int = 1800
     db_pool_pre_ping: bool = True
 
+    # Stripe settings
+    stripe_api_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_self_hosted_product_id: str | None = None
+    stripe_self_hosted_pro_price_id: str | None = None
+    stripe_self_hosted_team_price_id: str | None = None
+    stripe_cloud_product_id: str | None = None
+    stripe_cloud_free_price_id: str | None = None
+    stripe_cloud_team_price_id: str | None = None
+    stripe_cloud_pro_price_id: str | None = None
+    stripe_price_id: str | None = None
     @property
     def config(self) -> dict[str, Any]:
         """Get the configuration for the current environment"""

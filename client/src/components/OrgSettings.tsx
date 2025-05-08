@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
 import { APIKeysTable } from "@/components/apiKeys/APIKeysTable";
+import { BillingSection } from "@/components/billing/BillingSection";
 import { EnvironmentsTable } from "@/components/environments/EnvironmentsTable";
 import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
@@ -46,6 +47,12 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
       <ProjectsTable />
       <EnvironmentsTable />
       <APIKeysTable />
+
+      {/* Billing Section */}
+      <div className="mt-8 mb-8">
+        <BillingSection />
+      </div>
+
       {activeUserOrg.role === UserRole.OWNER && (
         <Alert variant="destructive" className="mt-8">
           <TriangleAlert className="h-4 w-4 " />
@@ -101,7 +108,9 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
     >
       <Form {...methods}>
         <form
-          onSubmit={methods.handleSubmit(handleSubmit)}
+          onSubmit={(e) => {
+            void methods.handleSubmit(handleSubmit)(e);
+          }}
           className="space-y-6"
         >
           <p className="text-red-500">WARNING: This action is final.</p>

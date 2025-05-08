@@ -1,6 +1,7 @@
 """Organizations models."""
 
 from typing import TYPE_CHECKING
+from enum import Enum
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -12,6 +13,14 @@ if TYPE_CHECKING:
     from .api_keys import APIKeyTable
     from .projects import ProjectTable
     from .tags import TagTable
+
+
+class SubscriptionPlan(str, Enum):
+    """Subscription plan enum."""
+    FREE = "free"
+    PRO = "pro"
+    TEAM = "team"
+    ENTERPRISE = "enterprise"
 
 
 class OrganizationBase(SQLModel):
@@ -39,3 +48,10 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
     )
     license: str | None = Field(default=None, nullable=True)
     support_services: bool = Field(default=True, nullable=False)
+
+    # Stripe billing fields
+    stripe_customer_id: str | None = Field(default=None, nullable=True)
+    stripe_subscription_id: str | None = Field(default=None, nullable=True)
+    subscription_plan: SubscriptionPlan = Field(default=SubscriptionPlan.FREE, nullable=False)
+    subscription_status: str | None = Field(default=None, nullable=True)
+    subscription_current_period_end: int | None = Field(default=None, nullable=True)

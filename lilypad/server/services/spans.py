@@ -1,7 +1,7 @@
 """The `SpanService` class for spans."""
 
 from collections.abc import Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import Literal
 from uuid import UUID
@@ -335,6 +335,47 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.exec(delete_stmt)  # type: ignore
         self.session.flush()
         return True
+
+    def delete_old_spans(self, organization_uuid: UUID, retention_days: int) -> int:
+        """Mark spans as deleted that are older than the retention period for an organization.
+        This performs a logical deletion by updating the data field with a deleted flag.
+
+        Args:
+            organization_uuid: The UUID of the organization
+            retention_days: The number of days to retain spans
+
+        Returns:
+            The number of spans marked as deleted
+        """
+        if retention_days <= 0 or retention_days == float("inf"):
+            # No deletion needed for infinite retention or invalid values
+            return 0
+
+        # Calculate the cutoff date
+        cutoff_date = datetime.now() - timedelta(days=retention_days)
+
+        # Find spans older than the cutoff date
+        query = select(self.table).where(
+            and_(
+                self.table.organization_uuid == organization_uuid,
+                self.table.created_at < cutoff_date,
+                # Ensure we don't re-mark already deleted spans
+                ~self.table.data.contains({"is_deleted": True})  # type: ignore
+            )
+        )
+        spans_to_delete = self.session.exec(query).all()
+
+        # Mark spans as deleted by updating the data field
+        count = 0
+        for span in spans_to_delete:
+            span.data["is_deleted"] = True
+            span.data["deleted_at"] = datetime.now().isoformat()
+            count += 1
+
+        self.session.flush()
+
+        # Return the number of spans marked as deleted
+        return count
 
     async def update_span(
         self,

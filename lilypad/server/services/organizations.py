@@ -1,5 +1,6 @@
 """The `OrganizationService` class for organizations."""
 
+from typing import Any, Sequence
 from uuid import UUID
 
 from sqlmodel import select
@@ -22,3 +23,11 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         ).first()
 
         return org.license if org else None
+
+    def update_record(self, uuid: UUID, data: dict, **filters: Any) -> OrganizationTable:
+        """Update a record by UUID."""
+        return self.update_record_by_uuid(uuid, data, **filters)
+
+    def find_records_by_filter(self, filters: dict) -> Sequence[OrganizationTable]:
+        """Find records by filter."""
+        return self.find_all_records(**filters)

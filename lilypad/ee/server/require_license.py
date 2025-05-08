@@ -157,6 +157,7 @@ class RequireLicense:
 async def get_organization_license(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
+    request: Request,
 ) -> LicenseInfo:
     """Get the license information for the organization"""
     if not user.active_organization_uuid:
@@ -167,11 +168,9 @@ async def get_organization_license(
             tier=Tier.FREE,
             organization_uuid=None,
         )
-    validator = LicenseValidator()
-    license_info = validator.validate_license(
-        user.active_organization_uuid, organization_service
-    )
-    if not license_info:
+
+    organization = organization_service.find_record_by_uuid(user.active_organization_uuid)
+    if not organization:
         return LicenseInfo(
             customer="",
             license_id="",
@@ -179,7 +178,50 @@ async def get_organization_license(
             tier=Tier.FREE,
             organization_uuid=user.active_organization_uuid,
         )
-    return license_info
+
+    # Check if this is the cloud version
+    is_cloud = await is_lilypad_cloud(request)
+
+    if is_cloud:
+        # For cloud version, use the subscription plan
+        subscription_plan = getattr(organization, "subscription_plan", None)
+        subscription_status = getattr(organization, "subscription_status", None)
+
+        # Map subscription plan to tier
+        tier_map = {
+            "free": Tier.FREE,
+            "pro": Tier.PRO,
+            "team": Tier.TEAM,
+            "enterprise": Tier.ENTERPRISE,
+        }
+
+        # Default to FREE tier if no subscription or if subscription is not active
+        tier = Tier.FREE
+        if subscription_plan and (not subscription_status or subscription_status in ["active", "trialing"]):
+            tier = tier_map.get(subscription_plan.lower(), Tier.FREE)
+
+        return LicenseInfo(
+            customer=organization.name,
+            license_id="cloud_subscription",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),  # Cloud subscriptions don't expire
+            tier=tier,
+            organization_uuid=user.active_organization_uuid,
+        )
+    else:
+        # For self-hosted version, use the license
+        validator = LicenseValidator()
+        license_info = validator.validate_license(
+            user.active_organization_uuid, organization_service
+        )
+        if not license_info:
+            return LicenseInfo(
+                customer="",
+                license_id="",
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                tier=Tier.FREE,
+                organization_uuid=user.active_organization_uuid,
+            )
+        return license_info
 
 
 async def is_lilypad_cloud(

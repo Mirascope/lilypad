@@ -16,18 +16,42 @@ class FeatureSettings(BaseModel):
 # Cloud
 cloud_features = {
     Tier.FREE: FeatureSettings(
-        num_users_per_organization=1,
-        traces_per_month=10_000,
+        num_users_per_organization=2,
+        traces_per_month=30_000,
         data_retention_days=30,
     ),
     Tier.PRO: FeatureSettings(
-        num_users_per_organization=5,
+        num_users_per_organization=10,
         traces_per_month=100_000,
-        data_retention_days=180,
+        data_retention_days=90,
     ),
     Tier.TEAM: FeatureSettings(
         num_users_per_organization=float("inf"),
         traces_per_month=1_000_000,
+        data_retention_days=180,
+    ),
+    Tier.ENTERPRISE: FeatureSettings(
+        num_users_per_organization=float("inf"),
+        traces_per_month=float("inf"),
+        data_retention_days=float("inf"),
+    ),
+}
+
+# Self-hosted
+self_hosted_features = {
+    Tier.FREE: FeatureSettings(
+        num_users_per_organization=float("inf"),
+        traces_per_month=float("inf"),
+        data_retention_days=float("inf"),
+    ),
+    Tier.PRO: FeatureSettings(
+        num_users_per_organization=float("inf"),
+        traces_per_month=float("inf"),
+        data_retention_days=float("inf"),
+    ),
+    Tier.TEAM: FeatureSettings(
+        num_users_per_organization=float("inf"),
+        traces_per_month=float("inf"),
         data_retention_days=float("inf"),
     ),
     Tier.ENTERPRISE: FeatureSettings(
