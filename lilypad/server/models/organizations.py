@@ -10,6 +10,7 @@ from .table_names import ORGANIZATION_TABLE_NAME
 if TYPE_CHECKING:
     from ...ee.server.models.user_organizations import UserOrganizationTable
     from .api_keys import APIKeyTable
+    from .billing import BillingTable
     from .projects import ProjectTable
     from .tags import TagTable
 
@@ -35,6 +36,9 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
         back_populates="organization", cascade_delete=True
     )
     tags: list["TagTable"] = Relationship(
+        back_populates="organization", cascade_delete=True
+    )
+    billings: list["BillingTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
     license: str | None = Field(default=None, nullable=True)

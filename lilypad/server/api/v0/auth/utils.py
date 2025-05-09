@@ -7,6 +7,8 @@ from sqlmodel import Session, select
 from ...._utils import create_jwt_token
 from ....models import UserTable
 from ....schemas.users import UserPublic
+from ....services import OrganizationService
+from ....services.billing import BillingService
 
 
 def handle_user(
@@ -15,12 +17,20 @@ def handle_user(
     last_name: str | None,
     session: Session,
     posthog: posthog.Posthog,
+    billing_service: BillingService
 ) -> UserPublic:
     """Handle user creation or retrieval."""
     user = session.exec(select(UserTable).where(UserTable.email == email)).first()
 
     if user:
         user_public = UserPublic.model_validate(user)
+
+        if user_public.active_organization_uuid:
+            organization_service = OrganizationService(session, user_public)
+            organization_service.create_stripe_customer(
+                billing_service, user_public.active_organization_uuid, user_public.email
+            )
+
         lilypad_token = create_jwt_token(user_public)
         user_public = user_public.model_copy(update={"access_token": lilypad_token})
         return user_public

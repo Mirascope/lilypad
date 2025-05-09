@@ -10,6 +10,7 @@ from sqlmodel import Session
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
 from ....schemas.users import UserPublic
+from ....services.billing import BillingService
 from ....settings import Settings, get_settings
 from .utils import handle_user
 
@@ -22,6 +23,7 @@ async def google_callback(
     posthog: Annotated[posthog.Posthog, Depends(get_posthog_client)],
     settings: Annotated[Settings, Depends(get_settings)],
     session: Annotated[Session, Depends(get_session)],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
 ) -> UserPublic:
     """Callback for Google OAuth.
 
@@ -89,6 +91,7 @@ async def google_callback(
                 last_name=last_name,
                 session=session,
                 posthog=posthog,
+                billing_service=billing_service
             )
 
         except httpx.RequestError as exc:

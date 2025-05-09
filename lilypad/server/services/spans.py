@@ -11,6 +11,7 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
+from .billing import BillingService
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
@@ -270,6 +271,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     def create_bulk_records(
         self,
         spans_create: Sequence[SpanCreate],
+        billing_service: BillingService,
         project_uuid: UUID,
         organization_uuid: UUID,
     ) -> list[SpanTable]:
@@ -318,6 +320,8 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if final_links_to_add:
             self.session.add_all(final_links_to_add)
             self.session.flush()
+
+        billing_service.report_span_usage(organization_uuid, quantity=len(spans_to_add))
 
         return spans_to_add
 
