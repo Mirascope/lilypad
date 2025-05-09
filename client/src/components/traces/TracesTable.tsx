@@ -25,9 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
-import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { useTable } from "@/hooks/use-table";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
 import { fetchCommentsBySpan } from "@/utils/comments";
 import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
@@ -44,7 +42,6 @@ import {
   MoreHorizontal,
   NotebookPen,
   SmileIcon,
-  Users,
 } from "lucide-react";
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -136,8 +133,6 @@ export const TracesTable = ({
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const [deleteSpan, setDeleteSpan] = useState<string | null>(null);
   const [tagFilterOpen, setTagFilterOpen] = useState<boolean>(false);
-
-  const { selectedRows } = useTable<SpanPublic>();
 
   const findRow = (rows: SpanPublic[], uuid?: string) =>
     rows.find((r) => r.uuid === uuid) ??
@@ -524,30 +519,6 @@ export const TracesTable = ({
     Array.isArray(row.child_spans) && row.child_spans.length > 0;
   const getSubRows = (row: SpanPublic) => row.child_spans || [];
 
-  const customControls = () => {
-    return (
-      <>
-        <div className="flex flex-col gap-2 sticky top-0 bg-background z-20 pt-2">
-          <div className="flex items-center gap-2">
-            {features.annotations && (
-              <LilypadDialog
-                icon={<Users />}
-                title={"Annotate selected traces"}
-                description={`${selectedRows.length} trace(s) selected.`}
-                buttonProps={{
-                  disabled: selectedRows.length === 0,
-                }}
-                tooltipContent={"Add selected traces to your annotation queue."}
-              >
-                <QueueForm spans={selectedRows} />
-              </LilypadDialog>
-            )}
-          </div>
-        </div>
-      </>
-    );
-  };
-
   return (
     <>
       <DataTable<SpanPublic>
@@ -565,7 +536,6 @@ export const TracesTable = ({
         filterColumn={filterColumn}
         getRowCanExpand={getRowCanExpand}
         getSubRows={getSubRows}
-        customControls={customControls}
         defaultSorting={
           isSearch
             ? [{ id: "score", desc: true }]

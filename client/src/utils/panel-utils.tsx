@@ -12,11 +12,17 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { CommentTab, Tab, TraceTab } from "@/types/traces";
-import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
+import {
+  AnnotationPublic,
+  Event,
+  MessageParam,
+  SpanMoreDetails,
+} from "@/types/types";
 import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -98,9 +104,13 @@ export const renderMessagesCard = (
 export const SpanComments = ({
   projectUuid,
   spanUuid,
+  activeAnnotation,
+  path,
 }: {
   projectUuid: string;
   spanUuid: string;
+  activeAnnotation?: AnnotationPublic | null;
+  path?: string;
 }) => {
   const features = useFeatureAccess();
   const { data: spanComments } = useSuspenseQuery(
@@ -112,8 +122,15 @@ export const SpanComments = ({
   const filteredAnnotations = annotations.filter(
     (annotation) => annotation.label
   );
-
   const tabs: Tab[] = [
+    {
+      label: "Annotate",
+      value: CommentTab.ANNOTATE,
+      component:
+        features.annotations && activeAnnotation && path ? (
+          <AnnotationView annotation={activeAnnotation} path={path} />
+        ) : null,
+    },
     {
       label: (
         <div className="flex items-center gap-1">
@@ -154,11 +171,12 @@ export const SpanComments = ({
         </div>
       ),
       value: CommentTab.ANNOTATIONS,
-      component: features.annotations ? (
-        <div className="h-full overflow-hidden">
-          <AnnotationsTable data={filteredAnnotations} />
-        </div>
-      ) : null,
+      component:
+        features.annotations && !activeAnnotation ? (
+          <div className="h-full overflow-hidden">
+            <AnnotationsTable data={filteredAnnotations} />
+          </div>
+        ) : null,
     },
   ];
 

@@ -54,7 +54,8 @@ export const LilypadDialog = ({
       {...buttonProps}
       size={icon ? "icon" : buttonProps.size}
     >
-      {icon ?? text}
+      {icon}
+      {text}
     </Button>
   );
 

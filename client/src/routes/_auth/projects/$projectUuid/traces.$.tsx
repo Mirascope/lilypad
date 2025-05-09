@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import { ComparePanel } from "@/components/ComparePanel";
+import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -11,6 +12,8 @@ import { SpanMoreDetails } from "@/components/traces/SpanMoreDetail";
 import { TracesTable } from "@/components/traces/TracesTable";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
+import { QueueForm } from "@/ee/components/QueueForm";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useInfiniteTraces } from "@/hooks/use-infinite-traces";
 import { TableProvider, useTable } from "@/hooks/use-table";
 import { SpanPublic } from "@/types/types";
@@ -21,6 +24,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
+import { Users } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -57,7 +61,7 @@ const Trace = () => {
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   const { selectedRows, detailRow, setDetailRow } = useTable<SpanPublic>();
   const [isComparing, setIsComparing] = useState(false);
-
+  const features = useFeatureAccess();
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("desc");
@@ -112,15 +116,30 @@ const Trace = () => {
       <div className="flex flex-col gap-1">
         <div className="flex justify-between items-center">
           <Typography variant="h3">{project.name}</Typography>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsComparing(true)}
-            disabled={selectedRows.length !== 2}
-            className="whitespace-nowrap"
-          >
-            Compare
-          </Button>
+          <div className="flex items-center gap-2">
+            {features.annotations && (
+              <LilypadDialog
+                icon={<Users />}
+                title={"Annotate selected traces"}
+                description={`${selectedRows.length} trace(s) selected.`}
+                buttonProps={{
+                  disabled: selectedRows.length === 0,
+                }}
+                tooltipContent={"Add selected traces to your annotation queue."}
+              >
+                <QueueForm spans={selectedRows} />
+              </LilypadDialog>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsComparing(true)}
+              disabled={selectedRows.length !== 2}
+              className="whitespace-nowrap"
+            >
+              Compare
+            </Button>
+          </div>
         </div>
         <Typography variant="span" affects="muted">
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}

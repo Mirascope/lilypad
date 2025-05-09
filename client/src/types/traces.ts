@@ -14,6 +14,7 @@ export enum TraceTab {
 export enum CommentTab {
   ANNOTATIONS = "annotations",
   COMMENTS = "comments",
+  ANNOTATE = "annotate",
 }
 
 export interface Tab {

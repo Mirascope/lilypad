@@ -52,7 +52,6 @@ function SpanDetailPage() {
   return (
     <div className="container h-screen w-full pt-4 px-4 max-w-screen-2xl overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Trace hierarchy column */}
         <ResizablePanel defaultSize={25} minSize={15} className="flex flex-col">
           <Typography variant="h3" className="truncate max-w-md mb-4 shrink-0">
             Trace Hierarchy
@@ -71,13 +70,11 @@ function SpanDetailPage() {
 
         <ResizableHandle withHandle className="m-4" />
 
-        {/* Main content and metrics columns with shared header */}
         <ResizablePanel
           defaultSize={75}
           minSize={50}
           className="flex flex-col h-full"
         >
-          {/* Shared header that spans both main content and metrics */}
           <div className="flex justify-between items-center mb-4 shrink-0">
             <FunctionTitle span={span} />
             <div className="flex gap-2">

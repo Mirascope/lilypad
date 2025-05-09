@@ -4,9 +4,7 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,7 +24,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
 import { FunctionTab } from "@/types/functions";
 import { FunctionPublic } from "@/types/types";
@@ -36,7 +33,6 @@ import {
   uniqueLatestVersionFunctionNamesQueryOptions,
   useArchiveFunctionByNameMutation,
 } from "@/utils/functions";
-import { FormattedText } from "@/utils/strings";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -118,7 +114,12 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
         onBlur={() => setHover(false)}
       >
         <CardTitle className="flex justify-between items-center">
-          {fn.name}
+          <div className="flex gap-2">
+            {fn.name}
+            <Typography variant="p" affects="muted">
+              v{fn.version_num}
+            </Typography>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -163,30 +164,13 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
         </CardTitle>
         <CardDescription>Latest Version: v{fn.version_num}</CardDescription>
       </CardHeader>
-      <Separator />
-      <CardContent className="p-0 m-6 overflow-auto max-h-[100px]">
-        <CodeSnippet code={fn.code} />
-      </CardContent>
-      <CardFooter className="flex flex-col gap-2 items-start">
-        <div className="flex flex-col gap-2 w-full">
-          <h3 className="text-sm font-medium text-gray-500">Template</h3>
-          {fn.is_versioned && fn.prompt_template ? (
-            <FormattedText
-              template={fn.prompt_template ?? ""}
-              values={fn.arg_types}
-            />
-          ) : (
-            <Typography affects="muted">No template</Typography>
-          )}
-        </div>
-      </CardFooter>
     </Card>
   );
 };
 const FunctionsList = () => {
   return (
-    <div className="p-4 flex flex-col lg:items-center gap-2">
-      <Typography variant="h2">Functions</Typography>
+    <div className="p-4 flex flex-col gap-10">
+      <Typography variant="h3">Functions</Typography>
       <div className="flex gap-2 max-w-full flex-wrap">
         <Suspense fallback={<CardSkeleton items={2} />}>
           <FunctionCards />
