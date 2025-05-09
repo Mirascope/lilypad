@@ -18,6 +18,10 @@ from .base_organization import BaseOrganizationService
 from .billing import BillingService
 from .tags import TagService
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class TimeFrame(str, Enum):
     """Timeframe for aggregation"""
@@ -321,7 +325,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             self.session.add_all(final_links_to_add)
             self.session.flush()
 
-        billing_service.report_span_usage(organization_uuid, quantity=len(spans_to_add))
+        try:
+            billing_service.report_span_usage(organization_uuid, quantity=len(spans_to_add))
+        except Exception as e:
+            # if reporting fails, we don't want to fail the entire span creation
+            logger.error("Error reporting span usage: %s", e)
 
         return spans_to_add
 
