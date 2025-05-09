@@ -58,10 +58,18 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 name=organization.name,
                 metadata={"organization_uuid": str(organization.uuid)},
             )
-    
+
+            # Create a subscription to enable metering
+            subscription = stripe.Subscription.create(
+                customer=customer.id,
+                items=[{"price": settings.stripe_cloud_free_price_id}],
+            )
+
             # Create a billing record for this customer
             billing_data = BillingCreate(
                 stripe_customer_id=customer.id,
+                stripe_subscription_id=subscription.id,
+                stripe_price_id=settings.stripe_cloud_free_price_id,
             )
     
             if existing_billing:
