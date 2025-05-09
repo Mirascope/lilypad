@@ -56,7 +56,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             self.create_record(billing_data, organization_uuid=organization.uuid)
 
             # Update the organization with the customer ID for backward compatibility
-            organization.stripe_customer_id = customer.id
+            organization.billing.stripe_customer_id = customer.id
             self.session.add(organization)
             self.session.flush()
 

@@ -11,8 +11,6 @@ from starlette.requests import Request
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
 from ....schemas.users import UserPublic
-from ....services import OrganizationService
-from ....services.billing import BillingService
 from ....settings import Settings, get_settings
 from .utils import handle_user
 

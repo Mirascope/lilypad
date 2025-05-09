@@ -34,7 +34,7 @@ class BillingBase(SQLModel):
     subscription_current_period_end: datetime | None = Field(nullable=True)
     # Usage tracking
     usage_quantity: int = Field(default=0)
-    last_usage_report: datetime = Field(nullable=True)
+    last_usage_report: datetime | None = Field(nullable=True)
 
     # Additional metadata
     metadata_: dict = Field(
