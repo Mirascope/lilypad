@@ -17,6 +17,7 @@ from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
 from ...server.schemas.users import UserPublic
 from ...server.services import OrganizationService, ProjectService
+from ...server.settings import get_settings
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
 
@@ -189,4 +190,5 @@ def is_lilypad_cloud(
     return request.url.hostname is not None and (
         request.url.hostname.endswith(HOST_NAME)
         or request.url.hostname.endswith(ALT_HOST_NAME)
+        or get_settings().remote_client_hostname.endswith(ALT_HOST_NAME)
     )

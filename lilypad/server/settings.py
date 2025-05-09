@@ -1,6 +1,7 @@
 """Server settings"""
 
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -96,6 +97,11 @@ class Settings(BaseSettings):
     def client_url(self) -> str:
         """Get the client URL"""
         return self.config["client_url"]
+
+    @property
+    def remote_client_hostname(self) -> str:
+        """Get the remote client hostname"""
+        return urlparse(self.client_url).hostname
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 
