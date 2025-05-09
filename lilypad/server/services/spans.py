@@ -1,5 +1,6 @@
 """The `SpanService` class for spans."""
 
+import logging
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
@@ -12,10 +13,14 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
 from ..models.functions import FunctionTable
+from ..models.organizations import OrganizationTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
+from .billing import BillingService, _CustomerNotFound
 from .tags import TagService
+
+logger = logging.getLogger(__name__)
 
 
 class TimeFrame(str, Enum):
@@ -270,6 +275,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     def create_bulk_records(
         self,
         spans_create: Sequence[SpanCreate],
+        billing_service: BillingService | None,
         project_uuid: UUID,
         organization_uuid: UUID,
     ) -> list[SpanTable]:
@@ -319,7 +325,41 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             self.session.add_all(final_links_to_add)
             self.session.flush()
 
+        if billing_service:
+            try:
+                self._report_span_usage_with_retry(
+                    billing_service, organization_uuid, len(spans_to_add)
+                )
+            except Exception as e:
+                # if reporting fails, we don't want to fail the entire span creation
+                logger.error("Error reporting span usage: %s", e)
+
         return spans_to_add
+
+    def _report_span_usage_with_retry(
+        self, billing_service: BillingService, organization_uuid: UUID, quantity: int
+    ) -> None:
+        """Report span usage to Stripe with retry logic."""
+        try:
+            billing_service.report_span_usage(organization_uuid, quantity=quantity)
+        except _CustomerNotFound:
+            # We don't expect this to happen, but if it does, we need to create a customer
+            logger.info(f"Creating customer for organization {organization_uuid}")
+            organization = self.session.exec(
+                select(OrganizationTable).where(
+                    OrganizationTable.uuid == organization_uuid
+                )
+            ).first()
+
+            if not organization:
+                logger.error(f"Organization {organization_uuid} not found")
+                return
+
+            email = self.user.email
+
+            billing_service.create_customer(organization, email)
+
+            billing_service.report_span_usage(organization_uuid, quantity=quantity)
 
     def delete_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID

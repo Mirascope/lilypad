@@ -28,6 +28,7 @@ import { Trash, TriangleAlert } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { PlanList } from "@/components/PlanList.tsx";
 
 interface OrgSettingsProps {
   open: boolean;
@@ -41,6 +42,7 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
   if (!activeUserOrg) return <NotFound />;
   return (
     <>
+      <PlanList />
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
       <UserTable />
       <ProjectsTable />
