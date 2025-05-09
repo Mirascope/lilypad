@@ -7,7 +7,7 @@ from uuid import UUID
 
 import stripe
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import desc, select
 from stripe import InvalidRequestError, StripeError
 
 from ..models.billing import BillingTable
@@ -107,7 +107,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             select(OrganizationTable).where(OrganizationTable.uuid == organization_uuid)
         ).first()
 
-        if not organization or not organization.billing.stripe_customer_id:
+        if not organization or not organization.billing or not organization.billing.stripe_customer_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Organization or Stripe customer not found",
@@ -118,7 +118,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             event_name="spans",
             payload={
                 "value": str(quantity),
-                "stripe_customer_id": organization.billing.stripe_customer_id,
+                "stripe_customer_id": str(organization.billing.stripe_customer_id),
             },
             identifier=str(uuid.uuid4()),
             timestamp=int(time.time()),
@@ -128,7 +128,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         billing = self.session.exec(
             select(BillingTable)
             .where(BillingTable.organization_uuid == organization_uuid)
-            .order_by(BillingTable.created_at.desc())
+            .order_by(desc(BillingTable.created_at))
         ).first()
 
         if billing:
