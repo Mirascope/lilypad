@@ -107,7 +107,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             select(OrganizationTable).where(OrganizationTable.uuid == organization_uuid)
         ).first()
 
-        if not organization or not organization.stripe_customer_id:
+        if not organization or not organization.billing.stripe_customer_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Organization or Stripe customer not found",
@@ -117,8 +117,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         stripe.billing.MeterEvent.create(
             event_name="spans",
             payload={
-                "value": quantity,
-                "stripe_customer_id": organization.stripe_customer_id,
+                "value": str(quantity),
+                "stripe_customer_id": organization.billing.stripe_customer_id,
             },
             identifier=str(uuid.uuid4()),
             timestamp=int(time.time()),

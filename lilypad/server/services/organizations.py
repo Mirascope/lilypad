@@ -69,7 +69,7 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         if not organization:
             raise ValueError("Organization not found")
 
-        if organization.stripe_customer_id:
+        if organization.billing.stripe_customer_id:
             return organization
 
         billing_service.create_customer(organization, email)
@@ -91,7 +91,7 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
             The Stripe customer or None if not found
         """
         organization = self.find_record_by_uuid(organization_uuid)
-        if not organization or not organization.stripe_customer_id:
+        if not organization or not organization.billing.stripe_customer_id:
             return None
 
-        return billing_service.get_customer(organization.stripe_customer_id)
+        return billing_service.get_customer(organization.billing.stripe_customer_id)
