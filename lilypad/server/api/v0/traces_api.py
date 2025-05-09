@@ -183,6 +183,12 @@ async def traces(
         tier = license.tier
         num_traces = span_service.count_by_current_month()
         if num_traces >= cloud_features[tier].traces_per_month:
+            logger.warning(
+                f"Trace limit exceeded for project {project_uuid}. "
+                f"Tier: {tier.name.capitalize()}, "
+                f"Current traces: {num_traces}, "
+                f"Limit: {cloud_features[tier].traces_per_month}."
+            )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",

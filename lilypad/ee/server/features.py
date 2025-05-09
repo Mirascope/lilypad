@@ -17,7 +17,7 @@ class FeatureSettings(BaseModel):
 cloud_features = {
     Tier.FREE: FeatureSettings(
         num_users_per_organization=2,
-        traces_per_month=10_000,
+        traces_per_month=30_000,
         data_retention_days=30,
     ),
     Tier.PRO: FeatureSettings(
