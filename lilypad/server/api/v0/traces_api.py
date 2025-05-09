@@ -190,7 +190,7 @@ async def traces(
                 f"Limit: {cloud_features[tier].traces_per_month}."
             )
             raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
             )
 
