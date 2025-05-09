@@ -19,9 +19,12 @@ from .base_organization import BaseOrganizationService
 settings = get_settings()
 stripe.api_key = settings.stripe_api_key
 
+
 class _CustomerNotFound(Exception):
     """Exception raised when a Stripe customer is not found."""
+
     pass
+
 
 class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     """Service for handling billing operations."""
@@ -44,45 +47,51 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
             )
-
+        stripe_cloud_free_price_id = settings.stripe_cloud_free_price_id
+        if not stripe_cloud_free_price_id:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Free price ID not configured",
+            )
         existing_billing = self.session.exec(
-            select(BillingTable).where(BillingTable.organization_uuid == organization.uuid)
+            select(BillingTable).where(
+                BillingTable.organization_uuid == organization.uuid
+            )
         ).first()
-    
+
         if existing_billing and existing_billing.stripe_customer_id:
             return existing_billing.stripe_customer_id
-    
+
         try:
             customer = stripe.Customer.create(
                 email=email,
                 name=organization.name,
                 metadata={"organization_uuid": str(organization.uuid)},
             )
-
             # Create a subscription to enable metering
             subscription = stripe.Subscription.create(
                 customer=customer.id,
-                items=[{"price": settings.stripe_cloud_free_price_id}],
+                items=[{"price": stripe_cloud_free_price_id}],
             )
 
             # Create a billing record for this customer
             billing_data = BillingCreate(
                 stripe_customer_id=customer.id,
                 stripe_subscription_id=subscription.id,
-                stripe_price_id=settings.stripe_cloud_free_price_id,
+                stripe_price_id=stripe_cloud_free_price_id,
             )
-    
+
             if existing_billing:
                 existing_billing.stripe_customer_id = customer.id
                 self.session.add(existing_billing)
             else:
                 self.create_record(billing_data, organization_uuid=organization.uuid)
-    
+
             # Update the organization with the customer ID for backward compatibility
             if organization.billing:
                 organization.billing.stripe_customer_id = customer.id
                 self.session.add(organization)
-            
+
             self.session.flush()
 
             return customer.id

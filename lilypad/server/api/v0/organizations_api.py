@@ -47,7 +47,9 @@ async def create_organization(
 ) -> OrganizationTable:
     """Create an organization."""
     organization = organization_service.create_record(
-        organization_create, email=user.email, billing_service=billing_service if is_lilypad_cloud else None
+        organization_create,
+        email=user.email,
+        billing_service=billing_service if is_lilypad_cloud else None,
     )
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(

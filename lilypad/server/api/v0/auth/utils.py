@@ -32,7 +32,7 @@ def handle_user(
             org_service_instance = OrganizationService(session, user_public)
             if is_lilypad_cloud(request):
                 org_service_instance.create_stripe_customer(
-                    BillingService(session, user),
+                    BillingService(session, user_public),
                     user_public.active_organization_uuid,
                     user_public.email,
                 )

@@ -101,7 +101,7 @@ class Settings(BaseSettings):
     @property
     def remote_client_hostname(self) -> str:
         """Get the remote client hostname"""
-        return urlparse(self.client_url).hostname
+        return urlparse(self.client_url).hostname or ""
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 

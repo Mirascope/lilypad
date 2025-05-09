@@ -327,18 +327,17 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
         if billing_service:
             try:
-                self._report_span_usage_with_retry(billing_service, organization_uuid, len(spans_to_add))
+                self._report_span_usage_with_retry(
+                    billing_service, organization_uuid, len(spans_to_add)
+                )
             except Exception as e:
                 # if reporting fails, we don't want to fail the entire span creation
                 logger.error("Error reporting span usage: %s", e)
-    
+
         return spans_to_add
-        
+
     def _report_span_usage_with_retry(
-        self, 
-        billing_service: BillingService, 
-        organization_uuid: UUID, 
-        quantity: int
+        self, billing_service: BillingService, organization_uuid: UUID, quantity: int
     ) -> None:
         """Report span usage to Stripe with retry logic."""
         try:
@@ -351,15 +350,15 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                     OrganizationTable.uuid == organization_uuid
                 )
             ).first()
-            
+
             if not organization:
                 logger.error(f"Organization {organization_uuid} not found")
                 return
-            
+
             email = self.user.email
-            
+
             billing_service.create_customer(organization, email)
-            
+
             billing_service.report_span_usage(organization_uuid, quantity=quantity)
 
     def delete_records_by_function_uuid(
