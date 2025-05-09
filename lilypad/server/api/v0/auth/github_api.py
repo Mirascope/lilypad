@@ -99,7 +99,9 @@ async def github_callback(
                 last_name=None,
                 session=session,
                 posthog=posthog,
-                billing_service=billing_service
+                billing_service=billing_service,
+                request=request,
+                organization_service=organization_service,
             )
 
         except httpx.RequestError as exc:

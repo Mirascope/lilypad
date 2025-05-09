@@ -41,12 +41,12 @@ async def create_organization(
     organization_create: OrganizationCreate,
     user: Annotated[UserPublic, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(UserService)],
-    billing_service: Annotated[
-        BillingService, Depends(BillingService)
-    ],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
 ) -> OrganizationTable:
     """Create an organization."""
-    organization = organization_service.create_record(organization_create, email=user.email, billing_service=billing_service)
+    organization = organization_service.create_record(
+        organization_create, email=user.email, billing_service=billing_service
+    )
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(
         user_uuid=user.uuid,

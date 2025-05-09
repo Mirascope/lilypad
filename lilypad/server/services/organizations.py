@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlmodel import select
 
-from ..models.organizations import OrganizationTable, SubscriptionPlan
+from ..models.organizations import OrganizationTable
 from ..schemas.organizations import OrganizationCreate
 from .base import BaseService
 from .billing import BillingService
@@ -25,7 +25,9 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
 
         return org.license if org else None
 
-    def create_record(self, data: OrganizationCreate, **kwargs: Any) -> OrganizationTable:
+    def create_record(
+        self, data: OrganizationCreate, **kwargs: Any
+    ) -> OrganizationTable:
         """Create a new organization record.
 
         This overrides the base method to add Stripe customer creation.
@@ -40,19 +42,19 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         # Create the organization record
         organization = super().create_record(data)
 
-
-        billing_service: BillingService | None = kwargs.get('billing_service')
+        billing_service: BillingService | None = kwargs.get("billing_service")
         if not billing_service:
             raise ValueError("Billing service is required")
 
         # Create Stripe customer if email is provided
-        if 'email' in kwargs and kwargs['email']:
-            billing_service.create_customer(organization, kwargs['email'])
-
+        if "email" in kwargs and kwargs["email"]:
+            billing_service.create_customer(organization, kwargs["email"])
 
         return organization
 
-    def create_stripe_customer(self, billing_service: BillingService, organization_uuid: UUID, email: str) -> OrganizationTable:
+    def create_stripe_customer(
+        self, billing_service: BillingService, organization_uuid: UUID, email: str
+    ) -> OrganizationTable:
         """Create a Stripe customer for an organization.
 
         Args:
@@ -76,7 +78,9 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
 
         return organization
 
-    def get_stripe_customer(self, billing_service: BillingService,  organization_uuid: UUID) -> Any:
+    def get_stripe_customer(
+        self, billing_service: BillingService, organization_uuid: UUID
+    ) -> Any:
         """Get the Stripe customer for an organization.
 
         Args:

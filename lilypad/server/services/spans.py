@@ -11,11 +11,11 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
-from .billing import BillingService
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
+from .billing import BillingService
 from .tags import TagService
 
 

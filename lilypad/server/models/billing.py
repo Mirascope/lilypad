@@ -13,8 +13,10 @@ from .table_names import BILLING_TABLE_NAME
 if TYPE_CHECKING:
     from .organizations import OrganizationTable
 
+
 class SubscriptionPlan(str, Enum):
     """Subscription plan enum."""
+
     FREE = "free"
     PRO = "pro"
     TEAM = "team"
@@ -35,7 +37,10 @@ class BillingBase(SQLModel):
     last_usage_report: datetime = Field(nullable=True)
 
     # Additional metadata
-    metadata_: dict = Field(default_factory=dict, sa_column=get_json_column(), alias="metadata")
+    metadata_: dict = Field(
+        default_factory=dict, sa_column=get_json_column(), alias="metadata"
+    )
+
 
 class BillingTable(BillingBase, BaseOrganizationSQLModel, table=True):
     """Billing table for Stripe integration."""
