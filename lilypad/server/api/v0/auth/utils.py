@@ -20,9 +20,7 @@ def handle_user(
     last_name: str | None,
     session: Session,
     posthog: posthog.Posthog,
-    billing_service: BillingService,
     request: Request,
-    organization_service: OrganizationService,
 ) -> UserPublic:
     """Handle user creation or retrieval."""
     user = session.exec(select(UserTable).where(UserTable.email == email)).first()
@@ -31,16 +29,16 @@ def handle_user(
         user_public = UserPublic.model_validate(user)
 
         if user_public.active_organization_uuid:
+            org_service_instance = OrganizationService(session, user_public)
             if is_lilypad_cloud(request):
-                organization_service = OrganizationService(session, user_public)
-                organization_service.create_stripe_customer(
-                    billing_service,
+                org_service_instance.create_stripe_customer(
+                    BillingService(session, user),
                     user_public.active_organization_uuid,
                     user_public.email,
                 )
             else:
                 # Validate license for self-hosted
-                get_organization_license(user_public, organization_service)
+                get_organization_license(user_public, org_service_instance)
 
         lilypad_token = create_jwt_token(user_public)
         user_public = user_public.model_copy(update={"access_token": lilypad_token})
