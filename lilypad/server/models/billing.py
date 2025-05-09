@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from . import get_json_column
@@ -46,5 +47,8 @@ class BillingTable(BillingBase, BaseOrganizationSQLModel, table=True):
     """Billing table for Stripe integration."""
 
     __tablename__ = BILLING_TABLE_NAME  # type: ignore
+    __table_args__ = (
+        UniqueConstraint("stripe_customer_id", name="uix_billing_stripe_customer_id"),
+    )
 
     organization: "OrganizationTable" = Relationship(back_populates="billing")

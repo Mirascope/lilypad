@@ -210,7 +210,7 @@ async def traces(
         await _process_span(root_span, parent_to_children, span_creates)
     project = project_service.find_record_no_organization(project_uuid)
     span_tables = span_service.create_bulk_records(
-        span_creates, billing_service, project_uuid, project.organization_uuid
+        span_creates, billing_service if is_lilypad_cloud else None, project_uuid, project.organization_uuid
     )
     if opensearch_service.is_enabled:
         trace_dicts = [span.model_dump() for span in span_tables]

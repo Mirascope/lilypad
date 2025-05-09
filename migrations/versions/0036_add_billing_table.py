@@ -59,6 +59,9 @@ def upgrade() -> None:
             ["stripe_customer_id"],
             unique=False,
         )
+        batch_op.create_unique_constraint(
+            "uix_billing_stripe_customer_id", ["stripe_customer_id"]
+        )
 
     # ### end Alembic commands ###
 
@@ -69,6 +72,7 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f("billings_stripe_customer_id_idx"))
         batch_op.drop_index(batch_op.f("billings_organization_uuid_idx"))
         batch_op.drop_index(batch_op.f("billings_created_at_idx"))
+        batch_op.drop_constraint("uix_billing_stripe_customer_id", type_="unique")
 
     op.drop_table("billings")
     # ### end Alembic commands ###

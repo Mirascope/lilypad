@@ -19,6 +19,9 @@ from .base_organization import BaseOrganizationService
 settings = get_settings()
 stripe.api_key = settings.stripe_api_key
 
+class _CustomerNotFound(Exception):
+    """Exception raised when a Stripe customer is not found."""
+    pass
 
 class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     """Service for handling billing operations."""
@@ -42,22 +45,36 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 detail="Stripe API key not configured",
             )
 
+        existing_billing = self.session.exec(
+            select(BillingTable).where(BillingTable.organization_uuid == organization.uuid)
+        ).first()
+    
+        if existing_billing and existing_billing.stripe_customer_id:
+            return existing_billing.stripe_customer_id
+    
         try:
             customer = stripe.Customer.create(
                 email=email,
                 name=organization.name,
                 metadata={"organization_uuid": str(organization.uuid)},
             )
-
+    
             # Create a billing record for this customer
             billing_data = BillingCreate(
                 stripe_customer_id=customer.id,
             )
-            self.create_record(billing_data, organization_uuid=organization.uuid)
-
+    
+            if existing_billing:
+                existing_billing.stripe_customer_id = customer.id
+                self.session.add(existing_billing)
+            else:
+                self.create_record(billing_data, organization_uuid=organization.uuid)
+    
             # Update the organization with the customer ID for backward compatibility
-            organization.billing.stripe_customer_id = customer.id
-            self.session.add(organization)
+            if organization.billing:
+                organization.billing.stripe_customer_id = customer.id
+                self.session.add(organization)
+            
             self.session.flush()
 
             return customer.id
@@ -107,12 +124,13 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             select(OrganizationTable).where(OrganizationTable.uuid == organization_uuid)
         ).first()
 
-        if not organization or not organization.billing or not organization.billing.stripe_customer_id:
+        if not organization:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Organization or Stripe customer not found",
             )
-            return None
+        if not organization.billing or not organization.billing.stripe_customer_id:
+            raise _CustomerNotFound()
 
         stripe.billing.MeterEvent.create(
             event_name="spans",

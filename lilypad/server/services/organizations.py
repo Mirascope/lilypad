@@ -43,13 +43,8 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         organization = super().create_record(data)
 
         billing_service: BillingService | None = kwargs.get("billing_service")
-        if not billing_service:
-            raise ValueError("Billing service is required")
-
-        # Create Stripe customer if email is provided
-        if "email" in kwargs and kwargs["email"]:
+        if billing_service and "email" in kwargs and kwargs["email"]:
             billing_service.create_customer(organization, kwargs["email"])
-
         return organization
 
     def create_stripe_customer(
