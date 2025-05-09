@@ -47,4 +47,4 @@ class BillingTable(BillingBase, BaseOrganizationSQLModel, table=True):
 
     __tablename__ = BILLING_TABLE_NAME  # type: ignore
 
-    organization: "OrganizationTable" = Relationship(back_populates="billings")
+    organization: "OrganizationTable" = Relationship(back_populates="billing")
