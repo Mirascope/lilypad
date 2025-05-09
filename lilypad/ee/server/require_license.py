@@ -110,7 +110,7 @@ class RequireLicense:
             )
         organization_uuid = project.organization_uuid
 
-        is_cloud = await is_lilypad_cloud(request)
+        is_cloud = is_lilypad_cloud(request)
 
         if is_cloud and self.cloud_free:
             return None
@@ -154,7 +154,7 @@ class RequireLicense:
             )
 
 
-async def get_organization_license(
+def get_organization_license(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
 ) -> LicenseInfo:
@@ -182,7 +182,7 @@ async def get_organization_license(
     return license_info
 
 
-async def is_lilypad_cloud(
+def is_lilypad_cloud(
     request: Request,
 ) -> bool:
     """Check if the request is to Lilypad Cloud"""

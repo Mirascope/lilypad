@@ -3,7 +3,9 @@
 import posthog
 from fastapi import HTTPException
 from sqlmodel import Session, select
+from starlette.requests import Request
 
+from lilypad.ee.server.require_license import is_lilypad_cloud, get_organization_license
 from ...._utils import create_jwt_token
 from ....models import UserTable
 from ....schemas.users import UserPublic
@@ -17,7 +19,9 @@ def handle_user(
     last_name: str | None,
     session: Session,
     posthog: posthog.Posthog,
-    billing_service: BillingService
+    billing_service: BillingService,
+    request: Request,
+    organization_service: OrganizationService,
 ) -> UserPublic:
     """Handle user creation or retrieval."""
     user = session.exec(select(UserTable).where(UserTable.email == email)).first()
@@ -25,11 +29,17 @@ def handle_user(
     if user:
         user_public = UserPublic.model_validate(user)
 
+
         if user_public.active_organization_uuid:
-            organization_service = OrganizationService(session, user_public)
-            organization_service.create_stripe_customer(
-                billing_service, user_public.active_organization_uuid, user_public.email
-            )
+            if is_lilypad_cloud(request):
+                    organization_service = OrganizationService(session, user_public)
+                    organization_service.create_stripe_customer(
+                        billing_service, user_public.active_organization_uuid, user_public.email
+                    )
+            else:
+                # Validate license for self-hosted
+                get_organization_license(user, organization_service)
+
 
         lilypad_token = create_jwt_token(user_public)
         user_public = user_public.model_copy(update={"access_token": lilypad_token})
