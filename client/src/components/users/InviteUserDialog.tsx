@@ -34,7 +34,7 @@ export const InviteUserDialog = ({
         </Button>
       </DialogTrigger>
       <DialogContent className={cn(`max-w-${maxWidth} overflow-x-auto`)}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className='shrink-0'>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>

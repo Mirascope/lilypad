@@ -233,7 +233,7 @@ export const DiffTool = ({
   secondCodeBlock,
   language = "typescript",
 }: DiffToolProps) => {
-  const [mode, setMode] = useState<"split" | "unified">("split");
+  const [mode, setMode] = useState<"split" | "unified">("unified");
 
   const handleModeChange = (checked: boolean) => {
     setMode(checked ? "split" : "unified");

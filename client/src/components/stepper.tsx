@@ -208,7 +208,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
             {variant === "vertical" && (
               <div className='flex gap-4'>
                 {!isLast && (
-                  <div className='flex justify-center ps-[calc(var(--spacing)_*_4.5_-_1px)]'>
+                  <div className='flex justify-center ps-[calc(var(--spacing)*4.5-1px)]'>
                     <StepperSeparator
                       orientation='vertical'
                       isLast={isLast}
@@ -386,7 +386,7 @@ const classForNavigationList = cva("flex gap-2", {
 const classForSeparator = cva(
   [
     "bg-muted",
-    "data-[state=completed]:bg-primary data-[disabled]:opacity-50",
+    "data-[state=completed]:bg-primary data-disabled:opacity-50",
     "transition-all duration-300 ease-in-out",
   ],
   {

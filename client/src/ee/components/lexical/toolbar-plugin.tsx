@@ -34,7 +34,7 @@ import {
 import { BlockTypeDropdown, blockTypeToBlockName } from "./block-type-dropdown";
 import { MessageTypeDropdown } from "./messages-dropdown";
 
-export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
+export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isBold, setIsBold] = useState<boolean>(false);
@@ -213,12 +213,8 @@ export const ToolbarPlugin = ({ isLLM = false }: { isLLM: boolean }) => {
         >
           <CodeIcon />
         </Toggle>
-        {isLLM && (
-          <>
-            <Separator orientation="vertical" className="h-auto my-1" />
-            <MessageTypeDropdown isEditable={isEditable} />
-          </>
-        )}
+        <Separator orientation="vertical" className="h-auto my-1" />
+        <MessageTypeDropdown isEditable={isEditable} />
       </div>
     </div>
   );

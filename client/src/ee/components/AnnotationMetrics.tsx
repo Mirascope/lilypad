@@ -1,27 +1,30 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Typography } from "@/components/ui/typography";
 import { annotationMetricsByFunctionQueryOptions } from "@/ee/utils/annotations";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle, CircleX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Cell, Label, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 interface AnnotationMetricsProps {
   projectUuid: string;
   functionUuid: string;
   title?: string;
   description?: string;
+  className?: string;
 }
 export const AnnotationMetrics = ({
   projectUuid,
   functionUuid,
   title = "Annotation Pass Rate",
   description,
+  className = "",
 }: AnnotationMetricsProps) => {
   const { data: annotationMetrics } = useSuspenseQuery(
     annotationMetricsByFunctionQueryOptions(projectUuid, functionUuid)
@@ -32,6 +35,7 @@ export const AnnotationMetrics = ({
       totalCount={annotationMetrics.total_count}
       title={title}
       description={description}
+      className={className}
     />
   );
 };
@@ -41,6 +45,7 @@ interface SuccessMetricsProps {
   totalCount?: number;
   title: string;
   description?: string;
+  className?: string;
 }
 
 const SuccessMetrics = ({
@@ -48,88 +53,80 @@ const SuccessMetrics = ({
   totalCount = 0,
   title,
   description,
+  className = "",
 }: SuccessMetricsProps) => {
   // Calculate percentage
   const percentage =
     totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0;
 
-  // Animated progress for the circle
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    // Animate progress on mount or when values change
-    const timer = setTimeout(() => {
-      setProgress(percentage);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [percentage]);
-
-  // Calculate circle properties
-  const radius = 70;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-  // Determine color based on percentage
+  // Determine color based on percentage for the label
   const getColor = () => {
     if (percentage > 75) return "text-green-500";
     if (percentage > 50) return "text-yellow-500";
     return "text-red-500";
   };
 
+  // Define fixed colors for the pie chart
+  const SUCCESS_COLOR = "#409b45"; // green-500
+  const FAIL_COLOR = "oklch(0.55 0.18 48)"; // red-500
+
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="pb-2">
+    <Card className={`w-full h-full flex flex-col ${className}`}>
+      <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative w-40 h-40 flex items-center justify-center">
-            <svg className="w-full h-full" viewBox="0 0 160 160">
-              <circle
-                cx="80"
-                cy="80"
-                r={radius}
-                fill="none"
-                stroke="#e6e6e6"
-                strokeWidth="12"
-              />
-              <circle
-                cx="80"
-                cy="80"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                className={getColor()}
-                transform="rotate(-90 80 80)"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold">{percentage}%</span>
-              <span className="text-sm text-gray-500">Pass Rate</span>
-            </div>
+      <CardContent className="flex-grow py-6 flex flex-col items-center justify-center">
+        {totalCount ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={[
+                  { name: "Success", value: successCount },
+                  { name: "Fail", value: totalCount - successCount },
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius="55%"
+                outerRadius="80%"
+                startAngle={90}
+                endAngle={450}
+                dataKey="value"
+                blendStroke
+                isAnimationActive={false}
+              >
+                <Label
+                  value={`${percentage}%`}
+                  position="center"
+                  fontSize="16"
+                  fontWeight="bold"
+                  className={getColor()}
+                />
+                {/* Fixed colors: green for success, red for fail */}
+                <Cell fill={SUCCESS_COLOR} />
+                <Cell fill={FAIL_COLOR} />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <Typography affects="muted">No Data</Typography>
+        )}
+      </CardContent>
+      <CardFooter className="shrink-0 pt-0 pb-4">
+        <div className="flex justify-between items-center text-xs sm:text-sm w-full">
+          <div className="flex items-center space-x-1">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>{successCount} pass</span>
           </div>
-
-          <div className="flex justify-between items-center text-sm w-full">
-            <div className="flex items-center space-x-1">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span>{successCount} pass</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <CircleX className="h-4 w-4 text-destructive" />
-              <span>{totalCount - successCount} fail</span>
-            </div>
-            <div className="font-medium">
-              {successCount} / {totalCount} total
-            </div>
+          <div className="flex items-center space-x-1">
+            <CircleX className="h-4 w-4 text-destructive" />
+            <span>{totalCount - successCount} fail</span>
+          </div>
+          <div className="font-medium">
+            {successCount} / {totalCount} total
           </div>
         </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };

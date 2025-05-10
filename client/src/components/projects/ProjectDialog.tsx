@@ -41,7 +41,7 @@ export const BaseProjectDialog = ({
         className={`max-w-${maxWidth} overflow-x-auto`}
         onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className='shrink-0'>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>

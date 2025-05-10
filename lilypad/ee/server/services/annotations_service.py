@@ -68,6 +68,18 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
             )
         ).all()
 
+    def find_records_by_span_uuid(self, span_uuid: UUID) -> Sequence[AnnotationTable]:
+        """Find records by span UUID."""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.span_uuid == span_uuid,
+                or_(
+                    self.table.assigned_to == self.user.uuid,
+                    self.table.assigned_to.is_(None),  # type: ignore
+                ),
+            )
+        ).all()
+
     def find_record_by_span_uuid(self, span_uuid: UUID) -> AnnotationTable | None:
         """Find records by function UUID."""
         return self.session.exec(

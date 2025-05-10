@@ -304,7 +304,7 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
         {fields.map((field, index) => {
           const type = methods.watch(`inputs.${index}.type`);
           return (
-            <Card key={field.id} className="w-full flex-shrink-0 relative">
+            <Card key={field.id} className="w-full shrink-0 relative">
               {!isDisabled && (
                 <Button
                   type="button"

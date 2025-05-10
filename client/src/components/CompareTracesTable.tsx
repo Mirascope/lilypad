@@ -1,6 +1,6 @@
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
-import { TracesTable } from "@/components/TracesTable";
+import { TracesTable } from "@/components/traces/TracesTable";
 import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
 import { SpanPublic } from "@/types/types";
 import { useMemo, useState } from "react";

@@ -1,5 +1,5 @@
 import api from "@/api";
-import { PaginatedSpanPublic } from "@/types/types";
+import { PaginatedSpanPublic, SpanPublic } from "@/types/types";
 import { PAGE_SIZE } from "@/utils/constants.ts";
 import type { QueryFunctionContext } from "@tanstack/react-query";
 
@@ -16,6 +16,13 @@ export const fetchTraces = async (
   });
   const { data } = await api.get<PaginatedSpanPublic>(
     `/projects/${projectUuid}/traces?${params}`
+  );
+  return data;
+};
+
+export const fetchRootTrace = async (projectUuid: string, spanUuid: string) => {
+  const { data } = await api.get<SpanPublic>(
+    `/projects/${projectUuid}/traces/${spanUuid}/root`
   );
   return data;
 };
@@ -49,5 +56,14 @@ export const tracesInfiniteQueryOptions = <Key extends readonly unknown[]>(
   },
 
   initialPageParam: { offset: 0, limit: pageSize },
+  staleTime: 30_000,
+});
+
+export const rootTraceQueryOptions = (
+  projectUuid: string,
+  spanUuid: string
+) => ({
+  queryKey: [`trace`, projectUuid, spanUuid],
+  queryFn: () => fetchRootTrace(projectUuid, spanUuid),
   staleTime: 30_000,
 });

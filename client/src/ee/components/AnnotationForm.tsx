@@ -80,7 +80,7 @@ const AnnotationFields = () => {
               <FormControl>
                 <div className="flex gap-2">
                   <SuccessButton
-                    variant={field.value === Label.PASS ? "success" : "outline"}
+                    variant={field.value === Label.PASS ? "default" : "outline"}
                     onClick={() => field.onChange(Label.PASS)}
                   >
                     Pass

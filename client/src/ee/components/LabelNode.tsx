@@ -19,7 +19,7 @@ export const LabelNode: React.FC<CustomNodeProps> = ({
   return isEditing ? (
     <div className="flex gap-2">
       <SuccessButton
-        variant={value === Label.PASS ? "success" : "outline"}
+        variant={value === Label.PASS ? "default" : "outline"}
         onClick={() => setValue(Label.PASS)}
       >
         Pass
