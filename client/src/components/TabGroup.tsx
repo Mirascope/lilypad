@@ -1,6 +1,7 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { Outlet } from "@tanstack/react-router";
 import { JSX, ReactNode, useEffect, useState } from "react";
 
 export interface Tab {
@@ -12,23 +13,24 @@ export interface Tab {
 
 export const TabGroup = ({
   tabs,
+  tab: initialTab,
   className,
   handleTabChange,
 }: {
   tabs: Tab[];
   handleTabChange?: (tab: string) => void;
   className?: string;
+  tab?: string;
 }) => {
   // Find the first tab that has a component and is not disabled
   const findFirstEligibleTab = () => {
-    return tabs.find((tab) => tab.component && !tab.isDisabled)?.value || "";
+    return tabs.find((tab) => tab.component && !tab.isDisabled)?.value ?? "";
   };
-
-  // Initialize with empty string, will be set in useEffect
-  const [tab, setTab] = useState<string>("");
+  const [tab, setTab] = useState<string>(initialTab ?? findFirstEligibleTab());
 
   // Set the initial tab when the component mounts or when tabs change
   useEffect(() => {
+    if (initialTab) return;
     const firstEligibleTabValue = findFirstEligibleTab();
     setTab(firstEligibleTabValue);
     // Optionally notify parent about the initial tab selection
@@ -84,7 +86,7 @@ export const TabGroup = ({
                 value={tab.value}
                 className="w-full h-full data-[state=active]:flex data-[state=active]:flex-col m-0 p-0"
               >
-                {tab.component}
+                {tab.component ?? <Outlet />}
               </TabsContent>
             ))}
           </div>

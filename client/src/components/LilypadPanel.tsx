@@ -112,9 +112,9 @@ export const LilypadPanel = ({
       {showMetrics && <LilypadMetrics span={span} />}
       {span.arg_values && (
         <div className="shrink-0">
-          <Card>
+          <Card variant="primary">
             <CardHeader>
-              <CardTitle>{"Input"}</CardTitle>
+              <CardTitle>{"Inputs"}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">

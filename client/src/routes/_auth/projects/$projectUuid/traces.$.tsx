@@ -8,7 +8,7 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
 import { ResizablePanels } from "@/components/traces/ResizablePanels";
-import { SpanMoreDetails } from "@/components/traces/SpanMoreDetail";
+import { SpanMoreDetail } from "@/components/traces/SpanMoreDetail";
 import { TracesTable } from "@/components/traces/TracesTable";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
@@ -16,7 +16,7 @@ import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { useInfiniteTraces } from "@/hooks/use-infinite-traces";
 import { TableProvider, useTable } from "@/hooks/use-table";
-import { SpanPublic } from "@/types/types";
+import { SpanMoreDetails, SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
 import { formatRelativeTime } from "@/utils/strings";
 import {
@@ -38,6 +38,15 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
 const TraceContainer = () => {
   const navigate = useNavigate();
   const { projectUuid } = useParams({ from: Route.id });
+  const handleDetailPanelOpen = (trace: SpanPublic) => {
+    navigate({
+      to: Route.fullPath,
+      replace: true,
+      params: { projectUuid, _splat: trace.uuid },
+    }).catch(() => {
+      toast.error("Failed to navigate");
+    });
+  };
   const handleDetailPanelClose = () => {
     navigate({
       to: Route.fullPath,
@@ -49,7 +58,10 @@ const TraceContainer = () => {
   };
   return (
     <Suspense fallback={<LilypadLoading />}>
-      <TableProvider onPanelClose={handleDetailPanelClose}>
+      <TableProvider<SpanPublic>
+        onPanelClose={handleDetailPanelClose}
+        onPanelOpen={handleDetailPanelOpen}
+      >
         <Trace />
       </TableProvider>
     </Suspense>
@@ -65,6 +77,7 @@ const Trace = () => {
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const navigate = useNavigate();
   const {
     fetchNextPage,
     hasNextPage,
@@ -92,6 +105,19 @@ const Trace = () => {
     await fetchNextPage();
   };
 
+  const handleFullView = (span: SpanMoreDetails) => {
+    if (!span.project_uuid) {
+      toast.error("This span is not part of a project");
+      return;
+    }
+    navigate({
+      to: "/projects/$projectUuid/traces/detail/$spanUuid",
+      params: {
+        projectUuid: span.project_uuid,
+        spanUuid: span.uuid,
+      },
+    }).catch(() => toast.error("Failed to navigate"));
+  };
   if (isComparing) {
     return (
       <div className="h-screen flex flex-col gap-4 p-4">
@@ -175,7 +201,7 @@ const Trace = () => {
   );
   const detailContent = detailRow && (
     <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
-      <SpanMoreDetails data={detailRow} path={Route.fullPath} />
+      <SpanMoreDetail data={detailRow} handleFullView={handleFullView} />
     </Suspense>
   );
 

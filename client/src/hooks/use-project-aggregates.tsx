@@ -1,17 +1,25 @@
-import { AggregateMetrics } from "@/types/types";
+import { AggregateMetrics, TimeFrame } from "@/types/types";
 import { aggregatesByProjectQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 
-interface ProcessedData extends AggregateMetrics {
+export interface ProcessedData extends AggregateMetrics {
   date: string;
   formattedCost: string;
   total_tokens: number;
   average_duration_sec: string;
+  average_duration_ms: number;
   uuid: string;
 }
 
-export const useProjectAggregates = (projectUuid: string, timeFrame: any) => {
+type ConsolidatedRecord = Record<string, Record<string, ProcessedData>>;
+
+type FunctionAggregates = Record<string, ProcessedData>;
+
+export const useProjectAggregates = (
+  projectUuid: string,
+  timeFrame: TimeFrame
+) => {
   // Fetch data using the query
   const { data, isLoading, error, refetch } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)
@@ -35,7 +43,44 @@ export const useProjectAggregates = (projectUuid: string, timeFrame: any) => {
     [data]
   );
 
-  // Optional: Add helper methods for the data if needed
+  const consolidatedData: ConsolidatedRecord = useMemo(() => {
+    const consolidated: ConsolidatedRecord = {};
+
+    processedData.forEach((item) => {
+      if (!consolidated[item.date]) {
+        consolidated[item.date] = {};
+      }
+
+      const functionKey = item.function_uuid ?? item.uuid;
+
+      if (!consolidated[item.date][functionKey]) {
+        consolidated[item.date][functionKey] = { ...item };
+      } else {
+        const existing = consolidated[item.date][functionKey];
+        existing.total_cost += item.total_cost;
+        existing.total_input_tokens += item.total_input_tokens;
+        existing.total_output_tokens += item.total_output_tokens;
+        existing.span_count += item.span_count;
+        existing.total_tokens =
+          existing.total_input_tokens + existing.total_output_tokens;
+        existing.formattedCost = `${existing.total_cost.toFixed(5)}`;
+      }
+    });
+
+    return consolidated;
+  }, [processedData]);
+
+  const functionAggregates: FunctionAggregates = useMemo(() => {
+    const aggregates: FunctionAggregates = {};
+
+    processedData.forEach((item) => {
+      const functionKey = item.function_uuid ?? item.uuid;
+      aggregates[functionKey] = item;
+    });
+
+    return aggregates;
+  }, [processedData]);
+
   const getTotalCost = useCallback(() => {
     return processedData.reduce((sum, item) => sum + item.total_cost, 0);
   }, [processedData]);
@@ -46,6 +91,8 @@ export const useProjectAggregates = (projectUuid: string, timeFrame: any) => {
 
   return {
     data: processedData,
+    consolidatedData,
+    functionAggregates,
     rawData: data,
     isLoading,
     error,

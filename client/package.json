@@ -55,6 +55,7 @@
     "@tanstack/react-router-devtools": "^1.116.00",
     "@tanstack/react-table": "^8.20.5",
     "@tanstack/react-virtual": "^3.11.0",
+    "@tanstack/zod-adapter": "^1.120.3",
     "@uiw/react-json-view": "2.0.0-alpha.30",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",

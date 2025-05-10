@@ -9,6 +9,7 @@ export interface TableContextType<T> {
   // Detail panel state
   detailRow: T | null;
   setDetailRow: (row: T | null) => void;
+  onDetailPanelOpen: (detailRow: T) => void;
   onDetailPanelClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export const TableContext = createContext<TableContextType<any>>({
   setSelectedRows: () => {},
   detailRow: null,
   setDetailRow: () => {},
+  onDetailPanelOpen: () => {},
   onDetailPanelClose: () => {},
 });
 
@@ -30,8 +32,10 @@ export function useTable<T>(): TableContextType<T> {
 export function TableProvider<T>({
   children,
   onPanelClose,
+  onPanelOpen,
 }: {
   children: ReactNode;
+  onPanelOpen?: (detailRow: T) => void;
   onPanelClose?: () => void;
 }) {
   const [selectedRows, setSelectedRowsState] = useState<T[]>([]);
@@ -42,6 +46,9 @@ export function TableProvider<T>({
   };
 
   const setDetailRow = (row: T | null) => {
+    if (row) {
+      onPanelOpen?.(row);
+    }
     setDetailRowState(row);
   };
 
@@ -58,6 +65,7 @@ export function TableProvider<T>({
     setSelectedRows,
     detailRow,
     setDetailRow,
+    onDetailPanelOpen: handleDetailPanelClose,
     onDetailPanelClose: handleDetailPanelClose,
   };
 

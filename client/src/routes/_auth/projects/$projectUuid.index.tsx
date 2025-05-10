@@ -2,6 +2,7 @@ import { CostAndTokensChart } from "@/components/CostAndTokensChart";
 import { DataTable } from "@/components/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProjectAggregates } from "@/hooks/use-project-aggregates";
 import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
 import { functionsQueryOptions } from "@/utils/functions";
 import { projectQueryOptions } from "@/utils/projects";
@@ -35,8 +36,6 @@ interface ProcessedData extends AggregateMetrics {
   uuid: string;
 }
 
-type ConsolidatedRecord = Record<string, Record<string, ProcessedData>>;
-
 interface PieChartData {
   name: string;
   value: number;
@@ -47,48 +46,17 @@ function RouteComponent() {
 }
 
 const ProjectDashboard = () => {
+  const timeFrame = TimeFrame.LIFETIME;
   const { projectUuid } = useParams({ from: Route.id });
   const [activeTab, setActiveTab] = useState("overview");
-  const [timeFrame, _setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   const { data } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)
   );
-
-  // Process data for visualization
-  const processedData: ProcessedData[] = data.map((item) => {
-    const date = item.start_date ? new Date(item.start_date) : new Date();
-
-    return {
-      ...item,
-      date: date.toLocaleDateString(),
-      formattedCost: `${item.total_cost.toFixed(5)}`,
-      total_tokens: item.total_input_tokens + item.total_output_tokens,
-      average_duration_sec: (item.average_duration_ms / 1000).toFixed(2),
-      uuid: crypto.randomUUID(),
-    };
-  });
-
-  // Group by date and function uuid
-  const consolidatedData: ConsolidatedRecord = {};
-  processedData.forEach((item) => {
-    if (!consolidatedData[item.date]) {
-      consolidatedData[item.date] = {};
-    }
-    const functionKey = item.function_uuid || item.uuid;
-    if (!consolidatedData[item.date][functionKey]) {
-      consolidatedData[item.date][functionKey] = item;
-    } else {
-      const existing = consolidatedData[item.date][functionKey];
-      existing.total_cost += item.total_cost;
-      existing.total_input_tokens += item.total_input_tokens;
-      existing.total_output_tokens += item.total_output_tokens;
-      existing.span_count += item.span_count;
-      existing.total_tokens =
-        existing.total_input_tokens + existing.total_output_tokens;
-      existing.formattedCost = `${existing.total_cost.toFixed(5)}`;
-    }
-  });
+  const { data: processedData, consolidatedData } = useProjectAggregates(
+    projectUuid,
+    timeFrame
+  );
 
   // Flatten the consolidated data for charts
   const chartData: ProcessedData[] = [];

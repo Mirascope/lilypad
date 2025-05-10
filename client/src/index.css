@@ -160,8 +160,8 @@ body::before {
 
 /* Base code styles */
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 /* Code blocks use different fonts based on mode */
@@ -173,8 +173,9 @@ pre,
 .mono-enabled pre,
 .mono-enabled .shiki,
 .mono-enabled .shiki code {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-family:
+    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace !important;
   /* Font size is defined in .shiki */
 }
 
@@ -300,5 +301,182 @@ pre,
   }
   .font-handwriting {
     font-family: "Williams Handwriting", cursive !important;
+  }
+}
+
+@layer components {
+  /* Button group */
+  .button-group {
+    @apply flex gap-2 mt-4;
+  }
+
+  /* Collapsible component */
+  .Collapsible__container {
+    @apply bg-card border border-border rounded-lg mb-2;
+  }
+
+  .Collapsible__title {
+    @apply cursor-pointer py-1 px-5 pl-5 relative font-bold list-none outline-none;
+  }
+
+  .Collapsible__title::marker,
+  .Collapsible__title::-webkit-details-marker {
+    @apply hidden;
+  }
+
+  .Collapsible__title:before {
+    @apply block absolute left-2 top-1/2 transform -translate-y-1/2;
+    content: "";
+    border-style: solid;
+    border-color: transparent;
+    border-width: 4px 6px 4px 6px;
+    border-left-color: currentColor;
+  }
+
+  .Collapsible__container[open] > .Collapsible__title:before {
+    @apply border-t-current border-l-transparent border-r-transparent border-b-transparent;
+    border-width: 6px 4px 0 4px;
+  }
+
+  .Collapsible__content {
+    @apply py-0 px-5 pl-5;
+  }
+
+  .Collapsible__collapsed .Collapsible__content {
+    @apply hidden select-none;
+  }
+
+  /* Editor styles */
+  .editor-paragraph {
+    @apply relative block my-1;
+  }
+
+  .editor-quote {
+    @apply m-0 ml-5 mb-2.5 text-sm text-muted-foreground border-l-4 border-l-muted pl-4;
+  }
+
+  .editor-indent {
+    --lexical-indent-base-value: 20px;
+  }
+
+  .editor-textBold {
+    @apply font-bold;
+  }
+
+  .editor-textItalic {
+    @apply italic;
+  }
+
+  .editor-textUnderline {
+    @apply underline;
+  }
+
+  .editor-textStrikethrough {
+    @apply line-through;
+  }
+
+  .editor-textUnderlineStrikethrough {
+    @apply underline;
+  }
+
+  .editor-text-code {
+    @apply bg-muted px-1 py-0.5 font-mono text-sm;
+  }
+
+  .editor-code {
+    @apply block bg-muted font-mono py-2 px-2 pl-[52px] leading-relaxed text-sm m-0 my-2 overflow-x-auto relative;
+    tab-size: 2;
+  }
+
+  .editor-code::before {
+    @apply absolute bg-card/50 left-0 top-0 border-r border-r-border py-2 px-2 text-muted-foreground whitespace-pre-wrap text-right min-w-[25px];
+    content: attr(data-gutter);
+  }
+
+  .editor-code:after {
+    @apply absolute top-[2%] right-[5px] p-[3px] text-xs uppercase text-muted-foreground/50;
+    content: attr(data-highlight-language);
+  }
+
+  /* Tags and mentions */
+  .editor-hashtag {
+    background-color: rgba(88, 144, 255, 0.15);
+    border-bottom: 1px solid rgba(88, 144, 255, 0.3);
+  }
+
+  /* Links */
+  .editor-link {
+    color: rgb(33, 111, 219);
+    text-decoration: none;
+  }
+
+  .editor-link:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* Character limit indicator */
+  .editor-characterLimit {
+    display: inline;
+    background-color: #ffbbbb !important;
+  }
+
+  /* Lists */
+  .editor-ol1 {
+    padding: 0;
+    margin: 0;
+    margin-left: 16px;
+    list-style-position: inside;
+  }
+
+  .editor-ol2 {
+    padding: 0;
+    margin: 0;
+    margin-left: 16px;
+    list-style-type: upper-alpha;
+    list-style-position: inside;
+  }
+
+  .editor-ol3 {
+    padding: 0;
+    margin: 0;
+    margin-left: 16px;
+    list-style-type: lower-alpha;
+    list-style-position: inside;
+  }
+
+  .editor-ol4 {
+    padding: 0;
+    margin: 0;
+    margin-left: 16px;
+    list-style-type: upper-roman;
+    list-style-position: inside;
+  }
+
+  .editor-ol5 {
+    padding: 0;
+    margin: 0;
+    margin-left: 16px;
+    list-style-type: lower-roman;
+    list-style-position: inside;
+  }
+
+  .editor-ul {
+    padding: 0;
+    margin: 0;
+    list-style-position: inside;
+  }
+
+  .editor-listitem {
+    margin: 0 16px;
+  }
+
+  .editor-nested-listitem {
+    list-style-type: none;
+  }
+
+  .editor-nested-listitem::before,
+  .editor-nested-listitem::after {
+    display: none;
   }
 }

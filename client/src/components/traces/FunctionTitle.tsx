@@ -1,3 +1,4 @@
+import { CopyButton } from "@/components/CopyButton";
 import { TagPopover } from "@/components/TagPopover";
 import { Badge } from "@/components/ui/badge";
 import { Typography } from "@/components/ui/typography";
@@ -19,6 +20,7 @@ export const FunctionTitle = ({ span }: { span: SpanMoreDetails }) => {
         <Typography variant="span" affects="muted">
           {versionNum && `v${versionNum}`}
         </Typography>
+        {span.function_uuid && <CopyButton content={span.function_uuid} />}
       </div>
       <div className="flex gap-1 flex-wrap">
         {span.tags?.map((tag) => (

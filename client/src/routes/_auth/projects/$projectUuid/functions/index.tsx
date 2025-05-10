@@ -25,8 +25,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Typography } from "@/components/ui/typography";
+import {
+  ProcessedData,
+  useProjectAggregates,
+} from "@/hooks/use-project-aggregates";
 import { FunctionTab } from "@/types/functions";
-import { FunctionPublic } from "@/types/types";
+import { FunctionPublic, TimeFrame } from "@/types/types";
 import {
   fetchFunctionsByName,
   functionKeys,
@@ -39,7 +43,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { MoreHorizontal, Trash } from "lucide-react";
+import { Clock, DollarSign, Hash, MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,18 +62,32 @@ const FunctionCards = () => {
   const { data } = useSuspenseQuery(
     uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
   );
+  const { functionAggregates } = useProjectAggregates(
+    projectUuid,
+    TimeFrame.LIFETIME
+  );
   if (data.length === 0) {
     return <FunctionNoDataPlaceholder />;
   }
   return (
     <>
       {data.map((fn) => (
-        <FunctionCard key={fn.uuid} fn={fn} />
+        <FunctionCard
+          key={fn.uuid}
+          fn={fn}
+          processedData={functionAggregates[fn.uuid]}
+        />
       ))}
     </>
   );
 };
-const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
+const FunctionCard = ({
+  fn,
+  processedData,
+}: {
+  fn: FunctionPublic;
+  processedData?: ProcessedData;
+}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [hover, setHover] = useState(false);
@@ -97,7 +115,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
   };
   return (
     <Card
-      className={`w-full lg:max-w-[400px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
+      className={`w-full max-w-[300px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
     >
       <CardHeader
         className="px-6 py-4 cursor-pointer"
@@ -162,7 +180,27 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardTitle>
-        <CardDescription>Latest Version: v{fn.version_num}</CardDescription>
+        <CardDescription>
+          {processedData && (
+            <span className="flex gap-2 justify-between">
+              <span className="flex gap-1 items-center">
+                <DollarSign className="size-4" />
+                {(processedData.total_cost / processedData.span_count).toFixed(
+                  5
+                )}
+              </span>
+              <span className="flex gap-1 items-center">
+                <Clock className="size-4" />
+                {(processedData.average_duration_ms / 1_000_000_000).toFixed(3)}
+                s
+              </span>
+              <span className="flex gap-1 items-center">
+                <Hash className="size-4" />
+                {processedData.span_count}
+              </span>
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
     </Card>
   );

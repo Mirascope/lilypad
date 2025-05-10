@@ -1,8 +1,7 @@
+import { CopyButton } from "@/components/CopyButton";
 import { highlightCode, stripHighlightMarkers } from "@/lib/code-highlights";
 import { cn } from "@/lib/utils";
-import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 interface CodeBlockProps {
   code: string;
@@ -22,7 +21,6 @@ export function CodeBlock({
   const [lightHtml, setLightHtml] = useState<string>("");
   const [darkHtml, setDarkHtml] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
   const codeRef = useRef<HTMLDivElement>(null);
   const [isSmallBlock, setIsSmallBlock] = useState<boolean>(false);
 
@@ -68,15 +66,6 @@ export function CodeBlock({
     }
   }, [isLoading, lightHtml, darkHtml]);
 
-  const copyToClipboard = () => {
-    // Strip highlight markers before copying to clipboard
-    const cleanCode = stripHighlightMarkers(code);
-    navigator.clipboard.writeText(cleanCode);
-    setIsCopied(true);
-    toast.success("Code copied to clipboard");
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
   // If loading, just show the code without syntax highlighting to maintain size
   if (isLoading) {
     return (
@@ -107,19 +96,7 @@ export function CodeBlock({
             : "top-3 right-3"
         )}
       >
-        {/* Copy button */}
-        <button
-          className="bg-background hover:bg-muted relative cursor-pointer rounded-md border p-1.5"
-          onClick={copyToClipboard}
-          aria-label="Copy code"
-          title="Copy code"
-        >
-          {isCopied ? (
-            <Check className="size-4" />
-          ) : (
-            <Copy className="size-4" />
-          )}
-        </button>
+        <CopyButton content={stripHighlightMarkers(code)} />
       </div>
 
       {/* Light theme code */}
