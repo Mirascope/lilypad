@@ -1,5 +1,6 @@
 """Table names for the database models."""
 
+BILLING_TABLE_NAME = "billings"
 PROJECT_TABLE_NAME = "projects"
 SPAN_TABLE_NAME = "spans"
 FUNCTION_TABLE_NAME = "functions"

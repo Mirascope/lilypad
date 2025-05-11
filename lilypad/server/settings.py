@@ -1,6 +1,7 @@
 """Server settings"""
 
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -59,6 +60,15 @@ class Settings(BaseSettings):
     db_pool_recycle: int = 1800
     db_pool_pre_ping: bool = True
 
+    # Stripe settings
+    stripe_api_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_cloud_product_id: str | None = None
+    stripe_cloud_free_price_id: str | None = None
+    stripe_cloud_pro_price_id: str | None = None
+    stripe_cloud_team_price_id: str | None = None
+    stripe_spans_metering_id: str | None = None
+
     @property
     def config(self) -> dict[str, Any]:
         """Get the configuration for the current environment"""
@@ -87,6 +97,11 @@ class Settings(BaseSettings):
     def client_url(self) -> str:
         """Get the client URL"""
         return self.config["client_url"]
+
+    @property
+    def remote_client_hostname(self) -> str:
+        """Get the remote client hostname"""
+        return urlparse(self.client_url).hostname or ""
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 

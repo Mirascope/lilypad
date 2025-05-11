@@ -6,6 +6,7 @@ import httpx
 import posthog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
+from starlette.requests import Request
 
 from ...._utils.posthog import get_posthog_client
 from ....db import get_session
@@ -22,6 +23,7 @@ async def google_callback(
     posthog: Annotated[posthog.Posthog, Depends(get_posthog_client)],
     settings: Annotated[Settings, Depends(get_settings)],
     session: Annotated[Session, Depends(get_session)],
+    request: Request,
 ) -> UserPublic:
     """Callback for Google OAuth.
 
@@ -89,6 +91,7 @@ async def google_callback(
                 last_name=last_name,
                 session=session,
                 posthog=posthog,
+                request=request,
             )
 
         except httpx.RequestError as exc:

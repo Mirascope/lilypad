@@ -1,4 +1,3 @@
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { Label } from "@/components/ui/label";
 import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -23,6 +22,7 @@ import { FunctionTab } from "@/types/functions";
 import { SquareTerminal } from "lucide-react";
 import { Suspense } from "react";
 import { toast } from "sonner";
+import { CodeSnippet } from "@/components/CodeSnippet";
 
 export const Route = createFileRoute(
   "/_auth/projects/$projectUuid/functions/$functionName/_workbench/$functionUuid/$tab/$"

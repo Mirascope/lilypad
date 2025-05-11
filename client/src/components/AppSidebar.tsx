@@ -306,7 +306,7 @@ export const AppSidebar = () => {
     <>
       <Sidebar collapsible="icon" className="lilypad-sidebar">
         <SidebarHeader>
-          <SidebarMenuButton asChild>
+          <SidebarMenuButton asChild className="[&>svg]:size-10">
             <Link
               {...(activeProject
                 ? {

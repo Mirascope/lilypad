@@ -25,9 +25,9 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
   const [projectUuid, setProjectUuid] = useState<string | null>(null);
   const defaultTrigger = (
     <Button
-      variant='ghost'
-      size='iconSm'
-      className='text-primary hover:text-primary/80 hover:bg-white'
+      variant="ghost"
+      size="iconSm"
+      className="text-primary hover:text-primary/80 hover:bg-white"
     >
       <PlusCircle />
     </Button>
@@ -39,10 +39,10 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
         {trigger ?? defaultTrigger}
       </DialogTrigger>
       <DialogContent
-        className='max-w-md overflow-x-auto'
+        className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create new API Key</DialogTitle>
           <DialogDescription>
             Generate a Lilypad API Key for your organization.
@@ -84,17 +84,17 @@ const CopyKeyButton = ({
 
   if (!projectUuid) return <NotFound />;
   return (
-    <div className='space-y-6 max-w-full overflow-hidden'>
-      <DialogHeader className='flex-shrink-0'>
+    <div className="space-y-6 max-w-full overflow-hidden">
+      <DialogHeader className="flex-shrink-0">
         <DialogTitle>API Key Created</DialogTitle>
-        <DialogDescription className='space-y-4'>
+        <DialogDescription className="space-y-4">
           Copy your project ID and API key into your environment
         </DialogDescription>
       </DialogHeader>
       <CopyKeyContent apiKey={apiKey} projectUuid={projectUuid} />
       <DialogFooter>
         <DialogClose asChild>
-          <Button type='button' variant='outline' onClick={handleCleanup}>
+          <Button type="button" variant="outline" onClick={handleCleanup}>
             Close
           </Button>
         </DialogClose>
@@ -112,15 +112,16 @@ export const CopyKeyContent = ({
 }) => {
   return (
     <>
-      <div className='overflow-x-auto'>
+      <div className="overflow-x-auto">
         <CodeSnippet
+          language="bash"
           code={`LILYPAD_PROJECT_ID="${projectUuid}"
 LILYPAD_API_KEY="${apiKey}"`}
           showLineNumbers={false}
         />
       </div>
-      <Alert variant='destructive'>
-        <TriangleAlert className='h-4 w-4' />
+      <Alert variant="destructive">
+        <TriangleAlert className="h-4 w-4" />
         <AlertTitle>Warning</AlertTitle>
         <AlertDescription>
           You won&apos;t be able to see your API key again.
