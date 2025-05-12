@@ -17,6 +17,7 @@ from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
 from ...server.schemas.users import UserPublic
 from ...server.services import OrganizationService, ProjectService
+from ...server.services.billing import BillingService
 from ...server.settings import get_settings
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
@@ -158,6 +159,8 @@ class RequireLicense:
 def get_organization_license(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
+    request: Request = None,
+    billing_service: Annotated[BillingService, Depends(BillingService)] = None,
 ) -> LicenseInfo:
     """Get the license information for the organization"""
     if not user.active_organization_uuid:
@@ -168,6 +171,21 @@ def get_organization_license(
             tier=Tier.FREE,
             organization_uuid=None,
         )
+
+    is_cloud = request is not None and is_lilypad_cloud(request)
+
+    # For Lilypad Cloud, get tier from billing table
+    if is_cloud and billing_service is not None:
+        tier = billing_service.get_tier_from_billing(user.active_organization_uuid)
+        return LicenseInfo(
+            customer="",
+            license_id="",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=tier,
+            organization_uuid=user.active_organization_uuid,
+        )
+
+    # For self-hosted, use license validator
     validator = LicenseValidator()
     license_info = validator.validate_license(
         user.active_organization_uuid, organization_service

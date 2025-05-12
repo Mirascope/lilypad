@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from ee.validate import LicenseValidator, Tier
@@ -20,7 +20,9 @@ from .....server.services import (
     OrganizationService,
     UserService,
 )
+from .....server.services.billing import BillingService
 from ....server.features import cloud_features
+from ....server.require_license import is_lilypad_cloud
 from ...models import UserOrganizationTable, UserRole
 from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
@@ -73,6 +75,8 @@ async def create_user_organization(
     create_user_organization_token: CreateUserOrganizationToken,
     user: Annotated[UserPublic, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(UserService)],
+    request: Request = None,
+    billing_service: Annotated[BillingService, Depends(BillingService)] = None,
 ) -> UserPublic:
     """Create user organization"""
     org_invite = organization_invites_service.find_record_by_token(
@@ -84,13 +88,21 @@ async def create_user_organization(
             detail="Invite not found.",
         )
     # OPEN BETA: Limit number of users per organization based on tier
-    validator = LicenseValidator()
-    license_info = validator.validate_license(
-        org_invite.organization_uuid, organization_service
-    )
+
+    is_cloud = request is not None and is_lilypad_cloud(request)
+
+    # For Lilypad Cloud, get tier from billing table
     tier = Tier.FREE
-    if license_info:
-        tier = license_info.tier
+    if is_cloud and billing_service is not None:
+        tier = billing_service.get_tier_from_billing(org_invite.organization_uuid)
+    else:
+        # For self-hosted, use license validator
+        validator = LicenseValidator()
+        license_info = validator.validate_license(
+            org_invite.organization_uuid, organization_service
+        )
+        if license_info:
+            tier = license_info.tier
     num_users = user_organization_service.count_users_in_organization(
         org_invite.organization_uuid
     )

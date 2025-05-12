@@ -1,16 +1,19 @@
 """Billing service for handling Stripe operations."""
 
+import logging
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 import stripe
 from fastapi import HTTPException, status
-from sqlmodel import desc, select
+from sqlmodel import desc, select, update
 from stripe import InvalidRequestError, StripeError
 
-from ..models.billing import BillingTable
+from ee import Tier
+
+from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
 from ..settings import get_settings
@@ -18,6 +21,7 @@ from .base_organization import BaseOrganizationService
 
 settings = get_settings()
 stripe.api_key = settings.stripe_api_key
+logger = logging.getLogger(__name__)
 
 
 class _CustomerNotFound(Exception):
@@ -31,6 +35,32 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
+
+    def get_tier_from_billing(self, organization_uuid: UUID) -> Tier:
+        """Get the tier from the billing table for an organization.
+
+        Args:
+            organization_uuid: The UUID of the organization
+
+        Returns:
+            The tier of the organization
+        """
+        billing = self.session.exec(
+            select(BillingTable)
+            .where(BillingTable.organization_uuid == organization_uuid)
+            .order_by(desc(BillingTable.created_at))
+        ).first()
+
+        if not billing or not billing.stripe_price_id:
+            return Tier.FREE
+
+        # Determine tier based on stripe_price_id
+        if billing.stripe_price_id == settings.stripe_cloud_team_price_id:
+            return Tier.TEAM
+        elif billing.stripe_price_id == settings.stripe_cloud_pro_price_id:
+            return Tier.PRO
+        else:
+            return Tier.FREE
 
     def create_customer(self, organization: OrganizationTable, email: str) -> str:
         """Create a Stripe customer for an organization.
@@ -75,14 +105,26 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             )
 
             # Create a billing record for this customer
+            subscription_status = None
+            try:
+                if hasattr(subscription, "status"):
+                    subscription_status = SubscriptionStatus(subscription.status)
+            except ValueError:
+                # If the status is not in our enum, log it but don't fail
+                pass
+
             billing_data = BillingCreate(
                 stripe_customer_id=customer.id,
                 stripe_subscription_id=subscription.id,
                 stripe_price_id=stripe_cloud_free_price_id,
+                subscription_status=subscription_status,
             )
 
             if existing_billing:
                 existing_billing.stripe_customer_id = customer.id
+                existing_billing.stripe_subscription_id = subscription.id
+                existing_billing.stripe_price_id = stripe_cloud_free_price_id
+                existing_billing.subscription_status = subscription_status
                 self.session.add(existing_billing)
             else:
                 self.create_record(billing_data, organization_uuid=organization.uuid)
@@ -92,7 +134,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 organization.billing.stripe_customer_id = customer.id
                 self.session.add(organization)
 
-            self.session.flush()
+            self.session.commit()
 
             return customer.id
         except StripeError as e:
@@ -149,7 +191,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         if not organization.billing or not organization.billing.stripe_customer_id:
             raise _CustomerNotFound()
 
-        stripe.billing.MeterEvent.create(
+        stripe.billing.MeterEvent.create(  # type: ignore[attr-defined]
             event_name="spans",
             payload={
                 "value": str(quantity),
@@ -159,7 +201,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             timestamp=int(time.time()),
         )
 
-        # Update the billing record with the usage information
+
+        # First, get the billing record ID
         billing = self.session.exec(
             select(BillingTable)
             .where(BillingTable.organization_uuid == organization_uuid)
@@ -167,9 +210,16 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         ).first()
 
         if billing:
-            billing.usage_quantity += quantity
-            billing.last_usage_report = datetime.now()
-            self.session.add(billing)
-            self.session.flush()
-            return None
+            stmt = (
+                update(BillingTable)
+                .where(BillingTable.uuid == billing.uuid)
+                .values(
+                    usage_quantity=BillingTable.usage_quantity + quantity,  # type: ignore[operator]
+                    last_usage_report=datetime.now(timezone.utc),
+                )
+            )
+            self.session.execute(stmt)
+            self.session.commit()
+
         return None
+
