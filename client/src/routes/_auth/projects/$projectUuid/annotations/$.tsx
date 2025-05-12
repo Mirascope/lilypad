@@ -27,7 +27,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Trash } from "lucide-react";
+import { RefreshCcw, Trash } from "lucide-react";
 import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -89,7 +89,6 @@ const AnnotationLayout = () => {
       </div>
     );
   }
-  // TODO: Annotation needs refresh button
   return (
     <div className="container h-screen w-full p-2 max-w-screen-2xl overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -196,9 +195,12 @@ const AnnotationList = ({
     from: Route.id,
   });
   const navigate = useNavigate();
-  const { data: annotations, dataUpdatedAt } = useSuspenseQuery(
-    annotationsByProjectQueryOptions(projectUuid)
-  );
+  const {
+    data: annotations,
+    dataUpdatedAt,
+    refetch,
+    isLoading,
+  } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
 
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: functions } = useSuspenseQuery(
@@ -223,7 +225,22 @@ const AnnotationList = ({
       <Typography
         variant="span"
         affects="muted"
-      >{`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}</Typography>
+        className="flex items-center gap-2"
+      >
+        {`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}
+        <Button
+          variant="outline"
+          size="icon"
+          loading={isLoading}
+          onClick={() => {
+            refetch();
+            toast.success("Refreshed annotations");
+          }}
+          className="transition-all hover:bg-gray-100 relative overflow-hidden group size-8"
+        >
+          <RefreshCcw className="h-4 w-4" />
+        </Button>
+      </Typography>
       <Typography affects="muted" variant="span">
         {annotations.length > 0 && `${annotations.length} item(s) remaining`}
       </Typography>

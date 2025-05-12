@@ -111,7 +111,7 @@ export const CopyKeyContent = ({
   projectUuid: string | null;
 }) => {
   return (
-    <>
+    <div className="flex flex-col gap-4 shrink-0">
       <div className="overflow-x-auto">
         <CodeSnippet
           language="bash"
@@ -127,6 +127,6 @@ LILYPAD_API_KEY="${apiKey}"`}
           You won&apos;t be able to see your API key again.
         </AlertDescription>
       </Alert>
-    </>
+    </div>
   );
 };

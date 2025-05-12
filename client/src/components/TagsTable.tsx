@@ -1,4 +1,5 @@
 import { DataTable } from "@/components/DataTable";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +40,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { PencilLine, Trash } from "lucide-react";
+import { PencilLine, Trash, TriangleAlert } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -162,7 +163,13 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
             <DialogDescription>
               {`Deleting ${tag.name} will remove this tag from all associated resources.`}
             </DialogDescription>
-            <p className="text-red-500">WARNING: This action is final.</p>
+            <Alert variant="destructive">
+              <TriangleAlert className="h-4 w-4 " />
+              <div className="flex flex-col gap-2">
+                <AlertTitle>WARNING</AlertTitle>
+                <AlertDescription>This action is final.</AlertDescription>
+              </div>
+            </Alert>
             <FormField
               key="tagName"
               control={methods.control}

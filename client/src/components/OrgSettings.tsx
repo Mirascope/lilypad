@@ -121,7 +121,13 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
           onSubmit={methods.handleSubmit(handleSubmit)}
           className="space-y-6"
         >
-          <p className="text-red-500">WARNING: This action is final.</p>
+          <Alert variant="destructive">
+            <TriangleAlert className="h-4 w-4 " />
+            <div className="flex flex-col gap-2">
+              <AlertTitle>WARNING</AlertTitle>
+              <AlertDescription>This action is final.</AlertDescription>
+            </div>
+          </Alert>
           <FormField
             key="organizationName"
             control={methods.control}

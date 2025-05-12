@@ -3,6 +3,7 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { AddComment, CommentCards } from "@/components/Comment";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { TabGroup } from "@/components/TabGroup";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
@@ -215,7 +215,6 @@ export const LilypadPanelTab = ({
       ) : null,
     },
     {
-      // TODO: Use TabGroup for Markdown / Plaintext and put it at the bottom sticky
       label: "Messages",
       value: TraceTab.MESSAGES,
       component:
@@ -304,21 +303,47 @@ export const MessagesContainer = ({
   const { updateUserConfig, userConfig } = useAuth();
   const defaultMessageRenderer =
     userConfig?.defaultMessageRenderer ?? "markdown";
-  const handleChange = (checked: boolean) => {
+
+  const handleChangeRenderer = (value: "markdown" | "raw") => {
     updateUserConfig({
-      defaultMessageRenderer: checked ? "markdown" : "raw",
+      defaultMessageRenderer: value,
     });
   };
+
   return (
-    <>
-      <Switch
-        checked={defaultMessageRenderer === "markdown"}
-        onCheckedChange={handleChange}
-      />
-      <div className="flex flex-col gap-4">
-        {renderMessagesCard(messages, defaultMessageRenderer)}
+    <div className="flex flex-col h-full p-2">
+      <div className="flex-grow overflow-auto">
+        <div className="flex flex-col gap-4">
+          {renderMessagesCard(messages, defaultMessageRenderer)}
+        </div>
       </div>
-    </>
+
+      <div className="flex justify-center my-1 shrink-0">
+        <div
+          className="inline-flex rounded-md shadow-sm space-x-1"
+          role="group"
+        >
+          <Button
+            variant={
+              defaultMessageRenderer === "markdown" ? "default" : "outline"
+            }
+            size="sm"
+            onClick={() => handleChangeRenderer("markdown")}
+            className="rounded-r-none m-0"
+          >
+            Markdown
+          </Button>
+          <Button
+            variant={defaultMessageRenderer === "raw" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleChangeRenderer("raw")}
+            className="rounded-l-none"
+          >
+            Raw
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 export const renderOutput = (output: string) => {

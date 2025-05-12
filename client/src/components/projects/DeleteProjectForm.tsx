@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ProjectPublic } from "@/types/types";
 import { useDeleteProjectMutation } from "@/utils/projects";
 import { useNavigate } from "@tanstack/react-router";
+import { TriangleAlert } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -43,11 +45,17 @@ export const BaseDeleteProjectForm = ({
         onSubmit={methods.handleSubmit(handleSubmit)}
         className={`space-y-6 ${className}`}
       >
-        <p className='text-red-500'>WARNING: This action is final.</p>
+        <Alert variant="destructive">
+          <TriangleAlert className="h-4 w-4 " />
+          <div className="flex flex-col gap-2">
+            <AlertTitle>WARNING</AlertTitle>
+            <AlertDescription>This action is final.</AlertDescription>
+          </div>
+        </Alert>
         <FormField
-          key='projectName'
+          key="projectName"
           control={methods.control}
-          name='projectName'
+          name="projectName"
           rules={{
             required: "Project name is required",
             validate: (value) =>
@@ -66,10 +74,10 @@ export const BaseDeleteProjectForm = ({
             </FormItem>
           )}
         />
-        <div className='flex justify-end'>
+        <div className="flex justify-end">
           <Button
-            type='submit'
-            variant='destructive'
+            type="submit"
+            variant="destructive"
             disabled={methods.formState.isSubmitting}
           >
             {methods.formState.isSubmitting ? "Deleting..." : "Delete Project"}

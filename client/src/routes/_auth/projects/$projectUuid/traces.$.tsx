@@ -24,7 +24,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { GitCompare, Users } from "lucide-react";
+import { GitCompare, RefreshCcw, Users } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -85,6 +85,7 @@ const Trace = () => {
     defaultData,
     isLoading,
     dataUpdatedAt,
+    refetch,
   } = useInfiniteTraces(projectUuid, pageSize, order);
 
   useEffect(() => {
@@ -142,7 +143,7 @@ const Trace = () => {
           <div className="flex items-center gap-2">
             {features.annotations && (
               <LilypadDialog
-                icon={<Users />} // TODO: Make this Assign text
+                icon={<Users />}
                 text={"Assign"}
                 title={"Annotate selected traces"}
                 description={`${selectedRows.length} trace(s) selected.`}
@@ -166,11 +167,26 @@ const Trace = () => {
             </Button>
           </div>
         </div>
-        <Typography variant="span" affects="muted">
+        <Typography
+          variant="span"
+          affects="muted"
+          className="flex items-center gap-2"
+        >
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
+          <Button
+            variant="outline"
+            size="icon"
+            loading={isLoading}
+            onClick={() => {
+              refetch();
+              toast.success("Refreshed traces");
+            }}
+            className="transition-all hover:bg-gray-100 relative overflow-hidden group size-8"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
         </Typography>
       </div>
-      {/* TODO: Add refresh button */}
       <div className="flex-1 overflow-auto">
         <div className="flex flex-col h-full">
           <div className="shrink-0 py-4">

@@ -83,7 +83,7 @@ export function CodeBlock({
     <div
       ref={codeRef}
       className={cn(
-        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group relative m-0 overflow-hidden p-0 text-sm border rounded-md`,
+        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group relative m-0 overflow-auto p-0 text-sm border rounded-md`,
         className
       )}
     >
