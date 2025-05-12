@@ -40,12 +40,6 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
 
-    def __init__(self, session: Annotated[Session, Depends(get_session)],
-                 user: Annotated[UserPublic | None, Depends(get_current_user)] = None) -> None:
-        super().__init__(session, user)
-        self.session = session
-        self.user = user
-
     def get_tier_from_billing(self, organization_uuid: UUID) -> Tier:
         """Get the tier from the billing table for an organization.
 
