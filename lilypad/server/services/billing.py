@@ -233,3 +233,69 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
         return None
 
+    @classmethod
+    def find_by_subscription_id(
+        cls, session: Session, subscription_id: str
+    ) -> BillingTable | None:
+        """find by subscription_id"""
+
+        return session.exec(
+            select(BillingTable).where(
+                BillingTable.stripe_subscription_id == subscription_id
+            )
+        ).first()
+
+    @classmethod
+    def find_by_customer_id(
+        cls, session: Session, customer_id: str
+    ) -> BillingTable | None:
+        """find by customer_id"""
+        return session.exec(
+            select(BillingTable).where(
+                BillingTable.stripe_customer_id == customer_id
+            )
+        ).first()
+
+    @classmethod
+    def update_from_subscription(
+        cls, session: Session, subscription
+    ) -> BillingTable | None:
+        """Update billing information from a Stripe subscription."""
+        billing = (
+            cls.find_by_subscription_id(session, subscription.id)
+            or cls.find_by_customer_id(session, getattr(subscription, "customer", None))
+        )
+        if billing is None:
+            return None
+
+        billing.stripe_subscription_id = subscription.id
+
+        customer_id = getattr(subscription, "customer", None)
+        if customer_id and not billing.stripe_customer_id:
+            billing.stripe_customer_id = customer_id
+
+        if hasattr(subscription, "items") and subscription.items.data:
+            price = getattr(subscription.items.data[0], "price", None)
+            if price and hasattr(price, "id"):
+                billing.stripe_price_id = price.id
+
+        # status
+        try:
+            billing.subscription_status = SubscriptionStatus(subscription.status)
+        except ValueError:
+            logger.warning("Unknown subscription status: %s", subscription.status)
+            billing.subscription_status = None
+
+        # current period
+        if getattr(subscription, "current_period_start", None):
+            billing.subscription_current_period_start = datetime.fromtimestamp(
+                subscription.current_period_start, tz=timezone.utc
+            )
+        if getattr(subscription, "current_period_end", None):
+            billing.subscription_current_period_end = datetime.fromtimestamp(
+                subscription.current_period_end, tz=timezone.utc
+            )
+
+        session.add(billing)
+        session.commit()
+        return billing
