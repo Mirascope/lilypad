@@ -59,7 +59,6 @@ export const CostAndTokensChart = ({
 }) => {
   // Create a map to organize data by date
   const dateMap = new Map();
-
   // Process all metrics data
   metricsData.forEach((metrics, index) => {
     const sourceLabel = labels[index];
@@ -128,7 +127,6 @@ export const CostAndTokensChart = ({
 
   // Define colors for each dataset
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
-
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="shrink-0 pb-2">
@@ -137,7 +135,7 @@ export const CostAndTokensChart = ({
       <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
         {combinedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={combinedData} margin={{ left: 20 }}>
+            <ComposedChart data={combinedData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="start_date"
@@ -146,13 +144,9 @@ export const CostAndTokensChart = ({
               <YAxis
                 yAxisId="cost"
                 orientation="left"
-                label={{
-                  value: "Cost ($)",
-                  angle: -90,
-                  position: "insideLeft",
-                  offset: -10,
-                  style: { textAnchor: "middle" },
-                }}
+                axisLine={{ strokeWidth: 1 }}
+                tickLine={false}
+                width={60}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />

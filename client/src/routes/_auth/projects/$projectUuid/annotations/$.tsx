@@ -1,7 +1,8 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadLoading } from "@/components/LilypadLoading";
-import { LilypadMetrics, LilypadPanel } from "@/components/LilypadPanel";
 import { FunctionTitle } from "@/components/traces/FunctionTitle";
+import { LilypadPanel } from "@/components/traces/LilypadPanel";
+import { SpanMetrics } from "@/components/traces/SpanMetrics";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,11 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Typography } from "@/components/ui/typography";
-import { annotationsByProjectQueryOptions } from "@/ee/utils/annotations";
+import {
+  annotationsByProjectQueryOptions,
+  useDeleteAnnotationMutation,
+} from "@/ee/utils/annotations";
+import { cn } from "@/lib/utils";
 import { AnnotationPublic, FunctionPublic, UserPublic } from "@/types/types";
 import { functionsQueryOptions } from "@/utils/functions";
 import { SpanComments } from "@/utils/panel-utils";
@@ -22,7 +27,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { NotebookPen } from "lucide-react";
+import { Trash } from "lucide-react";
 import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +49,7 @@ const AnnotationLayout = () => {
     annotationsByProjectQueryOptions(projectUuid)
   );
   const navigate = useNavigate();
+  const deleteAnnotation = useDeleteAnnotationMutation();
   const [activeAnnotation, setActiveAnnotation] =
     useState<AnnotationPublic | null>(annotations[0] || null);
   const span = activeAnnotation?.span;
@@ -73,8 +79,8 @@ const AnnotationLayout = () => {
   if (!span) {
     return (
       <div className="flex flex-col h-full p-4">
-        <div className="shrink-0 mb-2">
-          <Typography variant="h4">No Annotation Selected</Typography>
+        <div className="shrink-0">
+          <Typography variant="h3">No Annotation Selected</Typography>
         </div>
         <AnnotationList
           activeAnnotation={activeAnnotation}
@@ -83,11 +89,16 @@ const AnnotationLayout = () => {
       </div>
     );
   }
+  // TODO: Annotation needs refresh button
   return (
-    <div className="container h-screen w-full pt-4 px-4 max-w-screen-2xl overflow-hidden">
+    <div className="container h-screen w-full p-2 max-w-screen-2xl overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel defaultSize={25} minSize={15} className="flex flex-col">
-          <Typography variant="h3" className="truncate max-w-md mb-4 shrink-0">
+        <ResizablePanel
+          defaultSize={25}
+          minSize={15}
+          className="flex flex-col gap-1"
+        >
+          <Typography variant="h3" className="truncate max-w-md shrink-0">
             Annotation Queue
           </Typography>
           <div className="overflow-y-auto flex-1 min-h-0">
@@ -109,17 +120,27 @@ const AnnotationLayout = () => {
         >
           <div className="flex justify-between items-center mb-4 shrink-0">
             <FunctionTitle span={span} />
-            <div className="flex gap-2">
+            {annotationUuid && (
               <Button
-                onClick={() => {}}
-                variant="outline"
-                size="sm"
-                className="flex gap-2 items-center"
+                type="button"
+                loading={deleteAnnotation.isPending}
+                variant="outlineDestructive"
+                onClick={() => {
+                  deleteAnnotation
+                    .mutateAsync({
+                      projectUuid,
+                      annotationUuid,
+                    })
+                    .catch(() => toast.error("Failed to delete annotation"));
+                  toast.success("Annotation deleted");
+                }}
               >
-                <NotebookPen className="h-4 w-4" />
-                <span className="hidden sm:inline">Annotate</span>
+                <Trash className="size-4" />
+                {deleteAnnotation.isPending
+                  ? "Removing..."
+                  : "Remove Annotation"}
               </Button>
-            </div>
+            )}
           </div>
 
           <ResizablePanelGroup
@@ -144,7 +165,7 @@ const AnnotationLayout = () => {
               className="flex flex-col overflow-hidden h-full gap-4"
             >
               <div className="shrink-0">
-                <LilypadMetrics span={span} />
+                <SpanMetrics span={span} />
               </div>
               <div className="flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton items={1} />}>
@@ -171,7 +192,7 @@ const AnnotationList = ({
   activeAnnotation: AnnotationPublic | null;
   setActiveAnnotation: Dispatch<SetStateAction<AnnotationPublic | null>>;
 }) => {
-  const { projectUuid } = useParams({
+  const { projectUuid, _splat: annotationUuid } = useParams({
     from: Route.id,
   });
   const navigate = useNavigate();
@@ -198,11 +219,14 @@ const AnnotationList = ({
     {} as Record<string, UserPublic>
   );
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-2">
+      <Typography
+        variant="span"
+        affects="muted"
+      >{`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}</Typography>
       <Typography affects="muted" variant="span">
         {annotations.length > 0 && `${annotations.length} item(s) remaining`}
       </Typography>
-      <Typography affects="muted">{`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}</Typography>
       <div className="flex flex-col gap-2 overflow-auto">
         {annotations.map((annotation) => {
           const fn = annotation.function_uuid
@@ -211,7 +235,10 @@ const AnnotationList = ({
           return (
             <div
               key={annotation.uuid}
-              className={`border-b cursor-pointer p-2 ${activeAnnotation?.uuid === annotation.uuid ? "bg-primary/20" : ""}`}
+              className={cn(
+                "flex items-center py-2 px-1 rounded-md transition-colors hover:bg-accent/50 cursor-pointer",
+                annotationUuid === annotation.uuid && "bg-accent font-medium"
+              )}
               onClick={() => {
                 if (activeAnnotation?.uuid === annotation.uuid) {
                   setActiveAnnotation(null);
@@ -227,25 +254,28 @@ const AnnotationList = ({
                 }
               }}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <Typography variant="span" affects="small" className="mr-1">
+              <div className="flex flex-col min-w-0 w-full">
+                <div className="flex items-center gap-2 w-full">
+                  <span className="truncate font-medium max-w-full">
                     {annotation.span.display_name}
-                  </Typography>
+                  </span>
                   {fn && (
-                    <Typography affects="muted" variant="span">
+                    <Typography
+                      variant="span"
+                      className="text-xs whitespace-nowrap shrink-0"
+                    >
                       v{fn.version_num}
                     </Typography>
                   )}
+                  <Badge variant="neutral" size="sm" className="shrink-0">
+                    {formatRelativeTime(annotation.created_at, true)}
+                  </Badge>
+                  {annotation.assigned_to && (
+                    <Badge variant="neutral" size="sm" className="shrink-0">
+                      {usersMap[annotation.assigned_to].first_name}
+                    </Badge>
+                  )}
                 </div>
-                <Typography variant="span" affects="muted">
-                  {formatRelativeTime(annotation.created_at, true)}
-                </Typography>
-              </div>
-              <div>
-                {annotation.assigned_to && (
-                  <Badge>{usersMap[annotation.assigned_to].first_name}</Badge>
-                )}
               </div>
             </div>
           );

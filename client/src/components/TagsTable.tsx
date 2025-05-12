@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Typography } from "@/components/ui/typography";
 import { TagPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
@@ -82,7 +81,7 @@ export const TagsTable = () => {
       enableHiding: false,
       cell: ({ row }) => {
         return (
-          <>
+          <div className="flex gap-1">
             <EditTagButton
               tagUuid={row.original.uuid}
               defaultTagFormData={{
@@ -91,15 +90,17 @@ export const TagsTable = () => {
               }}
             />
             <DeleteTagButton tag={row.original} />
-          </>
+          </div>
         );
       },
     },
   ];
 
   return (
-    <>
-      <Typography variant="h4">Tags</Typography>
+    <div className="flex flex-col gap-1">
+      <div>
+        <CreateTagButton />
+      </div>
       <DataTable<TagPublic>
         columns={columns}
         data={data}
@@ -110,9 +111,8 @@ export const TagsTable = () => {
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateTagButton />}
       />
-    </>
+    </div>
   );
 };
 

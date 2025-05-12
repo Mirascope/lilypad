@@ -1,6 +1,6 @@
 import { CompareTracesTable } from "@/components/CompareTracesTable";
-import { SelectFunction } from "@/components/functions/SelectFunction";
 import { FunctionOverviewUI } from "@/components/functions/FunctionOverviewUI";
+import { SelectFunction } from "@/components/functions/SelectFunction";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { NotFound } from "@/components/NotFound";
 import { Tab, TabGroup } from "@/components/TabGroup";
@@ -116,7 +116,7 @@ const CompareWorkbench = () => {
         </Button>
       </div>
       <div className="flex justify-between shrink-0">
-        <div className="flex gap-1">
+        <div className="flex items-center gap-2">
           <Typography variant="h3">{functionName}</Typography>
           <SelectFunction
             compareMode={compareMode}
@@ -127,28 +127,28 @@ const CompareWorkbench = () => {
             projectUuid={projectUuid}
             tab={tab as FunctionTab}
           />
+          <Typography variant="span" affects="muted">
+            vs
+          </Typography>
+          <SelectFunction
+            compareMode={compareMode}
+            isFirstFunction={false}
+            firstFunctionUuid={firstFunctionUuid}
+            secondFunctionUuid={secondFunctionUuid}
+            functionName={functionName}
+            projectUuid={projectUuid}
+            tab={tab as FunctionTab}
+          />
         </div>
-        <div>
-          <Button variant="outline" size="icon" onClick={handleCompareToggle}>
-            <GitCompare />
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={handleCompareToggle}>
+            <GitCompare /> Compare
           </Button>
           <Button variant="outline" onClick={handlePlaygroundButtonClick}>
             <SquareTerminal className="size-4" />
             Go to playground
           </Button>
         </div>
-      </div>
-      <div className="flex gap-2 items-center">
-        <Typography>vs</Typography>
-        <SelectFunction
-          compareMode={compareMode}
-          isFirstFunction={false}
-          firstFunctionUuid={firstFunctionUuid}
-          secondFunctionUuid={secondFunctionUuid}
-          functionName={functionName}
-          projectUuid={projectUuid}
-          tab={tab as FunctionTab}
-        />
       </div>
       <div className="flex-1 min-h-0">
         <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
@@ -171,7 +171,7 @@ const CompareOverview = () => {
   if (!firstFunction || !secondFunction) {
     return <div>Please select two functions to compare.</div>;
   }
-  
+
   return (
     <FunctionOverviewUI
       projectUuid={projectUuid}

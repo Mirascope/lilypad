@@ -26,18 +26,24 @@ export const TabGroup = ({
   const findFirstEligibleTab = () => {
     return tabs.find((tab) => tab.component && !tab.isDisabled)?.value ?? "";
   };
+
+  // Initialize state with initialTab or first eligible tab
   const [tab, setTab] = useState<string>(initialTab ?? findFirstEligibleTab());
 
-  // Set the initial tab when the component mounts or when tabs change
+  // Update internal state when initialTab prop changes
   useEffect(() => {
-    if (initialTab) return;
-    const firstEligibleTabValue = findFirstEligibleTab();
-    setTab(firstEligibleTabValue);
-    // Optionally notify parent about the initial tab selection
-    if (firstEligibleTabValue && handleTabChange) {
-      handleTabChange(firstEligibleTabValue);
+    if (initialTab !== undefined) {
+      setTab(initialTab);
+    } else if (!tab) {
+      // If no tab is selected yet and no initialTab provided, set to first eligible
+      const firstEligibleTabValue = findFirstEligibleTab();
+      setTab(firstEligibleTabValue);
+      // Notify parent about the initial tab selection
+      if (firstEligibleTabValue && handleTabChange) {
+        handleTabChange(firstEligibleTabValue);
+      }
     }
-  }, [tabs]); // Re-run when tabs array changes
+  }, [initialTab, tabs]);
 
   const onTabChange = (value: string) => {
     setTab(value);
@@ -59,9 +65,9 @@ export const TabGroup = ({
         className="w-full flex flex-col h-full"
       >
         <div className="flex flex-col h-full">
-          <ScrollArea className="mb-1">
-            <div className="w-full relative h-10 px-2">
-              <TabsList className="h-10 flex absolute gap-x-2 bg-transparent p-0 font-handwriting">
+          <ScrollArea className="mb-2">
+            <div className="w-full relative h-8">
+              <TabsList className="h-8 flex absolute gap-x-2 bg-transparent p-0 ">
                 {tabs
                   .filter((tab) => tab.component)
                   .map((tab) => (

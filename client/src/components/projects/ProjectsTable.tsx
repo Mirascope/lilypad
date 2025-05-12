@@ -42,7 +42,7 @@ export const ProjectsTable = () => {
       enableHiding: false,
       cell: ({ row }) => {
         return (
-          <>
+          <div className="flex gap-1">
             <Button
               variant="outline"
               size="icon"
@@ -56,13 +56,13 @@ export const ProjectsTable = () => {
               defaultProjectFormData={{ name: row.original.name }}
             />
             <DeleteProjectDialog project={row.original} />
-          </>
+          </div>
         );
       },
     },
   ];
   return (
-    <>
+    <div>
       <div className="flex gap-2 items-center">
         <Typography variant="h4">Projects</Typography>
         <CreateProjectDialog />
@@ -78,6 +78,6 @@ export const ProjectsTable = () => {
         }}
         hideColumnButton
       />
-    </>
+    </div>
   );
 };

@@ -37,6 +37,7 @@ export const Editor = ({
   template,
   inputValues,
   editorClassName,
+  placeholderClassName,
   isDisabled = false,
   isLLM = false,
   placeholderText = "Enter some text...",
@@ -46,6 +47,7 @@ export const Editor = ({
   template?: string;
   inputValues?: Record<string, any>;
   editorClassName?: string;
+  placeholderClassName?: string;
   isDisabled?: boolean;
   isLLM?: boolean;
   placeholderText?: string;
@@ -108,7 +110,12 @@ export const Editor = ({
               />
             }
             placeholder={
-              <p className="text-muted-foreground absolute top-0 px-8 w-full pointer-events-none">
+              <p
+                className={cn(
+                  "text-muted-foreground absolute top-0 px-8 w-full pointer-events-none",
+                  placeholderClassName
+                )}
+              >
                 {placeholderText}
               </p>
             }

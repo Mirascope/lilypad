@@ -37,7 +37,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
 ));
 DropdownMenuSubTrigger.displayName =
   DropdownMenuPrimitive.SubTrigger.displayName;
-
+// TODO: Make hover neutral gray instead of green
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
@@ -79,7 +79,7 @@ const DropdownMenuContent = React.forwardRef<
         // Positioning and dimensions
         "z-50 min-w-[8rem]",
         // Appearance
-        "bg-background text-primary overflow-hidden rounded-md border p-1 shadow-md",
+        "bg-background overflow-hidden rounded-md border p-1 shadow-md",
         // Animation states
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

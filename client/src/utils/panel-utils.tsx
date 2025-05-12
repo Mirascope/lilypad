@@ -41,7 +41,9 @@ const MessageCard = ({ role, content }: MessageCardProps) => {
       <CardHeader>
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-4">{content}</CardContent>
+      <CardContent className="overflow-x-auto px-4 font-default">
+        {content}
+      </CardContent>
     </Card>
   );
 };
@@ -122,12 +124,13 @@ export const SpanComments = ({
   const filteredAnnotations = annotations.filter(
     (annotation) => annotation.label
   );
+
   const tabs: Tab[] = [
     {
       label: "Annotate",
       value: CommentTab.ANNOTATE,
       component:
-        features.annotations && activeAnnotation && path ? (
+        features.annotations && activeAnnotation ? (
           <AnnotationView annotation={activeAnnotation} path={path} />
         ) : null,
     },
@@ -135,9 +138,9 @@ export const SpanComments = ({
       label: (
         <div className="flex items-center gap-1">
           <MessageSquareMore />
-          <span>Comments</span>
+          <span>Discussion</span>
           {spanComments.length > 0 && (
-            <div className="absolute -top-0.5 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
@@ -145,12 +148,12 @@ export const SpanComments = ({
       ),
       value: CommentTab.COMMENTS,
       component: (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
-          <div className="flex-1 overflow-auto">
+        <div className="bg-primary-foreground text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
+          <div className="flex-1 overflow-auto px-4 pt-2">
             <CommentCards spanUuid={spanUuid} />
           </div>
           <div className="shrink-0">
-            <Separator className="my-4" />
+            <Separator className="mb-2" />
             <AddComment spanUuid={spanUuid} />
           </div>
         </div>
@@ -162,7 +165,7 @@ export const SpanComments = ({
           <NotebookPen />
           <span>Annotations</span>
           {filteredAnnotations.length > 0 && (
-            <div className="absolute -top-0.5 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
               {filteredAnnotations.length > 9
                 ? "9+"
                 : filteredAnnotations.length}
@@ -183,7 +186,15 @@ export const SpanComments = ({
   return <TabGroup tabs={tabs} />;
 };
 
-export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
+export const LilypadPanelTab = ({
+  span,
+  tab,
+  onTabChange,
+}: {
+  span: SpanMoreDetails;
+  tab?: string;
+  onTabChange?: (tab: string) => void;
+}) => {
   const tabs: Tab[] = [
     {
       label: "Output",
@@ -198,10 +209,13 @@ export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
       label: "Prompt Template",
       value: TraceTab.PROMPT_TEMPLATE,
       component: span.template ? (
-        <div className="pt-0 whitespace-pre-wrap text-sm">{span.template}</div>
+        <div className="p-2 whitespace-pre-wrap text-sm font-default">
+          {span.template}
+        </div>
       ) : null,
     },
     {
+      // TODO: Use TabGroup for Markdown / Plaintext and put it at the bottom sticky
       label: "Messages",
       value: TraceTab.MESSAGES,
       component:
@@ -249,11 +263,13 @@ export const LilypadPanelTab = ({ span }: { span: SpanMoreDetails }) => {
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
-      component: span.signature ? <CodeSnippet code={span.signature} /> : null,
+      component: span.signature ? (
+        <CodeSnippet code={span.signature} className="h-full" />
+      ) : null,
     },
   ];
 
-  return <TabGroup tabs={tabs} />;
+  return <TabGroup tabs={tabs} tab={tab} handleTabChange={onTabChange} />;
 };
 export const renderEventsContainer = (messages: Event[]) => {
   return (

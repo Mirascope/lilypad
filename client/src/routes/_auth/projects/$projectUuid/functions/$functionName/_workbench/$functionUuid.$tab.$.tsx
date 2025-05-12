@@ -110,13 +110,13 @@ const FunctionWorkbench = () => {
   return (
     <div className="pt-4 pb-1 h-screen flex flex-col px-4 gap-2">
       <div className="shrink-0">
-        <Button variant="ghost" onClick={handleBackButton}>
+        <Button variant="outline" onClick={handleBackButton}>
           <MoveLeft className="size-4" />
           Back to Functions
         </Button>
       </div>
       <div className="flex justify-between shrink-0">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Typography variant="h3">{functionName}</Typography>
           <SelectFunction
             compareMode={compareMode}
@@ -153,11 +153,10 @@ const FunctionWorkbench = () => {
             </>
           )}
         </div>
-        <div>
+        <div className="flex gap-2">
           {fn && (
             <Button
-              variant="outline"
-              size="icon"
+              variant={compareMode ? "secondary" : "outlineSecondary"}
               onClick={() => {
                 if (!compareMode) {
                   // Toggle on compare mode
@@ -172,12 +171,18 @@ const FunctionWorkbench = () => {
                   );
                   setCompareMode(false);
                   setSecondFunctionUuid("");
+                } else {
+                  setCompareMode(false);
                 }
               }}
             >
-              <GitCompare />
+              <GitCompare /> Compare
             </Button>
           )}
+          <Button variant="outline" onClick={handlePlaygroundButtonClick}>
+            <SquareTerminal className="size-4" />
+            Go to playground
+          </Button>
           {fn && !isCompare && (
             <LilypadDialog
               icon={<Trash />}
@@ -211,10 +216,6 @@ const FunctionWorkbench = () => {
               {`Are you sure you want to delete ${fn.name} v${fn.version_num}?`}
             </LilypadDialog>
           )}
-          <Button variant="outline" onClick={handlePlaygroundButtonClick}>
-            <SquareTerminal className="size-4" />
-            Go to playground
-          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0">

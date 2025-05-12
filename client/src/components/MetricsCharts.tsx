@@ -23,7 +23,7 @@ export const MetricCharts = ({
   const latencyTitle = `Latency (${timeFrame})`;
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="h-full flex flex-col space-y-2">
       <div className="shrink-0">
         <div className="inline-flex items-center p-1 rounded-lg bg-muted">
           <Button

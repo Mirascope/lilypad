@@ -1,3 +1,6 @@
+import CardSkeleton from "@/components/CardSkeleton";
+import { LilypadPanel } from "@/components/traces/LilypadPanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -6,11 +9,8 @@ import {
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
-import { useRef, useEffect, Suspense } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LilypadPanel } from "@/components/LilypadPanel";
-import CardSkeleton from "@/components/CardSkeleton";
 import { AlertTriangle } from "lucide-react";
+import { Suspense, useEffect, useRef } from "react";
 import { ImperativePanelHandle } from "react-resizable-panels";
 
 const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {

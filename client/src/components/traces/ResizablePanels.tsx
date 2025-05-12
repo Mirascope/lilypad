@@ -5,6 +5,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { TableContextType, useTable } from "@/hooks/use-table";
+import { cn } from "@/lib/utils";
 import { ReactNode, Suspense } from "react";
 
 type DetailContentRenderer<T> = (data: T) => ReactNode;
@@ -68,9 +69,9 @@ export function ResizablePanels<T>({
   defaultPrimarySize = 50,
   defaultDetailSize = 50,
   minDetailSize = 12,
-  className = "flex-1 rounded-lg w-full h-full flex gap-4",
-  primaryClassName = "flex flex-col gap-2 h-full",
-  detailClassName = "flex flex-col h-full",
+  className,
+  primaryClassName,
+  detailClassName,
 }: ResizablePanelsProps<T>) {
   // This explicitly references T in the component body, preventing the TypeScript warning
   const context: TableContextType<T> = useTable<T>();
@@ -93,12 +94,15 @@ export function ResizablePanels<T>({
     !!detailRow && (!!renderDetailContent || !!detailContent);
 
   return (
-    <ResizablePanelGroup direction="horizontal" className={className}>
+    <ResizablePanelGroup
+      direction="horizontal"
+      className={cn("flex-1 rounded-lg w-full h-full flex gap-4", className)}
+    >
       <ResizablePanel
         id="primary-panel"
         defaultSize={showDetailPanel ? defaultPrimarySize : 100}
         order={1}
-        className={primaryClassName}
+        className={cn("flex flex-col gap-2 h-full", primaryClassName)}
       >
         {primaryContent}
       </ResizablePanel>
@@ -110,7 +114,7 @@ export function ResizablePanels<T>({
             id="detail-panel"
             defaultSize={defaultDetailSize}
             order={2}
-            className={detailClassName}
+            className={cn("flex flex-col h-full", detailClassName)}
             collapsible={true}
             minSize={minDetailSize}
             onCollapse={handleCollapsePanel}

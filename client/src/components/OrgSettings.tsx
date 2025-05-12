@@ -18,14 +18,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 import { UserTable } from "@/components/users/UserTable";
 import { UserRole } from "@/types/types";
 import { useDeleteOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Trash, TriangleAlert } from "lucide-react";
-import { Dispatch, SetStateAction } from "react";
+import { Pencil, Trash, TriangleAlert } from "lucide-react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -34,13 +35,29 @@ interface OrgSettingsProps {
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
 export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
+  const [isHovered, setIsHovered] = useState<boolean>(false);
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const activeUserOrg = user.user_organizations?.find(
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   if (!activeUserOrg) return <NotFound />;
   return (
-    <>
+    <div className="flex flex-col gap-2">
+      <div
+        className="flex items-center gap-2 cursor-pointer"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <Typography variant="h3">
+          {activeUserOrg?.organization.name}&apos;s Settings
+        </Typography>
+        {isHovered && (
+          <Pencil
+            className="size-4 text-gray-500"
+            onClick={() => setOpen(true)}
+          />
+        )}
+      </div>
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
       <UserTable />
       <ProjectsTable />
@@ -60,7 +77,7 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
           </div>
         </Alert>
       )}
-    </>
+    </div>
   );
 };
 

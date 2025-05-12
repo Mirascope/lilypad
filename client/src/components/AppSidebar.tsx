@@ -45,15 +45,15 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import {
+  Blocks,
   ChevronDown,
   ChevronsUpDown,
-  FileCode,
-  Home,
+  Logs,
   NotebookPen,
   Plus,
   ScrollText,
   Settings,
-  SquareTerminal,
+  SquareFunction,
   User2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -147,9 +147,9 @@ export const AppSidebar = () => {
   const projectItems: Item[] = activeProject
     ? [
         {
-          title: "Home",
+          title: "Traces",
           url: `/projects/${activeProject.uuid}/traces`,
-          icon: Home,
+          icon: Logs,
           onHover: () => {
             queryClient
               .prefetchQuery({
@@ -162,7 +162,7 @@ export const AppSidebar = () => {
         {
           title: "Functions",
           url: `/projects/${activeProject.uuid}/functions`,
-          icon: FileCode,
+          icon: SquareFunction,
           onHover: () => {
             queryClient
               .prefetchQuery({
@@ -194,7 +194,7 @@ export const AppSidebar = () => {
         {
           title: "Playground",
           url: `/projects/${activeProject.uuid}/playground`,
-          icon: SquareTerminal,
+          icon: Blocks,
         },
         {
           title: "Settings",
@@ -266,7 +266,7 @@ export const AppSidebar = () => {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 font-handwriting rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                 align="start"
                 side="right"
                 sideOffset={4}
@@ -319,7 +319,7 @@ export const AppSidebar = () => {
   };
   return (
     <>
-      <Sidebar collapsible="icon" className="lilypad-sidebar font-handwriting">
+      <Sidebar collapsible="icon" className="lilypad-sidebar">
         <SidebarHeader>
           <AppHeader activeProject={activeProject} to={ProjectRoute.fullPath} />
         </SidebarHeader>
@@ -336,7 +336,7 @@ export const AppSidebar = () => {
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 font-handwriting rounded-lg"
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56  rounded-lg"
                   align="start"
                   side="right"
                   sideOffset={4}

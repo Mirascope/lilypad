@@ -1,7 +1,6 @@
 import CardSkeleton from "@/components/CardSkeleton";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { MetricCharts } from "@/components/MetricsCharts";
-import { Label } from "@/components/ui/label";
 import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { DiffTool } from "@/ee/components/DiffTool";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
@@ -25,10 +24,8 @@ export const FunctionOverviewUI = ({
   const showCompare = isCompare && secondFunction;
 
   return (
-    <div className="p-2 flex flex-col lg:flex-row gap-4 h-full overflow-auto">
-      {/* Code Section - 100% on small screens, 50% on large screens */}
+    <div className="flex rounded-md flex-col lg:flex-row gap-2 h-full p-2">
       <div className="w-full lg:w-1/2">
-        <Label>Code</Label>
         {showCompare ? (
           <DiffTool
             firstCodeBlock={firstFunction.code}
@@ -39,12 +36,10 @@ export const FunctionOverviewUI = ({
         )}
       </div>
 
-      {/* Metrics Section - 100% on small screens, 50% on large screens */}
-      <div className="w-full lg:w-1/2 flex flex-col gap-4">
-        {/* Annotation Metrics */}
+      <div className="w-full lg:w-1/2 flex flex-col gap-2">
         {features.annotations && (
           <div
-            className={`w-full h-80 ${showCompare ? "flex flex-col sm:flex-row gap-4" : ""}`}
+            className={`w-full h-80 ${showCompare ? "flex flex-col sm:flex-row gap-2" : ""}`}
           >
             <AnnotationMetrics
               projectUuid={projectUuid}
@@ -69,8 +64,6 @@ export const FunctionOverviewUI = ({
             )}
           </div>
         )}
-
-        {/* Metric Charts */}
         <div className="flex-1">
           <Suspense fallback={<CardSkeleton />}>
             <MetricCharts

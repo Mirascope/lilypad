@@ -125,6 +125,28 @@ export const DataTable = <T extends { uuid: string }>({
     fetchMoreOnBottomReached(virtualizerRef?.current);
   }, [fetchMoreOnBottomReached, virtualizerRef]);
 
+  const flattenedData = useMemo(() => {
+    // Helper function to flatten data recursively
+    const flattenData = (rows: T[]): T[] => {
+      return rows.flatMap((row) => {
+        // Start with the current row
+        const result: T[] = [row];
+
+        // Add all sub-rows if available
+        if (getSubRows) {
+          const subRows = getSubRows(row);
+          if (subRows && subRows.length > 0) {
+            result.push(...flattenData(subRows));
+          }
+        }
+
+        return result;
+      });
+    };
+
+    return flattenData(data);
+  }, [data, getSubRows]); // Recompute only when data or getSubRows changes
+
   const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (
     updaterOrValue
   ) => {
@@ -135,18 +157,16 @@ export const DataTable = <T extends { uuid: string }>({
 
       // Set our local state
       setRowSelection(newSelection);
-
       // Then extract the selected rows and update context
       const selectedRows = Object.keys(newSelection)
         .filter((key) => newSelection[key])
         .map((key) =>
-          data.find((row) => {
+          flattenedData.find((row) => {
             const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
             return rowId === key;
           })
         )
         .filter((item): item is T => item !== undefined);
-
       // Schedule the callback to run after render
       queueMicrotask(() => {
         setSelectedRows(selectedRows);
@@ -159,20 +179,18 @@ export const DataTable = <T extends { uuid: string }>({
       const selectedRows = Object.keys(updaterOrValue)
         .filter((key) => updaterOrValue[key])
         .map((key) =>
-          data.find((row) => {
+          flattenedData.find((row) => {
             const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
             return rowId === key;
           })
         )
         .filter((item): item is T => item !== undefined);
-
       // Schedule the callback to run after render
       queueMicrotask(() => {
         setSelectedRows(selectedRows);
       });
     }
   };
-
   const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (
     updaterOrValue
   ) => {
@@ -315,7 +333,7 @@ export const DataTable = <T extends { uuid: string }>({
         {!hideColumnButton && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="outline" className="ml-auto mb-2">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -341,8 +359,7 @@ export const DataTable = <T extends { uuid: string }>({
           </DropdownMenu>
         )}
       </div>
-
-      <div className="flex flex-col overflow-hidden min-h-0 rounded-md border flex-1">
+      <div className="flex flex-col overflow-hidden min-h-0 rounded-md border flex-1 ">
         <div
           ref={virtualizerRef}
           onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}

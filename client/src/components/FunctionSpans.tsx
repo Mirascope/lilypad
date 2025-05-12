@@ -104,7 +104,7 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
 
   const primaryContent = (
     <>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center ">
         <Typography variant="span" affects="muted">
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
         </Typography>
@@ -172,16 +172,19 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
   );
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4">
+    <div className="h-full flex flex-col gap-4">
       {fullView && traceUuid ? (
-        <SpanFullDetail
-          projectUuid={projectUuid}
-          spanUuid={traceUuid}
-          handleBackToTraces={() => setFullView(false)}
-        />
+        <div className="container h-full w-full p-2 max-w-screen-2xl overflow-hidden">
+          <SpanFullDetail
+            projectUuid={projectUuid}
+            spanUuid={traceUuid}
+            handleBackToTraces={() => setFullView(false)}
+          />
+        </div>
       ) : (
         <Suspense fallback={<TableSkeleton />}>
           <ResizablePanels
+            className="p-2"
             primaryContent={primaryContent}
             detailContent={detailContent}
             defaultPrimarySize={60}

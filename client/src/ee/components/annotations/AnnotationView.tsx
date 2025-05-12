@@ -9,7 +9,7 @@ export const AnnotationView = ({
   path,
 }: {
   annotation: AnnotationPublic;
-  path: string;
+  path?: string;
 }) => {
   const navigate = useNavigate();
   useEffect(() => {
@@ -35,7 +35,7 @@ export const AnnotationView = ({
     }
   };
   return (
-    <div className="shrink-0 mb-2">
+    <div className="shrink-0 p-2">
       <UpdateAnnotationForm
         annotation={annotation}
         spanUuid={annotation.span_uuid}

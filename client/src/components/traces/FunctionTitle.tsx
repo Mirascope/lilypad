@@ -14,7 +14,7 @@ export const FunctionTitle = ({ span }: { span: SpanMoreDetails }) => {
   const lilypadType = attributes?.["lilypad.type"];
   const versionNum = attributes?.[`lilypad.${lilypadType}.version`];
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 ">
       <div className="flex gap-2 items-center">
         <Typography variant="h3">{span.display_name}</Typography>
         <Typography variant="span" affects="muted">
@@ -24,7 +24,7 @@ export const FunctionTitle = ({ span }: { span: SpanMoreDetails }) => {
       </div>
       <div className="flex gap-1 flex-wrap">
         {span.tags?.map((tag) => (
-          <Badge pill variant="outline" size="sm" key={tag.uuid}>
+          <Badge variant="outline" size="sm" key={tag.uuid}>
             {tag.name}
           </Badge>
         ))}

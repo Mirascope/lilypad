@@ -1,5 +1,5 @@
-import { LilypadPanel } from "@/components/LilypadPanel";
 import { FunctionTitle } from "@/components/traces/FunctionTitle";
+import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 import { SpanMoreDetails, SpanPublic } from "@/types/types";
@@ -42,7 +42,7 @@ export const SpanMoreDetail = ({
           </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <LilypadPanel spanUuid={data.uuid} showMetrics={false} />
       </div>
     </div>

@@ -1,5 +1,4 @@
 import LilypadDialog from "@/components/LilypadDialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
@@ -180,15 +179,15 @@ export const CommentCard = ({
   return (
     <div className="flex flex-col gap-4 pr-2">
       <div className="flex items-start gap-4">
-        <Avatar>
+        {/* <Avatar>
           <AvatarFallback>
             {commentUser.first_name.charAt(0)}
             {commentUser.last_name?.charAt(0)}
           </AvatarFallback>
-        </Avatar>
-        <div className="space-y-2">
+        </Avatar> */}
+        <div className="mb-2">
           <div className="flex items-center justify-between">
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               <div className="font-medium">
                 {commentUser.first_name} {commentUser.last_name}
               </div>
@@ -287,14 +286,17 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
       <form
         id={`comment-form-${Math.random().toString(36).substring(7)}`}
         onSubmit={methods.handleSubmit(onSubmit)}
-        className="flex flex-col gap-4"
+        className="comment-form flex flex-col gap-2 mx-2"
       >
         <Editor
           ref={commentRef}
-          editorClassName="h-[100px]"
+          editorClassName="h-[100px] p-4"
+          placeholderClassName="p-4"
           placeholderText="Comment..."
         />
-        <Button type="submit">Comment</Button>
+        <Button className="mb-2" type="submit">
+          Comment
+        </Button>
       </form>
     </Form>
   );

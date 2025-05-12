@@ -69,7 +69,7 @@ export const TraceTree = ({
           <div className="w-6 mr-2 shrink-0" />
         )}
 
-        <div className="flex flex-col min-w-0 w-full">
+        <div className="flex flex-col min-w-0 w-full ">
           <div className="flex items-center gap-2 w-full">
             <span className="truncate font-medium max-w-full">
               {span.display_name ?? span.span_id}
@@ -77,22 +77,21 @@ export const TraceTree = ({
             {versionNum && (
               <Typography
                 variant="span"
-                affects="muted"
                 className="text-xs whitespace-nowrap shrink-0"
               >
                 v{versionNum}
               </Typography>
             )}
             {span.duration_ms && (
-              <Badge pill variant="outline" size="sm" className="shrink-0">
+              <Badge variant="neutral" size="sm" className="shrink-0">
                 {(span.duration_ms / 1_000_000_000).toFixed(3)}s
               </Badge>
             )}
           </div>
 
-          <div className="flex gap-1 flex-wrap mt-1 items-center">
+          <div className="flex gap-2 flex-wrap mt-1 items-center">
             {span.tags && span.tags.length > 0 && (
-              <Badge pill variant="outline" size="sm" className="shrink-0">
+              <Badge variant="neutral" size="sm" className="shrink-0">
                 {span.tags[0].name}
                 {span.tags.length > 1 && (
                   <span className="ml-1">+{span.tags.length - 1}</span>
@@ -106,11 +105,7 @@ export const TraceTree = ({
               </Badge>
             )}
 
-            <Typography
-              variant="span"
-              affects="muted"
-              className="text-xs shrink-0"
-            >
+            <Typography variant="span" className="text-xs shrink-0">
               {formatRelativeTime(span.created_at)}
             </Typography>
           </div>

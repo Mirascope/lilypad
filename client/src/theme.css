@@ -41,6 +41,7 @@
     0.67 0.18 48
   ); /* Warm orange that complements purple */
   --color-destructive-foreground: oklch(0.985 0 0);
+  --color-destructive-hover: rgb(243, 226, 225);
 
   /* Utility - keep as is */
   --color-border: oklch(0.92 0.004 286.32);

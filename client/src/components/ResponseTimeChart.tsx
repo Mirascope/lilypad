@@ -87,14 +87,14 @@ export const ResponseTimeChart = ({
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col ">
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
         {combinedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={combinedData} margin={{ left: 20 }}>
+            <ComposedChart data={combinedData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="start_date"
@@ -103,13 +103,6 @@ export const ResponseTimeChart = ({
               <YAxis
                 yAxisId="duration"
                 orientation="left"
-                label={{
-                  value: "Duration (ms)",
-                  angle: -90,
-                  position: "insideLeft",
-                  offset: -10,
-                  style: { textAnchor: "middle" },
-                }}
                 tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
               />
               <Tooltip

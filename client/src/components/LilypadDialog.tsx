@@ -52,7 +52,7 @@ export const LilypadDialog = ({
     <Button
       variant="outline"
       {...buttonProps}
-      size={icon ? "icon" : buttonProps.size}
+      size={icon && !text ? "icon" : buttonProps.size}
     >
       {icon}
       {text}

@@ -43,7 +43,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Clock, DollarSign, Hash, MoreHorizontal, Trash } from "lucide-react";
+import { Clock, DollarSign, MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -182,7 +182,7 @@ const FunctionCard = ({
         </CardTitle>
         <CardDescription>
           {processedData && (
-            <span className="flex gap-2 justify-between">
+            <span className="flex gap-4">
               <span className="flex gap-1 items-center">
                 <DollarSign className="size-4" />
                 {(processedData.total_cost / processedData.span_count).toFixed(
@@ -193,10 +193,6 @@ const FunctionCard = ({
                 <Clock className="size-4" />
                 {(processedData.average_duration_ms / 1_000_000_000).toFixed(3)}
                 s
-              </span>
-              <span className="flex gap-1 items-center">
-                <Hash className="size-4" />
-                {processedData.span_count}
               </span>
             </span>
           )}

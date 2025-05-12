@@ -24,7 +24,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { Users } from "lucide-react";
+import { GitCompare, Users } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -125,27 +125,25 @@ const Trace = () => {
           variant="outline"
           size="sm"
           onClick={() => setIsComparing(false)}
-          className="mb-4 w-fit"
+          className="mb-4 w-fit shrink-0"
         >
           ← Back to Traces
         </Button>
-        <ComparePanel
-          rows={selectedRows}
-          onClose={() => setIsComparing(false)}
-        />
+        <ComparePanel rows={selectedRows} />
       </div>
     );
   }
 
   const primaryContent = (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 ">
         <div className="flex justify-between items-center">
           <Typography variant="h3">{project.name}</Typography>
           <div className="flex items-center gap-2">
             {features.annotations && (
               <LilypadDialog
-                icon={<Users />}
+                icon={<Users />} // TODO: Make this Assign text
+                text={"Assign"}
                 title={"Annotate selected traces"}
                 description={`${selectedRows.length} trace(s) selected.`}
                 buttonProps={{
@@ -163,6 +161,7 @@ const Trace = () => {
               disabled={selectedRows.length !== 2}
               className="whitespace-nowrap"
             >
+              <GitCompare />
               Compare
             </Button>
           </div>
@@ -171,7 +170,7 @@ const Trace = () => {
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
         </Typography>
       </div>
-
+      {/* TODO: Add refresh button */}
       <div className="flex-1 overflow-auto">
         <div className="flex flex-col h-full">
           <div className="shrink-0 py-4">

@@ -137,7 +137,6 @@ export const TracesTable = ({
   const findRow = (rows: SpanPublic[], uuid?: string) =>
     rows.find((r) => r.uuid === uuid) ??
     rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
-
   const selectRow = findRow(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
 
@@ -332,11 +331,11 @@ export const TracesTable = ({
 
         return (
           <div className="flex items-center gap-1">
-            <Badge pill variant="neutral" size="sm" key={tags[0].uuid}>
+            <Badge variant="neutral" size="sm" key={tags[0].uuid}>
               {tags[0].name}
             </Badge>
             {tags.length > 1 && (
-              <Badge pill variant="neutral" size="sm" className="px-1.5">
+              <Badge variant="neutral" size="sm" className="px-1.5">
                 +{tags.length - 1}
               </Badge>
             )}

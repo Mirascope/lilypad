@@ -2,14 +2,31 @@ import { Token } from "@/assets/TokenIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SpanMoreDetails } from "@/types/types";
-import { LilypadPanelTab } from "@/utils/panel-utils";
-import { spanQueryOptions } from "@/utils/spans";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import JsonView from "@uiw/react-json-view";
 
-import React from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
-export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
+export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
+  const [isCompact, setIsCompact] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIsCompact(entry.contentRect.width < 350);
+      }
+    });
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
   const metricSections = [
     {
       show:
@@ -45,7 +62,7 @@ export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
     },
     // Provider section
     {
-      show: span.provider !== undefined,
+      show: span.provider !== undefined && span.provider !== "unknown",
       title: "Provider",
       content: (
         <>
@@ -58,20 +75,20 @@ export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
     },
   ];
 
-  // Filter out sections that shouldn't be shown
   const visibleSections = metricSections.filter((section) => section.show);
 
-  // If there are no visible sections, don't render the card at all
   if (visibleSections.length === 0) {
     return null;
   }
 
   return (
-    <Card className="w-full">
-      <div className="flex h-full">
+    <Card className="w-full" ref={containerRef}>
+      <div className={`flex ${isCompact ? "flex-col" : "flex-row"} h-full`}>
         {visibleSections.map((section, index) => (
-          <React.Fragment key={section.title}>
-            <div className="flex-1 p-2 flex justify-center">
+          <Fragment key={section.title}>
+            <div
+              className={`flex-1 p-2 flex ${isCompact ? "justify-start pl-4" : "justify-center"}`}
+            >
               <div className="text-left">
                 <CardHeader className="px-0 py-1">
                   <CardTitle className="text-sm font-medium">
@@ -85,48 +102,19 @@ export const LilypadMetrics = ({ span }: { span: SpanMoreDetails }) => {
             </div>
 
             {index < visibleSections.length - 1 && (
-              <div className="py-2 flex items-center">
-                <Separator
-                  orientation="vertical"
-                  className="h-full bg-accent"
-                />
+              <div
+                className={`flex justify-center ${isCompact ? "py-1" : "py-2"}`}
+              >
+                {isCompact ? (
+                  <Separator orientation="horizontal" className="w-4/5" />
+                ) : (
+                  <Separator orientation="vertical" className="h-full" />
+                )}
               </div>
             )}
-          </React.Fragment>
+          </Fragment>
         ))}
       </div>
     </Card>
-  );
-};
-
-export const LilypadPanel = ({
-  spanUuid,
-  showMetrics = true,
-}: {
-  spanUuid: string;
-  showMetrics?: boolean;
-}) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  return (
-    <div className="flex flex-col gap-4 h-full">
-      {showMetrics && <LilypadMetrics span={span} />}
-      {span.arg_values && (
-        <div className="shrink-0">
-          <Card variant="primary">
-            <CardHeader>
-              <CardTitle>{"Inputs"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">
-                <JsonView value={span.arg_values} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      <div className="flex-1 min-h-0">
-        <LilypadPanelTab span={span} />
-      </div>
-    </div>
   );
 };

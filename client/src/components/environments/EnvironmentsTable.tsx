@@ -38,7 +38,7 @@ export const EnvironmentsTable = () => {
   ];
 
   return (
-    <>
+    <div>
       <div className="flex gap-2 items-center">
         <Typography variant="h4">Environment</Typography>
         <CreateEnvironmentDialog />
@@ -54,6 +54,6 @@ export const EnvironmentsTable = () => {
         }}
         hideColumnButton
       />
-    </>
+    </div>
   );
 };

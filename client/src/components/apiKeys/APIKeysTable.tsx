@@ -50,7 +50,7 @@ export const APIKeysTable = () => {
     },
   ];
   return (
-    <>
+    <div>
       <div className="flex gap-2 items-center">
         <Typography variant="h4">API Keys</Typography>
         <CreateAPIKeyDialog />
@@ -66,6 +66,6 @@ export const APIKeysTable = () => {
         }}
         hideColumnButton
       />
-    </>
+    </div>
   );
 };

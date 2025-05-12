@@ -6,7 +6,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadLoading } from "@/components/LilypadLoading";
-import { LilypadPanel } from "@/components/LilypadPanel";
+import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,

@@ -1,5 +1,6 @@
 import { CopyKeyContent } from "@/components/apiKeys/CreateAPIKeyDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { NotFound } from "@/components/NotFound";
 import { defineStepper } from "@/components/stepper";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
@@ -32,6 +33,7 @@ import { JSX, ReactNode, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+// TODO: Review onboarding
 const stepper = defineStepper(
   { id: "step-1", title: "Welcome" },
   { id: "step-2", title: "Run a Function" },
@@ -224,12 +226,17 @@ const LilypadOnboarding = () => {
   const createOrganization = useCreateOrganizationMutation();
   const createProject = useCreateProjectMutation();
   const createEnvironment = useCreateEnvironmentMutation();
+  const createApiKey = useCreateApiKeyMutation();
   const handleSubmit = async (data: LilypadOnboardingFormValues) => {
-    await createOrganization.mutateAsync(data.organization).catch(() => {
-      toast.error("Failed to create organization");
-    });
+    const organization = await createOrganization
+      .mutateAsync(data.organization)
+      .catch(() => {
+        toast.error("Failed to create organization");
+        return;
+      });
     const project = await createProject.mutateAsync(data.project).catch(() => {
       toast.error("Failed to create project");
+      return;
     });
     const environment = await createEnvironment
       .mutateAsync({
@@ -237,10 +244,19 @@ const LilypadOnboarding = () => {
         description: "Default environment for your project",
         is_default: true,
       })
-      .catch(() => toast.error("Failed to create environment"));
+      .catch(() => {
+        toast.error("Failed to create environment");
+        return;
+      });
+    if (!project || !environment || !organization) return;
+    const newApiKey = await createApiKey.mutateAsync({
+      name: "Default API Key",
+      project_uuid: project.uuid,
+      environment_uuid: environment.uuid,
+    });
     stepperMethods.setMetadata("step-2", {
+      apiKey: newApiKey,
       project: project,
-      environment: environment,
     });
     toast.success("Organization and project created");
     methods.reset();
@@ -332,33 +348,20 @@ answer_question("What is the capital of France?")
 };
 
 const OnboardCreateAPIKey = () => {
-  const createApiKey = useCreateApiKeyMutation();
   const stepperMethods = useStepper();
   const metadata = stepperMethods.getMetadata("step-2");
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  useEffect(() => {
-    if (apiKey) return;
-
-    const getApiKey = async () => {
-      const newApiKey = await createApiKey.mutateAsync({
-        name: "Default API Key",
-        project_uuid: metadata?.project.uuid,
-        environment_uuid: metadata?.environment.uuid,
-      });
-      setApiKey(newApiKey);
-      stepperMethods.setMetadata("step-3", {
-        apiKey: newApiKey,
-        projectUuid: metadata?.project.uuid,
-      });
-    };
-    getApiKey().catch(() => toast.error("Failed to create API key"));
-  }, [apiKey]);
+  if (!metadata) {
+    return <NotFound />;
+  }
   return (
     <>
-      {!apiKey ? (
+      {!metadata.apiKey ? (
         <div>Generating API Key</div>
       ) : (
-        <CopyKeyContent apiKey={apiKey} projectUuid={metadata?.project.uuid} />
+        <CopyKeyContent
+          apiKey={metadata.apiKey}
+          projectUuid={metadata?.project.uuid}
+        />
       )}
     </>
   );

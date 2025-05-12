@@ -71,7 +71,7 @@ const SuccessMetrics = ({
   const FAIL_COLOR = "oklch(0.55 0.18 48)"; // red-500
 
   return (
-    <Card className={`w-full h-full flex flex-col ${className}`}>
+    <Card className={`w-full h-full flex flex-col  ${className}`}>
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
