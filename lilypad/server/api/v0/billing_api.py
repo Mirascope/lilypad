@@ -5,7 +5,8 @@ from typing import Annotated
 
 import stripe
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from sqlmodel import select
+from sqlmodel import select, Session          # 追加
+from ...db import get_session         # 追加
 
 from ...models.billing import BillingTable, SubscriptionStatus
 from ...schemas.billing import StripeWebhookResponse
@@ -24,20 +25,19 @@ HANDLED_EVENT_TYPES = {
 }
 
 
-@billing_router.post("/webhooks/stripe",  response_model=StripeWebhookResponse,)
+@billing_router.post("/webhooks/stripe", response_model=StripeWebhookResponse)
 async def stripe_webhook(
     request: Request,
-    billing_service: Annotated[BillingService, Depends(BillingService)],
+    session: Annotated[Session, Depends(get_session)],
     stripe_signature: str | None = Header(None, alias="Stripe-Signature"),
 ) -> StripeWebhookResponse:
-    """Handle Stripe webhook events.
-
-    This endpoint receives webhook events from Stripe and updates the billing records accordingly.
-    It handles the following events:
-    - customer.subscription.created
-    - customer.subscription.updated
-    - customer.subscription.deleted
     """
+    Handle Stripe webhook events.
+
+    This endpoint receives webhook events from Stripe and updates the billing records.
+    """
+    billing_service = BillingService(session=session, user=None)
+
     if not settings.stripe_webhook_secret:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

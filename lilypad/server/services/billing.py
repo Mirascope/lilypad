@@ -4,18 +4,22 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
+from typing import Annotated
 from uuid import UUID
 
 import stripe
-from fastapi import HTTPException, status
-from sqlmodel import desc, select, update
+from fastapi import Depends, HTTPException, status
+from sqlmodel import Session, desc, select, update
 from stripe import InvalidRequestError, StripeError
 
 from ee import Tier
 
+from .._utils import get_current_user
+from ..db import get_session
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
+from ..schemas.users import UserPublic
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 
@@ -35,6 +39,12 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
+
+    def __init__(self, session: Annotated[Session, Depends(get_session)],
+                 user: Annotated[UserPublic | None, Depends(get_current_user)] = None) -> None:
+        super().__init__(session, user)
+        self.session = session
+        self.user = user
 
     def get_tier_from_billing(self, organization_uuid: UUID) -> Tier:
         """Get the tier from the billing table for an organization.
