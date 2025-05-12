@@ -4,22 +4,18 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
-from uuid import UUID
+from typing import Any
 
 import stripe
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from sqlmodel import Session, desc, select, update
 from stripe import InvalidRequestError, StripeError
 
 from ee import Tier
 
-from .._utils import get_current_user
-from ..db import get_session
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
-from ..schemas.users import UserPublic
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 
@@ -40,7 +36,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
 
-    def get_tier_from_billing(self, organization_uuid: UUID) -> Tier:
+    def get_tier_from_billing(self, organization_uuid: uuid.UUID) -> Tier:
         """Get the tier from the billing table for an organization.
 
         Args:
@@ -172,7 +168,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 detail=f"Error retrieving Stripe customer: {str(e)}",
             )
 
-    def report_span_usage(self, organization_uuid: UUID, quantity: int = 1) -> None:
+    def report_span_usage(self, organization_uuid: uuid.UUID, quantity: int = 1) -> None:
         """Report span usage to Stripe.
 
         Args:
@@ -231,8 +227,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     def find_by_subscription_id(
         cls, session: Session, subscription_id: str
     ) -> BillingTable | None:
-        """find by subscription_id"""
-
+        """Find by subscription_id"""
         return session.exec(
             select(BillingTable).where(
                 BillingTable.stripe_subscription_id == subscription_id
@@ -243,7 +238,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     def find_by_customer_id(
         cls, session: Session, customer_id: str
     ) -> BillingTable | None:
-        """find by customer_id"""
+        """Find by customer_id"""
         return session.exec(
             select(BillingTable).where(
                 BillingTable.stripe_customer_id == customer_id
@@ -252,9 +247,17 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     @classmethod
     def update_from_subscription(
-        cls, session: Session, subscription
+        cls,
+        session: Session,
+        subscription: Any,
     ) -> BillingTable | None:
         """Update billing information from a Stripe subscription."""
+
+        def _get(obj: Any, attr: str, default: Any = None) -> Any:
+            if isinstance(obj, dict):
+                return obj.get(attr, default)
+            return getattr(obj, attr, default)
+
         billing = (
             cls.find_by_subscription_id(session, subscription.id)
             or cls.find_by_customer_id(session, getattr(subscription, "customer", None))
@@ -267,11 +270,6 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         customer_id = getattr(subscription, "customer", None)
         if customer_id and not billing.stripe_customer_id:
             billing.stripe_customer_id = customer_id
-
-        if hasattr(subscription, "items") and subscription.items.data:
-            price = getattr(subscription.items.data[0], "price", None)
-            if price and hasattr(price, "id"):
-                billing.stripe_price_id = price.id
 
         # status
         try:
@@ -289,6 +287,15 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             billing.subscription_current_period_end = datetime.fromtimestamp(
                 subscription.current_period_end, tz=timezone.utc
             )
+
+        items_obj = _get(subscription, "items")
+        data_list = _get(items_obj, "data", [])
+        if data_list:
+            first_item = data_list[0]
+            price = _get(first_item, "price")
+            price_id = _get(price, "id")
+            if price_id:
+                billing.stripe_price_id = price_id
 
         session.add(billing)
         session.commit()
