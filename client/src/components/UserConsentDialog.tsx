@@ -32,7 +32,7 @@ export const UserConsentDialog = ({
         <Typography variant="p" affects="muted">
           By signing in, you agree to our{" "}
           <a
-            href="https://beta.mirascope.com/terms/service"
+            href="https://mirascope.com/terms/service"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -40,7 +40,7 @@ export const UserConsentDialog = ({
           </a>{" "}
           and{" "}
           <a
-            href="https://beta.mirascope.com/privacy"
+            href="https://mirascope.com/privacy"
             target="_blank"
             rel="noopener noreferrer"
           >
