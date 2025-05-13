@@ -1,6 +1,11 @@
 import { TraceTab } from "@/types/traces";
 import { ProjectPublic, UserPublic } from "@/types/types";
-import { AUTH_STORAGE_KEY, USER_CONFIG_STORAGE_KEY } from "@/utils/constants";
+import {
+  AUTH_STORAGE_KEY,
+  PRIVACY_STORAGE_KEY,
+  TERMS_STORAGE_KEY,
+  USER_CONFIG_STORAGE_KEY,
+} from "@/utils/constants";
 import { VisibilityState } from "@tanstack/react-table";
 import {
   createContext,
@@ -23,6 +28,10 @@ export interface AuthContext {
   setSession: (user: UserPublic | null) => void;
   setProject: (project: ProjectPublic | null | undefined) => void;
   activeProject: ProjectPublic | null | undefined;
+  setTermsVersion: (termsVersion: string) => void;
+  setPrivacyPolicyVersion: (privacyPolicyVersion: string) => void;
+  loadPrivacyPolicyVersion: () => string | null;
+  loadTermsVersion: () => string | null;
   updateUserConfig: (userConfigUpdate: Partial<UserConfig>) => void;
   userConfig: UserConfig | null;
 }
@@ -35,6 +44,14 @@ const saveToStorage = (session: UserPublic | null) => {
   } else {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   }
+};
+
+const savePrivacyPolicyVersionToStorage = (privacyPolicyVersion: string) => {
+  localStorage.setItem(PRIVACY_STORAGE_KEY, privacyPolicyVersion);
+};
+
+const saveTermsVersionToStorage = (termsVersion: string) => {
+  localStorage.setItem(TERMS_STORAGE_KEY, termsVersion);
 };
 
 const loadFromStorage = (): UserPublic | null => {
@@ -55,6 +72,16 @@ const loadFromStorage = (): UserPublic | null => {
   }
 };
 
+const loadPrivacyPolicyVersionFromStorage = (): string | null => {
+  const version = localStorage.getItem(PRIVACY_STORAGE_KEY);
+  if (!version) return null;
+  return version;
+};
+const loadTermsVersionFromStorage = (): string | null => {
+  const version = localStorage.getItem(TERMS_STORAGE_KEY);
+  if (!version) return null;
+  return version;
+};
 const loadUserConfigFromStorage = (): UserConfig | null => {
   const stored = localStorage.getItem(USER_CONFIG_STORAGE_KEY);
   if (!stored) return null;
@@ -124,6 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         setSession,
         setProject,
+        setTermsVersion: saveTermsVersionToStorage,
+        setPrivacyPolicyVersion: savePrivacyPolicyVersionToStorage,
+        loadPrivacyPolicyVersion: loadPrivacyPolicyVersionFromStorage,
+        loadTermsVersion: loadTermsVersionFromStorage,
         activeProject,
         updateUserConfig,
         userConfig,
