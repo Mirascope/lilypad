@@ -40,43 +40,25 @@ export const fetchVersions = async () => {
   const privacyHtml = await privacyResponse.text();
   const termsHtml = await termsResponse.text();
 
-  // Create DOM parsers to extract the information
   const privacyParser = new DOMParser();
   const termsParser = new DOMParser();
 
   const privacyDoc = privacyParser.parseFromString(privacyHtml, "text/html");
   const termsDoc = termsParser.parseFromString(termsHtml, "text/html");
 
-  // Find all divs with h1 and p that match the structure
-  const privacyDivs = privacyDoc.querySelectorAll("div");
-  const termsDivs = termsDoc.querySelectorAll("div");
+  const privacyVersion = privacyDoc.querySelector(".last-updated-time");
+  const termsVersion = termsDoc.querySelector(".last-updated-time");
 
-  let privacyVersion: string | undefined = undefined;
-  let termsVersion: string | undefined = undefined;
-  // Search through privacy divs to find the matching structure
-  for (const div of privacyDivs) {
-    const h1 = div.querySelector("h1.text-3xl.font-bold.uppercase");
-    const p = div.querySelector("p.text-muted-foreground");
-
-    if (h1 && p && h1.textContent?.includes("Privacy Policy")) {
-      privacyVersion = p.textContent?.replace("Last Updated:", "").trim();
-      break;
-    }
-  }
-
-  // Search through terms divs to find the matching structure
-  for (const div of termsDivs) {
-    const h1 = div.querySelector("h1.text-3xl.font-bold.uppercase");
-    const p = div.querySelector("p.text-muted-foreground");
-
-    if (h1 && p && h1.textContent?.includes("Terms of Service")) {
-      termsVersion = p.textContent?.replace("Last Updated:", "").trim();
-      break;
-    }
-  }
-
-  if (!privacyVersion || !termsVersion) {
+  if (
+    !privacyVersion ||
+    !termsVersion ||
+    !privacyVersion.textContent ||
+    !termsVersion.textContent
+  ) {
     throw new Error("Could not find version information");
   }
-  return { privacyVersion, termsVersion };
+  return {
+    privacyVersion: privacyVersion.textContent,
+    termsVersion: termsVersion.textContent,
+  };
 };
