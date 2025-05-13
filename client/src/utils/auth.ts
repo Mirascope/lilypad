@@ -34,8 +34,8 @@ export const callbackCodeQueryOptions = (provider: string, code?: string) =>
   });
 
 export const fetchVersions = async () => {
-  const privacyResponse = await fetch("https://beta.mirascope.com/privacy"); // Adjust URL to your actual privacy policy page
-  const termsResponse = await fetch("https://beta.mirascope.com/terms/service"); // Adjust URL to your actual terms page
+  const privacyResponse = await fetch("https://mirascope.com/privacy");
+  const termsResponse = await fetch("https://mirascope.com/terms/service");
 
   const privacyHtml = await privacyResponse.text();
   const termsHtml = await termsResponse.text();
