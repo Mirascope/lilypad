@@ -3,6 +3,7 @@
 from .api_keys import APIKeyTable
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import BaseSQLModel, JSONTypeDecorator, get_json_column
+from .billing import BillingTable
 from .comments import CommentTable
 from .deployments import DeploymentTable
 from .environments import EnvironmentTable
@@ -24,6 +25,7 @@ __all__ = [
     "APIKeyTable",
     "BaseOrganizationSQLModel",
     "BaseSQLModel",
+    "BillingTable",
     "CommentTable",
     "ExternalAPIKeyTable",
     "EnvironmentTable",

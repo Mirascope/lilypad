@@ -32,6 +32,7 @@ from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...services import OpenSearchService, SpanService, get_opensearch_service
+from ...services.billing import BillingService
 from ...services.projects import ProjectService
 
 traces_router = APIRouter()
@@ -190,14 +191,21 @@ async def traces(
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
     background_tasks: BackgroundTasks,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
 ) -> Sequence[SpanTable]:
     """Create span traces."""
     if is_lilypad_cloud:
         tier = license.tier
         num_traces = span_service.count_by_current_month()
         if num_traces >= cloud_features[tier].traces_per_month:
+            logger.warning(
+                f"Trace limit exceeded for project {project_uuid}. "
+                f"Tier: {tier.name.capitalize()}, "
+                f"Current traces: {num_traces}, "
+                f"Limit: {cloud_features[tier].traces_per_month}."
+            )
             raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail=f"Exceeded the maximum number of traces per month for {tier.name.capitalize()} plan",
             )
 
@@ -217,7 +225,10 @@ async def traces(
         await _process_span(root_span, parent_to_children, span_creates)
     project = project_service.find_record_no_organization(project_uuid)
     span_tables = span_service.create_bulk_records(
-        span_creates, project_uuid, project.organization_uuid
+        span_creates,
+        billing_service if is_lilypad_cloud else None,
+        project_uuid,
+        project.organization_uuid,
     )
     if opensearch_service.is_enabled:
         trace_dicts = [span.model_dump() for span in span_tables]

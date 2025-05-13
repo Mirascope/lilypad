@@ -8,6 +8,7 @@ from ee import LicenseValidator
 from ee.validate import LicenseError
 
 from ....ee.server.models.user_organizations import UserRole
+from ....ee.server.require_license import is_lilypad_cloud
 from ....ee.server.schemas.user_organizations import UserOrganizationCreate
 from ....ee.server.services.user_organizations import UserOrganizationService
 from ....server._utils.auth import create_jwt_token
@@ -24,6 +25,7 @@ from ...schemas.users import (
     UserPublic,
 )
 from ...services import OrganizationService, UserService
+from ...services.billing import BillingService
 
 organization_router = APIRouter()
 
@@ -40,9 +42,15 @@ async def create_organization(
     organization_create: OrganizationCreate,
     user: Annotated[UserPublic, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(UserService)],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
+    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
 ) -> OrganizationTable:
     """Create an organization."""
-    organization = organization_service.create_record(organization_create)
+    organization = organization_service.create_record(
+        organization_create,
+        email=user.email,
+        billing_service=billing_service if is_lilypad_cloud else None,
+    )
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(
         user_uuid=user.uuid,

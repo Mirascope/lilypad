@@ -4,6 +4,7 @@ import { EnvironmentsTable } from "@/components/environments/EnvironmentsTable";
 import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { UpdateOrganizationDialog } from "@/components/OrganizationDialog";
+import { PlanList } from "@/components/PlanList.tsx";
 import { ProjectsTable } from "@/components/projects/ProjectsTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
           />
         )}
       </div>
+      <PlanList />
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
       <UserTable />
       <ProjectsTable />
