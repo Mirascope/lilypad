@@ -375,12 +375,12 @@ const OnboardInstallLilypad = () => {
     {
       label: "pip",
       value: "pip",
-      component: <CodeSnippet code={`pip install lilypad-sdk[google]`} />,
+      component: <CodeSnippet code={`pip install "lilypad-sdk[google]"`} />,
     },
     {
       label: "uv",
       value: "uv",
-      component: <CodeSnippet code={`uv add lilypad-sdk[google]`} />,
+      component: <CodeSnippet code={`uv add "lilypad-sdk[google]"`} />,
     },
   ];
   return <TabGroup tabs={tabs} className="shrink-0 h-auto" />;
