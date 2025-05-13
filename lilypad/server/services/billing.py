@@ -212,7 +212,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         if billing:
             stmt = (
                 update(BillingTable)
-                .where(BillingTable.uuid == billing.uuid)
+                .where(BillingTable.uuid == billing.uuid) # pyright: ignore[reportArgumentType]
                 .values(
                     usage_quantity=BillingTable.usage_quantity + quantity,  # type: ignore[operator]
                     last_usage_report=datetime.now(timezone.utc),
@@ -236,9 +236,11 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     @classmethod
     def find_by_customer_id(
-        cls, session: Session, customer_id: str
+        cls, session: Session, customer_id: str | None
     ) -> BillingTable | None:
         """Find by customer_id"""
+        if not customer_id:
+            return None
         return session.exec(
             select(BillingTable).where(
                 BillingTable.stripe_customer_id == customer_id
