@@ -1,7 +1,7 @@
+import { CopyButton } from "@/components/CopyButton";
 import { highlightCode, stripHighlightMarkers } from "@/lib/code-highlights";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 interface CodeBlockProps {
   code: string;
@@ -21,7 +21,6 @@ export function CodeBlock({
   const [lightHtml, setLightHtml] = useState<string>("");
   const [darkHtml, setDarkHtml] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
   const codeRef = useRef<HTMLDivElement>(null);
   const [isSmallBlock, setIsSmallBlock] = useState<boolean>(false);
 
@@ -67,22 +66,13 @@ export function CodeBlock({
     }
   }, [isLoading, lightHtml, darkHtml]);
 
-  const copyToClipboard = () => {
-    // Strip highlight markers before copying to clipboard
-    const cleanCode = stripHighlightMarkers(code);
-    navigator.clipboard.writeText(cleanCode);
-    setIsCopied(true);
-    toast.success("Code copied to clipboard");
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
   // If loading, just show the code without syntax highlighting to maintain size
   if (isLoading) {
     return (
       <div
-        className={`code-block-wrapper border-border relative m-0 overflow-hidden border p-0 text-sm ${className}`}
+        className={`code-block-wrapper relative m-0 overflow-hidden p-0 text-sm ${className}`}
       >
-        <pre className="bg-button-primary m-0 p-4">
+        <pre className="m-0 p-4">
           <code className="opacity-0">{code}</code>
         </pre>
       </div>
@@ -93,7 +83,7 @@ export function CodeBlock({
     <div
       ref={codeRef}
       className={cn(
-        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group border-border relative m-0 overflow-hidden border p-0 text-sm`,
+        `code-block-wrapper ${showLineNumbers && "show-line-numbers"} group relative m-0 overflow-auto p-0 text-sm border rounded-md`,
         className
       )}
     >
@@ -106,44 +96,7 @@ export function CodeBlock({
             : "top-3 right-3"
         )}
       >
-        {/* Copy button */}
-        <button
-          className="bg-background hover:bg-muted relative cursor-pointer rounded-md border p-1.5"
-          onClick={copyToClipboard}
-          aria-label="Copy code"
-          title="Copy code"
-        >
-          {isCopied ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          )}
-        </button>
+        <CopyButton content={stripHighlightMarkers(code)} />
       </div>
 
       {/* Light theme code */}

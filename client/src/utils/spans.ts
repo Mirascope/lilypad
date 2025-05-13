@@ -2,6 +2,7 @@ import api from "@/api";
 import {
   AggregateMetrics,
   PaginatedSpanPublic,
+  Scope,
   SpanMoreDetails,
   SpanPublic,
   SpanUpdate,
@@ -83,7 +84,7 @@ export const searchSpans = async (
     time_range_start?: number;
     time_range_end?: number;
     limit?: number;
-    scope?: string; // Assuming Scope is a string enum
+    scope?: Scope;
     type?: string;
   }
 ) => {
@@ -235,7 +236,7 @@ export const spansSearchQueryOptions = (
     time_range_start?: number;
     time_range_end?: number;
     limit?: number;
-    scope?: string;
+    scope?: Scope;
     type?: string;
   }
 ) =>

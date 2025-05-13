@@ -69,7 +69,6 @@ services:
       - VITE_HOST=0.0.0.0
     networks:
       - app-network
-
   opensearch:
     image: opensearchproject/opensearch:latest
     container_name: opensearch

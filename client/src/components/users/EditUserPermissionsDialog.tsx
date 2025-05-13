@@ -73,7 +73,7 @@ export const EditUserPermissionsDialog = ({
               onSubmit={methods.handleSubmit(onSubmit)}
               className='space-y-6'
             >
-              <DialogHeader className='flex-shrink-0'>
+              <DialogHeader className='shrink-0'>
                 <DialogTitle>{`Edit permissions for ${user.first_name}`}</DialogTitle>
               </DialogHeader>
               <DialogDescription>

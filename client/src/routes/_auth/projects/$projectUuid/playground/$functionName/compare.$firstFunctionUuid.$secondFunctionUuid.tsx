@@ -6,7 +6,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 
 import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadLoading } from "@/components/LilypadLoading";
-import { LilypadPanel } from "@/components/LilypadPanel";
+import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
@@ -33,7 +33,7 @@ const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {
   return (
     <div className="bg-red-50 border border-red-200 rounded-md p-3">
       <div className="flex items-start">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <AlertTriangle className="h-4 w-4 text-red-500" />
         </div>
         <div className="ml-2">

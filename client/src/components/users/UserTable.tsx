@@ -157,7 +157,7 @@ export const UserTable = () => {
   ];
 
   return (
-    <>
+    <div>
       <div className="flex gap-2 items-center">
         <Typography variant="h4">Users</Typography>
         {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
@@ -172,7 +172,6 @@ export const UserTable = () => {
         columns={columns}
         data={combinedData}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: combinedData.length,
           estimateSize: () => 45,
@@ -188,6 +187,6 @@ export const UserTable = () => {
           onClose={() => setActiveInvite(null)}
         />
       )}
-    </>
+    </div>
   );
 };

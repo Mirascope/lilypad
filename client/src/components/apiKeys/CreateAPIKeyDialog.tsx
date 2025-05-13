@@ -27,7 +27,7 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
     <Button
       variant="ghost"
       size="iconSm"
-      className="text-primary hover:text-primary/80 hover:bg-white"
+      className="text-primary hover:text-primary/80 hover:bg-background"
     >
       <PlusCircle />
     </Button>
@@ -42,7 +42,7 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
         className="max-w-md overflow-x-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Create new API Key</DialogTitle>
           <DialogDescription>
             Generate a Lilypad API Key for your organization.
@@ -85,7 +85,7 @@ const CopyKeyButton = ({
   if (!projectUuid) return <NotFound />;
   return (
     <div className="space-y-6 max-w-full overflow-hidden">
-      <DialogHeader className="flex-shrink-0">
+      <DialogHeader className="shrink-0">
         <DialogTitle>API Key Created</DialogTitle>
         <DialogDescription className="space-y-4">
           Copy your project ID and API key into your environment
@@ -111,7 +111,7 @@ export const CopyKeyContent = ({
   projectUuid: string | null;
 }) => {
   return (
-    <>
+    <div className="flex flex-col gap-4 shrink-0">
       <div className="overflow-x-auto">
         <CodeSnippet
           language="bash"
@@ -127,6 +127,6 @@ LILYPAD_API_KEY="${apiKey}"`}
           You won&apos;t be able to see your API key again.
         </AlertDescription>
       </Alert>
-    </>
+    </div>
   );
 };

@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const MainContent = () => (
   <div className="h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
     {[...Array(6)].map((_, i) => (
-      <div key={i} className="bg-white rounded-lg shadow p-4 min-h-32">
+      <div key={i} className="bg-background rounded-lg shadow p-4 min-h-32">
         <Skeleton className="h-4 w-3/4 mb-4" />
         <Skeleton className="h-4 w-full" />
       </div>

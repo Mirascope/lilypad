@@ -46,10 +46,10 @@ export const SearchBar = ({
   };
   if (!settings.experimental) return null;
   return (
-    <form onSubmit={handleSearchSubmit} className="p-3">
+    <form onSubmit={handleSearchSubmit}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Search input and button */}
-        <div className="relative flex-grow">
+        <div className="relative grow">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <Search size={16} />
           </div>

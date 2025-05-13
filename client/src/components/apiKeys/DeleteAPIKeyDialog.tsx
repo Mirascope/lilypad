@@ -30,7 +30,7 @@ export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{`Delete ${apiKey.name}`}</DialogTitle>
           <DialogDescription>
             This action is final and cannot be undone.

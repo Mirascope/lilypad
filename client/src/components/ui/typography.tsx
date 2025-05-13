@@ -5,11 +5,12 @@ import React from "react";
 const typographyVariants = cva("text-xl", {
   variants: {
     variant: {
-      h1: "scroll-m-20 text-4xl font-extrabold tracking-tight lg: text-5xl",
-      h2: "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
-      h3: "scroll-m-20 text-2xl font-semibold tracking-tight",
-      h4: "scroll-m-20 text-xl font-semibold tracking-tight",
-      p: "leading-7 [&:not(:first-child)]:mt-6",
+      h1: "scroll-m-20 text-4xl font-extrabold tracking-tight lg: text-5xl ",
+      h2: "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 ",
+      h3: "scroll-m-20 text-2xl font-semibold tracking-tight ",
+      h4: "scroll-m-20 text-xl font-semibold tracking-tight ",
+      h5: "scroll-m-20 text-lg font-semibold tracking-tight ",
+      p: "leading-7 not-first:mt-6",
       span: "",
       // default: "",
       // blockquote: "mt-6 border-l-2 pl-6 italic",
@@ -22,7 +23,7 @@ const typographyVariants = cva("text-xl", {
       small: "text-sm font-medium leading-none",
       xs: "text-xs leading-none",
       muted: "text-sm text-muted-foreground",
-      removePMargin: "[&:not(:first-child)]:mt-0",
+      removePMargin: "not-first:mt-0",
     },
   },
   defaultVariants: {
