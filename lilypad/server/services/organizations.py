@@ -73,8 +73,8 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         if organization.billing.stripe_customer_id:
                 return organization
 
-        stripe_customer = billing_service.create_customer(email=email, organization=organization)
-        organization.billing.stripe_customer_id = stripe_customer["id"]  # type: ignore[index]
+        stripe_customer_id = billing_service.create_customer(email=email, organization=organization)
+        organization.billing.stripe_customer_id = stripe_customer_id
 
         self.session.add(organization.billing)
         self.session.commit()
