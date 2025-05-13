@@ -34,31 +34,35 @@ export const callbackCodeQueryOptions = (provider: string, code?: string) =>
   });
 
 export const fetchVersions = async () => {
-  const privacyResponse = await fetch("https://mirascope.com/privacy");
-  const termsResponse = await fetch("https://mirascope.com/terms/service");
+  try {
+    const response = await fetch(
+      "https://mirascope.com/static/content-meta/policy/index.json"
+    );
 
-  const privacyHtml = await privacyResponse.text();
-  const termsHtml = await termsResponse.text();
+    if (!response.ok) {
+      throw new Error(`Failed to fetch policy data: ${response.status}`);
+    }
 
-  const privacyParser = new DOMParser();
-  const termsParser = new DOMParser();
+    const policyData = await response.json();
 
-  const privacyDoc = privacyParser.parseFromString(privacyHtml, "text/html");
-  const termsDoc = termsParser.parseFromString(termsHtml, "text/html");
+    // Find the privacy policy and terms of service entries
+    const privacyPolicy = policyData.find(
+      (policy: any) => policy.slug === "privacy"
+    );
+    const termsOfService = policyData.find(
+      (policy: any) => policy.slug === "service"
+    );
 
-  const privacyVersion = privacyDoc.querySelector(".last-updated-time");
-  const termsVersion = termsDoc.querySelector(".last-updated-time");
+    if (!privacyPolicy || !termsOfService) {
+      throw new Error("Could not find required policy information");
+    }
 
-  if (
-    !privacyVersion ||
-    !termsVersion ||
-    !privacyVersion.textContent ||
-    !termsVersion.textContent
-  ) {
-    throw new Error("Could not find version information");
+    return {
+      privacyVersion: privacyPolicy.lastUpdated,
+      termsVersion: termsOfService.lastUpdated,
+    };
+  } catch (error) {
+    console.error("Error fetching versions:", error);
+    throw error;
   }
-  return {
-    privacyVersion: privacyVersion.textContent,
-    termsVersion: termsVersion.textContent,
-  };
 };
