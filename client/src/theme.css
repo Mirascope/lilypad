@@ -9,102 +9,8 @@
   ); /* Darker purple */
   --color-lilypad-green: #409b45; /* Vibrant lily pad green */
   --color-lilypad-green-dark: #25562a; /* Darker version of the lily pad green */
-
   /* Default (Mirascope) theme colors */
 
-  /* Base */
-  --color-background: oklch(0.995 0 0); /* Pure white background - keep as is */
-  --color-foreground: oklch(0.1 0.2041 282.8); /* Dark text - keep as is */
-
-  /* Components */
-  --color-button-primary: var(--color-mirascope-purple-dark);
-  --color-primary: var(--color-mirascope-purple);
-  --color-primary-foreground: oklch(0.985 0 0);
-
-  --color-secondary: oklch(0.7 0.14 195); /* Teal that complements purple */
-  --color-secondary-foreground: oklch(1 0 0); /* Pure white */
-
-  --color-code-background: var(--color-background);
-
-  --color-muted: var(--color-gray-200);
-  --color-muted-foreground: var(--color-slate-700);
-
-  --color-accent: oklch(0.74 0.25 277.12);
-  --color-accent-foreground: var(--color-background);
-
-  /* ShadCn UI extras */
-  --color-card: oklch(0.995 0 0);
-  --color-card-foreground: oklch(0.1 0.2041 282.8);
-  --color-popover: oklch(0.995 0 0);
-  --color-popover-foreground: oklch(0.1 0.2041 282.8);
-  --color-destructive: oklch(
-    0.67 0.18 48
-  ); /* Warm orange that complements purple */
-  --color-destructive-foreground: oklch(0.985 0 0);
-  --color-destructive-hover: rgb(243, 226, 225);
-
-  /* Utility - keep as is */
-  --color-border: oklch(0.92 0.004 286.32);
-  --color-input: oklch(0.92 0.004 286.32);
-  --color-ring: var(--color-mirascope-purple);
-
-  /* Chart colors */
-  --color-chart-1: var(--color-indigo-500);
-  --color-chart-2: var(--color-emerald-500);
-  --color-chart-3: var(--color-violet-500);
-  --color-chart-4: var(--color-amber-500);
-  --color-chart-5: var(--color-rose-500);
-}
-
-/* Dark theme variant - Mirascope Dark */
-:is(.dark) {
-  /* Theme colors */
-  /* Base */
-  --color-background: oklch(0.11 0.005 285.823); /* Dark background */
-  --color-foreground: oklch(0.95 0 0); /* Light text */
-
-  /* Components */
-  --color-primary: var(--color-mirascope-purple); /* Keep your brand purple */
-  --color-button-primary: var(--color-mirascope-purple-dark);
-
-  --color-primary-foreground: oklch(0.985 0 0);
-
-  --color-secondary: oklch(
-    0.55 0.25 195
-  ); /* Darker teal that complements purple */
-  --color-secondary-foreground: oklch(0.95 0 0);
-
-  --color-muted: oklch(0.18 0.006 286.033);
-  --color-muted-foreground: oklch(0.75 0.015 286.067);
-
-  --color-accent: oklch(0.54 0.12 280.48);
-  --color-accent-foreground: oklch(1 0 0);
-
-  /* ShadCn UI extras */
-  --color-card: oklch(0.11 0.005 285.823);
-  --color-card-foreground: oklch(0.95 0 0);
-  --color-popover: oklch(0.11 0.005 285.823);
-  --color-popover-foreground: oklch(0.95 0 0);
-  --color-destructive: oklch(
-    0.55 0.18 48
-  ); /* Darker warm orange that complements purple */
-  --color-destructive-foreground: oklch(0.95 0 0);
-
-  /* Utility */
-  --color-border: oklch(0.16 0.006 286.033); /* Border color */
-  --color-input: oklch(0.16 0.006 286.033); /* Input border color */
-  --color-ring: oklch(0.35 0.017 285.786); /* Focus ring color */
-
-  /* Chart colors */
-  --color-chart-1: var(--color-indigo-400);
-  --color-chart-2: var(--color-emerald-400);
-  --color-chart-3: var(--color-violet-400);
-  --color-chart-4: var(--color-amber-400);
-  --color-chart-5: var(--color-rose-400);
-}
-
-/* Lilypad Light Theme */
-:root:has(div[data-product="lilypad"]) {
   /* Base */
   --color-background: oklch(0.995 0 0);
   --color-foreground: oklch(0.1 0.01 240);
@@ -114,18 +20,14 @@
   --color-primary: var(--color-lilypad-green);
   --color-primary-foreground: oklch(0.985 0 0);
 
-  --color-secondary: oklch(
-    0.65 0.15 180
-  ); /* Teal-blue that complements lilypad green */
-  --color-secondary-foreground: oklch(
-    0.1 0.01 240
-  ); /* Dark text for contrast */
+  --color-secondary: oklch(0.7 0.14 195); /* Teal that complements purple */
+  --color-secondary-foreground: oklch(1 0 0); /* Pure white */
+
+  --color-code-background: var(--color-background);
 
   --color-muted: var(--color-gray-100);
   --color-muted-foreground: var(--color-gray-500);
 
-  /* --color-accent: oklch(0.69 0.1274 146.3);
-    --color-accent-foreground: var(--color-emerald-900); */
   --color-accent: oklch(0.82 0.1111 145.19);
   --color-accent-foreground: oklch(0.1 0.2 282.8);
 
@@ -135,21 +37,21 @@
   --color-popover: oklch(0.995 0 0);
   --color-popover-foreground: oklch(0.1 0.01 240);
   --color-destructive: oklch(
-    0.65 0.15 30
-  ); /* Coral-orange that works with green */
-  --color-destructive-foreground: oklch(1 0 0); /* Pure white */
+    0.67 0.18 48
+  ); /* Warm orange that complements purple */
+  --color-destructive-foreground: oklch(0.985 0 0);
 
-  /* Utility */
+  /* Utility - keep as is */
   --color-border: var(--color-gray-200);
   --color-input: var(--color-gray-200);
   --color-ring: var(--color-lilypad-green);
 
   /* Chart colors */
-  --color-chart-1: var(--color-emerald-500);
-  --color-chart-2: var(--color-cyan-500);
-  --color-chart-3: var(--color-blue-500);
+  --color-chart-1: var(--color-indigo-500);
+  --color-chart-2: var(--color-emerald-500);
+  --color-chart-3: var(--color-violet-500);
   --color-chart-4: var(--color-amber-500);
-  --color-chart-5: var(--color-orange-500);
+  --color-chart-5: var(--color-rose-500);
 
   /* Sidebar specific colors */
   --color-sidebar-background: var(--color-gray-50);
@@ -162,9 +64,8 @@
   --color-sidebar-ring: var(--color-lilypad-green);
 }
 
-/* Lilypad Dark Theme */
-.dark:has(div[data-product="lilypad"]) {
-  /* Base */
+/* Dark theme variant - Mirascope Dark */
+:is(.dark) {
   --color-background: oklch(0.1 0.01 240);
   --color-foreground: oklch(0.95 0 0);
 
@@ -193,7 +94,7 @@
     0.5 0.17 30
   ); /* Darker coral-orange that works with green */
   --color-destructive-foreground: oklch(0.95 0 0);
-
+  --color-destructive-hover: oklch(0.3 0.034 30);
   /* Utility */
   --color-border: var(--color-gray-800);
   --color-input: var(--color-gray-800);
@@ -205,14 +106,4 @@
   --color-chart-3: var(--color-blue-400);
   --color-chart-4: var(--color-amber-400);
   --color-chart-5: var(--color-orange-400);
-
-  /* Sidebar specific colors */
-  --color-sidebar-background: var(--color-gray-900);
-  --color-sidebar-foreground: var(--color-gray-200);
-  --color-sidebar-primary: var(--color-emerald-600);
-  --color-sidebar-primary-foreground: oklch(0.985 0 0);
-  --color-sidebar-accent: var(--color-gray-800);
-  --color-sidebar-accent-foreground: var(--color-gray-200);
-  --color-sidebar-border: var(--color-gray-800);
-  --color-sidebar-ring: var(--color-emerald-600);
 }

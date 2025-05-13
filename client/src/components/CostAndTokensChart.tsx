@@ -89,7 +89,7 @@ export const CostAndTokensChart = ({
       const data = payload[0].payload;
 
       return (
-        <div className="bg-white p-4 rounded shadow-md border">
+        <div className="bg-background p-4 rounded shadow-md border">
           <p className="font-medium">{formatDate(label, false)}</p>
 
           {metricsData.map((_, index) => {

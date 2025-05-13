@@ -27,7 +27,7 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
     <Button
       variant="ghost"
       size="iconSm"
-      className="text-primary hover:text-primary/80 hover:bg-white"
+      className="text-primary hover:text-primary/80 hover:bg-background"
     >
       <PlusCircle />
     </Button>

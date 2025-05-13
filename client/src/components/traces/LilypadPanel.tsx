@@ -27,7 +27,7 @@ export const LilypadPanel = ({
               <CardTitle>{"Inputs"}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">
+              <div className="bg-background p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">
                 <JsonView value={span.arg_values} />
               </div>
             </CardContent>

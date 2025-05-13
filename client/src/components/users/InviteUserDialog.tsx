@@ -26,15 +26,15 @@ export const InviteUserDialog = ({
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-background"
         >
           <PlusCircle />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn(`max-w-${maxWidth} overflow-x-auto`)}>
-        <DialogHeader className='shrink-0'>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>

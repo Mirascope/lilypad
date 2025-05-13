@@ -109,7 +109,7 @@ const DropdownMenuItem = React.forwardRef<
       // Base styles
       "relative flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none",
       // State styles
-      "focus:bg-primary-foreground",
+      "focus:bg-muted",
       // Disabled state
       "data-disabled:pointer-events-none data-disabled:opacity-50",
       // Conditional styles

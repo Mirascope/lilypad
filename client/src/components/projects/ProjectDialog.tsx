@@ -41,7 +41,7 @@ export const BaseProjectDialog = ({
         className={`max-w-${maxWidth} overflow-x-auto`}
         onClick={(e) => e.stopPropagation()}
       >
-        <DialogHeader className='shrink-0'>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
@@ -61,15 +61,15 @@ export const CreateProjectDialog = () => {
     <BaseProjectDialog
       trigger={
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-background"
         >
           <PlusCircle />
         </Button>
       }
-      title='Create a new project'
-      description='Create a new project for your organization.'
+      title="Create a new project"
+      description="Create a new project for your organization."
     >
       <CreateProjectForm />
     </BaseProjectDialog>
@@ -86,12 +86,12 @@ export const EditProjectDialog = ({
   return (
     <BaseProjectDialog
       trigger={
-        <Button variant='outline' size='icon' className='h-8 w-8'>
+        <Button variant="outline" size="icon" className="h-8 w-8">
           <PencilLine />
         </Button>
       }
-      title='Edit project'
-      description='Update your project details.'
+      title="Edit project"
+      description="Update your project details."
     >
       <EditProjectForm
         projectUuid={projectUuid}
@@ -109,13 +109,13 @@ export const DeleteProjectDialog = ({
   return (
     <BaseProjectDialog
       trigger={
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       }
       title={`Delete ${project.name}`}
       description={`Deleting ${project.name} will delete all resources tied to this project.`}
-      maxWidth='[425px]'
+      maxWidth="[425px]"
       closeOnSubmit={false}
     >
       <DeleteProjectForm project={project} />

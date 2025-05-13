@@ -37,7 +37,7 @@ export interface MessageCardProps {
 }
 const MessageCard = ({ role, content }: MessageCardProps) => {
   return (
-    <Card className="bg-primary-foreground">
+    <Card className="bg-background">
       <CardHeader>
         <CardTitle>{role}</CardTitle>
       </CardHeader>
@@ -148,7 +148,7 @@ export const SpanComments = ({
       ),
       value: CommentTab.COMMENTS,
       component: (
-        <div className="bg-primary-foreground text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
+        <div className="bg-background text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
           <div className="flex-1 overflow-auto px-4 pt-2">
             <CommentCards spanUuid={spanUuid} />
           </div>
@@ -200,7 +200,7 @@ export const LilypadPanelTab = ({
       label: "Output",
       value: TraceTab.OUTPUT,
       component: span.output ? (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
           {renderOutput(span.output)}
         </div>
       ) : null,
@@ -236,7 +236,7 @@ export const LilypadPanelTab = ({
       label: "Metadata",
       value: TraceTab.METADATA,
       component: span.data ? (
-        <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
           {renderMetadata(span.data)}
         </div>
       ) : null,
@@ -246,7 +246,7 @@ export const LilypadPanelTab = ({
       value: TraceTab.DATA,
       component: span.data && (
         <div className="h-full overflow-auto">
-          <div className="bg-primary-foreground p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+          <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
             <JsonView value={span.data} />
           </div>
         </div>

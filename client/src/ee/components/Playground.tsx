@@ -174,7 +174,7 @@ const CallParamsDrawer = ({
     <Sheet>
       <SheetTrigger asChild>
         <Button
-          className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700"
+          className="border border-gray-300 bg-background hover:bg-gray-100 text-gray-700"
           variant="outline"
           disabled={isDisabled}
         >
@@ -252,7 +252,7 @@ const InputsDrawer = ({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
-          className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-700"
+          className="border border-gray-300 bg-background hover:bg-gray-100 text-gray-700"
           variant="outline"
           disabled={isDisabled}
         >

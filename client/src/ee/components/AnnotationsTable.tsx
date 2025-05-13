@@ -32,7 +32,7 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
     //             {JSON.stringify(row.original.span.arg_values)}
     //           </div>
     //         </TooltipTrigger>
-    //         <TooltipContent className='bg-white text-black'>
+    //         <TooltipContent className='bg-background text-black'>
     //           {<JsonView value={row.original.span.arg_values} />}
     //         </TooltipContent>
     //       </Tooltip>
@@ -50,7 +50,7 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
     //             {<ReactMarkdown>{row.original.span.output}</ReactMarkdown>}
     //           </div>
     //         </TooltipTrigger>
-    //         <TooltipContent className='bg-white text-black'>
+    //         <TooltipContent className='bg-background text-black'>
     //           {renderCardOutput(row.original.span.output)}
     //         </TooltipContent>
     //       </Tooltip>

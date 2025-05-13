@@ -369,7 +369,7 @@ export const DataTable = <T extends { uuid: string }>({
           }}
         >
           <Table className="w-full">
-            <TableHeader className="sticky top-0 z-10 bg-white">
+            <TableHeader className="sticky top-0 z-10 bg-background">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="w-full">
                   {headerGroup.headers.map((header) => (
