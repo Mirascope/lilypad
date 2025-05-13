@@ -11,7 +11,7 @@ from sqlmodel import Session, select
 from .._utils import get_current_user
 from ..db import get_session
 from ..models import BaseSQLModel
-from ..schemas import UserPublic
+from ..schemas.users import UserPublic
 
 _TableT = TypeVar("_TableT", bound=BaseSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -23,23 +23,53 @@ class BaseService(Generic[_TableT, _CreateT]):
     table: type[_TableT]
     create_model: type[_CreateT]
 
-    def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
-        """Find record by uuid"""
+    def find_record(self, **filters: Any) -> _TableT | None:
+        """Find record by filters"""
         filter_conditions = [
             getattr(self.table, key) == value for key, value in filters.items()
         ]
         record_table = self.session.exec(
             select(self.table).where(
-                self.table.uuid == uuid,
                 *filter_conditions,
             )
         ).first()
+        return record_table
+
+    def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
+        """Find record by uuid"""
+        record_table = self.find_record(
+            uuid=uuid,
+            **filters,
+        )
         if not record_table:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Record for {self.table.__tablename__} not found",
             )
         return record_table
+
+    def find_records_by_uuids(
+        self, uuids: set[UUID], **filters: Any
+    ) -> Sequence[_TableT]:
+        """Find multiple records by their UUIDs in a single query.
+
+        Args:
+            uuids: Set of UUIDs to fetch
+            filters: Additional filters to apply to the query.
+
+        Returns:
+            A sequence of records matching the UUIDs.
+        """
+        if not uuids:
+            return []
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
+        records = self.session.exec(
+            select(self.table).where(self.table.uuid.in_(uuids), *filter_conditions)  # type: ignore
+        ).all()
+
+        return records
 
     def find_all_records(self, **filters: Any) -> Sequence[_TableT]:
         """Find all records"""

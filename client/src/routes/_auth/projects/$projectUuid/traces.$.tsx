@@ -1,48 +1,235 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { z } from "zod";
 
+import CardSkeleton from "@/components/CardSkeleton";
+import { ComparePanel } from "@/components/ComparePanel";
+import LilypadDialog from "@/components/LilypadDialog";
 import { LilypadLoading } from "@/components/LilypadLoading";
+import { SearchBar } from "@/components/SearchBar";
 import TableSkeleton from "@/components/TableSkeleton";
-import { TracesTable } from "@/components/TracesTable";
+import { ResizablePanels } from "@/components/traces/ResizablePanels";
+import { SpanMoreDetail } from "@/components/traces/SpanMoreDetail";
+import { TracesTable } from "@/components/traces/TracesTable";
+import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
+import { QueueForm } from "@/ee/components/QueueForm";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { useInfiniteTraces } from "@/hooks/use-infinite-traces";
+import { TableProvider, useTable } from "@/hooks/use-table";
+import { SpanMoreDetails, SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
-import { tracesQueryOptions } from "@/utils/traces";
-import { createFileRoute, useParams } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { formatRelativeTime } from "@/utils/strings";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
+import { GitCompare, RefreshCcw, Users } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+const INIT_LIMIT = 80;
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
-  component: () => (
-    <Suspense fallback={<LilypadLoading />}>
-      <Trace />
-    </Suspense>
-  ),
+  validateSearch: z.object({}).optional(),
+  component: () => <TraceContainer />,
 });
 
-export const Trace = () => {
+const TraceContainer = () => {
+  const navigate = useNavigate();
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
+  const handleDetailPanelOpen = (trace: SpanPublic) => {
+    navigate({
+      to: Route.fullPath,
+      replace: true,
+      params: { projectUuid, _splat: trace.uuid },
+    }).catch(() => {
+      toast.error("Failed to navigate");
+    });
+  };
+  const handleDetailPanelClose = () => {
+    navigate({
+      to: Route.fullPath,
+      replace: true,
+      params: { projectUuid, _splat: undefined },
+    }).catch(() => {
+      toast.error("Failed to navigate");
+    });
+  };
   return (
-    <div className='pt-4 pb-1 h-screen flex flex-col px-2'>
-      <Typography variant='h2'>{project.name}</Typography>
-      <div className='flex-1 overflow-auto'>
-        <Suspense fallback={<TableSkeleton />}>
-          <TraceBody />
-        </Suspense>
-      </div>
-    </div>
+    <Suspense fallback={<LilypadLoading />}>
+      <TableProvider<SpanPublic>
+        onPanelClose={handleDetailPanelClose}
+        onPanelOpen={handleDetailPanelOpen}
+      >
+        <Trace />
+      </TableProvider>
+    </Suspense>
   );
 };
 
-export const TraceBody = () => {
+const Trace = () => {
   const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(tracesQueryOptions(projectUuid));
-  return (
+  const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
+  const { selectedRows, detailRow, setDetailRow } = useTable<SpanPublic>();
+  const [isComparing, setIsComparing] = useState(false);
+  const features = useFeatureAccess();
+  const [pageSize] = useState(INIT_LIMIT);
+  const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const navigate = useNavigate();
+  const {
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    defaultData,
+    isLoading,
+    dataUpdatedAt,
+    refetch,
+  } = useInfiniteTraces(projectUuid, pageSize, order);
+
+  useEffect(() => {
+    if (traceUuid) {
+      const trace = defaultData.find((row) => row.uuid === traceUuid);
+      if (trace) {
+        setDetailRow(trace);
+      } else {
+        setDetailRow(null);
+      }
+    } else {
+      setDetailRow(null);
+    }
+  }, [defaultData]);
+
+  const handleReachEnd = async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    await fetchNextPage();
+  };
+
+  const handleFullView = (span: SpanMoreDetails) => {
+    if (!span.project_uuid) {
+      toast.error("This span is not part of a project");
+      return;
+    }
+    navigate({
+      to: "/projects/$projectUuid/traces/detail/$spanUuid",
+      params: {
+        projectUuid: span.project_uuid,
+        spanUuid: span.uuid,
+      },
+    }).catch(() => toast.error("Failed to navigate"));
+  };
+  if (isComparing) {
+    return (
+      <div className="h-screen flex flex-col gap-4 p-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsComparing(false)}
+          className="mb-4 w-fit shrink-0"
+        >
+          ← Back to Traces
+        </Button>
+        <ComparePanel rows={selectedRows} />
+      </div>
+    );
+  }
+
+  const primaryContent = (
     <>
-      <TracesTable
-        data={data}
-        traceUuid={traceUuid}
-        path={Route.fullPath}
-        hideCompare={true}
-      />
+      <div className="flex flex-col gap-1 ">
+        <div className="flex justify-between items-center">
+          <Typography variant="h3">{project.name}</Typography>
+          <div className="flex items-center gap-2">
+            {features.annotations && (
+              <LilypadDialog
+                icon={<Users />}
+                text={"Assign"}
+                title={"Annotate selected traces"}
+                description={`${selectedRows.length} trace(s) selected.`}
+                buttonProps={{
+                  disabled: selectedRows.length === 0,
+                }}
+                tooltipContent={"Add selected traces to your annotation queue."}
+              >
+                <QueueForm spans={selectedRows} />
+              </LilypadDialog>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsComparing(true)}
+              disabled={selectedRows.length !== 2}
+              className="whitespace-nowrap"
+            >
+              <GitCompare />
+              Compare
+            </Button>
+          </div>
+        </div>
+        <Typography
+          variant="span"
+          affects="muted"
+          className="flex items-center gap-2"
+        >
+          Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
+          <Button
+            variant="outline"
+            size="icon"
+            loading={isLoading}
+            onClick={() => {
+              refetch();
+              toast.success("Refreshed traces");
+            }}
+            className="transition-all hover:bg-gray-100 relative overflow-hidden group size-8"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </Typography>
+      </div>
+      <div className="flex-1 overflow-auto">
+        <div className="flex flex-col h-full">
+          <div className="shrink-0 py-4">
+            <SearchBar projectUuid={projectUuid} onDataChange={setSearchData} />
+          </div>
+          <div className="flex-1 min-h-0 overflow-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <LilypadLoading />
+              </div>
+            ) : (
+              <TracesTable
+                data={searchData ?? defaultData}
+                traceUuid={traceUuid}
+                isSearch={Boolean(searchData)}
+                fetchNextPage={handleReachEnd}
+                isFetchingNextPage={isFetchingNextPage}
+                projectUuid={projectUuid}
+                order={order}
+                onOrderChange={setOrder}
+              />
+            )}
+          </div>
+        </div>
+      </div>
     </>
+  );
+  const detailContent = detailRow && (
+    <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
+      <SpanMoreDetail data={detailRow} handleFullView={handleFullView} />
+    </Suspense>
+  );
+
+  return (
+    <div className="h-screen flex flex-col gap-4 p-4">
+      <Suspense fallback={<TableSkeleton />}>
+        <ResizablePanels
+          primaryContent={primaryContent}
+          detailContent={detailContent}
+          defaultPrimarySize={60}
+          defaultDetailSize={40}
+        />
+      </Suspense>
+    </div>
   );
 };

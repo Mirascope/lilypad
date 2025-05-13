@@ -1,5 +1,6 @@
 """Constants for Lilypad Enterprise Edition"""
 
 HOST_NAME = "mirascope.com"
-REMOTE_API_URL = "https://api.mirascope.com/lilypad"
+ALT_HOST_NAME = "lilypad.so"
+REMOTE_API_URL = "https://lilypad-api.mirascope.com"
 REMOTE_CLIENT_URL = "https://lilypad.mirascope.com"

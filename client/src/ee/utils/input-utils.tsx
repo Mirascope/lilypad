@@ -115,7 +115,7 @@ export const StringInput = <
         <FormControl>
           <Input
             {...field}
-            placeholder='Enter text value'
+            placeholder="Enter text value"
             value={field.value ?? ""}
             onChange={field.onChange}
           />
@@ -139,9 +139,9 @@ export const IntegerInput = <
         <FormControl>
           <Input
             {...field}
-            type='number'
-            step='1'
-            placeholder='Enter integer value'
+            type="number"
+            step="1"
+            placeholder="Enter integer value"
             value={field.value ?? ""}
             onChange={(e) => {
               const value =
@@ -169,9 +169,9 @@ export const FloatInput = <
         <FormControl>
           <Input
             {...field}
-            type='number'
-            step='0.01'
-            placeholder='Enter float value'
+            type="number"
+            step="0.01"
+            placeholder="Enter float value"
             value={field.value ?? ""}
             onChange={(e) => {
               const value =
@@ -199,7 +199,7 @@ export const BooleanInput = <
         <FormControl>
           <div>
             <Checkbox
-              className='w-6 h-6'
+              className="w-6 h-6"
               checked={!!field.value}
               onCheckedChange={field.onChange}
             />
@@ -277,20 +277,20 @@ export const BytesInput = <
 
     if (fileType === "image") {
       return (
-        <div className='mt-2'>
-          <p className='text-sm text-gray-500 mb-1'>Image Preview:</p>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500 mb-1">Image Preview:</p>
           <img
             src={preview}
-            alt='Preview'
-            className='max-w-full max-h-40 object-contain border rounded'
+            alt="Preview"
+            className="max-w-full max-h-40 object-contain border rounded"
           />
         </div>
       );
     } else if (fileType === "audio") {
       return (
-        <div className='mt-2'>
-          <p className='text-sm text-gray-500 mb-1'>Audio Preview:</p>
-          <audio controls className='w-full'>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500 mb-1">Audio Preview:</p>
+          <audio controls className="w-full">
             <source src={preview} />
             Your browser does not support the audio element.
           </audio>
@@ -298,8 +298,8 @@ export const BytesInput = <
       );
     } else if (value) {
       return (
-        <div className='mt-2 flex items-center text-sm text-gray-500'>
-          <FileText className='w-4 h-4 mr-1' />
+        <div className="mt-2 flex items-center text-sm text-gray-500">
+          <FileText className="w-4 h-4 mr-1" />
           <span>
             File loaded ({Math.round((value.length * 3) / 4 / 1024)} KB)
           </span>
@@ -314,23 +314,23 @@ export const BytesInput = <
     <FormInputWrapper name={name} label={label}>
       {(field) => (
         <FormControl>
-          <div className='space-y-2'>
-            <div className='flex gap-2 mb-2'>
+          <div className="space-y-2">
+            <div className="flex gap-2 mb-2">
               <Button
-                type='button'
+                type="button"
                 variant={inputMode === "text" ? "default" : "outline"}
                 onClick={() => setInputMode("text")}
-                size='sm'
-                className='flex-1'
+                size="sm"
+                className="flex-1"
               >
                 Text Input
               </Button>
               <Button
-                type='button'
+                type="button"
                 variant={inputMode === "file" ? "default" : "outline"}
                 onClick={() => setInputMode("file")}
-                size='sm'
-                className='flex-1'
+                size="sm"
+                className="flex-1"
               >
                 File Upload
               </Button>
@@ -338,59 +338,59 @@ export const BytesInput = <
 
             {inputMode === "text" ? (
               <textarea
-                className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-                placeholder='Enter base64 encoded bytes'
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Enter base64 encoded bytes"
                 value={field.value || ""}
                 onChange={(e) => handleTextInput(e, field.onChange)}
               />
             ) : (
-              <div className='space-y-2'>
-                <div className='grid grid-cols-3 gap-2'>
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
-                    type='button'
-                    variant='outline'
+                    type="button"
+                    variant="outline"
                     onClick={triggerFileSelect}
-                    className='w-full flex items-center justify-center gap-1'
+                    className="w-full flex items-center justify-center gap-1"
                   >
-                    <Image className='w-4 h-4' />
+                    <Image className="w-4 h-4" />
                     <span>Image</span>
                   </Button>
                   <Button
-                    type='button'
-                    variant='outline'
+                    type="button"
+                    variant="outline"
                     onClick={triggerFileSelect}
-                    className='w-full flex items-center justify-center gap-1'
+                    className="w-full flex items-center justify-center gap-1"
                   >
-                    <Music className='w-4 h-4' />
+                    <Music className="w-4 h-4" />
                     <span>Audio</span>
                   </Button>
                   <Button
-                    type='button'
-                    variant='outline'
+                    type="button"
+                    variant="outline"
                     onClick={triggerFileSelect}
-                    className='w-full flex items-center justify-center gap-1'
+                    className="w-full flex items-center justify-center gap-1"
                   >
-                    <FileText className='w-4 h-4' />
+                    <FileText className="w-4 h-4" />
                     <span>Other File</span>
                   </Button>
                 </div>
                 <input
                   ref={fileInputRef}
-                  type='file'
+                  type="file"
                   onChange={(e) => void handleFileChange(e, field.onChange)}
-                  className='hidden'
-                  accept='*/*'
+                  className="hidden"
+                  accept="*/*"
                 />
                 <div
-                  className='flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md hover:border-primary cursor-pointer'
+                  className="flex items-center justify-center w-full p-6 border-2 border-dashed rounded-md hover:border-primary cursor-pointer"
                   onClick={triggerFileSelect}
                 >
-                  <div className='flex flex-col items-center'>
-                    <Upload className='w-8 h-8 text-gray-400' />
-                    <p className='mt-2 text-sm text-gray-500'>
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">
                       Click to upload or drag and drop
                     </p>
-                    <p className='text-xs text-gray-400'>
+                    <p className="text-xs text-gray-400">
                       Any file type supported
                     </p>
                   </div>
@@ -401,7 +401,7 @@ export const BytesInput = <
             {renderPreview(field.value)}
 
             {field.value && inputMode === "text" && (
-              <div className='text-xs text-gray-500'>
+              <div className="text-xs text-gray-500">
                 {field.value.length} characters (
                 {Math.round((field.value.length * 3) / 4 / 1024)} KB approx)
               </div>
@@ -429,28 +429,28 @@ export const ListInput = <
   });
   const methods = useFormContext<TFieldValues>();
   return (
-    <FormItem className='w-full'>
+    <FormItem className="w-full">
       <FormControl>
-        <div className='space-y-4'>
-          <div className='flex gap-4 flex-wrap pb-4'>
+        <div className="space-y-4">
+          <div className="flex gap-4 flex-wrap pb-4">
             {fields.map((field, index) => {
               const type =
                 methods.watch(
                   `${String(name)}.${index}.type` as unknown as FieldPath<TFieldValues>
                 ) || "str";
               return (
-                <Card key={field.id} className='w-full flex-shrink-0 relative'>
+                <Card key={field.id} className="w-full shrink-0 relative">
                   <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => remove(index)}
-                    className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
+                    className="h-6 w-6 absolute top-2 right-2 hover:bg-gray-100"
                   >
-                    <X className='h-4 w-4' />
+                    <X className="h-4 w-4" />
                   </Button>
-                  <CardContent className='pt-6 space-y-4'>
-                    <div className='w-full flex gap-2'>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="w-full flex gap-2">
                       <FormField
                         control={control}
                         // Using type assertion to handle nested paths
@@ -466,8 +466,8 @@ export const ListInput = <
                                   value={field.value || "str"}
                                   onValueChange={field.onChange}
                                 >
-                                  <SelectTrigger className='w-full'>
-                                    <SelectValue placeholder='Select input type' />
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select input type" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {pythonTypes.map((type) => (
@@ -496,7 +496,7 @@ export const ListInput = <
               );
             })}
             <AddCardButton
-              className='w-full h-[116px]'
+              className="w-full h-[116px]"
               onClick={() =>
                 append({ type: "str", value: "" } as unknown as any)
               }
@@ -604,31 +604,31 @@ export const ObjectInput = <
   return (
     <FormInputWrapper name={name} label={label}>
       {(_field) => (
-        <div className='space-y-4 border rounded-md p-4'>
+        <div className="space-y-4 border rounded-md p-4">
           {entries.map(({ key, type, value }, entryIndex) => {
             const valueLabel = `Value (${type})`;
             return (
-              <Card key={entryIndex} className='w-full flex-shrink-0 relative'>
+              <Card key={entryIndex} className="w-full shrink-0 relative">
                 <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleRemoveProperty(key)}
-                  className='h-6 w-6 absolute top-2 right-2 hover:bg-gray-100'
+                  className="h-6 w-6 absolute top-2 right-2 hover:bg-gray-100"
                 >
-                  <X className='h-4 w-4' />
+                  <X className="h-4 w-4" />
                 </Button>
-                <CardContent className='pt-6 space-y-4'>
+                <CardContent className="pt-6 space-y-4">
                   <FormItem>
                     <FormLabel>Key</FormLabel>
                     <Input
                       value={key}
                       onChange={(e) => handleKeyChange(key, e.target.value)}
-                      placeholder='Key'
-                      className='w-full'
+                      placeholder="Key"
+                      className="w-full"
                     />
                   </FormItem>
-                  <div className='flex gap-2'>
+                  <div className="flex gap-2">
                     <FormItem>
                       <FormLabel>Type</FormLabel>
                       <Select
@@ -637,8 +637,8 @@ export const ObjectInput = <
                           handleTypeChange(key, newType)
                         }
                       >
-                        <SelectTrigger className='w-full'>
-                          <SelectValue placeholder='Select type' />
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
                           {pythonTypes.map((t) => (
@@ -649,7 +649,7 @@ export const ObjectInput = <
                         </SelectContent>
                       </Select>
                     </FormItem>
-                    <FormItem className='w-full'>
+                    <FormItem className="w-full">
                       <FormLabel>{valueLabel}</FormLabel>
                       {type === "str" && (
                         <Input
@@ -657,13 +657,13 @@ export const ObjectInput = <
                           onChange={(e) =>
                             handleValueChange(key, e.target.value)
                           }
-                          placeholder='String value'
+                          placeholder="String value"
                         />
                       )}
                       {type === "int" && (
                         <Input
-                          type='number'
-                          step='1'
+                          type="number"
+                          step="1"
                           value={(value as any) ?? ""}
                           onChange={(e) => {
                             const val =
@@ -672,13 +672,13 @@ export const ObjectInput = <
                                 : parseInt(e.target.value, 10);
                             handleValueChange(key, val);
                           }}
-                          placeholder='Integer value'
+                          placeholder="Integer value"
                         />
                       )}
                       {type === "float" && (
                         <Input
-                          type='number'
-                          step='0.01'
+                          type="number"
+                          step="0.01"
                           value={(value as any) ?? ""}
                           onChange={(e) => {
                             const val =
@@ -687,13 +687,13 @@ export const ObjectInput = <
                                 : parseFloat(e.target.value);
                             handleValueChange(key, val);
                           }}
-                          placeholder='Float value'
+                          placeholder="Float value"
                         />
                       )}
                       {type === "bool" && (
-                        <div className='justify-end items-center'>
+                        <div className="justify-end items-center">
                           <Checkbox
-                            className='w-6 h-6'
+                            className="w-6 h-6"
                             checked={!!value}
                             onCheckedChange={(checked) =>
                               handleValueChange(key, !!checked)
@@ -706,7 +706,7 @@ export const ObjectInput = <
                           name={
                             `${String(name)}.${key}.value` as unknown as FieldPath<TFieldValues>
                           }
-                          label=''
+                          label=""
                         />
                       )}
                       {type === "dict" && (
@@ -714,7 +714,7 @@ export const ObjectInput = <
                           name={
                             `${String(name)}.${key}.value` as unknown as FieldPath<TFieldValues>
                           }
-                          label=''
+                          label=""
                         />
                       )}
                     </FormItem>
@@ -724,10 +724,10 @@ export const ObjectInput = <
             );
           })}
           <Button
-            type='button'
-            variant='outline'
+            type="button"
+            variant="outline"
             onClick={handleAddProperty}
-            className='w-full'
+            className="w-full"
           >
             Add Property
           </Button>

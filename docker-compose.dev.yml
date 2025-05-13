@@ -10,6 +10,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-postgres}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
   lilypad:
     build:
@@ -21,16 +23,11 @@ services:
       - .env.dev
     develop:
       watch:
-        # Sync the working directory with the `/app` directory in the container
         - action: sync
           path: .
           target: /app
-          # Exclude the project virtual environment — it could be for a
-          # different platform in the container
           ignore:
             - .venv/
-
-        # Rebuild the image if dependencies change by checking uv.lock
         - action: rebuild
           path: ./uv.lock
     environment:
@@ -47,9 +44,16 @@ services:
       - LILYPAD_REMOTE_CLIENT_URL=${LILYPAD_REMOTE_CLIENT_URL:-http://localhost:5173}
       - LILYPAD_ENVIRONMENT=${LILYPAD_ENVIRONMENT:-development}
       - LILYPAD_SERVE_FRONTEND=false
+      - LILYPAD_EXPERIMENTAL=true
       - LILYPAD_PLAYGROUND_VENV_PATH=/opt/playground-venv
+      - LILYPAD_OPENSEARCH_HOST=${LILYPAD_OPENSEARCH_HOST:-opensearch}
+      - LILYPAD_OPENSEARCH_PORT=${LILYPAD_OPENSEARCH_PORT:-9200}
+      - LILYPAD_OPENSEARCH_USER=${LILYPAD_OPENSEARCH_USER:-admin}
+      - LILYPAD_OPENSEARCH_PASSWORD=${LILYPAD_OPENSEARCH_PASSWORD:-${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-50\!w2nPBWe:}}
     depends_on:
       - postgres
+    networks:
+      - app-network
 
   client:
     build:
@@ -63,6 +67,56 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - VITE_HOST=0.0.0.0
+    networks:
+      - app-network
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-50\!w2nPBWe:}
+      - "cluster.routing.allocation.disk.threshold_enabled=true"
+      - "cluster.routing.allocation.disk.watermark.low=90%"
+      - "cluster.routing.allocation.disk.watermark.high=95%"
+      - "cluster.routing.allocation.disk.watermark.flood_stage=97%"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
+    networks:
+      - app-network
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    networks:
+      - app-network
+    depends_on:
+      - opensearch
 
 volumes:
   postgres-data:
+  opensearch-data:
+
+networks:
+  app-network:
+    driver: bridge

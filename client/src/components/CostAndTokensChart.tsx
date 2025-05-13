@@ -59,7 +59,6 @@ export const CostAndTokensChart = ({
 }) => {
   // Create a map to organize data by date
   const dateMap = new Map();
-
   // Process all metrics data
   metricsData.forEach((metrics, index) => {
     const sourceLabel = labels[index];
@@ -90,28 +89,28 @@ export const CostAndTokensChart = ({
       const data = payload[0].payload;
 
       return (
-        <div className='bg-white p-4 rounded shadow-md border'>
-          <p className='font-medium'>{formatDate(label, false)}</p>
+        <div className="bg-background p-4 rounded shadow-md border">
+          <p className="font-medium">{formatDate(label, false)}</p>
 
           {metricsData.map((_, index) => {
             // Only show data for this source if it exists for this date point
             if (data[`cost_${index}`] !== undefined) {
               return (
-                <div key={index} className='mt-2'>
+                <div key={index} className="mt-2">
                   <p
-                    className='font-medium'
+                    className="font-medium"
                     style={{ color: index === 0 ? "#6366f1" : "#f59e0b" }}
                   >
                     {labels[index]}
                   </p>
-                  <p className='text-purple-600'>
+                  <p className="text-purple-600">
                     Total Cost: ${data[`cost_${index}`]?.toFixed(4)}
                   </p>
-                  <p className='text-emerald-600'>
+                  <p className="text-emerald-600">
                     Input Tokens:{" "}
                     {data[`input_tokens_${index}`]?.toLocaleString()}
                   </p>
-                  <p className='text-amber-600'>
+                  <p className="text-amber-600">
                     Output Tokens:{" "}
                     {data[`output_tokens_${index}`]?.toLocaleString()}
                   </p>
@@ -128,51 +127,44 @@ export const CostAndTokensChart = ({
 
   // Define colors for each dataset
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
-
   return (
-    <Card className='w-full'>
-      <CardHeader>
+    <Card className="w-full h-full flex flex-col">
+      <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className='h-64'>
-          {combinedData.length > 0 ? (
-            <ResponsiveContainer width='100%' height='100%'>
-              <ComposedChart data={combinedData} margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray='3 3' />
-                <XAxis
-                  dataKey='start_date'
-                  tickFormatter={(value) => formatDate(value, false)}
-                />
-                <YAxis
-                  yAxisId='cost'
-                  orientation='left'
-                  label={{
-                    value: "Cost ($)",
-                    angle: -90,
-                    position: "insideLeft",
-                    offset: -10,
-                    style: { textAnchor: "middle" },
-                  }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
+      <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
+        {combinedData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={combinedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="start_date"
+                tickFormatter={(value) => formatDate(value, false)}
+              />
+              <YAxis
+                yAxisId="cost"
+                orientation="left"
+                axisLine={{ strokeWidth: 1 }}
+                tickLine={false}
+                width={60}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
 
-                {metricsData.map((_, index) => (
-                  <Bar
-                    key={index}
-                    yAxisId='cost'
-                    dataKey={`cost_${index}`}
-                    fill={colors[index % colors.length]}
-                    name={labels[index]}
-                  />
-                ))}
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : (
-            <Typography affects='muted'>No Data</Typography>
-          )}
-        </div>
+              {metricsData.map((_, index) => (
+                <Bar
+                  key={index}
+                  yAxisId="cost"
+                  dataKey={`cost_${index}`}
+                  fill={colors[index % colors.length]}
+                  name={labels[index]}
+                />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <Typography affects="muted">No Data</Typography>
+        )}
       </CardContent>
     </Card>
   );

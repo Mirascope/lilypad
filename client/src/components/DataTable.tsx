@@ -1,3 +1,4 @@
+import { useAuth, UserConfig } from "@/auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,11 +8,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
   Table,
   TableBody,
   TableCell,
@@ -19,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTable } from "@/hooks/use-table";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -26,15 +23,23 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  OnChangeFn,
   Row,
+  RowSelectionState,
   SortingState,
   Table as TanStackTable,
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -49,21 +54,20 @@ interface GenericDataTableProps<T> {
   filterColumn?: string;
   getRowCanExpand?: (row: T) => boolean;
   getSubRows?: (row: T) => T[];
-  DetailPanel?: React.ComponentType<{ data: T; path?: string }>;
   onRowClick?: (row: T) => void;
-  defaultPanelSize?: number;
+  onRowHover?: (row: T) => void;
   virtualizerRef?: React.RefObject<HTMLDivElement | null>;
   virtualizerOptions: VirtualizerOptions;
   onFilterChange?: (value: string) => void;
   defaultSorting?: SortingState;
   hideColumnButton?: boolean;
   customControls?: (table: TanStackTable<T>) => React.ReactNode;
-  defaultSelectedRow?: T | null;
-  selectRow?: T | null;
   customGetRowId?: (row: T) => string;
   customExpanded?: true | Record<string, boolean>;
-  onDetailPanelClose?: () => void;
-  path?: string;
+  customComponent?: ReactNode;
+  isFetching?: boolean;
+  fetchNextPage?: () => void;
+  columnVisibilityStateKey?: string;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -72,32 +76,138 @@ export const DataTable = <T extends { uuid: string }>({
   filterColumn,
   getRowCanExpand,
   getSubRows,
-  DetailPanel,
   onRowClick,
-  defaultPanelSize = 50,
+  onRowHover,
   virtualizerRef,
   virtualizerOptions,
   onFilterChange,
   defaultSorting = [],
   hideColumnButton,
   customControls,
-  defaultSelectedRow = null,
-  selectRow,
   customGetRowId = undefined,
   customExpanded = {},
-  onDetailPanelClose,
-  path,
+  isFetching,
+  fetchNextPage,
+  columnVisibilityStateKey,
 }: GenericDataTableProps<T>) => {
+  const { updateUserConfig, userConfig } = useAuth();
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
     customExpanded
   );
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [detailRow, setDetailRow] = useState<T | null | undefined>(
-    defaultSelectedRow
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    columnVisibilityStateKey
+      ? ((userConfig?.[columnVisibilityStateKey as keyof UserConfig] as
+          | VisibilityState
+          | undefined) ?? {})
+      : {}
   );
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+  // Use our context for detail panel and selected rows
+  const { detailRow, setDetailRow, onDetailPanelClose, setSelectedRows } =
+    useTable<T>();
+
+  const fetchMoreOnBottomReached = useCallback(
+    (containerRefElement?: HTMLDivElement | null) => {
+      if (containerRefElement) {
+        const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
+        if (scrollHeight - scrollTop - clientHeight < 500) {
+          fetchNextPage?.();
+        }
+      }
+    },
+    [fetchNextPage]
+  );
+
+  useEffect(() => {
+    fetchMoreOnBottomReached(virtualizerRef?.current);
+  }, [fetchMoreOnBottomReached, virtualizerRef]);
+
+  const flattenedData = useMemo(() => {
+    // Helper function to flatten data recursively
+    const flattenData = (rows: T[]): T[] => {
+      return rows.flatMap((row) => {
+        // Start with the current row
+        const result: T[] = [row];
+
+        // Add all sub-rows if available
+        if (getSubRows) {
+          const subRows = getSubRows(row);
+          if (subRows && subRows.length > 0) {
+            result.push(...flattenData(subRows));
+          }
+        }
+
+        return result;
+      });
+    };
+
+    return flattenData(data);
+  }, [data, getSubRows]); // Recompute only when data or getSubRows changes
+
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (
+    updaterOrValue
+  ) => {
+    if (typeof updaterOrValue === "function") {
+      // First, compute the new selection
+      const currentSelection = rowSelection;
+      const newSelection = updaterOrValue(currentSelection);
+
+      // Set our local state
+      setRowSelection(newSelection);
+      // Then extract the selected rows and update context
+      const selectedRows = Object.keys(newSelection)
+        .filter((key) => newSelection[key])
+        .map((key) =>
+          flattenedData.find((row) => {
+            const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
+            return rowId === key;
+          })
+        )
+        .filter((item): item is T => item !== undefined);
+      // Schedule the callback to run after render
+      queueMicrotask(() => {
+        setSelectedRows(selectedRows);
+      });
+    } else {
+      // Set our local state
+      setRowSelection(updaterOrValue);
+
+      // Extract the selected rows and update context
+      const selectedRows = Object.keys(updaterOrValue)
+        .filter((key) => updaterOrValue[key])
+        .map((key) =>
+          flattenedData.find((row) => {
+            const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
+            return rowId === key;
+          })
+        )
+        .filter((item): item is T => item !== undefined);
+      // Schedule the callback to run after render
+      queueMicrotask(() => {
+        setSelectedRows(selectedRows);
+      });
+    }
+  };
+  const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (
+    updaterOrValue
+  ) => {
+    const newVisibility =
+      typeof updaterOrValue === "function"
+        ? updaterOrValue(columnVisibility)
+        : updaterOrValue;
+
+    setColumnVisibility(newVisibility);
+
+    if (columnVisibilityStateKey) {
+      updateUserConfig({
+        [columnVisibilityStateKey]: newVisibility,
+      });
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -109,8 +219,8 @@ export const DataTable = <T extends { uuid: string }>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getRowCanExpand: getRowCanExpand ? () => true : undefined,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
+    onRowSelectionChange: handleRowSelectionChange,
     state: {
       sorting,
       columnFilters,
@@ -120,199 +230,207 @@ export const DataTable = <T extends { uuid: string }>({
     },
     getSubRows,
   });
+
   const { rows } = table.getRowModel();
-  useEffect(() => {
-    setDetailRow(selectRow);
-  }, [selectRow]);
+
+  const flatRows = useMemo(() => {
+    const flat: { row: Row<T>; depth: number }[] = [];
+
+    const flattenRows = (rows: Row<T>[], depth = 0) => {
+      rows.forEach((row) => {
+        flat.push({ row, depth });
+        if (row.getIsExpanded() && row.subRows.length > 0) {
+          flattenRows(row.subRows, depth + 1);
+        }
+      });
+    };
+
+    flattenRows(table.getRowModel().rows);
+    return flat;
+  }, [rows, expanded]);
+
   const rowVirtualizer = useVirtualizer({
-    count: virtualizerOptions.count,
-    getScrollElement: () => virtualizerRef?.current || null,
+    count: flatRows.length,
+    getScrollElement: () => virtualizerRef?.current ?? null,
     estimateSize: virtualizerOptions.estimateSize ?? (() => 45),
     overscan: virtualizerOptions.overscan ?? 10,
+    scrollPaddingStart: 0,
+    scrollPaddingEnd: 0,
   });
 
   const toggleRowSelection = (row: T) => {
     if (onRowClick) {
       onRowClick(row);
     } else {
-      setDetailRow((prevSelectedRow) =>
-        prevSelectedRow && prevSelectedRow.uuid === row.uuid ? null : row
-      );
-      onDetailPanelClose?.();
+      if (detailRow?.uuid === row.uuid) {
+        onDetailPanelClose();
+      } else {
+        setDetailRow(row);
+      }
     }
   };
 
-  const CollapsibleRow = ({ row }: { row: Row<T> }) => {
+  const renderRow = (
+    rowInfo: {
+      row: Row<T>;
+      depth: number;
+    },
+    virtualRow: VirtualItem
+  ) => {
+    const { row, depth } = rowInfo;
     return (
-      <>
-        <TableRow
-          key={row.id}
-          data-state={row.getIsSelected() && "selected"}
-          className={`cursor-pointer hover:bg-secondary ${
-            detailRow?.uuid === row.original.uuid ? "bg-primary/20" : ""
-          }`}
-          onClick={() => toggleRowSelection(row.original)}
-        >
-          {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id}>
+      <TableRow
+        data-index={virtualRow?.index}
+        ref={(node) => virtualRow && rowVirtualizer.measureElement(node)}
+        key={row.id}
+        data-state={row.getIsSelected() && "selected"}
+        className={`w-full cursor-pointer hover:bg-accent ${
+          detailRow?.uuid === row.original.uuid ? "bg-accent/50" : ""
+        }`}
+        style={{
+          paddingLeft: depth > 0 ? `${depth * 1.5}rem` : undefined,
+        }}
+        onMouseEnter={() => onRowHover?.(row.original)}
+        onFocus={() => onRowHover?.(row.original)}
+        onClick={() => toggleRowSelection(row.original)}
+      >
+        {row.getVisibleCells().map((cell) => {
+          return (
+            <TableCell
+              key={cell.id}
+              className="overflow-hidden text-ellipsis whitespace-nowrap"
+            >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </TableCell>
-          ))}
-        </TableRow>
-        {row.getIsExpanded() &&
-          row.subRows.map((subRow) => (
-            <CollapsibleRow key={subRow.id} row={subRow} />
-          ))}
-      </>
+          );
+        })}
+      </TableRow>
     );
   };
 
-  const onCollapse = () => {
-    setDetailRow(null);
-    onDetailPanelClose?.();
-  };
-  const paddingTop = rowVirtualizer.getVirtualItems()[0]?.start ?? 0;
-  const paddingBottom =
-    rowVirtualizer.getTotalSize() -
-    (rowVirtualizer.getVirtualItems()[
-      rowVirtualizer.getVirtualItems().length - 1
-    ]?.end ?? 0);
-
   return (
-    <ResizablePanelGroup
-      direction='horizontal'
-      className='flex-1 rounded-lg w-full'
-    >
-      <ResizablePanel
-        defaultSize={detailRow ? defaultPanelSize : 100}
-        order={1}
-        className='flex flex-col p-2 gap-2'
-      >
-        <div className='flex items-center rounded-md gap-2'>
-          {filterColumn && (
-            <>
-              <Input
-                placeholder='Filter...'
-                value={
-                  (table.getColumn(filterColumn)?.getFilterValue() as string) ??
-                  ""
-                }
-                onChange={(event) => {
-                  onFilterChange?.(event.target.value);
-                  table
-                    .getColumn(filterColumn)
-                    ?.setFilterValue(event.target.value);
-                }}
-                className='max-w-sm'
-              />
-            </>
-          )}
-          {customControls?.(table)}
-          {!hideColumnButton && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant='outline' className='ml-auto'>
-                  Columns <ChevronDown className='ml-2 h-4 w-4' />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='end'>
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className='capitalize'
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-
-        <div className='flex flex-col overflow-hidden min-h-0 rounded-md border'>
-          <div ref={virtualizerRef} className='rounded-md flex-1'>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {rows.length ? (
-                  <>
-                    {paddingTop > 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          style={{ height: `${paddingTop}px`, padding: 0 }}
-                        />
-                      </TableRow>
-                    )}
-                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const row = table.getRowModel().rows[virtualRow.index];
-                      if (!row) return null;
-                      return <CollapsibleRow key={row?.id} row={row} />;
-                    })}
-                    {paddingBottom > 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          style={{ height: `${paddingBottom}px`, padding: 0 }}
-                        />
-                      </TableRow>
-                    )}
-                  </>
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className='h-24 text-center'
+    <>
+      <div className="flex items-center rounded-md gap-2">
+        {filterColumn && (
+          <>
+            <Input
+              placeholder="Filter..."
+              value={
+                (table.getColumn(filterColumn)?.getFilterValue() as string) ??
+                ""
+              }
+              onChange={(event) => {
+                onFilterChange?.(event.target.value);
+                table
+                  .getColumn(filterColumn)
+                  ?.setFilterValue(event.target.value);
+              }}
+              className="max-w-sm"
+            />
+          </>
+        )}
+        {customControls?.(table)}
+        {!hideColumnButton && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto mb-2">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </ResizablePanel>
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      <div className="flex flex-col overflow-hidden min-h-0 rounded-md border flex-1 ">
+        <div
+          ref={virtualizerRef}
+          onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
+          className="rounded-md overflow-auto relative"
+          style={{
+            height: virtualizerOptions.containerHeight ?? "100%",
+          }}
+        >
+          <Table className="w-full">
+            <TableHeader className="sticky top-0 z-10 bg-background">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="w-full">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {flatRows.length ? (
+                <>
+                  {rowVirtualizer.getVirtualItems().length > 0 && (
+                    <TableRow
+                      style={{
+                        height: `${Math.max(0, rowVirtualizer.getVirtualItems()[0].start)}px`,
+                      }}
+                    />
+                  )}
 
-      {detailRow && DetailPanel && (
-        <>
-          <ResizableHandle withHandle />
-          <ResizablePanel
-            defaultSize={defaultPanelSize}
-            order={2}
-            className='flex flex-col h-full p-4'
-            collapsible={true}
-            minSize={12}
-            onCollapse={onCollapse}
-          >
-            <DetailPanel data={detailRow} path={path} />
-          </ResizablePanel>
-        </>
-      )}
-    </ResizablePanelGroup>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowInfo = flatRows[virtualRow.index];
+                    if (!rowInfo) return null;
+                    return renderRow(rowInfo, virtualRow);
+                  })}
+
+                  {rowVirtualizer.getVirtualItems().length > 0 && (
+                    <TableRow
+                      style={{
+                        height: `${Math.max(
+                          0,
+                          rowVirtualizer.getTotalSize() -
+                            (rowVirtualizer.getVirtualItems()[
+                              rowVirtualizer.getVirtualItems().length - 1
+                            ]?.end || 0)
+                        )}px`,
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <TableRow className="w-full">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          {isFetching && <div className="p-2">Fetching More...</div>}
+        </div>
+      </div>
+    </>
   );
 };

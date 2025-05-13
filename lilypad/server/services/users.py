@@ -5,8 +5,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-from ..models import UserTable
-from ..schemas import UserCreate
+from ..models.users import UserTable
+from ..schemas.users import UserCreate
 from .base import BaseService
 
 
@@ -31,7 +31,7 @@ class UserService(BaseService[UserTable, UserCreate]):
         return user
 
     def update_user_active_organization_uuid(
-        self, organization_uuid: UUID
+        self, organization_uuid: UUID | None
     ) -> UserTable:
         """Update the active organization UUID for a user."""
         user = self.get_user()

@@ -41,9 +41,8 @@ export const fetchFunctionsByName = async (
 };
 
 export const fetchFunctions = async (projectUuid: string) => {
-  return (
-    await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions/`)
-  ).data;
+  return (await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions`))
+    .data;
 };
 
 export const fetchLatestVersionUniqueFunctionNames = async (
@@ -186,9 +185,9 @@ export const useArchiveFunctionByNameMutation = () => {
       projectUuid: string;
       functionName: string;
     }) => await archiveFunctionByName(projectUuid, functionName),
-    onSuccess: async () => {
+    onSuccess: async (_, { projectUuid }) => {
       await queryClient.invalidateQueries({
-        queryKey: functionKeys.all,
+        queryKey: ["projects", projectUuid, ...functionKeys.list("unique")],
       });
     },
   });

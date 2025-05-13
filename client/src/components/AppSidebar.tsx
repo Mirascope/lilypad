@@ -1,5 +1,6 @@
 import { useAuth } from "@/auth";
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
+import { AppHeader } from "@/components/sidebar/AppHeader";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -25,15 +27,17 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast";
+import { fetchAnnotationsByProjectUuid } from "@/ee/utils/annotations";
 import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
 import { ProjectPublic } from "@/types/types";
-import { projectsQueryOptions } from "@/utils/projects";
 import {
-  userQueryOptions,
-  useUpdateActiveOrganizationMutation,
-} from "@/utils/users";
-import { useSuspenseQuery } from "@tanstack/react-query";
+  fetchLatestVersionUniqueFunctionNames,
+  functionKeys,
+} from "@/utils/functions";
+import { projectsQueryOptions } from "@/utils/projects";
+import { fetchSpans } from "@/utils/spans";
+import { useUpdateActiveOrganizationMutation } from "@/utils/users";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Link,
   useNavigate,
@@ -41,39 +45,52 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import {
+  Blocks,
   ChevronDown,
-  ChevronUp,
-  Home,
+  ChevronsUpDown,
+  Logs,
+  NotebookPen,
+  Plus,
   ScrollText,
   Settings,
-  SquareTerminal,
+  SquareFunction,
   User2,
-  Wrench,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 interface Item {
   title: string;
   url: string;
   icon?: React.ElementType;
   children?: Item[];
+  onHover?: () => void;
 }
 const RecursiveMenuContent = ({
   item,
   depth = 0,
+  onHover,
 }: {
   item: Item;
   depth?: number;
+  onHover?: () => void;
 }) => {
   const hasChildren = item.children && item.children.length > 0;
   if (!hasChildren) {
     return (
-      <SidebarMenuItem>
-        <SidebarMenuButton className={depth > 0 ? "ml-4" : ""} asChild>
+      <SidebarMenuItem
+        onMouseEnter={() => onHover?.()}
+        onFocus={() => onHover?.()}
+      >
+        <SidebarMenuButton
+          className={`m-0 px-4 ${depth > 0 ? "ml-6" : ""}`}
+          asChild
+          size="lg"
+        >
           <Link
             to={item.url}
-            className='flex items-center w-full gap-2 [&.active]:font-bold'
+            className="flex items-center w-full gap-2 [&.active]:font-extrabold [&.active]:text-accent-foreground [&.active]:bg-accent"
           >
-            {item.icon && <item.icon className='w-4 h-4' />}
+            {item.icon && <item.icon className="w-4 h-4" />}
             <span>{item.title}</span>
           </Link>
         </SidebarMenuButton>
@@ -88,7 +105,7 @@ const RecursiveMenuContent = ({
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton className={depth > 0 ? "ml-4" : ""}>
-            {item.icon && <item.icon className='w-4 h-4' />}
+            {item.icon && <item.icon className="w-4 h-4" />}
             <span>{item.title}</span>
             <ChevronDown
               className={`ml-auto transition-transform group-data-[state=open]/collapsible-${depth.toString()}:rotate-180`}
@@ -96,7 +113,7 @@ const RecursiveMenuContent = ({
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarMenuSub className='nested-menu'>
+          <SidebarMenuSub className="nested-menu">
             {item.children?.map((child, index) => (
               <RecursiveMenuContent
                 key={`${child.title}-${index}`}
@@ -112,13 +129,14 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { activeProject, setProject } = useAuth();
-  const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { activeProject, setProject, user } = useAuth();
   const navigate = useNavigate();
+  const [createOrganizationOpen, setCreateOrganizationOpen] =
+    useState<boolean>(false);
   const params = useParams({ strict: false });
   const auth = useAuth();
+  const queryClient = useQueryClient();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
-  const { toast } = useToast();
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
@@ -129,42 +147,93 @@ export const AppSidebar = () => {
   const projectItems: Item[] = activeProject
     ? [
         {
-          title: "Home",
+          title: "Traces",
           url: `/projects/${activeProject.uuid}/traces`,
-          icon: Home,
+          icon: Logs,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: ["projects", activeProject.uuid, "traces"],
+                queryFn: () => fetchSpans(activeProject.uuid),
+              })
+              .catch(() => toast.error("Failed to prefetch traces"));
+          },
         },
         {
           title: "Functions",
           url: `/projects/${activeProject.uuid}/functions`,
-          icon: Wrench,
+          icon: SquareFunction,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: [
+                  "projects",
+                  activeProject.uuid,
+                  ...functionKeys.list("unique"),
+                ],
+                queryFn: () =>
+                  fetchLatestVersionUniqueFunctionNames(activeProject.uuid),
+              })
+              .catch(() => toast.error("Failed to prefetch functions"));
+          },
+        },
+        {
+          title: "Annotations",
+          url: `/projects/${activeProject.uuid}/annotations`,
+          icon: NotebookPen,
+          onHover: () => {
+            queryClient
+              .prefetchQuery({
+                queryKey: ["projects", activeProject.uuid, "annotations"],
+                queryFn: () =>
+                  fetchAnnotationsByProjectUuid(activeProject.uuid),
+              })
+              .catch(() => toast.error("Failed to prefetch annotations"));
+          },
         },
         {
           title: "Playground",
           url: `/projects/${activeProject.uuid}/playground`,
-          icon: SquareTerminal,
+          icon: Blocks,
+        },
+        {
+          title: "Settings",
+          url: `/settings/overview`,
+          icon: Settings,
         },
       ]
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
     if (user?.active_organization_uuid == organizationUuid) return;
+    router
+      .invalidate()
+      .catch(() => toast.error("Failed to invalidate."))
+      .finally(() => {
+        navigate({
+          to: "/projects",
+          replace: true,
+        }).catch(() => toast.error("Failed to navigate"));
+      });
+    setProject(null);
     const newSession = await organizationMutation.mutateAsync({
       organizationUuid,
     });
     auth.setSession(newSession);
   };
   const handleLogout = () => {
-    auth.logout().then(() => {
-      router.invalidate().finally(() => {
+    auth.logout();
+    router
+      .invalidate()
+      .catch(() => toast.error("Failed to invalidate."))
+      .finally(() => {
         navigate({
           to: "/auth/login",
-        });
+        }).catch(() => toast.error("Failed to navigate"));
       });
-    });
   };
   const handleProjectChange = (project: ProjectPublic) => {
     setProject(project);
     const currentPath = window.location.pathname;
-
     const projectPathMatch = /\/projects\/[^/]+(?:\/([^/]+))?/.exec(
       currentPath
     );
@@ -175,32 +244,33 @@ export const AppSidebar = () => {
         : `/projects/${project.uuid}`;
 
       navigate({ to: newPath, replace: true }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
+        toast.error("Failed to navigate")
       );
     } else {
       navigate({ to: currentPath, replace: true }).catch(() =>
-        toast({
-          title: "Failed to navigate",
-        })
+        toast.error("Failed to navigate")
       );
     }
   };
   const renderProjectSelector = () => {
     return (
       <SidebarMenu>
-        <SidebarGroup>
+        <SidebarGroup className="flex gap-1">
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
+                <SidebarMenuButton size="lg">
                   <ScrollText />
                   {activeProject ? activeProject.name : "Select Project"}
-                  <ChevronDown className='ml-auto' />
+                  <ChevronDown className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className='w-[--radix-popper-anchor-width]'>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                align="start"
+                side="right"
+                sideOffset={4}
+              >
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.uuid}
@@ -218,6 +288,7 @@ export const AppSidebar = () => {
                 <RecursiveMenuContent
                   key={`${item.title}-${index}`}
                   item={item}
+                  onHover={item.onHover}
                 />
               ))}
             </SidebarMenu>
@@ -227,73 +298,75 @@ export const AppSidebar = () => {
     );
   };
   const renderOrganizationsDropdownItems = () => {
-    return user?.user_organizations?.map((user_organization) => (
-      <DropdownMenuCheckboxItem
-        key={user_organization.uuid}
-        onClick={() =>
-          void handleOrganizationSwitch(user_organization.organization.uuid)
-        }
-        checked={
-          user_organization.organization.uuid === user.active_organization_uuid
-        }
-      >
-        {user_organization.organization.name}
-      </DropdownMenuCheckboxItem>
-    ));
+    return (
+      <>
+        {user?.user_organizations?.map((user_organization) => (
+          <DropdownMenuCheckboxItem
+            key={user_organization.uuid}
+            onClick={() =>
+              handleOrganizationSwitch(user_organization.organization.uuid)
+            }
+            checked={
+              user_organization.organization.uuid ===
+              user.active_organization_uuid
+            }
+          >
+            {user_organization.organization.name}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </>
+    );
   };
   return (
-    <Sidebar collapsible='icon' className='lilypad-sidebar'>
-      <SidebarHeader>
-        <SidebarMenuButton asChild>
-          <Link
-            {...(activeProject
-              ? {
-                  to: ProjectRoute.fullPath,
-                  params: { projectUuid: activeProject.uuid },
-                }
-              : { to: "/" })}
-          >
-            <LilypadIcon /> Lilypad
-          </Link>
-        </SidebarMenuButton>
-      </SidebarHeader>
-      <SidebarContent>{renderProjectSelector()}</SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link
-                to={"/settings/$"}
-                className='flex items-center w-full gap-2 [&.active]:font-bold'
-              >
-                <Settings />
-                Settings
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 /> {user?.first_name}
-                  <ChevronUp className='ml-auto' />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side='top'
-                className='w-[--radix-popper-anchor-width]'
-              >
-                {renderOrganizationsDropdownItems()}
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+    <>
+      <Sidebar collapsible="icon" className="lilypad-sidebar">
+        <SidebarHeader>
+          <AppHeader activeProject={activeProject} to={ProjectRoute.fullPath} />
+        </SidebarHeader>
+        <SidebarContent>{renderProjectSelector()}</SidebarContent>
+        <Separator />
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton size="lg">
+                    <User2 /> {user?.first_name}
+                    <ChevronsUpDown className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56  rounded-lg"
+                  align="start"
+                  side="right"
+                  sideOffset={4}
+                >
+                  {renderOrganizationsDropdownItems()}
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setCreateOrganizationOpen(true);
+                    }}
+                    className="flex gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Organization
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+      <CreateOrganizationDialog
+        key="create-organization"
+        open={createOrganizationOpen}
+        setOpen={setCreateOrganizationOpen}
+      />
+    </>
   );
 };
 

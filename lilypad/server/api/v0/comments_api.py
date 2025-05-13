@@ -8,8 +8,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.exc import IntegrityError
 
 from ..._utils import get_current_user
-from ...models import CommentTable
-from ...schemas import CommentCreate, CommentPublic, CommentUpdate, UserPublic
+from ...models.comments import CommentTable
+from ...schemas.comments import CommentCreate, CommentPublic, CommentUpdate
+from ...schemas.users import UserPublic
 from ...services import CommentService
 
 comments_router = APIRouter()

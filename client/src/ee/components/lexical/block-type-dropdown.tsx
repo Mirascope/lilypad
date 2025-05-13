@@ -155,8 +155,8 @@ export const BlockTypeDropdown = ({
         }
       }}
     >
-      <SelectTrigger className='w-40'>
-        <SelectValue placeholder='Block Type' />
+      <SelectTrigger className="w-40">
+        <SelectValue placeholder="Block Type" />
       </SelectTrigger>
 
       <SelectContent onCloseAutoFocus={() => editor.focus()}>

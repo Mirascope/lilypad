@@ -7,8 +7,8 @@ from fastapi import HTTPException, status
 from sqlmodel import func, select
 
 from ....server.services.base_organization import BaseOrganizationService
-from ...server.models import UserOrganizationTable
-from ...server.schemas import UserOrganizationCreate
+from ...server.models.user_organizations import UserOrganizationTable
+from ...server.schemas.user_organizations import UserOrganizationCreate
 
 
 class UserOrganizationService(
@@ -33,6 +33,15 @@ class UserOrganizationService(
                 detail=f"Record for {self.table.__tablename__} not found",
             )
         return user_organization
+
+    def find_user_organizations(self) -> Sequence[UserOrganizationTable]:
+        """Find all user organizations."""
+        user_organizations = self.session.exec(
+            select(self.table).where(
+                self.table.user_uuid == self.user.uuid,
+            )
+        ).all()
+        return user_organizations
 
     def get_users_by_active_organization(self) -> Sequence[UserOrganizationTable]:
         """Get all users from the active organization."""

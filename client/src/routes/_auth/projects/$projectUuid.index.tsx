@@ -1,7 +1,10 @@
 import { CostAndTokensChart } from "@/components/CostAndTokensChart";
 import { DataTable } from "@/components/DataTable";
+import { Tab, TabGroup } from "@/components/TabGroup";
+import TableSkeleton from "@/components/TableSkeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Typography } from "@/components/ui/typography";
+import { useProjectAggregates } from "@/hooks/use-project-aggregates";
 import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
 import { functionsQueryOptions } from "@/utils/functions";
 import { projectQueryOptions } from "@/utils/projects";
@@ -9,7 +12,7 @@ import { aggregatesByProjectQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { useRef, useState } from "react";
+import { Suspense, useRef } from "react";
 import {
   CartesianGrid,
   Cell,
@@ -35,8 +38,6 @@ interface ProcessedData extends AggregateMetrics {
   uuid: string;
 }
 
-type ConsolidatedRecord = Record<string, Record<string, ProcessedData>>;
-
 interface PieChartData {
   name: string;
   value: number;
@@ -47,48 +48,16 @@ function RouteComponent() {
 }
 
 const ProjectDashboard = () => {
+  const timeFrame = TimeFrame.LIFETIME;
   const { projectUuid } = useParams({ from: Route.id });
-  const [activeTab, setActiveTab] = useState("overview");
-  const [timeFrame, _setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
   const { data } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)
   );
-
-  // Process data for visualization
-  const processedData: ProcessedData[] = data.map((item) => {
-    const date = item.start_date ? new Date(item.start_date) : new Date();
-
-    return {
-      ...item,
-      date: date.toLocaleDateString(),
-      formattedCost: `${item.total_cost.toFixed(5)}`,
-      total_tokens: item.total_input_tokens + item.total_output_tokens,
-      average_duration_sec: (item.average_duration_ms / 1000).toFixed(2),
-      uuid: crypto.randomUUID(),
-    };
-  });
-
-  // Group by date and function uuid
-  const consolidatedData: ConsolidatedRecord = {};
-  processedData.forEach((item) => {
-    if (!consolidatedData[item.date]) {
-      consolidatedData[item.date] = {};
-    }
-    const functionKey = item.function_uuid || item.uuid;
-    if (!consolidatedData[item.date][functionKey]) {
-      consolidatedData[item.date][functionKey] = item;
-    } else {
-      const existing = consolidatedData[item.date][functionKey];
-      existing.total_cost += item.total_cost;
-      existing.total_input_tokens += item.total_input_tokens;
-      existing.total_output_tokens += item.total_output_tokens;
-      existing.span_count += item.span_count;
-      existing.total_tokens =
-        existing.total_input_tokens + existing.total_output_tokens;
-      existing.formattedCost = `${existing.total_cost.toFixed(5)}`;
-    }
-  });
+  const { data: processedData, consolidatedData } = useProjectAggregates(
+    projectUuid,
+    timeFrame
+  );
 
   // Flatten the consolidated data for charts
   const chartData: ProcessedData[] = [];
@@ -128,160 +97,139 @@ const ProjectDashboard = () => {
       value: chartData.reduce((sum, item) => sum + item.total_output_tokens, 0),
     },
   ];
-
   const COLORS: string[] = ["#6366f1", "#2f7f3e"];
 
+  const tabs: Tab[] = [
+    {
+      value: "overview",
+      label: "Overview",
+      component: (
+        <div className="h-64">
+          <CostAndTokensChart
+            metricsData={[data]}
+            labels={["Total Cost"]}
+            title={`Cost and Tokens (${timeFrame})`}
+          />
+        </div>
+      ),
+    },
+    {
+      value: "tokens",
+      label: "Token Usage",
+      component: (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Token Usage by Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                      }
+                      outerRadius={80}
+                      fill="#6366f1"
+                      dataKey="value"
+                    >
+                      {pieData.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => value.toLocaleString()} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Token Usage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="total_input_tokens"
+                      name="Input Tokens"
+                      stroke="#6366f1"
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="total_output_tokens"
+                      name="Output Tokens"
+                      stroke="#2f7f3e"
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ),
+    },
+    {
+      value: "details",
+      label: "Details",
+      component: (
+        <Suspense fallback={<TableSkeleton />}>
+          <ProjectDetailsTable data={processedData} />
+        </Suspense>
+      ),
+    },
+  ];
+
   return (
-    <div className='p-4 w-full'>
-      <Card className='shadow-md'>
-        <CardHeader>
-          <CardTitle className='text-2xl font-bold'>
-            {`${project.name} Dashboard`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Total Cost
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>${totalCost}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Total Tokens
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{totalTokens}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Total API Calls
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{totalSpans}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className='w-full'
-          >
-            <TabsList className='grid grid-cols-3 mb-4'>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='tokens'>Token Usage</TabsTrigger>
-              <TabsTrigger value='details'>Details</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value='overview'>
-              <div className='grid grid-cols-1 gap-6'>
-                <CostAndTokensChart
-                  metricsData={[data]}
-                  labels={["Total Cost"]}
-                  title={`Cost and Tokens (${timeFrame})`}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value='tokens'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Token Usage by Type</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='h-64'>
-                      <ResponsiveContainer width='100%' height='100%'>
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx='50%'
-                            cy='50%'
-                            labelLine={false}
-                            label={({ name, percent }) =>
-                              `${name}: ${(percent * 100).toFixed(0)}%`
-                            }
-                            outerRadius={80}
-                            fill='#6366f1'
-                            dataKey='value'
-                          >
-                            {pieData.map((_, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value) => value.toLocaleString()}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Daily Token Usage</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='h-64'>
-                      <ResponsiveContainer width='100%' height='100%'>
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray='3 3' />
-                          <XAxis dataKey='date' />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Line
-                            type='monotone'
-                            dataKey='total_input_tokens'
-                            name='Input Tokens'
-                            stroke='#6366f1'
-                            activeDot={{ r: 8 }}
-                          />
-                          <Line
-                            type='monotone'
-                            dataKey='total_output_tokens'
-                            name='Output Tokens'
-                            stroke='#2f7f3e'
-                            activeDot={{ r: 8 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value='details'>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detailed Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className='overflow-x-auto'>
-                    <ProjectDetailsTable data={processedData} />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="p-4 w-full flex flex-col gap-2">
+      <Typography variant="h3">{`${project.name} Dashboard`}</Typography>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalCost}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalTokens}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total API Calls
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSpans}</div>
+          </CardContent>
+        </Card>
+      </div>
+      <TabGroup tabs={tabs} />
     </div>
   );
 };
@@ -310,6 +258,7 @@ export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
       cell: ({ row }) => {
         const functionUuid: string = row.getValue("function_uuid");
         const fn = mappedFunctions[functionUuid];
+        if (!fn) return <div>Unknown function</div>;
         return (
           <div>
             {fn.name} v{fn.version_num}
@@ -340,7 +289,6 @@ export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: data.length,
           estimateSize: () => 45,

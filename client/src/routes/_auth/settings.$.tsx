@@ -1,126 +1,140 @@
 import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
-import { LilypadLoading } from "@/components/LilypadLoading";
 import { OrgSettings } from "@/components/OrgSettings";
-import { TagSettings } from "@/components/TagSettings";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { Tab, TabGroup } from "@/components/TabGroup";
+import TableSkeleton from "@/components/TableSkeleton";
+import { TagsTable } from "@/components/TagsTable";
+import { Typography } from "@/components/ui/typography";
+import { userQueryOptions } from "@/utils/users";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { JSX, Suspense, useEffect } from "react";
+import { Building2, KeyRound, SettingsIcon, Tag } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
-interface Tab {
-  label: string;
-  value: string;
-  component?: JSX.Element | null;
-}
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { data: user } = useSuspenseQuery(userQueryOptions());
   const params = useParams({
     from: Route.id,
   });
   let { _splat: tab } = params;
+
+  const activeUserOrg = user.user_organizations?.find(
+    (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
+  );
+  const [open, setOpen] = useState<boolean>(false);
+
   const tabs: Tab[] = [
     {
-      label: "Overview",
+      label: (
+        <div className="flex items-center gap-1">
+          <SettingsIcon />
+          <span>Overview</span>
+        </div>
+      ),
       value: "overview",
-      component: <HomeSettings />,
+      component: (
+        <Suspense fallback={<TableSkeleton />}>
+          <div className="p-2">
+            <HomeSettings />
+          </div>
+        </Suspense>
+      ),
     },
     {
-      label: "LLM Keys",
+      label: (
+        <div className="flex items-center gap-1">
+          <KeyRound />
+          <span>LLM Keys</span>
+        </div>
+      ),
       value: "keys",
-      component: <KeysSettings />,
+      component: (
+        <Suspense fallback={<TableSkeleton />}>
+          <div className="p-2">
+            <KeysSettings />
+          </div>
+        </Suspense>
+      ),
     },
     {
-      label: "Organization",
+      label: (
+        <div className="flex items-center gap-1">
+          <Building2 />
+          <span>Organization</span>
+        </div>
+      ),
       value: "org",
-      component: (
-        <Suspense fallback={<LilypadLoading />}>
-          <OrgSettings />
+      component: activeUserOrg ? (
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-10">
+              <TableSkeleton rows={2} columns={3} />
+              <TableSkeleton rows={2} columns={2} />
+              <TableSkeleton rows={2} columns={3} />
+              <TableSkeleton rows={2} columns={6} />
+            </div>
+          }
+        >
+          <div className="p-2">
+            <OrgSettings open={open} setOpen={setOpen} />
+          </div>
         </Suspense>
-      ),
+      ) : null,
     },
     {
-      label: "Tags",
-      value: "tags",
-      component: (
-        <Suspense fallback={<LilypadLoading />}>
-          <TagSettings />
-        </Suspense>
+      label: (
+        <div className="flex items-center gap-1">
+          <Tag />
+          <span>Tags</span>
+        </div>
       ),
+      value: "tags",
+      component: activeUserOrg ? (
+        <Suspense fallback={<TableSkeleton />}>
+          <div className="p-2">
+            <TagsTable />
+          </div>
+        </Suspense>
+      ) : null,
     },
   ];
+  if (tab && !tabs.some((t) => t.value === tab)) {
+    tab = "overview";
+  }
   useEffect(() => {
     if (tab) {
       navigate({
         to: `/settings/${tab}`,
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     } else {
       navigate({
         to: `/settings/$`,
         params: { _splat: "overview" },
         replace: true,
-      }).catch(() =>
-        toast({
-          title: "Navigation failed",
-        })
-      );
+      }).catch(() => toast.error("Failed to navigate to settings page."));
     }
   }, [tab, navigate, toast]);
-  if (tab && !tabs.some((t) => t.value === tab)) {
-    tab = "overview";
-  }
   const handleTabChange = (value: string) => {
     navigate({
       to: `/settings/$`,
       params: { _splat: value },
       replace: true,
-    }).catch(() =>
-      toast({
-        title: "Navigation failed",
-      })
-    );
+    }).catch(() => toast.error("Failed to navigate to settings page."));
   };
-  const tabWidth = 90 * tabs.length;
-
   return (
-    <Tabs
-      value={tab ?? "overview"}
-      onValueChange={handleTabChange}
-      className='flex flex-col h-full'
-    >
-      <div className='flex justify-center w-full'>
-        <TabsList className={`w-[${tabWidth}px]`}>
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
-      <div className='flex-1 min-h-0 relative'>
-        {tabs.map((tab) => (
-          <TabsContent
-            key={tab.value}
-            value={tab.value}
-            className='w-full bg-gray-50 absolute inset-0 overflow-auto'
-          >
-            {tab.component}
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
+    <div className="p-2 flex flex-col gap-2">
+      <Typography variant="h3">Settings</Typography>
+      <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
+    </div>
   );
 };

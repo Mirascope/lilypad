@@ -1,8 +1,7 @@
 import { AuthContext } from "@/auth";
 import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
 import { NotFound } from "@/components/NotFound";
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/sonner";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
@@ -23,9 +22,13 @@ const RootComponent = () => {
   return (
     <>
       <Outlet />
-      <Toaster />
-      <SonnerToaster richColors />
-      <TanStackRouterDevtools position='bottom-right' />
+      <Toaster
+        richColors
+        toastOptions={{
+          className: "font-handwriting",
+        }}
+      />
+      <TanStackRouterDevtools position="bottom-right" />
     </>
   );
 };

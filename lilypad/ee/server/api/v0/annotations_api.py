@@ -7,12 +7,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from ee import Tier
 
-from .....server.schemas.spans import SpanMoreDetails
-from .....server.services import SpanService
-from ....server.schemas import AnnotationCreate, AnnotationPublic, AnnotationUpdate
+from .....server.schemas.span_more_details import SpanMoreDetails
+from .....server.services import ProjectService, SpanService
+from ....server.schemas.annotations import (
+    AnnotationCreate,
+    AnnotationPublic,
+    AnnotationUpdate,
+)
 from ....server.services import AnnotationService
 from ...generations.annotate_trace import annotate_trace
 from ...require_license import require_license
@@ -28,6 +33,7 @@ annotations_router = APIRouter()
 async def create_annotations(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+    project_service: Annotated[ProjectService, Depends(ProjectService)],
     annotations_create: Sequence[AnnotationCreate],
 ) -> Sequence[AnnotationPublic]:
     """Create an annotation.
@@ -35,6 +41,7 @@ async def create_annotations(
     Args:
         project_uuid: The project UUID.
         annotations_service: The annotation service.
+        project_service: The project service.
         annotations_create: The annotation create model.
 
     Returns:
@@ -45,22 +52,64 @@ async def create_annotations(
         not been labeled yet.
     """
     duplicate_checks = []
+    processed_creates: list[AnnotationCreate] = []
+    emails_to_lookup: set[str] = set()
+    email_to_uuid_map: dict[str, UUID] = {}
+
     for annotation in annotations_create:
-        annotation.project_uuid = project_uuid
-        if annotation.span_uuid and annotation.assigned_to:
-            for assigned_to in annotation.assigned_to:
-                duplicate_checks.append(
-                    {
-                        "assigned_to": assigned_to,
-                        "span_uuid": annotation.span_uuid,
-                    }
-                )
-        else:
-            duplicate_checks.append(
-                {
-                    "span_uuid": annotation.span_uuid,
-                }
+        if annotation.assignee_email:
+            emails_to_lookup.update(annotation.assignee_email)
+            processed_creates.append(
+                annotation.model_copy(update={"assignee_email": None})
             )
+        elif annotation.assigned_to:
+            for user_uuid in annotation.assigned_to:
+                duplicate_checks.append(
+                    {"span_uuid": annotation.span_uuid, "assigned_to": user_uuid}
+                )
+            processed_creates.append(annotation.model_copy())
+        else:
+            duplicate_checks.append({"span_uuid": annotation.span_uuid})
+            processed_creates.append(annotation.model_copy())
+
+    if emails_to_lookup:
+        project = project_service.find_record_by_uuid(project_uuid)
+        email_to_uuid_lookup = {
+            user_organizations.user.email: user_organizations.user.uuid
+            for user_organizations in project.organization.user_organizations
+            if user_organizations.user.uuid
+        }
+        for email in emails_to_lookup:
+            if email in email_to_uuid_lookup:
+                email_to_uuid_map[email] = email_to_uuid_lookup[email]
+            else:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND,
+                    f"User with email '{email}' not found in accessible organizations.",
+                )
+
+    final_creates: list[AnnotationCreate] = []
+    for ann_create_processed in processed_creates:
+        original_input = next(
+            (
+                item
+                for item in annotations_create
+                if item.span_uuid == ann_create_processed.span_uuid
+            ),
+            None,
+        )
+        if original_input and original_input.assignee_email:
+            for assignee_email in original_input.assignee_email:
+                assignee_uuid = email_to_uuid_map.get(assignee_email)
+                if assignee_uuid:
+                    ann_create_processed.assigned_to = [assignee_uuid]
+                    duplicate_checks.append(
+                        {
+                            "span_uuid": ann_create_processed.span_uuid,
+                            "assigned_to": assignee_uuid,
+                        }
+                    )
+        final_creates.append(ann_create_processed)
 
     # Check for duplicates in bulk
     duplicates = annotations_service.check_bulk_duplicates(duplicate_checks)
@@ -71,9 +120,7 @@ async def create_annotations(
         )
 
     # Create all records in bulk
-    annotations = annotations_service.create_bulk_records(
-        annotations_create, project_uuid
-    )
+    annotations = annotations_service.create_bulk_records(final_creates, project_uuid)
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
@@ -101,12 +148,25 @@ async def update_annotation(
     )
 
 
+@annotations_router.delete(
+    "/projects/{project_uuid}/annotations/{annotation_uuid}",
+    response_model=bool,
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def delete_annotation(
+    annotation_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> bool:
+    """Delete an annotation."""
+    return annotations_service.delete_record_by_uuid(annotation_uuid)
+
+
 @annotations_router.get(
     "/projects/{project_uuid}/functions/{function_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )
 @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
-async def get_annotations(
+async def get_annotations_by_functions(
     project_uuid: UUID,
     function_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
@@ -120,6 +180,71 @@ async def get_annotations(
             function_uuid
         )
     ]
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/spans/{span_uuid}/annotations",
+    response_model=Sequence[AnnotationPublic],
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotations_by_spans(
+    project_uuid: UUID,
+    span_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> Sequence[AnnotationPublic]:
+    """Get annotations by functions."""
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations_service.find_records_by_span_uuid(span_uuid)
+    ]
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/annotations",
+    response_model=Sequence[AnnotationPublic],
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotations_by_project(
+    project_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> Sequence[AnnotationPublic]:
+    """Get annotations by project."""
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations_service.find_records_by_project_uuid(project_uuid)
+    ]
+
+
+class AnnotationMetrics(BaseModel):
+    """Annotation metrics model."""
+
+    function_uuid: UUID
+    total_count: int
+    success_count: int
+
+
+@annotations_router.get(
+    "/projects/{project_uuid}/functions/{function_uuid}/annotations/metrics",
+    response_model=AnnotationMetrics,
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotation_metrics_by_function(
+    function_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> AnnotationMetrics:
+    """Get annotation metrics by function."""
+    success_count, total_count = annotations_service.find_metrics_by_function_uuid(
+        function_uuid
+    )
+    return AnnotationMetrics(
+        function_uuid=function_uuid,
+        total_count=total_count,
+        success_count=success_count,
+    )
 
 
 @annotations_router.get(

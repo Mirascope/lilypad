@@ -3,11 +3,11 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlmodel import and_, delete, or_, select
+from sqlmodel import and_, case, delete, func, or_, select
 
 from ....server.services.base_organization import BaseOrganizationService
-from ...server.models import AnnotationTable
-from ...server.schemas import AnnotationCreate
+from ...server.models.annotations import AnnotationTable, Label
+from ...server.schemas.annotations import AnnotationCreate
 
 
 class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreate]):
@@ -16,6 +16,44 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
     table: type[AnnotationTable] = AnnotationTable
     create_model: type[AnnotationCreate] = AnnotationCreate
 
+    def find_records_by_project_uuid(
+        self, project_uuid: UUID
+    ) -> Sequence[AnnotationTable]:
+        """Find records."""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.project_uuid == project_uuid,
+                self.table.label.is_(None),  # type: ignore
+                or_(
+                    self.table.assigned_to == self.user.uuid,
+                    self.table.assigned_to.is_(None),  # type: ignore
+                ),
+            )
+        ).all()
+
+    def find_metrics_by_function_uuid(self, function_uuid: UUID) -> tuple[int, int]:
+        """Find metrics by function.
+
+        Returns:
+            A tuple containing (success_count, total_count)
+        """
+        query_result = self.session.exec(
+            select(
+                func.sum(case((self.table.label == Label.PASS, 1), else_=0)).label(
+                    "success_count"
+                ),
+                func.count().label("total_count"),
+            ).where(
+                self.table.function_uuid == function_uuid,
+                self.table.label.is_not(None),  # type: ignore
+            )
+        ).one()
+
+        success_count = query_result[0] if query_result[0] is not None else 0
+        total_count = query_result[1]
+
+        return success_count, total_count
+
     def find_records_by_function_uuid(
         self, function_uuid: UUID
     ) -> Sequence[AnnotationTable]:
@@ -23,6 +61,18 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
         return self.session.exec(
             select(self.table).where(
                 self.table.function_uuid == function_uuid,
+                or_(
+                    self.table.assigned_to == self.user.uuid,
+                    self.table.assigned_to.is_(None),  # type: ignore
+                ),
+            )
+        ).all()
+
+    def find_records_by_span_uuid(self, span_uuid: UUID) -> Sequence[AnnotationTable]:
+        """Find records by span UUID."""
+        return self.session.exec(
+            select(self.table).where(
+                self.table.span_uuid == span_uuid,
                 or_(
                     self.table.assigned_to == self.user.uuid,
                     self.table.assigned_to.is_(None),  # type: ignore

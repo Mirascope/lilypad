@@ -1,8 +1,10 @@
 """The `SpanService` class for spans."""
 
+import logging
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -10,9 +12,15 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, delete, func, select, text
 
-from ..models import FunctionTable, SpanTable, SpanTagLink
-from ..schemas import SpanCreate, SpanUpdate
+from ..models.functions import FunctionTable
+from ..models.organizations import OrganizationTable
+from ..models.spans import SpanTable, SpanTagLink
+from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
+from .billing import BillingService, _CustomerNotFound
+from .tags import TagService
+
+logger = logging.getLogger(__name__)
 
 
 class TimeFrame(str, Enum):
@@ -43,18 +51,90 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    def find_all_no_parent_spans(self, project_uuid: UUID) -> Sequence[SpanTable]:
-        """Get all spans.
-        Child spans are not lazy loaded to avoid N+1 queries.
+    def count_no_parent_spans(self, project_uuid: UUID) -> int:
+        """Return the *total* number of root‑level spans for a project.
+
+        Unlike :py:meth:`find_no_parent_spans` this query only counts rows and
+        therefore avoids the overhead of eager‑loading child spans.
         """
-        return self.session.exec(
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.project_uuid == project_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
+            )
+        )
+
+        return self.session.exec(stmt).one()
+
+    def find_all_no_parent_spans(
+        self,
+        project_uuid: UUID,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        order: Literal["asc", "desc"] = "desc",
+    ) -> Sequence[SpanTable]:
+        """Find all root spans for a project."""
+        stmt = (
             select(self.table)
             .where(
                 self.table.project_uuid == project_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
+                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
             )
-            .options(selectinload(self.table.child_spans, recursion_depth=-1))  # pyright: ignore [reportArgumentType]
-        ).all()
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
+            .offset(offset)
+            .options(
+                selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]
+            )
+        )
+
+        if limit is not None:
+            stmt = stmt.limit(limit)
+
+        return self.session.exec(stmt).all()
+
+    def find_root_parent_span(
+        self,
+        span_id: str,
+    ) -> SpanTable | None:
+        """Find the root parent span (parent with no parent) for a given span UUID in a single query using SQLModel."""
+        root_span_query = text("""
+            WITH RECURSIVE span_hierarchy AS (
+                -- Base case: start with the specified span
+                SELECT uuid, span_id, parent_span_id, created_at, project_uuid
+                FROM spans
+                WHERE span_id = :span_id
+                
+                UNION ALL
+                
+                -- Recursive case: join with parent spans
+                SELECT s.uuid, s.span_id, s.parent_span_id, s.created_at, s.project_uuid
+                FROM spans s
+                JOIN span_hierarchy sh ON s.span_id = sh.parent_span_id
+            )
+            -- Select the root span (where parent_span_id is NULL)
+            SELECT uuid
+            FROM span_hierarchy
+            WHERE parent_span_id IS NULL
+            LIMIT 1
+        """).bindparams(span_id=span_id)
+
+        result = self.session.exec(root_span_query).first()  # type: ignore
+
+        if not result:
+            return None
+
+        root_span = self.session.exec(
+            select(self.table).where(self.table.uuid == result.uuid)
+        ).first()
+
+        return root_span
 
     def find_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -69,51 +149,16 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         ).all()
 
-    def get_record_by_span_id(self, project_uuid: UUID, spand_id: str) -> SpanTable:
-        """Find spans by spand id"""
+    def get_record_by_span_id(self, project_uuid: UUID, span_id: str) -> SpanTable:
+        """Find spans by span id"""
         return self.session.exec(
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.span_id == spand_id,
+                self.table.span_id == span_id,
                 self.table.parent_span_id.is_(None),  # type: ignore
             )
         ).one_or_none()
-
-    def update_tags(self, uuid: UUID, span_update: SpanUpdate) -> SpanTable:
-        """Updates a record based on the uuid, efficiently syncing with span_update.tags"""
-        record_table = self.find_record_by_uuid(uuid)
-
-        # Only update tags if span_update.tags is not None
-        if span_update.tags is not None:
-            # Get existing tag links
-            existing_links = self.session.exec(
-                select(SpanTagLink).where(SpanTagLink.span_uuid == uuid)
-            ).all()
-
-            existing_tag_uuids = {link.tag_uuid for link in existing_links}
-
-            new_tag_uuids = {tag.uuid for tag in span_update.tags}
-
-            to_add = new_tag_uuids - existing_tag_uuids
-            to_remove = existing_tag_uuids - new_tag_uuids
-
-            if to_remove:
-                delete_statement = delete(SpanTagLink).where(
-                    SpanTagLink.span_uuid == uuid,  # pyright: ignore [reportArgumentType]
-                    SpanTagLink.tag_uuid.in_(to_remove),  # type: ignore
-                )
-                self.session.connection().execute(delete_statement)
-
-            # Add links that need to be added
-            for tag_uuid in to_add:
-                new_link = SpanTagLink(
-                    span_uuid=uuid, tag_uuid=tag_uuid, created_by=self.user.uuid
-                )
-                self.session.add(new_link)
-
-        self.session.flush()
-        return record_table
 
     def _get_date_trunc(self, timeframe: TimeFrame) -> TextClause | None:
         """Get the appropriate date truncation for the timeframe"""
@@ -265,24 +310,93 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         return count
 
     def create_bulk_records(
-        self, spans_create: Sequence[SpanCreate], project_uuid: UUID
+        self,
+        spans_create: Sequence[SpanCreate],
+        billing_service: BillingService | None,
+        project_uuid: UUID,
+        organization_uuid: UUID,
     ) -> list[SpanTable]:
         """Create multiple annotation records in bulk."""
-        spans = []
+        spans_to_add = []
+        tag_service = TagService(self.session, self.user)
+
         for span_create in spans_create:
-            span = self.table.model_validate(
+            db_span = self.table.model_validate(
                 span_create,
                 update={
-                    "organization_uuid": self.user.active_organization_uuid,
+                    "organization_uuid": organization_uuid,
                     "user_uuid": self.user.uuid,
                     "project_uuid": project_uuid,
                 },
             )
-            spans.append(span)
+            spans_to_add.append(db_span)
 
-        self.session.add_all(spans)
+            otel_attributes = db_span.data.get("attributes", {})
+            if (
+                trace_tag_names := otel_attributes.get("lilypad.trace.tags")
+            ) and isinstance(trace_tag_names, list):
+                if not hasattr(db_span, "_temp_links_to_add"):
+                    db_span._temp_links_to_add = []  # type: ignore
+                for tag_name in trace_tag_names:
+                    if isinstance(tag_name, str):
+                        tag = tag_service.find_or_create_tag(tag_name, project_uuid)
+                        db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
+
+        self.session.add_all(spans_to_add)
         self.session.flush()
-        return spans
+
+        final_links_to_add = []
+        for db_span in spans_to_add:
+            if hasattr(db_span, "_temp_links_to_add") and db_span.uuid:
+                for tag_uuid in db_span._temp_links_to_add:  # type: ignore
+                    final_links_to_add.append(
+                        SpanTagLink(
+                            span_uuid=db_span.uuid,
+                            tag_uuid=tag_uuid,
+                            created_by=self.user.uuid,
+                        )
+                    )
+                del db_span._temp_links_to_add  # type: ignore
+
+        if final_links_to_add:
+            self.session.add_all(final_links_to_add)
+            self.session.flush()
+
+        if billing_service:
+            try:
+                self._report_span_usage_with_retry(
+                    billing_service, organization_uuid, len(spans_to_add)
+                )
+            except Exception as e:
+                # if reporting fails, we don't want to fail the entire span creation
+                logger.error("Error reporting span usage: %s", e)
+
+        return spans_to_add
+
+    def _report_span_usage_with_retry(
+        self, billing_service: BillingService, organization_uuid: UUID, quantity: int
+    ) -> None:
+        """Report span usage to Stripe with retry logic."""
+        try:
+            billing_service.report_span_usage(organization_uuid, quantity=quantity)
+        except _CustomerNotFound:
+            # We don't expect this to happen, but if it does, we need to create a customer
+            logger.info(f"Creating customer for organization {organization_uuid}")
+            organization = self.session.exec(
+                select(OrganizationTable).where(
+                    OrganizationTable.uuid == organization_uuid
+                )
+            ).first()
+
+            if not organization:
+                logger.error(f"Organization {organization_uuid} not found")
+                return
+
+            email = self.user.email
+
+            billing_service.create_customer(organization, email)
+
+            billing_service.report_span_usage(organization_uuid, quantity=quantity)
 
     def delete_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -298,3 +412,101 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.exec(delete_stmt)  # type: ignore
         self.session.flush()
         return True
+
+    async def update_span(
+        self,
+        span_uuid: UUID,
+        update_data: SpanUpdate,
+        user_uuid: UUID,
+    ) -> SpanTable:
+        """Update a span record by UUID"""
+        span_to_update = self.find_record_by_uuid(span_uuid)
+
+        tags_modified = self._sync_span_tags(span_to_update, update_data, user_uuid)
+        other_fields_modified = False
+        if tags_modified or other_fields_modified:
+            self.session.commit()
+            self.session.refresh(span_to_update)
+        return span_to_update
+
+    def _sync_span_tags(
+        self, span: SpanTable, span_update: SpanUpdate, user_uuid: UUID
+    ) -> bool:
+        target_tag_uuids: set[UUID] = set()
+        if span_update.tags_by_uuid is not None:
+            target_tag_uuids.update(span_update.tags_by_uuid)
+        elif span_update.tags_by_name is not None:
+            tag_service = TagService(self.session, self.user)
+            for name in span_update.tags_by_name:
+                tag = tag_service.find_or_create_tag(name, span.project_uuid)  # pyright: ignore [reportArgumentType]
+                target_tag_uuids.add(tag.uuid)  # pyright: ignore [reportArgumentType]
+        else:
+            return False
+
+        existing_links = self.session.exec(
+            select(SpanTagLink).where(SpanTagLink.span_uuid == span.uuid)
+        ).all()
+        existing_tag_uuids = {link.tag_uuid for link in existing_links if link.tag_uuid}
+        to_add = target_tag_uuids - existing_tag_uuids
+        to_remove = existing_tag_uuids - target_tag_uuids
+        modified = False
+        if to_remove:
+            self.session.exec(
+                delete(SpanTagLink).where(
+                    SpanTagLink.span_uuid == span.uuid,  # pyright: ignore [reportArgumentType]
+                    SpanTagLink.tag_uuid.in_(to_remove),  # type: ignore
+                )
+            )
+            modified = True
+        for tag_uuid in to_add:
+            self.session.add(
+                SpanTagLink(
+                    span_uuid=span.uuid, tag_uuid=tag_uuid, created_by=user_uuid
+                )
+            )
+            modified = True
+        return modified
+
+    def count_records_by_function_uuid(
+        self, project_uuid: UUID, function_uuid: UUID
+    ) -> int:
+        """Count root-level spans for a function (fast COUNT(*))."""
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+        )
+        return self.session.exec(stmt).one()
+
+    def find_records_by_function_uuid_paged(
+        self,
+        project_uuid: UUID,
+        function_uuid: UUID,
+        *,
+        limit: int,
+        offset: int = 0,
+        order: str = "desc",
+    ) -> Sequence[SpanTable]:
+        """Find root-level spans for a function with pagination + dynamic sort."""
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.function_uuid == function_uuid,
+                self.table.parent_span_id.is_(None),  # type: ignore
+            )
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        return self.session.exec(stmt).all()

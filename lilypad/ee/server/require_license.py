@@ -12,11 +12,12 @@ from fastapi import Depends, HTTPException, Request, status
 from ee import LicenseInfo, LicenseValidator, Tier
 from ee.validate import LicenseError
 
-from ...ee.server import HOST_NAME
+from ...ee.server import ALT_HOST_NAME, HOST_NAME
 from ...server._utils import get_current_user
 from ...server.exceptions import LilypadForbiddenError
-from ...server.schemas import UserPublic
+from ...server.schemas.users import UserPublic
 from ...server.services import OrganizationService, ProjectService
+from ...server.settings import get_settings
 
 _EndPointFunc = TypeVar("_EndPointFunc", bound=Callable[..., Awaitable[Any]])
 
@@ -110,7 +111,7 @@ class RequireLicense:
             )
         organization_uuid = project.organization_uuid
 
-        is_cloud = await is_lilypad_cloud(request)
+        is_cloud = is_lilypad_cloud(request)
 
         if is_cloud and self.cloud_free:
             return None
@@ -154,15 +155,18 @@ class RequireLicense:
             )
 
 
-async def get_organization_license(
+def get_organization_license(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
 ) -> LicenseInfo:
     """Get the license information for the organization"""
     if not user.active_organization_uuid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an active organization.",
+        return LicenseInfo(
+            customer="",
+            license_id="",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.FREE,
+            organization_uuid=None,
         )
     validator = LicenseValidator()
     license_info = validator.validate_license(
@@ -179,8 +183,12 @@ async def get_organization_license(
     return license_info
 
 
-async def is_lilypad_cloud(
+def is_lilypad_cloud(
     request: Request,
 ) -> bool:
     """Check if the request is to Lilypad Cloud"""
-    return request.url.hostname is not None and request.url.hostname.endswith(HOST_NAME)
+    return request.url.hostname is not None and (
+        request.url.hostname.endswith(HOST_NAME)
+        or request.url.hostname.endswith(ALT_HOST_NAME)
+        or get_settings().remote_client_hostname.endswith(ALT_HOST_NAME)
+    )

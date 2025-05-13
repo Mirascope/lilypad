@@ -13,10 +13,8 @@ from lilypad.ee.server.models import (
     UserRole,
 )
 from lilypad.ee.server.schemas.user_organizations import UserOrganizationPublic
-from lilypad.server.schemas import (
-    OrganizationPublic,
-    UserPublic,
-)
+from lilypad.server.schemas.organizations import OrganizationPublic
+from lilypad.server.schemas.users import UserPublic
 
 # In-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"

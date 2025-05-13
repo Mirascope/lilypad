@@ -1,6 +1,5 @@
 """The EE `OrganizationInviteService` class for organization_invites."""
 
-from fastapi import HTTPException, status
 from sqlmodel import select
 
 from ..models.organization_invites import OrganizationInviteTable
@@ -16,13 +15,7 @@ class OrganizationInviteService(
     table: type[OrganizationInviteTable] = OrganizationInviteTable
     create_model: type[OrganizationInviteCreate] = OrganizationInviteCreate
 
-    def find_record_by_token(self, token: str) -> OrganizationInviteTable:
+    def find_record_by_token(self, token: str) -> OrganizationInviteTable | None:
         """Find record by token."""
         query = select(self.table).where(self.table.token == token)
-        record_table = self.session.exec(query).first()
-        if not record_table:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Record for {self.table.__tablename__} not found",
-            )
-        return record_table
+        return self.session.exec(query).first()

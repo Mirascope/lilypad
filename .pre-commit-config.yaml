@@ -29,6 +29,6 @@ repos:
         pass_filenames: false
       - id: build-client
         name: build-client
-        entry: bash -c 'cd client && pnpm tsc -b --noEmit'
+        entry: bash -c 'cd client && pnpm typecheck'
         language: system
         pass_filenames: false

@@ -100,21 +100,38 @@ export interface AggregateMetrics {
  * Annotation create model.
  */
 export interface AnnotationCreate {
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Data */
-  data?: object | null;
   /** Span Uuid */
   span_uuid?: string | null;
   /** Project Uuid */
   project_uuid?: string | null;
   /** Function Uuid */
   function_uuid?: string | null;
+  label?: Label | null;
+  /** Reasoning */
+  reasoning?: string | null;
+  type?: EvaluationType | null;
+  /** Data */
+  data?: object | null;
   /** Assigned To */
   assigned_to?: string[] | null;
+  /** Assignee Email */
+  assignee_email?: string[] | null;
+}
+
+/**
+ * AnnotationMetrics
+ * Annotation metrics model.
+ */
+export interface AnnotationMetrics {
+  /**
+   * Function Uuid
+   * @format uuid
+   */
+  function_uuid: string;
+  /** Total Count */
+  total_count: number;
+  /** Success Count */
+  success_count: number;
 }
 
 /**
@@ -129,6 +146,8 @@ export interface AnnotationPublic {
   type?: EvaluationType | null;
   /** Data */
   data?: object | null;
+  /** Assigned To */
+  assigned_to?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -144,49 +163,15 @@ export interface AnnotationPublic {
    * @format uuid
    */
   span_uuid: string;
-  /**
-   * Function Uuid
-   * @format uuid
-   */
-  function_uuid: string;
-  /** Span more details model. */
-  span: SpanMoreDetails;
-  /** Assigned To */
-  assigned_to: string | null;
-}
-
-/**
- * AnnotationTable
- * Annotation table.
- */
-export interface AnnotationTable {
-  /** Uuid */
-  uuid?: string | null;
+  /** Function Uuid */
+  function_uuid?: string | null;
   /**
    * Created At
    * @format date-time
    */
-  created_at?: string;
-  /**
-   * Organization Uuid
-   * @format uuid
-   */
-  organization_uuid: string;
-  label?: Label | null;
-  /** Reasoning */
-  reasoning?: string | null;
-  /** @default "manual" */
-  type?: EvaluationType | null;
-  /** Data */
-  data?: object | null;
-  /** Assigned To */
-  assigned_to?: string | null;
-  /** Project Uuid */
-  project_uuid?: string | null;
-  /** Span Uuid */
-  span_uuid?: string | null;
-  /** Function Uuid */
-  function_uuid?: string | null;
+  created_at: string;
+  /** Span more details model. */
+  span: SpanMoreDetails;
 }
 
 /**
@@ -257,11 +242,6 @@ export interface CommentPublic {
    * @format date-time
    */
   created_at: string;
-  /**
-   * Child Comments
-   * @default []
-   */
-  child_comments?: CommentPublic[];
 }
 
 /**
@@ -652,11 +632,8 @@ export interface LicenseInfo {
   expires_at: string;
   /** License tier enum. */
   tier: Tier;
-  /**
-   * Organization Uuid
-   * @format uuid
-   */
-  organization_uuid: string;
+  /** Organization Uuid */
+  organization_uuid: string | null;
   /**
    * Is Expired
    * Check if the license has expired
@@ -673,6 +650,18 @@ export interface MessageParam {
   role: string;
   /** Content */
   content: (AudioPart | TextPart | ImagePart | ToolCall)[];
+}
+
+/**
+ * OrganizationCreate
+ * Organization create model
+ */
+export interface OrganizationCreate {
+  /**
+   * Name
+   * @minLength 1
+   */
+  name: string;
 }
 
 /**
@@ -767,6 +756,33 @@ export interface OrganizationUpdate {
   name?: string | null;
   /** License */
   license?: string | null;
+}
+
+/** Paginated[SpanPublic] */
+export interface PaginatedSpanPublic {
+  /**
+   * Items
+   * Current slice of items
+   */
+  items: SpanPublic[];
+  /**
+   * Limit
+   * Requested page size (limit)
+   * @min 1
+   */
+  limit: number;
+  /**
+   * Offset
+   * Requested offset
+   * @min 0
+   */
+  offset: number;
+  /**
+   * Total
+   * Total number of items
+   * @min 0
+   */
+  total: number;
 }
 
 /**
@@ -940,6 +956,8 @@ export interface SpanMoreDetails {
   provider: string;
   /** Model */
   model: string;
+  /** Instrumentation Scope name of the span */
+  scope: Scope;
   /** Input Tokens */
   input_tokens?: number | null;
   /** Output Tokens */
@@ -968,6 +986,10 @@ export interface SpanMoreDetails {
   events?: Event[] | null;
   /** Tags */
   tags?: TagPublic[] | null;
+  /** Session Id */
+  session_id?: string | null;
+  /** Span Id */
+  span_id: string;
 }
 
 /**
@@ -994,6 +1016,8 @@ export interface SpanPublic {
   data?: object;
   /** Parent Span Id */
   parent_span_id?: string | null;
+  /** Session Id */
+  session_id?: string | null;
   /**
    * Uuid
    * @format uuid
@@ -1008,7 +1032,7 @@ export interface SpanPublic {
   display_name?: string | null;
   function: FunctionPublic | null;
   /** Annotations */
-  annotations: AnnotationTable[];
+  annotations: AnnotationPublic[];
   /** Child Spans */
   child_spans: SpanPublic[];
   /**
@@ -1020,6 +1044,8 @@ export interface SpanPublic {
   status?: string | null;
   /** Tags */
   tags: TagPublic[];
+  /** Score */
+  score?: number | null;
 }
 
 /**
@@ -1036,8 +1062,10 @@ export enum SpanType {
  * Span update model
  */
 export interface SpanUpdate {
-  /** Tags */
-  tags?: TagPublic[] | null;
+  /** Tags By Uuid */
+  tags_by_uuid?: string[] | null;
+  /** Tags By Name */
+  tags_by_name?: string[] | null;
 }
 
 /**

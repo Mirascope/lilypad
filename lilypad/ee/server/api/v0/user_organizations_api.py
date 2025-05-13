@@ -7,14 +7,22 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from ee.validate import LicenseValidator, Tier
+
 from .....server._utils import get_current_user
+from .....server._utils.auth import create_jwt_token
 from .....server.models import UserTable
-from .....server.schemas import (
+from .....server.schemas.users import (
     UserPublic,
 )
-from .....server.services import OrganizationInviteService, OrganizationService
+from .....server.services import (
+    OrganizationInviteService,
+    OrganizationService,
+    UserService,
+)
+from ....server.features import cloud_features
 from ...models import UserOrganizationTable, UserRole
-from ...schemas import UserOrganizationCreate, UserOrganizationUpdate
+from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
 
 user_organizations_router = APIRouter()
@@ -53,9 +61,7 @@ class CreateUserOrganizationToken(BaseModel):
     token: str
 
 
-@user_organizations_router.post(
-    "/user-organizations", response_model=UserOrganizationTable
-)
+@user_organizations_router.post("/user-organizations", response_model=UserPublic)
 async def create_user_organization(
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
@@ -66,7 +72,8 @@ async def create_user_organization(
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     create_user_organization_token: CreateUserOrganizationToken,
     user: Annotated[UserPublic, Depends(get_current_user)],
-) -> UserOrganizationTable:
+    user_service: Annotated[UserService, Depends(UserService)],
+) -> UserPublic:
     """Create user organization"""
     org_invite = organization_invites_service.find_record_by_token(
         create_user_organization_token.token
@@ -77,21 +84,21 @@ async def create_user_organization(
             detail="Invite not found.",
         )
     # OPEN BETA: Limit number of users per organization based on tier
-    # validator = LicenseValidator()
-    # license_info = validator.validate_license(
-    #     org_invite.organization_uuid, organization_service
-    # )
-    # tier = Tier.FREE
-    # if license_info:
-    #     tier = license_info.tier
-    # num_users = user_organization_service.count_users_in_organization(
-    #     org_invite.organization_uuid
-    # )
-    # if num_users >= cloud_features[tier].num_users_per_organization:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-    #         detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
-    #     )
+    validator = LicenseValidator()
+    license_info = validator.validate_license(
+        org_invite.organization_uuid, organization_service
+    )
+    tier = Tier.FREE
+    if license_info:
+        tier = license_info.tier
+    num_users = user_organization_service.count_users_in_organization(
+        org_invite.organization_uuid
+    )
+    if num_users >= cloud_features[tier].num_users_per_organization:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Exceeded the maximum number of users ({cloud_features[tier].num_users_per_organization}) for {tier.name.capitalize()} plan",
+        )
     invite_deleted = organization_invites_service.delete_record_by_uuid(
         org_invite.uuid,
     )
@@ -112,7 +119,13 @@ async def create_user_organization(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user organization.",
         )
-    return user_organization
+    # Update user active organization
+    new_user = user_service.update_user_active_organization_uuid(
+        user_organization.organization_uuid
+    )
+    user_public = UserPublic.model_validate(new_user)
+    user_public.access_token = create_jwt_token(user_public)
+    return user_public
 
 
 @user_organizations_router.patch(

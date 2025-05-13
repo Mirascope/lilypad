@@ -1,5 +1,6 @@
 import LilypadDialog from "@/components/LilypadDialog";
-import { SettingsLayout } from "@/components/SettingsLayout";
+import { ModeToggle } from "@/components/ModeToggle";
+import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
@@ -13,13 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
 import { isLilypadCloud } from "@/ee/utils/common";
 import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { toast } from "@/hooks/use-toast";
 import { OrganizationUpdate, Tier } from "@/types/types";
 import { useUpdateOrganizationMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SettingsIcon } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const tier = {
   [Tier.FREE]: "Free",
@@ -29,43 +30,61 @@ const tier = {
 };
 export const HomeSettings = () => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const userOrganization = user.user_organizations?.find(
     (userOrg) => userOrg.organization.uuid === user?.active_organization_uuid
   );
+  const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
+  const [open, setOpen] = useState<boolean>(false);
   return (
-    <SettingsLayout title='Overview' icon={SettingsIcon}>
-      <Typography variant='h4'>Personal Information</Typography>
-      <div className='grid gap-4'>
-        <UneditableInput label='Name' value={user.first_name} />
-        <UneditableInput label='Email' value={user.email} />
-        <Typography variant='h4'>Organization</Typography>
-        {userOrganization && (
-          <UneditableInput
-            label='Name'
-            value={userOrganization.organization.name}
-          />
-        )}
-        <UneditableInput
-          label='Plan'
-          value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
-        />
-        {!isLilypadCloud() && (
-          <div>
-            <LilypadDialog
-              title='Change Plan'
-              description='Contact william@mirascope.com to obtain a new license key.'
-              buttonProps={{
-                variant: "default",
-              }}
-              text={"Upgrade plan"}
-            >
-              <ChangePlan />
-            </LilypadDialog>
-          </div>
-        )}
+    <div className="flex flex-col gap-6">
+      <div>
+        <Typography variant="h4">Personal Information</Typography>
+        <div className="grid gap-4">
+          <UneditableInput label="Name" value={user.first_name} />
+          <UneditableInput label="Email" value={user.email} />
+        </div>
+        <div className="flex flex-col my-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            Theme
+          </label>
+          <ModeToggle />
+        </div>
       </div>
-    </SettingsLayout>
+      <div>
+        <Typography variant="h4">Organization</Typography>
+        <div className="grid gap-4">
+          {userOrganization ? (
+            <>
+              <UneditableInput
+                label="Name"
+                value={userOrganization.organization.name}
+              />
+              <UneditableInput
+                label="Plan"
+                value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
+              />
+              {!isLilypadCloud() && (
+                <div>
+                  <LilypadDialog
+                    title="Change Plan"
+                    description="Contact william@mirascope.com to obtain a new license key."
+                    buttonProps={{
+                      variant: "default",
+                    }}
+                    text={"Upgrade plan"}
+                  >
+                    <ChangePlan />
+                  </LilypadDialog>
+                </div>
+              )}
+            </>
+          ) : (
+            <Button onClick={() => setOpen(true)}>Create Organization</Button>
+          )}
+        </div>
+      </div>
+      <CreateOrganizationDialog open={open} setOpen={setOpen} />
+    </div>
   );
 };
 
@@ -77,28 +96,21 @@ const ChangePlan = () => {
   });
   const updateOrganization = useUpdateOrganizationMutation();
   const onSubmit = async (data: OrganizationUpdate) => {
-    try {
-      await updateOrganization.mutateAsync(data);
-      toast({
-        title: "Successfully upgraded plan.",
-      });
-    } catch (e) {
-      toast({
-        title: "Failed to upgrade plan.",
-        variant: "destructive",
-      });
-    }
+    await updateOrganization
+      .mutateAsync(data)
+      .catch(() => toast.error("Failed to upgrade plan."));
+    toast.success("Successfully upgraded plan.");
   };
   return (
     <Form {...methods}>
       <form
         onSubmit={methods.handleSubmit(onSubmit)}
-        className='flex flex-col gap-3'
+        className="flex flex-col gap-3"
       >
         <FormField
-          key='licenseKey'
+          key="licenseKey"
           control={methods.control}
-          name='license'
+          name="license"
           render={({ field }) => (
             <FormItem>
               <FormLabel>License</FormLabel>
@@ -111,9 +123,9 @@ const ChangePlan = () => {
         <DialogFooter>
           <DialogClose asChild>
             <Button
-              type='submit'
+              type="submit"
               loading={methods.formState.isSubmitting}
-              className='w-full'
+              className="w-full"
             >
               {methods.formState.isSubmitting ? "Upgrading..." : "Upgrade Plan"}
             </Button>
@@ -131,9 +143,13 @@ const UneditableInput = ({
   value: string;
 }) => {
   return (
-    <div className='space-y-2'>
-      <label className='text-sm font-medium text-gray-700'>{label}</label>
-      <div className='p-2 bg-gray-100 rounded-md text-gray-800'>{value}</div>
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-muted-foreground">
+        {label}
+      </label>
+      <div className="p-2 bg-muted rounded-md text-muted-foreground">
+        {value}
+      </div>
     </div>
   );
 };

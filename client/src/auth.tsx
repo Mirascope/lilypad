@@ -1,9 +1,12 @@
+import { TraceTab } from "@/types/traces";
 import { ProjectPublic, UserPublic } from "@/types/types";
 import {
   AUTH_STORAGE_KEY,
   PRIVACY_STORAGE_KEY,
   TERMS_STORAGE_KEY,
+  USER_CONFIG_STORAGE_KEY,
 } from "@/utils/constants";
+import { VisibilityState } from "@tanstack/react-table";
 import {
   createContext,
   ReactNode,
@@ -11,9 +14,16 @@ import {
   useContext,
   useState,
 } from "react";
+
+export interface UserConfig {
+  defaultTraceTab?: TraceTab;
+  defaultMessageRenderer?: "raw" | "markdown";
+  tracesTableVisibilityState?: VisibilityState;
+}
+
 export interface AuthContext {
   isAuthenticated: boolean;
-  logout: () => Promise<void>;
+  logout: () => void;
   user: UserPublic | null;
   setSession: (user: UserPublic | null) => void;
   setProject: (project: ProjectPublic | null | undefined) => void;
@@ -22,6 +32,8 @@ export interface AuthContext {
   setPrivacyPolicyVersion: (privacyPolicyVersion: string) => void;
   loadPrivacyPolicyVersion: () => string | null;
   loadTermsVersion: () => string | null;
+  updateUserConfig: (userConfigUpdate: Partial<UserConfig>) => void;
+  userConfig: UserConfig | null;
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
@@ -70,9 +82,31 @@ const loadTermsVersionFromStorage = (): string | null => {
   if (!version) return null;
   return version;
 };
+const loadUserConfigFromStorage = (): UserConfig | null => {
+  const stored = localStorage.getItem(USER_CONFIG_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored) as UserConfig;
+  } catch {
+    localStorage.removeItem(USER_CONFIG_STORAGE_KEY);
+    return null;
+  }
+};
+
+const saveUserConfigToStorage = (config: UserConfig | null) => {
+  if (config) {
+    localStorage.setItem(USER_CONFIG_STORAGE_KEY, JSON.stringify(config));
+  } else {
+    localStorage.removeItem(USER_CONFIG_STORAGE_KEY);
+  }
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
+  const [userConfig, setUserConfig] = useState<UserConfig | null>(
+    loadUserConfigFromStorage()
+  );
   const [activeProject, setActiveProject] = useState<
     ProjectPublic | null | undefined
   >(null);
@@ -90,7 +124,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const logout = useCallback(async () => {
+  const updateUserConfig = useCallback(
+    (userConfigUpdate: Partial<UserConfig>) => {
+      const updatedConfig = {
+        ...(userConfig ?? {}),
+        ...userConfigUpdate,
+      };
+
+      // Save the updated config
+      setUserConfig(updatedConfig);
+      saveUserConfigToStorage(updatedConfig);
+    },
+    [userConfig]
+  );
+
+  const logout = useCallback(() => {
     setUser(null);
     saveToStorage(null);
   }, []);
@@ -108,6 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadPrivacyPolicyVersion: loadPrivacyPolicyVersionFromStorage,
         loadTermsVersion: loadTermsVersionFromStorage,
         activeProject,
+        updateUserConfig,
+        userConfig,
       }}
     >
       {children}
@@ -115,10 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+};

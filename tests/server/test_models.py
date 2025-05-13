@@ -16,15 +16,9 @@ from lilypad.server.models import (
     SpanTable,
     SpanType,
 )
-from lilypad.server.schemas import (
-    FunctionCreate,
-    FunctionPublic,
-    ProjectCreate,
-    ProjectPublic,
-    Provider,
-    SpanCreate,
-    SpanPublic,
-)
+from lilypad.server.schemas.functions import FunctionCreate, FunctionPublic, Provider
+from lilypad.server.schemas.projects import ProjectCreate, ProjectPublic
+from lilypad.server.schemas.spans import SpanCreate, SpanPublic
 
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
@@ -162,6 +156,18 @@ def test_span_models() -> None:
     )
     llm_span_public = SpanPublic.model_validate(llm_span)
     assert llm_span_public.display_name == "test_system with 'test_model'"
+
+
+def test_span_model_has_session_id() -> None:
+    """Test Span model session_id field."""
+    span = SpanTable(  # pyright: ignore [reportCallIssue]
+        span_id="s1",
+        project_uuid=uuid4(),
+        scope=Scope.LILYPAD,
+        session_id="RUN-XYZ",
+        data={},
+    )
+    assert span.session_id == "RUN-XYZ"
 
 
 def test_relationships(session) -> None:

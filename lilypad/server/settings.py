@@ -1,6 +1,7 @@
 """Server settings"""
 
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +19,7 @@ class Settings(BaseSettings):
     remote_client_url: str = Field(default=REMOTE_CLIENT_URL)
     api_key: str | None = None
     project_id: str | None = None
-    serve_frontend: str | None = Field(
+    serve_frontend: bool | None = Field(
         default=None, description="Serve the client in the root"
     )
     experimental: bool = Field(default=False)
@@ -41,12 +42,32 @@ class Settings(BaseSettings):
     # Resend
     resend_api_key: str | None = None
 
+    # OpenSearch
+    opensearch_host: str | None = None
+    opensearch_port: int | None = None
+    opensearch_user: str | None = None
+    opensearch_password: str | None = None
+    opensearch_use_ssl: bool = False
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None
     db_user: str | None = None
     db_password: str | None = None
     db_port: int | None = None
+    db_pool_size: int = 8
+    db_max_overflow: int = 2
+    db_pool_recycle: int = 1800
+    db_pool_pre_ping: bool = True
+
+    # Stripe settings
+    stripe_api_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_cloud_product_id: str | None = None
+    stripe_cloud_free_price_id: str | None = None
+    stripe_cloud_pro_price_id: str | None = None
+    stripe_cloud_team_price_id: str | None = None
+    stripe_spans_metering_id: str | None = None
 
     @property
     def config(self) -> dict[str, Any]:
@@ -76,6 +97,11 @@ class Settings(BaseSettings):
     def client_url(self) -> str:
         """Get the client URL"""
         return self.config["client_url"]
+
+    @property
+    def remote_client_hostname(self) -> str:
+        """Get the remote client hostname"""
+        return urlparse(self.client_url).hostname or ""
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
 

@@ -43,10 +43,10 @@ export const FormSlider = <T extends FieldValues>({
 
         return (
           <FormItem>
-            <FormLabel className='flex justify-between items-center'>
+            <FormLabel className="flex justify-between items-center">
               <Label
                 htmlFor={sliderProps.name ?? ""}
-                className='flex items-center gap-2'
+                className="flex items-center gap-2"
               >
                 {label}
                 {optional && switchName && (
@@ -60,7 +60,7 @@ export const FormSlider = <T extends FieldValues>({
                             checked={switchField.value}
                             onCheckedChange={switchField.onChange}
                           />
-                          <p className='text-xs'>
+                          <p className="text-xs">
                             {switchField.value ? "Active" : "Not set"}
                           </p>
                         </>
@@ -79,7 +79,7 @@ export const FormSlider = <T extends FieldValues>({
                       e.target.value === "" ? "" : Number(e.target.value);
                     field.onChange(val);
                   }}
-                  type='number'
+                  type="number"
                   disabled={isDisabled}
                 />
               )}

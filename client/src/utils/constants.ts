@@ -3,3 +3,5 @@ export const TERMS_VERSION = "2025-04-04";
 export const PRIVACY_VERSION = "2025-04-04";
 export const PRIVACY_STORAGE_KEY = "privacyPolicyVersion";
 export const TERMS_STORAGE_KEY = "termsVersion";
+export const USER_CONFIG_STORAGE_KEY = "user-config";
+export const PAGE_SIZE = 50;

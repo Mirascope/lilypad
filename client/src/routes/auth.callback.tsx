@@ -110,10 +110,10 @@ const CallbackPage = () => {
   }, [stateJson.redirect, auth.user]);
 
   return (
-    <div className='min-h-screen flex items-center justify-center'>
-      <div className='text-center'>
-        <h2 className='text-xl'>Processing login...</h2>
-        <p className='text-gray-500 mt-2'>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-xl">Processing login...</h2>
+        <p className="text-gray-500 mt-2">
           Authenticating with {activeProvider}...
         </p>
       </div>

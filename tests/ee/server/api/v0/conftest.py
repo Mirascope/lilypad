@@ -18,7 +18,7 @@ from lilypad.server.models import (
     ProjectTable,
     UserTable,
 )
-from lilypad.server.schemas import UserPublic
+from lilypad.server.schemas.users import UserPublic
 
 # Create a single test engine for all tests
 TEST_DATABASE_URL = "sqlite:///:memory:"

@@ -31,6 +31,7 @@ export const LilypadDialog = ({
   open,
   onOpenChange,
   dialogContentProps = {},
+  noTrigger = false,
 }: {
   icon?: ReactNode;
   text?: string;
@@ -45,14 +46,16 @@ export const LilypadDialog = ({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   dialogContentProps?: React.ComponentProps<typeof DialogContent>;
+  noTrigger?: boolean;
 }) => {
   const ButtonComponent = (
     <Button
-      variant='outline'
+      variant="outline"
       {...buttonProps}
-      size={icon ? "icon" : buttonProps.size}
+      size={icon && !text ? "icon" : buttonProps.size}
     >
-      {icon ?? text}
+      {icon}
+      {text}
     </Button>
   );
 
@@ -69,7 +72,7 @@ export const LilypadDialog = ({
           </TooltipTrigger>
           <TooltipContent {...tooltipProps}>{tooltipContent}</TooltipContent>
         </Tooltip>
-      ) : (
+      ) : noTrigger ? null : (
         TriggerButton
       )}
       <DialogContent
@@ -79,7 +82,7 @@ export const LilypadDialog = ({
         )}
         {...dialogContentProps}
       >
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>

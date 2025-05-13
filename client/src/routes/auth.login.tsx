@@ -34,13 +34,13 @@ export const Route = createFileRoute("/auth/login")({
 const LoginComponent = () => {
   const { redirect } = Route.useSearch();
   return (
-    <div className='flex items-center justify-center h-screen'>
-      <Card className='w-[600px] m-0'>
+    <div className="flex items-center justify-center h-screen">
+      <Card className="w-[600px] m-0">
         <CardHeader>
           <CardTitle>Welcome to Lilypad</CardTitle>
           <CardDescription>Sign in to continue</CardDescription>
         </CardHeader>
-        <CardContent className='flex flex-col gap-2'>
+        <CardContent className="flex flex-col gap-2">
           <GithubLogin redirect={redirect} />
           <GoogleLogin redirect={redirect} />
         </CardContent>

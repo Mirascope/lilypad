@@ -37,6 +37,7 @@ export const Editor = ({
   template,
   inputValues,
   editorClassName,
+  placeholderClassName,
   isDisabled = false,
   isLLM = false,
   placeholderText = "Enter some text...",
@@ -46,6 +47,7 @@ export const Editor = ({
   template?: string;
   inputValues?: Record<string, any>;
   editorClassName?: string;
+  placeholderClassName?: string;
   isDisabled?: boolean;
   isLLM?: boolean;
   placeholderText?: string;
@@ -94,13 +96,13 @@ export const Editor = ({
       <div
         className={`flex flex-col border shadow rounded-lg prose max-w-none`}
       >
-        {!isDisabled && <ToolbarPlugin isLLM={isLLM} />}
+        {!isDisabled && isLLM && <ToolbarPlugin />}
 
-        <div className='relative'>
+        <div className="relative">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                id='prompt-template'
+                id="prompt-template"
                 className={cn(
                   "focus:outline-none w-full px-8 py-4 h-[500px] overflow-auto relative",
                   editorClassName
@@ -108,7 +110,12 @@ export const Editor = ({
               />
             }
             placeholder={
-              <p className='text-muted-foreground absolute top-0 px-8 w-full pointer-events-none'>
+              <p
+                className={cn(
+                  "text-muted-foreground absolute top-0 px-8 w-full pointer-events-none",
+                  placeholderClassName
+                )}
+              >
                 {placeholderText}
               </p>
             }

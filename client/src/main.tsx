@@ -8,9 +8,56 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 // Import the generated route tree
 import { AuthProvider, useAuth } from "@/auth";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { routeTree } from "./routeTree.gen";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry 403 errors
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "status" in error &&
+            error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "statusCode" in error &&
+            error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        // Default behavior: retry failed queries 3 times
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      // Same logic for mutations
+      retry: (failureCount, error) => {
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "status" in error &&
+            error.status === 403) ||
+          (error &&
+            typeof error === "object" &&
+            "statusCode" in error &&
+            error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        return failureCount < 3;
+      },
+    },
+  },
+});
 
 // Create a new router instance
 const router = createRouter({
@@ -43,24 +90,35 @@ const InnerApp = () => {
 const rootElement = document.getElementById("root")!;
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
+
+  const appContent = (
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider delayDuration={200}>
+            <InnerApp />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
   root.render(
     <StrictMode>
-      <PostHogProvider
-        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
-        options={{
-          api_host: import.meta.env.VITE_POSTHOG_HOST,
-          autocapture: false,
-          capture_performance: false,
-        }}
-      >
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider delayDuration={200}>
-              <InnerApp />
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </PostHogProvider>
+      {import.meta.env.VITE_PUBLIC_POSTHOG_KEY &&
+      import.meta.env.VITE_POSTHOG_HOST ? (
+        <PostHogProvider
+          apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string}
+          options={{
+            api_host: import.meta.env.VITE_POSTHOG_HOST as string,
+            autocapture: false,
+            capture_performance: false,
+          }}
+        >
+          {appContent}
+        </PostHogProvider>
+      ) : (
+        appContent
+      )}
     </StrictMode>
   );
 }
