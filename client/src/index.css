@@ -1,8 +1,3 @@
-/* Tailwind Directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Google Fonts Import */
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
@@ -10,575 +5,153 @@
 /* Williams Handwriting Font Import - All styles */
 @font-face {
   font-family: "Williams Handwriting";
-  src: url("/fonts/Williams-Handwriting-Regular-v1.ttf") format("truetype");
+  src: url("/fonts/Williams-Handwriting-Font-v1.6.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
-  descent-override: 10%;
+  descent-override: 5%;
 }
 
-/* Dark mode configuration */
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@plugin '@tailwindcss/typography';
 @custom-variant dark (&:is(.dark *));
-@custom-variant sunset (&:is(.sunset *));
+@import "./theme.css";
 
-@layer base {
-  :root {
-    --radius: 0.625rem;
-    --header-height-base: 74px; /* Standard header without selector (measured) */
-    --header-height-with-selector: 136px; /* Header with product selector (measured) */
-    --header-height: var(--header-height-base); /* Default value */
-
-    /* Paper texture variables for light mode */
-    --text-offset: 2px;
-    --texture-opacity: 0.3;
-    --texture-blend-mode: multiply;
-    --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
-
-    /* Light mode theme colors */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 150 60% 40%;
-    --primary-foreground: 150 60% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  /* Dark mode theme colors */
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 150 60% 50%;
-    --primary-foreground: 150 60% 10%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Dark mode paper texture */
-    --text-offset: 2px;
-    --texture-opacity: 0.5; /* Adjusted opacity for dark mode */
-    --texture-blend-mode: screen;
-    --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='%23505050' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
-  }
-
-  /* Lilypad Light Theme - Using a class instead of :has() */
-  .lilypad-theme {
-    --primary: 140 18% 54%;
-    --primary-foreground: 0 0% 98.5%;
-    --secondary: 180 15% 65%;
-    --secondary-foreground: 240 1% 10%;
-    --background: 0 0% 99.5%;
-    --foreground: 240 1% 10%;
-    --card: 140 2% 98%;
-    --card-foreground: 240 1% 10%;
-    --popover: 0 0% 99.5%;
-    --popover-foreground: 240 1% 10%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 145 11.11% 82%;
-    --accent-foreground: 282.8 20.41% 10%;
-    --destructive: 30 15% 65%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 140 18% 54%;
-    --chart-1: 160 84% 39%;
-    --chart-2: 180 70% 50%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 24 95% 53%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 45%;
-    --sidebar-primary: 140 18% 54%;
-    --sidebar-primary-foreground: 0 0% 98.5%;
-    --sidebar-accent: 0 0% 93%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 89.8%;
-    --sidebar-ring: 140 18% 54%;
-  }
-
-  /* Lilypad Dark Theme */
-  .dark.lilypad-theme {
-    --primary: 140 18% 54%;
-    --primary-foreground: 0 0% 95%;
-    --secondary: 180 12% 50%;
-    --secondary-foreground: 0 0% 90%;
-    --background: 240 1% 10%;
-    --foreground: 0 0% 95%;
-    --card: 140 5% 15%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 1% 11%;
-    --popover-foreground: 0 0% 95%;
-    --muted: 0 0% 50%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 140 6% 45%;
-    --accent-foreground: 0 0% 80%;
-    --destructive: 30 17% 50%;
-    --destructive-foreground: 0 0% 95%;
-    --border: 0 0% 50%;
-    --input: 0 0% 50%;
-    --ring: 140 35% 35%;
-    --chart-1: 160 84% 39%;
-    --chart-2: 186 95% 42%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 24 95% 53%;
-    --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 142 42% 42%;
-    --sidebar-primary-foreground: 0 0% 98.5%;
-    --sidebar-accent: 0 0% 50%;
-    --sidebar-accent-foreground: 0 0% 80%;
-    --sidebar-border: 0 0% 50%;
-    --sidebar-ring: 142 42% 42%;
-  }
-
-  /* Disable texture on landing page */
-  :root:has(body > div > div[class*="bg-watercolor-flipped"]) {
-    --texture-opacity: 0;
-  }
-
-  /* Base styles and resets */
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground m-0;
-    font-family:
-      "Geist Sans",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Oxygen,
-      Ubuntu,
-      Cantarell,
-      "Open Sans",
-      "Helvetica Neue",
-      sans-serif;
-    font-size: 1rem; /* Default size - will be overridden by mono/sans classes */
-    font-weight: 400; /* Normal weight */
-    letter-spacing: 0.01em; /* Slight letter spacing */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Paper texture overlay for the entire app */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    background-image: var(--texture-svg);
-    opacity: var(--texture-opacity);
-    mix-blend-mode: var(--texture-blend-mode);
-    z-index: 9999;
-  }
-
-  /* Base code styles */
-  code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-      monospace;
-  }
-
-  /* Code blocks use different fonts based on mode */
-  code,
-  pre,
-  .shiki,
-  .shiki code,
-  .mono-enabled code,
-  .mono-enabled pre,
-  .mono-enabled .shiki,
-  .mono-enabled .shiki code {
-    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, "Liberation Mono", "Courier New", monospace !important;
-    /* Font size is defined in .shiki */
-  }
-
-  /* MDX content always uses monospace for all text and code blocks */
-  .mdx-content {
-    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, "Liberation Mono", "Courier New", monospace !important;
-    /* Font size for code blocks is defined in .shiki */
-  }
-
-  /* Code elements should always use monospace regardless of sans/mono setting */
-  .mdx-content code,
-  .mdx-content pre,
-  .mdx-content .shiki,
-  .mdx-content .shiki code {
-    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, "Liberation Mono", "Courier New", monospace !important;
-  }
-
-  .handwriting-enabled .mdx-content,
-  .handwriting-enabled #doc-content,
-  .handwriting-enabled .mdx-container,
-  .handwriting-enabled .blog-content .mdx-content,
-  .handwriting-enabled .prose {
-    font-family:
-      "Roboto",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Helvetica,
-      Arial,
-      sans-serif,
-      "Apple Color Emoji",
-      "Segoe UI Emoji",
-      "Segoe UI Symbol" !important;
-    font-size: 1rem !important;
-  }
-
-  /* Additional rule to specifically target blog content */
-  .blog-content {
-    font-family:
-      "Roboto",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Helvetica,
-      Arial,
-      sans-serif,
-      "Apple Color Emoji",
-      "Segoe UI Emoji",
-      "Segoe UI Symbol" !important;
-    font-size: 1rem !important;
-  }
-
-  main {
-    width: 100%;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .lilypad-sidebar ul {
-    list-style: none;
-    padding: 0;
-  }
-
-  /* Text alignment utilities */
-  .ltr {
-    text-align: left;
-  }
-
-  .rtl {
-    text-align: right;
-  }
-
-  @theme inline {
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-  }
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Landing page text shadow */
-.landing-page-text-shadow {
-  text-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    0 4px 14px rgba(0, 0, 0, 0.2);
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.995 0 0);
+  --foreground: oklch(0.1 0.01 240);
+  --card: rgba(64, 155, 69, 0.2);
+  --card-foreground: oklch(0.1 0.01 240);
+  --popover: oklch(0.995 0 0);
+  --popover-foreground: oklch(0.1 0.01 240);
+  --primary: var(--color-lilypad-green);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: var(--color-mirascope-purple);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: var(--color-gray-100);
+  --muted-foreground: var(--color-gray-500);
+  --accent: rgba(64, 155, 69, 0.6);
+  --accent-foreground: oklch(0.1 0.2 282.8);
+  --destructive: oklch(0.65 0.15 30);
+  --destructive-hover: rgb(243, 226, 225);
+
+  --border: var(--color-gray-200);
+  --input: var(--color-gray-200);
+  --ring: var(--color-lilypad-green);
+
+  --chart-1: var(--color-emerald-500);
+  --chart-2: var(--color-cyan-500);
+  --chart-3: var(--color-blue-500);
+  --chart-4: var(--color-amber-500);
+  --chart-5: var(--color-orange-500);
+
+  --sidebar: var(--color-gray-50);
+  --sidebar-foreground: var(--color-gray-700);
+  --sidebar-primary: var(--color-lilypad-green);
+  --sidebar-primary-foreground: var(--color-gray-700);
+  --sidebar-accent: var(--color-gray-100);
+  --sidebar-accent-foreground: var(--color-gray-900);
+  --sidebar-border: var(--color-gray-200);
+  --sidebar-ring: var(--color-lilypad-green);
 }
 
-/* Landing page hover text shadow - lighter for accent color text */
-.hover\:landing-page-text-shadow:hover {
-  text-shadow:
-    0 2px 10px rgba(255, 255, 255, 0.3),
-    0 4px 20px rgba(255, 255, 255, 0.2);
+:root {
+  --radius: 0.625rem;
+  --header-height-base: 74px; /* Standard header without selector (measured) */
+  --header-height-with-selector: 136px; /* Header with product selector (measured) */
+  --header-height: var(--header-height-base); /* Default value */
+
+  /* Paper texture variables for light mode */
+  --text-offset: 2px;
+  --texture-opacity: 0.3;
+  --texture-blend-mode: multiply;
+  --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
 }
 
-/* Utility classes for navigation text styling */
+.dark {
+  --text-offset: 2px;
+  --texture-opacity: 0.5; /* Adjusted opacity for dark mode */
+  --texture-blend-mode: screen;
+  --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='%23505050' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
+  --background: oklch(0.1 0.01 240);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.11 0.01 240);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: var(--color-lilypad-green-dark);
+  --primary-foreground: var(--color-foreground);
+  --secondary: oklch(0.5 0.12 180);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: var(--color-gray-800);
+  --muted-foreground: var(--color-gray-400);
+  --accent: oklch(0.45 0.06 140);
+  --accent-foreground: oklch(0.95 0 0);
+  --destructive: oklch(0.5 0.17 30);
+  --destructive-hover: oklch(0.3 0.034 30);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
 
-/* For text over landing page backdrop - white with shadow, hovering to white with lighter shadow */
-.nav-text-landing {
-  color: white;
-  text-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.3),
-    0 4px 20px rgba(0, 0, 0, 0.2);
-  transition:
-    color 0.2s ease,
-    text-shadow 0.2s ease;
-}
-.nav-text-landing:hover,
-.nav-text-landing[data-state="open"] {
-  color: white;
-  text-shadow:
-    0 2px 10px rgba(255, 255, 255, 0.3),
-    0 4px 20px rgba(255, 255, 255, 0.2);
-}
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
 
-/* For text on regular pages - using foreground color, hovering to primary with shadow */
-.nav-text-regular {
-  color: var(--color-foreground);
-  transition:
-    color 0.2s ease,
-    text-shadow 0.2s ease;
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
-.nav-text-regular:hover,
-.nav-text-regular[data-state="open"] {
-  color: var(--color-primary);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-/* Landing page box shadow for elements like buttons */
-.landing-page-box-shadow {
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.3),
-    0 4px 20px rgba(0, 0, 0, 0.2);
-  transition: box-shadow 0.2s ease;
-}
-
-/* Hover effect with white glow for landing page buttons */
-.landing-page-box-shadow-hover:hover {
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.4),
-    0 4px 24px rgba(0, 0, 0, 0.3);
-}
-
-/* Icon shadow utility classes */
-.icon-shadow {
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
-}
-
-/* For icon-based buttons on landing page */
-.nav-icon-landing {
-  color: white;
-  transition: color 0.2s ease;
-}
-.nav-icon-landing:hover svg {
-  color: white;
-  filter: drop-shadow(0 2px 3px rgba(255, 255, 255, 0.5));
-}
-
-/* Ensure inline code stands out from text */
-p code,
-li code,
-h1 code,
-h2 code,
-h3 code,
-h4 code,
-h5 code,
-h6 code {
-  border-radius: 0.2rem;
-  padding: 0.1rem 0.3rem;
-}
-
-.mono-enabled p code,
-.mono-enabled li code,
-.mono-enabled h1 code,
-.mono-enabled h2 code,
-.mono-enabled h3 code,
-.mono-enabled h4 code,
-.mono-enabled h5 code,
-.mono-enabled h6 code {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.handwriting-enabled p code,
-.handwriting-enabled li code,
-.handwriting-enabled h1 code,
-.handwriting-enabled h2 code,
-.handwriting-enabled h3 code,
-.handwriting-enabled h4 code,
-.handwriting-enabled h5 code,
-.handwriting-enabled h6 code {
-  background-color: rgba(0, 0, 0, 0.03);
-  font-weight: 400;
-  /* Font size is defined in .shiki */
-}
-
-/* Flipped background image */
-.bg-watercolor-flipped {
-  position: relative;
-}
-
-.bg-watercolor-flipped::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("/assets/backgrounds/light.webp");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  transform: scaleX(-1);
-  z-index: -1;
-  transition: background-image 0.2s ease-in-out;
-}
-
-/* Responsive backgrounds for smaller screens */
-@media (max-width: 1200px) {
-  .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/light-medium.webp");
-  }
-}
-
-@media (max-width: 800px) {
-  .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/light-small.webp");
-  }
-}
-
-.dark .bg-watercolor-flipped::before {
-  background-image: url("/assets/backgrounds/dark.webp");
-  transition: background-image 0.3s ease;
-}
-
-/* Responsive dark backgrounds for smaller screens */
-@media (max-width: 1200px) {
-  .dark .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/dark-medium.webp");
-  }
-}
-
-@media (max-width: 800px) {
-  .dark .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/dark-small.webp");
-  }
-}
-
-/* Apply sunset background during sunset time */
-.sunset-time .bg-watercolor-flipped::before {
-  background-image: url("/assets/backgrounds/sunset.webp");
-  transition: background-image 0.3s ease;
-}
-
-/* Responsive sunset backgrounds for smaller screens */
-@media (max-width: 1200px) {
-  .sunset-time .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/sunset-medium.webp");
-  }
-}
-
-@media (max-width: 800px) {
-  .sunset-time .bg-watercolor-flipped::before {
-    background-image: url("/assets/backgrounds/sunset-small.webp");
-  }
-}
-
-/* Font for site content - active when mono-enabled class is present */
-.font-mono,
-.mono-enabled {
+body {
+  @apply m-0;
   font-family:
-    "Roboto",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol" !important;
-  font-size: 1rem !important;
-}
-
-/* Make sure code elements keep monospace even in sans font mode */
-.mono-enabled pre,
-.mono-enabled code,
-.mono-enabled .shiki,
-.mono-enabled .shiki code {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
-  /* Font size is defined in .shiki */
-}
-
-/* Fun mode for code blocks */
-.mdx-content .fun-mode .shiki code span,
-.fun-mode .shiki code span {
-  font-family: "Williams Handwriting", cursive !important;
-  font-size: 0.95rem !important;
-}
-
-/* Font for site content when handwriting is enabled */
-.handwriting-enabled {
-  font-family: "Williams Handwriting", cursive !important;
-  font-size: 1.1rem !important;
-}
-
-/* Font class for handwriting - used in handwriting mode */
-.font-handwriting {
-  font-family: "Williams Handwriting", cursive !important;
-}
-
-/* Font class for Excalifont - used for stylistic elements in mono mode */
-.font-excalifont {
-  font-family: "Excalifont", sans-serif !important;
-}
-
-/* Special styling for hero text in different modes */
-.handwriting-enabled .hero-font {
-  font-family: "Williams Handwriting", cursive !important;
-}
-
-.mono-enabled .hero-font {
-  font-family: "Excalifont", sans-serif !important;
-}
-
-/* Font class for sans */
-.font-sans {
-  font-family:
+    "Williams Handwriting",
     "Geist Sans",
     -apple-system,
     BlinkMacSystemFont,
@@ -589,209 +162,47 @@ h6 code {
     Cantarell,
     "Open Sans",
     "Helvetica Neue",
-    sans-serif !important;
-  font-size: 1rem !important;
+    sans-serif;
+  font-size: 1rem; /* Default size - will be overridden by mono/sans classes */
+  font-weight: 400; /* Normal weight */
+  letter-spacing: 0.01em; /* Slight letter spacing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* Paper texture overlay for the entire app */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: var(--texture-svg);
+  opacity: var(--texture-opacity);
+  mix-blend-mode: var(--texture-blend-mode);
+  z-index: 9999;
 }
 
-/* Navigation and header items styling */
-header a,
-header button:not(.font-toggle-button),
-.navigation-item {
-  font-weight: 400 !important;
+/* Base code styles */
+code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-/* Font toggle button styling - consistent across all pages */
-.font-toggle-button {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif !important;
-  line-height: 1.5 !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.01em !important;
-  transition: all 0.2s ease-in-out !important;
-  white-space: nowrap !important;
-  color: black !important;
-  background-color: white !important;
-}
-
-/* Font classes for use in menu options */
-.font-mono {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
-  /* Font size for code blocks is defined in .shiki */
-}
-
-.font-handwriting {
-  font-family: "Williams Handwriting", cursive !important;
-}
-
-/* Ensure font dropdown text is always black regardless of page */
-.font-dropdown,
-.font-dropdown button,
-.font-dropdown span {
-  color: #000 !important;
-}
-
-/* Custom navigation menu styling */
-[data-radix-navigation-menu-viewport],
-[data-radix-navigation-menu-content] {
-  z-index: 1050 !important;
-}
-
-.NavigationMenuContent {
-  display: block !important;
-  visibility: visible !important;
-  position: absolute !important;
-  z-index: 1050 !important;
-}
-
-/* Remove default Radix chevron */
-.font-toggle-button svg {
-  display: none !important;
-}
-
-/* Fix dropdown positioning and size */
-.NavigationMenuViewport {
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  transform: none !important;
-  width: auto !important;
-  min-width: 12rem !important;
-  z-index: 1050 !important;
-}
-
-/* Homepage headings styling */
-.text-[2\.5rem],
-.text-[3\.5rem],
-.text-[4\.5rem],
-.text-[5\.5rem] {
-  font-weight: 500 !important;
-}
-
-/* Extra large hero text */
-.hero-text {
-  font-size: 9vw !important;
-}
-
-@media (min-width: 768px) {
-  .hero-text {
-    font-size: 6vw !important;
-  }
-}
-
-@media (min-width: 1200px) {
-  .hero-text {
-    font-size: 5rem !important;
-  }
-}
-
-/* Pricing table adjustments */
-.grid.grid-cols-3 {
-  min-width: 800px;
-}
-
-/* Blog post headers styling - base styles */
-.blog-content h1,
-.blog-content h2,
-.blog-content h3,
-.blog-content h4,
-.blog-content h5,
-.blog-content h6 {
-  font-weight: 500 !important;
-  margin-top: 1.5em !important;
-  margin-bottom: 0.8em !important;
-}
-
-/* Standard header sizes */
-.blog-content h1 {
-  font-size: 2rem !important;
-}
-.blog-content h2 {
-  font-size: 1.5rem !important;
-}
-.blog-content h3 {
-  font-size: 1.25rem !important;
-}
-.blog-content h4,
-.blog-content h5,
-.blog-content h6 {
-  font-size: 1.1rem !important;
-}
-
-/* Hide the first h1 heading in blog content since it's already shown in the page header */
-.blog-content > h1:first-of-type {
-  display: none !important;
-}
-
-/* Torn paper effect */
-.torn-paper-effect {
-  clip-path: polygon(
-    0% 4%,
-    10% 0%,
-    20% 2%,
-    30% 0%,
-    40% 3%,
-    50% 0%,
-    60% 2%,
-    70% 0%,
-    80% 3%,
-    90% 0%,
-    100% 4%,
-    99% 20%,
-    100% 35%,
-    98% 50%,
-    100% 65%,
-    99% 80%,
-    100% 96%,
-    90% 100%,
-    80% 97%,
-    70% 100%,
-    60% 98%,
-    50% 100%,
-    40% 97%,
-    30% 100%,
-    20% 98%,
-    10% 100%,
-    0% 96%,
-    1% 80%,
-    0% 65%,
-    2% 50%,
-    0% 35%,
-    1% 20%
-  );
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: scale(1.08);
-}
-
-/* Badge container for docs and usage info */
-.badge-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.badge-container a {
-  display: inline-block;
-  width: auto;
-  flex: 0 0 auto;
-}
-
-/* Remove top margin from first child and bottom margin from last child in callouts */
-.callout-content > *:first-child {
-  margin-top: 0 !important;
-}
-
-.callout-content > *:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* Code block styling */
-.code-block-wrapper {
-  position: relative;
-  margin: 0;
-  border-radius: 0.5rem;
-  overflow: hidden;
+/* Code blocks use different fonts based on mode */
+code,
+pre,
+.shiki,
+.shiki code,
+.mono-enabled code,
+.mono-enabled pre,
+.mono-enabled .shiki,
+.mono-enabled .shiki code {
+  font-family:
+    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace !important;
+  /* Font size is defined in .shiki */
 }
 
 .shiki {
@@ -894,145 +305,45 @@ header button:not(.font-toggle-button),
   border-left-color: #6366f1 !important;
 }
 
-/* Word highlighting */
-.word {
-  background-color: rgba(200, 200, 255, 0.15);
-  padding: 0.1rem 0.2rem;
-  border-radius: 0.2rem;
-}
-
-/* Pagefind search result highlighting */
-mark,
-.search-results mark,
-[data-pagefind-body] mark {
-  background: transparent;
-  color: var(--color-primary);
-  font-weight: 600;
-  padding: 0;
-}
-
-/* Fade-in animation for search results */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-/* Styles moved from MDXProvider.tsx */
-/* Base styles for content - Sans-serif font */
-.mdx-content {
-  font-family:
-    "Roboto",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol" !important;
-  font-size: 1rem !important;
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* All standard text elements use sans font in normal mode */
-.mdx-content h1,
-.mdx-content h2,
-.mdx-content h3,
-.mdx-content h4,
-.mdx-content h5,
-.mdx-content h6,
-.mdx-content p,
-.mdx-content a,
-.mdx-content li,
-.mdx-content blockquote,
-.mdx-content table {
-  font-family:
-    "Roboto",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol" !important;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  .font-default {
+    font-family:
+      "Geist Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      "Open Sans",
+      "Helvetica Neue",
+      sans-serif;
+  }
+  .font-handwriting {
+    font-family: "Williams Handwriting", cursive !important;
+  }
 }
 
-/* Code elements always use monospace in all modes */
-.mdx-content pre,
-.mdx-content pre code,
-.mdx-content .shiki,
-.mdx-content .shiki code,
-.mdx-content .shiki .line {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
-  /* SINGLE SOURCE OF TRUTH FOR CODE BLOCK FONT SIZE */
-  font-size: 0.8rem !important;
-}
-
-/* Inline code gets monospace font but scales with context */
-.mdx-content p code,
-.mdx-content li code,
-.mdx-content td code {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
-  font-size: 0.9em !important;
-}
-
-/* Allow code in headings to inherit heading size */
-.mdx-content h1 code,
-.mdx-content h2 code,
-.mdx-content h3 code,
-.mdx-content h4 code,
-.mdx-content h5 code,
-.mdx-content h6 code {
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace !important;
-  font-size: 0.9em !important;
-}
-
-.mdx-content h1,
-.mdx-content h2,
-.mdx-content h3 {
-  font-family: "Williams Handwriting", cursive !important;
-}
-
-/* Fun mode - make sure code elements also use handwriting with highest specificity */
-.mdx-content.fun-mode pre,
-.mdx-content.fun-mode code,
-.mdx-content.fun-mode .shiki,
-.mdx-content.fun-mode .shiki code,
-.mdx-content.fun-mode .shiki .line,
-.mdx-content.fun-mode .shiki * {
-  font-family: "Williams Handwriting", cursive !important;
-  font-size: 0.9rem !important;
-}
-
-/* Additional styles for code highlighting */
-.mdx-content .shiki code span {
-  font-family: inherit !important;
-  font-size: inherit !important;
-}
-
-/* Additional list styling */
-.mdx-content ul li:last-child,
-.mdx-content ol li:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* Code block styling */
-.mdx-content pre {
-  padding: 0.5rem !important;
-  background-color: var(--color-code-background) !important;
-  overflow-x: auto !important;
-}
-
-/* Component styles */
 @layer components {
   /* Button group */
   .button-group {
@@ -1073,6 +384,11 @@ mark,
 
   .Collapsible__collapsed .Collapsible__content {
     @apply hidden select-none;
+  }
+
+  .comment-form p {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 
   /* Editor styles */

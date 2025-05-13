@@ -1,6 +1,8 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { AddComment, CommentCards } from "@/components/Comment";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
+import { TabGroup } from "@/components/TabGroup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,20 +11,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
+import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
+import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
+import { CommentTab, Tab, TraceTab } from "@/types/traces";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tab, TraceTab } from "@/types/traces";
-import { Event, MessageParam, SpanMoreDetails } from "@/types/types";
+  AnnotationPublic,
+  Event,
+  MessageParam,
+  SpanMoreDetails,
+} from "@/types/types";
+import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView, { JsonViewProps } from "@uiw/react-json-view";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import JsonView from "@uiw/react-json-view";
+import { MessageSquareMore, NotebookPen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
   role: string;
@@ -31,11 +37,13 @@ export interface MessageCardProps {
 }
 const MessageCard = ({ role, content }: MessageCardProps) => {
   return (
-    <Card>
+    <Card className="bg-background">
       <CardHeader>
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">{content}</CardContent>
+      <CardContent className="overflow-x-auto px-4 font-default">
+        {content}
+      </CardContent>
     </Card>
   );
 };
@@ -95,71 +103,172 @@ export const renderMessagesCard = (
   }
 };
 
-export const TraceCodeTab = ({ span }: { span: SpanMoreDetails }) => {
-  const { userConfig, updateUserConfig } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-
-  if (!span.code && !span.signature) return null;
+export const SpanComments = ({
+  projectUuid,
+  spanUuid,
+  activeAnnotation,
+  path,
+}: {
+  projectUuid: string;
+  spanUuid: string;
+  activeAnnotation?: AnnotationPublic | null;
+  path?: string;
+}) => {
+  const features = useFeatureAccess();
+  const { data: spanComments } = useSuspenseQuery(
+    commentsBySpanQueryOptions(spanUuid)
+  );
+  const { data: annotations } = useSuspenseQuery(
+    annotationsBySpanQueryOptions(projectUuid, spanUuid, features.annotations)
+  );
+  const filteredAnnotations = annotations.filter(
+    (annotation) => annotation.label
+  );
 
   const tabs: Tab[] = [
     {
+      label: "Annotate",
+      value: CommentTab.ANNOTATE,
+      component:
+        features.annotations && activeAnnotation ? (
+          <AnnotationView annotation={activeAnnotation} path={path} />
+        ) : null,
+    },
+    {
+      label: (
+        <div className="flex items-center gap-1">
+          <MessageSquareMore />
+          <span>Discussion</span>
+          {spanComments.length > 0 && (
+            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              {spanComments.length > 9 ? "9+" : spanComments.length}
+            </div>
+          )}
+        </div>
+      ),
+      value: CommentTab.COMMENTS,
+      component: (
+        <div className="bg-background text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
+          <div className="flex-1 overflow-auto px-4 pt-2">
+            <CommentCards spanUuid={spanUuid} />
+          </div>
+          <div className="shrink-0">
+            <Separator className="mb-2" />
+            <AddComment spanUuid={spanUuid} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: (
+        <div className="flex items-center gap-1">
+          <NotebookPen />
+          <span>Annotations</span>
+          {filteredAnnotations.length > 0 && (
+            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+              {filteredAnnotations.length > 9
+                ? "9+"
+                : filteredAnnotations.length}
+            </div>
+          )}
+        </div>
+      ),
+      value: CommentTab.ANNOTATIONS,
+      component:
+        features.annotations && !activeAnnotation ? (
+          <div className="h-full overflow-hidden">
+            <AnnotationsTable data={filteredAnnotations} />
+          </div>
+        ) : null,
+    },
+  ];
+
+  return <TabGroup tabs={tabs} />;
+};
+
+export const LilypadPanelTab = ({
+  span,
+  tab,
+  onTabChange,
+}: {
+  span: SpanMoreDetails;
+  tab?: string;
+  onTabChange?: (tab: string) => void;
+}) => {
+  const tabs: Tab[] = [
+    {
+      label: "Output",
+      value: TraceTab.OUTPUT,
+      component: span.output ? (
+        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+          {renderOutput(span.output)}
+        </div>
+      ) : null,
+    },
+    {
+      label: "Prompt Template",
+      value: TraceTab.PROMPT_TEMPLATE,
+      component: span.template ? (
+        <div className="p-2 whitespace-pre-wrap text-sm font-default">
+          {span.template}
+        </div>
+      ) : null,
+    },
+    {
+      label: "Messages",
+      value: TraceTab.MESSAGES,
+      component:
+        span.messages.length > 0 ? (
+          <MessagesContainer messages={span.messages} />
+        ) : null,
+    },
+    {
+      label: "Events",
+      value: TraceTab.EVENTS,
+      component:
+        span.events && span.events.length > 0 ? (
+          <div className="h-full overflow-hidden">
+            {renderEventsContainer(span.events)}
+          </div>
+        ) : null,
+    },
+    {
+      label: "Metadata",
+      value: TraceTab.METADATA,
+      component: span.data ? (
+        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+          {renderMetadata(span.data)}
+        </div>
+      ) : null,
+    },
+    {
+      label: "Data",
+      value: TraceTab.DATA,
+      component: span.data && (
+        <div className="h-full overflow-auto">
+          <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
+            <JsonView value={span.data} />
+          </div>
+        </div>
+      ),
+    },
+    {
       label: "Code",
       value: TraceTab.CODE,
-      component: <CodeSnippet code={span.code ?? ""} />,
+      component: span.code ? (
+        <CodeSnippet code={span.code} className="h-full" />
+      ) : null,
     },
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
-      component: <CodeSnippet code={span.signature ?? ""} />,
+      component: span.signature ? (
+        <CodeSnippet code={span.signature} className="h-full" />
+      ) : null,
     },
   ];
 
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-      <Tabs
-        defaultValue={userConfig?.defaultTraceTab ?? "signature"}
-        className="w-full"
-      >
-        <div className="flex w-full">
-          <TabsList className={`w-[160px]`}>
-            {tabs.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                onClick={() =>
-                  updateUserConfig({
-                    defaultTraceTab: tab.value,
-                  })
-                }
-              >
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="p-1 rounded-md hover:bg-gray-100 h-9"
-            >
-              {isOpen ? "Hide" : "Show"}
-              {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent>
-          {tabs.map((tab) => (
-            <TabsContent
-              key={tab.value}
-              value={tab.value}
-              className="w-full bg-gray-50"
-            >
-              {tab.component}
-            </TabsContent>
-          ))}
-        </CollapsibleContent>
-      </Tabs>
-    </Collapsible>
-  );
+  return <TabGroup tabs={tabs} tab={tab} handleTabChange={onTabChange} />;
 };
 export const renderEventsContainer = (messages: Event[]) => {
   return (
@@ -194,26 +303,47 @@ export const MessagesContainer = ({
   const { updateUserConfig, userConfig } = useAuth();
   const defaultMessageRenderer =
     userConfig?.defaultMessageRenderer ?? "markdown";
-  const handleChange = (checked: boolean) => {
+
+  const handleChangeRenderer = (value: "markdown" | "raw") => {
     updateUserConfig({
-      defaultMessageRenderer: checked ? "markdown" : "raw",
+      defaultMessageRenderer: value,
     });
   };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {"Messages"}
-          <Switch
-            checked={defaultMessageRenderer === "markdown"}
-            onCheckedChange={handleChange}
-          />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {renderMessagesCard(messages, defaultMessageRenderer)}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col h-full p-2">
+      <div className="flex-grow overflow-auto">
+        <div className="flex flex-col gap-4">
+          {renderMessagesCard(messages, defaultMessageRenderer)}
+        </div>
+      </div>
+
+      <div className="flex justify-center my-1 shrink-0">
+        <div
+          className="inline-flex rounded-md shadow-sm space-x-1"
+          role="group"
+        >
+          <Button
+            variant={
+              defaultMessageRenderer === "markdown" ? "default" : "outline"
+            }
+            size="sm"
+            onClick={() => handleChangeRenderer("markdown")}
+            className="rounded-r-none m-0"
+          >
+            Markdown
+          </Button>
+          <Button
+            variant={defaultMessageRenderer === "raw" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleChangeRenderer("raw")}
+            className="rounded-l-none"
+          >
+            Raw
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 export const renderOutput = (output: string) => {
@@ -221,7 +351,7 @@ export const renderOutput = (output: string) => {
   return (
     <>
       {typeof jsonOutput === "object" ? (
-        <JsonView value={jsonOutput} />
+        <JsonView shortenTextAfterLength={100} value={jsonOutput} />
       ) : (
         <ReactMarkdown>{output}</ReactMarkdown>
       )}
@@ -229,51 +359,9 @@ export const renderOutput = (output: string) => {
   );
 };
 
-export const renderCardOutput = (output: string) => {
-  return (
-    <>
-      {output && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{"Output"}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col overflow-x-auto">
-            {renderOutput(output)}
-          </CardContent>
-        </Card>
-      )}
-    </>
-  );
-};
-
 export const renderMetadata = (data: Record<string, any>) => {
   const attributes = data.attributes;
-  if (!attributes) return null;
-  if (attributes.type && attributes.type !== "traces") return null;
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{"Metadata"}</CardTitle>
-      </CardHeader>
-      {attributes && (
-        <CardContent className="overflow-x-auto">
-          <JsonView value={attributes} />
-        </CardContent>
-      )}
-    </Card>
-  );
-};
-export const renderData = ({ ...props }: JsonViewProps<object>) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{"Data"}</CardTitle>
-      </CardHeader>
-      {props.value && (
-        <CardContent className="overflow-x-auto">
-          <JsonView value={props.value} collapsed={props.collapsed} />
-        </CardContent>
-      )}
-    </Card>
-  );
+  if (!attributes || typeof attributes !== "object") return null;
+  if ("type" in attributes && attributes.type !== "traces") return null;
+  return <JsonView value={attributes} />;
 };

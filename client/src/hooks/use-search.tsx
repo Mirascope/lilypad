@@ -1,3 +1,4 @@
+import { Scope } from "@/types/types";
 import { spansSearchQueryOptions } from "@/utils/spans";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
@@ -7,7 +8,7 @@ export interface SearchParams {
   time_range_start?: number;
   time_range_end?: number;
   limit?: number;
-  scope?: string;
+  scope?: Scope;
   type?: string;
 }
 export const useSearch = (projectUuid: string) => {

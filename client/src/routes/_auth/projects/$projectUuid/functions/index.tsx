@@ -4,9 +4,7 @@ import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,24 +24,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
+import {
+  ProcessedData,
+  useProjectAggregates,
+} from "@/hooks/use-project-aggregates";
 import { FunctionTab } from "@/types/functions";
-import { FunctionPublic } from "@/types/types";
+import { FunctionPublic, TimeFrame } from "@/types/types";
 import {
   fetchFunctionsByName,
   functionKeys,
   uniqueLatestVersionFunctionNamesQueryOptions,
   useArchiveFunctionByNameMutation,
 } from "@/utils/functions";
-import { FormattedText } from "@/utils/strings";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { MoreHorizontal, Trash } from "lucide-react";
+import { Clock, DollarSign, MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -62,18 +62,32 @@ const FunctionCards = () => {
   const { data } = useSuspenseQuery(
     uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
   );
+  const { functionAggregates } = useProjectAggregates(
+    projectUuid,
+    TimeFrame.LIFETIME
+  );
   if (data.length === 0) {
     return <FunctionNoDataPlaceholder />;
   }
   return (
     <>
       {data.map((fn) => (
-        <FunctionCard key={fn.uuid} fn={fn} />
+        <FunctionCard
+          key={fn.uuid}
+          fn={fn}
+          processedData={functionAggregates[fn.uuid]}
+        />
       ))}
     </>
   );
 };
-const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
+const FunctionCard = ({
+  fn,
+  processedData,
+}: {
+  fn: FunctionPublic;
+  processedData?: ProcessedData;
+}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [hover, setHover] = useState(false);
@@ -101,7 +115,7 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
   };
   return (
     <Card
-      className={`w-full lg:max-w-[400px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
+      className={`w-full max-w-[300px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
     >
       <CardHeader
         className="px-6 py-4 cursor-pointer"
@@ -118,7 +132,12 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
         onBlur={() => setHover(false)}
       >
         <CardTitle className="flex justify-between items-center">
-          {fn.name}
+          <div className="flex gap-2">
+            {fn.name}
+            <Typography variant="p" affects="muted">
+              v{fn.version_num}
+            </Typography>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -161,32 +180,31 @@ const FunctionCard = ({ fn }: { fn: FunctionPublic }) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </CardTitle>
-        <CardDescription>Latest Version: v{fn.version_num}</CardDescription>
-      </CardHeader>
-      <Separator />
-      <CardContent className="p-0 m-6 overflow-auto max-h-[100px]">
-        <CodeSnippet code={fn.code} />
-      </CardContent>
-      <CardFooter className="flex flex-col gap-2 items-start">
-        <div className="flex flex-col gap-2 w-full">
-          <h3 className="text-sm font-medium text-gray-500">Template</h3>
-          {fn.is_versioned && fn.prompt_template ? (
-            <FormattedText
-              template={fn.prompt_template ?? ""}
-              values={fn.arg_types}
-            />
-          ) : (
-            <Typography affects="muted">No template</Typography>
+        <CardDescription>
+          {processedData && (
+            <span className="flex gap-4">
+              <span className="flex gap-1 items-center">
+                <DollarSign className="size-4" />
+                {(processedData.total_cost / processedData.span_count).toFixed(
+                  5
+                )}
+              </span>
+              <span className="flex gap-1 items-center">
+                <Clock className="size-4" />
+                {(processedData.average_duration_ms / 1_000_000_000).toFixed(3)}
+                s
+              </span>
+            </span>
           )}
-        </div>
-      </CardFooter>
+        </CardDescription>
+      </CardHeader>
     </Card>
   );
 };
 const FunctionsList = () => {
   return (
-    <div className="p-4 flex flex-col lg:items-center gap-2">
-      <Typography variant="h2">Functions</Typography>
+    <div className="p-4 flex flex-col gap-10">
+      <Typography variant="h3">Functions</Typography>
       <div className="flex gap-2 max-w-full flex-wrap">
         <Suspense fallback={<CardSkeleton items={2} />}>
           <FunctionCards />

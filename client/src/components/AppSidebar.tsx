@@ -1,6 +1,6 @@
 import { useAuth } from "@/auth";
-import { LilypadIcon } from "@/components/LilypadIcon";
 import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
+import { AppHeader } from "@/components/sidebar/AppHeader";
 import {
   Collapsible,
   CollapsibleContent,
@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -44,16 +45,16 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import {
+  Blocks,
   ChevronDown,
-  ChevronUp,
-  Home,
+  ChevronsUpDown,
+  Logs,
   NotebookPen,
   Plus,
   ScrollText,
   Settings,
-  SquareTerminal,
+  SquareFunction,
   User2,
-  Wrench,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -80,10 +81,14 @@ const RecursiveMenuContent = ({
         onMouseEnter={() => onHover?.()}
         onFocus={() => onHover?.()}
       >
-        <SidebarMenuButton className={depth > 0 ? "ml-4" : ""} asChild>
+        <SidebarMenuButton
+          className={`m-0 px-4 ${depth > 0 ? "ml-6" : ""}`}
+          asChild
+          size="lg"
+        >
           <Link
             to={item.url}
-            className="flex items-center w-full gap-2 [&.active]:font-bold"
+            className="flex items-center w-full gap-2 [&.active]:font-extrabold [&.active]:text-accent-foreground [&.active]:bg-accent"
           >
             {item.icon && <item.icon className="w-4 h-4" />}
             <span>{item.title}</span>
@@ -142,9 +147,9 @@ export const AppSidebar = () => {
   const projectItems: Item[] = activeProject
     ? [
         {
-          title: "Home",
+          title: "Traces",
           url: `/projects/${activeProject.uuid}/traces`,
-          icon: Home,
+          icon: Logs,
           onHover: () => {
             queryClient
               .prefetchQuery({
@@ -157,7 +162,7 @@ export const AppSidebar = () => {
         {
           title: "Functions",
           url: `/projects/${activeProject.uuid}/functions`,
-          icon: Wrench,
+          icon: SquareFunction,
           onHover: () => {
             queryClient
               .prefetchQuery({
@@ -189,7 +194,12 @@ export const AppSidebar = () => {
         {
           title: "Playground",
           url: `/projects/${activeProject.uuid}/playground`,
-          icon: SquareTerminal,
+          icon: Blocks,
+        },
+        {
+          title: "Settings",
+          url: `/settings/overview`,
+          icon: Settings,
         },
       ]
     : [];
@@ -245,17 +255,22 @@ export const AppSidebar = () => {
   const renderProjectSelector = () => {
     return (
       <SidebarMenu>
-        <SidebarGroup>
+        <SidebarGroup className="flex gap-1">
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
+                <SidebarMenuButton size="lg">
                   <ScrollText />
                   {activeProject ? activeProject.name : "Select Project"}
                   <ChevronDown className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                align="start"
+                side="right"
+                sideOffset={4}
+              >
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.uuid}
@@ -306,45 +321,25 @@ export const AppSidebar = () => {
     <>
       <Sidebar collapsible="icon" className="lilypad-sidebar">
         <SidebarHeader>
-          <SidebarMenuButton asChild className="[&>svg]:size-10">
-            <Link
-              {...(activeProject
-                ? {
-                    to: ProjectRoute.fullPath,
-                    params: { projectUuid: activeProject.uuid },
-                  }
-                : { to: "/" })}
-            >
-              <LilypadIcon /> Lilypad Beta
-            </Link>
-          </SidebarMenuButton>
+          <AppHeader activeProject={activeProject} to={ProjectRoute.fullPath} />
         </SidebarHeader>
         <SidebarContent>{renderProjectSelector()}</SidebarContent>
+        <Separator />
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link
-                  to={"/settings/$"}
-                  params={{ _splat: "overview" }}
-                  className="flex items-center w-full gap-2 [&.active]:font-bold"
-                >
-                  <Settings />
-                  Settings
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
+                  <SidebarMenuButton size="lg">
                     <User2 /> {user?.first_name}
-                    <ChevronUp className="ml-auto" />
+                    <ChevronsUpDown className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  side="top"
-                  className="min-w-[--radix-popper-anchor-width]"
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56  rounded-lg"
+                  align="start"
+                  side="right"
+                  sideOffset={4}
                 >
                   {renderOrganizationsDropdownItems()}
                   <DropdownMenuItem

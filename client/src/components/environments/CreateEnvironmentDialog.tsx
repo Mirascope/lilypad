@@ -18,15 +18,15 @@ export const CreateEnvironmentDialog = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          variant='ghost'
-          size='iconSm'
-          className='text-primary hover:text-primary/80 hover:bg-white'
+          variant="ghost"
+          size="iconSm"
+          className="text-primary hover:text-primary/80 hover:bg-background"
         >
           <PlusCircle />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className="shrink-0">
           <DialogTitle>Create new Environment</DialogTitle>
         </DialogHeader>
         <DialogDescription>
@@ -36,12 +36,12 @@ export const CreateEnvironmentDialog = () => {
           customButtons={
             <DialogFooter>
               <DialogClose asChild>
-                <Button type='button' variant='secondary'>
+                <Button type="button" variant="secondary">
                   Cancel
                 </Button>
               </DialogClose>
               <DialogClose asChild>
-                <Button type='submit'>Create Environment</Button>
+                <Button type="submit">Create Environment</Button>
               </DialogClose>
             </DialogFooter>
           }

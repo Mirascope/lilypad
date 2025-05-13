@@ -87,68 +87,59 @@ export const ResponseTimeChart = ({
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full h-full flex flex-col ">
+      <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-64">
-          {combinedData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={combinedData} margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="start_date"
-                  tickFormatter={(value: string) => formatDate(value, false)}
-                />
-                <YAxis
-                  yAxisId="duration"
-                  orientation="left"
-                  label={{
-                    value: "Duration (ms)",
-                    angle: -90,
-                    position: "insideLeft",
-                    offset: -10,
-                    style: { textAnchor: "middle" },
-                  }}
-                  tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
-                />
-                <Tooltip
-                  labelFormatter={(label: string) => formatDate(label, false)}
-                  formatter={(
-                    value: number | string | unknown[],
-                    name: string
-                  ) => {
-                    if (typeof value === "number") {
-                      return [(value / 1_000_000_000).toFixed(2) + " ms", name];
-                    }
-                    return [
-                      Number.isFinite(value)
-                        ? Number(value).toFixed(2)
-                        : String(value),
-                      name,
-                    ];
-                  }}
-                />
-                <Legend />
+      <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
+        {combinedData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={combinedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="start_date"
+                tickFormatter={(value: string) => formatDate(value, false)}
+              />
+              <YAxis
+                yAxisId="duration"
+                orientation="left"
+                tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
+              />
+              <Tooltip
+                labelFormatter={(label: string) => formatDate(label, false)}
+                formatter={(
+                  value: number | string | unknown[],
+                  name: string
+                ) => {
+                  if (typeof value === "number") {
+                    return [(value / 1_000_000_000).toFixed(2) + " ms", name];
+                  }
+                  return [
+                    Number.isFinite(value)
+                      ? Number(value).toFixed(2)
+                      : String(value),
+                    name,
+                  ];
+                }}
+              />
+              <Legend />
 
-                {metricsData.map((_, index) => (
-                  <Line
-                    key={index}
-                    yAxisId="duration"
-                    type="monotone"
-                    dataKey={`duration_${index}`}
-                    stroke={colors[index % colors.length]}
-                    name={labels[index]}
-                    activeDot={{ r: 8 }}
-                  />
-                ))}
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : (
-            <Typography affects="muted">No Data</Typography>
-          )}
-        </div>
+              {metricsData.map((_, index) => (
+                <Line
+                  key={index}
+                  yAxisId="duration"
+                  type="monotone"
+                  dataKey={`duration_${index}`}
+                  stroke={colors[index % colors.length]}
+                  name={labels[index]}
+                  activeDot={{ r: 8 }}
+                />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <Typography affects="muted">No Data</Typography>
+        )}
       </CardContent>
     </Card>
   );

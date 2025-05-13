@@ -38,16 +38,15 @@ export const EnvironmentsTable = () => {
   ];
 
   return (
-    <>
-      <div className='flex gap-2 items-center'>
-        <Typography variant='h4'>Environment</Typography>
+    <div>
+      <div className="flex gap-2 items-center">
+        <Typography variant="h4">Environment</Typography>
         <CreateEnvironmentDialog />
       </div>
       <DataTable<EnvironmentPublic>
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: data.length,
           estimateSize: () => 45,
@@ -55,6 +54,6 @@ export const EnvironmentsTable = () => {
         }}
         hideColumnButton
       />
-    </>
+    </div>
   );
 };

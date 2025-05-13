@@ -1,4 +1,5 @@
 import LilypadDialog from "@/components/LilypadDialog";
+import { ModeToggle } from "@/components/ModeToggle";
 import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
@@ -35,43 +36,55 @@ export const HomeSettings = () => {
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const [open, setOpen] = useState<boolean>(false);
   return (
-    <>
-      <Typography variant="h4">Personal Information</Typography>
-      <div className="grid gap-4">
-        <UneditableInput label="Name" value={user.first_name} />
-        <UneditableInput label="Email" value={user.email} />
+    <div className="flex flex-col gap-6">
+      <div>
+        <Typography variant="h4">Personal Information</Typography>
+        <div className="grid gap-4">
+          <UneditableInput label="Name" value={user.first_name} />
+          <UneditableInput label="Email" value={user.email} />
+        </div>
+        <div className="flex flex-col my-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            Theme
+          </label>
+          <ModeToggle />
+        </div>
+      </div>
+      <div>
         <Typography variant="h4">Organization</Typography>
-        {userOrganization ? (
-          <>
-            <UneditableInput
-              label="Name"
-              value={userOrganization.organization.name}
-            />
-            <UneditableInput
-              label="Plan"
-              value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
-            />
-            {!isLilypadCloud() && (
-              <div>
-                <LilypadDialog
-                  title="Change Plan"
-                  description="Contact william@mirascope.com to obtain a new license key."
-                  buttonProps={{
-                    variant: "default",
-                  }}
-                  text={"Upgrade plan"}
-                >
-                  <ChangePlan />
-                </LilypadDialog>
-              </div>
-            )}
-          </>
-        ) : (
-          <Button onClick={() => setOpen(true)}>Create Organization</Button>
-        )}
+        <div className="grid gap-4">
+          {userOrganization ? (
+            <>
+              <UneditableInput
+                label="Name"
+                value={userOrganization.organization.name}
+              />
+              <UneditableInput
+                label="Plan"
+                value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
+              />
+              {!isLilypadCloud() && (
+                <div>
+                  <LilypadDialog
+                    title="Change Plan"
+                    description="Contact william@mirascope.com to obtain a new license key."
+                    buttonProps={{
+                      variant: "default",
+                    }}
+                    text={"Upgrade plan"}
+                  >
+                    <ChangePlan />
+                  </LilypadDialog>
+                </div>
+              )}
+            </>
+          ) : (
+            <Button onClick={() => setOpen(true)}>Create Organization</Button>
+          )}
+        </div>
       </div>
       <CreateOrganizationDialog open={open} setOpen={setOpen} />
-    </>
+    </div>
   );
 };
 
@@ -131,8 +144,12 @@ const UneditableInput = ({
 }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <div className="p-2 bg-gray-100 rounded-md text-gray-800">{value}</div>
+      <label className="text-sm font-medium text-muted-foreground">
+        {label}
+      </label>
+      <div className="p-2 bg-muted rounded-md text-muted-foreground">
+        {value}
+      </div>
     </div>
   );
 };

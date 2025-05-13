@@ -1,6 +1,9 @@
 import { CopyKeyContent } from "@/components/apiKeys/CreateAPIKeyDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { LilypadIcon } from "@/components/LilypadIcon";
+import { NotFound } from "@/components/NotFound";
 import { defineStepper } from "@/components/stepper";
+import { TabGroup } from "@/components/TabGroup";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import {
@@ -11,8 +14,6 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Typography } from "@/components/ui/typography";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
@@ -28,7 +29,7 @@ import { userQueryOptions } from "@/utils/users";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
-import { JSX, ReactNode, useEffect, useState } from "react";
+import { JSX, ReactNode, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -55,15 +56,16 @@ const StepperPanel = ({
 }: StepperPanelProps) => {
   return (
     <Stepper.Panel
-      className={cn(
-        `w-full overflow-auto flex-1 min-h-0 max-h-full
-        rounded border bg-primary/5 p-8`,
-        className
-      )}
+      className={cn(`w-full h-full flex-1 flex flex-col p-4`, className)}
     >
-      <Typography variant="h4">{title}</Typography>
+      <Typography variant="h3" className="flex gap-1 items-center shrink-0">
+        <LilypadIcon className="size-16" />
+        {title}
+      </Typography>
       {description && (
-        <p className="text-sm text-slate-500 mt-2">{description}</p>
+        <Typography variant="span" affects="small" className="shrink-0">
+          {description}
+        </Typography>
       )}
       {children}
     </Stepper.Panel>
@@ -73,15 +75,13 @@ const StepperPanel = ({
 const OnboardingDesktop = () => {
   return (
     <Stepper.Provider
-      className={cn("flex flex-col h-full w-full overflow-hidden")}
+      className={cn("flex flex-col h-full w-full overflow-hidden gap-2")}
       variant={"horizontal"}
       tracking={true}
     >
       {({ methods }) => (
         <>
-          <Stepper.Navigation
-            className={"max-w-full overflow-x-auto flex-shrink-0"}
-          >
+          <Stepper.Navigation className={"max-w-full overflow-x-auto shrink-0"}>
             {methods.all.map((step) => (
               <Stepper.Step key={step.id} of={step.id}>
                 <Stepper.Title className={"text-xs"}>
@@ -117,11 +117,7 @@ const OnboardingMobile = () => {
 export const Onboarding = () => {
   const isMobile = useIsMobile();
 
-  return (
-    <div className="flex flex-col h-full">
-      {isMobile ? <OnboardingMobile /> : <OnboardingDesktop />}
-    </div>
-  );
+  return <>{isMobile ? <OnboardingMobile /> : <OnboardingDesktop />}</>;
 };
 type StepperMethods = ReturnType<typeof stepper.useStepper>;
 // Helper function to render the appropriate panel based on current step
@@ -138,13 +134,18 @@ const renderStepPanel = (methods: StepperMethods) => {
 
 const LilypadWelcome = () => {
   return (
-    <StepperPanel title="Welcome to Lilypad" className="welcome-panel">
-      <p>We are excited to have you here!</p>
-      <p className="text-sm text-slate-500 mt-4">
+    <StepperPanel
+      title="Welcome to Lilypad"
+      className="welcome-panel flex flex-col gap-4"
+    >
+      <Typography variant="span" affects="small">
+        We are excited to have you here!
+      </Typography>
+      <Typography variant="span" affects="small">
         Lilypad is a platform that enables seamless collaboration between
         developers, business users, and domain experts while maintaining quality
         and reproducibility in your AI applications.
-      </p>
+      </Typography>
       <LilypadOnboarding />
     </StepperPanel>
   );
@@ -153,15 +154,15 @@ const LilypadWelcome = () => {
 const OnboardNextSteps = () => {
   const navigate = useNavigate();
   const stepperMethods = useStepper();
-  const metadata = stepperMethods.getMetadata("step-3");
+  const metadata = stepperMethods.getMetadata("step-2");
   const handleViewTrace = () => {
     navigate({
-      to: `/projects/${metadata?.projectUuid}/traces`,
+      to: `/projects/${metadata?.project.uuid}/traces`,
     }).catch(() => toast.error("Failed to navigate to traces"));
   };
 
   const handleReadDocs = () => {
-    window.open("https://lilypad.so/docs", "_blank");
+    window.open("https://beta.mirascope.com/docs/lilypad", "_blank");
   };
 
   return (
@@ -226,12 +227,17 @@ const LilypadOnboarding = () => {
   const createOrganization = useCreateOrganizationMutation();
   const createProject = useCreateProjectMutation();
   const createEnvironment = useCreateEnvironmentMutation();
+  const createApiKey = useCreateApiKeyMutation();
   const handleSubmit = async (data: LilypadOnboardingFormValues) => {
-    await createOrganization.mutateAsync(data.organization).catch(() => {
-      toast.error("Failed to create organization");
-    });
+    const organization = await createOrganization
+      .mutateAsync(data.organization)
+      .catch(() => {
+        toast.error("Failed to create organization");
+        return;
+      });
     const project = await createProject.mutateAsync(data.project).catch(() => {
       toast.error("Failed to create project");
+      return;
     });
     const environment = await createEnvironment
       .mutateAsync({
@@ -239,10 +245,19 @@ const LilypadOnboarding = () => {
         description: "Default environment for your project",
         is_default: true,
       })
-      .catch(() => toast.error("Failed to create environment"));
+      .catch(() => {
+        toast.error("Failed to create environment");
+        return;
+      });
+    if (!project || !environment || !organization) return;
+    const newApiKey = await createApiKey.mutateAsync({
+      name: "Default API Key",
+      project_uuid: project.uuid,
+      environment_uuid: environment.uuid,
+    });
     stepperMethods.setMetadata("step-2", {
+      apiKey: newApiKey,
       project: project,
-      environment: environment,
     });
     toast.success("Organization and project created");
     methods.reset();
@@ -299,15 +314,10 @@ const OnboardPlayground = () => {
 };
 const OnboardCodeSnippet = () => {
   const stepperMethods = useStepper();
-  const metadata = stepperMethods.getMetadata("step-3");
+  const metadata = stepperMethods.getMetadata("step-2");
   return (
-    <div className="flex flex-col">
-      <Typography variant={"span"} affects="small" className="block mb-2">
-        Copy the code below or run your own function
-      </Typography>
-      <CodeSnippet
-        className="w-full flex-1"
-        code={`import os
+    <CodeSnippet
+      code={`import os
 
 import lilypad
 from mirascope import llm, prompt_template
@@ -316,7 +326,7 @@ os.environ["GOOGLE_API_KEY"] = "YOUR_API_KEY"
 
 lilypad.configure(
     auto_llm=True,
-    project_id="${metadata?.projectUuid}",
+    project_id="${metadata?.project.uuid}",
     api_key="${metadata?.apiKey}",
 )
 
@@ -329,39 +339,25 @@ def answer_question(question: str): ...
 
 answer_question("What is the capital of France?")
 `}
-      />
-    </div>
+    />
   );
 };
 
 const OnboardCreateAPIKey = () => {
-  const createApiKey = useCreateApiKeyMutation();
   const stepperMethods = useStepper();
   const metadata = stepperMethods.getMetadata("step-2");
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  useEffect(() => {
-    if (apiKey) return;
-
-    const getApiKey = async () => {
-      const newApiKey = await createApiKey.mutateAsync({
-        name: "Default API Key",
-        project_uuid: metadata?.project.uuid,
-        environment_uuid: metadata?.environment.uuid,
-      });
-      setApiKey(newApiKey);
-      stepperMethods.setMetadata("step-3", {
-        apiKey: newApiKey,
-        projectUuid: metadata?.project.uuid,
-      });
-    };
-    getApiKey().catch(() => toast.error("Failed to create API key"));
-  }, [apiKey]);
+  if (!metadata) {
+    return <NotFound />;
+  }
   return (
     <>
-      {!apiKey ? (
+      {!metadata.apiKey ? (
         <div>Generating API Key</div>
       ) : (
-        <CopyKeyContent apiKey={apiKey} projectUuid={metadata?.project.uuid} />
+        <CopyKeyContent
+          apiKey={metadata.apiKey}
+          projectUuid={metadata?.project.uuid}
+        />
       )}
     </>
   );
@@ -379,69 +375,15 @@ const OnboardInstallLilypad = () => {
     {
       label: "pip",
       value: "pip",
-      component: (
-        <div className="flex flex-col min-h-20">
-          <Typography variant={"span"} affects="small" className="block mb-2">
-            Replace `google` with any provider, `openai`, `anthropic`, etc.
-          </Typography>
-          <CodeSnippet
-            className="w-full flex-1"
-            code={`pip install lilypad-python[google]`}
-          />
-        </div>
-      ),
+      component: <CodeSnippet code={`pip install "lilypad-sdk[google]"`} />,
     },
     {
       label: "uv",
       value: "uv",
-      component: (
-        <div className="flex flex-col min-h-20">
-          <Typography variant={"span"} affects="small" className="block mb-2">
-            Replace `google` with any provider, `openai`, `anthropic`, etc.
-          </Typography>
-          <CodeSnippet
-            className="w-full flex-1"
-            code={`uv add lilypad-python[google]`}
-          />
-        </div>
-      ),
+      component: <CodeSnippet code={`uv add "lilypad-sdk[google]"`} />,
     },
   ];
-  const [tab, setTab] = useState<string>(tabs[0].value);
-  return (
-    <Tabs
-      value={tab}
-      onValueChange={(value) => setTab(value)}
-      className="w-full flex-shrink flex flex-col"
-    >
-      <div className="flex justify-center w-full">
-        <TabsList className={`w-[80px]`}>
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              disabled={tab.isDisabled}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
-      <Separator className="my-2" />
-
-      <div className="flex-1 min-h-20 relative">
-        {tabs.map((tab) => (
-          <TabsContent
-            key={tab.value}
-            value={tab.value}
-            className="absolute inset-0"
-          >
-            {tab.component}
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
-  );
+  return <TabGroup tabs={tabs} className="shrink-0 h-auto" />;
 };
 
 const OnboardRunLilypad = () => {
@@ -458,47 +400,13 @@ const OnboardRunLilypad = () => {
       isDisabled: true,
     },
   ];
-  const [tab, setTab] = useState<string>(tabs[0].value);
-  return (
-    <Tabs
-      value={tab}
-      onValueChange={(value) => setTab(value)}
-      className="w-full flex-1 min-h-0 flex flex-col"
-    >
-      <div className="flex justify-center w-full">
-        <TabsList className={`w-[180px]`}>
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              disabled={tab.isDisabled}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
-      <Separator className="my-2" />
-
-      <div className="flex-1 min-h-0 relative">
-        {tabs.map((tab) => (
-          <TabsContent
-            key={tab.value}
-            value={tab.value}
-            className="absolute inset-0 min-h-0 overflow-auto"
-          >
-            {tab.component}
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
-  );
+  return <TabGroup tabs={tabs} className="flex-1 min-h-0 h-full" />;
 };
 const OnboardRunFunction = () => {
   const stepperMethods = useStepper();
-  const metadata = stepperMethods.getMetadata("step-3");
+  const metadata = stepperMethods.getMetadata("step-2");
   const { data: traces } = useQuery({
-    ...spansQueryOptions(metadata?.projectUuid as string),
+    ...spansQueryOptions(metadata?.project.uuid as string),
     refetchInterval: 1000,
   });
   useEffect(() => {
@@ -510,12 +418,17 @@ const OnboardRunFunction = () => {
     <StepperPanel
       title="Run a function"
       description="Now run a function and observe the results. You can use the API key and Project ID you just created to authenticate your requests."
+      className="gap-2"
     >
-      <div className="flex flex-col h-full">
-        <OnboardCreateAPIKey />
-        <OnboardInstallLilypad />
-        <OnboardRunLilypad />
-      </div>
+      <OnboardCreateAPIKey />
+      <Typography variant="h5" className="block">
+        Replace `google` with any provider, `openai`, `anthropic`, etc.
+      </Typography>
+      <OnboardInstallLilypad />
+      <Typography variant="h5" className="block">
+        Copy the code below or run your own function
+      </Typography>
+      <OnboardRunLilypad />
     </StepperPanel>
   );
 };

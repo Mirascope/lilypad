@@ -99,6 +99,43 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
         return self.session.exec(stmt).all()
 
+    def find_root_parent_span(
+        self,
+        span_id: str,
+    ) -> SpanTable | None:
+        """Find the root parent span (parent with no parent) for a given span UUID in a single query using SQLModel."""
+        root_span_query = text("""
+            WITH RECURSIVE span_hierarchy AS (
+                -- Base case: start with the specified span
+                SELECT uuid, span_id, parent_span_id, created_at, project_uuid
+                FROM spans
+                WHERE span_id = :span_id
+                
+                UNION ALL
+                
+                -- Recursive case: join with parent spans
+                SELECT s.uuid, s.span_id, s.parent_span_id, s.created_at, s.project_uuid
+                FROM spans s
+                JOIN span_hierarchy sh ON s.span_id = sh.parent_span_id
+            )
+            -- Select the root span (where parent_span_id is NULL)
+            SELECT uuid
+            FROM span_hierarchy
+            WHERE parent_span_id IS NULL
+            LIMIT 1
+        """).bindparams(span_id=span_id)
+
+        result = self.session.exec(root_span_query).first()  # type: ignore
+
+        if not result:
+            return None
+
+        root_span = self.session.exec(
+            select(self.table).where(self.table.uuid == result.uuid)
+        ).first()
+
+        return root_span
+
     def find_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
     ) -> Sequence[SpanTable]:

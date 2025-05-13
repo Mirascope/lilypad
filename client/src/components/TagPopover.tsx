@@ -117,8 +117,8 @@ export const TagPopover = ({
     <Combobox
       multiple={true}
       customTrigger={
-        <Badge pill variant="outline" size="lg">
-          <Plus />
+        <Badge variant="outline" size="sm">
+          <Plus className="size-4" />
         </Badge>
       }
       items={availableTags.map((tag) => ({

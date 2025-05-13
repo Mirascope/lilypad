@@ -12,7 +12,8 @@ export const fetchEnvironments = async () => {
 };
 
 export const postEnvironment = async (environmentCreate: EnvironmentCreate) => {
-  return (await api.post<string>(`/environments`, environmentCreate)).data;
+  return (await api.post<EnvironmentPublic>(`/environments`, environmentCreate))
+    .data;
 };
 
 export const deleteEnvironment = async (environmentUuid: string) => {

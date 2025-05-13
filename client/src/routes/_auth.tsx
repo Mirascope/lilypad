@@ -57,16 +57,17 @@ function AuthLayout() {
       });
     }
   }, [posthog, user?.uuid, user?.email]);
+
   return (
     <div
       className="flex flex-col border-collapse overflow-hidden"
       data-product="lilypad"
     >
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
         </Suspense>
-        <main className="flex-1 overflow-hidden bg-secondary/10">
+        <main className="flex-1 overflow-hidden">
           {daysLeft < 14 && showAlert && (
             <Alert variant="warning" onClose={() => setShowAlert(false)}>
               <AlertTriangle className="h-4 w-4" />

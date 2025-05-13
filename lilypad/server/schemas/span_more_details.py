@@ -559,6 +559,7 @@ class SpanMoreDetails(BaseModel):
     events: list[Event] | None = None
     tags: list[TagPublic] | None = None
     session_id: str | None = None
+    span_id: str
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:
@@ -597,7 +598,9 @@ class SpanMoreDetails(BaseModel):
                 messages = convert_mirascope_messages(
                     attributes.get(f"lilypad.{lilypad_type}.common_messages", [])
                 )
-                template = attributes.get(f"lilypad.{lilypad_type}.template", None)
+                template = attributes.get(
+                    f"lilypad.{lilypad_type}.prompt_template", None
+                )
         if not span.uuid:
             raise ValueError("UUID does not exist.")
         return SpanMoreDetails.model_validate(
