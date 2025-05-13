@@ -29,20 +29,20 @@ export const UserConsentDialog = ({
             Please review and accept our terms before continuing.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <Typography variant='p' affects='muted'>
+        <Typography variant="p" affects="muted">
           By signing in, you agree to our{" "}
           <a
-            href='https://mirascope.com/terms/service'
-            target='_blank'
-            rel='noopener noreferrer'
+            href="https://beta.mirascope.com/terms/service"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Terms of Service
           </a>{" "}
           and{" "}
           <a
-            href='https://mirascope.com/privacy'
-            target='_blank'
-            rel='noopener noreferrer'
+            href="https://beta.mirascope.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Privacy Policy
           </a>

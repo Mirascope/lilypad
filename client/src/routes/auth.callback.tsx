@@ -1,7 +1,6 @@
 import { useAuth } from "@/auth";
 import { UserConsentUpdate } from "@/types/types";
-import { callbackCodeQueryOptions } from "@/utils/auth";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/constants";
+import { callbackCodeQueryOptions, fetchVersions } from "@/utils/auth";
 import {
   useCreateUserConsentMutation,
   useUpdateUserConsentMutation,
@@ -53,12 +52,7 @@ const CallbackPage = () => {
   const activeProvider = stateJson.provider ?? "github";
 
   const { data: session } = useSuspenseQuery(
-    callbackCodeQueryOptions(
-      activeProvider,
-      PRIVACY_VERSION,
-      TERMS_VERSION,
-      code
-    )
+    callbackCodeQueryOptions(activeProvider, code)
   );
   const createUserConsent = useCreateUserConsentMutation();
   const updateUserConsent = useUpdateUserConsentMutation();
@@ -69,45 +63,51 @@ const CallbackPage = () => {
   }, [session]);
 
   useEffect(() => {
-    if (auth.user) {
-      if (!auth.user.user_consents) {
-        if (!createUserConsent.isPending) {
-          createUserConsent
-            .mutateAsync({
-              privacy_policy_version: PRIVACY_VERSION,
-              tos_version: TERMS_VERSION,
-            })
-            .catch(() => toast.error("Failed to save privacy and terms"));
+    if (!auth.user) return;
+    const run = async () => {
+      const { privacyVersion, termsVersion } = await fetchVersions();
+      setPrivacyPolicyVersion(privacyVersion);
+      setTermsVersion(termsVersion);
+
+      if (auth.user) {
+        if (!auth.user.user_consents) {
+          if (!createUserConsent.isPending) {
+            createUserConsent
+              .mutateAsync({
+                privacy_policy_version: privacyVersion,
+                tos_version: termsVersion,
+              })
+              .catch(() => toast.error("Failed to save privacy and terms"));
+          }
+        } else {
+          const updates: UserConsentUpdate = {};
+          if (
+            auth.user.user_consents.privacy_policy_version !== privacyVersion
+          ) {
+            updates.privacy_policy_version = privacyVersion;
+          }
+          if (auth.user.user_consents.tos_version !== termsVersion) {
+            updates.tos_version = termsVersion;
+          }
+          if (Object.keys(updates).length > 0) {
+            updateUserConsent
+              .mutateAsync({
+                userConsentUuid: auth.user.user_consents.uuid,
+                userConsentUpdate: updates,
+              })
+              .catch(() => toast.error("Failed to update privacy and terms"));
+          }
         }
-      } else {
-        const updates: UserConsentUpdate = {};
-        if (
-          auth.user.user_consents.privacy_policy_version !== PRIVACY_VERSION
-        ) {
-          updates.privacy_policy_version = PRIVACY_VERSION;
-        }
-        if (auth.user.user_consents.tos_version !== TERMS_VERSION) {
-          updates.tos_version = TERMS_VERSION;
-        }
-        if (Object.keys(updates).length > 0) {
-          updateUserConsent
-            .mutateAsync({
-              userConsentUuid: auth.user.user_consents.uuid,
-              userConsentUpdate: updates,
-            })
-            .catch(() => toast.error("Failed to update privacy and terms"));
-        }
+        navigate({
+          to: stateJson?.redirect ?? "/projects",
+          from: "/",
+        }).catch(() => {
+          toast.error("Failed to navigate after login.");
+        });
       }
-      setPrivacyPolicyVersion(PRIVACY_VERSION);
-      setTermsVersion(TERMS_VERSION);
-      navigate({
-        to: stateJson?.redirect ?? "/projects",
-        from: "/",
-      }).catch(() => {
-        toast.error("Failed to navigate after login.");
-      });
-    }
-  }, [stateJson.redirect, auth.user]);
+    };
+    run();
+  }, [stateJson?.redirect, auth.user]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

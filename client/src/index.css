@@ -5,11 +5,11 @@
 /* Williams Handwriting Font Import - All styles */
 @font-face {
   font-family: "Williams Handwriting";
-  src: url("/fonts/Williams-Handwriting-Regular-v1.ttf") format("truetype");
+  src: url("/fonts/Williams-Handwriting-Font-v1.6.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
-  descent-override: 10%;
+  descent-override: 5%;
 }
 
 @import "tailwindcss";

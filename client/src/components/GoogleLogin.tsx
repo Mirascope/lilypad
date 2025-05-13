@@ -1,7 +1,5 @@
-import { useAuth } from "@/auth";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { UserConsentDialog } from "@/components/UserConsentDialog";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/constants";
 import { settingsQueryOptions } from "@/utils/settings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
@@ -105,13 +103,16 @@ const GoogleButton = ({
   );
 };
 
-export const GoogleLogin = ({ redirect }: { redirect?: string }) => {
+export const GoogleLogin = ({
+  redirect,
+  showModal,
+}: {
+  redirect?: string;
+  showModal: boolean;
+}) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
-  const { loadPrivacyPolicyVersion, loadTermsVersion } = useAuth();
-  const showModal =
-    loadPrivacyPolicyVersion() !== PRIVACY_VERSION ||
-    loadTermsVersion() !== TERMS_VERSION;
   const [open, setOpen] = useState<boolean>(false);
+
   const getAuthUrl = () => {
     const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth";
     const params = new URLSearchParams({
