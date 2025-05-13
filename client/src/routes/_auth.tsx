@@ -57,6 +57,7 @@ function AuthLayout() {
       });
     }
   }, [posthog, user?.uuid, user?.email]);
+
   return (
     <div
       className="flex flex-col border-collapse overflow-hidden"
