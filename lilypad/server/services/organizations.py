@@ -5,6 +5,7 @@ from uuid import UUID
 
 from sqlmodel import select
 
+from ..models import BillingTable
 from ..models.organizations import OrganizationTable
 from ..schemas.organizations import OrganizationCreate
 from .base import BaseService
@@ -61,15 +62,23 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
             The updated organization
         """
         organization = self.find_record_by_uuid(organization_uuid)
-        if not organization:
-            raise ValueError("Organization not found")
+        if organization is None:
+                raise ValueError(f"Organization {organization_uuid} not found")
+
+        if organization.billing is None:
+            organization.billing = BillingTable(organization_uuid=organization.uuid) # pyright: ignore[reportCallIssue]
+            self.session.add(organization.billing)
+            self.session.flush()
 
         if organization.billing.stripe_customer_id:
-            return organization
+                return organization
 
-        billing_service.create_customer(organization, email)
-        # Note: create_customer already updates the organization record
-        self.session.flush()
+        stripe_customer = billing_service.create_customer(email=email, organization=organization)
+        organization.billing.stripe_customer_id = stripe_customer["id"]  # type: ignore[index]
+
+        self.session.add(organization.billing)
+        self.session.commit()
+
 
         return organization
 

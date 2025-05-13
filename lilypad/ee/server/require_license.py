@@ -159,8 +159,8 @@ class RequireLicense:
 def get_organization_license(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
-    request: Request = None,
-    billing_service: Annotated[BillingService, Depends(BillingService)] = None,
+    request: Request | None = None,
+    billing_service: Annotated[BillingService | None, Depends(BillingService)] = None,
 ) -> LicenseInfo:
     """Get the license information for the organization"""
     if not user.active_organization_uuid:
