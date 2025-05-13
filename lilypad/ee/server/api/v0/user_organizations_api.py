@@ -75,7 +75,7 @@ async def create_user_organization(
     create_user_organization_token: CreateUserOrganizationToken,
     user: Annotated[UserPublic, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(UserService)],
-    request: Request = None, # pyright: ignore[reportArgumentType]
+    request: Request = None,  # pyright: ignore[reportArgumentType]
     billing_service: Annotated[BillingService | None, Depends(BillingService)] = None,
 ) -> UserPublic:
     """Create user organization"""

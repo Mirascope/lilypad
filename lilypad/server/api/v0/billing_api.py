@@ -1,12 +1,12 @@
 """The `/billing` API router for handling Stripe webhooks."""
+
 import logging
 from typing import Annotated
 
 import stripe
-from stripe import SignatureVerificationError
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlmodel import Session
+from stripe import SignatureVerificationError
 
 from ...db import get_session
 from ...schemas.billing import StripeWebhookResponse

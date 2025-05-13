@@ -42,6 +42,7 @@ class BillingPublic(BillingBase):
     organization_uuid: UUID
     created_at: datetime
 
+
 class StripeWebhookResponse(BaseModel):
     """Response schema for Stripe webhook events."""
 

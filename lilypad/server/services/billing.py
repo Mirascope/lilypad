@@ -168,7 +168,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 detail=f"Error retrieving Stripe customer: {str(e)}",
             )
 
-    def report_span_usage(self, organization_uuid: uuid.UUID, quantity: int = 1) -> None:
+    def report_span_usage(
+        self, organization_uuid: uuid.UUID, quantity: int = 1
+    ) -> None:
         """Report span usage to Stripe.
 
         Args:
@@ -201,7 +203,6 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             timestamp=int(time.time()),
         )
 
-
         # First, get the billing record ID
         billing = self.session.exec(
             select(BillingTable)
@@ -212,7 +213,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         if billing:
             stmt = (
                 update(BillingTable)
-                .where(BillingTable.uuid == billing.uuid) # pyright: ignore[reportArgumentType]
+                .where(BillingTable.uuid == billing.uuid)  # pyright: ignore[reportArgumentType]
                 .values(
                     usage_quantity=BillingTable.usage_quantity + quantity,  # type: ignore[operator]
                     last_usage_report=datetime.now(timezone.utc),
@@ -242,9 +243,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         if not customer_id:
             return None
         return session.exec(
-            select(BillingTable).where(
-                BillingTable.stripe_customer_id == customer_id
-            )
+            select(BillingTable).where(BillingTable.stripe_customer_id == customer_id)
         ).first()
 
     @classmethod
@@ -260,10 +259,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 return obj.get(attr, default)
             return getattr(obj, attr, default)
 
-        billing = (
-            cls.find_by_subscription_id(session, subscription.id)
-            or cls.find_by_customer_id(session, getattr(subscription, "customer", None))
-        )
+        billing = cls.find_by_subscription_id(
+            session, subscription.id
+        ) or cls.find_by_customer_id(session, getattr(subscription, "customer", None))
         if billing is None:
             return None
 

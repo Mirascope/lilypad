@@ -63,22 +63,23 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         """
         organization = self.find_record_by_uuid(organization_uuid)
         if organization is None:
-                raise ValueError(f"Organization {organization_uuid} not found")
+            raise ValueError(f"Organization {organization_uuid} not found")
 
         if organization.billing is None:
-            organization.billing = BillingTable(organization_uuid=organization.uuid) # pyright: ignore[reportCallIssue]
+            organization.billing = BillingTable(organization_uuid=organization.uuid)  # pyright: ignore[reportCallIssue]
             self.session.add(organization.billing)
             self.session.flush()
 
         if organization.billing.stripe_customer_id:
-                return organization
+            return organization
 
-        stripe_customer_id = billing_service.create_customer(email=email, organization=organization)
+        stripe_customer_id = billing_service.create_customer(
+            email=email, organization=organization
+        )
         organization.billing.stripe_customer_id = stripe_customer_id
 
         self.session.add(organization.billing)
         self.session.commit()
-
 
         return organization
 

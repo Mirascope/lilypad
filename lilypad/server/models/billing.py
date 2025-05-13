@@ -45,15 +45,18 @@ class BillingBase(SQLModel):
     stripe_price_id: str | None = Field(nullable=True)
     subscription_status: SubscriptionStatus | None = Field(nullable=True)
     subscription_current_period_start: datetime | None = Field(
-        nullable=True, sa_type=DateTime(timezone=True)  # pyright: ignore [reportArgumentType]
+        nullable=True,
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
     )
     subscription_current_period_end: datetime | None = Field(
-        nullable=True, sa_type=DateTime(timezone=True)  # pyright: ignore [reportArgumentType]
+        nullable=True,
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
     )
     # Usage tracking
     usage_quantity: int = Field(default=0)
     last_usage_report: datetime | None = Field(
-        nullable=True, sa_type=DateTime(timezone=True)  # pyright: ignore [reportArgumentType]
+        nullable=True,
+        sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
     )
 
     # Additional metadata
@@ -68,7 +71,9 @@ class BillingTable(BillingBase, BaseOrganizationSQLModel, table=True):
     __tablename__ = BILLING_TABLE_NAME  # type: ignore
     __table_args__ = (
         UniqueConstraint("stripe_customer_id", name="uix_billing_stripe_customer_id"),
-        UniqueConstraint("stripe_subscription_id", name="uix_billing_stripe_subscription_id"),
+        UniqueConstraint(
+            "stripe_subscription_id", name="uix_billing_stripe_subscription_id"
+        ),
     )
 
     organization: "OrganizationTable" = Relationship(back_populates="billing")
