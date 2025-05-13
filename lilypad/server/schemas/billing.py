@@ -1,9 +1,12 @@
 """Billing schemas."""
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ..models.billing import SubscriptionStatus
 
 
 class BillingBase(BaseModel):
@@ -12,7 +15,7 @@ class BillingBase(BaseModel):
     stripe_customer_id: str | None = None
     stripe_subscription_id: str | None = None
     stripe_price_id: str | None = None
-    subscription_status: str | None = None
+    subscription_status: SubscriptionStatus | None = None
     subscription_current_period_start: datetime | None = None
     subscription_current_period_end: datetime | None = None
     usage_quantity: int = 0
@@ -38,3 +41,11 @@ class BillingPublic(BillingBase):
     uuid: UUID
     organization_uuid: UUID
     created_at: datetime
+
+
+class StripeWebhookResponse(BaseModel):
+    """Response schema for Stripe webhook events."""
+
+    status: Literal["success", "error", "ignored"]
+    event: str | None = None
+    message: str | None = None
