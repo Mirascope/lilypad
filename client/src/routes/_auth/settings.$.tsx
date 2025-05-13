@@ -1,10 +1,10 @@
 import { HomeSettings } from "@/components/HomeSettings";
 import { KeysSettings } from "@/components/KeysSettings";
 import { OrgSettings } from "@/components/OrgSettings";
-import { SettingsLayout } from "@/components/SettingsLayout";
+import { Tab, TabGroup } from "@/components/TabGroup";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TagsTable } from "@/components/TagsTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Typography } from "@/components/ui/typography";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -12,27 +12,12 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import {
-  Building2,
-  KeyRound,
-  LucideIcon,
-  Pencil,
-  SettingsIcon,
-  Tag,
-} from "lucide-react";
-import { JSX, ReactNode, Suspense, useEffect, useState } from "react";
+import { Building2, KeyRound, SettingsIcon, Tag } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
-interface Tab {
-  label: string;
-  value: string;
-  component: JSX.Element;
-  title: string | ReactNode;
-  icon: LucideIcon;
-  disabled?: boolean;
-}
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -46,35 +31,49 @@ const Settings = () => {
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   const [open, setOpen] = useState<boolean>(false);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
 
   const tabs: Tab[] = [
     {
-      label: "Overview",
+      label: (
+        <div className="flex items-center gap-1">
+          <SettingsIcon />
+          <span>Overview</span>
+        </div>
+      ),
       value: "overview",
       component: (
         <Suspense fallback={<TableSkeleton />}>
-          <HomeSettings />
+          <div className="p-2">
+            <HomeSettings />
+          </div>
         </Suspense>
       ),
-      title: "Overview",
-      icon: SettingsIcon,
     },
     {
-      label: "LLM Keys",
+      label: (
+        <div className="flex items-center gap-1">
+          <KeyRound />
+          <span>LLM Keys</span>
+        </div>
+      ),
       value: "keys",
       component: (
         <Suspense fallback={<TableSkeleton />}>
-          <KeysSettings />
+          <div className="p-2">
+            <KeysSettings />
+          </div>
         </Suspense>
       ),
-      title: `${user.first_name}'s Keys`,
-      icon: KeyRound,
     },
     {
-      label: "Organization",
+      label: (
+        <div className="flex items-center gap-1">
+          <Building2 />
+          <span>Organization</span>
+        </div>
+      ),
       value: "org",
-      component: (
+      component: activeUserOrg ? (
         <Suspense
           fallback={
             <div className="flex flex-col gap-10">
@@ -85,40 +84,27 @@ const Settings = () => {
             </div>
           }
         >
-          <OrgSettings open={open} setOpen={setOpen} />
+          <div className="p-2">
+            <OrgSettings open={open} setOpen={setOpen} />
+          </div>
         </Suspense>
-      ),
-      title: (
-        <div
-          className="flex items-center gap-2 cursor-pointer"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <h1 className="text-xl font-semibold">
-            {activeUserOrg?.organization.name}&apos;s Settings
-          </h1>
-          {isHovered && (
-            <Pencil
-              className="h-4 w-4 text-gray-500"
-              onClick={() => setOpen(true)}
-            />
-          )}
-        </div>
-      ),
-      icon: Building2,
-      disabled: !activeUserOrg,
+      ) : null,
     },
     {
-      label: "Tags",
-      value: "tags",
-      component: (
-        <Suspense fallback={<TableSkeleton />}>
-          <TagsTable />
-        </Suspense>
+      label: (
+        <div className="flex items-center gap-1">
+          <Tag />
+          <span>Tags</span>
+        </div>
       ),
-      title: `${activeUserOrg?.organization.name}'s Tags`,
-      icon: Tag,
-      disabled: !activeUserOrg,
+      value: "tags",
+      component: activeUserOrg ? (
+        <Suspense fallback={<TableSkeleton />}>
+          <div className="p-2">
+            <TagsTable />
+          </div>
+        </Suspense>
+      ) : null,
     },
   ];
   if (tab && !tabs.some((t) => t.value === tab)) {
@@ -145,40 +131,10 @@ const Settings = () => {
       replace: true,
     }).catch(() => toast.error("Failed to navigate to settings page."));
   };
-  const tabWidth = 90 * tabs.length;
-
   return (
-    <Tabs
-      value={tab ?? "overview"}
-      onValueChange={handleTabChange}
-      className="flex flex-col h-full"
-    >
-      <div className="flex justify-center w-full">
-        <TabsList className={`w-[${tabWidth}px]`}>
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              disabled={tab.disabled}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
-      <div className="flex-1 min-h-0 relative">
-        {tabs.map((tab) => (
-          <TabsContent
-            key={tab.value}
-            value={tab.value}
-            className="w-full bg-gray-50 absolute inset-0 overflow-auto"
-          >
-            <SettingsLayout title={tab.title} icon={tab.icon}>
-              {tab.component}
-            </SettingsLayout>
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
+    <div className="p-2 flex flex-col gap-2">
+      <Typography variant="h3">Settings</Typography>
+      <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
+    </div>
   );
 };

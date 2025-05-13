@@ -183,6 +183,25 @@ async def get_annotations_by_functions(
 
 
 @annotations_router.get(
+    "/projects/{project_uuid}/spans/{span_uuid}/annotations",
+    response_model=Sequence[AnnotationPublic],
+)
+@require_license(tier=Tier.ENTERPRISE, cloud_free=True)
+async def get_annotations_by_spans(
+    project_uuid: UUID,
+    span_uuid: UUID,
+    annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+) -> Sequence[AnnotationPublic]:
+    """Get annotations by functions."""
+    return [
+        AnnotationPublic.model_validate(
+            annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
+        )
+        for annotation in annotations_service.find_records_by_span_uuid(span_uuid)
+    ]
+
+
+@annotations_router.get(
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
 )

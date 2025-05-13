@@ -22,7 +22,12 @@ const RootComponent = () => {
   return (
     <>
       <Outlet />
-      <Toaster richColors />
+      <Toaster
+        richColors
+        toastOptions={{
+          className: "font-handwriting",
+        }}
+      />
       <TanStackRouterDevtools position="bottom-right" />
     </>
   );

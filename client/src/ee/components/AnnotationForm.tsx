@@ -11,10 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  useDeleteAnnotationMutation,
-  useUpdateAnnotationMutation,
-} from "@/ee/utils/annotations";
+import { useUpdateAnnotationMutation } from "@/ee/utils/annotations";
 import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -78,9 +75,9 @@ const AnnotationFields = () => {
             <FormItem>
               <FormLabel>Label</FormLabel>
               <FormControl>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <SuccessButton
-                    variant={field.value === Label.PASS ? "success" : "outline"}
+                    variant={field.value === Label.PASS ? "default" : "outline"}
                     onClick={() => field.onChange(Label.PASS)}
                   >
                     Pass
@@ -137,29 +134,12 @@ export const UpdateAnnotationForm = ({
     },
   });
   const updateAnnotation = useUpdateAnnotationMutation();
-  const deleteAnnotation = useDeleteAnnotationMutation();
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
       <div className="flex justify-between gap-2">
         <Button type="submit" loading={isLoading}>
-          {isLoading ? "Annotating..." : "Annotate"}
-        </Button>
-        <Button
-          type="button"
-          variant="outlineDestructive"
-          onClick={() => {
-            deleteAnnotation
-              .mutateAsync({
-                projectUuid: annotation.project_uuid,
-                annotationUuid: annotation.uuid,
-              })
-              .catch(() => toast.error("Failed to delete annotation"));
-            toast.success("Annotation deleted");
-            onSubmit();
-          }}
-        >
-          {isLoading ? "Deleting..." : "Remove Annotation"}
+          {isLoading ? "Annotating..." : "Submit Annotation"}
         </Button>
       </div>
     );

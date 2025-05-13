@@ -988,6 +988,8 @@ export interface SpanMoreDetails {
   tags?: TagPublic[] | null;
   /** Session Id */
   session_id?: string | null;
+  /** Span Id */
+  span_id: string;
 }
 
 /**

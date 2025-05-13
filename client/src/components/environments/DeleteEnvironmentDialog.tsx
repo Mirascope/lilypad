@@ -36,7 +36,7 @@ export const DeleteEnvironmentDialog = ({
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='flex-shrink-0'>
+        <DialogHeader className='shrink-0'>
           <DialogTitle>{`Delete ${environment.name}`}</DialogTitle>
           <DialogDescription>
             This action is final and cannot be undone.

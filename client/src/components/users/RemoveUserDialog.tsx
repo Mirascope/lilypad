@@ -49,7 +49,7 @@ export const RemoveUserDialog = ({
       >
         <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='flex-shrink-0'>
+            <DialogHeader className='shrink-0'>
               <DialogTitle>{`Remove ${user.first_name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>

@@ -1,4 +1,5 @@
 import { DataTable } from "@/components/DataTable";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Typography } from "@/components/ui/typography";
 import { TagPublic } from "@/types/types";
 import { projectsQueryOptions } from "@/utils/projects";
 import { formatDate } from "@/utils/strings";
@@ -40,7 +40,7 @@ import {
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { PencilLine, Trash } from "lucide-react";
+import { PencilLine, Trash, TriangleAlert } from "lucide-react";
 import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -82,7 +82,7 @@ export const TagsTable = () => {
       enableHiding: false,
       cell: ({ row }) => {
         return (
-          <>
+          <div className="flex gap-1">
             <EditTagButton
               tagUuid={row.original.uuid}
               defaultTagFormData={{
@@ -91,29 +91,29 @@ export const TagsTable = () => {
               }}
             />
             <DeleteTagButton tag={row.original} />
-          </>
+          </div>
         );
       },
     },
   ];
 
   return (
-    <>
-      <Typography variant="h4">Tags</Typography>
+    <div className="flex flex-col gap-1">
+      <div>
+        <CreateTagButton />
+      </div>
       <DataTable<TagPublic>
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
-        defaultPanelSize={50}
         virtualizerOptions={{
           count: data.length,
           estimateSize: () => 45,
           overscan: 5,
         }}
         hideColumnButton
-        customControls={() => <CreateTagButton />}
       />
-    </>
+    </div>
   );
 };
 
@@ -157,13 +157,19 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
       >
         <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{`Delete ${tag.name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
               {`Deleting ${tag.name} will remove this tag from all associated resources.`}
             </DialogDescription>
-            <p className="text-red-500">WARNING: This action is final.</p>
+            <Alert variant="destructive">
+              <TriangleAlert className="h-4 w-4 " />
+              <div className="flex flex-col gap-2">
+                <AlertTitle>WARNING</AlertTitle>
+                <AlertDescription>This action is final.</AlertDescription>
+              </div>
+            </Alert>
             <FormField
               key="tagName"
               control={methods.control}
@@ -260,7 +266,7 @@ const TagForm = ({
             onSubmit={methods.handleSubmit(handleSubmit)}
             className="space-y-6"
           >
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
