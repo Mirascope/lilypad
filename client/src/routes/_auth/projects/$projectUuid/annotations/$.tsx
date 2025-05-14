@@ -102,87 +102,85 @@ const AnnotationLayout = () => {
     );
   }
   return (
-    <div className="container h-screen w-full p-2 max-w-screen-2xl overflow-hidden">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel
-          defaultSize={25}
-          minSize={15}
-          className="flex flex-col gap-1"
-        >
-          <Typography variant="h3" className="truncate max-w-md shrink-0">
-            Annotation Queue
-          </Typography>
-          <div className="overflow-y-auto flex-1 flex flex-col min-h-0 gap-2">
-            <Suspense fallback={<LilypadLoading />}>
-              <div className="grow-1">
-                <AnnotationList
-                  activeAnnotation={activeAnnotation}
-                  setActiveAnnotation={setActiveAnnotation}
+    <ResizablePanelGroup direction="horizontal" className="h-full p-4">
+      <ResizablePanel
+        defaultSize={25}
+        minSize={15}
+        className="flex flex-col gap-1"
+      >
+        <Typography variant="h3" className="truncate max-w-md shrink-0">
+          Annotation Queue
+        </Typography>
+        <div className="overflow-y-auto flex-1 flex flex-col min-h-0 gap-2">
+          <Suspense fallback={<LilypadLoading />}>
+            <div className="grow-1">
+              <AnnotationList
+                activeAnnotation={activeAnnotation}
+                setActiveAnnotation={setActiveAnnotation}
+              />
+            </div>
+            <Separator />
+            <div className="shrink-0">
+              <Typography variant="h3" className="truncate max-w-md">
+                Criteria
+              </Typography>
+              {activeAnnotation && (
+                <AnnotationView
+                  annotation={activeAnnotation}
+                  path={Route.fullPath}
                 />
-              </div>
-              <Separator />
-              <div className="shrink-0">
-                <Typography variant="h3" className="truncate max-w-md">
-                  Criteria
-                </Typography>
-                {activeAnnotation && (
-                  <AnnotationView
-                    annotation={activeAnnotation}
-                    path={Route.fullPath}
-                  />
-                )}
-              </div>
-            </Suspense>
-          </div>
-        </ResizablePanel>
+              )}
+            </div>
+          </Suspense>
+        </div>
+      </ResizablePanel>
 
-        <ResizableHandle withHandle className="m-4" />
+      <ResizableHandle withHandle className="m-4" />
 
-        <ResizablePanel
-          defaultSize={75}
-          minSize={50}
-          className="flex flex-col h-full"
+      <ResizablePanel
+        defaultSize={75}
+        minSize={50}
+        className="flex flex-col h-full"
+      >
+        <FunctionTitle span={span} />
+
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex-1 min-h-0 h-full overflow-hidden"
         >
-          <FunctionTitle span={span} />
-
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="flex-1 min-h-0 h-full overflow-hidden"
+          <ResizablePanel
+            defaultSize={65}
+            minSize={40}
+            className="overflow-hidden"
           >
-            <ResizablePanel
-              defaultSize={65}
-              minSize={40}
-              className="overflow-hidden"
-            >
-              <div className="h-full overflow-y-auto">
-                <LilypadPanel spanUuid={span.uuid} showMetrics={false} />
-              </div>
-            </ResizablePanel>
+            <div className="h-full overflow-y-auto">
+              <LilypadPanel spanUuid={span.uuid} showMetrics={false} />
+            </div>
+          </ResizablePanel>
 
-            <ResizableHandle withHandle className="m-4" />
+          <ResizableHandle withHandle className="m-4" />
 
-            <ResizablePanel
-              defaultSize={35}
-              minSize={25}
-              className="flex flex-col overflow-hidden h-full gap-4"
-            >
-              <div className="shrink-0">
-                <SpanMetrics span={span} />
-              </div>
-              <div className="flex-1 min-h-0">
-                <Suspense fallback={<CardSkeleton items={1} />}>
-                  <SpanComments
-                    projectUuid={projectUuid}
-                    spanUuid={span.uuid}
-                    activeAnnotation={activeAnnotation}
-                  />
-                </Suspense>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+          <ResizablePanel
+            defaultSize={35}
+            minSize={25}
+            className="flex flex-col overflow-hidden w-full h-full gap-4"
+          >
+            <div className="shrink-0">
+              <SpanMetrics span={span} />
+            </div>
+            <div className="flex-1 min-h-0">
+              <Suspense fallback={<CardSkeleton items={1} />}>
+                <SpanComments
+                  projectUuid={projectUuid}
+                  spanUuid={span.uuid}
+                  activeAnnotation={activeAnnotation}
+                />
+              </Suspense>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 };
 

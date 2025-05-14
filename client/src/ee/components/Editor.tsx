@@ -94,7 +94,7 @@ export const Editor = ({
   return (
     <LexicalComposer key={template} initialConfig={config}>
       <div
-        className={`flex flex-col border shadow rounded-lg prose max-w-none`}
+        className={`flex flex-col border shadow rounded-lg prose dark:prose-invert max-w-none`}
       >
         {!isDisabled && isLLM && <ToolbarPlugin />}
 

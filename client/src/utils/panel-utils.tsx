@@ -37,7 +37,7 @@ export interface MessageCardProps {
 const MessageCard = ({ role, content }: MessageCardProps) => {
   return (
     <Card className="bg-background">
-      <CardHeader>
+      <CardHeader className="px-4">
         <CardTitle>{role}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto px-4 font-default">
