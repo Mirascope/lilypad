@@ -80,7 +80,7 @@ export const patchSpan = async (spanUuid: string, spanUpdate: SpanUpdate) => {
 export const searchSpans = async (
   projectUuid: string,
   params: {
-    query_string: string;
+    query_string?: string;
     time_range_start?: number;
     time_range_end?: number;
     limit?: number;
@@ -232,19 +232,23 @@ export const useDeleteSpanMutation = () => {
 export const spansSearchQueryOptions = (
   projectUuid: string,
   params: {
-    query_string: string;
+    query_string?: string;
     time_range_start?: number;
     time_range_end?: number;
     limit?: number;
     scope?: Scope;
     type?: string;
   }
-) =>
-  queryOptions({
+) => {
+  return queryOptions({
     queryKey: ["projects", projectUuid, "spans", params],
     queryFn: () => searchSpans(projectUuid, params),
-    enabled: !!params.query_string,
+    enabled:
+      !!params.query_string ||
+      !!params.time_range_start ||
+      !!params.time_range_end,
   });
+};
 
 export interface PageParam {
   offset: number;

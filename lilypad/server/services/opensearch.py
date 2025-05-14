@@ -19,7 +19,7 @@ OPENSEARCH_INDEX_PREFIX = "traces_"
 class SearchQuery(BaseModel):
     """Search query parameters."""
 
-    query_string: str
+    query_string: str | None = None
     time_range_start: int | None = None
     time_range_end: int | None = None
     limit: int = 100
