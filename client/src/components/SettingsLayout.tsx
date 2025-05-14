@@ -12,7 +12,7 @@ export const SettingsLayout = ({
   title?: string | ReactNode;
 }) => {
   return (
-    <div className="bg-gray-50 p-8">
+    <div className="bg-muted p-8">
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader className="flex flex-row justify-center items-center gap-2">

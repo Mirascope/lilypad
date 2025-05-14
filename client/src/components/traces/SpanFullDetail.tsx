@@ -1,8 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Minimize2 } from "lucide-react";
+import { Minimize2, Users } from "lucide-react";
 import { Suspense } from "react";
 
 import CardSkeleton from "@/components/CardSkeleton";
+import LilypadDialog from "@/components/LilypadDialog";
 import { FunctionTitle } from "@/components/traces/FunctionTitle";
 import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { SpanMetrics } from "@/components/traces/SpanMetrics";
@@ -14,6 +15,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Typography } from "@/components/ui/typography";
+import { QueueForm } from "@/ee/components/QueueForm";
+import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { SpanComments } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { rootTraceQueryOptions } from "@/utils/traces";
@@ -31,6 +34,7 @@ export const SpanFullDetail = ({
   const { data: trace } = useSuspenseQuery(
     rootTraceQueryOptions(projectUuid, span.span_id)
   );
+  const features = useFeatureAccess();
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -60,6 +64,17 @@ export const SpanFullDetail = ({
         <div className="flex justify-between items-center mb-4 shrink-0">
           <FunctionTitle span={span} />
           <div className="flex gap-2">
+            {features.annotations && (
+              <LilypadDialog
+                icon={<Users />}
+                text={"Assign"}
+                title={"Annotate selected traces"}
+                description={`1 trace(s) selected.`}
+                tooltipContent={"Add trace to your annotation queue."}
+              >
+                <QueueForm spans={[span]} />
+              </LilypadDialog>
+            )}
             <Button
               onClick={handleBackToTraces}
               variant="outline"

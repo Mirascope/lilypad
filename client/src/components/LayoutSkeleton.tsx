@@ -18,7 +18,7 @@ export const LayoutSkeleton = () => {
     <div className="flex h-screen border-collapse overflow-hidden">
       <SidebarProvider>
         <SidebarSkeleton />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-gray-50 pb-1">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-muted pb-1">
           <MainContent />
         </main>
       </SidebarProvider>

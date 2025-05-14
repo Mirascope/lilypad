@@ -1,9 +1,9 @@
+import { JsonView } from "@/components/JsonView";
 import { SpanMetrics } from "@/components/traces/SpanMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LilypadPanelTab } from "@/utils/panel-utils";
 import { spanQueryOptions } from "@/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import JsonView from "@uiw/react-json-view";
 
 export const LilypadPanel = ({
   spanUuid,
@@ -27,7 +27,7 @@ export const LilypadPanel = ({
               <CardTitle>{"Inputs"}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-background p-2 text-card-foreground relative rounded-lg border shadow-sm overflow-x-auto">
+              <div className="rounded-md bg-background">
                 <JsonView value={span.arg_values} />
               </div>
             </CardContent>

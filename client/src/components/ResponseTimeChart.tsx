@@ -106,19 +106,37 @@ export const ResponseTimeChart = ({
                 tickFormatter={(value) => (value / 1_000_000_000).toFixed(2)}
               />
               <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--background)",
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--border)",
+                }}
+                wrapperClassName="bg-background rounded-md shadow-md"
+                labelClassName="text-foreground font-medium"
                 labelFormatter={(label: string) => formatDate(label, false)}
                 formatter={(
                   value: number | string | unknown[],
                   name: string
                 ) => {
+                  // Find the corresponding color for this data series
+                  const colorIndex = labels.findIndex(
+                    (label) => label === name
+                  );
+                  const color = colors[colorIndex % colors.length];
+
                   if (typeof value === "number") {
-                    return [(value / 1_000_000_000).toFixed(2) + " ms", name];
+                    return [
+                      (value / 1_000_000_000).toFixed(2) + " ms",
+                      name,
+                      color,
+                    ];
                   }
                   return [
                     Number.isFinite(value)
                       ? Number(value).toFixed(2)
                       : String(value),
                     name,
+                    color,
                   ];
                 }}
               />

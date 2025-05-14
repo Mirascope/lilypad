@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTable } from "@/hooks/use-table";
+import { cn } from "@/lib/utils";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -68,6 +70,7 @@ interface GenericDataTableProps<T> {
   isFetching?: boolean;
   fetchNextPage?: () => void;
   columnVisibilityStateKey?: string;
+  className?: string;
 }
 
 export const DataTable = <T extends { uuid: string }>({
@@ -89,6 +92,7 @@ export const DataTable = <T extends { uuid: string }>({
   isFetching,
   fetchNextPage,
   columnVisibilityStateKey,
+  className,
 }: GenericDataTableProps<T>) => {
   const { updateUserConfig, userConfig } = useAuth();
   const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
@@ -359,8 +363,13 @@ export const DataTable = <T extends { uuid: string }>({
           </DropdownMenu>
         )}
       </div>
-      <div className="flex flex-col overflow-hidden min-h-0 rounded-md border flex-1 ">
-        <div
+      <div
+        className={cn(
+          "flex flex-col overflow-hidden min-h-0 rounded-md border flex-1",
+          className
+        )}
+      >
+        <ScrollArea
           ref={virtualizerRef}
           onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
           className="rounded-md overflow-auto relative"
@@ -368,6 +377,7 @@ export const DataTable = <T extends { uuid: string }>({
             height: virtualizerOptions.containerHeight ?? "100%",
           }}
         >
+          <ScrollBar orientation="horizontal" />
           <Table className="w-full">
             <TableHeader className="sticky top-0 z-10 bg-background">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -429,7 +439,7 @@ export const DataTable = <T extends { uuid: string }>({
             </TableBody>
           </Table>
           {isFetching && <div className="p-2">Fetching More...</div>}
-        </div>
+        </ScrollArea>
       </div>
     </>
   );

@@ -112,6 +112,7 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
           {features.annotations && (
             <LilypadDialog
               icon={<Users />}
+              text={"Assign"}
               title={"Annotate selected traces"}
               description={`${selectedRows.length} trace(s) selected.`}
               buttonProps={{

@@ -96,10 +96,7 @@ export const SearchBar = ({
       {searchResults && (
         <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
           <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-gray-50 text-gray-700 font-medium"
-            >
+            <Badge variant="outline" className="font-medium">
               {displayCount} results found
             </Badge>
           </div>

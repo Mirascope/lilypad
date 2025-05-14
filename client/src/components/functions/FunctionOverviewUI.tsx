@@ -28,8 +28,8 @@ export const FunctionOverviewUI = ({
       <div className="w-full lg:w-1/2">
         {showCompare ? (
           <DiffTool
-            firstCodeBlock={firstFunction.code}
-            secondCodeBlock={secondFunction?.code || ""}
+            baseCodeBlock={firstFunction.code}
+            incomingCodeBlock={secondFunction.code}
           />
         ) : (
           <CodeSnippet code={firstFunction.code} />

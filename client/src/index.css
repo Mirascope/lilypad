@@ -5,7 +5,7 @@
 /* Williams Handwriting Font Import - All styles */
 @font-face {
   font-family: "Williams Handwriting";
-  src: url("/fonts/Williams-Handwriting-Font-v1.6.ttf") format("truetype");
+  src: url("/fonts/Williams-Handwriting-Font-v1.7.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -16,15 +16,24 @@
 @plugin "tailwindcss-animate";
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:is(.dark *));
-@import "./theme.css";
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
 
 @theme inline {
+  --color-mirascope-purple: oklch(0.5854 0.2041 277.12); /* Mirascope purple */
+  --color-mirascope-purple-dark: oklch(
+    0.5254 0.2041 277.12
+  ); /* Darker purple */
+  --color-lilypad-green: #409b45; /* Vibrant lily pad green */
+  --color-lilypad-green-dark: #25562a; /* Darker version of the lily pad green */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-button-primary: var(--color-lilypad-green-dark);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -58,6 +67,16 @@
 
 :root {
   --radius: 0.625rem;
+  --header-height-base: 74px; /* Standard header without selector (measured) */
+  --header-height-with-selector: 136px; /* Header with product selector (measured) */
+  --header-height: var(--header-height-base); /* Default value */
+
+  /* Paper texture variables for light mode */
+  --text-offset: 2px;
+  --texture-opacity: 0.3;
+  --texture-blend-mode: multiply;
+  --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
+
   --background: oklch(0.995 0 0);
   --foreground: oklch(0.1 0.01 240);
   --card: rgba(64, 155, 69, 0.2);
@@ -95,19 +114,6 @@
   --sidebar-ring: var(--color-lilypad-green);
 }
 
-:root {
-  --radius: 0.625rem;
-  --header-height-base: 74px; /* Standard header without selector (measured) */
-  --header-height-with-selector: 136px; /* Header with product selector (measured) */
-  --header-height: var(--header-height-base); /* Default value */
-
-  /* Paper texture variables for light mode */
-  --text-offset: 2px;
-  --texture-opacity: 0.3;
-  --texture-blend-mode: multiply;
-  --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
-}
-
 .dark {
   --text-offset: 2px;
   --texture-opacity: 0.5; /* Adjusted opacity for dark mode */
@@ -115,15 +121,15 @@
   --texture-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='1' seed='2'/%3E%3CfeDiffuseLighting lighting-color='%23505050' surfaceScale='1'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23grain)' opacity='0.6'/%3E%3C/svg%3E");
   --background: oklch(0.1 0.01 240);
   --foreground: oklch(0.95 0 0);
-  --card: oklch(0.205 0 0);
+  --card: rgba(64, 155, 69, 0.2);
   --card-foreground: oklch(0.95 0 0);
   --popover: oklch(0.11 0.01 240);
   --popover-foreground: oklch(0.95 0 0);
   --primary: var(--color-lilypad-green-dark);
   --primary-foreground: var(--color-foreground);
-  --secondary: oklch(0.5 0.12 180);
+  --secondary: #5452dc;
   --secondary-foreground: oklch(0.95 0 0);
-  --muted: var(--color-gray-800);
+  --muted: hsl(240 5.9% 10%);
   --muted-foreground: var(--color-gray-400);
   --accent: oklch(0.45 0.06 140);
   --accent-foreground: oklch(0.95 0 0);
