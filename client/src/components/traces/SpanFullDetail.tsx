@@ -37,7 +37,7 @@ export const SpanFullDetail = ({
   const features = useFeatureAccess();
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
+    <ResizablePanelGroup direction="horizontal" className="h-full p-4">
       <ResizablePanel defaultSize={25} minSize={15} className="flex flex-col">
         <Typography variant="h3" className="truncate max-w-md mb-4 shrink-0">
           Trace Hierarchy

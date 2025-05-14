@@ -31,13 +31,11 @@ const SpanDetailPage = () => {
   };
   return (
     <Suspense fallback={<LilypadLoading />}>
-      <div className="container h-full w-full p-4 max-w-screen-2xl overflow-hidden">
-        <SpanFullDetail
-          handleBackToTraces={handleBackToTraces}
-          projectUuid={projectUuid}
-          spanUuid={spanUuid}
-        />
-      </div>
+      <SpanFullDetail
+        handleBackToTraces={handleBackToTraces}
+        projectUuid={projectUuid}
+        spanUuid={spanUuid}
+      />
     </Suspense>
   );
 };

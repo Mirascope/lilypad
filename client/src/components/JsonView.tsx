@@ -7,7 +7,7 @@ export const JsonView = <T extends object>(props: JsonViewProps<T>) => {
 
   return (
     <ReactJsonView
-      className="p-2 h-full overflow-auto rounded-lg shadow-sm"
+      className="p-2 rounded-md h-full w-full overflow-auto shadow-sm"
       style={{
         ...(theme === "dark" && vscodeTheme),
         ...props.style,
