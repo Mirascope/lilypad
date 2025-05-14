@@ -196,11 +196,6 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/playground`,
           icon: Blocks,
         },
-        {
-          title: "Settings",
-          url: `/settings/overview`,
-          icon: Settings,
-        },
       ]
     : [];
   const handleOrganizationSwitch = async (organizationUuid: string) => {
@@ -324,9 +319,21 @@ export const AppSidebar = () => {
           <AppHeader activeProject={activeProject} to={ProjectRoute.fullPath} />
         </SidebarHeader>
         <SidebarContent>{renderProjectSelector()}</SidebarContent>
-        <Separator />
+        <Separator className="mt-2" />
         <SidebarFooter>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild size="lg">
+                <Link
+                  to={"/settings/$"}
+                  params={{ _splat: "overview" }}
+                  className="flex items-center w-full gap-2 [&.active]:font-extrabold [&.active]:text-accent-foreground [&.active]:bg-accent"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>{"Settings"}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

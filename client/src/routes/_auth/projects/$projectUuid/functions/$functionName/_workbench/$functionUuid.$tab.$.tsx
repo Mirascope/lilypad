@@ -8,6 +8,7 @@ import { Tab, TabGroup } from "@/components/TabGroup";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
+import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { FunctionTab } from "@/types/functions";
 import {
@@ -20,7 +21,13 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { GitCompare, MoveLeft, SquareTerminal, Trash } from "lucide-react";
+import {
+  ArrowLeft,
+  GitCompare,
+  MoveLeft,
+  SquareTerminal,
+  Trash,
+} from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -69,6 +76,14 @@ const FunctionWorkbench = () => {
       label: "Annotations",
       value: FunctionTab.ANNOTATIONS,
       isDisabled: !features.annotations,
+      component: fn ? (
+        <Suspense fallback={<TableSkeleton />}>
+          <FunctionAnnotations
+            projectUuid={projectUuid}
+            functionUuid={fn.uuid}
+          />
+        </Suspense>
+      ) : null,
     },
   ];
   const handleArchive = async () => {
@@ -128,9 +143,7 @@ const FunctionWorkbench = () => {
           />
           {compareMode && (
             <>
-              <Typography variant="span" affects="muted">
-                vs
-              </Typography>
+              <ArrowLeft className="size-4" />
               <SelectFunction
                 compareMode={compareMode}
                 isFirstFunction={false}

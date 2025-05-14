@@ -16,7 +16,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { GitCompare, MoveLeft, SquareTerminal } from "lucide-react";
+import { ArrowLeft, GitCompare, MoveLeft, SquareTerminal } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -75,6 +75,11 @@ const CompareWorkbench = () => {
       label: "Annotations",
       value: FunctionTab.ANNOTATIONS,
       isDisabled: !features.annotations,
+      component: (
+        <div className="flex items-center justify-center w-full h-full">
+          <Typography variant="h4">Under construction...</Typography>
+        </div>
+      ),
     },
   ];
 
@@ -127,9 +132,7 @@ const CompareWorkbench = () => {
             projectUuid={projectUuid}
             tab={tab as FunctionTab}
           />
-          <Typography variant="span" affects="muted">
-            vs
-          </Typography>
+          <ArrowLeft className="size-4" />
           <SelectFunction
             compareMode={compareMode}
             isFirstFunction={false}

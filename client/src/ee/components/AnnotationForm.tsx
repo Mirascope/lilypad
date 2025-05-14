@@ -64,7 +64,7 @@ const AnnotationFields = () => {
         rules={{
           validate: (value) => {
             if (value === null) {
-              return "Label is required";
+              return "Overall label is required";
             }
             return true;
           },
@@ -73,7 +73,7 @@ const AnnotationFields = () => {
         render={({ field }) => {
           return (
             <FormItem>
-              <FormLabel>Label</FormLabel>
+              <FormLabel>Overall</FormLabel>
               <FormControl>
                 <div className="flex flex-wrap gap-2">
                   <SuccessButton
@@ -137,11 +137,9 @@ export const UpdateAnnotationForm = ({
   const isLoading = methods.formState.isSubmitting;
   const renderButtons = () => {
     return (
-      <div className="flex justify-between gap-2">
-        <Button type="submit" loading={isLoading}>
-          {isLoading ? "Annotating..." : "Submit Annotation"}
-        </Button>
-      </div>
+      <Button type="submit" loading={isLoading}>
+        {isLoading ? "Annotating..." : "Annotate"}
+      </Button>
     );
   };
   const handleSubmit = async (data: AnnotationUpdate) => {

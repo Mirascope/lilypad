@@ -538,7 +538,7 @@ class SpanMoreDetails(BaseModel):
     """Span more details model."""
 
     uuid: UUID
-    project_uuid: UUID | None = None
+    project_uuid: UUID
     function_uuid: UUID | None = None
     display_name: str
     provider: str

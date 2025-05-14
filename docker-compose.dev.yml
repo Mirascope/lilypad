@@ -28,6 +28,7 @@ services:
           target: /app
           ignore:
             - .venv/
+            - client/
         - action: rebuild
           path: ./uv.lock
     environment:

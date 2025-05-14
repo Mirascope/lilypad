@@ -16,7 +16,10 @@ const GithubButton = ({
   ...buttonProps
 }: GithubButtonProps) => {
   return (
-    <Button {...buttonProps} className="bg-[#333333] hover:bg-[#555555]">
+    <Button
+      {...buttonProps}
+      className="bg-[#333333] hover:bg-[#555555] cursor-pointer"
+    >
       <svg
         fill={iconColor}
         role="img"
