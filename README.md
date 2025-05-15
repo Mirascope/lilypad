@@ -1,4 +1,9 @@
-[![Lilypad Logo & Wordmark](https://github.com/user-attachments/assets/c8ba44ca-3e6c-40b1-af3b-4ecf9b69ebc5)](https://mirascope.com/#lilypad)
+<p align="center">
+    <a href="https://mirascope.com/#lilypad">
+        <img src="https://github.com/user-attachments/assets/b3ccb489-792d-4f13-8184-1eeae94e3451" />
+    </a>
+</p>
+
 
 <p align="center">
     <a href="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml" target="_blank"><img src="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests"/></a>
