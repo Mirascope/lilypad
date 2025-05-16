@@ -19,6 +19,7 @@ export interface UserConfig {
   defaultTraceTab?: TraceTab;
   defaultMessageRenderer?: "raw" | "markdown";
   tracesTableVisibilityState?: VisibilityState;
+  font?: "professional" | "fun";
 }
 
 export interface AuthContext {
