@@ -19,8 +19,6 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
-    env_file:
-      - .env.dev
     develop:
       watch:
         - action: sync

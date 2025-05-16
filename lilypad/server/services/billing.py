@@ -88,7 +88,6 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 BillingTable.organization_uuid == organization.uuid
             )
         ).first()
-
         if existing_billing and existing_billing.stripe_customer_id:
             return existing_billing.stripe_customer_id
 

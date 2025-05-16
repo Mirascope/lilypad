@@ -49,6 +49,7 @@
     "@shikijs/transformers": "^3.3.0",
     "@stepperize/react": "^5.1.5",
     "@storybook/addon-actions": "^8.6.12",
+    "@stripe/stripe-js": "^7.3.0",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-query-devtools": "^5.74.4",

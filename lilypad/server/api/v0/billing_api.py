@@ -8,9 +8,12 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlmodel import Session
 from stripe import SignatureVerificationError
 
+from ..._utils.auth import get_current_user
 from ...db import get_session
 from ...schemas.billing import StripeWebhookResponse
+from ...schemas.users import UserPublic
 from ...services.billing import BillingService
+from ...services.organizations import OrganizationService
 from ...settings import get_settings
 
 billing_router = APIRouter()
@@ -23,6 +26,40 @@ HANDLED_EVENT_TYPES = {
     "customer.subscription.updated",
     "customer.subscription.deleted",
 }
+
+
+@billing_router.post("/stripe/create-customer-portal-session", response_model=str)
+def create_portal_session(
+    user: Annotated[UserPublic, Depends(get_current_user)],
+    organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
+) -> str:
+    try:
+        if not user.active_organization_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User does not have an active organization",
+            )
+        organization = organization_service.find_record_by_uuid(
+            user.active_organization_uuid
+        )
+        customer_id = organization.billing.stripe_customer_id
+        if not customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Customer ID not found",
+            )
+        # Create a billing portal session
+        session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=f"{settings.client_url}/settings/overview",
+        )
+
+        return session.url
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating portal session: {str(e)}",
+        )
 
 
 @billing_router.post("/webhooks/stripe", response_model=StripeWebhookResponse)

@@ -191,6 +191,48 @@ export interface AnnotationUpdate {
 }
 
 /**
+ * BillingPublic
+ * Schema for public billing information.
+ */
+export interface BillingPublic {
+  /** Stripe Customer Id */
+  stripe_customer_id?: string | null;
+  /** Stripe Subscription Id */
+  stripe_subscription_id?: string | null;
+  /** Stripe Price Id */
+  stripe_price_id?: string | null;
+  subscription_status?: SubscriptionStatus | null;
+  /** Subscription Current Period Start */
+  subscription_current_period_start?: string | null;
+  /** Subscription Current Period End */
+  subscription_current_period_end?: string | null;
+  /**
+   * Usage Quantity
+   * @default 0
+   */
+  usage_quantity?: number;
+  /** Last Usage Report */
+  last_usage_report?: string | null;
+  /** Metadata */
+  metadata?: object;
+  /**
+   * Uuid
+   * @format uuid
+   */
+  uuid: string;
+  /**
+   * Organization Uuid
+   * @format uuid
+   */
+  organization_uuid: string;
+  /**
+   * Created At
+   * @format date-time
+   */
+  created_at: string;
+}
+
+/**
  * CommentCreate
  * Comment Create Model.
  */
@@ -745,6 +787,8 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
+  /** Schema for public billing information. */
+  billing: BillingPublic;
 }
 
 /**
@@ -1082,6 +1126,21 @@ export interface StripeWebhookResponse {
   event?: string | null;
   /** Message */
   message?: string | null;
+}
+
+/**
+ * SubscriptionStatus
+ * Subscription status enum based on Stripe's subscription statuses.
+ */
+export enum SubscriptionStatus {
+  ACTIVE = "active",
+  PAST_DUE = "past_due",
+  UNPAID = "unpaid",
+  CANCELED = "canceled",
+  INCOMPLETE = "incomplete",
+  INCOMPLETE_EXPIRED = "incomplete_expired",
+  TRIALING = "trialing",
+  PAUSED = "paused",
 }
 
 /**
