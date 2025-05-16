@@ -26,13 +26,9 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       }
     };
   }, []);
-
   const metricSections = [
     {
-      show:
-        span.cost !== undefined &&
-        span.input_tokens !== undefined &&
-        span.output_tokens !== undefined,
+      show: span.cost !== 0 && (span.input_tokens ?? span.output_tokens),
       title: "Cost and Tokens",
       content: (
         <>
@@ -55,9 +51,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       show: span.duration_ms !== undefined,
       title: "Duration",
       content: (
-        <div className="font-bold">
-          {(span.duration_ms! / 1_000_000_000).toFixed(3)}s
-        </div>
+        <div className="font-bold">{span.duration_ms! / 1_000_000_000}s</div>
       ),
     },
     // Provider section

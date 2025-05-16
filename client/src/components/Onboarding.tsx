@@ -1,5 +1,6 @@
 import { CopyKeyContent } from "@/components/apiKeys/CreateAPIKeyDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { FontToggle } from "@/components/FontToggle";
 import { LilypadIcon } from "@/components/LilypadIcon";
 import { NotFound } from "@/components/NotFound";
 import { defineStepper } from "@/components/stepper";
@@ -138,6 +139,10 @@ const LilypadWelcome = () => {
       title="Welcome to Lilypad"
       className="welcome-panel flex flex-col gap-4"
     >
+      <div className="flex flex-col">
+        Font
+        <FontToggle />
+      </div>
       <Typography variant="span" affects="small">
         We are excited to have you here!
       </Typography>
