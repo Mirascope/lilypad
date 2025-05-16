@@ -114,6 +114,7 @@ interface TracesTableProps {
   filterColumn?: string;
   /** Optional prop to access compare view state */
   onCompareViewToggle?: (isComparing: boolean) => void;
+  className?: string;
 }
 
 export const TracesTable = ({
@@ -126,6 +127,7 @@ export const TracesTable = ({
   onOrderChange,
   fetchNextPage,
   filterColumn,
+  className,
 }: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
@@ -521,6 +523,7 @@ export const TracesTable = ({
   return (
     <>
       <DataTable<SpanPublic>
+        className={className}
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}

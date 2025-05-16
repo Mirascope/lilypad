@@ -35,13 +35,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -124,10 +118,6 @@ export const DataTable = <T extends { uuid: string }>({
     },
     [fetchNextPage]
   );
-
-  useEffect(() => {
-    fetchMoreOnBottomReached(virtualizerRef?.current);
-  }, [fetchMoreOnBottomReached, virtualizerRef]);
 
   const flattenedData = useMemo(() => {
     // Helper function to flatten data recursively
@@ -311,7 +301,6 @@ export const DataTable = <T extends { uuid: string }>({
       </TableRow>
     );
   };
-
   return (
     <>
       <div className="flex items-center rounded-md gap-2">
@@ -371,11 +360,11 @@ export const DataTable = <T extends { uuid: string }>({
       >
         <ScrollArea
           ref={virtualizerRef}
-          onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
           className="rounded-md overflow-auto relative"
           style={{
             height: virtualizerOptions.containerHeight ?? "100%",
           }}
+          onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
         >
           <ScrollBar orientation="horizontal" />
           <Table className="w-full">
