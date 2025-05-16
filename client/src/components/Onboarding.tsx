@@ -43,7 +43,7 @@ const stepper = defineStepper(
 const { Stepper, useStepper } = stepper;
 
 interface StepperPanelProps {
-  title: string;
+  title: string | ReactNode;
   description?: string;
   children: ReactNode;
   className?: string;
@@ -60,7 +60,7 @@ const StepperPanel = ({
       className={cn(`w-full h-full flex-1 flex flex-col p-4`, className)}
     >
       <Typography variant="h3" className="flex gap-1 items-center shrink-0">
-        <LilypadIcon className="size-16" />
+        <LilypadIcon size={64} />
         {title}
       </Typography>
       {description && (
@@ -136,7 +136,11 @@ const renderStepPanel = (methods: StepperMethods) => {
 const LilypadWelcome = () => {
   return (
     <StepperPanel
-      title="Welcome to Lilypad"
+      title={
+        <span>
+          Welcome to <span className="text-primary fun">Lilypad</span>
+        </span>
+      }
       className="welcome-panel flex flex-col gap-4"
     >
       <div className="flex flex-col">
