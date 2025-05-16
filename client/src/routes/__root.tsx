@@ -1,5 +1,6 @@
 import { AuthContext } from "@/auth";
 import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
+import { useFont } from "@/components/FontProvider";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -19,13 +20,14 @@ const TanStackRouterDevtools =
       );
 
 const RootComponent = () => {
+  const { font } = useFont();
   return (
     <>
       <Outlet />
       <Toaster
         richColors
         toastOptions={{
-          className: "font-handwriting",
+          className: font === "fun" ? "fun" : "professional",
         }}
       />
       <TanStackRouterDevtools position="bottom-right" />

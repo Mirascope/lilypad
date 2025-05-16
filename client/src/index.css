@@ -16,6 +16,7 @@
 @plugin "tailwindcss-animate";
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:is(.dark *));
+@custom-variant fun (&:is(.fun *));
 @utility no-scrollbar {
   @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }
@@ -154,8 +155,21 @@
   --sidebar-border: hsl(240 3.7% 15.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
-body {
-  @apply m-0;
+.professional {
+  font-family:
+    "Geist Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
+}
+.fun {
   font-family:
     "Williams Handwriting",
     "Geist Sans",
@@ -169,6 +183,9 @@ body {
     "Open Sans",
     "Helvetica Neue",
     sans-serif;
+}
+body {
+  @apply m-0;
   font-size: 1rem; /* Default size - will be overridden by mono/sans classes */
   font-weight: 400; /* Normal weight */
   letter-spacing: 0.01em; /* Slight letter spacing */
@@ -330,23 +347,6 @@ pre,
   }
   body {
     @apply bg-background text-foreground;
-  }
-  .font-default {
-    font-family:
-      "Geist Sans",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Oxygen,
-      Ubuntu,
-      Cantarell,
-      "Open Sans",
-      "Helvetica Neue",
-      sans-serif;
-  }
-  .font-handwriting {
-    font-family: "Williams Handwriting", cursive !important;
   }
 }
 

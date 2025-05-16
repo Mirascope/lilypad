@@ -1,3 +1,4 @@
+import { FontToggle } from "@/components/FontToggle";
 import LilypadDialog from "@/components/LilypadDialog";
 import { ModeToggle } from "@/components/ModeToggle";
 import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
@@ -48,6 +49,12 @@ export const HomeSettings = () => {
             Theme
           </label>
           <ModeToggle />
+        </div>
+        <div className="flex flex-col my-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            Font
+          </label>
+          <FontToggle />
         </div>
       </div>
       <div>

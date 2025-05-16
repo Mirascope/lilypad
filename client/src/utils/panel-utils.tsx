@@ -40,7 +40,7 @@ const MessageCard = ({ role, content }: MessageCardProps) => {
       <CardHeader className="px-4">
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-4 font-default">
+      <CardContent className="overflow-x-auto px-4 professional">
         {content}
       </CardContent>
     </Card>
@@ -194,7 +194,7 @@ export const LilypadPanelTab = ({
       label: "Prompt Template",
       value: TraceTab.PROMPT_TEMPLATE,
       component: span.template ? (
-        <div className="p-2 whitespace-pre-wrap text-sm font-default">
+        <div className="p-2 whitespace-pre-wrap text-sm professional">
           {span.template}
         </div>
       ) : null,
