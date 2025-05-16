@@ -1,6 +1,7 @@
 import { useAuth } from "@/auth";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { AddComment, CommentCards } from "@/components/Comment";
+import { JsonView } from "@/components/JsonView";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { TabGroup } from "@/components/TabGroup";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
@@ -27,7 +27,6 @@ import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode } from "@tanstack/react-router";
-import JsonView from "@uiw/react-json-view";
 import { MessageSquareMore, NotebookPen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
@@ -38,7 +37,7 @@ export interface MessageCardProps {
 const MessageCard = ({ role, content }: MessageCardProps) => {
   return (
     <Card className="bg-background">
-      <CardHeader>
+      <CardHeader className="px-4">
         <CardTitle>{role}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto px-4 font-default">
@@ -107,12 +106,10 @@ export const SpanComments = ({
   projectUuid,
   spanUuid,
   activeAnnotation,
-  path,
 }: {
   projectUuid: string;
   spanUuid: string;
   activeAnnotation?: AnnotationPublic | null;
-  path?: string;
 }) => {
   const features = useFeatureAccess();
   const { data: spanComments } = useSuspenseQuery(
@@ -126,14 +123,6 @@ export const SpanComments = ({
   );
 
   const tabs: Tab[] = [
-    {
-      label: "Annotate",
-      value: CommentTab.ANNOTATE,
-      component:
-        features.annotations && activeAnnotation ? (
-          <AnnotationView annotation={activeAnnotation} path={path} />
-        ) : null,
-    },
     {
       label: (
         <div className="flex items-center gap-1">
@@ -199,11 +188,7 @@ export const LilypadPanelTab = ({
     {
       label: "Output",
       value: TraceTab.OUTPUT,
-      component: span.output ? (
-        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
-          {renderOutput(span.output)}
-        </div>
-      ) : null,
+      component: span.output ? renderOutput(span.output) : null,
     },
     {
       label: "Prompt Template",
@@ -235,20 +220,14 @@ export const LilypadPanelTab = ({
     {
       label: "Metadata",
       value: TraceTab.METADATA,
-      component: span.data ? (
-        <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
-          {renderMetadata(span.data)}
-        </div>
-      ) : null,
+      component: span.data ? renderMetadata(span.data) : null,
     },
     {
       label: "Data",
       value: TraceTab.DATA,
       component: span.data && (
         <div className="h-full overflow-auto">
-          <div className="bg-background p-2 text-card-foreground relative rounded-lg shadow-sm overflow-auto h-full">
-            <JsonView value={span.data} />
-          </div>
+          <JsonView value={span.data} />
         </div>
       ),
     },
@@ -318,7 +297,7 @@ export const MessagesContainer = ({
         </div>
       </div>
 
-      <div className="flex justify-center my-1 shrink-0">
+      <div className="flex justify-center mt-2 shrink-0">
         <div
           className="inline-flex rounded-md shadow-sm space-x-1"
           role="group"

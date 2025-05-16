@@ -10,12 +10,16 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useCreateAnnotationsMutation } from "@/ee/utils/annotations";
-import { AnnotationCreate, SpanPublic } from "@/types/types";
+import { AnnotationCreate, SpanMoreDetails, SpanPublic } from "@/types/types";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-export const QueueForm = ({ spans }: { spans: SpanPublic[] }) => {
+export const QueueForm = ({
+  spans,
+}: {
+  spans: SpanPublic[] | SpanMoreDetails[];
+}) => {
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const methods = useForm<AnnotationCreate>();
   const createAnnotation = useCreateAnnotationsMutation();

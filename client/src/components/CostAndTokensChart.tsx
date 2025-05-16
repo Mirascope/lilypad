@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
 import { aggregatesByFunctionQueryOptions } from "@/utils/spans";
 import { formatDate } from "@/utils/strings";
@@ -52,10 +53,12 @@ export const CostAndTokensChart = ({
   metricsData,
   title,
   labels,
+  className,
 }: {
   metricsData: AggregateMetrics[][];
   title: string;
   labels: string[];
+  className?: string;
 }) => {
   // Create a map to organize data by date
   const dateMap = new Map();
@@ -89,7 +92,7 @@ export const CostAndTokensChart = ({
       const data = payload[0].payload;
 
       return (
-        <div className="bg-background p-4 rounded shadow-md border">
+        <div className="bg-background">
           <p className="font-medium">{formatDate(label, false)}</p>
 
           {metricsData.map((_, index) => {
@@ -128,7 +131,7 @@ export const CostAndTokensChart = ({
   // Define colors for each dataset
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>

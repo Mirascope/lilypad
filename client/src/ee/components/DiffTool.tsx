@@ -1,6 +1,5 @@
 import { CodeBlock } from "@/components/CodeBlock";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { diffArrays } from "diff";
 import { useState } from "react";
 
@@ -223,14 +222,14 @@ const CodeBlockWithLineNumbersAndHighlights = ({
 };
 
 interface DiffToolProps {
-  firstCodeBlock: string;
-  secondCodeBlock: string;
+  incomingCodeBlock: string;
+  baseCodeBlock: string;
   language?: string;
 }
 
 export const DiffTool = ({
-  firstCodeBlock,
-  secondCodeBlock,
+  incomingCodeBlock,
+  baseCodeBlock,
   language = "typescript",
 }: DiffToolProps) => {
   const [mode, setMode] = useState<"split" | "unified">("unified");
@@ -240,27 +239,37 @@ export const DiffTool = ({
   };
 
   let diffed: DiffPart[] | null = null;
-  if (firstCodeBlock && secondCodeBlock) {
-    const firstCode = firstCodeBlock.split("\n");
-    const secondCode = secondCodeBlock.split("\n");
+  if (incomingCodeBlock && baseCodeBlock) {
+    const firstCode = incomingCodeBlock.split("\n");
+    const secondCode = baseCodeBlock.split("\n");
     diffed = diffArrays(firstCode, secondCode);
   }
 
   return (
     <>
       {diffed && (
-        <>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="diff-view"
-              checked={mode === "split"}
-              onCheckedChange={handleModeChange}
-            />
-            <Label htmlFor="diff-view">
-              {mode === "split" ? "Split" : "Unified"} View
-            </Label>
+        <div className="flex flex-col gap-2">
+          <div className="shrink-0">
+            <div className="inline-flex items-center p-1 rounded-lg bg-muted">
+              <Button
+                variant={mode === "unified" ? "default" : "ghost"}
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() => handleModeChange(false)}
+              >
+                <span>Unified</span>
+              </Button>
+              <Button
+                variant={mode === "split" ? "default" : "ghost"}
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() => handleModeChange(true)}
+              >
+                <span>Split</span>
+              </Button>
+            </div>
           </div>
-          <div className="flex w-full">
+          <div className="grow-1 w-full">
             {mode === "unified" ? (
               <CodeBlockWithLineNumbersAndHighlights
                 diffedLines={diffed}
@@ -273,7 +282,7 @@ export const DiffTool = ({
               />
             )}
           </div>
-        </>
+        </div>
       )}
     </>
   );

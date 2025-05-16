@@ -10,7 +10,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
+import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
 import {
   annotationsByProjectQueryOptions,
   useDeleteAnnotationMutation,
@@ -49,7 +51,6 @@ const AnnotationLayout = () => {
     annotationsByProjectQueryOptions(projectUuid)
   );
   const navigate = useNavigate();
-  const deleteAnnotation = useDeleteAnnotationMutation();
   const [activeAnnotation, setActiveAnnotation] =
     useState<AnnotationPublic | null>(annotations[0] || null);
   const span = activeAnnotation?.span;
@@ -76,6 +77,17 @@ const AnnotationLayout = () => {
       setActiveAnnotation(null);
     }
   }, [annotations, annotationUuid]);
+
+  useEffect(() => {
+    navigate({
+      to: Route.fullPath,
+      replace: true,
+      params: { projectUuid, _splat: activeAnnotation?.uuid },
+    }).catch(() => {
+      toast.error("Failed to navigate");
+    });
+  }, [activeAnnotation]);
+
   if (!span) {
     return (
       <div className="flex flex-col h-full p-4">
@@ -90,97 +102,85 @@ const AnnotationLayout = () => {
     );
   }
   return (
-    <div className="container h-screen w-full p-2 max-w-screen-2xl overflow-hidden">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel
-          defaultSize={25}
-          minSize={15}
-          className="flex flex-col gap-1"
-        >
-          <Typography variant="h3" className="truncate max-w-md shrink-0">
-            Annotation Queue
-          </Typography>
-          <div className="overflow-y-auto flex-1 min-h-0">
-            <Suspense fallback={<LilypadLoading />}>
+    <ResizablePanelGroup direction="horizontal" className="h-full p-4">
+      <ResizablePanel
+        defaultSize={25}
+        minSize={15}
+        className="flex flex-col gap-1"
+      >
+        <Typography variant="h3" className="truncate max-w-md shrink-0">
+          Annotation Queue
+        </Typography>
+        <div className="overflow-y-auto flex-1 flex flex-col min-h-0 gap-2">
+          <Suspense fallback={<LilypadLoading />}>
+            <div className="grow-1">
               <AnnotationList
                 activeAnnotation={activeAnnotation}
                 setActiveAnnotation={setActiveAnnotation}
               />
-            </Suspense>
-          </div>
-        </ResizablePanel>
+            </div>
+            <Separator />
+            <div className="shrink-0">
+              <Typography variant="h3" className="truncate max-w-md">
+                Criteria
+              </Typography>
+              {activeAnnotation && (
+                <AnnotationView
+                  annotation={activeAnnotation}
+                  path={Route.fullPath}
+                />
+              )}
+            </div>
+          </Suspense>
+        </div>
+      </ResizablePanel>
 
-        <ResizableHandle withHandle className="m-4" />
+      <ResizableHandle withHandle className="m-4" />
 
-        <ResizablePanel
-          defaultSize={75}
-          minSize={50}
-          className="flex flex-col h-full"
+      <ResizablePanel
+        defaultSize={75}
+        minSize={50}
+        className="flex flex-col h-full"
+      >
+        <FunctionTitle span={span} />
+
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex-1 min-h-0 h-full overflow-hidden"
         >
-          <div className="flex justify-between items-center mb-4 shrink-0">
-            <FunctionTitle span={span} />
-            {annotationUuid && (
-              <Button
-                type="button"
-                loading={deleteAnnotation.isPending}
-                variant="outlineDestructive"
-                onClick={() => {
-                  deleteAnnotation
-                    .mutateAsync({
-                      projectUuid,
-                      annotationUuid,
-                    })
-                    .catch(() => toast.error("Failed to delete annotation"));
-                  toast.success("Annotation deleted");
-                }}
-              >
-                <Trash className="size-4" />
-                {deleteAnnotation.isPending
-                  ? "Removing..."
-                  : "Remove Annotation"}
-              </Button>
-            )}
-          </div>
-
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="flex-1 min-h-0 h-full overflow-hidden"
+          <ResizablePanel
+            defaultSize={65}
+            minSize={40}
+            className="overflow-hidden"
           >
-            <ResizablePanel
-              defaultSize={65}
-              minSize={40}
-              className="overflow-hidden"
-            >
-              <div className="h-full overflow-y-auto">
-                <LilypadPanel spanUuid={span.uuid} showMetrics={false} />
-              </div>
-            </ResizablePanel>
+            <div className="h-full overflow-y-auto">
+              <LilypadPanel spanUuid={span.uuid} showMetrics={false} />
+            </div>
+          </ResizablePanel>
 
-            <ResizableHandle withHandle className="m-4" />
+          <ResizableHandle withHandle className="m-4" />
 
-            <ResizablePanel
-              defaultSize={35}
-              minSize={25}
-              className="flex flex-col overflow-hidden h-full gap-4"
-            >
-              <div className="shrink-0">
-                <SpanMetrics span={span} />
-              </div>
-              <div className="flex-1 min-h-0">
-                <Suspense fallback={<CardSkeleton items={1} />}>
-                  <SpanComments
-                    projectUuid={projectUuid}
-                    spanUuid={span.uuid}
-                    activeAnnotation={activeAnnotation}
-                    path={Route.fullPath}
-                  />
-                </Suspense>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+          <ResizablePanel
+            defaultSize={35}
+            minSize={25}
+            className="flex flex-col overflow-hidden w-full h-full gap-4"
+          >
+            <div className="shrink-0">
+              <SpanMetrics span={span} />
+            </div>
+            <div className="flex-1 min-h-0">
+              <Suspense fallback={<CardSkeleton items={1} />}>
+                <SpanComments
+                  projectUuid={projectUuid}
+                  spanUuid={span.uuid}
+                  activeAnnotation={activeAnnotation}
+                />
+              </Suspense>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 };
 
@@ -203,6 +203,7 @@ const AnnotationList = ({
   } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
 
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
+  const deleteAnnotation = useDeleteAnnotationMutation();
   const { data: functions } = useSuspenseQuery(
     functionsQueryOptions(projectUuid)
   );
@@ -253,7 +254,7 @@ const AnnotationList = ({
             <div
               key={annotation.uuid}
               className={cn(
-                "flex items-center py-2 px-1 rounded-md transition-colors hover:bg-accent/50 cursor-pointer",
+                "flex items-center py-2 px-1 rounded-md transition-colors hover:bg-accent/50 cursor-pointer relative group",
                 annotationUuid === annotation.uuid && "bg-accent font-medium"
               )}
               onClick={() => {
@@ -272,7 +273,7 @@ const AnnotationList = ({
               }}
             >
               <div className="flex flex-col min-w-0 w-full">
-                <div className="flex items-center gap-2 w-full">
+                <div className="flex items-center gap-2 w-full pr-8">
                   <span className="truncate font-medium max-w-full">
                     {annotation.span.display_name}
                   </span>
@@ -294,6 +295,26 @@ const AnnotationList = ({
                   )}
                 </div>
               </div>
+              <Button
+                type="button"
+                variant="outlineDestructive"
+                size="icon"
+                className="size-7 absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteAnnotation
+                    .mutateAsync({
+                      projectUuid: annotation.project_uuid,
+                      annotationUuid: annotation.uuid,
+                    })
+                    .catch(() =>
+                      toast.error("Failed to remove annotation from queue")
+                    );
+                  toast.success("Annotation removed from queue.");
+                }}
+              >
+                <Trash className="size-4" />
+              </Button>
             </div>
           );
         })}

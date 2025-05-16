@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 
 export interface SearchParams {
-  query_string: string;
+  query_string?: string;
   time_range_start?: number;
   time_range_end?: number;
   limit?: number;
@@ -14,16 +14,17 @@ export interface SearchParams {
 export const useSearch = (projectUuid: string) => {
   // State for search parameters
   const [searchParams, setSearchParams] = useState<SearchParams>({
-    query_string: "",
+    query_string: undefined,
     limit: 100,
+    time_range_start: undefined,
+    time_range_end: undefined,
   });
-
   const queryResult = useQuery(
     spansSearchQueryOptions(projectUuid, searchParams)
   );
 
   // Helper functions
-  const search = useCallback((query: string) => {
+  const search = useCallback((query?: string) => {
     setSearchParams((prev) => ({ ...prev, query_string: query }));
   }, []);
 
@@ -33,7 +34,7 @@ export const useSearch = (projectUuid: string) => {
 
   const resetSearch = useCallback(() => {
     setSearchParams({
-      query_string: "",
+      query_string: undefined,
       limit: 100,
     });
   }, []);

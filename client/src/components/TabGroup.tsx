@@ -128,7 +128,7 @@ export const TabGroup = ({
             {/* Scrollable Tabs Container */}
             <div
               ref={tabsListRef}
-              className="overflow-x-auto scrollbar-hide relative h-8"
+              className="overflow-x-auto overflow-y-hidden no-scrollbar relative h-8"
               onScroll={handleScroll}
             >
               <TabsList className="h-8 flex gap-x-2 bg-transparent p-0">
@@ -136,7 +136,7 @@ export const TabGroup = ({
                   .filter((tab) => tab.component)
                   .map((tab) => (
                     <TabsTrigger
-                      className="relative"
+                      className="relative data-[state=active]:bg-primary dark:data-[state=active]:bg-primary/60"
                       key={tab.value}
                       value={tab.value}
                       disabled={tab.isDisabled}

@@ -1,4 +1,17 @@
-# Lilypad
+<p align="center">
+    <a href="https://mirascope.com/#lilypad">
+        <img src="https://github.com/user-attachments/assets/b3ccb489-792d-4f13-8184-1eeae94e3451" />
+    </a>
+</p>
+
+
+<p align="center">
+    <a href="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml" target="_blank"><img src="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests"/></a>
+    <a href="https://mirascope.com/docs/lilypad" target="_blank"><img src="https://img.shields.io/badge/docs-available-brightgreen" alt="Docs"/></a>
+    <a href="https://github.com/Mirascope/lilypad/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/Mirascope/lilypad.svg" alt="Stars"/></a>
+</p>
+
+---
 
 An open-source LLM engineering platform built on these principles:
 

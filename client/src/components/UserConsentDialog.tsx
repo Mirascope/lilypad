@@ -35,6 +35,7 @@ export const UserConsentDialog = ({
             href="https://mirascope.com/terms/service"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-primary text-base no-underline hover:underline"
           >
             Terms of Service
           </a>{" "}
@@ -43,6 +44,7 @@ export const UserConsentDialog = ({
             href="https://mirascope.com/privacy"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-primary text-base no-underline hover:underline"
           >
             Privacy Policy
           </a>

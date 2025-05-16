@@ -87,7 +87,6 @@ const Trace = () => {
     dataUpdatedAt,
     refetch,
   } = useInfiniteTraces(projectUuid, pageSize, order);
-
   useEffect(() => {
     if (traceUuid) {
       const trace = defaultData.find((row) => row.uuid === traceUuid);
@@ -192,24 +191,23 @@ const Trace = () => {
           <div className="shrink-0 py-4">
             <SearchBar projectUuid={projectUuid} onDataChange={setSearchData} />
           </div>
-          <div className="flex-1 min-h-0 overflow-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <LilypadLoading />
-              </div>
-            ) : (
-              <TracesTable
-                data={searchData ?? defaultData}
-                traceUuid={traceUuid}
-                isSearch={Boolean(searchData)}
-                fetchNextPage={handleReachEnd}
-                isFetchingNextPage={isFetchingNextPage}
-                projectUuid={projectUuid}
-                order={order}
-                onOrderChange={setOrder}
-              />
-            )}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <LilypadLoading />
+            </div>
+          ) : (
+            <TracesTable
+              className="flex-1 min-h-0 overflow-hidden"
+              data={searchData ?? defaultData}
+              traceUuid={traceUuid}
+              isSearch={Boolean(searchData)}
+              fetchNextPage={handleReachEnd}
+              isFetchingNextPage={isFetchingNextPage}
+              projectUuid={projectUuid}
+              order={order}
+              onOrderChange={setOrder}
+            />
+          )}
         </div>
       </div>
     </>

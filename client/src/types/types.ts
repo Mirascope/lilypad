@@ -946,8 +946,11 @@ export interface SpanMoreDetails {
    * @format uuid
    */
   uuid: string;
-  /** Project Uuid */
-  project_uuid?: string | null;
+  /**
+   * Project Uuid
+   * @format uuid
+   */
+  project_uuid: string;
   /** Function Uuid */
   function_uuid?: string | null;
   /** Display Name */
@@ -1066,6 +1069,19 @@ export interface SpanUpdate {
   tags_by_uuid?: string[] | null;
   /** Tags By Name */
   tags_by_name?: string[] | null;
+}
+
+/**
+ * StripeWebhookResponse
+ * Response schema for Stripe webhook events.
+ */
+export interface StripeWebhookResponse {
+  /** Status */
+  status: "success" | "error" | "ignored";
+  /** Event */
+  event?: string | null;
+  /** Message */
+  message?: string | null;
 }
 
 /**
