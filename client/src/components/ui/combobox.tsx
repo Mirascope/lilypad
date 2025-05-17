@@ -8,11 +8,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CheckIcon } from "@radix-ui/react-icons";
 import { Emoji } from "frimousse";
@@ -163,13 +159,13 @@ export function Combobox({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className='flex flex-col gap-2'>
       <Popover open={disabled ? false : isOpen} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           {customTrigger ?? (
             <Button
-              variant="outline"
-              role="combobox"
+              variant='outline'
+              role='combobox'
               aria-expanded={isOpen}
               disabled={disabled}
               className={cn(
@@ -182,8 +178,8 @@ export function Combobox({
           )}
         </PopoverTrigger>
         <PopoverContent
-          className="p-0 w-(--radix-popover-trigger-width) min-w-[200px]"
-          align="start"
+          className='p-0 w-(--radix-popover-trigger-width) min-w-[200px]'
+          align='start'
           sideOffset={4}
         >
           <Command>
@@ -191,16 +187,16 @@ export function Combobox({
               placeholder={helperText}
               value={inputValue}
               onValueChange={setInputValue}
-              className="h-9"
+              className='h-9'
               {...(withEmoji && {
                 customContent: (
                   <Popover open={emojiIsOpen} onOpenChange={setEmojiIsOpen}>
                     <PopoverTrigger asChild>
-                      <SmileIcon className="cursor-pointer h-4 w-4 opacity-70 hover:opacity-100" />
+                      <SmileIcon className='cursor-pointer h-4 w-4 opacity-70 hover:opacity-100' />
                     </PopoverTrigger>
-                    <PopoverContent className="w-fit p-0">
+                    <PopoverContent className='w-fit p-0'>
                       <EmojiPicker
-                        className="h-[342px]"
+                        className='h-[342px]'
                         onEmojiSelect={(emojiData) => {
                           handleEmojiSelect(emojiData);
                           setEmojiIsOpen(false);
@@ -227,7 +223,7 @@ export function Combobox({
                         value={item.value}
                         onSelect={handleSelect}
                       >
-                        <CheckIcon className="mr-2 h-4 w-4 opacity-100" />
+                        <CheckIcon className='mr-2 h-4 w-4 opacity-100' />
                         {item.label}
                       </CommandItem>
                     ))}
@@ -258,8 +254,8 @@ export function Combobox({
                               ? "opacity-100"
                               : "opacity-0"
                             : value === item.value
-                              ? "opacity-100"
-                              : "opacity-0"
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       {item.label}
@@ -280,8 +276,8 @@ export function Combobox({
                               ? "opacity-100"
                               : "opacity-0"
                             : value === inputValue
-                              ? "opacity-100"
-                              : "opacity-0"
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       Add &quot;{inputValue}&quot;

@@ -9,7 +9,7 @@ import ReactDOM from "react-dom/client";
 // Import the generated route tree
 import { AuthProvider, useAuth } from "@/auth";
 import { FontProvider } from "@/components/FontProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({

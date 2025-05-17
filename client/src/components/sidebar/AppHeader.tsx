@@ -1,4 +1,4 @@
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import { Badge } from "@/components/ui/badge";
 import {
   SidebarMenu,
@@ -38,8 +38,8 @@ export const AppHeader = ({ to, activeProject }: AppHeaderProps) => {
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           onClick={handleProjectClick}
         >
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
-            <LilypadIcon className="size-10" />
+          <div className="flex aspect-square items-center justify-center rounded-lg text-sidebar-primary-foreground">
+            <LilypadLogo size={34} />
           </div>
           <Typography variant="h4" className="flex items-center gap-2 flex-1">
             <span className="truncate text-primary fun">Lilypad</span>
