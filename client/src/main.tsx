@@ -8,6 +8,7 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 // Import the generated route tree
 import { AuthProvider, useAuth } from "@/auth";
+import { FontProvider } from "@/components/FontProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { routeTree } from "./routeTree.gen";
 
@@ -92,15 +93,17 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
 
   const appContent = (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider delayDuration={200}>
-            <InnerApp />
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <FontProvider defaultFont="professional" storageKey="font">
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <InnerApp />
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </FontProvider>
   );
   root.render(
     <StrictMode>
