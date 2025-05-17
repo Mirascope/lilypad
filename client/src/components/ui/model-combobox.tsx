@@ -14,11 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,7 +36,7 @@ type ModelComboboxProps<T extends FieldValues, TName extends FieldPath<T>> = {
 
 export const ModelCombobox = <
   T extends FieldValues,
-  TName extends FieldPath<T>,
+  TName extends FieldPath<T>
 >({
   control,
   name,
@@ -77,9 +73,9 @@ export const ModelCombobox = <
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
-                    variant="outline"
-                    type="button"
-                    className="w-full flex justify-between items-center px-3 py-2 border rounded-md"
+                    variant='outline'
+                    type='button'
+                    className='w-full flex justify-between items-center px-3 py-2 border rounded-md'
                     disabled={isDisabled}
                     onClick={() => setOpen(!open)}
                   >
@@ -87,13 +83,13 @@ export const ModelCombobox = <
                       ? options.find((opt) => opt.value === field.value)
                           ?.label || field.value
                       : "Select an option"}
-                    <ChevronsUpDown className="h-4 w-4" />
+                    <ChevronsUpDown className='h-4 w-4' />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
+                <PopoverContent className='w-full p-0'>
                   <Command>
                     <CommandInput
-                      placeholder="Type or select an option..."
+                      placeholder='Type or select an option...'
                       value={inputValue}
                       disabled={isDisabled}
                       onValueChange={(value) => {

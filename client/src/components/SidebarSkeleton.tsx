@@ -1,4 +1,4 @@
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +19,7 @@ const SidebarSkeleton = () => {
       <SidebarHeader>
         <SidebarHeader>
           <SidebarMenuButton>
-            <LilypadIcon /> Lilypad
+            <LilypadLogo /> Lilypad
           </SidebarMenuButton>
         </SidebarHeader>
       </SidebarHeader>

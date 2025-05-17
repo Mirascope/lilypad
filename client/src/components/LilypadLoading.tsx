@@ -1,4 +1,4 @@
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import React from "react";
 import { cn } from "../lib/utils";
 
@@ -37,7 +37,7 @@ export const LilypadLoading: React.FC<LilypadLoadingProps> = ({
             iconClassName
           )}
         >
-          <LilypadIcon width={`${size}`} height={`${size}`} />
+          <LilypadLogo width={`${size}`} height={`${size}`} />
         </div>
       </div>
     </div>

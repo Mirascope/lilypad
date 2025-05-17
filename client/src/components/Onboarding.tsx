@@ -1,7 +1,7 @@
 import { CopyKeyContent } from "@/components/apiKeys/CreateAPIKeyDialog";
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { FontToggle } from "@/components/FontToggle";
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import { NotFound } from "@/components/NotFound";
 import { defineStepper } from "@/components/stepper";
 import { TabGroup } from "@/components/TabGroup";
@@ -60,7 +60,7 @@ const StepperPanel = ({
       className={cn(`w-full h-full flex-1 flex flex-col p-4`, className)}
     >
       <Typography variant="h3" className="flex gap-1 items-center shrink-0">
-        <LilypadIcon size={64} />
+        <LilypadLogo size={64} />
         {title}
       </Typography>
       {description && (

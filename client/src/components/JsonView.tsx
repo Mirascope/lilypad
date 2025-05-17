@@ -1,4 +1,4 @@
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/components/theme-provider";
 import ReactJsonView, { JsonViewProps } from "@uiw/react-json-view";
 import { vscodeTheme } from "@uiw/react-json-view/vscode";
 

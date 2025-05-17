@@ -1,6 +1,6 @@
 import { FontToggle } from "@/components/FontToggle";
 import LilypadDialog from "@/components/LilypadDialog";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/mode-toggle";
 import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";

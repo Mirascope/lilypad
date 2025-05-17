@@ -254,9 +254,14 @@ export const AppSidebar = () => {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg">
+                <SidebarMenuButton
+                  size="lg"
+                  tooltip="Projects" // Add tooltip for collapsed state
+                >
                   <ScrollText />
-                  {activeProject ? activeProject.name : "Select Project"}
+                  <span>
+                    {activeProject ? activeProject.name : "Select Project"}
+                  </span>
                   <ChevronDown className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
