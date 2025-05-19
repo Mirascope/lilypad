@@ -191,12 +191,10 @@ export const LilypadPanelTab = ({
       component: span.output ? renderOutput(span.output) : null,
     },
     {
-      label: "Prompt Template",
-      value: TraceTab.PROMPT_TEMPLATE,
-      component: span.template ? (
-        <div className="p-2 whitespace-pre-wrap text-sm professional">
-          {span.template}
-        </div>
+      label: "Response Model",
+      value: TraceTab.RESPONSE,
+      component: span.response_model ? (
+        <JsonView shortenTextAfterLength={100} value={span.response_model} />
       ) : null,
     },
     {
@@ -206,6 +204,22 @@ export const LilypadPanelTab = ({
         span.messages.length > 0 ? (
           <MessagesContainer messages={span.messages} />
         ) : null,
+    },
+    {
+      label: "Response",
+      value: TraceTab.CONTENT,
+      component: span.response ? (
+        <JsonView shortenTextAfterLength={100} value={span.response} />
+      ) : null,
+    },
+    {
+      label: "Prompt Template",
+      value: TraceTab.PROMPT_TEMPLATE,
+      component: span.template ? (
+        <div className="p-2 whitespace-pre-wrap text-sm professional">
+          {span.template}
+        </div>
+      ) : null,
     },
     {
       label: "Events",
@@ -332,7 +346,7 @@ export const renderOutput = (output: string) => {
       {typeof jsonOutput === "object" ? (
         <JsonView shortenTextAfterLength={100} value={jsonOutput} />
       ) : (
-        <ReactMarkdown>{output}</ReactMarkdown>
+        <ReactMarkdown className="p-2 professional">{output}</ReactMarkdown>
       )}
     </>
   );

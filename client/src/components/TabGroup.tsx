@@ -32,22 +32,24 @@ export const TabGroup = ({
   const tabsListRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
-
   // Update internal state when initialTab prop changes
   useEffect(() => {
     if (initialTab !== undefined) {
       setTab(initialTab);
-    } else if (!tab) {
-      // If no tab is selected yet and no initialTab provided, set to first eligible
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    // If no tab is selected yet and no initialTab provided, set to first eligible
+    const findTab = tabs.find((tab) => tab.value === initialTab);
+    if (!findTab) {
       const firstEligibleTabValue = findFirstEligibleTab();
       setTab(firstEligibleTabValue);
-      // Notify parent about the initial tab selection
       if (firstEligibleTabValue && handleTabChange) {
         handleTabChange(firstEligibleTabValue);
       }
     }
-  }, [initialTab, tabs]);
-
+  }, [tabs]);
   // Check if scrolling is needed and update arrow visibility
   useEffect(() => {
     const checkScroll = () => {
