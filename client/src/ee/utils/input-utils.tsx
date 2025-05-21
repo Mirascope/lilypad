@@ -330,7 +330,7 @@ export const BytesInput = <
 
             {inputMode === "text" ? (
               <textarea
-                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Enter base64 encoded bytes"
                 value={field.value || ""}
                 onChange={(e) => handleTextInput(e, field.onChange)}
@@ -374,7 +374,7 @@ export const BytesInput = <
                   accept="*/*"
                 />
                 <div
-                  className="hover:border-primary flex w-full cursor-pointer items-center justify-center rounded-md border-2 border-dashed p-6"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-md border-2 border-dashed p-6 hover:border-primary"
                   onClick={triggerFileSelect}
                 >
                   <div className="flex flex-col items-center">

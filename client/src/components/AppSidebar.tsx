@@ -69,7 +69,7 @@ const RecursiveMenuContent = ({
         <SidebarMenuButton className={`m-0 px-4 ${depth > 0 ? "ml-6" : ""}`} asChild size="lg">
           <Link
             to={item.url}
-            className="[&.active]:text-accent-foreground [&.active]:bg-accent flex w-full items-center gap-2 [&.active]:font-extrabold"
+            className="flex w-full items-center gap-2 [&.active]:bg-accent [&.active]:font-extrabold [&.active]:text-accent-foreground"
           >
             {item.icon && <item.icon className="h-4 w-4" />}
             <span>{item.title}</span>
@@ -287,7 +287,7 @@ export const AppSidebar = () => {
                 <Link
                   to={"/settings/$"}
                   params={{ _splat: "overview" }}
-                  className="[&.active]:text-accent-foreground [&.active]:bg-accent flex w-full items-center gap-2 [&.active]:font-extrabold"
+                  className="flex w-full items-center gap-2 [&.active]:bg-accent [&.active]:font-extrabold [&.active]:text-accent-foreground"
                 >
                   <Settings className="h-4 w-4" />
                   <span>{"Settings"}</span>

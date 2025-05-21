@@ -33,7 +33,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       content: (
         <>
           <div className="font-bold">${span.cost?.toFixed(5)}</div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             <span>{span.input_tokens}</span>
             <span className="mx-1">&#8594;</span>
             <span>{span.output_tokens}</span>
@@ -59,7 +59,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       content: (
         <>
           <div className="font-bold">{span.provider}</div>
-          {span.model && <p className="text-muted-foreground text-xs">{span.model}</p>}
+          {span.model && <p className="text-xs text-muted-foreground">{span.model}</p>}
         </>
       ),
     },

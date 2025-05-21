@@ -17,7 +17,7 @@ export function ForbiddenBoundary() {
         <Link
           to="/settings/$"
           params={{ _splat: "overview" }}
-          className={`bg-primary dark:bg-primary rounded px-2 py-1 font-extrabold text-white uppercase`}
+          className={`rounded bg-primary px-2 py-1 font-extrabold text-white uppercase dark:bg-primary`}
         >
           Upgrade
         </Link>

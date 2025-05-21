@@ -12,7 +12,7 @@ export const ComparePanel = ({ rows }: ComparePanelProps) => {
   const [tab, setTab] = useState<string | undefined>(undefined);
   if (rows.length !== 2) {
     return (
-      <div className="text-muted-foreground p-6 italic">Select exactly two rows to compare.</div>
+      <div className="p-6 text-muted-foreground italic">Select exactly two rows to compare.</div>
     );
   }
   return (

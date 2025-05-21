@@ -39,11 +39,11 @@ export const HomeSettings = () => {
           <UneditableInput label="Email" value={user.email} />
         </div>
         <div className="my-2 flex flex-col">
-          <label className="text-muted-foreground text-sm font-medium">Theme</label>
+          <label className="text-sm font-medium text-muted-foreground">Theme</label>
           <ModeToggle />
         </div>
         <div className="my-2 flex flex-col">
-          <label className="text-muted-foreground text-sm font-medium">Font</label>
+          <label className="text-sm font-medium text-muted-foreground">Font</label>
           <FontToggle />
         </div>
       </div>
@@ -123,8 +123,8 @@ const ChangePlan = () => {
 const UneditableInput = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="space-y-2">
-      <label className="text-muted-foreground text-sm font-medium">{label}</label>
-      <div className="bg-muted text-muted-foreground rounded-md p-2">{value}</div>
+      <label className="text-sm font-medium text-muted-foreground">{label}</label>
+      <div className="rounded-md bg-muted p-2 text-muted-foreground">{value}</div>
     </div>
   );
 };

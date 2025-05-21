@@ -123,7 +123,7 @@ const LilypadWelcome = () => {
     <StepperPanel
       title={
         <span>
-          Welcome to <span className="text-primary fun">Lilypad</span>
+          Welcome to <span className="fun text-primary">Lilypad</span>
         </span>
       }
       className="welcome-panel flex flex-col gap-4"

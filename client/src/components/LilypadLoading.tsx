@@ -30,7 +30,7 @@ export const LilypadLoading: React.FC<LilypadLoadingProps> = ({
         className={cn("flex items-center justify-center", className)}
         style={{ width: size, height: size }}
       >
-        <div className={cn("text-primary transform-gpu", animationClasses, iconClassName)}>
+        <div className={cn("transform-gpu text-primary", animationClasses, iconClassName)}>
           <LilypadLogo width={`${size}`} height={`${size}`} />
         </div>
       </div>

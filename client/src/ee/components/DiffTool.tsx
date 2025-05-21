@@ -2,6 +2,7 @@ import { CodeBlock } from "@/components/code-block";
 import { Button } from "@/components/ui/button";
 import { diffArrays } from "diff";
 import { useState } from "react";
+import { BuiltinLanguage, BundledLanguage } from "shiki";
 
 const PLACEHOLDER = Symbol("placeholder");
 
@@ -76,21 +77,65 @@ const processDiffData = (diffedLines: DiffPart[]): ProcessedDiffBlock[] => {
   return result;
 };
 
+const getCommentSyntax = (lang: BuiltinLanguage, type: "add" | "remove" | "highlight"): string => {
+  // Different comment syntaxes for different languages
+  let commentSyntax: string;
+  if (type === "add") {
+    commentSyntax = "[!code ++]";
+  } else if (type === "remove") {
+    commentSyntax = "[!code --]";
+  } else {
+    commentSyntax = "[!code highlight]";
+  }
+  switch (lang.toLowerCase()) {
+    case "html":
+    case "xml":
+    case "svg":
+    case "markdown":
+    case "md":
+      return `<!-- ${commentSyntax} -->`;
+    case "css":
+    case "scss":
+    case "less":
+      return `/* ${commentSyntax} */`;
+    case "python":
+    case "ruby":
+    case "shell":
+    case "bash":
+    case "sh":
+    case "yaml":
+    case "yml":
+      return `# ${commentSyntax}`;
+    case "sql":
+      return `--  ${commentSyntax}`;
+    default:
+      // Default to C-style comments (JavaScript, TypeScript, Java, C, C++, etc.)
+      return `// ${commentSyntax}`;
+  }
+};
+
 /**
  * Add line highlighting using Shiki's [!code highlight] comments
  */
-const addHighlightComments = (lines: string[], lineHighlights: Record<number, string>): string => {
+const addHighlightComments = (
+  lines: string[],
+  lineHighlights: Record<number, string>,
+  language: BuiltinLanguage
+): string => {
+  const addCommentSyntax = getCommentSyntax(language, "add");
+  const removeCommentSyntax = getCommentSyntax(language, "remove");
+  const highlightCommentSyntax = getCommentSyntax(language, "highlight");
   return lines
     .map((line, index) => {
       // Line numbers are 1-based
       const lineNumber = index + 1;
       if (lineHighlights[lineNumber]) {
-        if (lineHighlights[lineNumber] === "added") {
-          return `${line} // [!code ++]`;
-        } else if (lineHighlights[lineNumber] === "removed") {
-          return `${line} // [!code --]`;
+        if (lineHighlights[lineNumber] === "add") {
+          return `${line} ${addCommentSyntax}`;
+        } else if (lineHighlights[lineNumber] === "remove") {
+          return `${line} ${removeCommentSyntax}`;
         } else {
-          return `${line} // [!code highlight]`;
+          return `${line} ${highlightCommentSyntax}`;
         }
       }
       return line;
@@ -100,7 +145,7 @@ const addHighlightComments = (lines: string[], lineHighlights: Record<number, st
 
 interface CodeBlockWithLineNumbersSideBySideProps {
   diffedLines: DiffPart[];
-  language?: string;
+  language?: BundledLanguage;
 }
 
 const CodeBlockWithLineNumbersSideBySide = ({
@@ -121,8 +166,6 @@ const CodeBlockWithLineNumbersSideBySide = ({
         if (line !== PLACEHOLDER) {
           lineNumber++;
           codeLines.push(typeof line === "symbol" ? "" : line);
-
-          // Apply highlighting based on diff type
           if (
             (block.type === "modified" &&
               ((side === "before" && !block.oldValue.every((v) => v === PLACEHOLDER)) ||
@@ -130,7 +173,11 @@ const CodeBlockWithLineNumbersSideBySide = ({
             (block.type === "added" && side === "after") ||
             (block.type === "removed" && side === "before")
           ) {
-            lineHighlights[lineNumber] = "highlight";
+            if (side === "before") {
+              lineHighlights[lineNumber] = "remove";
+            } else if (side === "after") {
+              lineHighlights[lineNumber] = "add";
+            }
           }
         } else {
           // Empty placeholder line
@@ -140,15 +187,11 @@ const CodeBlockWithLineNumbersSideBySide = ({
     });
 
     // Add the highlight comments and generate the final code string
-    const highlightedCode = addHighlightComments(codeLines, lineHighlights);
+    const highlightedCode = addHighlightComments(codeLines, lineHighlights, language);
 
     return (
       <div className="w-full flex-1 overflow-x-auto">
-        <CodeBlock
-          code={highlightedCode}
-          language={language}
-          className={`border-0 ${side === "before" ? "highlight-removed" : "highlight-added"}`}
-        />
+        <CodeBlock code={highlightedCode} language={language} />
       </div>
     );
   };
@@ -166,48 +209,85 @@ const CodeBlockWithLineNumbersSideBySide = ({
 
 interface CodeBlockWithLineNumbersAndHighlightsProps {
   diffedLines: DiffPart[];
-  language?: string;
+  language?: BundledLanguage;
 }
 
+interface LineNumberMapping {
+  old: number | null;
+  new: number | null;
+}
+
+interface DiffPart {
+  value: string[];
+  removed?: boolean;
+  added?: boolean;
+}
+
+interface CodeBlockWithLineNumbersAndHighlightsProps {
+  diffedLines: DiffPart[];
+  language?: BuiltinLanguage;
+}
+
+const processUnifiedDiffWithDualLineNumbers = (diffedLines: DiffPart[]) => {
+  const codeLines: string[] = [];
+  const lineHighlights: Record<number, string> = {};
+  let oldLineNumber = 0;
+  let newLineNumber = 0;
+  const lineNumberMapping: LineNumberMapping[] = [];
+
+  // First, flatten all diffedLines to handle hunks correctly
+  const allLines: { text: string; removed?: boolean; added?: boolean }[] = [];
+
+  diffedLines.forEach((part) => {
+    part.value.forEach((line) => {
+      allLines.push({
+        text: line,
+        removed: part.removed,
+        added: part.added,
+      });
+    });
+  });
+
+  // Process each line
+  allLines.forEach((line, index) => {
+    // Add the line to the code display
+    codeLines.push(line.text);
+
+    // Update line numbers and mapping
+    if (line.removed) {
+      oldLineNumber++;
+      lineNumberMapping.push({ old: oldLineNumber, new: null });
+      lineHighlights[index + 1] = "remove";
+    } else if (line.added) {
+      newLineNumber++;
+      lineNumberMapping.push({ old: null, new: newLineNumber });
+      lineHighlights[index + 1] = "add";
+    } else {
+      // Unchanged lines
+      oldLineNumber++;
+      newLineNumber++;
+      lineNumberMapping.push({ old: oldLineNumber, new: newLineNumber });
+    }
+  });
+
+  return { codeLines, lineHighlights, lineNumberMapping };
+};
 const CodeBlockWithLineNumbersAndHighlights = ({
   diffedLines,
   language = "python",
 }: CodeBlockWithLineNumbersAndHighlightsProps) => {
   // Generate the unified code view
-  const codeLines: string[] = [];
-  const lineHighlights: Record<number, string> = {};
-  let currentLine = 0;
 
-  diffedLines.forEach((part) => {
-    const symbol = part.added ? "+" : part.removed ? "-" : " ";
-
-    part.value.forEach((line) => {
-      currentLine++;
-      codeLines.push(`${symbol} ${line}`);
-
-      if (part.added) {
-        lineHighlights[currentLine] = "added";
-      }
-      if (part.removed) {
-        lineHighlights[currentLine] = "removed";
-      }
-    });
-  });
-
+  const { codeLines, lineHighlights } = processUnifiedDiffWithDualLineNumbers(diffedLines);
   // Add the highlight comments and generate the final code string
-  const highlightedCode = addHighlightComments(codeLines, lineHighlights);
-
-  return (
-    <div className="w-full overflow-hidden rounded-md border font-mono text-sm">
-      <CodeBlock code={highlightedCode} language={language} className="unified-diff border-0" />
-    </div>
-  );
+  const highlightedCode = addHighlightComments(codeLines, lineHighlights, language);
+  return <CodeBlock code={highlightedCode} language={language} className="unified-diff border-0" />;
 };
 
 interface DiffToolProps {
   incomingCodeBlock: string;
   baseCodeBlock: string;
-  language?: string;
+  language?: BundledLanguage;
 }
 
 export const DiffTool = ({
@@ -233,7 +313,7 @@ export const DiffTool = ({
       {diffed && (
         <div className="flex flex-col gap-2">
           <div className="shrink-0">
-            <div className="bg-muted inline-flex items-center rounded-lg p-1">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
                 variant={mode === "unified" ? "default" : "ghost"}
                 size="sm"

@@ -218,7 +218,7 @@ const AnnotationList = ({
             <div
               key={annotation.uuid}
               className={cn(
-                "hover:bg-accent/50 group relative flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors",
+                "group relative flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors hover:bg-accent/50",
                 annotationUuid === annotation.uuid && "bg-accent font-medium"
               )}
               onClick={() => {

@@ -16,7 +16,7 @@ function EmojiPicker({
   return (
     <EmojiPickerPrimitive.Root
       className={cn(
-        "bg-popover text-popover-foreground isolate flex h-full w-fit flex-col overflow-hidden rounded-md",
+        "isolate flex h-full w-fit flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
         className
       )}
       data-slot="emoji-picker"
@@ -36,7 +36,7 @@ function EmojiPickerSearch({
     >
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <EmojiPickerPrimitive.Search
-        className="placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
         data-slot="emoji-picker-search"
         {...props}
       />
@@ -57,7 +57,7 @@ function EmojiPickerEmoji({ emoji, className, ...props }: EmojiPickerListEmojiPr
     <button
       {...props}
       className={cn(
-        "data-active:bg-accent flex size-7 items-center justify-center rounded-sm text-base",
+        "flex size-7 items-center justify-center rounded-sm text-base data-active:bg-accent",
         className
       )}
       data-slot="emoji-picker-emoji"
@@ -71,7 +71,7 @@ function EmojiPickerCategoryHeader({ category, ...props }: EmojiPickerListCatego
   return (
     <div
       {...props}
-      className="bg-popover text-muted-foreground px-3 pt-3.5 pb-2 text-xs leading-none"
+      className="bg-popover px-3 pt-3.5 pb-2 text-xs leading-none text-muted-foreground"
       data-slot="emoji-picker-category-header"
     >
       {category.label}
@@ -90,13 +90,13 @@ function EmojiPickerContent({
       {...props}
     >
       <EmojiPickerPrimitive.Loading
-        className="text-muted-foreground absolute inset-0 flex items-center justify-center"
+        className="absolute inset-0 flex items-center justify-center text-muted-foreground"
         data-slot="emoji-picker-loading"
       >
         <LoaderIcon className="size-4 animate-spin" />
       </EmojiPickerPrimitive.Loading>
       <EmojiPickerPrimitive.Empty
-        className="text-muted-foreground absolute inset-0 flex items-center justify-center text-sm"
+        className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground"
         data-slot="emoji-picker-empty"
       >
         No emoji found.
@@ -131,10 +131,10 @@ function EmojiPickerFooter({ className, ...props }: React.ComponentProps<"div">)
               <div className="flex size-7 flex-none items-center justify-center text-lg">
                 {emoji.emoji}
               </div>
-              <span className="text-secondary-foreground truncate text-xs">{emoji.label}</span>
+              <span className="truncate text-xs text-secondary-foreground">{emoji.label}</span>
             </>
           ) : (
-            <span className="text-muted-foreground ml-1.5 flex h-7 items-center truncate text-xs">
+            <span className="ml-1.5 flex h-7 items-center truncate text-xs text-muted-foreground">
               Select an emoji…
             </span>
           )

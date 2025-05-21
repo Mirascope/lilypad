@@ -38,7 +38,7 @@ export const TraceTree = ({ span, projectUuid, currentSpanUuid, level }: SpanTre
     <div className="w-full">
       <div
         className={cn(
-          "hover:bg-accent/50 flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors",
+          "flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors hover:bg-accent/50",
           isCurrentSpan && "bg-accent font-medium"
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}

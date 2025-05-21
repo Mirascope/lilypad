@@ -34,12 +34,12 @@ export const AppHeader = ({ to, activeProject }: AppHeaderProps) => {
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           onClick={handleProjectClick}
         >
-          <div className="text-sidebar-primary-foreground flex aspect-square items-center justify-center rounded-lg">
+          <div className="flex aspect-square items-center justify-center rounded-lg text-sidebar-primary-foreground">
             <LilypadLogo size={34} />
           </div>
           <Typography variant="h4" className="flex flex-1 items-center gap-2">
-            <span className="text-primary fun truncate">Lilypad</span>
-            <Badge className="text-primary bg-yellow-400 hover:bg-yellow-500">Beta</Badge>
+            <span className="fun truncate text-primary">Lilypad</span>
+            <Badge className="bg-yellow-400 text-primary hover:bg-yellow-500">Beta</Badge>
           </Typography>
         </SidebarMenuButton>
       </SidebarMenuItem>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Font = "default" | "fun" | "professional";
+export type Font = "default" | "fun" | "professional";
 
 interface FontProviderProps {
   children: React.ReactNode;

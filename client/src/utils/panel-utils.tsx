@@ -103,7 +103,7 @@ export const SpanComments = ({
           <MessageSquareMore />
           <span>Discussion</span>
           {spanComments.length > 0 && (
-            <div className="bg-secondary text-primary-foreground absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
+            <div className="absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-xs font-medium text-primary-foreground">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
@@ -111,7 +111,7 @@ export const SpanComments = ({
       ),
       value: CommentTab.COMMENTS,
       component: (
-        <div className="bg-background text-card-foreground relative flex h-full flex-col rounded-lg shadow-sm">
+        <div className="relative flex h-full flex-col rounded-lg bg-background text-card-foreground shadow-sm">
           <div className="flex-1 overflow-auto px-4 pt-2">
             <CommentCards spanUuid={spanUuid} />
           </div>
@@ -128,7 +128,7 @@ export const SpanComments = ({
           <NotebookPen />
           <span>Annotations</span>
           {filteredAnnotations.length > 0 && (
-            <div className="bg-secondary text-primary-foreground absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
+            <div className="absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-xs font-medium text-primary-foreground">
               {filteredAnnotations.length > 9 ? "9+" : filteredAnnotations.length}
             </div>
           )}

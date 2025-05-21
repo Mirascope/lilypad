@@ -93,7 +93,7 @@ export const Editor = ({
   );
   return (
     <LexicalComposer key={template} initialConfig={config}>
-      <div className={`prose dark:prose-invert flex max-w-none flex-col rounded-lg border shadow`}>
+      <div className={`prose flex max-w-none flex-col rounded-lg border shadow dark:prose-invert`}>
         {!isDisabled && isLLM && <ToolbarPlugin />}
 
         <div className="relative">
@@ -110,7 +110,7 @@ export const Editor = ({
             placeholder={
               <p
                 className={cn(
-                  "text-muted-foreground pointer-events-none absolute top-0 w-full px-8",
+                  "pointer-events-none absolute top-0 w-full px-8 text-muted-foreground",
                   placeholderClassName
                 )}
               >

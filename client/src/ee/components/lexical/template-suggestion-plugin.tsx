@@ -178,7 +178,7 @@ export const TemplateSuggestionPlugin = ({
     }
     return anchorElementRef.current && options.length
       ? createPortal(
-          <div className="bg-background max-h-[320px] w-[180px] min-w-[90px] overflow-y-auto rounded-md border border-gray-100 shadow-lg">
+          <div className="max-h-[320px] w-[180px] min-w-[90px] overflow-y-auto rounded-md border border-gray-100 bg-background shadow-lg">
             <ul className="px-1.5">
               {options.map((option: CustomTypeaheadOption, index: number) => (
                 <SuggestionItem

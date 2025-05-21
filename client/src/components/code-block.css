@@ -1,3 +1,4 @@
+/* Base code styles */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
@@ -38,25 +39,66 @@ pre,
   min-height: 1.5em !important;
 }
 
-/* Line numbers */
+.has-diff {
+  /* Line numbers */
+  & .show-line-numbers .shiki .line::before {
+    content: counter(step);
+    counter-increment: step;
+    margin-right: 1rem;
+    display: inline-block;
+    text-align: right;
+    color: rgba(115, 138, 148, 0.4);
+  }
+}
 .show-line-numbers .shiki .line::before {
   content: counter(step);
   counter-increment: step;
-  width: 1rem;
   margin-right: 1rem;
   display: inline-block;
   text-align: right;
   color: rgba(115, 138, 148, 0.4);
 }
 
+.show-line-numbers .has-diff.shiki .line::before {
+  margin-right: 2rem;
+}
+
 /* Basic split view diff styles */
-.shiki .highlighted {
-  background-color: rgba(124, 58, 237, 0.108) !important;
+.shiki .line {
   padding-left: 1rem !important;
   display: inline-block !important;
   margin-left: -1rem !important;
   margin-right: -0.75rem !important;
   width: calc(100% + 1.75rem) !important; /* Full width + left margin + right margin */
+}
+
+.shiki .line.diff.add span:first-child::before,
+.shiki .line.diff.remove span:first-child::before {
+  margin-left: -1rem;
+  display: inline-flex;
+  width: 1rem;
+}
+
+.shiki .highlighted {
+  background-color: rgba(124, 58, 237, 0.108) !important;
+}
+.shiki .line.diff.add {
+  background-color: #409b4533 !important;
+}
+
+.shiki .line.diff.add span:first-child::before {
+  color: var(--color-primary) !important;
+  --shiki-dark: var(--color-primary) !important;
+  content: "+";
+}
+.shiki .line.diff.remove {
+  background-color: color-mix(in oklch, var(--color-destructive) 20%, transparent);
+}
+
+.shiki .line.diff.remove span:first-child::before {
+  color: var(--color-destructive) !important;
+  --shiki-dark: var(--color-destructive) !important;
+  content: "-";
 }
 
 html.dark .shiki .highlighted {

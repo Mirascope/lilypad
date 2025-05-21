@@ -129,7 +129,7 @@ const FunctionCard = ({
                 <Dialog>
                   <DialogTrigger asChild>
                     <DropdownMenuItem
-                      className="text-destructive hover:text-destructive focus:text-destructive flex items-center gap-2"
+                      className="flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive"
                       onSelect={(e) => e.preventDefault()}
                     >
                       <Trash className="h-4 w-4" />

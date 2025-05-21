@@ -306,7 +306,7 @@ export const CommentButton = ({ spanUuid }: { spanUuid: string }) => {
         >
           <MessageSquareMore />
           {spanComments.length > 0 && (
-            <div className="bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
+            <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}

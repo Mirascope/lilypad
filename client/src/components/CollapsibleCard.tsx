@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 export const CollapsibleChevronTrigger = () => {
   return (
     <CollapsibleTrigger className="transition-transform duration-200 data-[state=open]:rotate-90">
-      <ChevronRight className="text-primary hover:text-primary/80 h-5 w-5" />
+      <ChevronRight className="h-5 w-5 text-primary hover:text-primary/80" />
     </CollapsibleTrigger>
   );
 };

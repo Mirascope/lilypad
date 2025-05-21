@@ -99,7 +99,7 @@ export const SearchBar = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search spans..."
             disabled={isLoading}
-            className="focus-visible:ring-primary h-10 w-full pr-10 pl-10"
+            className="h-10 w-full pr-10 pl-10 focus-visible:ring-primary"
           />
           {searchQuery && (
             <Button
@@ -167,7 +167,7 @@ export const SearchBar = ({
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-primary hover:bg-primary/90 h-10 min-w-[100px] px-4 text-white"
+          className="h-10 min-w-[100px] bg-primary px-4 text-white hover:bg-primary/90"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">

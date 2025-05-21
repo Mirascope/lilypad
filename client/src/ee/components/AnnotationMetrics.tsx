@@ -118,7 +118,7 @@ const SuccessMetrics = ({
             <span>{successCount} pass</span>
           </div>
           <div className="flex items-center space-x-1">
-            <CircleX className="text-destructive h-4 w-4" />
+            <CircleX className="h-4 w-4 text-destructive" />
             <span>{totalCount - successCount} fail</span>
           </div>
           <div className="font-medium">

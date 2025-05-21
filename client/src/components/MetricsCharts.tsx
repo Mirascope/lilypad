@@ -25,7 +25,7 @@ export const MetricCharts = ({
   return (
     <div className="flex h-full flex-col space-y-2">
       <div className="shrink-0">
-        <div className="bg-muted inline-flex items-center rounded-lg p-1">
+        <div className="inline-flex items-center rounded-lg bg-muted p-1">
           <Button
             variant={timeFrame === TimeFrame.DAY ? "default" : "ghost"}
             size="sm"

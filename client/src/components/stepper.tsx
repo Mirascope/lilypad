@@ -257,7 +257,7 @@ const Description = ({
   return (
     <Comp
       date-component="stepper-step-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     >
       {children}

@@ -46,9 +46,9 @@ const DropdownMenuSubContent = React.forwardRef<
       // Positioning and dimensions
       "z-50 min-w-[8rem]",
       // Appearance
-      "bg-background text-primary overflow-hidden rounded-md border p-1 shadow-lg",
+      "overflow-hidden rounded-md border bg-background p-1 text-primary shadow-lg",
       // Animation states
-      "data-[state=open]:animate-in data-[state=closed]:animate-out",
+      "data-[state=closed]:animate-out data-[state=open]:animate-in",
       "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
       // Direction-based animations
@@ -76,9 +76,9 @@ const DropdownMenuContent = React.forwardRef<
         // Positioning and dimensions
         "z-50 min-w-[8rem]",
         // Appearance
-        "bg-background overflow-hidden rounded-md border p-1 shadow-md",
+        "overflow-hidden rounded-md border bg-background p-1 shadow-md",
         // Animation states
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:animate-out data-[state=open]:animate-in",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         // Direction-based animations
@@ -204,7 +204,7 @@ const DropdownMenuSeparator = React.forwardRef<
     ref={ref}
     className={cn(
       // Base styles
-      "bg-muted -mx-1 my-1 h-px",
+      "-mx-1 my-1 h-px bg-muted",
       // Custom classes
       className
     )}

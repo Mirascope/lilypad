@@ -104,14 +104,14 @@ export const TabGroup = ({
   if (tabs.length === 0) return null;
 
   return (
-    <div className={cn("bg-card flex h-full flex-col rounded-md border p-2 shadow-md", className)}>
+    <div className={cn("flex h-full flex-col rounded-md border bg-card p-2 shadow-md", className)}>
       <Tabs value={tab} onValueChange={onTabChange} className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col">
           <div className="relative mb-2">
             {/* Left Arrow Button */}
             <button
               onClick={scrollLeft}
-              className={`bg-background/60 absolute top-1/2 left-0 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-opacity duration-200 ${showLeftArrow ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              className={`absolute top-1/2 left-0 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-background/60 shadow-md backdrop-blur-sm transition-opacity duration-200 ${showLeftArrow ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
               aria-label="Scroll tabs left"
               aria-hidden={!showLeftArrow}
             >
@@ -121,15 +121,15 @@ export const TabGroup = ({
             {/* Scrollable Tabs Container */}
             <div
               ref={tabsListRef}
-              className="no-scrollbar relative h-8 overflow-x-auto overflow-y-hidden"
+              className="relative no-scrollbar h-8 overflow-x-auto overflow-y-hidden"
               onScroll={handleScroll}
             >
-              <TabsList className="default:font-fun flex h-8 gap-x-2 bg-transparent p-0">
+              <TabsList className="flex h-8 gap-x-2 bg-transparent p-0 default:font-fun">
                 {tabs
                   .filter((tab) => tab.component)
                   .map((tab) => (
                     <TabsTrigger
-                      className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary/60 relative"
+                      className="relative data-[state=active]:bg-primary dark:data-[state=active]:bg-primary/60"
                       key={tab.value}
                       value={tab.value}
                       disabled={tab.isDisabled}
@@ -144,7 +144,7 @@ export const TabGroup = ({
             <button
               onClick={scrollRight}
               className={cn(
-                `bg-background/60 absolute top-1/2 right-0 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-opacity duration-200`,
+                `absolute top-1/2 right-0 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-background/60 shadow-md backdrop-blur-sm transition-opacity duration-200`,
                 showRightArrow ? "opacity-100" : "pointer-events-none opacity-0"
               )}
               aria-label="Scroll tabs right"
@@ -154,7 +154,7 @@ export const TabGroup = ({
             </button>
           </div>
 
-          <div className="bg-background min-h-0 flex-1 rounded-md border-t">
+          <div className="min-h-0 flex-1 rounded-md border-t bg-background">
             {tabs.map((tab) => (
               <TabsContent
                 key={tab.value}

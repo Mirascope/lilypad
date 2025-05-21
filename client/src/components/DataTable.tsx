@@ -269,7 +269,7 @@ export const DataTable = <T extends { uuid: string }>({
         ref={(node) => virtualRow && rowVirtualizer.measureElement(node)}
         key={row.id}
         data-state={row.getIsSelected() && "selected"}
-        className={`hover:bg-accent w-full cursor-pointer ${
+        className={`w-full cursor-pointer hover:bg-accent ${
           detailRow?.uuid === row.original.uuid ? "bg-accent/50" : ""
         }`}
         style={{
@@ -346,7 +346,7 @@ export const DataTable = <T extends { uuid: string }>({
         >
           <ScrollBar orientation="horizontal" />
           <Table className="w-full">
-            <TableHeader className="bg-background sticky top-0 z-10">
+            <TableHeader className="sticky top-0 z-10 bg-background">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="w-full">
                   {headerGroup.headers.map((header) => (
