@@ -124,9 +124,9 @@ def convert_gemini_messages(
                 assistant_message.content.append(_TextPart(type="text", text=""))
             attribute_message = json.loads(attributes.get("message", "{}"))
             if content := attribute_message.get("content"):
-                for c in content:
-                    if c:
-                        assistant_message.content[index].text += c
+                for part in content:
+                    if part:
+                        assistant_message.content[index].text += part
             if tool_calls := attribute_message.get("tool_calls"):
                 for tool_call in tool_calls:
                     function: dict = tool_call.get("function", {})
