@@ -1,4 +1,4 @@
-import { CodeBlock } from "@/components/CodeBlock";
+import { CodeBlock } from "@/components/code-block";
 import { Button } from "@/components/ui/button";
 import { diffArrays } from "diff";
 import { useState } from "react";
@@ -30,11 +30,7 @@ const processDiffData = (diffedLines: DiffPart[]): ProcessedDiffBlock[] => {
   while (i < diffedLines.length) {
     const current = diffedLines[i];
 
-    if (
-      current.removed &&
-      i + 1 < diffedLines.length &&
-      diffedLines[i + 1].added
-    ) {
+    if (current.removed && i + 1 < diffedLines.length && diffedLines[i + 1].added) {
       // This is a modification (paired removal and addition)
       const oldValue = current.value;
       const newValue = diffedLines[i + 1].value;
@@ -42,12 +38,8 @@ const processDiffData = (diffedLines: DiffPart[]): ProcessedDiffBlock[] => {
 
       result.push({
         type: "modified",
-        oldValue: oldValue.concat(
-          Array(maxLength - oldValue.length).fill(PLACEHOLDER)
-        ),
-        newValue: newValue.concat(
-          Array(maxLength - newValue.length).fill(PLACEHOLDER)
-        ),
+        oldValue: oldValue.concat(Array(maxLength - oldValue.length).fill(PLACEHOLDER)),
+        newValue: newValue.concat(Array(maxLength - newValue.length).fill(PLACEHOLDER)),
       });
       i += 2; // Skip the next item as we've processed it
     } else if (current.removed) {
@@ -87,10 +79,7 @@ const processDiffData = (diffedLines: DiffPart[]): ProcessedDiffBlock[] => {
 /**
  * Add line highlighting using Shiki's [!code highlight] comments
  */
-const addHighlightComments = (
-  lines: string[],
-  lineHighlights: Record<number, string>
-): string => {
+const addHighlightComments = (lines: string[], lineHighlights: Record<number, string>): string => {
   return lines
     .map((line, index) => {
       // Line numbers are 1-based
@@ -136,10 +125,8 @@ const CodeBlockWithLineNumbersSideBySide = ({
           // Apply highlighting based on diff type
           if (
             (block.type === "modified" &&
-              ((side === "before" &&
-                !block.oldValue.every((v) => v === PLACEHOLDER)) ||
-                (side === "after" &&
-                  !block.newValue.every((v) => v === PLACEHOLDER)))) ||
+              ((side === "before" && !block.oldValue.every((v) => v === PLACEHOLDER)) ||
+                (side === "after" && !block.newValue.every((v) => v === PLACEHOLDER)))) ||
             (block.type === "added" && side === "after") ||
             (block.type === "removed" && side === "before")
           ) {
@@ -156,7 +143,7 @@ const CodeBlockWithLineNumbersSideBySide = ({
     const highlightedCode = addHighlightComments(codeLines, lineHighlights);
 
     return (
-      <div className="flex-1 w-full overflow-x-auto">
+      <div className="w-full flex-1 overflow-x-auto">
         <CodeBlock
           code={highlightedCode}
           language={language}
@@ -167,7 +154,7 @@ const CodeBlockWithLineNumbersSideBySide = ({
   };
 
   return (
-    <div className="font-mono text-sm border rounded-md overflow-hidden">
+    <div className="overflow-hidden rounded-md border font-mono text-sm">
       <div className="flex">
         {renderColumn("before")}
         <div className="w-px bg-gray-300"></div>
@@ -211,12 +198,8 @@ const CodeBlockWithLineNumbersAndHighlights = ({
   const highlightedCode = addHighlightComments(codeLines, lineHighlights);
 
   return (
-    <div className="w-full font-mono text-sm border rounded-md overflow-hidden">
-      <CodeBlock
-        code={highlightedCode}
-        language={language}
-        className="unified-diff border-0"
-      />
+    <div className="w-full overflow-hidden rounded-md border font-mono text-sm">
+      <CodeBlock code={highlightedCode} language={language} className="unified-diff border-0" />
     </div>
   );
 };
@@ -250,7 +233,7 @@ export const DiffTool = ({
       {diffed && (
         <div className="flex flex-col gap-2">
           <div className="shrink-0">
-            <div className="inline-flex items-center p-1 rounded-lg bg-muted">
+            <div className="bg-muted inline-flex items-center rounded-lg p-1">
               <Button
                 variant={mode === "unified" ? "default" : "ghost"}
                 size="sm"
@@ -269,17 +252,11 @@ export const DiffTool = ({
               </Button>
             </div>
           </div>
-          <div className="grow-1 w-full">
+          <div className="w-full grow-1">
             {mode === "unified" ? (
-              <CodeBlockWithLineNumbersAndHighlights
-                diffedLines={diffed}
-                language={language}
-              />
+              <CodeBlockWithLineNumbersAndHighlights diffedLines={diffed} language={language} />
             ) : (
-              <CodeBlockWithLineNumbersSideBySide
-                diffedLines={diffed}
-                language={language}
-              />
+              <CodeBlockWithLineNumbersSideBySide diffedLines={diffed} language={language} />
             )}
           </div>
         </div>

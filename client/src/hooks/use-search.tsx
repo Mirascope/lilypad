@@ -19,9 +19,7 @@ export const useSearch = (projectUuid: string) => {
     time_range_start: undefined,
     time_range_end: undefined,
   });
-  const queryResult = useQuery(
-    spansSearchQueryOptions(projectUuid, searchParams)
-  );
+  const queryResult = useQuery(spansSearchQueryOptions(projectUuid, searchParams));
 
   // Helper functions
   const search = useCallback((query?: string) => {

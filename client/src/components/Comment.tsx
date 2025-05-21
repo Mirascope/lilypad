@@ -5,12 +5,7 @@ import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { Editor } from "@/ee/components/Editor";
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
-import {
-  CommentCreate,
-  CommentPublic,
-  CommentUpdate,
-  UserPublic,
-} from "@/types/types";
+import { CommentCreate, CommentPublic, CommentUpdate, UserPublic } from "@/types/types";
 import {
   commentsBySpanQueryOptions,
   useCreateCommentMutation,
@@ -18,29 +13,18 @@ import {
   useUpdateCommentMutation,
 } from "@/utils/comments";
 import { formatRelativeTime } from "@/utils/strings";
-import {
-  userQueryOptions,
-  usersByOrganizationQueryOptions,
-} from "@/utils/users";
+import { userQueryOptions, usersByOrganizationQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CLEAR_EDITOR_COMMAND, LexicalEditor } from "lexical";
-import {
-  CheckIcon,
-  MessageSquareMore,
-  PencilIcon,
-  Trash,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, MessageSquareMore, PencilIcon, Trash, XIcon } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
 export const CommentCards = ({ spanUuid }: { spanUuid: string }) => {
-  const { data: spanComments } = useSuspenseQuery(
-    commentsBySpanQueryOptions(spanUuid)
-  );
+  const { data: spanComments } = useSuspenseQuery(commentsBySpanQueryOptions(spanUuid));
   return (
     <>
       {spanComments.map((comment) => (
@@ -139,7 +123,7 @@ const CommentCardContainer = ({ comment }: { comment: CommentPublic }) => {
           variant="ghost"
           size="sm"
           onClick={handleEdit}
-          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
         >
           <PencilIcon className="h-4 w-4" />
           <span className="sr-only">Edit comment</span>
@@ -161,11 +145,7 @@ interface CommentCardProps {
   renderControls?: () => ReactNode;
   renderEdit?: ReactNode;
 }
-export const CommentCard = ({
-  comment,
-  renderControls,
-  renderEdit,
-}: CommentCardProps) => {
+export const CommentCard = ({ comment, renderControls, renderEdit }: CommentCardProps) => {
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
 
   const userMap = users.reduce(
@@ -187,7 +167,7 @@ export const CommentCard = ({
         </Avatar> */}
         <div className="mb-2">
           <div className="flex items-center justify-between">
-            <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="font-medium">
                 {commentUser.first_name} {commentUser.last_name}
               </div>
@@ -223,7 +203,7 @@ const DeleteComment = ({ comment }: { comment: CommentPublic }) => {
         <Button
           variant="ghostDestructive"
           size="sm"
-          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
         >
           <Trash className="h-4 w-4" />
           <span className="sr-only">Delete comment</span>
@@ -235,11 +215,7 @@ const DeleteComment = ({ comment }: { comment: CommentPublic }) => {
       <div className="flex flex-col gap-4">
         <CommentCard comment={comment} />
         <DialogClose asChild>
-          <Button
-            variant="outlineDestructive"
-            size="sm"
-            onClick={handleDeleteComment}
-          >
+          <Button variant="outlineDestructive" size="sm" onClick={handleDeleteComment}>
             Delete
           </Button>
         </DialogClose>
@@ -286,7 +262,7 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
       <form
         id={`comment-form-${Math.random().toString(36).substring(7)}`}
         onSubmit={methods.handleSubmit(onSubmit)}
-        className="comment-form flex flex-col gap-2 mx-2"
+        className="comment-form mx-2 flex flex-col gap-2"
       >
         <Editor
           ref={commentRef}
@@ -304,7 +280,7 @@ export const AddComment = ({ spanUuid }: { spanUuid: string }) => {
 export const Comment = ({ spanUuid }: { spanUuid: string }) => {
   return (
     <>
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         <CommentCards spanUuid={spanUuid} />
       </div>
       <div className="mt-4 shrink-0">
@@ -318,21 +294,19 @@ export const Comment = ({ spanUuid }: { spanUuid: string }) => {
 };
 export const CommentButton = ({ spanUuid }: { spanUuid: string }) => {
   const [showComments, setShowComments] = useState(false);
-  const { data: spanComments } = useSuspenseQuery(
-    commentsBySpanQueryOptions(spanUuid)
-  );
+  const { data: spanComments } = useSuspenseQuery(commentsBySpanQueryOptions(spanUuid));
   return (
     <div className={`flex flex-col ${showComments ? "h-full" : ""}`}>
       <div className="shrink-0">
         <Button
           size="icon"
-          className="h-8 w-8 relative"
+          className="relative h-8 w-8"
           variant="outline"
           onClick={() => setShowComments(!showComments)}
         >
           <MessageSquareMore />
           {spanComments.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}

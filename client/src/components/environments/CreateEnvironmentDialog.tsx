@@ -29,9 +29,7 @@ export const CreateEnvironmentDialog = () => {
         <DialogHeader className="shrink-0">
           <DialogTitle>Create new Environment</DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          Create an environment for your organization
-        </DialogDescription>
+        <DialogDescription>Create an environment for your organization</DialogDescription>
         <CreateEnvironmentForm
           customButtons={
             <DialogFooter>

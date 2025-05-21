@@ -10,24 +10,15 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const getOrganizationInvite = async (inviteToken: string) => {
-  return (
-    await api.get<OrganizationInvitePublic>(
-      `/organizations-invites/${inviteToken}`
-    )
-  ).data;
+  return (await api.get<OrganizationInvitePublic>(`/organizations-invites/${inviteToken}`)).data;
 };
 
 export const getOrganizationInvites = async () => {
-  return (await api.get<OrganizationInvitePublic[]>(`/organizations-invites/`))
-    .data;
+  return (await api.get<OrganizationInvitePublic[]>(`/organizations-invites/`)).data;
 };
 
-export const createOrganizationInvite = async (
-  data: OrganizationInviteCreate
-) => {
-  return (
-    await api.post<OrganizationInvitePublic>(`/organizations-invites`, data)
-  ).data;
+export const createOrganizationInvite = async (data: OrganizationInviteCreate) => {
+  return (await api.post<OrganizationInvitePublic>(`/organizations-invites`, data)).data;
 };
 
 export const resendOrganizationInvite = async (
@@ -42,13 +33,9 @@ export const resendOrganizationInvite = async (
   ).data;
 };
 
-export const deleteOrganizationInvite = async (
-  organizationInviteUuid: string
-) => {
+export const deleteOrganizationInvite = async (organizationInviteUuid: string) => {
   return (
-    await api.delete<OrganizationInvitePublic>(
-      `/organizations-invites/${organizationInviteUuid}`
-    )
+    await api.delete<OrganizationInvitePublic>(`/organizations-invites/${organizationInviteUuid}`)
   ).data;
 };
 
@@ -90,8 +77,7 @@ export const useDeleteOrganizationInviteMutation = () => {
 export const useCreateOrganizationInviteMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: OrganizationInviteCreate) =>
-      await createOrganizationInvite(data),
+    mutationFn: async (data: OrganizationInviteCreate) => await createOrganizationInvite(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["organization-invites"],
@@ -103,8 +89,7 @@ export const useCreateOrganizationInviteMutation = () => {
 export const useUpdateOrganizationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: OrganizationUpdate) =>
-      await updateOrganization(data),
+    mutationFn: async (data: OrganizationUpdate) => await updateOrganization(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["license"],
@@ -119,8 +104,7 @@ export const useUpdateOrganizationMutation = () => {
 export const useCreateOrganizationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: OrganizationCreate) =>
-      await postOrganization(data),
+    mutationFn: async (data: OrganizationCreate) => await postOrganization(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["organizations"],

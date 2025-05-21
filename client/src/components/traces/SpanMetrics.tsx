@@ -33,7 +33,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       content: (
         <>
           <div className="font-bold">${span.cost?.toFixed(5)}</div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             <span>{span.input_tokens}</span>
             <span className="mx-1">&#8594;</span>
             <span>{span.output_tokens}</span>
@@ -50,9 +50,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
     {
       show: span.duration_ms !== undefined,
       title: "Duration",
-      content: (
-        <div className="font-bold">{span.duration_ms! / 1_000_000_000}s</div>
-      ),
+      content: <div className="font-bold">{span.duration_ms! / 1_000_000_000}s</div>,
     },
     // Provider section
     {
@@ -61,9 +59,7 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
       content: (
         <>
           <div className="font-bold">{span.provider}</div>
-          {span.model && (
-            <p className="text-xs text-muted-foreground">{span.model}</p>
-          )}
+          {span.model && <p className="text-muted-foreground text-xs">{span.model}</p>}
         </>
       ),
     },
@@ -81,24 +77,18 @@ export const SpanMetrics = ({ span }: { span: SpanMoreDetails }) => {
         {visibleSections.map((section, index) => (
           <Fragment key={section.title}>
             <div
-              className={`flex-1 p-2 flex ${isCompact ? "justify-start pl-4" : "justify-center"}`}
+              className={`flex flex-1 p-2 ${isCompact ? "justify-start pl-4" : "justify-center"}`}
             >
               <div className="text-left">
                 <CardHeader className="px-0 py-1">
-                  <CardTitle className="text-sm font-medium">
-                    {section.title}
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">{section.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="px-0 pt-0 pb-1">
-                  {section.content}
-                </CardContent>
+                <CardContent className="px-0 pt-0 pb-1">{section.content}</CardContent>
               </div>
             </div>
 
             {index < visibleSections.length - 1 && (
-              <div
-                className={`flex justify-center ${isCompact ? "py-1" : "py-2"}`}
-              >
+              <div className={`flex justify-center ${isCompact ? "py-1" : "py-2"}`}>
                 {isCompact ? (
                   <Separator orientation="horizontal" className="w-4/5" />
                 ) : (

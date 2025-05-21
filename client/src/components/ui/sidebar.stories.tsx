@@ -14,15 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Calendar,
-  ChevronUp,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  User2,
-} from "lucide-react";
+import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,10 +146,7 @@ export const Footer: Story = {
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
+              <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
                 <DropdownMenuItem>
                   <span>Account</span>
                 </DropdownMenuItem>

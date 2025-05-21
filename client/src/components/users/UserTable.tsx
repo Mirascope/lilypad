@@ -9,10 +9,7 @@ import { ResendInviteUserDialog } from "@/components/users/ResendInviteUserDialo
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { OrganizationInvitePublic, UserPublic, UserRole } from "@/types/types";
 import { organizationInvitesQueryOptions } from "@/utils/organizations";
-import {
-  userQueryOptions,
-  usersByOrganizationQueryOptions,
-} from "@/utils/users";
+import { userQueryOptions, usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Mail } from "lucide-react";
@@ -24,9 +21,7 @@ export const UserTable = () => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const { data: user } = useSuspenseQuery(userQueryOptions());
-  const { data: invitedUsers } = useSuspenseQuery(
-    organizationInvitesQueryOptions()
-  );
+  const { data: invitedUsers } = useSuspenseQuery(organizationInvitesQueryOptions());
   const [activeInvite, setActiveInvite] = useState<
     (OrganizationInvitePublic & { isInvite: true }) | null
   >(null);
@@ -46,9 +41,7 @@ export const UserTable = () => {
 
   const showCreateUser = features.users > users.length;
 
-  const handleOpenResendDialog = (
-    invite: OrganizationInvitePublic & { isInvite: true }
-  ) => {
+  const handleOpenResendDialog = (invite: OrganizationInvitePublic & { isInvite: true }) => {
     setActiveInvite(invite);
     setResendInviteOpen(true);
   };
@@ -87,8 +80,7 @@ export const UserTable = () => {
         }
 
         const userOrganization = rowData.user_organizations?.find(
-          (userOrg) =>
-            userOrg.organization_uuid === user.active_organization_uuid
+          (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
         );
 
         return <div>{userOrganization?.role}</div>;
@@ -129,8 +121,7 @@ export const UserTable = () => {
 
         // For regular users
         const rowUserOrganization = rowData.user_organizations?.find(
-          (userOrg) =>
-            userOrg.organization_uuid === user.active_organization_uuid
+          (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
         );
 
         if (
@@ -142,14 +133,8 @@ export const UserTable = () => {
 
         return (
           <div className="flex gap-2">
-            <EditUserPermissionsDialog
-              userOrganization={rowUserOrganization}
-              user={rowData}
-            />
-            <RemoveUserDialog
-              userOrganization={rowUserOrganization}
-              user={rowData}
-            />
+            <EditUserPermissionsDialog userOrganization={rowUserOrganization} user={rowData} />
+            <RemoveUserDialog userOrganization={rowUserOrganization} user={rowData} />
           </div>
         );
       },
@@ -158,7 +143,7 @@ export const UserTable = () => {
 
   return (
     <div>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <Typography variant="h4">Users</Typography>
         {userOrganization.role !== UserRole.MEMBER && showCreateUser && (
           <InviteUserDialog

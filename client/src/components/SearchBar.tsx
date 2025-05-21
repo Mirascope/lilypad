@@ -2,11 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSearch } from "@/hooks/use-search";
 import { cn } from "@/lib/utils";
 import { SpanPublic } from "@/types/types";
@@ -29,12 +25,7 @@ export const SearchBar = ({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
-  const {
-    spans: searchResults,
-    isLoading,
-    search,
-    updateFilters,
-  } = useSearch(projectUuid);
+  const { spans: searchResults, isLoading, search, updateFilters } = useSearch(projectUuid);
 
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
 
@@ -79,9 +70,7 @@ export const SearchBar = ({
   const handleEndDateChange = (date: Date | undefined) => {
     setEndDate(date);
     // Add a day to include the entire end date (end of day) - in milliseconds
-    const timestamp = date
-      ? new Date(date.setHours(23, 59, 59, 999)).getTime()
-      : undefined;
+    const timestamp = date ? new Date(date.setHours(23, 59, 59, 999)).getTime() : undefined;
     updateFilters({ time_range_end: timestamp });
   };
 
@@ -102,7 +91,7 @@ export const SearchBar = ({
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Search input and button */}
         <div className="relative grow">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400">
             <Search size={16} />
           </div>
           <Input
@@ -110,7 +99,7 @@ export const SearchBar = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search spans..."
             disabled={isLoading}
-            className="pl-10 pr-10 w-full h-10 focus-visible:ring-primary"
+            className="focus-visible:ring-primary h-10 w-full pr-10 pl-10"
           />
           {searchQuery && (
             <Button
@@ -118,7 +107,7 @@ export const SearchBar = ({
               size="icon"
               type="button"
               onClick={handleClearSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 h-6 w-6"
+              className="absolute top-1/2 right-2 h-6 w-6 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Clear search"
             >
               <X size={16} />
@@ -178,7 +167,7 @@ export const SearchBar = ({
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-primary hover:bg-primary/90 text-white h-10 px-4 min-w-[100px]"
+          className="bg-primary hover:bg-primary/90 h-10 min-w-[100px] px-4 text-white"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -187,9 +176,7 @@ export const SearchBar = ({
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              {!searchQuery.trim() && !startDate && !endDate
-                ? "Show All"
-                : "Search"}
+              {!searchQuery.trim() && !startDate && !endDate ? "Show All" : "Search"}
             </span>
           )}
         </Button>
@@ -198,7 +185,7 @@ export const SearchBar = ({
       {/* Active filters and results counter */}
       {(searchResults ?? startDate ?? endDate) && (
         <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {searchResults && (
               <Badge variant="outline" className="font-medium">
                 {displayCount} results found
@@ -212,7 +199,7 @@ export const SearchBar = ({
                   variant="ghost"
                   size="icon"
                   onClick={clearStartDate}
-                  className="h-4 w-4 ml-1 p-0"
+                  className="ml-1 h-4 w-4 p-0"
                 >
                   <X size={12} />
                 </Button>
@@ -226,7 +213,7 @@ export const SearchBar = ({
                   variant="ghost"
                   size="icon"
                   onClick={clearEndDate}
-                  className="h-4 w-4 ml-1 p-0"
+                  className="ml-1 h-4 w-4 p-0"
                 >
                   <X size={12} />
                 </Button>
@@ -234,14 +221,12 @@ export const SearchBar = ({
             )}
           </div>
 
-          {((searchResults && searchResults?.length > 0) ??
-            startDate ??
-            endDate) && (
+          {((searchResults && searchResults?.length > 0) ?? startDate ?? endDate) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearSearch}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className="text-sm text-gray-500 hover:text-gray-700"
             >
               <X size={14} className="mr-1" />
               Clear all

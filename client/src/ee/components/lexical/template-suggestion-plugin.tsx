@@ -9,8 +9,7 @@ import { JSX, useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { $createTemplateNode } from "./template-node";
 
-const PUNCTUATION =
-  "\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%'\"~=<>_:;";
+const PUNCTUATION = "\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%'\"~=<>_:;";
 
 const useBasicTypeaheadTriggerMatch = (
   trigger: string,
@@ -20,16 +19,7 @@ const useBasicTypeaheadTriggerMatch = (
     (text: string) => {
       const validChars = "[^" + trigger + PUNCTUATION + "\\s]";
       const TypeaheadTriggerRegex = new RegExp(
-        "(^||\\()(" +
-          "[" +
-          trigger +
-          "]" +
-          "((?:" +
-          validChars +
-          "){0," +
-          maxLength +
-          "})" +
-          ")$"
+        "(^||\\()(" + "[" + trigger + "]" + "((?:" + validChars + "){0," + maxLength + "})" + ")$"
       );
       const match = TypeaheadTriggerRegex.exec(text);
       if (match !== null) {
@@ -90,15 +80,9 @@ export function SuggestionItem({
     <li
       key={option.key}
       tabIndex={-1}
-      className={`
-        px-3 py-2 mx-1 my-0.5 text-sm cursor-pointer rounded-md
-        transition-colors duration-150 ease-in-out flex items-center
-        ${
-          isSelected
-            ? "bg-blue-50 text-blue-700"
-            : "text-gray-700 hover:bg-gray-50"
-        }
-      `}
+      className={`mx-1 my-0.5 flex cursor-pointer items-center rounded-md px-3 py-2 text-sm transition-colors duration-150 ease-in-out ${
+        isSelected ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50"
+      } `}
       ref={option.setRefElement}
       role="option"
       aria-selected={isSelected}
@@ -106,9 +90,7 @@ export function SuggestionItem({
       onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
-      <span className="popper__reference truncate">
-        {option.metadata.value}
-      </span>
+      <span className="popper__reference truncate">{option.metadata.value}</span>
     </li>
   );
 }
@@ -174,9 +156,7 @@ export const TemplateSuggestionPlugin = ({
     // Filter by both key and display value with case sensitivity
     return options
       .filter(
-        (option) =>
-          regex.test(option.key) ||
-          (option.metadata && regex.test(option.metadata.value))
+        (option) => regex.test(option.key) || (option.metadata && regex.test(option.metadata.value))
       )
       .slice(0, 10);
   };
@@ -193,16 +173,12 @@ export const TemplateSuggestionPlugin = ({
     anchorElementRef: { current: Element | DocumentFragment | null },
     { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }: any
   ) => {
-    if (
-      !showTemplateSuggestions ||
-      anchorElementRef.current == null ||
-      options.length === 0
-    ) {
+    if (!showTemplateSuggestions || anchorElementRef.current == null || options.length === 0) {
       return null;
     }
     return anchorElementRef.current && options.length
       ? createPortal(
-          <div className="bg-background rounded-md shadow-lg max-h-[320px] overflow-y-auto w-[180px] min-w-[90px] border border-gray-100">
+          <div className="bg-background max-h-[320px] w-[180px] min-w-[90px] overflow-y-auto rounded-md border border-gray-100 shadow-lg">
             <ul className="px-1.5">
               {options.map((option: CustomTypeaheadOption, index: number) => (
                 <SuggestionItem

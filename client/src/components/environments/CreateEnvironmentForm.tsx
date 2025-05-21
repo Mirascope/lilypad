@@ -18,9 +18,7 @@ import { toast } from "sonner";
 interface CreateEnvironmentFormProps {
   customButtons?: React.ReactNode;
 }
-export const CreateEnvironmentForm = ({
-  customButtons,
-}: CreateEnvironmentFormProps) => {
+export const CreateEnvironmentForm = ({ customButtons }: CreateEnvironmentFormProps) => {
   const methods = useForm<EnvironmentCreate>({
     defaultValues: { name: "", description: "", is_default: false },
   });
@@ -36,11 +34,11 @@ export const CreateEnvironmentForm = ({
 
   return (
     <Form {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
-          key='name'
+          key="name"
           control={methods.control}
-          name='name'
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Environment Name</FormLabel>
@@ -51,9 +49,9 @@ export const CreateEnvironmentForm = ({
           )}
         />
         <FormField
-          key='description'
+          key="description"
           control={methods.control}
-          name='description'
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
@@ -64,32 +62,25 @@ export const CreateEnvironmentForm = ({
           )}
         />
         <FormField
-          key='is_default'
+          key="is_default"
           control={methods.control}
-          name='is_default'
+          name="is_default"
           render={({ field }) => (
-            <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
-              <div className='space-y-0.5'>
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
                 <FormLabel>Default Environment</FormLabel>
-                <FormDescription>
-                  Set as default environment for new API keys
-                </FormDescription>
+                <FormDescription>Set as default environment for new API keys</FormDescription>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}
         />
         {customButtons ?? (
-          <div className='flex justify-end'>
-            <Button type='submit' loading={methods.formState.isSubmitting}>
-              {methods.formState.isSubmitting
-                ? "Creating..."
-                : "Create Environment"}
+          <div className="flex justify-end">
+            <Button type="submit" loading={methods.formState.isSubmitting}>
+              {methods.formState.isSubmitting ? "Creating..." : "Create Environment"}
             </Button>
           </div>
         )}

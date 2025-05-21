@@ -18,7 +18,7 @@ export const LilypadPanel = ({
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex h-full flex-col gap-4">
       {showMetrics && <SpanMetrics span={span} />}
       {span.arg_values && (
         <div className="shrink-0">
@@ -27,14 +27,14 @@ export const LilypadPanel = ({
               <CardTitle>{"Inputs"}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md bg-background">
+              <div className="bg-background rounded-md">
                 <JsonView value={span.arg_values} />
               </div>
             </CardContent>
           </Card>
         </div>
       )}
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         <LilypadPanelTab span={span} tab={tab} onTabChange={onTabChange} />
       </div>
     </div>

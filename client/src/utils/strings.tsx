@@ -14,10 +14,7 @@ interface FormattedTextProps {
   values?: Record<string, string>;
 }
 
-export const FormattedText = ({
-  template,
-  values = {},
-}: FormattedTextProps) => {
+export const FormattedText = ({ template, values = {} }: FormattedTextProps) => {
   const parts = template.split(/(\{[^}]+\})/g);
 
   return (
@@ -27,10 +24,7 @@ export const FormattedText = ({
         if (match) {
           const key = match[1];
           return (
-            <span
-              key={index}
-              className={key in values ? "text-purple-500" : undefined}
-            >
+            <span key={index} className={key in values ? "text-purple-500" : undefined}>
               {part}
             </span>
           );
@@ -50,10 +44,7 @@ export const safelyParseJSON = (json: string): object | undefined => {
 
   return parsed;
 };
-export const formatDate = (
-  utcDateString?: string | Date,
-  dateOnly = true
-): string => {
+export const formatDate = (utcDateString?: string | Date, dateOnly = true): string => {
   if (!utcDateString) {
     return "";
   }
@@ -78,10 +69,7 @@ export const formatDate = (
   }).format(date);
 };
 
-export const formatRelativeTime = (
-  utcDateString?: string | Date,
-  shorthand = false
-): string => {
+export const formatRelativeTime = (utcDateString?: string | Date, shorthand = false): string => {
   if (!utcDateString) {
     return "";
   }
@@ -111,17 +99,11 @@ export const formatRelativeTime = (
       ? `${diffMinutes}m`
       : `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
   } else if (diffHours < 24) {
-    return shorthand
-      ? `${diffHours}h`
-      : `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    return shorthand ? `${diffHours}h` : `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
   } else if (diffDays < 7) {
-    return shorthand
-      ? `${diffDays}d`
-      : `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+    return shorthand ? `${diffDays}d` : `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
   } else if (diffWeeks < 5) {
-    return shorthand
-      ? `${diffWeeks}w`
-      : `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
+    return shorthand ? `${diffWeeks}w` : `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
   } else {
     return shorthand
       ? `${diffMonths}mo`

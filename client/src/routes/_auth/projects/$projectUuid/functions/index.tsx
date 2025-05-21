@@ -1,13 +1,8 @@
 import CardSkeleton from "@/components/CardSkeleton";
-import { CodeSnippet } from "@/components/CodeSnippet";
+import { CodeBlock } from "@/components/code-block";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -25,10 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Typography } from "@/components/ui/typography";
-import {
-  ProcessedData,
-  useProjectAggregates,
-} from "@/hooks/use-project-aggregates";
+import { ProcessedData, useProjectAggregates } from "@/hooks/use-project-aggregates";
 import { FunctionTab } from "@/types/functions";
 import { FunctionPublic, TimeFrame } from "@/types/types";
 import {
@@ -38,45 +30,30 @@ import {
   useArchiveFunctionByNameMutation,
 } from "@/utils/functions";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { Clock, DollarSign, MoreHorizontal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")(
-  {
-    component: () => (
-      <Suspense fallback={<LilypadLoading />}>
-        <FunctionsList />
-      </Suspense>
-    ),
-  }
-);
+export const Route = createFileRoute("/_auth/projects/$projectUuid/functions/")({
+  component: () => (
+    <Suspense fallback={<LilypadLoading />}>
+      <FunctionsList />
+    </Suspense>
+  ),
+});
 
 const FunctionCards = () => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data } = useSuspenseQuery(
-    uniqueLatestVersionFunctionNamesQueryOptions(projectUuid)
-  );
-  const { functionAggregates } = useProjectAggregates(
-    projectUuid,
-    TimeFrame.LIFETIME
-  );
+  const { data } = useSuspenseQuery(uniqueLatestVersionFunctionNamesQueryOptions(projectUuid));
+  const { functionAggregates } = useProjectAggregates(projectUuid, TimeFrame.LIFETIME);
   if (data.length === 0) {
     return <FunctionNoDataPlaceholder />;
   }
   return (
     <>
       {data.map((fn) => (
-        <FunctionCard
-          key={fn.uuid}
-          fn={fn}
-          processedData={functionAggregates[fn.uuid]}
-        />
+        <FunctionCard key={fn.uuid} fn={fn} processedData={functionAggregates[fn.uuid]} />
       ))}
     </>
   );
@@ -118,7 +95,7 @@ const FunctionCard = ({
       className={`w-full max-w-[300px] transition-all duration-200 ${hover ? "shadow-lg" : ""}`}
     >
       <CardHeader
-        className="px-6 py-4 cursor-pointer"
+        className="cursor-pointer px-6 py-4"
         onClick={handleClick}
         onMouseEnter={() => {
           setHover(true);
@@ -131,7 +108,7 @@ const FunctionCard = ({
         }}
         onBlur={() => setHover(false)}
       >
-        <CardTitle className="flex justify-between items-center">
+        <CardTitle className="flex items-center justify-between">
           <div className="flex gap-2">
             {fn.name}
             <Typography variant="p" affects="muted">
@@ -152,10 +129,10 @@ const FunctionCard = ({
                 <Dialog>
                   <DialogTrigger asChild>
                     <DropdownMenuItem
-                      className="flex items-center gap-2 text-destructive hover:text-destructive focus:text-destructive"
+                      className="text-destructive hover:text-destructive focus:text-destructive flex items-center gap-2"
                       onSelect={(e) => e.preventDefault()}
                     >
-                      <Trash className="w-4 h-4" />
+                      <Trash className="h-4 w-4" />
                       <span className="font-medium">Delete function</span>
                     </DropdownMenuItem>
                   </DialogTrigger>
@@ -183,16 +160,13 @@ const FunctionCard = ({
         <CardDescription>
           {processedData && (
             <span className="flex gap-4">
-              <span className="flex gap-1 items-center">
+              <span className="flex items-center gap-1">
                 <DollarSign className="size-4" />
-                {(processedData.total_cost / processedData.span_count).toFixed(
-                  5
-                )}
+                {(processedData.total_cost / processedData.span_count).toFixed(5)}
               </span>
-              <span className="flex gap-1 items-center">
+              <span className="flex items-center gap-1">
                 <Clock className="size-4" />
-                {(processedData.average_duration_ms / 1_000_000_000).toFixed(3)}
-                s
+                {(processedData.average_duration_ms / 1_000_000_000).toFixed(3)}s
               </span>
             </span>
           )}
@@ -203,9 +177,9 @@ const FunctionCard = ({
 };
 const FunctionsList = () => {
   return (
-    <div className="p-4 flex flex-col gap-10">
+    <div className="flex flex-col gap-10 p-4">
       <Typography variant="h3">Functions</Typography>
-      <div className="flex gap-2 max-w-full flex-wrap">
+      <div className="flex max-w-full flex-wrap gap-2">
         <Suspense fallback={<CardSkeleton items={2} />}>
           <FunctionCards />
         </Suspense>
@@ -224,12 +198,11 @@ const FunctionNoDataPlaceholder = () => {
 
 const DeveloperFunctionNoDataPlaceholder = () => {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl">
       <div>
-        Start by decorating your LLM powered functions with{" "}
-        <code>@lilypad.trace()</code>.
+        Start by decorating your LLM powered functions with <code>@lilypad.trace()</code>.
       </div>
-      <CodeSnippet
+      <CodeBlock
         code={`import lilypad
 from openai import OpenAI
 

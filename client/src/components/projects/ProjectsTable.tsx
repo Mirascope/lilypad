@@ -20,9 +20,7 @@ export const ProjectsTable = () => {
   const { data } = useSuspenseQuery(projectsQueryOptions());
   const handleProjectCopy = (project: ProjectPublic) => {
     navigator.clipboard.writeText(project.uuid);
-    toast.success(
-      `Successfully copied Project ID to clipboard for project ${project.name}`
-    );
+    toast.success(`Successfully copied Project ID to clipboard for project ${project.name}`);
   };
   const columns: ColumnDef<ProjectPublic>[] = [
     {
@@ -63,7 +61,7 @@ export const ProjectsTable = () => {
   ];
   return (
     <div>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <Typography variant="h4">Projects</Typography>
         <CreateProjectDialog />
       </div>

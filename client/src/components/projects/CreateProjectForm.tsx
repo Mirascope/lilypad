@@ -1,7 +1,4 @@
-import {
-  BaseProjectForm,
-  ProjectFormData,
-} from "@/components/projects/BaseProjectForm";
+import { BaseProjectForm, ProjectFormData } from "@/components/projects/BaseProjectForm";
 import { useCreateProjectMutation } from "@/utils/projects";
 import { toast } from "sonner";
 interface CreateProjectFormProps {
@@ -9,10 +6,7 @@ interface CreateProjectFormProps {
   className?: string;
 }
 
-export const CreateProjectForm = ({
-  onSuccess,
-  className,
-}: CreateProjectFormProps) => {
+export const CreateProjectForm = ({ onSuccess, className }: CreateProjectFormProps) => {
   const createProject = useCreateProjectMutation();
 
   const handleCreate = async (data: ProjectFormData) => {
@@ -31,8 +25,8 @@ export const CreateProjectForm = ({
     <BaseProjectForm
       defaultValues={{ name: "" }}
       onSubmit={handleCreate}
-      submitButtonText='Create Project'
-      submittingText='Creating...'
+      submitButtonText="Create Project"
+      submittingText="Creating..."
       className={className}
     />
   );

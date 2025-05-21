@@ -11,9 +11,7 @@ export const FunctionAnnotations = ({
   projectUuid: string;
   functionUuid: string;
 }) => {
-  const { data } = useSuspenseQuery(
-    annotationsByFunctionQueryOptions(projectUuid, functionUuid)
-  );
+  const { data } = useSuspenseQuery(annotationsByFunctionQueryOptions(projectUuid, functionUuid));
   return (
     <Suspense fallback={<TableSkeleton />}>
       <AnnotationsTable data={data} />

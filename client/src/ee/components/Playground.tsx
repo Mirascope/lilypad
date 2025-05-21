@@ -27,16 +27,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Editor } from "@/ee/components/Editor";
-import {
-  EditorParameters,
-  usePlaygroundContainer,
-} from "@/ee/hooks/use-playground";
+import { EditorParameters, usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { TypedInput } from "@/ee/utils/input-utils";
 import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
 import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
@@ -86,7 +79,7 @@ export const Playground = ({
               name="run"
               loading={isRunLoading}
               disabled={!doesProviderExist}
-              className="hover:bg-green-700 text-white font-medium"
+              className="font-medium text-white hover:bg-green-700"
             >
               Run
             </Button>
@@ -108,13 +101,13 @@ export const Playground = ({
   return (
     <Form {...methods}>
       <div className="h-full">
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
           <form
             id={`playground-form-${version?.uuid ?? Math.random().toString(36).substring(7)}`}
             onSubmit={methods.handleSubmit(onSubmit)}
-            className="flex flex-col gap-4 flex-1 h-full"
+            className="flex h-full flex-1 flex-col gap-4"
           >
-            <div className="flex justify-between gap-4 w-full">
+            <div className="flex w-full justify-between gap-4">
               <div className="flex items-center gap-2">
                 <InputsDrawer
                   open={openInputDrawer}
@@ -134,7 +127,7 @@ export const Playground = ({
                 {(!isCompare || showRunButton) && renderRunButton()}
               </div>
             </div>
-            <div className="lexical flex-1 min-h-[200px] relative">
+            <div className="lexical relative min-h-[200px] flex-1">
               <Editor
                 inputs={inputs.map((input) => input.key)}
                 inputValues={inputValues}
@@ -145,7 +138,7 @@ export const Playground = ({
               />
               {editorErrors.length > 0 &&
                 editorErrors.map((error, i) => (
-                  <div key={i} className="text-red-500 text-sm mt-1">
+                  <div key={i} className="mt-1 text-sm text-red-500">
                     {error}
                   </div>
                 ))}
@@ -174,17 +167,14 @@ const CallParamsDrawer = ({
     <Sheet>
       <SheetTrigger asChild>
         <Button
-          className="border border-gray-300 bg-background hover:bg-gray-100 text-gray-700"
+          className="bg-background border border-gray-300 text-gray-700 hover:bg-gray-100"
           variant="outline"
           disabled={isDisabled}
         >
           Configure Call Params
         </Button>
       </SheetTrigger>
-      <SheetContent
-        className="flex flex-col gap-2 overflow-y-auto"
-        showOverlay={false}
-      >
+      <SheetContent className="flex flex-col gap-2 overflow-y-auto" showOverlay={false}>
         <SheetHeader>
           <SheetTitle>Call Params</SheetTitle>
         </SheetHeader>
@@ -197,7 +187,7 @@ const CallParamsDrawer = ({
                 type="submit"
                 loading={isLoading}
                 disabled={!doesProviderExist}
-                className="hover:bg-green-700 text-white font-medium"
+                className="font-medium text-white hover:bg-green-700"
               >
                 Run
               </Button>
@@ -252,7 +242,7 @@ const InputsDrawer = ({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
-          className="border border-gray-300 bg-background hover:bg-gray-100 text-gray-700"
+          className="bg-background border border-gray-300 text-gray-700 hover:bg-gray-100"
           variant="outline"
           disabled={isDisabled}
         >
@@ -260,7 +250,7 @@ const InputsDrawer = ({
         </Button>
       </SheetTrigger>
       <SheetContent
-        className="flex flex-col sm:max-w-xl md:max-w-2xl overflow-y-auto"
+        className="flex flex-col overflow-y-auto sm:max-w-xl md:max-w-2xl"
         showOverlay={false}
       >
         <SheetHeader>
@@ -273,7 +263,7 @@ const InputsDrawer = ({
               onClick={handleClick}
               loading={isLoading}
               disabled={!doesProviderExist}
-              className="hover:bg-green-700 text-white font-medium"
+              className="font-medium text-white hover:bg-green-700"
             >
               Run
             </Button>
@@ -300,23 +290,23 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-4 flex-wrap pb-4">
+      <div className="flex flex-wrap gap-4 pb-4">
         {fields.map((field, index) => {
           const type = methods.watch(`inputs.${index}.type`);
           return (
-            <Card key={field.id} className="w-full shrink-0 relative">
+            <Card key={field.id} className="relative w-full shrink-0">
               {!isDisabled && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => remove(index)}
-                  className="h-6 w-6 absolute top-2 right-2 hover:bg-gray-100"
+                  className="absolute top-2 right-2 h-6 w-6 hover:bg-gray-100"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              <CardContent className="pt-6 space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 <div className="w-full">
                   <FormField
                     control={methods.control}
@@ -326,18 +316,14 @@ const InputsContent = ({ isDisabled }: { isDisabled: boolean }) => {
                       <FormItem>
                         <FormLabel>Args</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Argument Name"
-                            disabled={isDisabled}
-                            {...field}
-                          />
+                          <Input placeholder="Argument Name" disabled={isDisabled} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <div className="w-full flex gap-2">
+                <div className="flex w-full gap-2">
                   <FormField
                     control={methods.control}
                     name={`inputs.${index}.type`}

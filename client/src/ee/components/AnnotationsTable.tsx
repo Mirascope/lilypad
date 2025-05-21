@@ -9,9 +9,7 @@ import { useRef, useState } from "react";
 
 export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
   const virtualizerRef = useRef<HTMLDivElement>(null);
-  const { data: usersInOrg } = useSuspenseQuery(
-    usersByOrganizationQueryOptions()
-  );
+  const { data: usersInOrg } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const mappedUsers: Record<string, string> = usersInOrg.reduce(
     (acc, user) => ({
       ...acc,
@@ -72,11 +70,7 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
         const label: string = row.getValue("label") || "";
         return (
           <div
-            className={
-              row.getValue("label") === Label.PASS
-                ? "text-green-600"
-                : "text-destructive"
-            }
+            className={row.getValue("label") === Label.PASS ? "text-green-600" : "text-destructive"}
           >
             {label.toUpperCase()}
           </div>
@@ -143,24 +137,20 @@ export const AnnotationsTable = ({ data }: { data: AnnotationPublic[] }) => {
 //   );
 // };
 
-export const AnnotationsButton = ({
-  annotations,
-}: {
-  annotations: AnnotationPublic[];
-}) => {
+export const AnnotationsButton = ({ annotations }: { annotations: AnnotationPublic[] }) => {
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   return (
     <div className={`flex flex-col ${showAnnotations ? "h-full" : ""}`}>
       <div className="shrink-0">
         <Button
           size="icon"
-          className="h-8 w-8 relative"
+          className="relative h-8 w-8"
           variant="outline"
           onClick={() => setShowAnnotations(!showAnnotations)}
         >
           <NotebookPen />
           {annotations.length > 0 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
               {annotations.length > 9 ? "9+" : annotations.length}
             </div>
           )}

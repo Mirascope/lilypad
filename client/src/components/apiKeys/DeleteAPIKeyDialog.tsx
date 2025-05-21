@@ -17,9 +17,7 @@ import { toast } from "sonner";
 export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
   const deleteApiKey = useDeleteApiKeyMutation();
   const handleApiKeyDelete = async (apiKeyUuid: string) => {
-    await deleteApiKey
-      .mutateAsync(apiKeyUuid)
-      .catch(() => toast.error("Failed to delete API Key"));
+    await deleteApiKey.mutateAsync(apiKeyUuid).catch(() => toast.error("Failed to delete API Key"));
     toast.success("Successfully deleted API Key");
   };
   return (
@@ -32,9 +30,7 @@ export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
         <DialogHeader className="shrink-0">
           <DialogTitle>{`Delete ${apiKey.name}`}</DialogTitle>
-          <DialogDescription>
-            This action is final and cannot be undone.
-          </DialogDescription>
+          <DialogDescription>This action is final and cannot be undone.</DialogDescription>
           <p>
             {"Are you sure you want to delete "}
             <b>{apiKey.name}</b>?
@@ -42,10 +38,7 @@ export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {
         </DialogHeader>
 
         <DialogFooter>
-          <Button
-            variant="destructive"
-            onClick={() => handleApiKeyDelete(apiKey.uuid)}
-          >
+          <Button variant="destructive" onClick={() => handleApiKeyDelete(apiKey.uuid)}>
             Delete
           </Button>
           <DialogClose asChild>

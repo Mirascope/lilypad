@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Font = "fun" | "professional";
+type Font = "default" | "fun" | "professional";
 
 interface FontProviderProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ interface FontProviderState {
 }
 
 const initialState: FontProviderState = {
-  font: "professional",
+  font: "default",
   setFont: () => null,
 };
 
@@ -22,7 +22,7 @@ const FontProviderContext = createContext<FontProviderState>(initialState);
 
 export function FontProvider({
   children,
-  defaultFont = "professional",
+  defaultFont = "default",
   storageKey = "font",
   ...props
 }: FontProviderProps) {
@@ -33,7 +33,7 @@ export function FontProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("professional", "fun");
+    root.classList.remove("default", "professional", "fun");
 
     root.classList.add(font);
   }, [font]);
@@ -56,8 +56,7 @@ export function FontProvider({
 export const useFont = () => {
   const context = useContext(FontProviderContext);
 
-  if (context === undefined)
-    throw new Error("useFont must be used within a FontProvider");
+  if (context === undefined) throw new Error("useFont must be used within a FontProvider");
 
   return context;
 };

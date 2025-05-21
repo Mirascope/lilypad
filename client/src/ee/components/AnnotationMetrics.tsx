@@ -56,8 +56,7 @@ const SuccessMetrics = ({
   className = "",
 }: SuccessMetricsProps) => {
   // Calculate percentage
-  const percentage =
-    totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0;
+  const percentage = totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0;
 
   // Determine color based on percentage for the label
   const getColor = () => {
@@ -71,12 +70,12 @@ const SuccessMetrics = ({
   const FAIL_COLOR = "oklch(0.55 0.18 48)"; // red-500
 
   return (
-    <Card className={`w-full h-full flex flex-col  ${className}`}>
+    <Card className={`flex h-full w-full flex-col ${className}`}>
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent className="flex-grow py-6 flex flex-col items-center justify-center">
+      <CardContent className="flex flex-grow flex-col items-center justify-center py-6">
         {totalCount ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -113,13 +112,13 @@ const SuccessMetrics = ({
         )}
       </CardContent>
       <CardFooter className="shrink-0 pt-0 pb-4">
-        <div className="flex justify-between items-center text-xs sm:text-sm w-full">
+        <div className="flex w-full items-center justify-between text-xs sm:text-sm">
           <div className="flex items-center space-x-1">
             <CheckCircle className="h-4 w-4 text-green-500" />
             <span>{successCount} pass</span>
           </div>
           <div className="flex items-center space-x-1">
-            <CircleX className="h-4 w-4 text-destructive" />
+            <CircleX className="text-destructive h-4 w-4" />
             <span>{totalCount - successCount} fail</span>
           </div>
           <div className="font-medium">

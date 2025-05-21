@@ -1,10 +1,7 @@
 import { useAuth } from "@/auth";
 import { UserConsentUpdate } from "@/types/types";
 import { callbackCodeQueryOptions, fetchVersions } from "@/utils/auth";
-import {
-  useCreateUserConsentMutation,
-  useUpdateUserConsentMutation,
-} from "@/utils/user_consents";
+import { useCreateUserConsentMutation, useUpdateUserConsentMutation } from "@/utils/user_consents";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -51,9 +48,7 @@ const CallbackPage = () => {
   }
   const activeProvider = stateJson.provider ?? "github";
 
-  const { data: session } = useSuspenseQuery(
-    callbackCodeQueryOptions(activeProvider, code)
-  );
+  const { data: session } = useSuspenseQuery(callbackCodeQueryOptions(activeProvider, code));
   const createUserConsent = useCreateUserConsentMutation();
   const updateUserConsent = useUpdateUserConsentMutation();
   useEffect(() => {
@@ -81,9 +76,7 @@ const CallbackPage = () => {
           }
         } else {
           const updates: UserConsentUpdate = {};
-          if (
-            auth.user.user_consents.privacy_policy_version !== privacyVersion
-          ) {
+          if (auth.user.user_consents.privacy_policy_version !== privacyVersion) {
             updates.privacy_policy_version = privacyVersion;
           }
           if (auth.user.user_consents.tos_version !== termsVersion) {
@@ -110,12 +103,10 @@ const CallbackPage = () => {
   }, [stateJson?.redirect, auth.user]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <h2 className="text-xl">Processing login...</h2>
-        <p className="text-gray-500 mt-2">
-          Authenticating with {activeProvider}...
-        </p>
+        <p className="mt-2 text-gray-500">Authenticating with {activeProvider}...</p>
       </div>
     </div>
   );

@@ -63,7 +63,7 @@ export const VersionedPlayground = ({
   };
 
   return (
-    <div className="w-full p-6 flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 p-6">
       <Typography variant="h3">Playground</Typography>
       <div className="flex gap-2">
         <Combobox
@@ -80,7 +80,7 @@ export const VersionedPlayground = ({
           }}
         />
       </div>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="icon"
@@ -133,11 +133,7 @@ export const VersionedPlayground = ({
               >
                 Delete
               </Button>,
-              <Button
-                key="cancel-delete-button"
-                type="button"
-                variant="outline"
-              >
+              <Button key="cancel-delete-button" type="button" variant="outline">
                 Cancel
               </Button>,
             ]}
@@ -147,8 +143,8 @@ export const VersionedPlayground = ({
         )}
       </div>
       {functionName && functionUuid && compareMode && (
-        <div className="flex gap-2 items-center">
-          <div className="w-10 h-10"></div>
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-10"></div>
           <SelectFunction
             projectUuid={projectUuid}
             functionName={functionName}

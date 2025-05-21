@@ -46,11 +46,7 @@ export const BaseProjectDialog = ({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        {closeOnSubmit ? (
-          <DialogClose asChild>{children}</DialogClose>
-        ) : (
-          children
-        )}
+        {closeOnSubmit ? <DialogClose asChild>{children}</DialogClose> : children}
       </DialogContent>
     </Dialog>
   );
@@ -93,19 +89,12 @@ export const EditProjectDialog = ({
       title="Edit project"
       description="Update your project details."
     >
-      <EditProjectForm
-        projectUuid={projectUuid}
-        defaultProjectFormData={defaultProjectFormData}
-      />
+      <EditProjectForm projectUuid={projectUuid} defaultProjectFormData={defaultProjectFormData} />
     </BaseProjectDialog>
   );
 };
 
-export const DeleteProjectDialog = ({
-  project,
-}: {
-  project: ProjectPublic;
-}) => {
+export const DeleteProjectDialog = ({ project }: { project: ProjectPublic }) => {
   return (
     <BaseProjectDialog
       trigger={

@@ -13,19 +13,10 @@ import {
   TextNode,
 } from "lexical";
 import { JSX, useCallback, useEffect } from "react";
-import {
-  useFieldArray,
-  UseFieldArrayAppend,
-  useFormContext,
-} from "react-hook-form";
-import {
-  $createTemplateNode,
-  $isTemplateNode,
-  TemplateNode,
-} from "./template-node";
+import { useFieldArray, UseFieldArrayAppend, useFormContext } from "react-hook-form";
+import { $createTemplateNode, $isTemplateNode, TemplateNode } from "./template-node";
 
-export const TOGGLE_SHOW_VARIABLE_COMMAND: LexicalCommand<boolean> =
-  createCommand();
+export const TOGGLE_SHOW_VARIABLE_COMMAND: LexicalCommand<boolean> = createCommand();
 
 const parseTemplate = (
   template: string
@@ -62,16 +53,7 @@ const checkTemplateValidity = (
     return { isValid: false, parsed: null };
   }
 
-  const validFormats = [
-    "list",
-    "lists",
-    "image",
-    "images",
-    "audio",
-    "audios",
-    "text",
-    "texts",
-  ];
+  const validFormats = ["list", "lists", "image", "images", "audio", "audios", "text", "texts"];
   const pythonFormatterPattern = /^[,.0-9+\-#% ]*[defgxobcnEFGXOBCN%]?$/;
   const isValid =
     inputs.includes(parsed.variable) &&
@@ -87,10 +69,7 @@ const findAndTransformTemplate = (
   node: TextNode,
   inputs: readonly string[],
   inputValues: Record<string, any>,
-  append: UseFieldArrayAppend<
-    EditorParameters,
-    "inputs" | `inputs.${number}.${string}`
-  >
+  append: UseFieldArrayAppend<EditorParameters, "inputs" | `inputs.${number}.${string}`>
 ): null | TextNode => {
   const text = node.getTextContent();
   const regex = /\{[^{}]*\}/g;
@@ -181,13 +160,7 @@ const useTemplates = (
           if (!targetNode.isSimpleText()) {
             return;
           }
-          targetNode = findAndTransformTemplate(
-            editor,
-            targetNode,
-            inputs,
-            inputValues,
-            append
-          );
+          targetNode = findAndTransformTemplate(editor, targetNode, inputs, inputValues, append);
         }
       }
     },
@@ -206,14 +179,9 @@ const useTemplates = (
     editor.setEditable(false);
 
     if (!editor.hasNodes([TemplateNode])) {
-      throw new Error(
-        "TemplateAutoReplacePlugin: TemplateNode not registered on editor"
-      );
+      throw new Error("TemplateAutoReplacePlugin: TemplateNode not registered on editor");
     }
-    const removeTextTransform = editor.registerNodeTransform(
-      TextNode,
-      textTransformFunction
-    );
+    const removeTextTransform = editor.registerNodeTransform(TextNode, textTransformFunction);
 
     const removeTemplateTransform = editor.registerNodeTransform(
       TemplateNode,
@@ -278,9 +246,7 @@ export const TemplatePlugin = ({
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([TemplateNode])) {
-      throw new Error(
-        "TemplateAutoReplacePlugin: TemplateNode not registered on editor"
-      );
+      throw new Error("TemplateAutoReplacePlugin: TemplateNode not registered on editor");
     }
   }, [editor]);
 
@@ -325,11 +291,7 @@ export const TemplatePlugin = ({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        DELETE_CHARACTER_COMMAND,
-        onBackspaceCommand,
-        COMMAND_PRIORITY_LOW
-      )
+      editor.registerCommand(DELETE_CHARACTER_COMMAND, onBackspaceCommand, COMMAND_PRIORITY_LOW)
     );
   }, []);
 
@@ -338,10 +300,5 @@ export const TemplatePlugin = ({
 };
 
 function isDOMNode(x: unknown): x is Node {
-  return (
-    typeof x === "object" &&
-    x !== null &&
-    "nodeType" in x &&
-    typeof x.nodeType === "number"
-  );
+  return typeof x === "object" && x !== null && "nodeType" in x && typeof x.nodeType === "number";
 }

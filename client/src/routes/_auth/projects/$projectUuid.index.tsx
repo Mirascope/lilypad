@@ -52,13 +52,8 @@ const ProjectDashboard = () => {
   const timeFrame = TimeFrame.LIFETIME;
   const { projectUuid } = useParams({ from: Route.id });
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
-  const { data } = useSuspenseQuery(
-    aggregatesByProjectQueryOptions(projectUuid, timeFrame)
-  );
-  const { data: processedData, consolidatedData } = useProjectAggregates(
-    projectUuid,
-    timeFrame
-  );
+  const { data } = useSuspenseQuery(aggregatesByProjectQueryOptions(projectUuid, timeFrame));
+  const { data: processedData, consolidatedData } = useProjectAggregates(projectUuid, timeFrame);
 
   // Flatten the consolidated data for charts
   const chartData: ProcessedData[] = [];
@@ -78,13 +73,8 @@ const ProjectDashboard = () => {
   });
 
   // Calculate totals
-  const totalCost = chartData
-    .reduce((sum, item) => sum + item.total_cost, 0)
-    .toFixed(5);
-  const totalTokens = chartData.reduce(
-    (sum, item) => sum + item.total_tokens,
-    0
-  );
+  const totalCost = chartData.reduce((sum, item) => sum + item.total_cost, 0).toFixed(5);
+  const totalTokens = chartData.reduce((sum, item) => sum + item.total_tokens, 0);
   const totalSpans = chartData.reduce((sum, item) => sum + item.span_count, 0);
 
   // Generate data for pie chart
@@ -107,7 +97,7 @@ const ProjectDashboard = () => {
       component: (
         <div className="h-64">
           <CostAndTokensChart
-            className="shadow-none border-none"
+            className="border-none shadow-none"
             metricsData={[data]}
             labels={["Total Cost"]}
             title={`Cost and Tokens (${timeFrame})`}
@@ -121,7 +111,7 @@ const ProjectDashboard = () => {
       component: (
         <div className="flex flex-col md:flex-row">
           <div className="flex-1">
-            <Card className="shadow-none border-none h-full">
+            <Card className="h-full border-none shadow-none">
               <CardHeader>
                 <CardTitle>Token Usage by Type</CardTitle>
               </CardHeader>
@@ -134,18 +124,13 @@ const ProjectDashboard = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) =>
-                          `${name}: ${(percent * 100).toFixed(0)}%`
-                        }
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#6366f1"
                         dataKey="value"
                       >
                         {pieData.map((_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(value) => value.toLocaleString()} />
@@ -156,12 +141,12 @@ const ProjectDashboard = () => {
             </Card>
           </div>
 
-          <div className="hidden md:block py-4 mx-2">
+          <div className="mx-2 hidden py-4 md:block">
             <Separator orientation="vertical" className="h-full" />
           </div>
 
           <div className="flex-1">
-            <Card className="shadow-none border-none h-full">
+            <Card className="h-full border-none shadow-none">
               <CardHeader>
                 <CardTitle>Daily Token Usage</CardTitle>
               </CardHeader>
@@ -209,9 +194,9 @@ const ProjectDashboard = () => {
   ];
 
   return (
-    <div className="p-4 w-full flex flex-col gap-2">
+    <div className="flex w-full flex-col gap-2 p-4">
       <Typography variant="h3">{`${project.name} Dashboard`}</Typography>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
@@ -228,9 +213,7 @@ const ProjectDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total API Calls
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalSpans}</div>
@@ -244,9 +227,7 @@ const ProjectDashboard = () => {
 
 export const ProjectDetailsTable = ({ data }: { data: ProcessedData[] }) => {
   const { projectUuid } = useParams({ from: Route.id });
-  const { data: functions } = useSuspenseQuery(
-    functionsQueryOptions(projectUuid)
-  );
+  const { data: functions } = useSuspenseQuery(functionsQueryOptions(projectUuid));
   const mappedFunctions: Record<string, FunctionPublic> = functions.reduce(
     (acc, fn) => ({
       ...acc,

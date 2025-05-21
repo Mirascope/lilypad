@@ -39,7 +39,7 @@ export const EnvironmentsTable = () => {
 
   return (
     <div>
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <Typography variant="h4">Environment</Typography>
         <CreateEnvironmentDialog />
       </div>

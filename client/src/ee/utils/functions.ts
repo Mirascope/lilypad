@@ -26,10 +26,7 @@ export const runPlayground = async (
   playgroundParameters: PlaygroundParameters
 ): Promise<PlaygroundResult> => {
   try {
-    const response = await api.post<
-      PlaygroundParameters,
-      AxiosResponse<PlaygroundSuccessResponse>
-    >(
+    const response = await api.post<PlaygroundParameters, AxiosResponse<PlaygroundSuccessResponse>>(
       `/ee/projects/${projectUuid}/functions/${functionUuid}/playground`,
       playgroundParameters
     );

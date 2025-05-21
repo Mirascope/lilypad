@@ -22,8 +22,7 @@ export type SerializedTemplateNode = Spread<
 >;
 
 const formatTemplateValue = (value: any): string => {
-  if (value === null || value === undefined || value === "")
-    return "[No Value]";
+  if (value === null || value === undefined || value === "") return "[No Value]";
 
   if (typeof value === "object") {
     try {
@@ -36,9 +35,7 @@ const formatTemplateValue = (value: any): string => {
   return String(value);
 };
 
-function $convertTemplateElement(
-  domNode: HTMLElement
-): DOMConversionOutput | null {
+function $convertTemplateElement(domNode: HTMLElement): DOMConversionOutput | null {
   const textContent = domNode.textContent;
   const isError = domNode.getAttribute("data-error") === "true";
 
@@ -135,11 +132,7 @@ export class TemplateNode extends TextNode {
     return dom;
   }
 
-  updateDOM(
-    _prevNode: TextNode,
-    dom: HTMLElement,
-    _config: EditorConfig
-  ): boolean {
+  updateDOM(_prevNode: TextNode, dom: HTMLElement, _config: EditorConfig): boolean {
     if (this.__showingVariable) {
       dom.textContent = `${this.__variable}`;
       dom.className = this.__isError
@@ -232,14 +225,10 @@ export function $createTemplateNode(
   showVariable: boolean = true
 ): TemplateNode {
   const templateNode = new TemplateNode(variable, value, isError, showVariable);
-  return $applyNodeReplacement(
-    templateNode.setMode("normal").toggleDirectionless()
-  );
+  return $applyNodeReplacement(templateNode.setMode("normal").toggleDirectionless());
 }
 
-export function $isTemplateNode(
-  node: LexicalNode | null | undefined
-): node is TemplateNode {
+export function $isTemplateNode(node: LexicalNode | null | undefined): node is TemplateNode {
   return node instanceof TemplateNode;
 }
 

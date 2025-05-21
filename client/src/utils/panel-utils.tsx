@@ -1,28 +1,17 @@
 import { useAuth } from "@/auth";
-import { CodeSnippet } from "@/components/CodeSnippet";
+import { CodeBlock } from "@/components/code-block";
 import { AddComment, CommentCards } from "@/components/Comment";
 import { JsonView } from "@/components/JsonView";
 import { LilypadMarkdown } from "@/components/LilypadMarkdown";
 import { TabGroup } from "@/components/TabGroup";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
 import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { CommentTab, Tab, TraceTab } from "@/types/traces";
-import {
-  AnnotationPublic,
-  Event,
-  MessageParam,
-  SpanMoreDetails,
-} from "@/types/types";
+import { AnnotationPublic, Event, MessageParam, SpanMoreDetails } from "@/types/types";
 import { commentsBySpanQueryOptions } from "@/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -40,17 +29,12 @@ const MessageCard = ({ role, content }: MessageCardProps) => {
       <CardHeader className="px-4">
         <CardTitle>{role}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-4 professional">
-        {content}
-      </CardContent>
+      <CardContent className="professional overflow-x-auto px-4">{content}</CardContent>
     </Card>
   );
 };
 
-export const renderMessagesCard = (
-  messages: MessageParam[],
-  renderer: "raw" | "markdown"
-) => {
+export const renderMessagesCard = (messages: MessageParam[], renderer: "raw" | "markdown") => {
   try {
     return messages.map((message: MessageParam, index: number) => {
       const contents: ReactNode[] = [];
@@ -89,13 +73,7 @@ export const renderMessagesCard = (
         }
         contentIndex++;
       }
-      return (
-        <MessageCard
-          role={message.role}
-          content={contents}
-          key={`messages-${index}`}
-        />
-      );
+      return <MessageCard role={message.role} content={contents} key={`messages-${index}`} />;
     });
   } catch (e) {
     return null;
@@ -112,15 +90,11 @@ export const SpanComments = ({
   activeAnnotation?: AnnotationPublic | null;
 }) => {
   const features = useFeatureAccess();
-  const { data: spanComments } = useSuspenseQuery(
-    commentsBySpanQueryOptions(spanUuid)
-  );
+  const { data: spanComments } = useSuspenseQuery(commentsBySpanQueryOptions(spanUuid));
   const { data: annotations } = useSuspenseQuery(
     annotationsBySpanQueryOptions(projectUuid, spanUuid, features.annotations)
   );
-  const filteredAnnotations = annotations.filter(
-    (annotation) => annotation.label
-  );
+  const filteredAnnotations = annotations.filter((annotation) => annotation.label);
 
   const tabs: Tab[] = [
     {
@@ -129,7 +103,7 @@ export const SpanComments = ({
           <MessageSquareMore />
           <span>Discussion</span>
           {spanComments.length > 0 && (
-            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            <div className="bg-secondary text-primary-foreground absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
               {spanComments.length > 9 ? "9+" : spanComments.length}
             </div>
           )}
@@ -137,7 +111,7 @@ export const SpanComments = ({
       ),
       value: CommentTab.COMMENTS,
       component: (
-        <div className="bg-background text-card-foreground relative flex flex-col rounded-lg shadow-sm h-full">
+        <div className="bg-background text-card-foreground relative flex h-full flex-col rounded-lg shadow-sm">
           <div className="flex-1 overflow-auto px-4 pt-2">
             <CommentCards spanUuid={spanUuid} />
           </div>
@@ -154,10 +128,8 @@ export const SpanComments = ({
           <NotebookPen />
           <span>Annotations</span>
           {filteredAnnotations.length > 0 && (
-            <div className="absolute -top-0 -right-2 bg-secondary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-              {filteredAnnotations.length > 9
-                ? "9+"
-                : filteredAnnotations.length}
+            <div className="bg-secondary text-primary-foreground absolute -top-0 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
+              {filteredAnnotations.length > 9 ? "9+" : filteredAnnotations.length}
             </div>
           )}
         </div>
@@ -200,10 +172,7 @@ export const LilypadPanelTab = ({
     {
       label: "Messages",
       value: TraceTab.MESSAGES,
-      component:
-        span.messages.length > 0 ? (
-          <MessagesContainer messages={span.messages} />
-        ) : null,
+      component: span.messages.length > 0 ? <MessagesContainer messages={span.messages} /> : null,
     },
     {
       label: "Response",
@@ -216,9 +185,7 @@ export const LilypadPanelTab = ({
       label: "Prompt Template",
       value: TraceTab.PROMPT_TEMPLATE,
       component: span.template ? (
-        <div className="p-2 whitespace-pre-wrap text-sm professional">
-          {span.template}
-        </div>
+        <div className="professional p-2 text-sm whitespace-pre-wrap">{span.template}</div>
       ) : null,
     },
     {
@@ -226,9 +193,7 @@ export const LilypadPanelTab = ({
       value: TraceTab.EVENTS,
       component:
         span.events && span.events.length > 0 ? (
-          <div className="h-full overflow-hidden">
-            {renderEventsContainer(span.events)}
-          </div>
+          <div className="h-full overflow-hidden">{renderEventsContainer(span.events)}</div>
         ) : null,
     },
     {
@@ -248,16 +213,12 @@ export const LilypadPanelTab = ({
     {
       label: "Code",
       value: TraceTab.CODE,
-      component: span.code ? (
-        <CodeSnippet code={span.code} className="h-full" />
-      ) : null,
+      component: span.code ? <CodeBlock code={span.code} className="h-full" /> : null,
     },
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
-      component: span.signature ? (
-        <CodeSnippet code={span.signature} className="h-full" />
-      ) : null,
+      component: span.signature ? <CodeBlock code={span.signature} className="h-full" /> : null,
     },
   ];
 
@@ -278,9 +239,7 @@ export const renderEventsContainer = (messages: Event[]) => {
               </CardTitle>
               <CardDescription>{event.timestamp}</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              {event.message}
-            </CardContent>
+            <CardContent className="overflow-x-auto">{event.message}</CardContent>
           </Card>
         ))}
       </CardContent>
@@ -288,14 +247,9 @@ export const renderEventsContainer = (messages: Event[]) => {
   );
 };
 
-export const MessagesContainer = ({
-  messages,
-}: {
-  messages: MessageParam[];
-}) => {
+export const MessagesContainer = ({ messages }: { messages: MessageParam[] }) => {
   const { updateUserConfig, userConfig } = useAuth();
-  const defaultMessageRenderer =
-    userConfig?.defaultMessageRenderer ?? "markdown";
+  const defaultMessageRenderer = userConfig?.defaultMessageRenderer ?? "markdown";
 
   const handleChangeRenderer = (value: "markdown" | "raw") => {
     updateUserConfig({
@@ -304,25 +258,20 @@ export const MessagesContainer = ({
   };
 
   return (
-    <div className="flex flex-col h-full p-2">
+    <div className="flex h-full flex-col p-2">
       <div className="flex-grow overflow-auto">
         <div className="flex flex-col gap-4">
           {renderMessagesCard(messages, defaultMessageRenderer)}
         </div>
       </div>
 
-      <div className="flex justify-center mt-2 shrink-0">
-        <div
-          className="inline-flex rounded-md shadow-sm space-x-1"
-          role="group"
-        >
+      <div className="mt-2 flex shrink-0 justify-center">
+        <div className="inline-flex space-x-1 rounded-md shadow-sm" role="group">
           <Button
-            variant={
-              defaultMessageRenderer === "markdown" ? "default" : "outline"
-            }
+            variant={defaultMessageRenderer === "markdown" ? "default" : "outline"}
             size="sm"
             onClick={() => handleChangeRenderer("markdown")}
-            className="rounded-r-none m-0"
+            className="m-0 rounded-r-none"
           >
             Markdown
           </Button>
@@ -346,7 +295,7 @@ export const renderOutput = (output: string) => {
       {typeof jsonOutput === "object" ? (
         <JsonView shortenTextAfterLength={100} value={jsonOutput} />
       ) : (
-        <ReactMarkdown className="p-2 professional">{output}</ReactMarkdown>
+        <ReactMarkdown className="professional p-2">{output}</ReactMarkdown>
       )}
     </>
   );

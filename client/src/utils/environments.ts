@@ -1,10 +1,6 @@
 import api from "@/api";
 import { EnvironmentCreate, EnvironmentPublic } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 
 export const fetchEnvironments = async () => {
@@ -12,8 +8,7 @@ export const fetchEnvironments = async () => {
 };
 
 export const postEnvironment = async (environmentCreate: EnvironmentCreate) => {
-  return (await api.post<EnvironmentPublic>(`/environments`, environmentCreate))
-    .data;
+  return (await api.post<EnvironmentPublic>(`/environments`, environmentCreate)).data;
 };
 
 export const deleteEnvironment = async (environmentUuid: string) => {
@@ -38,8 +33,7 @@ export const useCreateEnvironmentMutation = () => {
 export const useDeleteEnvironmentMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (environmentUuid: string) =>
-      await deleteEnvironment(environmentUuid),
+    mutationFn: async (environmentUuid: string) => await deleteEnvironment(environmentUuid),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["environments"],

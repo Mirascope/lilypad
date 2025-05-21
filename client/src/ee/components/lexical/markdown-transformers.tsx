@@ -3,11 +3,7 @@ import type {
   MultilineElementTransformer,
   Transformer,
 } from "@lexical/markdown";
-import {
-  $createParagraphNode,
-  $createTextNode,
-  type LexicalNode,
-} from "lexical";
+import { $createParagraphNode, $createTextNode, type LexicalNode } from "lexical";
 
 import { TRANSFORMERS } from "@lexical/markdown";
 import {
@@ -67,10 +63,7 @@ const trimEmptyStrings = (arr: string[]): string[] => {
   let lastContentIndex = -1;
 
   for (let i = 0; i < arr.length; i++) {
-    if (
-      arr[i] !== "" ||
-      (lastContentIndex !== -1 && arr.slice(i).some((item) => item !== ""))
-    ) {
+    if (arr[i] !== "" || (lastContentIndex !== -1 && arr.slice(i).some((item) => item !== ""))) {
       result.push(arr[i]);
       if (arr[i] !== "") {
         lastContentIndex = result.length - 1;
@@ -121,14 +114,7 @@ export const COLLAPSIBLE_TRANSFORMER: MultilineElementTransformer = {
   },
 
   // Replace function to convert markdown code blocks back to Lexical nodes
-  replace: (
-    rootNode,
-    _children,
-    startMatch,
-    _endMatch,
-    linesInBetween,
-    isImport
-  ) => {
+  replace: (rootNode, _children, startMatch, _endMatch, linesInBetween, isImport) => {
     if (!isImport) return true;
     const containerNode = $createCollapsibleContainerNode(true);
     // create title node

@@ -7,11 +7,7 @@ import { TagsTable } from "@/components/TagsTable";
 import { Typography } from "@/components/ui/typography";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { Building2, KeyRound, SettingsIcon, Tag } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -132,7 +128,7 @@ const Settings = () => {
     }).catch(() => toast.error("Failed to navigate to settings page."));
   };
   return (
-    <div className="p-2 flex flex-col gap-2">
+    <div className="flex flex-col gap-2 p-2">
       <Typography variant="h3">Settings</Typography>
       <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
     </div>

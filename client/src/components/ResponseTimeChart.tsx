@@ -40,13 +40,7 @@ export const FunctionResponseTimeChart = ({
   if (secondFunction) {
     labels.push(`${secondFunction.name} v${secondFunction.version_num}`);
   }
-  return (
-    <ResponseTimeChart
-      metricsData={extractedMetricsData}
-      title={title}
-      labels={labels}
-    />
-  );
+  return <ResponseTimeChart metricsData={extractedMetricsData} title={title} labels={labels} />;
 };
 
 export const ResponseTimeChart = ({
@@ -79,19 +73,18 @@ export const ResponseTimeChart = ({
 
   // Convert map to array and sort by date
   const combinedData = Array.from(dateMap.values()).sort(
-    (a, b) =>
-      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
   );
 
   // Define colors for each dataset
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
 
   return (
-    <Card className="w-full h-full flex flex-col ">
+    <Card className="flex h-full w-full flex-col">
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
+      <CardContent className="flex h-full flex-grow flex-col items-center justify-center p-4">
         {combinedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={combinedData}>
@@ -114,27 +107,16 @@ export const ResponseTimeChart = ({
                 wrapperClassName="bg-background rounded-md shadow-md"
                 labelClassName="text-foreground font-medium"
                 labelFormatter={(label: string) => formatDate(label, false)}
-                formatter={(
-                  value: number | string | unknown[],
-                  name: string
-                ) => {
+                formatter={(value: number | string | unknown[], name: string) => {
                   // Find the corresponding color for this data series
-                  const colorIndex = labels.findIndex(
-                    (label) => label === name
-                  );
+                  const colorIndex = labels.findIndex((label) => label === name);
                   const color = colors[colorIndex % colors.length];
 
                   if (typeof value === "number") {
-                    return [
-                      (value / 1_000_000_000).toFixed(2) + " ms",
-                      name,
-                      color,
-                    ];
+                    return [(value / 1_000_000_000).toFixed(2) + " ms", name, color];
                   }
                   return [
-                    Number.isFinite(value)
-                      ? Number(value).toFixed(2)
-                      : String(value),
+                    Number.isFinite(value) ? Number(value).toFixed(2) : String(value),
                     name,
                     color,
                   ];

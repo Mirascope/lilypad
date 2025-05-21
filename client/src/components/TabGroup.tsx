@@ -104,19 +104,10 @@ export const TabGroup = ({
   if (tabs.length === 0) return null;
 
   return (
-    <div
-      className={cn(
-        "bg-card rounded-md border p-2 shadow-md h-full flex flex-col",
-        className
-      )}
-    >
-      <Tabs
-        value={tab}
-        onValueChange={onTabChange}
-        className="w-full flex flex-col h-full"
-      >
-        <div className="flex flex-col h-full">
-          <div className="mb-2 relative">
+    <div className={cn("bg-card flex h-full flex-col rounded-md border p-2 shadow-md", className)}>
+      <Tabs value={tab} onValueChange={onTabChange} className="flex h-full w-full flex-col">
+        <div className="flex h-full flex-col">
+          <div className="relative mb-2">
             {/* Left Arrow Button */}
             <button
               onClick={scrollLeft}
@@ -130,15 +121,15 @@ export const TabGroup = ({
             {/* Scrollable Tabs Container */}
             <div
               ref={tabsListRef}
-              className="overflow-x-auto overflow-y-hidden no-scrollbar relative h-8"
+              className="no-scrollbar relative h-8 overflow-x-auto overflow-y-hidden"
               onScroll={handleScroll}
             >
-              <TabsList className="h-8 flex gap-x-2 bg-transparent p-0">
+              <TabsList className="default:font-fun flex h-8 gap-x-2 bg-transparent p-0">
                 {tabs
                   .filter((tab) => tab.component)
                   .map((tab) => (
                     <TabsTrigger
-                      className="relative data-[state=active]:bg-primary dark:data-[state=active]:bg-primary/60"
+                      className="data-[state=active]:bg-primary dark:data-[state=active]:bg-primary/60 relative"
                       key={tab.value}
                       value={tab.value}
                       disabled={tab.isDisabled}
@@ -154,7 +145,7 @@ export const TabGroup = ({
               onClick={scrollRight}
               className={cn(
                 `bg-background/60 absolute top-1/2 right-0 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-opacity duration-200`,
-                showRightArrow ? "opacity-100" : "opacity-0 pointer-events-none"
+                showRightArrow ? "opacity-100" : "pointer-events-none opacity-0"
               )}
               aria-label="Scroll tabs right"
               tabIndex={showRightArrow ? 0 : -1}
@@ -163,12 +154,12 @@ export const TabGroup = ({
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 bg-background border-t rounded-md">
+          <div className="bg-background min-h-0 flex-1 rounded-md border-t">
             {tabs.map((tab) => (
               <TabsContent
                 key={tab.value}
                 value={tab.value}
-                className="w-full h-full data-[state=active]:flex data-[state=active]:flex-col m-0 p-0"
+                className="m-0 h-full w-full p-0 data-[state=active]:flex data-[state=active]:flex-col"
               >
                 {tab.component ?? <Outlet />}
               </TabsContent>
