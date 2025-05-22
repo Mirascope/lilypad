@@ -1,7 +1,7 @@
 [project]
 name = "lilypad"
-version = "0.3.0"
-description = "Start building your data flywheel in one line of code."
+version = "0.5.0"
+description = "Spin up your data flywheel in one line of code."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
