@@ -1,15 +1,10 @@
 import api from "@/api";
 import { useAuth } from "@/auth";
 import { ProjectCreate, ProjectPublic } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 
-export const fetchProjects = async () =>
-  (await api.get<ProjectPublic[]>("/projects")).data;
+export const fetchProjects = async () => (await api.get<ProjectPublic[]>("/projects")).data;
 
 export const fetchProject = async (projectUuid: string) => {
   return (await api.get<ProjectPublic>(`/projects/${projectUuid}`)).data;
@@ -19,13 +14,8 @@ export const postProject = async (projectCreate: ProjectCreate) => {
   return (await api.post<ProjectPublic>(`/projects`, projectCreate)).data;
 };
 
-export const patchProject = async (
-  projectUuid: string,
-  projectUpdate: ProjectCreate
-) => {
-  return (
-    await api.patch<ProjectPublic>(`/projects/${projectUuid}`, projectUpdate)
-  ).data;
+export const patchProject = async (projectUuid: string, projectUpdate: ProjectCreate) => {
+  return (await api.patch<ProjectPublic>(`/projects/${projectUuid}`, projectUpdate)).data;
 };
 export const deleteProject = async (projectUuid: string) => {
   return (await api.delete<boolean>(`/projects/${projectUuid}`)).data;
@@ -48,8 +38,7 @@ export const useCreateProjectMutation = () => {
   const posthog = usePostHog();
   const { setProject } = useAuth();
   return useMutation({
-    mutationFn: async (projectCreate: ProjectCreate) =>
-      await postProject(projectCreate),
+    mutationFn: async (projectCreate: ProjectCreate) => await postProject(projectCreate),
     onSuccess: async () => {
       posthog.capture("projectCreated");
       await queryClient.invalidateQueries({

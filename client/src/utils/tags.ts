@@ -1,10 +1,6 @@
 import api from "@/api";
 import { TagCreate, TagPublic } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchTags = async () => (await api.get<TagPublic[]>("/tags")).data;
 
@@ -60,13 +56,8 @@ export const useCreateTagMutation = () => {
 export const useUpdateTagMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      tagUuid,
-      tagUpdate,
-    }: {
-      tagUuid: string;
-      tagUpdate: TagCreate;
-    }) => await patchTag(tagUuid, tagUpdate),
+    mutationFn: async ({ tagUuid, tagUpdate }: { tagUuid: string; tagUpdate: TagCreate }) =>
+      await patchTag(tagUuid, tagUpdate),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["tags"],

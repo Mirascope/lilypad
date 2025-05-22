@@ -1,9 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { TableContextType, useTable } from "@/hooks/use-table";
 import { cn } from "@/lib/utils";
 import { ReactNode, Suspense } from "react";
@@ -90,19 +86,18 @@ export function ResizablePanels<T>({
     renderDetailContent = detailContentRenderer(detailRow);
   }
 
-  const showDetailPanel =
-    !!detailRow && (!!renderDetailContent || !!detailContent);
+  const showDetailPanel = !!detailRow && (!!renderDetailContent || !!detailContent);
 
   return (
     <ResizablePanelGroup
       direction="horizontal"
-      className={cn("flex-1 rounded-lg w-full h-full flex gap-4", className)}
+      className={cn("flex h-full w-full flex-1 gap-4 rounded-lg", className)}
     >
       <ResizablePanel
         id="primary-panel"
         defaultSize={showDetailPanel ? defaultPrimarySize : 100}
         order={1}
-        className={cn("flex flex-col gap-2 h-full", primaryClassName)}
+        className={cn("flex h-full flex-col gap-2", primaryClassName)}
       >
         {primaryContent}
       </ResizablePanel>
@@ -114,14 +109,12 @@ export function ResizablePanels<T>({
             id="detail-panel"
             defaultSize={defaultDetailSize}
             order={2}
-            className={cn("flex flex-col h-full", detailClassName)}
+            className={cn("flex h-full flex-col", detailClassName)}
             collapsible={true}
             minSize={minDetailSize}
             onCollapse={handleCollapsePanel}
           >
-            <Suspense
-              fallback={<CardSkeleton items={5} className="flex flex-col" />}
-            >
+            <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
               {renderDetailContent}
             </Suspense>
           </ResizablePanel>

@@ -18,9 +18,7 @@ import { $isCollapsibleContentNode } from "./collapsible-content-node";
 
 type SerializedCollapsibleTitleNode = SerializedElementNode;
 
-export function $convertSummaryElement(
-  _domNode: HTMLElement
-): DOMConversionOutput | null {
+export function $convertSummaryElement(_domNode: HTMLElement): DOMConversionOutput | null {
   const node = $createCollapsibleTitleNode();
   return {
     node,
@@ -70,9 +68,7 @@ export class CollapsibleTitleNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    _serializedNode: SerializedCollapsibleTitleNode
-  ): CollapsibleTitleNode {
+  static importJSON(_serializedNode: SerializedCollapsibleTitleNode): CollapsibleTitleNode {
     return $createCollapsibleTitleNode();
   }
 
@@ -91,10 +87,7 @@ export class CollapsibleTitleNode extends ElementNode {
 
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
-      invariant(
-        $isCollapsibleTitleNode(node),
-        "node is not a CollapsibleTitleNode"
-      );
+      invariant($isCollapsibleTitleNode(node), "node is not a CollapsibleTitleNode");
       if (node.isEmpty()) {
         node.remove();
       }
@@ -105,17 +98,13 @@ export class CollapsibleTitleNode extends ElementNode {
     const containerNode = this.getParentOrThrow();
 
     if (!$isCollapsibleContainerNode(containerNode)) {
-      throw new Error(
-        "CollapsibleTitleNode expects to be child of CollapsibleContainerNode"
-      );
+      throw new Error("CollapsibleTitleNode expects to be child of CollapsibleContainerNode");
     }
 
     if (containerNode.getOpen()) {
       const contentNode = this.getNextSibling();
       if (!$isCollapsibleContentNode(contentNode)) {
-        throw new Error(
-          "CollapsibleTitleNode expects to have CollapsibleContentNode sibling"
-        );
+        throw new Error("CollapsibleTitleNode expects to have CollapsibleContentNode sibling");
       }
 
       const firstChild = contentNode.getFirstChild();

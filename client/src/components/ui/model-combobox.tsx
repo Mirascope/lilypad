@@ -7,13 +7,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -34,10 +28,7 @@ type ModelComboboxProps<T extends FieldValues, TName extends FieldPath<T>> = {
   isDisabled?: boolean;
 };
 
-export const ModelCombobox = <
-  T extends FieldValues,
-  TName extends FieldPath<T>
->({
+export const ModelCombobox = <T extends FieldValues, TName extends FieldPath<T>>({
   control,
   name,
   label,
@@ -73,23 +64,22 @@ export const ModelCombobox = <
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
-                    variant='outline'
-                    type='button'
-                    className='w-full flex justify-between items-center px-3 py-2 border rounded-md'
+                    variant="outline"
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border px-3 py-2"
                     disabled={isDisabled}
                     onClick={() => setOpen(!open)}
                   >
                     {field.value
-                      ? options.find((opt) => opt.value === field.value)
-                          ?.label || field.value
+                      ? options.find((opt) => opt.value === field.value)?.label || field.value
                       : "Select an option"}
-                    <ChevronsUpDown className='h-4 w-4' />
+                    <ChevronsUpDown className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className='w-full p-0'>
+                <PopoverContent className="w-full p-0">
                   <Command>
                     <CommandInput
-                      placeholder='Type or select an option...'
+                      placeholder="Type or select an option..."
                       value={inputValue}
                       disabled={isDisabled}
                       onValueChange={(value) => {
@@ -101,9 +91,7 @@ export const ModelCombobox = <
                       <CommandGroup>
                         {options
                           .filter((option) =>
-                            option.label
-                              .toLowerCase()
-                              .includes(inputValue.toLowerCase())
+                            option.label.toLowerCase().includes(inputValue.toLowerCase())
                           )
                           .map((option) => (
                             <CommandItem
@@ -114,9 +102,7 @@ export const ModelCombobox = <
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  field.value === option.value
-                                    ? "opacity-100"
-                                    : "opacity-0"
+                                  field.value === option.value ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               {option.label}
@@ -124,19 +110,13 @@ export const ModelCombobox = <
                           ))}
                         {inputValue &&
                           !options.some(
-                            (opt) =>
-                              opt.label.toLowerCase() ===
-                              inputValue.toLowerCase()
+                            (opt) => opt.label.toLowerCase() === inputValue.toLowerCase()
                           ) && (
-                            <CommandItem
-                              onSelect={() => handleSelect(inputValue)}
-                            >
+                            <CommandItem onSelect={() => handleSelect(inputValue)}>
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  field.value === inputValue
-                                    ? "opacity-100"
-                                    : "opacity-0"
+                                  field.value === inputValue ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               Add "{inputValue}"

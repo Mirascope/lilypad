@@ -7,19 +7,13 @@ import {
   USER_CONFIG_STORAGE_KEY,
 } from "@/utils/constants";
 import { VisibilityState } from "@tanstack/react-table";
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
+import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 
 export interface UserConfig {
   defaultTraceTab?: TraceTab;
   defaultMessageRenderer?: "raw" | "markdown";
   tracesTableVisibilityState?: VisibilityState;
-  font?: "professional" | "fun";
+  font?: "default" | "professional" | "fun";
 }
 
 export interface AuthContext {
@@ -105,12 +99,8 @@ const saveUserConfigToStorage = (config: UserConfig | null) => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
-  const [userConfig, setUserConfig] = useState<UserConfig | null>(
-    loadUserConfigFromStorage()
-  );
-  const [activeProject, setActiveProject] = useState<
-    ProjectPublic | null | undefined
-  >(null);
+  const [userConfig, setUserConfig] = useState<UserConfig | null>(loadUserConfigFromStorage());
+  const [activeProject, setActiveProject] = useState<ProjectPublic | null | undefined>(null);
   const isAuthenticated = !!user;
 
   const setSession = useCallback((newSession: UserPublic | null) => {
@@ -118,12 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveToStorage(newSession);
   }, []);
 
-  const setProject = useCallback(
-    (project: ProjectPublic | null | undefined) => {
-      setActiveProject(project);
-    },
-    []
-  );
+  const setProject = useCallback((project: ProjectPublic | null | undefined) => {
+    setActiveProject(project);
+  }, []);
 
   const updateUserConfig = useCallback(
     (userConfigUpdate: Partial<UserConfig>) => {

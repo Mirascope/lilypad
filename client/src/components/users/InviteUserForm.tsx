@@ -9,10 +9,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  OrganizationInviteCreate,
-  OrganizationInvitePublic,
-} from "@/types/types";
+import { OrganizationInviteCreate, OrganizationInvitePublic } from "@/types/types";
 import { useCreateOrganizationInviteMutation } from "@/utils/organizations";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -21,11 +18,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export const AlternativeInviteLink = ({
-  inviteLink,
-}: {
-  inviteLink: string;
-}) => {
+export const AlternativeInviteLink = ({ inviteLink }: { inviteLink: string }) => {
   return (
     <>
       <div>Alternatively, give the invited user this link:</div>
@@ -55,16 +48,14 @@ interface InviteUserFormProps {
   className?: string;
 }
 
-export const InviteUserForm = ({
-  onSuccess,
-  className = "",
-}: InviteUserFormProps) => {
+export const InviteUserForm = ({ onSuccess, className = "" }: InviteUserFormProps) => {
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const methods = useForm<OrganizationInviteCreate>({
     defaultValues: { email: "", invited_by: user.uuid },
   });
-  const [organizationInvite, setOrganizationInvite] =
-    useState<OrganizationInvitePublic | null>(null);
+  const [organizationInvite, setOrganizationInvite] = useState<OrganizationInvitePublic | null>(
+    null
+  );
 
   const createOrganizationInvite = useCreateOrganizationInviteMutation();
 
@@ -81,10 +72,7 @@ export const InviteUserForm = ({
 
   return (
     <Form {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(handleSubmit)}
-        className={`space-y-6 ${className}`}
-      >
+      <form onSubmit={methods.handleSubmit(handleSubmit)} className={`space-y-6 ${className}`}>
         <FormField
           key="email"
           control={methods.control}
@@ -114,17 +102,11 @@ export const InviteUserForm = ({
         <div className="flex justify-end">
           {!organizationInvite ? (
             <Button type="submit" disabled={methods.formState.isSubmitting}>
-              {methods.formState.isSubmitting
-                ? "Sending invite..."
-                : "Send invite"}
+              {methods.formState.isSubmitting ? "Sending invite..." : "Send invite"}
             </Button>
           ) : (
             <DialogClose asChild>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOrganizationInvite(null)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOrganizationInvite(null)}>
                 Close
               </Button>
             </DialogClose>

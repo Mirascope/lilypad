@@ -35,6 +35,7 @@ class SpanType(str, Enum):
 
     FUNCTION = "function"
     TRACE = "trace"
+    MIRASCOPE_V1 = "mirascope.v1"
 
 
 class SpanBase(SQLModel):

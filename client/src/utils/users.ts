@@ -1,14 +1,6 @@
 import api from "@/api";
-import {
-  UserOrganizationTable,
-  UserOrganizationUpdate,
-  UserPublic,
-} from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { UserOrganizationTable, UserOrganizationUpdate, UserPublic } from "@/types/types";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 export const updateActiveOrganization = async (organizationUuid: string) => {
   return (await api.put<UserPublic>(`/users/${organizationUuid}`)).data;
 };
@@ -26,8 +18,7 @@ export const fetchUsersByOrganization = async () => {
 };
 
 export const fetchUserOrganizations = async () => {
-  return (await api.get<UserOrganizationTable[]>(`/ee/user-organizations`))
-    .data;
+  return (await api.get<UserOrganizationTable[]>(`/ee/user-organizations`)).data;
 };
 
 export const createUserOrganization = async (token: string) => {
@@ -43,17 +34,12 @@ export const updateUserOrganization = async (
   data: UserOrganizationUpdate
 ) => {
   return (
-    await api.patch<UserOrganizationTable>(
-      `/ee/user-organizations/${userOrganizationUuid}`,
-      data
-    )
+    await api.patch<UserOrganizationTable>(`/ee/user-organizations/${userOrganizationUuid}`, data)
   ).data;
 };
 
 export const deleteUserOrganization = async (userOrganizationUuid: string) => {
-  return (
-    await api.delete<boolean>(`/ee/user-organizations/${userOrganizationUuid}`)
-  ).data;
+  return (await api.delete<boolean>(`/ee/user-organizations/${userOrganizationUuid}`)).data;
 };
 
 export const userQueryOptions = () =>
@@ -131,8 +117,7 @@ export const useUpdateUserKeysMutation = () => {
 export const useDeleteUserOrganizationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (projectUuid: string) =>
-      await deleteUserOrganization(projectUuid),
+    mutationFn: async (projectUuid: string) => await deleteUserOrganization(projectUuid),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["usersByOrganization"],

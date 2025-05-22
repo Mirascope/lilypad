@@ -43,9 +43,7 @@ const TableSkeleton = ({
             <TableRow key={rowIndex}>
               {Array.from({ length: columns }).map((_, colIndex) => (
                 <TableCell key={colIndex}>
-                  <Skeleton
-                    className={`h-4 w-[${colIndex === 0 ? "120px" : "80px"}]`}
-                  />
+                  <Skeleton className={`h-4 w-[${colIndex === 0 ? "120px" : "80px"}]`} />
                 </TableCell>
               ))}
             </TableRow>

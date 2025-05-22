@@ -9,11 +9,7 @@ import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { SpanMetrics } from "@/components/traces/SpanMetrics";
 import { TraceTree } from "@/components/traces/TraceTree";
 import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Typography } from "@/components/ui/typography";
 import { QueueForm } from "@/ee/components/QueueForm";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
@@ -31,18 +27,16 @@ export const SpanFullDetail = ({
   handleBackToTraces: () => void;
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const { data: trace } = useSuspenseQuery(
-    rootTraceQueryOptions(projectUuid, span.span_id)
-  );
+  const { data: trace } = useSuspenseQuery(rootTraceQueryOptions(projectUuid, span.span_id));
   const features = useFeatureAccess();
 
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full p-4">
       <ResizablePanel defaultSize={25} minSize={15} className="flex flex-col">
-        <Typography variant="h3" className="truncate max-w-md mb-4 shrink-0">
+        <Typography variant="h3" className="mb-4 max-w-md shrink-0 truncate">
           Trace Hierarchy
         </Typography>
-        <div className="overflow-y-auto flex-1 min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <Suspense fallback={<CardSkeleton items={1} />}>
             <TraceTree
               span={trace}
@@ -56,12 +50,8 @@ export const SpanFullDetail = ({
 
       <ResizableHandle withHandle className="m-4" />
 
-      <ResizablePanel
-        defaultSize={75}
-        minSize={50}
-        className="flex flex-col h-full"
-      >
-        <div className="flex justify-between items-center mb-4 shrink-0">
+      <ResizablePanel defaultSize={75} minSize={50} className="flex h-full flex-col">
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <FunctionTitle span={span} />
           <div className="flex gap-2">
             {features.annotations && (
@@ -79,7 +69,7 @@ export const SpanFullDetail = ({
               onClick={handleBackToTraces}
               variant="outline"
               size="sm"
-              className="flex gap-2 items-center"
+              className="flex items-center gap-2"
             >
               <Minimize2 className="h-4 w-4" />
               <span className="hidden sm:inline">Back to Traces</span>
@@ -89,13 +79,9 @@ export const SpanFullDetail = ({
 
         <ResizablePanelGroup
           direction="horizontal"
-          className="flex-1 min-h-0 h-full overflow-hidden"
+          className="h-full min-h-0 flex-1 overflow-hidden"
         >
-          <ResizablePanel
-            defaultSize={65}
-            minSize={40}
-            className="overflow-hidden"
-          >
+          <ResizablePanel defaultSize={65} minSize={40} className="overflow-hidden">
             <div className="h-full overflow-y-auto">
               <LilypadPanel spanUuid={spanUuid} showMetrics={false} />
             </div>
@@ -106,12 +92,12 @@ export const SpanFullDetail = ({
           <ResizablePanel
             defaultSize={35}
             minSize={25}
-            className="flex flex-col overflow-hidden h-full gap-4"
+            className="flex h-full flex-col gap-4 overflow-hidden"
           >
             <div className="shrink-0">
               <SpanMetrics span={span} />
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="min-h-0 flex-1">
               <Suspense fallback={<CardSkeleton items={1} />}>
                 <SpanComments projectUuid={projectUuid} spanUuid={span.uuid} />
               </Suspense>

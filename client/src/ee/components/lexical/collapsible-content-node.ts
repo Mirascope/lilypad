@@ -94,9 +94,7 @@ export class CollapsibleContentNode extends ElementNode {
     return { element };
   }
 
-  static importJSON(
-    _serializedNode: SerializedCollapsibleContentNode
-  ): CollapsibleContentNode {
+  static importJSON(_serializedNode: SerializedCollapsibleContentNode): CollapsibleContentNode {
     return $createCollapsibleContentNode();
   }
 

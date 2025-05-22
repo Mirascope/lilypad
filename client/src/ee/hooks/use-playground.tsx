@@ -8,15 +8,8 @@ import {
   PlaygroundErrorDetail,
   PlaygroundParameters,
 } from "@/types/types";
-import {
-  useCreateVersionedFunctionMutation,
-  usePatchFunctionMutation,
-} from "@/utils/functions";
-import {
-  getAvailableProviders,
-  useBaseEditorForm,
-  validateInputs,
-} from "@/utils/playground-utils";
+import { useCreateVersionedFunctionMutation, usePatchFunctionMutation } from "@/utils/functions";
+import { getAvailableProviders, useBaseEditorForm, validateInputs } from "@/utils/playground-utils";
 import { userQueryOptions } from "@/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -37,11 +30,7 @@ export type EditorParameters = PlaygroundParameters & FormValues;
 /**
  * Custom hook that encapsulates all the business logic for the Playground component
  */
-export const usePlaygroundContainer = ({
-  version,
-}: {
-  version: FunctionPublic | null;
-}) => {
+export const usePlaygroundContainer = ({ version }: { version: FunctionPublic | null }) => {
   const { projectUuid, functionName } = useParams({
     strict: false,
   });
@@ -89,10 +78,7 @@ export const usePlaygroundContainer = ({
   const editorRef = useRef<LexicalEditor>(null);
   const doesProviderExist = getAvailableProviders(user).length > 0;
 
-  const onSubmit = async (
-    data: EditorParameters,
-    event?: BaseSyntheticEvent
-  ) => {
+  const onSubmit = async (data: EditorParameters, event?: BaseSyntheticEvent) => {
     event?.preventDefault();
     methods.clearErrors();
     setEditorErrors([]);
@@ -102,13 +88,9 @@ export const usePlaygroundContainer = ({
     if (!editorRef?.current || !projectUuid || !functionName) return;
 
     let buttonName = "";
-    if (
-      (event?.nativeEvent as unknown as { submitter: HTMLButtonElement })
-        ?.submitter
-    ) {
-      buttonName = (
-        event?.nativeEvent as unknown as { submitter: HTMLButtonElement }
-      ).submitter.name;
+    if ((event?.nativeEvent as unknown as { submitter: HTMLButtonElement })?.submitter) {
+      buttonName = (event?.nativeEvent as unknown as { submitter: HTMLButtonElement }).submitter
+        .name;
     } else if (event?.target && "name" in event.target) {
       buttonName = (event.target as { name: string }).name;
     }
@@ -116,9 +98,7 @@ export const usePlaygroundContainer = ({
     const templateErrors = $findErrorTemplateNodes(editorRef.current);
     if (templateErrors.length > 0) {
       setEditorErrors(
-        templateErrors.map(
-          (node) => `'${node.getValue()}' is not a valid function argument.`
-        )
+        templateErrors.map((node) => `'${node.getValue()}' is not a valid function argument.`)
       );
       return;
     }
@@ -146,9 +126,7 @@ export const usePlaygroundContainer = ({
         }
 
         if (isEmpty) {
-          toast.error(
-            "The prompt template cannot be empty. Please enter some text."
-          );
+          toast.error("The prompt template cannot be empty. Please enter some text.");
           resolve();
           return;
         }
@@ -203,15 +181,10 @@ export const usePlaygroundContainer = ({
               if (input.key && input.key.trim().length > 0) {
                 if (input.type === "list" || input.type === "dict") {
                   try {
-                    const simplifiedValue = simplifyFormItem(
-                      input as FormItemValue
-                    );
+                    const simplifiedValue = simplifyFormItem(input as FormItemValue);
                     acc[input.key] = simplifiedValue;
                   } catch (parseError) {
-                    console.warn(
-                      `Could not parse input '${input.key}':`,
-                      parseError
-                    );
+                    console.warn(`Could not parse input '${input.key}':`, parseError);
                     acc[input.key] = input.value;
                   }
                 } else {
@@ -255,9 +228,7 @@ export const usePlaygroundContainer = ({
         } catch (apiError) {
           console.error("API Error during create/run:", apiError);
           const message =
-            apiError instanceof Error
-              ? apiError.message
-              : "An unexpected API error occurred.";
+            apiError instanceof Error ? apiError.message : "An unexpected API error occurred.";
           setError({
             type: "ApiError",
             reason: "Failed to create or run the function version via API.",

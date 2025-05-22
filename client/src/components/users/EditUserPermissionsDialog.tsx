@@ -9,13 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -56,43 +50,35 @@ export const EditUserPermissionsDialog = ({
       });
     toast.success("Successfully updated user permissions");
   };
-  const roles = Object.values(UserRole).filter(
-    (role) => role !== UserRole.OWNER
-  );
+  const roles = Object.values(UserRole).filter((role) => role !== UserRole.OWNER);
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant='outline' size='icon' className='h-8 w-8'>
+          <Button variant="outline" size="icon" className="h-8 w-8">
             <PencilLine />
           </Button>
         </DialogTrigger>
-        <DialogContent className='max-w-[425px] overflow-x-auto'>
+        <DialogContent className="max-w-[425px] overflow-x-auto">
           <Form {...methods}>
-            <form
-              onSubmit={methods.handleSubmit(onSubmit)}
-              className='space-y-6'
-            >
-              <DialogHeader className='shrink-0'>
+            <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+              <DialogHeader className="shrink-0">
                 <DialogTitle>{`Edit permissions for ${user.first_name}`}</DialogTitle>
               </DialogHeader>
               <DialogDescription>
                 Update <b>{user.first_name}'s</b> role within the organization.
               </DialogDescription>
               <FormField
-                key='role'
+                key="role"
                 control={methods.control}
-                name='role'
+                name="role"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
                     <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className='w-full'>
-                          <SelectValue placeholder='Change role' />
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Change role" />
                         </SelectTrigger>
                         <SelectContent>
                           {roles.map((role) => (
@@ -108,11 +94,7 @@ export const EditUserPermissionsDialog = ({
               />
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button
-                    type='submit'
-                    loading={methods.formState.isSubmitting}
-                    className='w-full'
-                  >
+                  <Button type="submit" loading={methods.formState.isSubmitting} className="w-full">
                     {methods.formState.isSubmitting ? "Updating..." : "Update"}
                   </Button>
                 </DialogClose>

@@ -1,10 +1,6 @@
 import { LilypadLogo } from "@/components/lilypad-logo";
 import { Badge } from "@/components/ui/badge";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Typography } from "@/components/ui/typography";
 import { ProjectPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
@@ -41,11 +37,9 @@ export const AppHeader = ({ to, activeProject }: AppHeaderProps) => {
           <div className="flex aspect-square items-center justify-center rounded-lg text-sidebar-primary-foreground">
             <LilypadLogo size={34} />
           </div>
-          <Typography variant="h4" className="flex items-center gap-2 flex-1">
-            <span className="truncate text-primary fun">Lilypad</span>
-            <Badge className="bg-yellow-400 text-primary hover:bg-yellow-500">
-              Beta
-            </Badge>
+          <Typography variant="h4" className="flex flex-1 items-center gap-2">
+            <span className="fun truncate text-primary">Lilypad</span>
+            <Badge className="bg-yellow-400 text-primary hover:bg-yellow-500">Beta</Badge>
           </Typography>
         </SidebarMenuButton>
       </SidebarMenuItem>

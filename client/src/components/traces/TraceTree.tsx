@@ -16,12 +16,7 @@ interface SpanTreeProps {
   level: number;
 }
 
-export const TraceTree = ({
-  span,
-  projectUuid,
-  currentSpanUuid,
-  level,
-}: SpanTreeProps) => {
+export const TraceTree = ({ span, projectUuid, currentSpanUuid, level }: SpanTreeProps) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(true);
   const isCurrentSpan = span.uuid === currentSpanUuid;
@@ -43,7 +38,7 @@ export const TraceTree = ({
     <div className="w-full">
       <div
         className={cn(
-          "flex items-center py-2 px-1 rounded-md transition-colors hover:bg-accent/50 cursor-pointer",
+          "flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors hover:bg-accent/50",
           isCurrentSpan && "bg-accent font-medium"
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}
@@ -53,32 +48,25 @@ export const TraceTree = ({
           <Button
             variant="ghost"
             size="sm"
-            className="p-0 size-6 mr-2 shrink-0"
+            className="mr-2 size-6 shrink-0 p-0"
             onClick={(e) => {
               e.stopPropagation();
               setExpanded(!expanded);
             }}
           >
-            {expanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         ) : (
-          <div className="w-6 mr-2 shrink-0" />
+          <div className="mr-2 w-6 shrink-0" />
         )}
 
-        <div className="flex flex-col min-w-0 w-full ">
-          <div className="flex items-center gap-2 w-full">
-            <span className="truncate font-medium max-w-full">
+        <div className="flex w-full min-w-0 flex-col">
+          <div className="flex w-full items-center gap-2">
+            <span className="max-w-full truncate font-medium">
               {span.display_name ?? span.span_id}
             </span>
             {versionNum && (
-              <Typography
-                variant="span"
-                className="text-xs whitespace-nowrap shrink-0"
-              >
+              <Typography variant="span" className="shrink-0 text-xs whitespace-nowrap">
                 v{versionNum}
               </Typography>
             )}
@@ -89,13 +77,11 @@ export const TraceTree = ({
             )}
           </div>
 
-          <div className="flex gap-2 flex-wrap mt-1 items-center">
+          <div className="mt-1 flex flex-wrap items-center gap-2">
             {span.tags && span.tags.length > 0 && (
               <Badge variant="neutral" size="sm" className="shrink-0">
                 {span.tags[0].name}
-                {span.tags.length > 1 && (
-                  <span className="ml-1">+{span.tags.length - 1}</span>
-                )}
+                {span.tags.length > 1 && <span className="ml-1">+{span.tags.length - 1}</span>}
               </Badge>
             )}
 
@@ -105,7 +91,7 @@ export const TraceTree = ({
               </Badge>
             )}
 
-            <Typography variant="span" className="text-xs shrink-0">
+            <Typography variant="span" className="shrink-0 text-xs">
               {formatRelativeTime(span.created_at)}
             </Typography>
           </div>

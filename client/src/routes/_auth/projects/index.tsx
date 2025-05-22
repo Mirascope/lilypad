@@ -45,7 +45,7 @@ const Projects = () => {
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   return (
-    <div className="p-4 flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 p-4">
       <div className="text-left">
         <Typography variant="h3">Projects</Typography>
         <p className="text-lg">Select a project to view functions.</p>

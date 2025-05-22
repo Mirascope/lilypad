@@ -2,10 +2,8 @@ import * as React from "react";
 
 const badgeVariants = {
   variant: {
-    default:
-      "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-    secondary:
-      "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    default: "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+    secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
     neutral: "bg-background hover:bg-background/80",
     destructive:
       "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
@@ -35,9 +33,7 @@ function Badge({
   pill = false,
   ...props
 }: BadgeProps) {
-  const shapeClass = pill
-    ? badgeVariants.shape.pill
-    : badgeVariants.shape.default;
+  const shapeClass = pill ? badgeVariants.shape.pill : badgeVariants.shape.default;
   const baseClasses = `inline-flex items-center ${shapeClass} border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
   const variantClasses = badgeVariants.variant[variant];
   const sizeClasses = badgeVariants.size[size];

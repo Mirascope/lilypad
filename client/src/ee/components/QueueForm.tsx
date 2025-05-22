@@ -15,11 +15,7 @@ import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-export const QueueForm = ({
-  spans,
-}: {
-  spans: SpanPublic[] | SpanMoreDetails[];
-}) => {
+export const QueueForm = ({ spans }: { spans: SpanPublic[] | SpanMoreDetails[] }) => {
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const methods = useForm<AnnotationCreate>();
   const createAnnotation = useCreateAnnotationsMutation();
@@ -31,9 +27,7 @@ export const QueueForm = ({
       }),
       {} as Record<string, string>
     );
-    const assignedToNames = data.assigned_to?.map(
-      (assignedTo) => mappedUsers[assignedTo]
-    );
+    const assignedToNames = data.assigned_to?.map((assignedTo) => mappedUsers[assignedTo]);
     const annotationsCreate: AnnotationCreate[] = spans.map((span) => ({
       ...data,
       span_uuid: span.uuid,
@@ -54,25 +48,16 @@ export const QueueForm = ({
   };
   return (
     <Form {...methods}>
-      <form
-        className="flex flex-col gap-2"
-        onSubmit={methods.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-2" onSubmit={methods.handleSubmit(onSubmit)}>
         <SelectUsers />
         <DialogFooter>
           <DialogClose asChild>
             <Button type="submit" loading={methods.formState.isSubmitting}>
-              {methods.formState.isSubmitting
-                ? "Adding to queue..."
-                : "Add to queue"}
+              {methods.formState.isSubmitting ? "Adding to queue..." : "Add to queue"}
             </Button>
           </DialogClose>
           <DialogClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-              loading={methods.formState.isSubmitting}
-            >
+            <Button type="button" variant="outline" loading={methods.formState.isSubmitting}>
               Cancel
             </Button>
           </DialogClose>
@@ -93,9 +78,7 @@ export const SelectUsers = () => {
       render={() => (
         <FormItem>
           <FormLabel className="flex items-center gap-2">Assign To</FormLabel>
-          <FormDescription>
-            Leave empty to allow anyone to annotate
-          </FormDescription>
+          <FormDescription>Leave empty to allow anyone to annotate</FormDescription>
           <FormControl>
             <FormCombobox<AnnotationCreate>
               items={users.map((user) => ({

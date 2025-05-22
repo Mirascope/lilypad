@@ -17,14 +17,9 @@ export const CompareTracesTable = ({
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
   const q1 = usePaginatedSpansByFunction(projectUuid, order, firstFunctionUuid);
-  const q2 = usePaginatedSpansByFunction(
-    projectUuid,
-    order,
-    secondFunctionUuid!,
-    {
-      enabled: Boolean(secondFunctionUuid),
-    }
-  );
+  const q2 = usePaginatedSpansByFunction(projectUuid, order, secondFunctionUuid!, {
+    enabled: Boolean(secondFunctionUuid),
+  });
 
   const defaultData = useMemo<SpanPublic[]>(() => {
     const p1 = q1.data?.pages ?? [];
@@ -44,13 +39,13 @@ export const CompareTracesTable = ({
   };
   if (q1.isLoading || q2.isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <LilypadLoading />
       </div>
     );
   }
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <div className="py-2">
         <SearchBar
           projectUuid={projectUuid}
@@ -64,7 +59,7 @@ export const CompareTracesTable = ({
           }
         />
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <TracesTable
           data={displayData ?? defaultData}
           projectUuid={projectUuid}

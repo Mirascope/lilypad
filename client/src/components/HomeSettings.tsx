@@ -4,13 +4,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
 import { isLilypadCloud } from "@/ee/utils/common";
@@ -44,16 +38,12 @@ export const HomeSettings = () => {
           <UneditableInput label="Name" value={user.first_name} />
           <UneditableInput label="Email" value={user.email} />
         </div>
-        <div className="flex flex-col my-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            Theme
-          </label>
+        <div className="my-2 flex flex-col">
+          <label className="text-sm font-medium text-muted-foreground">Theme</label>
           <ModeToggle />
         </div>
-        <div className="flex flex-col my-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            Font
-          </label>
+        <div className="my-2 flex flex-col">
+          <label className="text-sm font-medium text-muted-foreground">Font</label>
           <FontToggle />
         </div>
       </div>
@@ -62,10 +52,7 @@ export const HomeSettings = () => {
         <div className="grid gap-4">
           {userOrganization ? (
             <>
-              <UneditableInput
-                label="Name"
-                value={userOrganization.organization.name}
-              />
+              <UneditableInput label="Name" value={userOrganization.organization.name} />
               <UneditableInput
                 label="Plan"
                 value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
@@ -103,17 +90,12 @@ const ChangePlan = () => {
   });
   const updateOrganization = useUpdateOrganizationMutation();
   const onSubmit = async (data: OrganizationUpdate) => {
-    await updateOrganization
-      .mutateAsync(data)
-      .catch(() => toast.error("Failed to upgrade plan."));
+    await updateOrganization.mutateAsync(data).catch(() => toast.error("Failed to upgrade plan."));
     toast.success("Successfully upgraded plan.");
   };
   return (
     <Form {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(onSubmit)}
-        className="flex flex-col gap-3"
-      >
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <FormField
           key="licenseKey"
           control={methods.control}
@@ -129,11 +111,7 @@ const ChangePlan = () => {
         />
         <DialogFooter>
           <DialogClose asChild>
-            <Button
-              type="submit"
-              loading={methods.formState.isSubmitting}
-              className="w-full"
-            >
+            <Button type="submit" loading={methods.formState.isSubmitting} className="w-full">
               {methods.formState.isSubmitting ? "Upgrading..." : "Upgrade Plan"}
             </Button>
           </DialogClose>
@@ -142,21 +120,11 @@ const ChangePlan = () => {
     </Form>
   );
 };
-const UneditableInput = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) => {
+const UneditableInput = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-muted-foreground">
-        {label}
-      </label>
-      <div className="p-2 bg-muted rounded-md text-muted-foreground">
-        {value}
-      </div>
+      <label className="text-sm font-medium text-muted-foreground">{label}</label>
+      <div className="rounded-md bg-muted p-2 text-muted-foreground">{value}</div>
     </div>
   );
 };

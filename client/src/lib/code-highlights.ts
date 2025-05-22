@@ -1,7 +1,4 @@
-import {
-  transformerNotationDiff,
-  transformerNotationHighlight,
-} from "@shikijs/transformers";
+import { transformerNotationDiff, transformerNotationHighlight } from "@shikijs/transformers";
 import { codeToHtml } from "shiki";
 
 /**
@@ -15,20 +12,12 @@ export function stripHighlightMarkers(code: string): string {
   const lines = code.split("\n");
   const processedLines = lines.map((line) => {
     // Case 1: Line contains only a highlight marker with no code
-    if (
-      /^\s*(?:\/\/|#|\/\*|<!--|--)\s*\[!code highlight\](?:\s*\*\/|\s*-->)?\s*$/.test(
-        line
-      )
-    ) {
+    if (/^\s*(?:\/\/|#|\/\*|<!--|--)\s*\[!code highlight\](?:\s*\*\/|\s*-->)?\s*$/.test(line)) {
       return ""; // Replace with empty line to preserve line numbers
     }
 
     // Case 2: Line contains code followed by a highlight marker
-    if (
-      /\S.*\s*(?:\/\/|#|\/\*|<!--|--)\s*\[!code highlight\](?:\s*\*\/|\s*-->)?\s*$/.test(
-        line
-      )
-    ) {
+    if (/\S.*\s*(?:\/\/|#|\/\*|<!--|--)\s*\[!code highlight\](?:\s*\*\/|\s*-->)?\s*$/.test(line)) {
       // Remove the highlight marker but keep the code
       return line.replace(
         /\s*(?:\/\/|#|\/\*|<!--|--)\s*\[!code highlight\](?:\s*\*\/|\s*-->)?\s*$/,
@@ -130,18 +119,10 @@ export function processCodeWithMetaHighlighting(
 }
 
 // Generate HTML for highlighted code
-export async function highlightCode(
-  code: string,
-  language = "text",
-  meta = ""
-) {
+export async function highlightCode(code: string, language = "text", meta = "") {
   try {
     // Process the code with meta information for line highlighting
-    const processedCode = processCodeWithMetaHighlighting(
-      code.trim(),
-      meta,
-      language
-    );
+    const processedCode = processCodeWithMetaHighlighting(code.trim(), meta, language);
 
     // Generate HTML for both light and dark themes
     // Using direct codeToHtml call from shiki
@@ -160,10 +141,7 @@ export async function highlightCode(
     // Return both versions for theme switching
     return { lightThemeHtml, darkThemeHtml };
   } catch (error) {
-    console.error(
-      `Error highlighting code with language "${language}":`,
-      error
-    );
+    console.error(`Error highlighting code with language "${language}":`, error);
 
     // Fallback to a simple code block with escaped HTML
     const escapedCode = code

@@ -20,6 +20,10 @@
     "editor.tabSize": 2,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[typescript]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[yml]": {
     "editor.tabSize": 2,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -27,5 +31,10 @@
   "[markdown]": {
     "editor.formatOnSave": false
   },
-  "eslint.rules.customizations": [{ "rule": "*", "severity": "warn" }]
+  "eslint.rules.customizations": [
+    {
+      "rule": "*",
+      "severity": "warn"
+    }
+  ],
 }

@@ -105,17 +105,13 @@ export function Combobox({
       }
 
       if (newValue.includes(currentValue)) {
-        (onChange as (value: string[]) => void)(
-          newValue.filter((v) => v !== currentValue)
-        );
+        (onChange as (value: string[]) => void)(newValue.filter((v) => v !== currentValue));
       } else {
         (onChange as (value: string[]) => void)([...newValue, currentValue]);
       }
     } else {
       // Type assertion is safe here because we've ensured multiple is false
-      (onChange as (value: string) => void)(
-        currentValue === (value as string) ? "" : currentValue
-      );
+      (onChange as (value: string) => void)(currentValue === (value as string) ? "" : currentValue);
       setOpen(false);
     }
     setInputValue("");
@@ -127,10 +123,7 @@ export function Combobox({
   };
 
   const getDisplayValue = () => {
-    if (
-      !value ||
-      (isMultiple && (!Array.isArray(value) || value.length === 0))
-    ) {
+    if (!value || (isMultiple && (!Array.isArray(value) || value.length === 0))) {
       return popoverText;
     }
 
@@ -159,27 +152,24 @@ export function Combobox({
   };
 
   return (
-    <div className='flex flex-col gap-2'>
+    <div className="flex flex-col gap-2">
       <Popover open={disabled ? false : isOpen} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           {customTrigger ?? (
             <Button
-              variant='outline'
-              role='combobox'
+              variant="outline"
+              role="combobox"
               aria-expanded={isOpen}
               disabled={disabled}
-              className={cn(
-                "w-full justify-between",
-                disabled && "opacity-50 cursor-not-allowed"
-              )}
+              className={cn("w-full justify-between", disabled && "cursor-not-allowed opacity-50")}
             >
               {getDisplayValue()}
             </Button>
           )}
         </PopoverTrigger>
         <PopoverContent
-          className='p-0 w-(--radix-popover-trigger-width) min-w-[200px]'
-          align='start'
+          className="w-(--radix-popover-trigger-width) min-w-[200px] p-0"
+          align="start"
           sideOffset={4}
         >
           <Command>
@@ -187,16 +177,16 @@ export function Combobox({
               placeholder={helperText}
               value={inputValue}
               onValueChange={setInputValue}
-              className='h-9'
+              className="h-9"
               {...(withEmoji && {
                 customContent: (
                   <Popover open={emojiIsOpen} onOpenChange={setEmojiIsOpen}>
                     <PopoverTrigger asChild>
-                      <SmileIcon className='cursor-pointer h-4 w-4 opacity-70 hover:opacity-100' />
+                      <SmileIcon className="h-4 w-4 cursor-pointer opacity-70 hover:opacity-100" />
                     </PopoverTrigger>
-                    <PopoverContent className='w-fit p-0'>
+                    <PopoverContent className="w-fit p-0">
                       <EmojiPicker
-                        className='h-[342px]'
+                        className="h-[342px]"
                         onEmojiSelect={(emojiData) => {
                           handleEmojiSelect(emojiData);
                           setEmojiIsOpen(false);
@@ -223,7 +213,7 @@ export function Combobox({
                         value={item.value}
                         onSelect={handleSelect}
                       >
-                        <CheckIcon className='mr-2 h-4 w-4 opacity-100' />
+                        <CheckIcon className="mr-2 h-4 w-4 opacity-100" />
                         {item.label}
                       </CommandItem>
                     ))}
@@ -236,16 +226,10 @@ export function Combobox({
                       return false;
                     }
                     // Filter by search input
-                    return item.label
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase());
+                    return item.label.toLowerCase().includes(inputValue.toLowerCase());
                   })
                   .map((item) => (
-                    <CommandItem
-                      key={item.value}
-                      value={item.value}
-                      onSelect={handleSelect}
-                    >
+                    <CommandItem key={item.value} value={item.value} onSelect={handleSelect}>
                       <CheckIcon
                         className={cn(
                           "mr-2 h-4 w-4",
@@ -254,8 +238,8 @@ export function Combobox({
                               ? "opacity-100"
                               : "opacity-0"
                             : value === item.value
-                            ? "opacity-100"
-                            : "opacity-0"
+                              ? "opacity-100"
+                              : "opacity-0"
                         )}
                       />
                       {item.label}
@@ -263,10 +247,7 @@ export function Combobox({
                   ))}
                 {inputValue &&
                   !disableAdd &&
-                  !items.some(
-                    (item) =>
-                      item.label.toLowerCase() === inputValue.toLowerCase()
-                  ) && (
+                  !items.some((item) => item.label.toLowerCase() === inputValue.toLowerCase()) && (
                     <CommandItem value={inputValue} onSelect={handleSelect}>
                       <CheckIcon
                         className={cn(
@@ -276,8 +257,8 @@ export function Combobox({
                               ? "opacity-100"
                               : "opacity-0"
                             : value === inputValue
-                            ? "opacity-100"
-                            : "opacity-0"
+                              ? "opacity-100"
+                              : "opacity-0"
                         )}
                       />
                       Add &quot;{inputValue}&quot;

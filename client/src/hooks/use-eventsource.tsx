@@ -4,9 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export function useEventSource<T = any>(url: string | null) {
   const [data, setData] = useState<T[]>([]);
-  const [status, setStatus] = useState<
-    "idle" | "connecting" | "open" | "closed"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "connecting" | "open" | "closed">("idle");
   const [error, setError] = useState<Event | null>(null);
   // New state to control connection
   const [isConnected, setIsConnected] = useState(false);

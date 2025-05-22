@@ -14,16 +14,10 @@ export const FunctionOverview = () => {
     functionsByNameQueryOptions(functionName, projectUuid)
   );
   const fn = functions.find((f) => f.uuid === functionUuid);
-  
+
   if (!fn) {
     return <NotFound />;
   }
-  
-  return (
-    <FunctionOverviewUI 
-      projectUuid={projectUuid}
-      firstFunction={fn}
-      isCompare={false}
-    />
-  );
+
+  return <FunctionOverviewUI projectUuid={projectUuid} firstFunction={fn} isCompare={false} />;
 };

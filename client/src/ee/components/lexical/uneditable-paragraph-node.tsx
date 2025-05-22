@@ -28,9 +28,7 @@ export class UneditableParagraphNode extends ParagraphNode {
     return false;
   }
 
-  static importJSON(
-    serializedNode: SerializedUneditableParagraphNode
-  ): UneditableParagraphNode {
+  static importJSON(serializedNode: SerializedUneditableParagraphNode): UneditableParagraphNode {
     const node = $createUneditableParagraphNode();
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);

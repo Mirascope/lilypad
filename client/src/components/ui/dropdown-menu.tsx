@@ -35,8 +35,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     <ChevronRight className="ml-auto h-4 w-4" />
   </DropdownMenuPrimitive.SubTrigger>
 ));
-DropdownMenuSubTrigger.displayName =
-  DropdownMenuPrimitive.SubTrigger.displayName;
+DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
@@ -47,9 +46,9 @@ const DropdownMenuSubContent = React.forwardRef<
       // Positioning and dimensions
       "z-50 min-w-[8rem]",
       // Appearance
-      "bg-background text-primary overflow-hidden rounded-md border p-1 shadow-lg",
+      "overflow-hidden rounded-md border bg-background p-1 text-primary shadow-lg",
       // Animation states
-      "data-[state=open]:animate-in data-[state=closed]:animate-out",
+      "data-[state=closed]:animate-out data-[state=open]:animate-in",
       "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
       // Direction-based animations
@@ -63,8 +62,7 @@ const DropdownMenuSubContent = React.forwardRef<
     {...props}
   />
 ));
-DropdownMenuSubContent.displayName =
-  DropdownMenuPrimitive.SubContent.displayName;
+DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
@@ -78,9 +76,9 @@ const DropdownMenuContent = React.forwardRef<
         // Positioning and dimensions
         "z-50 min-w-[8rem]",
         // Appearance
-        "bg-background overflow-hidden rounded-md border p-1 shadow-md",
+        "overflow-hidden rounded-md border bg-background p-1 shadow-md",
         // Animation states
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:animate-out data-[state=open]:animate-in",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         // Direction-based animations
@@ -148,8 +146,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     {children}
   </DropdownMenuPrimitive.CheckboxItem>
 ));
-DropdownMenuCheckboxItem.displayName =
-  DropdownMenuPrimitive.CheckboxItem.displayName;
+DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
 
 const DropdownMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
@@ -207,7 +204,7 @@ const DropdownMenuSeparator = React.forwardRef<
     ref={ref}
     className={cn(
       // Base styles
-      "bg-muted -mx-1 my-1 h-px",
+      "-mx-1 my-1 h-px bg-muted",
       // Custom classes
       className
     )}
@@ -216,10 +213,7 @@ const DropdownMenuSeparator = React.forwardRef<
 ));
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
-const DropdownMenuShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={cn(

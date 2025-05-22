@@ -66,14 +66,11 @@ export const CreateAPIKeyForm = ({
 
   return (
     <Form {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(onSubmit)}
-        className={`space-y-6 ${className}`}
-      >
+      <form onSubmit={methods.handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
         <FormField
-          key='name'
+          key="name"
           control={methods.control}
-          name='name'
+          name="name"
           rules={{
             required: {
               value: true,
@@ -91,9 +88,9 @@ export const CreateAPIKeyForm = ({
           )}
         />
         <FormField
-          key='project_uuid'
+          key="project_uuid"
           control={methods.control}
-          name='project_uuid'
+          name="project_uuid"
           rules={{
             required: {
               value: true,
@@ -104,12 +101,9 @@ export const CreateAPIKeyForm = ({
             <FormItem>
               <FormLabel>Project</FormLabel>
               <FormControl>
-                <Select
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Select a project' />
+                <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
                     {projects.map((project) => (
@@ -125,9 +119,9 @@ export const CreateAPIKeyForm = ({
           )}
         />
         <FormField
-          key='environment_uuid'
+          key="environment_uuid"
           control={methods.control}
-          name='environment_uuid'
+          name="environment_uuid"
           rules={{
             required: {
               value: true,
@@ -138,19 +132,13 @@ export const CreateAPIKeyForm = ({
             <FormItem>
               <FormLabel>Environment</FormLabel>
               <FormControl>
-                <Select
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue placeholder='Select an environment' />
+                <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an environment" />
                   </SelectTrigger>
                   <SelectContent>
                     {environments.map((environment) => (
-                      <SelectItem
-                        key={environment.uuid}
-                        value={environment.uuid}
-                      >
+                      <SelectItem key={environment.uuid} value={environment.uuid}>
                         {environment.name}
                       </SelectItem>
                     ))}
@@ -162,12 +150,8 @@ export const CreateAPIKeyForm = ({
           )}
         />
 
-        <div className='flex justify-end'>
-          <Button
-            type='submit'
-            loading={methods.formState.isSubmitting}
-            className='w-full'
-          >
+        <div className="flex justify-end">
+          <Button type="submit" loading={methods.formState.isSubmitting} className="w-full">
             {methods.formState.isSubmitting ? "Generating..." : "Generate Key"}
           </Button>
         </div>

@@ -28,7 +28,7 @@ export const InviteUserDialog = ({
         <Button
           variant="ghost"
           size="iconSm"
-          className="text-primary hover:text-primary/80 hover:bg-background"
+          className="text-primary hover:bg-background hover:text-primary/80"
         >
           <PlusCircle />
         </Button>
