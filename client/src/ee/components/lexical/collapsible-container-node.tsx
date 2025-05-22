@@ -28,9 +28,7 @@ type SerializedCollapsibleContainerNode = Spread<
   SerializedElementNode
 >;
 
-export function $convertDetailsElement(
-  domNode: HTMLDetailsElement
-): DOMConversionOutput | null {
+export function $convertDetailsElement(domNode: HTMLDetailsElement): DOMConversionOutput | null {
   const isOpen = domNode.open !== undefined ? domNode.open : true;
   const node = $createCollapsibleContainerNode(isOpen);
   return {
@@ -76,18 +74,12 @@ export class CollapsibleContainerNode extends ElementNode {
     return dom;
   }
 
-  updateDOM(
-    prevNode: CollapsibleContainerNode,
-    dom: HTMLDetailsElement
-  ): boolean {
+  updateDOM(prevNode: CollapsibleContainerNode, dom: HTMLDetailsElement): boolean {
     const currentOpen = this.__open;
     if (prevNode.__open !== currentOpen) {
       if (IS_CHROME) {
         const contentDom = dom.children[1];
-        invariant(
-          isHTMLElement(contentDom),
-          "Expected contentDom to be an HTMLElement"
-        );
+        invariant(isHTMLElement(contentDom), "Expected contentDom to be an HTMLElement");
         if (currentOpen) {
           dom.setAttribute("open", "");
           contentDom.hidden = false;
@@ -114,9 +106,7 @@ export class CollapsibleContainerNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleContainerNode
-  ): CollapsibleContainerNode {
+  static importJSON(serializedNode: SerializedCollapsibleContainerNode): CollapsibleContainerNode {
     const node = $createCollapsibleContainerNode(serializedNode.open);
     return node;
   }
@@ -151,9 +141,7 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 }
 
-export function $createCollapsibleContainerNode(
-  isOpen: boolean
-): CollapsibleContainerNode {
+export function $createCollapsibleContainerNode(isOpen: boolean): CollapsibleContainerNode {
   return new CollapsibleContainerNode(isOpen);
 }
 

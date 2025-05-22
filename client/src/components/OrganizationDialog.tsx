@@ -1,13 +1,7 @@
 import { useAuth } from "@/auth";
 import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   useCreateOrganizationMutation,
@@ -50,10 +44,7 @@ export const OrganizationForm = <T extends FormData>({
 
   return (
     <Form {...methods}>
-      <form
-        className={`space-y-6 ${className}`}
-        onSubmit={methods.handleSubmit(handleSubmit)}
-      >
+      <form className={`space-y-6 ${className}`} onSubmit={methods.handleSubmit(handleSubmit)}>
         <FormField
           control={methods.control}
           name={"name" as Path<T>}
@@ -66,15 +57,9 @@ export const OrganizationForm = <T extends FormData>({
             </FormItem>
           )}
         />
-        <div className='flex justify-end'>
-          <Button
-            key='submit'
-            type='submit'
-            disabled={methods.formState.isSubmitting}
-          >
-            {methods.formState.isSubmitting
-              ? submitButtonLoadingText
-              : submitButtonText}
+        <div className="flex justify-end">
+          <Button key="submit" type="submit" disabled={methods.formState.isSubmitting}>
+            {methods.formState.isSubmitting ? submitButtonLoadingText : submitButtonText}
           </Button>
         </div>
       </form>
@@ -87,14 +72,10 @@ interface CreateOrganizationFormProps {
   className?: string;
 }
 
-export const CreateOrganizationForm = ({
-  onSuccess,
-  className,
-}: CreateOrganizationFormProps) => {
+export const CreateOrganizationForm = ({ onSuccess, className }: CreateOrganizationFormProps) => {
   const auth = useAuth();
   const organizationCreateMutation = useCreateOrganizationMutation();
-  const updateActiveOrganizationMutation =
-    useUpdateActiveOrganizationMutation();
+  const updateActiveOrganizationMutation = useUpdateActiveOrganizationMutation();
 
   const handleCreateSubmit = async (data: { name: string }) => {
     const newOrganization = await organizationCreateMutation
@@ -122,8 +103,8 @@ export const CreateOrganizationForm = ({
     <OrganizationForm
       defaultValues={{ name: "" }}
       onSubmit={handleCreateSubmit}
-      submitButtonText='Create'
-      submitButtonLoadingText='Creating...'
+      submitButtonText="Create"
+      submitButtonLoadingText="Creating..."
       className={className}
     />
   );
@@ -160,8 +141,8 @@ export const UpdateOrganizationForm = ({
     <OrganizationForm
       defaultValues={{ name: initialName }}
       onSubmit={handleUpdateSubmit}
-      submitButtonText='Update'
-      submitButtonLoadingText='Updating...'
+      submitButtonText="Update"
+      submitButtonLoadingText="Updating..."
       className={className}
     />
   );
@@ -200,16 +181,13 @@ interface CreateOrganizationDialogProps {
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-export const CreateOrganizationDialog = ({
-  open,
-  setOpen,
-}: CreateOrganizationDialogProps) => {
+export const CreateOrganizationDialog = ({ open, setOpen }: CreateOrganizationDialogProps) => {
   return (
     <BaseOrganizationDialog
       open={open}
       setOpen={setOpen}
-      title='New Organization'
-      description='Create a new organization'
+      title="New Organization"
+      description="Create a new organization"
     >
       <CreateOrganizationForm onSuccess={() => setOpen(false)} />
     </BaseOrganizationDialog>
@@ -231,13 +209,10 @@ export const UpdateOrganizationDialog = ({
     <BaseOrganizationDialog
       open={open}
       setOpen={setOpen}
-      title='Update Organization'
-      description='Update organization details'
+      title="Update Organization"
+      description="Update organization details"
     >
-      <UpdateOrganizationForm
-        initialName={initialName}
-        onSuccess={() => setOpen(false)}
-      />
+      <UpdateOrganizationForm initialName={initialName} onSuccess={() => setOpen(false)} />
     </BaseOrganizationDialog>
   );
 };

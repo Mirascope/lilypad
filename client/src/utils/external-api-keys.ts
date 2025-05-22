@@ -1,14 +1,6 @@
 import api from "@/api";
-import {
-  ExternalAPIKeyCreate,
-  ExternalAPIKeyPublic,
-  ExternalAPIKeyUpdate,
-} from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { ExternalAPIKeyCreate, ExternalAPIKeyPublic, ExternalAPIKeyUpdate } from "@/types/types";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchExternalApiKeys = async () => {
   return (await api.get<ExternalAPIKeyPublic[]>(`/external-api-keys`)).data;
@@ -26,11 +18,8 @@ export const patchExternalApiKey = async (
   ).data;
 };
 
-export const postExternalApiKey = async (
-  externalApiKeyCreate: ExternalAPIKeyCreate
-) => {
-  return (await api.post<string>(`/external-api-keys`, externalApiKeyCreate))
-    .data;
+export const postExternalApiKey = async (externalApiKeyCreate: ExternalAPIKeyCreate) => {
+  return (await api.post<string>(`/external-api-keys`, externalApiKeyCreate)).data;
 };
 
 export const deleteExternalApiKey = async (serviceName: string) => {
@@ -70,8 +59,7 @@ export const useCreateExternalApiKeyMutation = () => {
 export const useDeleteExternalApiKeyMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (apiKeyUuid: string) =>
-      await deleteExternalApiKey(apiKeyUuid),
+    mutationFn: async (apiKeyUuid: string) => await deleteExternalApiKey(apiKeyUuid),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["externalApiKeys"],

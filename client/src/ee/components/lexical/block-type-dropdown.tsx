@@ -14,11 +14,7 @@ import {
   REMOVE_LIST_COMMAND,
 } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import {
-  $createHeadingNode,
-  $createQuoteNode,
-  HeadingTagType,
-} from "@lexical/rich-text";
+import { $createHeadingNode, $createQuoteNode, HeadingTagType } from "@lexical/rich-text";
 import { $setBlocksType } from "@lexical/selection";
 import { INSERT_COLLAPSIBLE_COMMAND } from "./collapsible-plugin";
 

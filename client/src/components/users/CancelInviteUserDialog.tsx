@@ -25,16 +25,16 @@ export const CancelInviteUserDialog = ({
 
   return (
     <LilypadDialog
-      title='Remove invitation'
+      title="Remove invitation"
       description={`Are you sure you want to rescind the invitation to ${invite.email}?`}
       dialogContentProps={{
         onClick: (e) => e.stopPropagation(),
       }}
       customTrigger={
         <Button
-          variant='outlineDestructive'
-          size='icon'
-          className='h-8 w-8'
+          variant="outlineDestructive"
+          size="icon"
+          className="h-8 w-8"
           onClick={(e) => e.stopPropagation()}
         >
           <Trash size={16} />
@@ -42,8 +42,8 @@ export const CancelInviteUserDialog = ({
       }
       dialogButtons={[
         <Button
-          key='remove-invitation'
-          variant='destructive'
+          key="remove-invitation"
+          variant="destructive"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -52,7 +52,7 @@ export const CancelInviteUserDialog = ({
         >
           Remove invitation
         </Button>,
-        <Button variant='outline' key='remove-invitation-close'>
+        <Button variant="outline" key="remove-invitation-close">
           Close
         </Button>,
       ]}

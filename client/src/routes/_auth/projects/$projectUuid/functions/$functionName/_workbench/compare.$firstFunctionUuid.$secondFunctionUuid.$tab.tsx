@@ -11,11 +11,7 @@ import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { FunctionTab } from "@/types/functions";
 import { functionsByNameQueryOptions } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, GitCompare, MoveLeft, SquareTerminal } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -31,13 +27,7 @@ export const Route = createFileRoute(
 });
 
 const CompareWorkbench = () => {
-  const {
-    projectUuid,
-    functionName,
-    firstFunctionUuid,
-    secondFunctionUuid,
-    tab,
-  } = useParams({
+  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid, tab } = useParams({
     from: Route.id,
   });
   const { data: functions } = useSuspenseQuery(
@@ -76,7 +66,7 @@ const CompareWorkbench = () => {
       value: FunctionTab.ANNOTATIONS,
       isDisabled: !features.annotations,
       component: (
-        <div className="flex items-center justify-center w-full h-full">
+        <div className="flex h-full w-full items-center justify-center">
           <Typography variant="h4">Under construction...</Typography>
         </div>
       ),
@@ -113,14 +103,14 @@ const CompareWorkbench = () => {
   }
 
   return (
-    <div className="pt-4 pb-1 h-screen flex flex-col px-4 gap-2">
+    <div className="flex h-screen flex-col gap-2 px-4 pt-4 pb-1">
       <div className="shrink-0">
         <Button variant="ghost" onClick={handleBackButton}>
           <MoveLeft className="size-4" />
           Back to Functions
         </Button>
       </div>
-      <div className="flex justify-between shrink-0">
+      <div className="flex shrink-0 justify-between">
         <div className="flex items-center gap-2">
           <Typography variant="h3">{functionName}</Typography>
           <SelectFunction
@@ -153,7 +143,7 @@ const CompareWorkbench = () => {
           </Button>
         </div>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
       </div>
     </div>
@@ -161,10 +151,9 @@ const CompareWorkbench = () => {
 };
 
 const CompareOverview = () => {
-  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } =
-    useParams({
-      from: Route.id,
-    });
+  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } = useParams({
+    from: Route.id,
+  });
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );

@@ -28,7 +28,7 @@
     "./src/components/keyssettings.tsx",
     "./src/components/layoutskeleton.tsx",
     "./src/components/lilypaddialog.tsx",
-    "./src/components/lilypadicon.tsx",
+    "./src/components/LilypadLogo.tsx",
     "./src/components/lilypadloading.tsx",
     "./src/components/lilypadpanel.tsx",
     "./src/components/llmpanel.tsx",

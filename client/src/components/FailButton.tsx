@@ -4,7 +4,7 @@ import { XCircle } from "lucide-react";
 export const FailButton = ({ children, ...buttonProps }: ButtonProps) => {
   return (
     <Button type="button" variant="destructive" {...buttonProps}>
-      <XCircle className="w-4 h-4 mr-2" />
+      <XCircle className="mr-2 h-4 w-4" />
       {children}
     </Button>
   );

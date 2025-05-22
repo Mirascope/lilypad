@@ -5,11 +5,7 @@ import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { SpanMetrics } from "@/components/traces/SpanMetrics";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Separator } from "@/components/ui/separator";
 import { Typography } from "@/components/ui/typography";
 import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
@@ -24,18 +20,12 @@ import { SpanComments } from "@/utils/panel-utils";
 import { formatRelativeTime } from "@/utils/strings";
 import { usersByOrganizationQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { RefreshCcw, Trash } from "lucide-react";
 import { Dispatch, SetStateAction, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/annotations/$"
-)({
+export const Route = createFileRoute("/_auth/projects/$projectUuid/annotations/$")({
   component: () => {
     return (
       <Suspense fallback={<LilypadLoading />}>
@@ -47,17 +37,14 @@ export const Route = createFileRoute(
 
 const AnnotationLayout = () => {
   const { projectUuid, _splat: annotationUuid } = useParams({ from: Route.id });
-  const { data: annotations } = useSuspenseQuery(
-    annotationsByProjectQueryOptions(projectUuid)
-  );
+  const { data: annotations } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
   const navigate = useNavigate();
-  const [activeAnnotation, setActiveAnnotation] =
-    useState<AnnotationPublic | null>(annotations[0] || null);
+  const [activeAnnotation, setActiveAnnotation] = useState<AnnotationPublic | null>(
+    annotations[0] || null
+  );
   const span = activeAnnotation?.span;
   useEffect(() => {
-    const annotation = annotations.find(
-      (annotation) => annotation.uuid === annotationUuid
-    );
+    const annotation = annotations.find((annotation) => annotation.uuid === annotationUuid);
     if (annotationUuid === "next") {
       if (annotations.length == 0) {
         setActiveAnnotation(null);
@@ -90,7 +77,7 @@ const AnnotationLayout = () => {
 
   if (!span) {
     return (
-      <div className="flex flex-col h-full p-4">
+      <div className="flex h-full flex-col p-4">
         <div className="shrink-0">
           <Typography variant="h3">No Annotation Selected</Typography>
         </div>
@@ -103,15 +90,11 @@ const AnnotationLayout = () => {
   }
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full p-4">
-      <ResizablePanel
-        defaultSize={25}
-        minSize={15}
-        className="flex flex-col gap-1"
-      >
-        <Typography variant="h3" className="truncate max-w-md shrink-0">
+      <ResizablePanel defaultSize={25} minSize={15} className="flex flex-col gap-1">
+        <Typography variant="h3" className="max-w-md shrink-0 truncate">
           Annotation Queue
         </Typography>
-        <div className="overflow-y-auto flex-1 flex flex-col min-h-0 gap-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
           <Suspense fallback={<LilypadLoading />}>
             <div className="grow-1">
               <AnnotationList
@@ -121,14 +104,11 @@ const AnnotationLayout = () => {
             </div>
             <Separator />
             <div className="shrink-0">
-              <Typography variant="h3" className="truncate max-w-md">
+              <Typography variant="h3" className="max-w-md truncate">
                 Criteria
               </Typography>
               {activeAnnotation && (
-                <AnnotationView
-                  annotation={activeAnnotation}
-                  path={Route.fullPath}
-                />
+                <AnnotationView annotation={activeAnnotation} path={Route.fullPath} />
               )}
             </div>
           </Suspense>
@@ -137,22 +117,14 @@ const AnnotationLayout = () => {
 
       <ResizableHandle withHandle className="m-4" />
 
-      <ResizablePanel
-        defaultSize={75}
-        minSize={50}
-        className="flex flex-col h-full"
-      >
+      <ResizablePanel defaultSize={75} minSize={50} className="flex h-full flex-col">
         <FunctionTitle span={span} />
 
         <ResizablePanelGroup
           direction="horizontal"
-          className="flex-1 min-h-0 h-full overflow-hidden"
+          className="h-full min-h-0 flex-1 overflow-hidden"
         >
-          <ResizablePanel
-            defaultSize={65}
-            minSize={40}
-            className="overflow-hidden"
-          >
+          <ResizablePanel defaultSize={65} minSize={40} className="overflow-hidden">
             <div className="h-full overflow-y-auto">
               <LilypadPanel spanUuid={span.uuid} showMetrics={false} />
             </div>
@@ -163,12 +135,12 @@ const AnnotationLayout = () => {
           <ResizablePanel
             defaultSize={35}
             minSize={25}
-            className="flex flex-col overflow-hidden w-full h-full gap-4"
+            className="flex h-full w-full flex-col gap-4 overflow-hidden"
           >
             <div className="shrink-0">
               <SpanMetrics span={span} />
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="min-h-0 flex-1">
               <Suspense fallback={<CardSkeleton items={1} />}>
                 <SpanComments
                   projectUuid={projectUuid}
@@ -204,9 +176,7 @@ const AnnotationList = ({
 
   const { data: users } = useSuspenseQuery(usersByOrganizationQueryOptions());
   const deleteAnnotation = useDeleteAnnotationMutation();
-  const { data: functions } = useSuspenseQuery(
-    functionsQueryOptions(projectUuid)
-  );
+  const { data: functions } = useSuspenseQuery(functionsQueryOptions(projectUuid));
   const functionsMap = functions.reduce(
     (acc, fn) => {
       acc[fn.uuid] = fn;
@@ -222,12 +192,8 @@ const AnnotationList = ({
     {} as Record<string, UserPublic>
   );
   return (
-    <div className="flex flex-col h-full gap-2">
-      <Typography
-        variant="span"
-        affects="muted"
-        className="flex items-center gap-2"
-      >
+    <div className="flex h-full flex-col gap-2">
+      <Typography variant="span" affects="muted" className="flex items-center gap-2">
         {`Last updated: ${formatRelativeTime(new Date(dataUpdatedAt))}`}
         <Button
           variant="outline"
@@ -237,7 +203,7 @@ const AnnotationList = ({
             refetch();
             toast.success("Refreshed annotations");
           }}
-          className="transition-all hover:bg-gray-100 relative overflow-hidden group size-8"
+          className="group relative size-8 overflow-hidden transition-all hover:bg-gray-100"
         >
           <RefreshCcw className="h-4 w-4" />
         </Button>
@@ -247,14 +213,12 @@ const AnnotationList = ({
       </Typography>
       <div className="flex flex-col gap-2 overflow-auto">
         {annotations.map((annotation) => {
-          const fn = annotation.function_uuid
-            ? functionsMap[annotation.function_uuid]
-            : null;
+          const fn = annotation.function_uuid ? functionsMap[annotation.function_uuid] : null;
           return (
             <div
               key={annotation.uuid}
               className={cn(
-                "flex items-center py-2 px-1 rounded-md transition-colors hover:bg-accent/50 cursor-pointer relative group",
+                "group relative flex cursor-pointer items-center rounded-md px-1 py-2 transition-colors hover:bg-accent/50",
                 annotationUuid === annotation.uuid && "bg-accent font-medium"
               )}
               onClick={() => {
@@ -272,16 +236,13 @@ const AnnotationList = ({
                 }
               }}
             >
-              <div className="flex flex-col min-w-0 w-full">
-                <div className="flex items-center gap-2 w-full pr-8">
-                  <span className="truncate font-medium max-w-full">
+              <div className="flex w-full min-w-0 flex-col">
+                <div className="flex w-full items-center gap-2 pr-8">
+                  <span className="max-w-full truncate font-medium">
                     {annotation.span.display_name}
                   </span>
                   {fn && (
-                    <Typography
-                      variant="span"
-                      className="text-xs whitespace-nowrap shrink-0"
-                    >
+                    <Typography variant="span" className="shrink-0 text-xs whitespace-nowrap">
                       v{fn.version_num}
                     </Typography>
                   )}
@@ -299,7 +260,7 @@ const AnnotationList = ({
                 type="button"
                 variant="outlineDestructive"
                 size="icon"
-                className="size-7 absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1/2 right-2 size-7 -translate-y-1/2 transform opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteAnnotation
@@ -307,9 +268,7 @@ const AnnotationList = ({
                       projectUuid: annotation.project_uuid,
                       annotationUuid: annotation.uuid,
                     })
-                    .catch(() =>
-                      toast.error("Failed to remove annotation from queue")
-                    );
+                    .catch(() => toast.error("Failed to remove annotation from queue"));
                   toast.success("Annotation removed from queue.");
                 }}
               >

@@ -9,11 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
@@ -49,37 +45,26 @@ export const LilypadDialog = ({
   noTrigger?: boolean;
 }) => {
   const ButtonComponent = (
-    <Button
-      variant="outline"
-      {...buttonProps}
-      size={icon && !text ? "icon" : buttonProps.size}
-    >
+    <Button variant="outline" {...buttonProps} size={icon && !text ? "icon" : buttonProps.size}>
       {icon}
       {text}
     </Button>
   );
 
-  const TriggerButton = (
-    <DialogTrigger asChild>{customTrigger ?? ButtonComponent}</DialogTrigger>
-  );
+  const TriggerButton = <DialogTrigger asChild>{customTrigger ?? ButtonComponent}</DialogTrigger>;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {tooltipContent ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            {<span>{TriggerButton}</span>}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{<span>{TriggerButton}</span>}</TooltipTrigger>
           <TooltipContent {...tooltipProps}>{tooltipContent}</TooltipContent>
         </Tooltip>
       ) : noTrigger ? null : (
         TriggerButton
       )}
       <DialogContent
-        className={cn(
-          "max-w-[425px] overflow-x-auto",
-          dialogContentProps?.className
-        )}
+        className={cn("max-w-[425px] overflow-x-auto", dialogContentProps?.className)}
         {...dialogContentProps}
       >
         <DialogHeader className="shrink-0">

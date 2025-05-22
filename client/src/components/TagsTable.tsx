@@ -164,7 +164,7 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
               {`Deleting ${tag.name} will remove this tag from all associated resources.`}
             </DialogDescription>
             <Alert variant="destructive">
-              <TriangleAlert className="h-4 w-4 " />
+              <TriangleAlert className="h-4 w-4" />
               <div className="flex flex-col gap-2">
                 <AlertTitle>WARNING</AlertTitle>
                 <AlertDescription>This action is final.</AlertDescription>
@@ -176,8 +176,7 @@ const DeleteTagButton = ({ tag }: { tag: TagPublic }) => {
               name="tagName"
               rules={{
                 required: "Tag name is required",
-                validate: (value) =>
-                  value === tag.name || "Tag name doesn't match",
+                validate: (value) => value === tag.name || "Tag name doesn't match",
               }}
               render={({ field }) => (
                 <FormItem>
@@ -243,9 +242,7 @@ const TagForm = ({
   const handleSubmit = async (data: TagFormData) => {
     try {
       await onSubmit(data);
-      toast.success(
-        `Successfully ${mode === "create" ? "created" : "updated"} tag`
-      );
+      toast.success(`Successfully ${mode === "create" ? "created" : "updated"} tag`);
       methods.reset();
     } catch (error) {
       toast.error(`Failed to ${mode === "create" ? "create" : "update"} tag`);
@@ -257,15 +254,9 @@ const TagForm = ({
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         {trigger}
       </DialogTrigger>
-      <DialogContent
-        className="max-w-md overflow-x-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <DialogContent className="max-w-md overflow-x-auto" onClick={(e) => e.stopPropagation()}>
         <Form {...methods}>
-          <form
-            onSubmit={methods.handleSubmit(handleSubmit)}
-            className="space-y-6"
-          >
+          <form onSubmit={methods.handleSubmit(handleSubmit)} className="space-y-6">
             <DialogHeader className="shrink-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
@@ -295,9 +286,7 @@ const TagForm = ({
                   <FormControl>
                     <Select
                       value={field.value ?? ""}
-                      onValueChange={(value) =>
-                        field.onChange(value === "<none>" ? null : value)
-                      }
+                      onValueChange={(value) => field.onChange(value === "<none>" ? null : value)}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a project" />
@@ -312,9 +301,7 @@ const TagForm = ({
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>
-                    Associate this tag with a project
-                  </FormDescription>
+                  <FormDescription>Associate this tag with a project</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -322,14 +309,8 @@ const TagForm = ({
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button
-                  type="submit"
-                  disabled={methods.formState.isSubmitting}
-                  className="w-full"
-                >
-                  {methods.formState.isSubmitting
-                    ? submittingText
-                    : submitButtonText}
+                <Button type="submit" disabled={methods.formState.isSubmitting} className="w-full">
+                  {methods.formState.isSubmitting ? submittingText : submitButtonText}
                 </Button>
               </DialogClose>
             </DialogFooter>

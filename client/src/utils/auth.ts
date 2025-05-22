@@ -3,16 +3,12 @@ import { UserPublic } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 export const fetchGitHubCallbackCode = async (code: string) => {
   const params = new URLSearchParams({ code });
-  return (
-    await api.get<UserPublic>(`/auth/github/callback?${params.toString()}`)
-  ).data;
+  return (await api.get<UserPublic>(`/auth/github/callback?${params.toString()}`)).data;
 };
 
 export const fetchGoogleCallbackCode = async (code: string) => {
   const params = new URLSearchParams({ code });
-  return (
-    await api.get<UserPublic>(`/auth/google/callback?${params.toString()}`)
-  ).data;
+  return (await api.get<UserPublic>(`/auth/google/callback?${params.toString()}`)).data;
 };
 
 export const callbackCodeQueryOptions = (provider: string, code?: string) =>
@@ -35,9 +31,7 @@ export const callbackCodeQueryOptions = (provider: string, code?: string) =>
 
 export const fetchVersions = async () => {
   try {
-    const response = await fetch(
-      "https://mirascope.com/static/content-meta/policy/index.json"
-    );
+    const response = await fetch("https://mirascope.com/static/content-meta/policy/index.json");
 
     if (!response.ok) {
       throw new Error(`Failed to fetch policy data: ${response.status}`);
@@ -46,12 +40,8 @@ export const fetchVersions = async () => {
     const policyData = await response.json();
 
     // Find the privacy policy and terms of service entries
-    const privacyPolicy = policyData.find(
-      (policy: any) => policy.slug === "privacy"
-    );
-    const termsOfService = policyData.find(
-      (policy: any) => policy.slug === "service"
-    );
+    const privacyPolicy = policyData.find((policy: any) => policy.slug === "privacy");
+    const termsOfService = policyData.find((policy: any) => policy.slug === "service");
 
     if (!privacyPolicy || !termsOfService) {
       throw new Error("Could not find required policy information");

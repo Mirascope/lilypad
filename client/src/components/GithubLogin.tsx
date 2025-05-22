@@ -16,10 +16,7 @@ const GithubButton = ({
   ...buttonProps
 }: GithubButtonProps) => {
   return (
-    <Button
-      {...buttonProps}
-      className="bg-[#333333] hover:bg-[#555555] cursor-pointer"
-    >
+    <Button {...buttonProps} className="cursor-pointer bg-[#333333] hover:bg-[#555555]">
       <svg
         fill={iconColor}
         role="img"
@@ -36,13 +33,7 @@ const GithubButton = ({
   );
 };
 
-export const GithubLogin = ({
-  redirect,
-  showModal,
-}: {
-  redirect?: string;
-  showModal: boolean;
-}) => {
+export const GithubLogin = ({ redirect, showModal }: { redirect?: string; showModal: boolean }) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const [open, setOpen] = useState<boolean>(false);
 
@@ -81,11 +72,7 @@ export const GithubLogin = ({
       >
         Login with GitHub
       </GithubButton>
-      <UserConsentDialog
-        open={open}
-        setOpen={setOpen}
-        onClick={handleGithubLogin}
-      />
+      <UserConsentDialog open={open} setOpen={setOpen} onClick={handleGithubLogin} />
     </>
   );
 };

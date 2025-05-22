@@ -39,7 +39,7 @@ export const RemoveUserDialog = ({
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
@@ -48,8 +48,8 @@ export const RemoveUserDialog = ({
         onClick={(e) => e.stopPropagation()}
       >
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className='space-y-6'>
-            <DialogHeader className='shrink-0'>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{`Remove ${user.first_name}`}</DialogTitle>
             </DialogHeader>
             <DialogDescription>
@@ -59,14 +59,12 @@ export const RemoveUserDialog = ({
             <DialogFooter>
               <DialogClose asChild>
                 <Button
-                  type='submit'
-                  variant='destructive'
+                  type="submit"
+                  variant="destructive"
                   loading={methods.formState.isSubmitting}
-                  className='w-full'
+                  className="w-full"
                 >
-                  {methods.formState.isSubmitting
-                    ? "Removing..."
-                    : "Remove user"}
+                  {methods.formState.isSubmitting ? "Removing..." : "Remove user"}
                 </Button>
               </DialogClose>
             </DialogFooter>

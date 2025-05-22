@@ -15,9 +15,7 @@ export const TagPopover = ({
   projectUuid: string;
 }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
-  const { data: availableTags } = useSuspenseQuery(
-    tagsByProjectsQueryOptions(projectUuid)
-  );
+  const { data: availableTags } = useSuspenseQuery(tagsByProjectsQueryOptions(projectUuid));
   const createTag = useCreateTagMutation();
   const updateSpan = useUpdateSpanMutation();
 
@@ -28,9 +26,7 @@ export const TagPopover = ({
   const prevTagsRef = useRef<TagPublic[]>([]);
 
   // Use state for selected tags but initialize only once
-  const [selectedTags, setSelectedTags] = useState<TagPublic[]>(
-    () => span.tags ?? []
-  );
+  const [selectedTags, setSelectedTags] = useState<TagPublic[]>(() => span.tags ?? []);
 
   // Only update selected tags if span tags change from external source
   useEffect(() => {
@@ -55,9 +51,7 @@ export const TagPopover = ({
 
   const handleTagChange = async (tagUuids: string[]) => {
     // Find the full TagPublic objects for the selected UUIDs
-    const tagObjects: TagPublic[] = tagUuids
-      .map((uuid) => tagMapping[uuid])
-      .filter(Boolean); // Filter out any undefined values
+    const tagObjects: TagPublic[] = tagUuids.map((uuid) => tagMapping[uuid]).filter(Boolean); // Filter out any undefined values
 
     // Use optimistic updates to avoid UI flicker
     const previousTags = [...selectedTags];

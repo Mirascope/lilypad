@@ -124,8 +124,9 @@ def convert_gemini_messages(
                 assistant_message.content.append(_TextPart(type="text", text=""))
             attribute_message = json.loads(attributes.get("message", "{}"))
             if content := attribute_message.get("content"):
-                for c in content:
-                    assistant_message.content[index].text += c
+                for part in content:
+                    if part:
+                        assistant_message.content[index].text += part
             if tool_calls := attribute_message.get("tool_calls"):
                 for tool_call in tool_calls:
                     function: dict = tool_call.get("function", {})
@@ -560,6 +561,8 @@ class SpanMoreDetails(BaseModel):
     tags: list[TagPublic] | None = None
     session_id: str | None = None
     span_id: str
+    response: dict[str, Any] | None = None
+    response_model: dict[str, Any] | None = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:
@@ -571,6 +574,8 @@ class SpanMoreDetails(BaseModel):
         arg_values = None
         output = None
         template = None
+        response = None
+        response_model = None
         status = data.get("status")
         attributes: dict = data["attributes"]
         display_name = data["name"]
@@ -595,8 +600,14 @@ class SpanMoreDetails(BaseModel):
                     attributes.get(f"lilypad.{lilypad_type}.arg_values", "{}")
                 )
                 output = attributes.get(f"lilypad.{lilypad_type}.output", None)
+                response = parse_nested_json(
+                    attributes.get(f"lilypad.{lilypad_type}.response", None)
+                )
+                response_model = parse_nested_json(
+                    attributes.get(f"lilypad.{lilypad_type}.response_model", None)
+                )
                 messages = convert_mirascope_messages(
-                    attributes.get(f"lilypad.{lilypad_type}.common_messages", [])
+                    attributes.get(f"lilypad.{lilypad_type}.messages", [])
                 )
                 template = attributes.get(
                     f"lilypad.{lilypad_type}.prompt_template", None
@@ -616,6 +627,8 @@ class SpanMoreDetails(BaseModel):
                 "code": code,
                 "arg_values": arg_values,
                 "output": output,
+                "response": response,
+                "response_model": response_model,
                 "messages": messages,
                 "template": template,
                 "data": data,

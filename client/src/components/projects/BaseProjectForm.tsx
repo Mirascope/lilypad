@@ -1,11 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 
@@ -40,13 +34,10 @@ export const BaseProjectForm = ({
 
   return (
     <Form {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(handleSubmit)}
-        className={`space-y-6 ${className}`}
-      >
+      <form onSubmit={methods.handleSubmit(handleSubmit)} className={`space-y-6 ${className}`}>
         <FormField
           control={methods.control}
-          name='name'
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Project Name</FormLabel>
@@ -57,8 +48,8 @@ export const BaseProjectForm = ({
           )}
         />
 
-        <div className='flex justify-end'>
-          <Button type='submit' disabled={methods.formState.isSubmitting}>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={methods.formState.isSubmitting}>
             {methods.formState.isSubmitting ? submittingText : submitButtonText}
           </Button>
         </div>

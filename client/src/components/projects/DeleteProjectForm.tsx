@@ -41,12 +41,9 @@ export const BaseDeleteProjectForm = ({
 
   return (
     <Form {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(handleSubmit)}
-        className={`space-y-6 ${className}`}
-      >
+      <form onSubmit={methods.handleSubmit(handleSubmit)} className={`space-y-6 ${className}`}>
         <Alert variant="destructive">
-          <TriangleAlert className="h-4 w-4 " />
+          <TriangleAlert className="h-4 w-4" />
           <div className="flex flex-col gap-2">
             <AlertTitle>WARNING</AlertTitle>
             <AlertDescription>This action is final.</AlertDescription>
@@ -58,8 +55,7 @@ export const BaseDeleteProjectForm = ({
           name="projectName"
           rules={{
             required: "Project name is required",
-            validate: (value) =>
-              value === project.name || "Project name doesn't match",
+            validate: (value) => value === project.name || "Project name doesn't match",
           }}
           render={({ field }) => (
             <FormItem>
@@ -75,11 +71,7 @@ export const BaseDeleteProjectForm = ({
           )}
         />
         <div className="flex justify-end">
-          <Button
-            type="submit"
-            variant="destructive"
-            disabled={methods.formState.isSubmitting}
-          >
+          <Button type="submit" variant="destructive" disabled={methods.formState.isSubmitting}>
             {methods.formState.isSubmitting ? "Deleting..." : "Delete Project"}
           </Button>
         </div>
@@ -94,11 +86,7 @@ interface DeleteProjectFormProps {
   className?: string;
 }
 
-export const DeleteProjectForm = ({
-  project,
-  onSuccess,
-  className,
-}: DeleteProjectFormProps) => {
+export const DeleteProjectForm = ({ project, onSuccess, className }: DeleteProjectFormProps) => {
   const deleteProject = useDeleteProjectMutation();
   const navigate = useNavigate();
 
@@ -117,11 +105,5 @@ export const DeleteProjectForm = ({
       });
   };
 
-  return (
-    <BaseDeleteProjectForm
-      project={project}
-      onSubmit={handleDelete}
-      className={className}
-    />
-  );
+  return <BaseDeleteProjectForm project={project} onSubmit={handleDelete} className={className} />;
 };

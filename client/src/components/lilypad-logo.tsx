@@ -1,5 +1,5 @@
 import { LucideProps } from "lucide-react";
-export const LilypadIcon = (props: LucideProps) => {
+export const LilypadLogo = (props: LucideProps) => {
   const {
     color = "currentColor",
     size = 24,
@@ -13,6 +13,7 @@ export const LilypadIcon = (props: LucideProps) => {
       height={size}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 987.7 577.6"
+      className={`lucide lucide-token ${className}`}
       {...otherProps}
     >
       <g transform="translate(-18, -2) scale(1.04)">

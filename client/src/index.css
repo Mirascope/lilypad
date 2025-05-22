@@ -2,10 +2,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 
+/* Import code styling from code-block.css */
+@import url("@/components/code-block.css");
+
 /* Williams Handwriting Font Import - All styles */
 @font-face {
   font-family: "Williams Handwriting";
-  src: url("/fonts/Williams-Handwriting-Font-v1.7.ttf") format("truetype");
+  src: url("/fonts/Williams-Handwriting-Font-v1.9.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -17,15 +20,15 @@
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:is(.dark *));
 @custom-variant fun (&:is(.fun *));
+@custom-variant professional (&:is(.professional *));
+@custom-variant default (&:is(.default *));
 @utility no-scrollbar {
   @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }
 
 @theme inline {
   --color-mirascope-purple: oklch(0.5854 0.2041 277.12); /* Mirascope purple */
-  --color-mirascope-purple-dark: oklch(
-    0.5254 0.2041 277.12
-  ); /* Darker purple */
+  --color-mirascope-purple-dark: oklch(0.5254 0.2041 277.12); /* Darker purple */
   --color-lilypad-green: #409b45; /* Vibrant lily pad green */
   --color-lilypad-green-dark: #25562a; /* Darker version of the lily pad green */
   --radius-sm: calc(var(--radius) - 4px);
@@ -157,11 +160,11 @@
 }
 .professional {
   font-family:
+    Roboto,
     "Geist Sans",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
     Oxygen,
     Ubuntu,
     Cantarell,
@@ -169,20 +172,29 @@
     "Helvetica Neue",
     sans-serif;
 }
+
 .fun {
   font-family:
     "Williams Handwriting",
+    Roboto,
     "Geist Sans",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
     Oxygen,
     Ubuntu,
     Cantarell,
     "Open Sans",
     "Helvetica Neue",
     sans-serif;
+}
+@theme font {
+  --font-professional:
+    Roboto, "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Oxygen, Ubuntu, Cantarell,
+    "Open Sans", "Helvetica Neue", sans-serif;
+  --font-fun:
+    "Williams Handwriting", Roboto, "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 body {
   @apply m-0;
@@ -207,127 +219,6 @@ body::before {
   z-index: 9999;
 }
 
-/* Base code styles */
-code {
-  font-family:
-    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
-/* Code blocks use different fonts based on mode */
-code,
-pre,
-.shiki,
-.shiki code,
-.mono-enabled code,
-.mono-enabled pre,
-.mono-enabled .shiki,
-.mono-enabled .shiki code {
-  font-family:
-    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace !important;
-  /* Font size is defined in .shiki */
-}
-
-.shiki {
-  margin: 0 !important;
-  padding: 0.75rem !important;
-  width: 100% !important;
-  overflow-x: auto !important;
-  position: relative !important;
-}
-
-/* Ensure the code doesn't get additional styling */
-.shiki code {
-  background: transparent !important;
-  padding: 0 !important;
-  counter-reset: step;
-  counter-increment: step 0;
-}
-
-/* Ensure consistent line heights */
-.shiki .line {
-  line-height: 1.5 !important;
-  min-height: 1.5em !important;
-}
-
-/* Line numbers */
-.show-line-numbers .shiki .line::before {
-  content: counter(step);
-  counter-increment: step;
-  width: 1rem;
-  margin-right: 1rem;
-  display: inline-block;
-  text-align: right;
-  color: rgba(115, 138, 148, 0.4);
-}
-
-/* Basic split view diff styles */
-.shiki .highlighted,
-.shiki [data-highlighted],
-.shiki .line[data-highlighted="true"] {
-  background-color: rgba(124, 58, 237, 0.07) !important;
-  border-left: 3px solid #6366f1 !important;
-  margin-left: -1rem !important;
-  padding-left: calc(1rem - 3px) !important;
-  display: inline-block !important;
-}
-
-.shiki .line.diff.remove {
-  background-color: rgba(239, 68, 68, 0.07) !important;
-}
-
-.shiki .line.diff.add {
-  background-color: rgba(34, 197, 94, 0.07) !important;
-}
-
-/* Dark theme adjustments for diff lines */
-.dark-theme-code .shiki .line.diff.remove {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  border-left-color: #ef4444 !important;
-}
-
-.dark-theme-code .shiki .line.diff.add {
-  background-color: rgba(34, 197, 94, 0.1) !important;
-  border-left-color: #22c55e !important;
-}
-
-/* Split view colors */
-.highlight-added .shiki .highlighted,
-.highlight-added .shiki [data-highlighted],
-.highlight-added .shiki .line[data-highlighted="true"] {
-  background-color: rgba(34, 197, 94, 0.07) !important;
-  border-left: 3px solid #22c55e !important;
-}
-
-.highlight-removed .shiki .highlighted,
-.highlight-removed .shiki [data-highlighted],
-.highlight-removed .shiki .line[data-highlighted="true"] {
-  background-color: rgba(239, 68, 68, 0.07) !important;
-  border-left: 3px solid #ef4444 !important;
-}
-
-/* Dark theme adjustments for split view */
-.dark-theme-code .highlight-added .shiki .highlighted,
-.dark-theme-code .highlight-added .shiki [data-highlighted],
-.dark-theme-code .highlight-added .shiki .line[data-highlighted="true"] {
-  background-color: rgba(34, 197, 94, 0.1) !important;
-  border-left-color: #22c55e !important;
-}
-
-.dark-theme-code .highlight-removed .shiki .highlighted,
-.dark-theme-code .highlight-removed .shiki [data-highlighted],
-.dark-theme-code .highlight-removed .shiki .line[data-highlighted="true"] {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  border-left-color: #ef4444 !important;
-}
-
-.dark-theme-code .shiki .highlighted,
-.dark-theme-code .shiki [data-highlighted],
-.dark-theme-code .shiki .line[data-highlighted="true"] {
-  background-color: rgba(139, 92, 246, 0.1) !important;
-  border-left-color: #6366f1 !important;
-}
-
 @utility scrollbar-hidden {
   &::-webkit-scrollbar {
     display: none;
@@ -348,21 +239,38 @@ pre,
   body {
     @apply bg-background text-foreground;
   }
+  .font-default {
+    font-family:
+      "Geist Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      "Open Sans",
+      "Helvetica Neue",
+      sans-serif;
+  }
+  .font-handwriting {
+    font-family: "Williams Handwriting", cursive !important;
+  }
 }
 
 @layer components {
   /* Button group */
   .button-group {
-    @apply flex gap-2 mt-4;
+    @apply mt-4 flex gap-2;
   }
 
   /* Collapsible component */
   .Collapsible__container {
-    @apply bg-card border border-border rounded-lg mb-2;
+    @apply mb-2 rounded-lg border border-border bg-card;
   }
 
   .Collapsible__title {
-    @apply cursor-pointer py-1 px-5 pl-5 relative font-bold list-none outline-none;
+    @apply relative cursor-pointer list-none px-5 py-1 pl-5 font-bold outline-none;
   }
 
   .Collapsible__title::marker,
@@ -371,7 +279,7 @@ pre,
   }
 
   .Collapsible__title:before {
-    @apply block absolute left-2 top-1/2 transform -translate-y-1/2;
+    @apply absolute top-1/2 left-2 block -translate-y-1/2 transform;
     content: "";
     border-style: solid;
     border-color: transparent;
@@ -380,12 +288,12 @@ pre,
   }
 
   .Collapsible__container[open] > .Collapsible__title:before {
-    @apply border-t-current border-l-transparent border-r-transparent border-b-transparent;
+    @apply border-t-current border-r-transparent border-b-transparent border-l-transparent;
     border-width: 6px 4px 0 4px;
   }
 
   .Collapsible__content {
-    @apply py-0 px-5 pl-5;
+    @apply px-5 py-0 pl-5;
   }
 
   .Collapsible__collapsed .Collapsible__content {
@@ -399,11 +307,11 @@ pre,
 
   /* Editor styles */
   .editor-paragraph {
-    @apply relative block my-1;
+    @apply relative my-1 block;
   }
 
   .editor-quote {
-    @apply m-0 ml-5 mb-2.5 text-sm text-muted-foreground border-l-4 border-l-muted pl-4;
+    @apply m-0 mb-2.5 ml-5 border-l-4 border-l-muted pl-4 text-sm text-muted-foreground;
   }
 
   .editor-indent {
@@ -435,17 +343,17 @@ pre,
   }
 
   .editor-code {
-    @apply block bg-muted font-mono py-2 px-2 pl-[52px] leading-relaxed text-sm m-0 my-2 overflow-x-auto relative;
+    @apply relative m-0 my-2 block overflow-x-auto bg-muted px-2 py-2 pl-[52px] font-mono text-sm leading-relaxed;
     tab-size: 2;
   }
 
   .editor-code::before {
-    @apply absolute bg-card/50 left-0 top-0 border-r border-r-border py-2 px-2 text-muted-foreground whitespace-pre-wrap text-right min-w-[25px];
+    @apply absolute top-0 left-0 min-w-[25px] border-r border-r-border bg-card/50 px-2 py-2 text-right whitespace-pre-wrap text-muted-foreground;
     content: attr(data-gutter);
   }
 
   .editor-code:after {
-    @apply absolute top-[2%] right-[5px] p-[3px] text-xs uppercase text-muted-foreground/50;
+    @apply absolute top-[2%] right-[5px] p-[3px] text-xs text-muted-foreground/50 uppercase;
     content: attr(data-highlight-language);
   }
 

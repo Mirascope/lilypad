@@ -3,13 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useAuth } from "@/auth";
 import { GithubLogin } from "@/components/GithubLogin";
 import { GoogleLogin } from "@/components/GoogleLogin";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchVersions } from "@/utils/auth";
 import { useEffect, useState } from "react";
 
@@ -46,8 +40,7 @@ const LoginComponent = () => {
         const storedTermsVersion = loadTermsVersion();
 
         const versionsChanged =
-          storedPrivacyVersion !== privacyVersion ||
-          storedTermsVersion !== termsVersion;
+          storedPrivacyVersion !== privacyVersion || storedTermsVersion !== termsVersion;
 
         setShowModal(!!versionsChanged);
       } catch (error) {
@@ -59,8 +52,8 @@ const LoginComponent = () => {
     checkVersions();
   }, []);
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Card className="w-[600px] m-0">
+    <div className="flex h-screen items-center justify-center">
+      <Card className="m-0 w-[600px]">
         <CardHeader>
           <CardTitle>Welcome to Lilypad</CardTitle>
           <CardDescription>Sign in to continue</CardDescription>

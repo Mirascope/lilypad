@@ -11,23 +11,10 @@ import { Typography } from "@/components/ui/typography";
 import { FunctionAnnotations } from "@/ee/components/FunctionAnnotations";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { FunctionTab } from "@/types/functions";
-import {
-  functionsByNameQueryOptions,
-  useArchiveFunctionMutation,
-} from "@/utils/functions";
+import { functionsByNameQueryOptions, useArchiveFunctionMutation } from "@/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  GitCompare,
-  MoveLeft,
-  SquareTerminal,
-  Trash,
-} from "lucide-react";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { ArrowLeft, GitCompare, MoveLeft, SquareTerminal, Trash } from "lucide-react";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
@@ -78,10 +65,7 @@ const FunctionWorkbench = () => {
       isDisabled: !features.annotations,
       component: fn ? (
         <Suspense fallback={<TableSkeleton />}>
-          <FunctionAnnotations
-            projectUuid={projectUuid}
-            functionUuid={fn.uuid}
-          />
+          <FunctionAnnotations projectUuid={projectUuid} functionUuid={fn.uuid} />
         </Suspense>
       ) : null,
     },
@@ -123,14 +107,14 @@ const FunctionWorkbench = () => {
     return <NotFound />;
   }
   return (
-    <div className="pt-4 pb-1 h-screen flex flex-col px-4 gap-2">
+    <div className="flex h-screen flex-col gap-2 px-4 pt-4 pb-1">
       <div className="shrink-0">
         <Button variant="outline" onClick={handleBackButton}>
           <MoveLeft className="size-4" />
           Back to Functions
         </Button>
       </div>
-      <div className="flex justify-between shrink-0">
+      <div className="flex shrink-0 justify-between">
         <div className="flex items-center gap-2">
           <Typography variant="h3">{functionName}</Typography>
           <SelectFunction
@@ -157,9 +141,7 @@ const FunctionWorkbench = () => {
                   if (uuid) {
                     navigate({
                       to: `/projects/${projectUuid}/functions/${functionName}/compare/${functionUuid}/${uuid}/${tab}`,
-                    }).catch(() =>
-                      toast.error("Failed to navigate to compare page")
-                    );
+                    }).catch(() => toast.error("Failed to navigate to compare page"));
                   }
                 }}
               />
@@ -179,9 +161,7 @@ const FunctionWorkbench = () => {
                   // Navigate back to single function view
                   navigate({
                     to: `/projects/${projectUuid}/functions/${functionName}/${functionUuid}/${tab}`,
-                  }).catch(() =>
-                    toast.error("Failed to navigate to function page")
-                  );
+                  }).catch(() => toast.error("Failed to navigate to function page"));
                   setCompareMode(false);
                   setSecondFunctionUuid("");
                 } else {
@@ -217,11 +197,7 @@ const FunctionWorkbench = () => {
                 >
                   Delete
                 </Button>,
-                <Button
-                  key="cancel-delete-button"
-                  type="button"
-                  variant="outline"
-                >
+                <Button key="cancel-delete-button" type="button" variant="outline">
                   Cancel
                 </Button>,
               ]}
@@ -231,7 +207,7 @@ const FunctionWorkbench = () => {
           )}
         </div>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1">
         <TabGroup tabs={tabs} tab={tab} handleTabChange={handleTabChange} />
       </div>
     </div>

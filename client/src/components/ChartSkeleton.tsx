@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const ChartSkeleton = ({ title }: { title: string }) => {
   return (
-    <Card className="w-full h-full">
+    <Card className="h-full w-full">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>

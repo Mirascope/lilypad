@@ -28,13 +28,7 @@ import {
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import {
-  DefaultValues,
-  Path,
-  useForm,
-  useFormContext,
-  UseFormReturn,
-} from "react-hook-form";
+import { DefaultValues, Path, useForm, useFormContext, UseFormReturn } from "react-hook-form";
 export type OptionalField<T> = {
   enabled: boolean;
   value: T;
@@ -60,9 +54,7 @@ function getDefaultValueForType(value: unknown): unknown {
   return null;
 }
 
-export function apiToFormValues<T extends object>(
-  apiData: T
-): WithOptionalFields<T> {
+export function apiToFormValues<T extends object>(apiData: T): WithOptionalFields<T> {
   const result = {} as WithOptionalFields<T>;
 
   for (const key in apiData) {
@@ -165,14 +157,8 @@ export const SLIDER_CONFIGS: Record<string, SliderConfig> = {
   },
 } as const;
 
-export function createFormSlider(
-  sliderKey: keyof typeof SLIDER_CONFIGS,
-  isDisabled?: boolean
-) {
-  return function renderSlider<T extends object>(
-    name: Path<T>,
-    enabled?: Path<T>
-  ) {
+export function createFormSlider(sliderKey: keyof typeof SLIDER_CONFIGS, isDisabled?: boolean) {
+  return function renderSlider<T extends object>(name: Path<T>, enabled?: Path<T>) {
     const config = SLIDER_CONFIGS[sliderKey];
     const isOptional = !!enabled;
 
@@ -267,9 +253,7 @@ export const renderStopSequences = (
       name={name}
       render={() => (
         <FormItem>
-          <FormLabel className="flex items-center gap-2">
-            Stop Sequences
-          </FormLabel>
+          <FormLabel className="flex items-center gap-2">Stop Sequences</FormLabel>
           <FormControl>
             <FormCombobox<PlaygroundParameters>
               items={stopSequences.map((str) => ({
@@ -329,10 +313,7 @@ const getDefaultValues = <T extends PlaygroundParameters>(
       call_params: commonCallParamsDefault,
     } as DefaultValues<T>;
   }
-  if (
-    !latestVersion.call_params ||
-    Object.keys(latestVersion.call_params).length === 0
-  ) {
+  if (!latestVersion.call_params || Object.keys(latestVersion.call_params).length === 0) {
     latestVersion.call_params = commonCallParamsDefault;
   }
   return {
@@ -358,12 +339,7 @@ const renderSeed = (isDisabled: boolean) => {
         <FormItem>
           <FormLabel>Seed</FormLabel>
           <FormControl>
-            <Input
-              {...field}
-              type="number"
-              value={field.value ?? ""}
-              disabled={isDisabled}
-            />
+            <Input {...field} type="number" value={field.value ?? ""} disabled={isDisabled} />
           </FormControl>
         </FormItem>
       )}
@@ -391,11 +367,7 @@ export const getAvailableProviders = (user: UserPublic | null) => {
   }
   return availableProviders;
 };
-export const BaseEditorFormFields = ({
-  isDisabled,
-}: {
-  isDisabled: boolean;
-}) => {
+export const BaseEditorFormFields = ({ isDisabled }: { isDisabled: boolean }) => {
   const methods = useFormContext<PlaygroundParameters>();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const provider = methods.watch("provider");
@@ -433,7 +405,7 @@ export const BaseEditorFormFields = ({
     renderStopSequences("call_params.stop", 4, isDisabled),
   ];
   return (
-    <div className="w-full max-w-sm flex flex-col gap-3">
+    <div className="flex w-full max-w-sm flex-col gap-3">
       {selectItems.length > 0 && (
         <>
           <FormField
@@ -482,12 +454,7 @@ export const formValuesToApi = (obj: { [key: string]: unknown }) => {
   // property if 'enabled' is false.
   for (const key of Object.keys(obj)) {
     const param = obj[key];
-    if (
-      param &&
-      typeof param === "object" &&
-      "enabled" in param &&
-      "value" in param
-    ) {
+    if (param && typeof param === "object" && "enabled" in param && "value" in param) {
       if (param.enabled) {
         obj[key] = param.value;
       } else {

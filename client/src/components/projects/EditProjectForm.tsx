@@ -1,7 +1,4 @@
-import {
-  BaseProjectForm,
-  ProjectFormData,
-} from "@/components/projects/BaseProjectForm";
+import { BaseProjectForm, ProjectFormData } from "@/components/projects/BaseProjectForm";
 import { useUpdateProjectMutation } from "@/utils/projects";
 import { toast } from "sonner";
 
@@ -39,8 +36,8 @@ export const EditProjectForm = ({
     <BaseProjectForm
       defaultValues={defaultProjectFormData}
       onSubmit={handleEdit}
-      submitButtonText='Save Changes'
-      submittingText='Saving...'
+      submitButtonText="Save Changes"
+      submittingText="Saving..."
       className={className}
     />
   );

@@ -1,10 +1,4 @@
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input, InputProps } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -43,11 +37,8 @@ export const FormSlider = <T extends FieldValues>({
 
         return (
           <FormItem>
-            <FormLabel className="flex justify-between items-center">
-              <Label
-                htmlFor={sliderProps.name ?? ""}
-                className="flex items-center gap-2"
-              >
+            <FormLabel className="flex items-center justify-between">
+              <Label htmlFor={sliderProps.name ?? ""} className="flex items-center gap-2">
                 {label}
                 {optional && switchName && (
                   <>
@@ -60,9 +51,7 @@ export const FormSlider = <T extends FieldValues>({
                             checked={switchField.value}
                             onCheckedChange={switchField.onChange}
                           />
-                          <p className="text-xs">
-                            {switchField.value ? "Active" : "Not set"}
-                          </p>
+                          <p className="text-xs">{switchField.value ? "Active" : "Not set"}</p>
                         </>
                       )}
                     />
@@ -75,8 +64,7 @@ export const FormSlider = <T extends FieldValues>({
                   value={field.value}
                   onChange={(e) => {
                     // Convert to number for the field
-                    const val =
-                      e.target.value === "" ? "" : Number(e.target.value);
+                    const val = e.target.value === "" ? "" : Number(e.target.value);
                     field.onChange(val);
                   }}
                   type="number"

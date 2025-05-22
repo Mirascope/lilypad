@@ -16,10 +16,7 @@ type ConsolidatedRecord = Record<string, Record<string, ProcessedData>>;
 
 type FunctionAggregates = Record<string, ProcessedData>;
 
-export const useProjectAggregates = (
-  projectUuid: string,
-  timeFrame: TimeFrame
-) => {
+export const useProjectAggregates = (projectUuid: string, timeFrame: TimeFrame) => {
   // Fetch data using the query
   const { data, isLoading, error, refetch } = useSuspenseQuery(
     aggregatesByProjectQueryOptions(projectUuid, timeFrame)
@@ -61,8 +58,7 @@ export const useProjectAggregates = (
         existing.total_input_tokens += item.total_input_tokens;
         existing.total_output_tokens += item.total_output_tokens;
         existing.span_count += item.span_count;
-        existing.total_tokens =
-          existing.total_input_tokens + existing.total_output_tokens;
+        existing.total_tokens = existing.total_input_tokens + existing.total_output_tokens;
         existing.formattedCost = `${existing.total_cost.toFixed(5)}`;
       }
     });
