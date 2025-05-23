@@ -16,7 +16,7 @@ from ...schemas.user_consents import (
 from ...schemas.users import UserPublic
 from ...services.user_consents import UserConsentService
 
-user_consents_router = APIRouter()
+user_consents_router = APIRouter(tags=["UserConsents"])
 
 
 @user_consents_router.post("/user-consents", response_model=UserConsentPublic)

@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
+from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from ....ee.server.api import v0_ee_router
@@ -52,7 +53,7 @@ class SettingsPublic(BaseModel):
     experimental: bool
 
 
-@api.get("/settings", response_model=SettingsPublic)
+@api.get("/settings", response_model=SettingsPublic, tags=["Settings"])
 async def get_settings_client(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> SettingsPublic:
@@ -66,5 +67,17 @@ async def get_settings_client(
         experimental=settings.experimental,
     )
 
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """
+    Simplify operation IDs so that generated API clients have simpler function
+    names.
+
+    Should be called only after all routes have been added.
+    """
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name  # in this case, 'read_items'
+
+use_route_names_as_operation_ids(api)
 
 __all__ = ["api"]

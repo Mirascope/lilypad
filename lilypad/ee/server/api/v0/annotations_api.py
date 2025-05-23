@@ -22,12 +22,13 @@ from ....server.services import AnnotationService
 from ...generations.annotate_trace import annotate_trace
 from ...require_license import require_license
 
-annotations_router = APIRouter()
+annotations_router = APIRouter(tags=["Annotations"])
 
 
 @annotations_router.post(
     "/projects/{project_uuid}/annotations",
     response_model=Sequence[AnnotationPublic],
+    operation_id="create_annotations"
 )
 @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def create_annotations(
@@ -132,6 +133,7 @@ async def create_annotations(
 @annotations_router.patch(
     "/projects/{project_uuid}/annotations/{annotation_uuid}",
     response_model=AnnotationPublic,
+    operation_id="update_annotation"
 )
 @require_license(tier=Tier.ENTERPRISE, cloud_free=True)
 async def update_annotation(

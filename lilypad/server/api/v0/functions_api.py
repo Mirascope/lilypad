@@ -25,7 +25,7 @@ from ...schemas.functions import (
 from ...services import DeploymentService, FunctionService, SpanService
 from ...services.opensearch import OpenSearchService, get_opensearch_service
 
-functions_router = APIRouter()
+functions_router = APIRouter(tags=["Functions"])
 
 
 @functions_router.get(

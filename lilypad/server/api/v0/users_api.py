@@ -12,7 +12,7 @@ from ...models.users import (
 from ...schemas.users import UserPublic
 from ...services import UserService
 
-users_router = APIRouter()
+users_router = APIRouter(tags=["Users"])
 
 
 @users_router.put("/users/{activeOrganizationUuid}", response_model=UserPublic)

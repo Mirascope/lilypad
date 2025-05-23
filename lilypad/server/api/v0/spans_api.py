@@ -21,7 +21,7 @@ from ...services.opensearch import (
 )
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
-spans_router = APIRouter()
+spans_router = APIRouter(tags=["Spans"])
 
 
 @spans_router.get("/spans/{span_uuid}", response_model=SpanMoreDetails)

@@ -14,7 +14,7 @@ from ....schemas.users import UserPublic
 from ....settings import Settings, get_settings
 from .utils import handle_user
 
-google_router = APIRouter()
+google_router = APIRouter(tags=["Google"])
 
 
 @google_router.get("/google/callback", response_model=UserPublic)

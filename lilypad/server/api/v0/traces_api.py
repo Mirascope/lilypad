@@ -35,7 +35,7 @@ from ...services import OpenSearchService, SpanService, get_opensearch_service
 from ...services.billing import BillingService
 from ...services.projects import ProjectService
 
-traces_router = APIRouter()
+traces_router = APIRouter(tags=["Traces"])
 logger = logging.getLogger(__name__)
 
 

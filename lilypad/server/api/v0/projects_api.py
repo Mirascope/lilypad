@@ -11,7 +11,7 @@ from ...models.projects import ProjectTable
 from ...schemas.projects import ProjectCreate, ProjectPublic
 from ...services import ProjectService
 
-projects_router = APIRouter()
+projects_router = APIRouter(tags=["Projects"])
 
 
 @projects_router.get("/projects", response_model=Sequence[ProjectPublic])

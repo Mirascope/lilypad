@@ -13,7 +13,7 @@ from ...schemas.billing import StripeWebhookResponse
 from ...services.billing import BillingService
 from ...settings import get_settings
 
-billing_router = APIRouter()
+billing_router = APIRouter(tags=["Billing"])
 settings = get_settings()
 
 logger = logging.getLogger(__name__)

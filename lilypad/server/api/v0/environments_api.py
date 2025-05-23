@@ -20,7 +20,7 @@ from ....server.services import DeploymentService, EnvironmentService
 from ...models.deployments import DeploymentTable
 from ...models.environments import EnvironmentTable
 
-environments_router = APIRouter()
+environments_router = APIRouter(tags=["Environments"])
 
 
 # Environment endpoints

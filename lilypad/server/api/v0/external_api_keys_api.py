@@ -13,7 +13,7 @@ from ...schemas.external_api_keys import (
 from ...schemas.users import UserPublic
 from ...services.user_external_api_key_service import UserExternalAPIKeyService
 
-external_api_key_router = APIRouter()
+external_api_key_router = APIRouter(tags=["ExternalAPIKeys"])
 
 
 @external_api_key_router.post("/external-api-keys", response_model=ExternalAPIKeyPublic)
