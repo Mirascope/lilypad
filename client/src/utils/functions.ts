@@ -1,10 +1,6 @@
 import api from "@/api";
 import { FunctionCreate, FunctionPublic, FunctionUpdate } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 import { usePostHog } from "posthog-js/react";
 
@@ -28,31 +24,21 @@ export const createVersionedFunction = async (
   ).data;
 };
 
-export const fetchFunctionsByName = async (
-  functionName: string,
-  projectUuid: string
-) => {
+export const fetchFunctionsByName = async (functionName: string, projectUuid: string) => {
   if (!projectUuid || !functionName) return [];
   return (
-    await api.get<FunctionPublic[]>(
-      `/projects/${projectUuid}/functions/name/${functionName}`
-    )
+    await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions/name/${functionName}`)
   ).data;
 };
 
 export const fetchFunctions = async (projectUuid: string) => {
-  return (await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions`))
-    .data;
+  return (await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions`)).data;
 };
 
-export const fetchLatestVersionUniqueFunctionNames = async (
-  projectUuid?: string
-) => {
+export const fetchLatestVersionUniqueFunctionNames = async (projectUuid?: string) => {
   if (!projectUuid) return [];
   return (
-    await api.get<FunctionPublic[]>(
-      `/projects/${projectUuid}/functions/metadata/names/versions`
-    )
+    await api.get<FunctionPublic[]>(`/projects/${projectUuid}/functions/metadata/names/versions`)
   ).data;
 };
 
@@ -69,26 +55,13 @@ export const patchFunction = async (
   ).data;
 };
 
-export const archiveFunction = async (
-  projectUuid: string,
-  functionUuid: string
-) => {
-  return (
-    await api.delete<boolean>(
-      `/projects/${projectUuid}/functions/${functionUuid}`
-    )
-  ).data;
+export const archiveFunction = async (projectUuid: string, functionUuid: string) => {
+  return (await api.delete<boolean>(`/projects/${projectUuid}/functions/${functionUuid}`)).data;
 };
 
-export const archiveFunctionByName = async (
-  projectUuid: string,
-  functionName: string
-) => {
-  return (
-    await api.delete<boolean>(
-      `/projects/${projectUuid}/functions/names/${functionName}`
-    )
-  ).data;
+export const archiveFunctionByName = async (projectUuid: string, functionName: string) => {
+  return (await api.delete<boolean>(`/projects/${projectUuid}/functions/names/${functionName}`))
+    .data;
 };
 
 export const useCreateVersionedFunctionMutation = () => {
@@ -131,13 +104,10 @@ export const usePatchFunctionMutation = () => {
   });
 };
 
-export const uniqueLatestVersionFunctionNamesQueryOptions = (
-  projectUuid?: string
-) =>
+export const uniqueLatestVersionFunctionNamesQueryOptions = (projectUuid?: string) =>
   queryOptions({
     queryKey: ["projects", projectUuid, ...functionKeys.list("unique")],
-    queryFn: async () =>
-      await fetchLatestVersionUniqueFunctionNames(projectUuid),
+    queryFn: async () => await fetchLatestVersionUniqueFunctionNames(projectUuid),
   });
 
 export const functionsQueryOptions = (projectUuid: string) =>
@@ -146,10 +116,7 @@ export const functionsQueryOptions = (projectUuid: string) =>
     queryFn: async () => await fetchFunctions(projectUuid),
   });
 
-export const functionsByNameQueryOptions = (
-  functionName: string,
-  projectUuid: string
-) =>
+export const functionsByNameQueryOptions = (functionName: string, projectUuid: string) =>
   queryOptions({
     queryKey: functionKeys.list(functionName),
     queryFn: async () => await fetchFunctionsByName(functionName, projectUuid),

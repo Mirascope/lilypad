@@ -8,11 +8,7 @@ import {
   SpanUpdate,
   TimeFrame,
 } from "@/types/types";
-import {
-  queryOptions,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchSpans = async (projectUuid?: string) => {
   if (!projectUuid) {
@@ -23,8 +19,7 @@ export const fetchSpans = async (projectUuid?: string) => {
       offset: 0,
     };
   }
-  return (await api.get<PaginatedSpanPublic>(`/projects/${projectUuid}/traces`))
-    .data;
+  return (await api.get<PaginatedSpanPublic>(`/projects/${projectUuid}/traces`)).data;
 };
 
 export const spansQueryOptions = (projectUuid?: string) =>
@@ -40,9 +35,7 @@ export const fetchSpan = async (spanUuid: string) => {
 };
 
 export const deleteSpan = async (projectUuid: string, spanUuid: string) => {
-  return (
-    await api.delete<boolean>(`/projects/${projectUuid}/spans/${spanUuid}`)
-  ).data;
+  return (await api.delete<boolean>(`/projects/${projectUuid}/spans/${spanUuid}`)).data;
 };
 
 export const spanQueryOptions = (spanUuid: string) =>
@@ -51,21 +44,7 @@ export const spanQueryOptions = (spanUuid: string) =>
     queryFn: () => fetchSpan(spanUuid),
   });
 
-export const fetchSpansByFunctionUuid = async (
-  projectUuid: string,
-  functionUuid: string
-) => {
-  return (
-    await api.get<SpanPublic[]>(
-      `/projects/${projectUuid}/functions/${functionUuid}/spans`
-    )
-  ).data;
-};
-
-export const fetchAggregatesByProjectUuid = async (
-  projectUuid: string,
-  timeFrame: TimeFrame
-) => {
+export const fetchAggregatesByProjectUuid = async (projectUuid: string, timeFrame: TimeFrame) => {
   return (
     await api.get<AggregateMetrics[]>(
       `/projects/${projectUuid}/spans/metadata?time_frame=${timeFrame}`
@@ -74,7 +53,7 @@ export const fetchAggregatesByProjectUuid = async (
 };
 
 export const patchSpan = async (spanUuid: string, spanUpdate: SpanUpdate) => {
-  return (await api.patch<SpanPublic>(`/spans/${spanUuid}`, spanUpdate)).data;
+  return (await api.patch<SpanMoreDetails>(`/spans/${spanUuid}`, spanUpdate)).data;
 };
 
 export const searchSpans = async (
@@ -96,11 +75,8 @@ export const searchSpans = async (
     }
   });
 
-  return (
-    await api.get<SpanPublic[]>(
-      `/projects/${projectUuid}/spans?${searchParams.toString()}`
-    )
-  ).data;
+  return (await api.get<SpanPublic[]>(`/projects/${projectUuid}/spans?${searchParams.toString()}`))
+    .data;
 };
 
 export const fetchAggregatesByFunctionUuid = async (
@@ -115,20 +91,7 @@ export const fetchAggregatesByFunctionUuid = async (
   ).data;
 };
 
-export const spansByFunctionQueryOptions = (
-  projectUuid: string,
-  functionUuid: string
-) =>
-  queryOptions({
-    queryKey: ["projects", projectUuid, "functions", functionUuid, "spans"],
-    queryFn: () => fetchSpansByFunctionUuid(projectUuid, functionUuid),
-    refetchInterval: 10000,
-  });
-
-export const aggregatesByProjectQueryOptions = (
-  projectUuid: string,
-  timeFrame: TimeFrame
-) =>
+export const aggregatesByProjectQueryOptions = (projectUuid: string, timeFrame: TimeFrame) =>
   queryOptions({
     queryKey: ["projects", projectUuid, "spans", "metadata", timeFrame],
     queryFn: () => fetchAggregatesByProjectUuid(projectUuid, timeFrame),
@@ -140,37 +103,20 @@ export const aggregatesByFunctionQueryOptions = (
   timeFrame: TimeFrame
 ) =>
   queryOptions({
-    queryKey: [
-      "projects",
-      projectUuid,
-      "functions",
-      functionUuid,
-      "spans",
-      "metadata",
-      timeFrame,
-    ],
-    queryFn: () =>
-      fetchAggregatesByFunctionUuid(projectUuid, functionUuid, timeFrame),
+    queryKey: ["projects", projectUuid, "functions", functionUuid, "spans", "metadata", timeFrame],
+    queryFn: () => fetchAggregatesByFunctionUuid(projectUuid, functionUuid, timeFrame),
   });
 
 export const useUpdateSpanMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      spanUuid,
-      spanUpdate,
-    }: {
-      spanUuid: string;
-      spanUpdate: SpanUpdate;
-    }) => await patchSpan(spanUuid, spanUpdate),
+    mutationFn: async ({ spanUuid, spanUpdate }: { spanUuid: string; spanUpdate: SpanUpdate }) =>
+      await patchSpan(spanUuid, spanUpdate),
     onSuccess: async (data, { spanUuid }) => {
-      queryClient.setQueryData(
-        ["spans", spanUuid],
-        (oldData: SpanMoreDetails | undefined) => {
-          if (!oldData) return oldData;
-          return { ...oldData, ...data };
-        }
-      );
+      queryClient.setQueryData(["spans", spanUuid], (oldData: SpanMoreDetails | undefined) => {
+        if (!oldData) return oldData;
+        return { ...oldData, ...data };
+      });
 
       await queryClient.invalidateQueries({
         queryKey: ["spans", spanUuid],
@@ -190,13 +136,8 @@ export const useUpdateSpanMutation = () => {
 export const useDeleteSpanMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      projectUuid,
-      spanUuid,
-    }: {
-      projectUuid: string;
-      spanUuid: string;
-    }) => await deleteSpan(projectUuid, spanUuid),
+    mutationFn: async ({ projectUuid, spanUuid }: { projectUuid: string; spanUuid: string }) =>
+      await deleteSpan(projectUuid, spanUuid),
     onSuccess: async (_, { projectUuid, spanUuid }) => {
       queryClient.removeQueries({
         queryKey: ["spans", spanUuid],
@@ -243,10 +184,7 @@ export const spansSearchQueryOptions = (
   return queryOptions({
     queryKey: ["projects", projectUuid, "spans", params],
     queryFn: () => searchSpans(projectUuid, params),
-    enabled:
-      !!params.query_string ||
-      !!params.time_range_start ||
-      !!params.time_range_end,
+    enabled: !!params.query_string || !!params.time_range_start || !!params.time_range_end,
   });
 };
 

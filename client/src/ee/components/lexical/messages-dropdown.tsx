@@ -18,39 +18,29 @@ export const messageTypeToMessageName: Record<string, string> = {
   User: "USER",
 };
 
-export const MessageTypeDropdown = ({
-  isEditable,
-}: {
-  isEditable: boolean;
-}) => {
+export const MessageTypeDropdown = ({ isEditable }: { isEditable: boolean }) => {
   const [editor] = useLexicalComposerContext();
-  const [messageType, setMessageType] = useState<
-    keyof typeof messageTypeToMessageName | undefined
-  >(undefined);
-  const [isCursorInsideCollapsible, setIsCursorInsideCollapsible] =
-    useState<boolean>(false);
+  const [messageType, setMessageType] = useState<keyof typeof messageTypeToMessageName | undefined>(
+    undefined
+  );
+  const [isCursorInsideCollapsible, setIsCursorInsideCollapsible] = useState<boolean>(false);
 
   useEffect(() => {
     // Listener to detect cursor position within the editor
-    const removeUpdateListener = editor.registerUpdateListener(
-      ({ editorState }) => {
-        editorState.read(() => {
-          const selection = $getSelection();
+    const removeUpdateListener = editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
 
-          if ($isRangeSelection(selection)) {
-            const anchorNode = selection.anchor.getNode();
-            // Check if the cursor is inside a CollapsibleContainerNode
-            const collapsibleContainer = $findMatchingParent(
-              anchorNode,
-              $isCollapsibleContainerNode
-            );
-            setIsCursorInsideCollapsible(!!collapsibleContainer);
-          } else {
-            setIsCursorInsideCollapsible(false);
-          }
-        });
-      }
-    );
+        if ($isRangeSelection(selection)) {
+          const anchorNode = selection.anchor.getNode();
+          // Check if the cursor is inside a CollapsibleContainerNode
+          const collapsibleContainer = $findMatchingParent(anchorNode, $isCollapsibleContainerNode);
+          setIsCursorInsideCollapsible(!!collapsibleContainer);
+        } else {
+          setIsCursorInsideCollapsible(false);
+        }
+      });
+    });
 
     return () => {
       removeUpdateListener();
@@ -76,10 +66,7 @@ export const MessageTypeDropdown = ({
       <SelectContent onCloseAutoFocus={() => editor.focus()}>
         {Object.keys(messageTypeToMessageName).map((messageType) => {
           return (
-            <SelectItem
-              key={messageType}
-              value={messageTypeToMessageName[messageType]}
-            >
+            <SelectItem key={messageType} value={messageTypeToMessageName[messageType]}>
               {messageType}
             </SelectItem>
           );

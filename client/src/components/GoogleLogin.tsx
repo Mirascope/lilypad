@@ -9,11 +9,7 @@ interface GoogleButtonProps extends ButtonProps {
   children?: ReactNode;
 }
 
-const GoogleButton = ({
-  iconSize = 24,
-  children,
-  ...buttonProps
-}: GoogleButtonProps) => {
+const GoogleButton = ({ iconSize = 24, children, ...buttonProps }: GoogleButtonProps) => {
   return (
     <Button variant="outline" {...buttonProps} className="hover:bg-[#EFF0EE]">
       <svg
@@ -103,13 +99,7 @@ const GoogleButton = ({
   );
 };
 
-export const GoogleLogin = ({
-  redirect,
-  showModal,
-}: {
-  redirect?: string;
-  showModal: boolean;
-}) => {
+export const GoogleLogin = ({ redirect, showModal }: { redirect?: string; showModal: boolean }) => {
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const [open, setOpen] = useState<boolean>(false);
 
@@ -149,11 +139,7 @@ export const GoogleLogin = ({
       >
         Login with Google
       </GoogleButton>
-      <UserConsentDialog
-        open={open}
-        setOpen={setOpen}
-        onClick={handleGoogleLogin}
-      />
+      <UserConsentDialog open={open} setOpen={setOpen} onClick={handleGoogleLogin} />
     </>
   );
 };

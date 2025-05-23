@@ -20,11 +20,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-export const FunctionSpansContainer = ({
-  functionUuid,
-}: {
-  functionUuid: string;
-}) => {
+export const FunctionSpansContainer = ({ functionUuid }: { functionUuid: string }) => {
   const navigate = useNavigate();
   const { functionName, projectUuid } = useParams({ from: Route.id });
   const handleDetailPanelOpen = (trace: SpanPublic) => {
@@ -70,14 +66,8 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [fullView, setFullView] = useState<boolean>(false);
   const { selectedRows, detailRow, setDetailRow } = useTable<SpanPublic>();
-  const {
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    defaultData,
-    dataUpdatedAt,
-  } = usePaginatedSpansByFunction(projectUuid, order, functionUuid);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, defaultData, dataUpdatedAt } =
+    usePaginatedSpansByFunction(projectUuid, order, functionUuid);
   const features = useFeatureAccess();
   const [displayData, setDisplayData] = useState<SpanPublic[] | null>(null);
 
@@ -96,7 +86,7 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <LilypadLoading />
       </div>
     );
@@ -104,7 +94,7 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
 
   const primaryContent = (
     <>
-      <div className="flex justify-between items-center ">
+      <div className="flex items-center justify-between">
         <Typography variant="span" affects="muted">
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
         </Typography>
@@ -127,19 +117,17 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
           <div className="shrink-0 py-4">
             <SearchBar
               projectUuid={projectUuid}
               onDataChange={setDisplayData}
-              filterFunction={(data) =>
-                data.filter((item) => item.function_uuid === functionUuid)
-              }
+              filterFunction={(data) => data.filter((item) => item.function_uuid === functionUuid)}
             />
           </div>
-          <div className="flex-1 min-h-0 overflow-auto">
+          <div className="min-h-0 flex-1 overflow-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex h-full items-center justify-center">
                 <LilypadLoading />
               </div>
             ) : (
@@ -165,17 +153,14 @@ export const FunctionSpans = ({ functionUuid }: { functionUuid: string }) => {
   );
   const detailContent = detailRow && (
     <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
-      <SpanMoreDetail
-        data={detailRow}
-        handleFullView={() => setFullView(true)}
-      />
+      <SpanMoreDetail data={detailRow} handleFullView={() => setFullView(true)} />
     </Suspense>
   );
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="flex h-full flex-col gap-4">
       {fullView && traceUuid ? (
-        <div className="container h-full w-full p-2 max-w-screen-2xl overflow-hidden">
+        <div className="container h-full w-full max-w-screen-2xl overflow-hidden p-2">
           <SpanFullDetail
             projectUuid={projectUuid}
             spanUuid={traceUuid}

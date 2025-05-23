@@ -45,21 +45,17 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
           <FormLabel>{input.label}</FormLabel>
           <FormControl>
             <div className="relative">
-              <Input
-                type={isView ? "text" : "password"}
-                id={input.id}
-                {...field}
-              />
+              <Input type={isView ? "text" : "password"} id={input.id} {...field} />
               {isView ? (
                 <Eye
-                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
+                  className="absolute top-2 right-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => {
                     setIsView(!isView);
                   }}
                 />
               ) : (
                 <EyeOff
-                  className="absolute right-2 top-2 z-10 cursor-pointer text-gray-500"
+                  className="absolute top-2 right-2 z-10 cursor-pointer text-gray-500"
                   onClick={() => setIsView(!isView)}
                 />
               )}
@@ -73,9 +69,7 @@ const PasswordField = ({ input }: { input: KeyInput }) => {
 };
 
 export const KeysSettings = () => {
-  const { data: externalApiKeys } = useSuspenseQuery(
-    externalApiKeysQueryOptions()
-  );
+  const { data: externalApiKeys } = useSuspenseQuery(externalApiKeysQueryOptions());
   const externalApiKeysMap = externalApiKeys.reduce(
     (acc, key) => {
       acc[key.service_name] = key.masked_api_key;

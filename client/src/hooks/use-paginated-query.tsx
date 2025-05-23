@@ -42,11 +42,10 @@ export const usePaginatedSpansByFunction = (
         });
       }
 
-      const page = await fetchSpansByFunctionUuidPaged(
-        projectUuid,
-        functionUuid,
-        { ...pageParam, order }
-      );
+      const page = await fetchSpansByFunctionUuidPaged(projectUuid, functionUuid, {
+        ...pageParam,
+        order,
+      });
       return {
         ...page,
         limit: page.limit ?? pageParam.limit,

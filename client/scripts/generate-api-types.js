@@ -93,9 +93,7 @@ async function generateApiTypes(options) {
     await fs.mkdir(apiOptions.output, { recursive: true });
 
     // Generate the API types
-    console.log(
-      `Generating TypeScript types to ${apiOptions.output}/${name}...`
-    );
+    console.log(`Generating TypeScript types to ${apiOptions.output}/${name}...`);
     const result = await generateApi(apiOptions);
 
     console.log(`Generated types at ${path.join(apiOptions.output, name)}`);
@@ -162,9 +160,7 @@ yargs(hideBin(process.argv))
           output: path.resolve(__dirname, "../src/types/"),
         });
 
-        console.log(
-          "Generated types for both APIs using default configuration"
-        );
+        console.log("Generated types for both APIs using default configuration");
       } catch (error) {
         process.exit(1);
       }

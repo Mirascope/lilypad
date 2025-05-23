@@ -14,16 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Typography } from "@/components/ui/typography";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
 import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
@@ -46,11 +38,7 @@ import {
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { toast } from "sonner";
 
-const tagFilter = (
-  row: Row<SpanPublic>,
-  columnId: string,
-  filterValue: string
-): boolean => {
+const tagFilter = (row: Row<SpanPublic>, columnId: string, filterValue: string): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
 
   if (!filterValue || filterValue.trim() === "") {
@@ -69,21 +57,18 @@ const tagFilter = (
 
 // Custom filter function
 const onlyParentFilter: FilterFn<SpanPublic> = (row, columnId, filterValue) => {
-  const isParent =
-    row.original.child_spans && row.original.child_spans.length > 0;
+  const isParent = row.original.child_spans && row.original.child_spans.length > 0;
 
   if (isParent) {
     const cellValue = row.getValue(columnId);
-    return String(cellValue)
-      .toLowerCase()
-      .includes(String(filterValue).toLowerCase());
+    return String(cellValue).toLowerCase().includes(String(filterValue).toLowerCase());
   }
 
   // Always include child rows
   return true;
 };
 
-const Spacer = () => <div className="w-4 h-4" />;
+const Spacer = () => <div className="h-4 w-4" />;
 const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
   return (
     <ChevronRight
@@ -91,9 +76,7 @@ const ExpandRowButton = ({ row }: { row: Row<SpanPublic> }) => {
         row.toggleExpanded();
         event.stopPropagation();
       }}
-      className={`h-4 w-4 transition-transform ${
-        row.getIsExpanded() ? "rotate-90" : ""
-      }`}
+      className={`h-4 w-4 transition-transform ${row.getIsExpanded() ? "rotate-90" : ""}`}
     />
   );
 };
@@ -106,14 +89,12 @@ interface TracesTableProps {
   isFetchingNextPage?: boolean;
   isSearch: boolean;
   order: "asc" | "desc";
-  onOrderChange: (
-    o: "asc" | "desc",
-    order_by_column: "version" | "created_at"
-  ) => void;
+  onOrderChange: (o: "asc" | "desc", order_by_column: "version" | "created_at") => void;
   fetchNextPage?: () => void;
   filterColumn?: string;
   /** Optional prop to access compare view state */
   onCompareViewToggle?: (isComparing: boolean) => void;
+  className?: string;
 }
 
 export const TracesTable = ({
@@ -126,6 +107,7 @@ export const TracesTable = ({
   onOrderChange,
   fetchNextPage,
   filterColumn,
+  className,
 }: TracesTableProps) => {
   const navigate = useNavigate();
   const features = useFeatureAccess();
@@ -172,9 +154,7 @@ export const TracesTable = ({
                 table.getIsAllPageRowsSelected() ||
                 (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={(value) =>
-                table.toggleAllPageRowsSelected(!!value)
-              }
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
               aria-label="Select all"
               className="mr-2"
             />
@@ -219,9 +199,7 @@ export const TracesTable = ({
                 <Button
                   className="p-0"
                   variant="ghost"
-                  onClick={() =>
-                    column.toggleSorting(column.getIsSorted() === "asc")
-                  }
+                  onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                   Score
                   {column.getIsSorted() ? (
@@ -259,15 +237,10 @@ export const TracesTable = ({
           <div className="flex items-center gap-1">
             <Popover open={tagFilterOpen} onOpenChange={setTagFilterOpen}>
               <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-0 h-8 ml-1"
-                  title="Filter tags"
-                >
+                <Button variant="ghost" size="sm" className="ml-1 h-8 p-0" title="Filter tags">
                   Tags
                   <Filter
-                    className={`w-4 h-4 ${
+                    className={`h-4 w-4 ${
                       table.getColumn("tags")?.getFilterValue()
                         ? "text-primary"
                         : "text-muted-foreground"
@@ -275,37 +248,28 @@ export const TracesTable = ({
                   />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="p-2 w-80">
+              <PopoverContent className="w-80 p-2">
                 <div className="space-y-2">
                   <div className="relative">
                     <Input
                       placeholder="Filter tags..."
-                      value={
-                        (table.getColumn("tags")?.getFilterValue() as string) ??
-                        ""
-                      }
+                      value={(table.getColumn("tags")?.getFilterValue() as string) ?? ""}
                       onChange={(event) => {
-                        table
-                          .getColumn("tags")
-                          ?.setFilterValue(event.target.value);
+                        table.getColumn("tags")?.setFilterValue(event.target.value);
                       }}
                       className="pr-10"
                     />
                     <Popover>
                       <PopoverTrigger asChild>
-                        <SmileIcon className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer h-5 w-5 opacity-70 hover:opacity-100" />
+                        <SmileIcon className="absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100" />
                       </PopoverTrigger>
                       <PopoverContent className="w-fit p-0">
                         <EmojiPicker
                           className="h-[342px]"
                           onEmojiSelect={(emojiData) => {
                             const currFilter =
-                              (table
-                                .getColumn("tags")
-                                ?.getFilterValue() as string) ?? "";
-                            table
-                              .getColumn("tags")
-                              ?.setFilterValue(currFilter + emojiData.emoji);
+                              (table.getColumn("tags")?.getFilterValue() as string) ?? "";
+                            table.getColumn("tags")?.setFilterValue(currFilter + emojiData.emoji);
                           }}
                         >
                           <EmojiPickerContent />
@@ -361,11 +325,7 @@ export const TracesTable = ({
             }}
           >
             Version
-            {isAsc ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            )}
+            {isAsc ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />}
           </Button>
         );
       },
@@ -404,11 +364,7 @@ export const TracesTable = ({
             }}
           >
             Timestamp
-            {isAsc ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            )}
+            {isAsc ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />}
           </Button>
         );
       },
@@ -433,18 +389,14 @@ export const TracesTable = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="p-0 h-8"
+                  className="h-8 p-0"
                   onClick={() => {
-                    table
-                      .getColumn("annotations")
-                      ?.setFilterValue(isFiltered ? undefined : true);
+                    table.getColumn("annotations")?.setFilterValue(isFiltered ? undefined : true);
                   }}
-                  title={
-                    isFiltered ? "Show all rows" : "Show only annotated rows"
-                  }
+                  title={isFiltered ? "Show all rows" : "Show only annotated rows"}
                 >
                   <NotebookPen
-                    className={`w-4 h-4 mr-2 ${isFiltered ? "text-primary" : "text-muted-foreground"}`}
+                    className={`mr-2 h-4 w-4 ${isFiltered ? "text-primary" : "text-muted-foreground"}`}
                   />
                 </Button>
               </TooltipTrigger>
@@ -454,13 +406,10 @@ export const TracesTable = ({
         );
       },
       cell: ({ row }) => {
-        const annotations: AnnotationPublic[] =
-          row.getValue("annotations") ?? [];
-        const filteredAnnotations = annotations.filter(
-          (annotation) => annotation.label
-        );
+        const annotations: AnnotationPublic[] = row.getValue("annotations") ?? [];
+        const filteredAnnotations = annotations.filter((annotation) => annotation.label);
         if (filteredAnnotations.length > 0) {
-          return <NotebookPen className="w-4 h-4" />;
+          return <NotebookPen className="h-4 w-4" />;
         }
         return null;
       },
@@ -521,6 +470,7 @@ export const TracesTable = ({
   return (
     <>
       <DataTable<SpanPublic>
+        className={className}
         columns={columns}
         data={data}
         virtualizerRef={virtualizerRef}
@@ -536,20 +486,14 @@ export const TracesTable = ({
         getRowCanExpand={getRowCanExpand}
         getSubRows={getSubRows}
         defaultSorting={
-          isSearch
-            ? [{ id: "score", desc: true }]
-            : [{ id: "timestamp", desc: true }]
+          isSearch ? [{ id: "score", desc: true }] : [{ id: "timestamp", desc: true }]
         }
         isFetching={isFetchingNextPage}
         fetchNextPage={fetchNextPage}
         columnVisibilityStateKey="tracesTableVisibilityState"
       />
       {deleteSpan && (
-        <DeleteSpanDialog
-          setOpen={setDeleteSpan}
-          spanUuid={deleteSpan}
-          projectUuid={projectUuid}
-        />
+        <DeleteSpanDialog setOpen={setDeleteSpan} spanUuid={deleteSpan} projectUuid={projectUuid} />
       )}
     </>
   );
@@ -561,11 +505,7 @@ interface DeleteSpanDialogProps {
   setOpen: Dispatch<SetStateAction<string | null>>;
 }
 
-const DeleteSpanDialog = ({
-  projectUuid,
-  spanUuid,
-  setOpen,
-}: DeleteSpanDialogProps) => {
+const DeleteSpanDialog = ({ projectUuid, spanUuid, setOpen }: DeleteSpanDialogProps) => {
   const deleteSpanMutation = useDeleteSpanMutation();
   const handleSpanDelete = async () => {
     await deleteSpanMutation

@@ -44,11 +44,7 @@ export default function CollapsiblePlugin(): null {
 
   useEffect(() => {
     if (
-      !editor.hasNodes([
-        CollapsibleContainerNode,
-        CollapsibleTitleNode,
-        CollapsibleContentNode,
-      ])
+      !editor.hasNodes([CollapsibleContainerNode, CollapsibleTitleNode, CollapsibleContentNode])
     ) {
       throw new Error(
         "CollapsiblePlugin: CollapsibleContainerNode, CollapsibleTitleNode, or CollapsibleContentNode not registered on editor"
@@ -72,8 +68,7 @@ export default function CollapsiblePlugin(): null {
           if (
             parent !== null &&
             parent.getFirstChild<LexicalNode>() === container &&
-            selection.anchor.key ===
-              container.getFirstDescendant<LexicalNode>()?.getKey()
+            selection.anchor.key === container.getFirstDescendant<LexicalNode>()?.getKey()
           ) {
             container.insertBefore($createParagraphNode());
           }
@@ -93,18 +88,14 @@ export default function CollapsiblePlugin(): null {
 
         if ($isCollapsibleContainerNode(container)) {
           const parent = container.getParent<ElementNode>();
-          if (
-            parent !== null &&
-            parent.getLastChild<LexicalNode>() === container
-          ) {
+          if (parent !== null && parent.getLastChild<LexicalNode>() === container) {
             const titleParagraph = container.getFirstDescendant<LexicalNode>();
             const contentParagraph = container.getLastDescendant<LexicalNode>();
 
             if (
               (contentParagraph !== null &&
                 selection.anchor.key === contentParagraph.getKey() &&
-                selection.anchor.offset ===
-                  contentParagraph.getTextContentSize()) ||
+                selection.anchor.offset === contentParagraph.getTextContentSize()) ||
               (titleParagraph !== null &&
                 selection.anchor.key === titleParagraph.getKey() &&
                 selection.anchor.offset === titleParagraph.getTextContentSize())
@@ -136,9 +127,7 @@ export default function CollapsiblePlugin(): null {
       editor.registerNodeTransform(CollapsibleTitleNode, (node) => {
         const parent = node.getParent<ElementNode>();
         if (!$isCollapsibleContainerNode(parent)) {
-          node.replace(
-            $createParagraphNode().append(...node.getChildren<LexicalNode>())
-          );
+          node.replace($createParagraphNode().append(...node.getChildren<LexicalNode>()));
           return;
         }
       }),
@@ -174,10 +163,7 @@ export default function CollapsiblePlugin(): null {
           }
 
           const anchorNode = selection.anchor.getNode();
-          const collapsibleContentNode = $findMatchingParent(
-            anchorNode,
-            $isCollapsibleContentNode
-          );
+          const collapsibleContentNode = $findMatchingParent(anchorNode, $isCollapsibleContentNode);
 
           const topLevelElement = anchorNode.getTopLevelElement();
           if (topLevelElement === null) {
@@ -187,8 +173,7 @@ export default function CollapsiblePlugin(): null {
             const containerNode = collapsibleContentNode.getParent();
             if ($isCollapsibleContainerNode(containerNode)) {
               // Check if the collapsible content is empty
-              const isContentEmpty =
-                collapsibleContentNode.getTextContent().trim() === "";
+              const isContentEmpty = collapsibleContentNode.getTextContent().trim() === "";
               if (isContentEmpty) {
                 // If there is no node before the container, insert a paragraph before the container
                 if (containerNode.getPreviousSibling() === null) {
@@ -215,33 +200,17 @@ export default function CollapsiblePlugin(): null {
       // below it to allow adding more content. It's similar what $insertBlockNode
       // (mainly for decorators), except it'll always be possible to continue adding
       // new content even if trailing paragraph is accidentally deleted
-      editor.registerCommand(
-        KEY_ARROW_DOWN_COMMAND,
-        $onEscapeDown,
-        COMMAND_PRIORITY_LOW
-      ),
+      editor.registerCommand(KEY_ARROW_DOWN_COMMAND, $onEscapeDown, COMMAND_PRIORITY_LOW),
 
-      editor.registerCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        $onEscapeDown,
-        COMMAND_PRIORITY_LOW
-      ),
+      editor.registerCommand(KEY_ARROW_RIGHT_COMMAND, $onEscapeDown, COMMAND_PRIORITY_LOW),
 
       // When collapsible is the first child pressing up/left arrow will insert paragraph
       // above it to allow adding more content. It's similar what $insertBlockNode
       // (mainly for decorators), except it'll always be possible to continue adding
       // new content even if leading paragraph is accidentally deleted
-      editor.registerCommand(
-        KEY_ARROW_UP_COMMAND,
-        $onEscapeUp,
-        COMMAND_PRIORITY_LOW
-      ),
+      editor.registerCommand(KEY_ARROW_UP_COMMAND, $onEscapeUp, COMMAND_PRIORITY_LOW),
 
-      editor.registerCommand(
-        KEY_ARROW_LEFT_COMMAND,
-        $onEscapeUp,
-        COMMAND_PRIORITY_LOW
-      ),
+      editor.registerCommand(KEY_ARROW_LEFT_COMMAND, $onEscapeUp, COMMAND_PRIORITY_LOW),
 
       // Enter goes from Title to Content rather than a new line inside Title
       editor.registerCommand(
@@ -256,9 +225,7 @@ export default function CollapsiblePlugin(): null {
             const contentParagraph = $createParagraphNode();
             paragraph.append(textNode);
 
-            const collapsibleContainerNode = $createCollapsibleContainerNode(
-              true
-            ).append(
+            const collapsibleContainerNode = $createCollapsibleContainerNode(true).append(
               title.append(paragraph),
               collapsibleContentNode.append(contentParagraph)
             );
@@ -268,10 +235,7 @@ export default function CollapsiblePlugin(): null {
 
               // Check if the selected node is an empty paragraph
               const selectedNode = anchorNode.getTopLevelElementOrThrow();
-              if (
-                $isParagraphNode(selectedNode) &&
-                selectedNode.getTextContent().trim() === ""
-              ) {
+              if ($isParagraphNode(selectedNode) && selectedNode.getTextContent().trim() === "") {
                 // Replace the empty paragraph node with the collapsible container node
                 selectedNode.replace(collapsibleContainerNode);
               } else {

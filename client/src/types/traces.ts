@@ -1,6 +1,8 @@
 import { JSX, ReactNode } from "react";
 
 export enum TraceTab {
+  RESPONSE = "response",
+  CONTENT = "content",
   CODE = "code",
   SIGNATURE = "signature",
   OUTPUT = "output",

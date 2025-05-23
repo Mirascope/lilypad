@@ -8,11 +8,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CheckIcon } from "@radix-ui/react-icons";
 import { Emoji } from "frimousse";
@@ -109,17 +105,13 @@ export function Combobox({
       }
 
       if (newValue.includes(currentValue)) {
-        (onChange as (value: string[]) => void)(
-          newValue.filter((v) => v !== currentValue)
-        );
+        (onChange as (value: string[]) => void)(newValue.filter((v) => v !== currentValue));
       } else {
         (onChange as (value: string[]) => void)([...newValue, currentValue]);
       }
     } else {
       // Type assertion is safe here because we've ensured multiple is false
-      (onChange as (value: string) => void)(
-        currentValue === (value as string) ? "" : currentValue
-      );
+      (onChange as (value: string) => void)(currentValue === (value as string) ? "" : currentValue);
       setOpen(false);
     }
     setInputValue("");
@@ -131,10 +123,7 @@ export function Combobox({
   };
 
   const getDisplayValue = () => {
-    if (
-      !value ||
-      (isMultiple && (!Array.isArray(value) || value.length === 0))
-    ) {
+    if (!value || (isMultiple && (!Array.isArray(value) || value.length === 0))) {
       return popoverText;
     }
 
@@ -172,17 +161,14 @@ export function Combobox({
               role="combobox"
               aria-expanded={isOpen}
               disabled={disabled}
-              className={cn(
-                "w-full justify-between",
-                disabled && "opacity-50 cursor-not-allowed"
-              )}
+              className={cn("w-full justify-between", disabled && "cursor-not-allowed opacity-50")}
             >
               {getDisplayValue()}
             </Button>
           )}
         </PopoverTrigger>
         <PopoverContent
-          className="p-0 w-(--radix-popover-trigger-width) min-w-[200px]"
+          className="w-(--radix-popover-trigger-width) min-w-[200px] p-0"
           align="start"
           sideOffset={4}
         >
@@ -196,7 +182,7 @@ export function Combobox({
                 customContent: (
                   <Popover open={emojiIsOpen} onOpenChange={setEmojiIsOpen}>
                     <PopoverTrigger asChild>
-                      <SmileIcon className="cursor-pointer h-4 w-4 opacity-70 hover:opacity-100" />
+                      <SmileIcon className="h-4 w-4 cursor-pointer opacity-70 hover:opacity-100" />
                     </PopoverTrigger>
                     <PopoverContent className="w-fit p-0">
                       <EmojiPicker
@@ -240,16 +226,10 @@ export function Combobox({
                       return false;
                     }
                     // Filter by search input
-                    return item.label
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase());
+                    return item.label.toLowerCase().includes(inputValue.toLowerCase());
                   })
                   .map((item) => (
-                    <CommandItem
-                      key={item.value}
-                      value={item.value}
-                      onSelect={handleSelect}
-                    >
+                    <CommandItem key={item.value} value={item.value} onSelect={handleSelect}>
                       <CheckIcon
                         className={cn(
                           "mr-2 h-4 w-4",
@@ -267,10 +247,7 @@ export function Combobox({
                   ))}
                 {inputValue &&
                   !disableAdd &&
-                  !items.some(
-                    (item) =>
-                      item.label.toLowerCase() === inputValue.toLowerCase()
-                  ) && (
+                  !items.some((item) => item.label.toLowerCase() === inputValue.toLowerCase()) && (
                     <CommandItem value={inputValue} onSelect={handleSelect}>
                       <CheckIcon
                         className={cn(

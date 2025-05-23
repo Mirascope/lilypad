@@ -1,4 +1,4 @@
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +19,7 @@ const SidebarSkeleton = () => {
       <SidebarHeader>
         <SidebarHeader>
           <SidebarMenuButton>
-            <LilypadIcon /> Lilypad
+            <LilypadLogo /> Lilypad
           </SidebarMenuButton>
         </SidebarHeader>
       </SidebarHeader>
@@ -31,7 +31,7 @@ const SidebarSkeleton = () => {
               <div className="flex items-center gap-2 px-3 py-2">
                 <Skeleton className="h-4 w-4" />
                 <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4 ml-auto" />{" "}
+                <Skeleton className="ml-auto h-4 w-4" />{" "}
               </div>
             </SidebarMenuItem>
 
@@ -64,7 +64,7 @@ const SidebarSkeleton = () => {
             <div className="flex items-center gap-2 px-3 py-2">
               <Skeleton className="h-4 w-4" />
               <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-4 ml-auto" />
+              <Skeleton className="ml-auto h-4 w-4" />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

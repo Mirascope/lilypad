@@ -1,5 +1,5 @@
 import CardSkeleton from "@/components/CardSkeleton";
-import { CodeSnippet } from "@/components/CodeSnippet";
+import { CodeBlock } from "@/components/code-block";
 import { MetricCharts } from "@/components/MetricsCharts";
 import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
 import { DiffTool } from "@/ee/components/DiffTool";
@@ -24,30 +24,27 @@ export const FunctionOverviewUI = ({
   const showCompare = isCompare && secondFunction;
 
   return (
-    <div className="flex rounded-md flex-col lg:flex-row gap-2 h-full p-2">
+    <div className="flex h-full flex-col gap-2 rounded-md p-2 lg:flex-row">
       <div className="w-full lg:w-1/2">
         {showCompare ? (
           <DiffTool
+            language="python"
             baseCodeBlock={firstFunction.code}
             incomingCodeBlock={secondFunction.code}
           />
         ) : (
-          <CodeSnippet code={firstFunction.code} />
+          <CodeBlock language="python" code={firstFunction.code} />
         )}
       </div>
 
-      <div className="w-full lg:w-1/2 flex flex-col gap-2">
+      <div className="flex w-full flex-col gap-2 lg:w-1/2">
         {features.annotations && (
-          <div
-            className={`w-full h-80 ${showCompare ? "flex flex-col sm:flex-row gap-2" : ""}`}
-          >
+          <div className={`h-80 w-full ${showCompare ? "flex flex-col gap-2 sm:flex-row" : ""}`}>
             <AnnotationMetrics
               projectUuid={projectUuid}
               functionUuid={firstFunction.uuid}
               title={
-                showCompare
-                  ? `${firstFunction.name} v${firstFunction.version_num}`
-                  : undefined
+                showCompare ? `${firstFunction.name} v${firstFunction.version_num}` : undefined
               }
               description={showCompare ? "Annotation Pass Rate" : undefined}
               className={showCompare ? "flex-1" : "h-full"}

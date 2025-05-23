@@ -19,11 +19,7 @@ import { TableProvider, useTable } from "@/hooks/use-table";
 import { SpanMoreDetails, SpanPublic } from "@/types/types";
 import { projectQueryOptions } from "@/utils/projects";
 import { formatRelativeTime } from "@/utils/strings";
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { GitCompare, RefreshCcw, Users } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -87,7 +83,6 @@ const Trace = () => {
     dataUpdatedAt,
     refetch,
   } = useInfiniteTraces(projectUuid, pageSize, order);
-
   useEffect(() => {
     if (traceUuid) {
       const trace = defaultData.find((row) => row.uuid === traceUuid);
@@ -121,7 +116,7 @@ const Trace = () => {
   };
   if (isComparing) {
     return (
-      <div className="h-screen flex flex-col gap-4 p-4">
+      <div className="flex h-screen flex-col gap-4 p-4">
         <Button
           variant="outline"
           size="sm"
@@ -137,8 +132,8 @@ const Trace = () => {
 
   const primaryContent = (
     <>
-      <div className="flex flex-col gap-1 ">
-        <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
           <Typography variant="h3">{project.name}</Typography>
           <div className="flex items-center gap-2">
             {features.annotations && (
@@ -167,11 +162,7 @@ const Trace = () => {
             </Button>
           </div>
         </div>
-        <Typography
-          variant="span"
-          affects="muted"
-          className="flex items-center gap-2"
-        >
+        <Typography variant="span" affects="muted" className="flex items-center gap-2">
           Last updated: {formatRelativeTime(new Date(dataUpdatedAt))}
           <Button
             variant="outline"
@@ -181,35 +172,34 @@ const Trace = () => {
               refetch();
               toast.success("Refreshed traces");
             }}
-            className="transition-all hover:bg-gray-100 relative overflow-hidden group size-8"
+            className="group relative size-8 overflow-hidden transition-all hover:bg-gray-100"
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
         </Typography>
       </div>
       <div className="flex-1 overflow-auto">
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
           <div className="shrink-0 py-4">
             <SearchBar projectUuid={projectUuid} onDataChange={setSearchData} />
           </div>
-          <div className="flex-1 min-h-0 overflow-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <LilypadLoading />
-              </div>
-            ) : (
-              <TracesTable
-                data={searchData ?? defaultData}
-                traceUuid={traceUuid}
-                isSearch={Boolean(searchData)}
-                fetchNextPage={handleReachEnd}
-                isFetchingNextPage={isFetchingNextPage}
-                projectUuid={projectUuid}
-                order={order}
-                onOrderChange={setOrder}
-              />
-            )}
-          </div>
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <LilypadLoading />
+            </div>
+          ) : (
+            <TracesTable
+              className="min-h-0 flex-1 overflow-hidden"
+              data={searchData ?? defaultData}
+              traceUuid={traceUuid}
+              isSearch={Boolean(searchData)}
+              fetchNextPage={handleReachEnd}
+              isFetchingNextPage={isFetchingNextPage}
+              projectUuid={projectUuid}
+              order={order}
+              onOrderChange={setOrder}
+            />
+          )}
         </div>
       </div>
     </>
@@ -221,7 +211,7 @@ const Trace = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col gap-4 p-4">
+    <div className="flex h-screen flex-col gap-4 p-4">
       <Suspense fallback={<TableSkeleton />}>
         <ResizablePanels
           primaryContent={primaryContent}

@@ -1037,6 +1037,10 @@ export interface SpanMoreDetails {
   session_id?: string | null;
   /** Span Id */
   span_id: string;
+  /** Response */
+  response?: object | null;
+  /** Response Model */
+  response_model?: object | null;
 }
 
 /**
@@ -1102,6 +1106,7 @@ export interface SpanPublic {
 export enum SpanType {
   FUNCTION = "function",
   TRACE = "trace",
+  MIRASCOPE_V_1 = "mirascope.v1",
 }
 
 /**

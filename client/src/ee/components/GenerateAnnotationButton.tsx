@@ -7,16 +7,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
-export const GenerateAnnotationButton = ({
-  spanUuid,
-}: {
-  spanUuid: string;
-}) => {
+export const GenerateAnnotationButton = ({ spanUuid }: { spanUuid: string }) => {
   const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
   const methods = useFormContext<AnnotationUpdate>();
   const url = `${baseURL}/ee/projects/${span.project_uuid}/spans/${spanUuid}/generate-annotation`;
-  const { data, startConnection, stopConnection, isConnected, status } =
-    useEventSource(url);
+  const { data, startConnection, stopConnection, isConnected, status } = useEventSource(url);
   // Handle function completion if needed
   useEffect(() => {
     if (data.length > 0) {
@@ -30,10 +25,7 @@ export const GenerateAnnotationButton = ({
   }, [data, stopConnection]);
 
   return (
-    <Button
-      onClick={() => startConnection()}
-      disabled={isConnected || status === "connecting"}
-    >
+    <Button onClick={() => startConnection()} disabled={isConnected || status === "connecting"}>
       {isConnected ? "Generating..." : "Generate Annotation"}
     </Button>
   );

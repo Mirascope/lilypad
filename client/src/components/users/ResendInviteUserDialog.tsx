@@ -73,9 +73,7 @@ export const ResendInviteUserDialog = ({
         </DialogHeader>
 
         {newOrganizationInvite?.invite_link && (
-          <AlternativeInviteLink
-            inviteLink={newOrganizationInvite.invite_link}
-          />
+          <AlternativeInviteLink inviteLink={newOrganizationInvite.invite_link} />
         )}
 
         <DialogFooter>

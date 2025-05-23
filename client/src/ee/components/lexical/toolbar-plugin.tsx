@@ -18,11 +18,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { $isListNode, ListNode } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isHeadingNode } from "@lexical/rich-text";
-import {
-  $findMatchingParent,
-  $getNearestNodeOfType,
-  mergeRegister,
-} from "@lexical/utils";
+import { $findMatchingParent, $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
 import {
   CodeIcon,
   FontBoldIcon,
@@ -41,8 +37,7 @@ export const ToolbarPlugin = () => {
   const [isItalic, setIsItalic] = useState<boolean>(false);
   const [isUnderline, setIsUnderline] = useState<boolean>(false);
   const [isCode, setIsCode] = useState<boolean>(false);
-  const [blockType, setBlockType] =
-    useState<keyof typeof blockTypeToBlockName>("paragraph");
+  const [blockType, setBlockType] = useState<keyof typeof blockTypeToBlockName>("paragraph");
 
   const [canUndo, setCanUndo] = useState<boolean>(false);
   const [canRedo, setCanRedo] = useState<boolean>(false);
@@ -73,18 +68,11 @@ export const ToolbarPlugin = () => {
 
       if (elementDOM !== null) {
         if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType<ListNode>(
-            anchorNode,
-            ListNode
-          );
-          const type = parentList
-            ? parentList.getListType()
-            : element.getListType();
+          const parentList = $getNearestNodeOfType<ListNode>(anchorNode, ListNode);
+          const type = parentList ? parentList.getListType() : element.getListType();
           setBlockType(type);
         } else {
-          const type = $isHeadingNode(element)
-            ? element.getTag()
-            : element.getType();
+          const type = $isHeadingNode(element) ? element.getTag() : element.getType();
           if (type in blockTypeToBlockName) {
             setBlockType(type as keyof typeof blockTypeToBlockName);
           }
@@ -136,8 +124,8 @@ export const ToolbarPlugin = () => {
   }, [editor]);
 
   return (
-    <div className="w-full border-b z-10 relative">
-      <div className="flex space-x-2 justify-center p-1">
+    <div className="relative z-10 w-full border-b">
+      <div className="flex justify-center space-x-2 p-1">
         <Button
           className="h-8 px-2"
           variant="ghost"
@@ -145,7 +133,7 @@ export const ToolbarPlugin = () => {
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         >
           {/* reload flip to left */}
-          <ReloadIcon className="transform -scale-x-100" />
+          <ReloadIcon className="-scale-x-100 transform" />
         </Button>
 
         <Button
@@ -157,11 +145,11 @@ export const ToolbarPlugin = () => {
           <ReloadIcon />
         </Button>
 
-        <Separator orientation="vertical" className="h-auto my-1" />
+        <Separator orientation="vertical" className="my-1 h-auto" />
 
         <BlockTypeDropdown blockType={blockType} isEditable={isEditable} />
 
-        <Separator orientation="vertical" className="h-auto my-1" />
+        <Separator orientation="vertical" className="my-1 h-auto" />
 
         <Toggle
           area-label="Bold"
@@ -213,7 +201,7 @@ export const ToolbarPlugin = () => {
         >
           <CodeIcon />
         </Toggle>
-        <Separator orientation="vertical" className="h-auto my-1" />
+        <Separator orientation="vertical" className="my-1 h-auto" />
         <MessageTypeDropdown isEditable={isEditable} />
       </div>
     </div>

@@ -93,9 +93,7 @@ export const Editor = ({
   );
   return (
     <LexicalComposer key={template} initialConfig={config}>
-      <div
-        className={`flex flex-col border shadow rounded-lg prose dark:prose-invert max-w-none`}
-      >
+      <div className={`prose flex max-w-none flex-col rounded-lg border shadow dark:prose-invert`}>
         {!isDisabled && isLLM && <ToolbarPlugin />}
 
         <div className="relative">
@@ -104,7 +102,7 @@ export const Editor = ({
               <ContentEditable
                 id="prompt-template"
                 className={cn(
-                  "focus:outline-none w-full px-8 py-4 h-[500px] overflow-auto relative",
+                  "relative h-[500px] w-full overflow-auto px-8 py-4 focus:outline-none",
                   editorClassName
                 )}
               />
@@ -112,7 +110,7 @@ export const Editor = ({
             placeholder={
               <p
                 className={cn(
-                  "text-muted-foreground absolute top-0 px-8 w-full pointer-events-none",
+                  "pointer-events-none absolute top-0 w-full px-8 text-muted-foreground",
                   placeholderClassName
                 )}
               >

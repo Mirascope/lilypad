@@ -8,19 +8,11 @@ import { useEffect, useState } from "react";
 import LilypadDialog from "@/components/LilypadDialog";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TOGGLE_SHOW_VARIABLE_COMMAND } from "@/ee/components/lexical/template-plugin";
 import { Braces, Eye, LetterText, ListRestart, Pencil } from "lucide-react";
 
-export const ActionsPlugin = ({
-  isDisabled,
-}: {
-  isDisabled: boolean;
-}): JSX.Element => {
+export const ActionsPlugin = ({ isDisabled }: { isDisabled: boolean }): JSX.Element => {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState<boolean>(!isDisabled);
   const [isShowingVariable, setIsShowingVariable] = useState(true);
@@ -65,10 +57,7 @@ export const ActionsPlugin = ({
             variant="outline"
             size="icon"
             onClick={() => {
-              editor.dispatchCommand(
-                TOGGLE_SHOW_VARIABLE_COMMAND,
-                !isShowingVariable
-              );
+              editor.dispatchCommand(TOGGLE_SHOW_VARIABLE_COMMAND, !isShowingVariable);
               setIsShowingVariable(!isShowingVariable);
             }}
           >
@@ -79,9 +68,7 @@ export const ActionsPlugin = ({
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          {!isShowingVariable ? "Values" : "Variables"}
-        </TooltipContent>
+        <TooltipContent>{!isShowingVariable ? "Values" : "Variables"}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -92,16 +79,10 @@ export const ActionsPlugin = ({
             disabled={isDisabled === true}
             onClick={toggleEditable}
           >
-            {!isEditable ? (
-              <Eye strokeWidth={1.5} />
-            ) : (
-              <Pencil strokeWidth={1.5} />
-            )}
+            {!isEditable ? <Eye strokeWidth={1.5} /> : <Pencil strokeWidth={1.5} />}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          {!isEditable ? "Read-only" : "Editable"}
-        </TooltipContent>
+        <TooltipContent>{!isEditable ? "Read-only" : "Editable"}</TooltipContent>
       </Tooltip>
       <LilypadDialog
         icon={<ListRestart strokeWidth={1.5} />}

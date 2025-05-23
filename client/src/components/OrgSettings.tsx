@@ -45,19 +45,12 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
   return (
     <div className="flex flex-col gap-2">
       <div
-        className="flex items-center gap-2 cursor-pointer"
+        className="flex cursor-pointer items-center gap-2"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Typography variant="h3">
-          {activeUserOrg?.organization.name}&apos;s Settings
-        </Typography>
-        {isHovered && (
-          <Pencil
-            className="size-4 text-gray-500"
-            onClick={() => setOpen(true)}
-          />
-        )}
+        <Typography variant="h3">{activeUserOrg?.organization.name}&apos;s Settings</Typography>
+        {isHovered && <Pencil className="size-4 text-gray-500" onClick={() => setOpen(true)} />}
       </div>
       <SubscriptionManager />
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
@@ -67,14 +60,12 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
       <APIKeysTable />
       {activeUserOrg.role === UserRole.OWNER && (
         <Alert variant="destructive" className="mt-8">
-          <TriangleAlert className="h-4 w-4 " />
+          <TriangleAlert className="h-4 w-4" />
           <div className="flex flex-col gap-2">
             <AlertTitle>Danger Zone</AlertTitle>
             <AlertDescription>This action is permanent.</AlertDescription>
             <div className="mt-2">
-              <DeleteOrganizationButton
-                name={activeUserOrg.organization.name}
-              />
+              <DeleteOrganizationButton name={activeUserOrg.organization.name} />
             </div>
           </div>
         </Alert>
@@ -96,12 +87,10 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
   const deleteOrganizationMutation = useDeleteOrganizationMutation();
   const navigate = useNavigate();
   const handleSubmit = async () => {
-    const newSession = await deleteOrganizationMutation
-      .mutateAsync()
-      .catch(() => {
-        toast.error("Failed to delete organization. Please try again.");
-        return null;
-      });
+    const newSession = await deleteOrganizationMutation.mutateAsync().catch(() => {
+      toast.error("Failed to delete organization. Please try again.");
+      return null;
+    });
     toast.success("Successfully deleted organization");
     auth.setSession(newSession);
     navigate({
@@ -112,19 +101,16 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
     <LilypadDialog
       customTrigger={
         <Button variant="destructive">
-          <Trash className="w-4 h-4 mr-2" /> Delete Organization
+          <Trash className="mr-2 h-4 w-4" /> Delete Organization
         </Button>
       }
       title={`Delete ${name}`}
       description={`Deleting ${name} will delete all resources tied to this organization.`}
     >
       <Form {...methods}>
-        <form
-          onSubmit={methods.handleSubmit(handleSubmit)}
-          className="space-y-6"
-        >
+        <form onSubmit={methods.handleSubmit(handleSubmit)} className="space-y-6">
           <Alert variant="destructive">
-            <TriangleAlert className="h-4 w-4 " />
+            <TriangleAlert className="h-4 w-4" />
             <div className="flex flex-col gap-2">
               <AlertTitle>WARNING</AlertTitle>
               <AlertDescription>This action is final.</AlertDescription>
@@ -136,8 +122,7 @@ const DeleteOrganizationButton = ({ name }: { name: string }) => {
             name="organizationName"
             rules={{
               required: "Organization name is required",
-              validate: (value) =>
-                value === name || "Organization name doesn't match",
+              validate: (value) => value === name || "Organization name doesn't match",
             }}
             render={({ field }) => (
               <FormItem>

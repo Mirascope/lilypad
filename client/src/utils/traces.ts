@@ -14,16 +14,12 @@ export const fetchTraces = async (
     offset: String(offset),
     order: order,
   });
-  const { data } = await api.get<PaginatedSpanPublic>(
-    `/projects/${projectUuid}/traces?${params}`
-  );
+  const { data } = await api.get<PaginatedSpanPublic>(`/projects/${projectUuid}/traces?${params}`);
   return data;
 };
 
 export const fetchRootTrace = async (projectUuid: string, spanUuid: string) => {
-  const { data } = await api.get<SpanPublic>(
-    `/projects/${projectUuid}/traces/${spanUuid}/root`
-  );
+  const { data } = await api.get<SpanPublic>(`/projects/${projectUuid}/traces/${spanUuid}/root`);
   return data;
 };
 
@@ -59,10 +55,7 @@ export const tracesInfiniteQueryOptions = <Key extends readonly unknown[]>(
   staleTime: 30_000,
 });
 
-export const rootTraceQueryOptions = (
-  projectUuid: string,
-  spanUuid: string
-) => ({
+export const rootTraceQueryOptions = (projectUuid: string, spanUuid: string) => ({
   queryKey: [`trace`, projectUuid, spanUuid],
   queryFn: () => fetchRootTrace(projectUuid, spanUuid),
   staleTime: 30_000,

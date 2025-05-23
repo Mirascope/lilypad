@@ -16,12 +16,7 @@ import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
 import { userQueryOptions } from "@/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import {
-  SubmitHandler,
-  useForm,
-  useFormContext,
-  UseFormReturn,
-} from "react-hook-form";
+import { SubmitHandler, useForm, useFormContext, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 interface BaseAnnotation {
   data?: Record<string, any> | null;
@@ -41,10 +36,7 @@ export const AnnotationFormFields = <T extends BaseAnnotation>({
 }: AnnotationFormFieldsProps<T>) => {
   return (
     <Form {...methods}>
-      <form
-        className="flex flex-col gap-2"
-        onSubmit={methods.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-2" onSubmit={methods.handleSubmit(onSubmit)}>
         <Suspense fallback={<CardSkeleton />}>
           <AnnotationFields />
         </Suspense>
@@ -83,9 +75,7 @@ const AnnotationFields = () => {
                     Pass
                   </SuccessButton>
                   <FailButton
-                    variant={
-                      field.value === Label.FAIL ? "destructive" : "outline"
-                    }
+                    variant={field.value === Label.FAIL ? "destructive" : "outline"}
                     onClick={() => field.onChange(Label.FAIL)}
                   >
                     Fail

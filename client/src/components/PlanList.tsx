@@ -29,12 +29,7 @@ export const PlanList = () => {
           return (
             <div key={tierKey} className="inline-block">
               {isCurrentPlan ? (
-                <Badge
-                  pill
-                  variant="default"
-                  className="cursor-default"
-                  size="lg"
-                >
+                <Badge pill variant="default" className="cursor-default" size="lg">
                   {fullPlanName} (Current)
                 </Badge>
               ) : (
@@ -69,8 +64,8 @@ export const PlanList = () => {
                     </p>
                     {isTeamOrProPlus && (
                       <p className="mt-2">
-                        During the beta period, this plan may be available
-                        without billing for eligible users.
+                        During the beta period, this plan may be available without billing for
+                        eligible users.
                       </p>
                     )}
                   </div>

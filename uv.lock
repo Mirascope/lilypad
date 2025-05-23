@@ -870,7 +870,7 @@ wheels = [
 
 [[package]]
 name = "lilypad"
-version = "0.1.0a7"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

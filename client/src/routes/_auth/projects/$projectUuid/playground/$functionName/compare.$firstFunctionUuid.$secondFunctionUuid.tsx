@@ -8,22 +8,14 @@ import CardSkeleton from "@/components/CardSkeleton";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { LilypadPanel } from "@/components/traces/LilypadPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
 import { Playground } from "@/ee/components/Playground";
 import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
 import { useRunPlaygroundMutation } from "@/ee/utils/functions";
 import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
 import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import {
-  FunctionPublic,
-  PlaygroundErrorDetail,
-  PlaygroundParameters,
-} from "@/types/types";
+import { FunctionPublic, PlaygroundErrorDetail, PlaygroundParameters } from "@/types/types";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { AlertTriangle } from "lucide-react";
 import { Suspense, useState } from "react";
@@ -31,15 +23,13 @@ import { toast } from "sonner";
 
 const SimpleErrorDisplay = ({ error }: { error: PlaygroundErrorDetail }) => {
   return (
-    <div className="bg-red-50 border border-red-200 rounded-md p-3">
+    <div className="rounded-md border border-red-200 bg-red-50 p-3">
       <div className="flex items-start">
         <div className="shrink-0">
           <AlertTriangle className="h-4 w-4 text-red-500" />
         </div>
         <div className="ml-2">
-          <p className="text-sm text-red-700">
-            {error.reason || "An unknown error occurred"}
-          </p>
+          <p className="text-sm text-red-700">{error.reason || "An unknown error occurred"}</p>
         </div>
       </div>
     </div>
@@ -66,12 +56,8 @@ const ComparePlaygrounds = ({
 }) => {
   const [firstSpanUuid, setFirstSpanUuid] = useState<string | null>(null);
   const [secondSpanUuid, setSecondSpanUuid] = useState<string | null>(null);
-  const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(
-    null
-  );
-  const [secondError, setSecondError] = useState<PlaygroundErrorDetail | null>(
-    null
-  );
+  const [firstError, setFirstError] = useState<PlaygroundErrorDetail | null>(null);
+  const [secondError, setSecondError] = useState<PlaygroundErrorDetail | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   // Set up hooks for both functions
   const firstPlayground = usePlaygroundContainer({
@@ -84,8 +70,7 @@ const ComparePlaygrounds = ({
   const runMutation = useRunPlaygroundMutation();
 
   // Check if either playground has missing API keys
-  const canRun =
-    firstPlayground.doesProviderExist && secondPlayground.doesProviderExist;
+  const canRun = firstPlayground.doesProviderExist && secondPlayground.doesProviderExist;
 
   const runBothFunctions = async () => {
     setIsRunning(true);
@@ -190,8 +175,8 @@ const ComparePlaygrounds = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-end mb-4">
+    <div className="flex h-full flex-col">
+      <div className="mb-4 flex justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
@@ -200,7 +185,7 @@ const ComparePlaygrounds = ({
                 loading={isRunning}
                 disabled={!canRun || isRunning}
                 onClick={runBothFunctions}
-                className="hover:bg-green-700 text-white font-medium"
+                className="font-medium text-white hover:bg-green-700"
               >
                 Run Both Playgrounds
               </Button>
@@ -216,7 +201,7 @@ const ComparePlaygrounds = ({
         </Tooltip>
       </div>
 
-      <div className="flex mb-4" style={{ gap: "16px" }}>
+      <div className="mb-4 flex" style={{ gap: "16px" }}>
         <div className="w-1/2">
           <div className="playground-container">
             <Playground
@@ -238,7 +223,7 @@ const ComparePlaygrounds = ({
       </div>
 
       {(firstSpanUuid ?? secondSpanUuid ?? firstError ?? secondError) && (
-        <div className="flex mt-4" style={{ gap: "16px" }}>
+        <div className="mt-4 flex" style={{ gap: "16px" }}>
           <div className="w-1/2">
             <Card className="h-full">
               <CardHeader>
@@ -248,17 +233,11 @@ const ComparePlaygrounds = ({
                 {isRunning && <div className="text-gray-500">Running...</div>}
                 {firstError && <SimpleErrorDisplay error={firstError} />}
                 {firstSpanUuid && !firstError && (
-                  <Suspense
-                    fallback={
-                      <CardSkeleton items={5} className="flex flex-col" />
-                    }
-                  >
+                  <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
                     <LilypadPanel spanUuid={firstSpanUuid} />
                   </Suspense>
                 )}
-                {!firstSpanUuid && !firstError && (
-                  <div className="text-gray-500">No result</div>
-                )}
+                {!firstSpanUuid && !firstError && <div className="text-gray-500">No result</div>}
               </CardContent>
             </Card>
           </div>
@@ -269,15 +248,9 @@ const ComparePlaygrounds = ({
               </CardHeader>
               <CardContent>
                 {isRunning && <div className="text-gray-500">Running...</div>}
-                {!isRunning && secondError && (
-                  <SimpleErrorDisplay error={secondError} />
-                )}
+                {!isRunning && secondError && <SimpleErrorDisplay error={secondError} />}
                 {!isRunning && secondSpanUuid && !secondError && (
-                  <Suspense
-                    fallback={
-                      <CardSkeleton items={5} className="flex flex-col" />
-                    }
-                  >
+                  <Suspense fallback={<CardSkeleton items={5} className="flex flex-col" />}>
                     <LilypadPanel spanUuid={secondSpanUuid} />
                   </Suspense>
                 )}
@@ -294,10 +267,9 @@ const ComparePlaygrounds = ({
 };
 
 const ComparePlaygroundsRoute = () => {
-  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } =
-    useParams({
-      from: "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid",
-    });
+  const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } = useParams({
+    from: "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid",
+  });
   const { data: functions } = useSuspenseQuery(
     functionsByNameQueryOptions(functionName, projectUuid)
   );
@@ -308,22 +280,15 @@ const ComparePlaygroundsRoute = () => {
     return <div>Selected functions not found or invalid comparison link.</div>;
   }
   const canCompare =
-    features.playground &&
-    firstFunction.is_versioned &&
-    secondFunction.is_versioned;
+    features.playground && firstFunction.is_versioned && secondFunction.is_versioned;
   return (
-    <div className="p-4 flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-4">
       <div className="text-left">
-        <Label className="text-lg font-semibold mb-4">Compare Functions</Label>
+        <Label className="mb-4 text-lg font-semibold">Compare Functions</Label>
         {canCompare ? (
-          <ComparePlaygrounds
-            firstFunction={firstFunction}
-            secondFunction={secondFunction}
-          />
+          <ComparePlaygrounds firstFunction={firstFunction} secondFunction={secondFunction} />
         ) : (
-          <div>
-            Comparison requires versioned functions and playground access.
-          </div>
+          <div>Comparison requires versioned functions and playground access.</div>
         )}
       </div>
     </div>

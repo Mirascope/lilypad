@@ -14,11 +14,7 @@ import { EnvironmentPublic } from "@/types/types";
 import { useDeleteEnvironmentMutation } from "@/utils/environments";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
-export const DeleteEnvironmentDialog = ({
-  environment,
-}: {
-  environment: EnvironmentPublic;
-}) => {
+export const DeleteEnvironmentDialog = ({ environment }: { environment: EnvironmentPublic }) => {
   const deleteEnvironment = useDeleteEnvironmentMutation();
 
   const handleEnvironmentDelete = async (environmentUuid: string) => {
@@ -31,16 +27,14 @@ export const DeleteEnvironmentDialog = ({
   return (
     <Dialog>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant='outlineDestructive' size='icon' className='h-8 w-8'>
+        <Button variant="outlineDestructive" size="icon" className="h-8 w-8">
           <Trash />
         </Button>
       </DialogTrigger>
       <DialogContent className={cn("max-w-[425px] overflow-x-auto")}>
-        <DialogHeader className='shrink-0'>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{`Delete ${environment.name}`}</DialogTitle>
-          <DialogDescription>
-            This action is final and cannot be undone.
-          </DialogDescription>
+          <DialogDescription>This action is final and cannot be undone.</DialogDescription>
           <p>
             {"Are you sure you want to delete "}
             <b>{environment.name}</b>?
@@ -48,14 +42,11 @@ export const DeleteEnvironmentDialog = ({
         </DialogHeader>
 
         <DialogFooter>
-          <Button
-            variant='destructive'
-            onClick={() => handleEnvironmentDelete(environment.uuid)}
-          >
+          <Button variant="destructive" onClick={() => handleEnvironmentDelete(environment.uuid)}>
             Delete
           </Button>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type="button" variant="secondary">
               Cancel
             </Button>
           </DialogClose>

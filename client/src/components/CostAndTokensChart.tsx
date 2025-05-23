@@ -41,13 +41,7 @@ export const FunctionCostAndTokensChart = ({
   if (secondFunction) {
     labels.push(`${secondFunction.name} v${secondFunction.version_num}`);
   }
-  return (
-    <CostAndTokensChart
-      metricsData={extractedMetricsData}
-      title={title}
-      labels={labels}
-    />
-  );
+  return <CostAndTokensChart metricsData={extractedMetricsData} title={title} labels={labels} />;
 };
 export const CostAndTokensChart = ({
   metricsData,
@@ -82,8 +76,7 @@ export const CostAndTokensChart = ({
 
   // Convert map to array and sort by date
   const combinedData = Array.from(dateMap.values()).sort(
-    (a, b) =>
-      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
   );
 
   // Custom tooltip to show input and output token details
@@ -100,22 +93,17 @@ export const CostAndTokensChart = ({
             if (data[`cost_${index}`] !== undefined) {
               return (
                 <div key={index} className="mt-2">
-                  <p
-                    className="font-medium"
-                    style={{ color: index === 0 ? "#6366f1" : "#f59e0b" }}
-                  >
+                  <p className="font-medium" style={{ color: index === 0 ? "#6366f1" : "#f59e0b" }}>
                     {labels[index]}
                   </p>
                   <p className="text-purple-600">
                     Total Cost: ${data[`cost_${index}`]?.toFixed(4)}
                   </p>
                   <p className="text-emerald-600">
-                    Input Tokens:{" "}
-                    {data[`input_tokens_${index}`]?.toLocaleString()}
+                    Input Tokens: {data[`input_tokens_${index}`]?.toLocaleString()}
                   </p>
                   <p className="text-amber-600">
-                    Output Tokens:{" "}
-                    {data[`output_tokens_${index}`]?.toLocaleString()}
+                    Output Tokens: {data[`output_tokens_${index}`]?.toLocaleString()}
                   </p>
                 </div>
               );
@@ -131,19 +119,16 @@ export const CostAndTokensChart = ({
   // Define colors for each dataset
   const colors = ["#6366f1", "#f59e0b", "#10b981", "#ef4444"];
   return (
-    <Card className={cn("w-full h-full flex flex-col", className)}>
+    <Card className={cn("flex h-full w-full flex-col", className)}>
       <CardHeader className="shrink-0 pb-2">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-4 flex flex-col items-center justify-center h-full">
+      <CardContent className="flex h-full flex-grow flex-col items-center justify-center p-4">
         {combinedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={combinedData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="start_date"
-                tickFormatter={(value) => formatDate(value, false)}
-              />
+              <XAxis dataKey="start_date" tickFormatter={(value) => formatDate(value, false)} />
               <YAxis
                 yAxisId="cost"
                 orientation="left"

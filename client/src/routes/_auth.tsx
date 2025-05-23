@@ -59,10 +59,7 @@ function AuthLayout() {
   }, [posthog, user?.uuid, user?.email]);
 
   return (
-    <div
-      className="flex flex-col border-collapse overflow-hidden"
-      data-product="lilypad"
-    >
+    <div className="flex border-collapse flex-col overflow-hidden" data-product="lilypad">
       <SidebarProvider defaultOpen={false}>
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
@@ -78,7 +75,7 @@ function AuthLayout() {
           {!user?.user_organizations?.length && (
             <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
               <DialogTitle className="sr-only">Welcome</DialogTitle>
-              <DialogContent className="max-w-[90%] h-[90vh] overflow-hidden">
+              <DialogContent className="h-[90vh] max-w-[90%] overflow-hidden">
                 <Onboarding />
               </DialogContent>
             </Dialog>

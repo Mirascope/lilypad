@@ -69,9 +69,5 @@ export function TableProvider<T>({
     onDetailPanelClose: handleDetailPanelClose,
   };
 
-  return (
-    <TableContext.Provider value={contextValue}>
-      {children}
-    </TableContext.Provider>
-  );
+  return <TableContext.Provider value={contextValue}>{children}</TableContext.Provider>;
 }

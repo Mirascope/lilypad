@@ -1,8 +1,4 @@
-import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -10,9 +6,7 @@ import { z } from "zod";
 import { LilypadLoading } from "@/components/LilypadLoading";
 import { SpanFullDetail } from "@/components/traces/SpanFullDetail";
 
-export const Route = createFileRoute(
-  "/_auth/projects/$projectUuid/traces/detail/$spanUuid"
-)({
+export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/detail/$spanUuid")({
   parseParams: (params) => ({
     projectUuid: z.string().parse(params.projectUuid),
     spanUuid: z.string().parse(params.spanUuid),

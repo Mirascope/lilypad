@@ -35,13 +35,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -95,9 +89,7 @@ export const DataTable = <T extends { uuid: string }>({
   className,
 }: GenericDataTableProps<T>) => {
   const { updateUserConfig, userConfig } = useAuth();
-  const [expanded, setExpanded] = useState<true | Record<string, boolean>>(
-    customExpanded
-  );
+  const [expanded, setExpanded] = useState<true | Record<string, boolean>>(customExpanded);
   const [sorting, setSorting] = useState<SortingState>(defaultSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
@@ -110,8 +102,7 @@ export const DataTable = <T extends { uuid: string }>({
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   // Use our context for detail panel and selected rows
-  const { detailRow, setDetailRow, onDetailPanelClose, setSelectedRows } =
-    useTable<T>();
+  const { detailRow, setDetailRow, onDetailPanelClose, setSelectedRows } = useTable<T>();
 
   const fetchMoreOnBottomReached = useCallback(
     (containerRefElement?: HTMLDivElement | null) => {
@@ -124,10 +115,6 @@ export const DataTable = <T extends { uuid: string }>({
     },
     [fetchNextPage]
   );
-
-  useEffect(() => {
-    fetchMoreOnBottomReached(virtualizerRef?.current);
-  }, [fetchMoreOnBottomReached, virtualizerRef]);
 
   const flattenedData = useMemo(() => {
     // Helper function to flatten data recursively
@@ -151,9 +138,7 @@ export const DataTable = <T extends { uuid: string }>({
     return flattenData(data);
   }, [data, getSubRows]); // Recompute only when data or getSubRows changes
 
-  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (
-    updaterOrValue
-  ) => {
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (updaterOrValue) => {
     if (typeof updaterOrValue === "function") {
       // First, compute the new selection
       const currentSelection = rowSelection;
@@ -195,13 +180,9 @@ export const DataTable = <T extends { uuid: string }>({
       });
     }
   };
-  const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (
-    updaterOrValue
-  ) => {
+  const handleColumnVisibilityChange: OnChangeFn<VisibilityState> = (updaterOrValue) => {
     const newVisibility =
-      typeof updaterOrValue === "function"
-        ? updaterOrValue(columnVisibility)
-        : updaterOrValue;
+      typeof updaterOrValue === "function" ? updaterOrValue(columnVisibility) : updaterOrValue;
 
     setColumnVisibility(newVisibility);
 
@@ -300,10 +281,7 @@ export const DataTable = <T extends { uuid: string }>({
       >
         {row.getVisibleCells().map((cell) => {
           return (
-            <TableCell
-              key={cell.id}
-              className="overflow-hidden text-ellipsis whitespace-nowrap"
-            >
+            <TableCell key={cell.id} className="overflow-hidden text-ellipsis whitespace-nowrap">
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </TableCell>
           );
@@ -311,23 +289,17 @@ export const DataTable = <T extends { uuid: string }>({
       </TableRow>
     );
   };
-
   return (
     <>
-      <div className="flex items-center rounded-md gap-2">
+      <div className="flex items-center gap-2 rounded-md">
         {filterColumn && (
           <>
             <Input
               placeholder="Filter..."
-              value={
-                (table.getColumn(filterColumn)?.getFilterValue() as string) ??
-                ""
-              }
+              value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
               onChange={(event) => {
                 onFilterChange?.(event.target.value);
-                table
-                  .getColumn(filterColumn)
-                  ?.setFilterValue(event.target.value);
+                table.getColumn(filterColumn)?.setFilterValue(event.target.value);
               }}
               className="max-w-sm"
             />
@@ -337,7 +309,7 @@ export const DataTable = <T extends { uuid: string }>({
         {!hideColumnButton && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto mb-2">
+              <Button variant="outline" className="mb-2 ml-auto">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -351,9 +323,7 @@ export const DataTable = <T extends { uuid: string }>({
                       key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     >
                       {column.id}
                     </DropdownMenuCheckboxItem>
@@ -364,18 +334,15 @@ export const DataTable = <T extends { uuid: string }>({
         )}
       </div>
       <div
-        className={cn(
-          "flex flex-col overflow-hidden min-h-0 rounded-md border flex-1",
-          className
-        )}
+        className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border", className)}
       >
         <ScrollArea
           ref={virtualizerRef}
-          onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
-          className="rounded-md overflow-auto relative"
+          className="relative overflow-auto rounded-md"
           style={{
             height: virtualizerOptions.containerHeight ?? "100%",
           }}
+          onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
         >
           <ScrollBar orientation="horizontal" />
           <Table className="w-full">
@@ -386,10 +353,7 @@ export const DataTable = <T extends { uuid: string }>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -428,10 +392,7 @@ export const DataTable = <T extends { uuid: string }>({
                 </>
               ) : (
                 <TableRow className="w-full">
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>

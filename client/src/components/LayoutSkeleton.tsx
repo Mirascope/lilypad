@@ -3,10 +3,10 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MainContent = () => (
-  <div className="h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+  <div className="grid h-full w-full grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
     {[...Array(6)].map((_, i) => (
-      <div key={i} className="bg-background rounded-lg shadow p-4 min-h-32">
-        <Skeleton className="h-4 w-3/4 mb-4" />
+      <div key={i} className="min-h-32 rounded-lg bg-background p-4 shadow">
+        <Skeleton className="mb-4 h-4 w-3/4" />
         <Skeleton className="h-4 w-full" />
       </div>
     ))}
@@ -18,7 +18,7 @@ export const LayoutSkeleton = () => {
     <div className="flex h-screen border-collapse overflow-hidden">
       <SidebarProvider>
         <SidebarSkeleton />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-4 bg-muted pb-1">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-muted pt-4 pb-1">
           <MainContent />
         </main>
       </SidebarProvider>

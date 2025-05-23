@@ -32,21 +32,11 @@ export const LabelNode: React.FC<CustomNodeProps> = ({
       </FailButton>
     </div>
   ) : (
-    <div
-      onDoubleClick={() => setIsEditing(true)}
-      className="jer-value-string"
-      style={stringStyle}
-    >
+    <div onDoubleClick={() => setIsEditing(true)} className="jer-value-string" style={stringStyle}>
       {value === Label.PASS && <CircleCheck color="#00a741" />}
       {value === Label.FAIL && <CircleX color="#e7000b" />}
       {!value && (
-        <div>
-          {exact ? (
-            <i>Label will be automatically set</i>
-          ) : (
-            <i>Double click to label</i>
-          )}
-        </div>
+        <div>{exact ? <i>Label will be automatically set</i> : <i>Double click to label</i>}</div>
       )}
     </div>
   );

@@ -1,10 +1,6 @@
-import { LilypadIcon } from "@/components/LilypadIcon";
+import { LilypadLogo } from "@/components/lilypad-logo";
 import { Badge } from "@/components/ui/badge";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Typography } from "@/components/ui/typography";
 import { ProjectPublic } from "@/types/types";
 import { useNavigate } from "@tanstack/react-router";
@@ -33,31 +29,17 @@ export const AppHeader = ({ to, activeProject }: AppHeaderProps) => {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        {/* <SidebarMenuButton
-          size="logo"
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-        >
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <GalleryVerticalEnd className="size-4" />
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Acme Inc</span>
-            <span className="truncate text-xs">Enterprise</span>
-          </div>
-        </SidebarMenuButton> */}
         <SidebarMenuButton
           size="logo"
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           onClick={handleProjectClick}
         >
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
-            <LilypadIcon className="size-10" />
+          <div className="flex aspect-square items-center justify-center rounded-lg text-sidebar-primary-foreground">
+            <LilypadLogo size={34} />
           </div>
-          <Typography variant="h4" className="flex items-center gap-2 flex-1">
-            <span className="truncate">Lilypad</span>
-            <Badge className="bg-yellow-400 text-primary hover:bg-yellow-500">
-              Beta
-            </Badge>
+          <Typography variant="h4" className="flex flex-1 items-center gap-2">
+            <span className="fun truncate text-primary">Lilypad</span>
+            <Badge className="bg-yellow-400 text-primary hover:bg-yellow-500">Beta</Badge>
           </Typography>
         </SidebarMenuButton>
       </SidebarMenuItem>

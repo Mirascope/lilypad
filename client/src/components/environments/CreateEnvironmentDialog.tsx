@@ -20,7 +20,7 @@ export const CreateEnvironmentDialog = () => {
         <Button
           variant="ghost"
           size="iconSm"
-          className="text-primary hover:text-primary/80 hover:bg-background"
+          className="text-primary hover:bg-background hover:text-primary/80"
         >
           <PlusCircle />
         </Button>
@@ -29,9 +29,7 @@ export const CreateEnvironmentDialog = () => {
         <DialogHeader className="shrink-0">
           <DialogTitle>Create new Environment</DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          Create an environment for your organization
-        </DialogDescription>
+        <DialogDescription>Create an environment for your organization</DialogDescription>
         <CreateEnvironmentForm
           customButtons={
             <DialogFooter>
