@@ -301,6 +301,7 @@ const OnboardCodeSnippet = () => {
   const metadata = stepperMethods.getMetadata("step-2");
   return (
     <CodeBlock
+      language="python"
       code={`import os
 
 import lilypad
@@ -356,12 +357,12 @@ const OnboardInstallLilypad = () => {
     {
       label: "pip",
       value: "pip",
-      component: <CodeBlock code={`pip install "lilypad-sdk[google]"`} />,
+      component: <CodeBlock language="bash" code={`pip install "lilypad-sdk[google]"`} />,
     },
     {
       label: "uv",
       value: "uv",
-      component: <CodeBlock code={`uv add "lilypad-sdk[google]"`} />,
+      component: <CodeBlock language="bash" code={`uv add "lilypad-sdk[google]"`} />,
     },
   ];
   return <TabGroup tabs={tabs} className="h-auto shrink-0" />;

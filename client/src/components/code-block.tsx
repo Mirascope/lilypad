@@ -1,9 +1,9 @@
 import { CopyButton } from "@/components/copy-button";
 import {
   highlightCode,
-  initialHighlight,
   stripHighlightMarkers,
   type HighlightResult,
+  initialHighlight,
 } from "@/lib/code-highlight";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";

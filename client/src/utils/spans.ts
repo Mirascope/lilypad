@@ -44,11 +44,6 @@ export const spanQueryOptions = (spanUuid: string) =>
     queryFn: () => fetchSpan(spanUuid),
   });
 
-export const fetchSpansByFunctionUuid = async (projectUuid: string, functionUuid: string) => {
-  return (await api.get<SpanPublic[]>(`/projects/${projectUuid}/functions/${functionUuid}/spans`))
-    .data;
-};
-
 export const fetchAggregatesByProjectUuid = async (projectUuid: string, timeFrame: TimeFrame) => {
   return (
     await api.get<AggregateMetrics[]>(
@@ -58,7 +53,7 @@ export const fetchAggregatesByProjectUuid = async (projectUuid: string, timeFram
 };
 
 export const patchSpan = async (spanUuid: string, spanUpdate: SpanUpdate) => {
-  return (await api.patch<SpanPublic>(`/spans/${spanUuid}`, spanUpdate)).data;
+  return (await api.patch<SpanMoreDetails>(`/spans/${spanUuid}`, spanUpdate)).data;
 };
 
 export const searchSpans = async (
@@ -95,13 +90,6 @@ export const fetchAggregatesByFunctionUuid = async (
     )
   ).data;
 };
-
-export const spansByFunctionQueryOptions = (projectUuid: string, functionUuid: string) =>
-  queryOptions({
-    queryKey: ["projects", projectUuid, "functions", functionUuid, "spans"],
-    queryFn: () => fetchSpansByFunctionUuid(projectUuid, functionUuid),
-    refetchInterval: 10000,
-  });
 
 export const aggregatesByProjectQueryOptions = (projectUuid: string, timeFrame: TimeFrame) =>
   queryOptions({

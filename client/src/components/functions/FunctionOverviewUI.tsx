@@ -27,9 +27,13 @@ export const FunctionOverviewUI = ({
     <div className="flex h-full flex-col gap-2 rounded-md p-2 lg:flex-row">
       <div className="w-full lg:w-1/2">
         {showCompare ? (
-          <DiffTool baseCodeBlock={firstFunction.code} incomingCodeBlock={secondFunction.code} />
+          <DiffTool
+            language="python"
+            baseCodeBlock={firstFunction.code}
+            incomingCodeBlock={secondFunction.code}
+          />
         ) : (
-          <CodeBlock code={firstFunction.code} />
+          <CodeBlock language="python" code={firstFunction.code} />
         )}
       </div>
 

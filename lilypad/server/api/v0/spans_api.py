@@ -65,7 +65,7 @@ async def get_span_by_span_id(
     return SpanMoreDetails.from_span(span)
 
 
-@spans_router.patch("/spans/{span_uuid}", response_model=SpanPublic)
+@spans_router.patch("/spans/{span_uuid}", response_model=SpanMoreDetails)
 async def update_span(
     span_uuid: UUID,
     span_update: SpanUpdate,
@@ -78,19 +78,6 @@ async def update_span(
         update_data=span_update,
         user_uuid=current_user.uuid,
     )
-
-
-@spans_router.get(
-    "/projects/{project_uuid}/functions/{function_uuid}/spans",
-    response_model=Sequence[SpanPublic],
-)
-async def get_span_by_function_uuid(
-    project_uuid: UUID,
-    function_uuid: UUID,
-    span_service: Annotated[SpanService, Depends(SpanService)],
-) -> Sequence[SpanTable]:
-    """Get span by uuid."""
-    return span_service.find_records_by_function_uuid(project_uuid, function_uuid)
 
 
 @spans_router.get(

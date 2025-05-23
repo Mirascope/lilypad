@@ -140,22 +140,6 @@ def test_post_traces(
     assert spans[0]["span_id"] == "test_span_2"
 
 
-def test_get_spans_by_version(
-    client: TestClient,
-    test_project: ProjectTable,
-    test_function: FunctionTable,
-    test_span: SpanTable,
-):
-    """Test getting spans for a version returns expected spans."""
-    response = client.get(
-        f"/projects/{test_project.uuid}/functions/{test_function.uuid}/spans"
-    )
-    assert response.status_code == 200
-    spans = response.json()
-    assert len(spans) == 1
-    assert spans[0]["span_id"] == test_span.span_id
-
-
 def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
     """Test getting single span by ID."""
     response = client.get(f"/spans/{test_span.uuid}")
