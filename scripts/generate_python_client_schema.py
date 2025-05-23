@@ -13,6 +13,8 @@ from datamodel_code_generator import (
 from datamodel_code_generator.format import CodeFormatter, Formatter
 from datamodel_code_generator.model import DataModel, get_data_model_types
 from datamodel_code_generator.parser.openapi import OpenAPIParser
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
 
 app = typer.Typer(help="Lilypad schema generator CLI", no_args_is_help=True)
 
@@ -146,11 +148,24 @@ def generate_client_schema(
         file.write(generated_models)
     return [model.name for model in parser.results]
 
+def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """
+    Simplify operation IDs so that generated API clients have simpler function
+    names.
+
+    Should be called only after all routes have been added.
+    """
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = route.name  # in this case, 'read_items'
+
 
 def get_openapi_schema(endpoint: Endpoint) -> dict:
     """Get the OpenAPI schema for the specified endpoint."""
     if endpoint == Endpoint.V0:
         from lilypad.server.api.v0 import api as v0
+
+        use_route_names_as_operation_ids(v0)
 
         return v0.openapi()
     else:

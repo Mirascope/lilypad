@@ -27,7 +27,7 @@ from ...schemas.users import (
 from ...services import OrganizationService, UserService
 from ...services.billing import BillingService
 
-organization_router = APIRouter()
+organization_router = APIRouter(tags=["Organizations"])
 
 
 @organization_router.post(

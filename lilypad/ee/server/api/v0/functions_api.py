@@ -51,7 +51,7 @@ except ImportError:
     CAN_LIMIT_RESOURCES = False
 
 
-functions_router = APIRouter()
+functions_router = APIRouter(tags=["Functions"])
 
 
 logger = logging.getLogger(__name__)

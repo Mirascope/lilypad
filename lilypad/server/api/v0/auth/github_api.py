@@ -14,7 +14,7 @@ from ....schemas.users import UserPublic
 from ....settings import Settings, get_settings
 from .utils import handle_user
 
-github_router = APIRouter()
+github_router = APIRouter(tags=["GitHub"])
 
 
 @github_router.get("/github/callback", response_model=UserPublic)

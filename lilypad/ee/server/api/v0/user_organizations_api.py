@@ -27,7 +27,7 @@ from ...models import UserOrganizationTable, UserRole
 from ...schemas.user_organizations import UserOrganizationCreate, UserOrganizationUpdate
 from ...services import UserOrganizationService
 
-user_organizations_router = APIRouter()
+user_organizations_router = APIRouter(tags=["UserOrganizations"])
 
 
 @user_organizations_router.get(

@@ -24,7 +24,7 @@ from ...schemas.organization_invites import (
 )
 from ...services import OrganizationInviteService
 
-organization_invites_router = APIRouter()
+organization_invites_router = APIRouter(tags=["OrganizationInvites"])
 
 
 @organization_invites_router.get(

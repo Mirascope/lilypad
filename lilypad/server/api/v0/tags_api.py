@@ -11,7 +11,7 @@ from ...models.tags import TagTable
 from ...schemas.tags import TagCreate, TagPublic
 from ...services import TagService
 
-tags_router = APIRouter()
+tags_router = APIRouter(tags=["Tags"])
 
 
 @tags_router.get("/tags", response_model=Sequence[TagPublic])

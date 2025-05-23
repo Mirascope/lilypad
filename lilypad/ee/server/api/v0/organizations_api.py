@@ -8,7 +8,7 @@ from ee.validate import LicenseInfo
 
 from ...require_license import get_organization_license
 
-organizations_router = APIRouter()
+organizations_router = APIRouter(tags=["Organizations"])
 
 
 @organizations_router.get("/organizations/license", response_model=LicenseInfo)

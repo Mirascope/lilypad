@@ -11,7 +11,7 @@ from ...models.api_keys import APIKeyTable
 from ...schemas.api_keys import APIKeyCreate, APIKeyPublic
 from ...services import APIKeyService
 
-api_keys_api = APIRouter()
+api_keys_api = APIRouter(tags=["APIKeys"])
 
 
 @api_keys_api.get(

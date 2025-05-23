@@ -13,7 +13,7 @@ from ...schemas.comments import CommentCreate, CommentPublic, CommentUpdate
 from ...schemas.users import UserPublic
 from ...services import CommentService
 
-comments_router = APIRouter()
+comments_router = APIRouter(tags=["Comments"])
 
 
 @comments_router.get("/comments", response_model=Sequence[CommentPublic])
