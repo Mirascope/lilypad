@@ -1,4 +1,8 @@
-import { transformerNotationDiff, transformerNotationHighlight } from "@shikijs/transformers";
+import {
+  transformerNotationDiff,
+  transformerNotationHighlight,
+  transformerMetaHighlight,
+} from "@shikijs/transformers";
 import { codeToHtml, createHighlighter } from "shiki";
 
 export type HighlightResult = {
@@ -23,6 +27,7 @@ function getTransformers() {
   return [
     transformerNotationHighlight({ matchAlgorithm: MATCH_ALGORITHM }),
     transformerNotationDiff({ matchAlgorithm: MATCH_ALGORITHM }),
+    transformerMetaHighlight(),
   ];
 }
 
@@ -34,17 +39,17 @@ export async function highlightCode(
 ): Promise<HighlightResult> {
   try {
     // Process the code with meta information for line highlighting
-    const processedCode = processCodeWithMetaHighlighting(code.trim(), meta, language);
 
     // Generate HTML for both light and dark themes
     // Using direct codeToHtml call from shiki
-    const themeHtml = await codeToHtml(processedCode, {
+    const themeHtml = await codeToHtml(code.trim(), {
       lang: language || "text",
       themes: {
         light: THEME_LIGHT,
         dark: THEME_DARK,
       },
       transformers: getTransformers(),
+      meta: { __raw: meta },
     });
 
     // Return both versions for theme switching
@@ -61,15 +66,30 @@ export function fallbackHighlighter(
   language: string = "text",
   meta: string = ""
 ): HighlightResult {
-  const escapedCode = stripHighlightMarkers(code)
+  // Strip highlight markers (this helps with consistent behavior)
+  const escapedCode = stripHighlightMarkers(code.trim())
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-  const lines = escapedCode.split("\n").map((s) => `<span class="line">${s}`);
-  const codeHtml = `<code>${lines.join("\n")}</code>`;
+  // Handle blank lines to match Shiki's behavior
+  let lines = escapedCode.split("\n");
+
+  // Trim leading whitespace lines (Shiki behavior)
+  while (lines.length > 0 && lines[0].trim() === "") {
+    lines.shift();
+  }
+
+  // Trim trailing whitespace lines (Shiki behavior)
+  while (lines.length > 0 && lines[lines.length - 1].trim() === "") {
+    lines.pop();
+  }
+
+  // Map the remaining lines to HTML spans
+  const htmlLines = lines.map((line) => `<span class="line">${line}</span>`);
+  const codeHtml = `<code>${htmlLines.join("\n")}</code>`;
 
   const shikiClass = `shiki shiki-themes ${THEME_LIGHT} ${THEME_DARK} has-highlighted`;
   const shikiBgStyle = "background-color:#fff;--shiki-dark-bg:#0d1117;";
@@ -113,21 +133,19 @@ export const initializeSynchronousHighlighter = async (): Promise<void> => {
 
 // Synchronous highlighting function
 export function highlightCodeSync(code: string, language: string = "text", meta: string = "") {
-  // Process the code with meta information for line highlighting
-  const processedCode = processCodeWithMetaHighlighting(code.trim(), meta, language);
-
   // If highlighters aren't initialized, raise an error
   if (!syncHighlighter) {
     throw new Error("Tried to highlight code, but highlighter not initialized");
   }
 
-  const themeHtml = syncHighlighter.codeToHtml(processedCode, {
+  const themeHtml = syncHighlighter.codeToHtml(code.trim(), {
     lang: language,
     themes: {
       light: THEME_LIGHT,
       dark: THEME_DARK,
     },
     transformers: getTransformers(),
+    meta: { __raw: meta },
   });
 
   return { themeHtml, code, language, meta, highlighted: true };
@@ -219,90 +237,5 @@ export function stripHighlightMarkers(code: string): string {
     .filter((x) => x != null);
 
   // Join the lines back together, preserving the original line endings
-  return processedLines.join("\n");
-}
-
-/**
- * Function to parse meta information and add highlighting comments
- * Transforms meta information like {1-3,5} into [!code highlight] comments
- */
-export function processCodeWithMetaHighlighting(
-  code: string,
-  meta: string,
-  language: string
-): string {
-  if (!meta || !meta.includes("{") || !meta.includes("}")) {
-    return code;
-  }
-
-  // Extract highlight information from meta: language{lines}
-  const highlightMatch = /{([^}]+)}/.exec(meta);
-  if (!highlightMatch) return code;
-
-  const highlightInfo = highlightMatch[1];
-  const lines = code.split("\n");
-  const lineHighlights = new Set<number>();
-
-  // Process ranges like 1-3,5,7-9
-  highlightInfo.split(",").forEach((part) => {
-    if (part.includes("-")) {
-      // Handle ranges like 1-3
-      const [start, end] = part.split("-").map(Number);
-      for (let i = start; i <= end; i++) {
-        lineHighlights.add(i);
-      }
-    } else {
-      // Handle single lines like 5
-      lineHighlights.add(Number(part));
-    }
-  });
-
-  // Get the appropriate comment syntax based on language
-  const getCommentSyntax = (lang: string): string => {
-    // Different comment syntaxes for different languages
-    switch (lang.toLowerCase()) {
-      case "html":
-      case "xml":
-      case "svg":
-      case "markdown":
-      case "md":
-        return "<!-- [!code highlight] -->";
-      case "css":
-      case "scss":
-      case "less":
-        return "/* [!code highlight] */";
-      case "python":
-      case "ruby":
-      case "shell":
-      case "bash":
-      case "sh":
-      case "yaml":
-      case "yml":
-        return "# [!code highlight]";
-      case "sql":
-        return "-- [!code highlight]";
-      default:
-        // Default to C-style comments (JavaScript, TypeScript, Java, C, C++, etc.)
-        return "// [!code highlight]";
-    }
-  };
-
-  const commentSyntax = getCommentSyntax(language);
-
-  // Add highlight comments to the specified lines
-  const processedLines = lines.map((line, index) => {
-    const lineNumber = index + 1;
-    if (lineHighlights.has(lineNumber)) {
-      // Add highlight marker to the end of the line
-      if (line.trim() !== "") {
-        return `${line} ${commentSyntax}`;
-      } else {
-        // Handle empty lines - add a space so the marker is visible
-        return commentSyntax;
-      }
-    }
-    return line;
-  });
-
   return processedLines.join("\n");
 }

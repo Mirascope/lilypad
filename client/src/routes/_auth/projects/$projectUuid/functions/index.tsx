@@ -203,6 +203,7 @@ const DeveloperFunctionNoDataPlaceholder = () => {
         Start by decorating your LLM powered functions with <code>@lilypad.trace()</code>.
       </div>
       <CodeBlock
+        language="python"
         code={`import lilypad
 from openai import OpenAI
 

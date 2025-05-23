@@ -18,7 +18,7 @@ export const CopyButton = ({ content, onCopy }: CopyButtonProps) => {
   };
   return (
     <button
-      className="relative cursor-pointer rounded-md border border-neutral-200 bg-white p-1.5 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800"
+      className="bg-white hover:bg-neutral-100 relative cursor-pointer rounded-md border border-neutral-200 p-1.5 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:border-neutral-800"
       onClick={copyToClipboard}
       aria-label="Copy code"
       title="Copy code"

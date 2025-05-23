@@ -213,12 +213,16 @@ export const LilypadPanelTab = ({
     {
       label: "Code",
       value: TraceTab.CODE,
-      component: span.code ? <CodeBlock code={span.code} className="h-full" /> : null,
+      component: span.code ? (
+        <CodeBlock language="python" code={span.code} className="h-full" />
+      ) : null,
     },
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
-      component: span.signature ? <CodeBlock code={span.signature} className="h-full" /> : null,
+      component: span.signature ? (
+        <CodeBlock language="python" code={span.signature} className="h-full" />
+      ) : null,
     },
   ];
 

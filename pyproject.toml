@@ -1,6 +1,6 @@
 [project]
 name = "lilypad"
-version = "0.5.0"
+version = "0.5.1"
 description = "Spin up your data flywheel in one line of code."
 readme = "README.md"
 license = { file = "LICENSE" }
