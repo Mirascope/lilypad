@@ -3,25 +3,29 @@
 import typing
 
 import httpx
+
 from .api_keys.client import ApiKeysClient, AsyncApiKeysClient
 from .auth.client import AsyncAuthClient, AuthClient
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from .environment import MirascopeEnvironment
+from .core.request_options import RequestOptions
+from .environment import LilypadEnvironment
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
 from .organizations.client import AsyncOrganizationsClient, OrganizationsClient
 from .projects.client import AsyncProjectsClient, ProjectsClient
 from .projects_traces.client import AsyncProjectsTracesClient, ProjectsTracesClient
+from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
+from .types.span_public import SpanPublic
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
 
 
-class Mirascope:
+class Lilypad:
     """
     Use this class to access the different functions within the SDK. You can instantiate any number of clients with different configuration that will propagate to these functions.
 
@@ -30,12 +34,12 @@ class Mirascope:
     base_url : typing.Optional[str]
         The base url to use for requests from the client.
 
-    environment : MirascopeEnvironment
-        The environment to use for requests from the client. from .environment import MirascopeEnvironment
+    environment : LilypadEnvironment
+        The environment to use for requests from the client. from .environment import LilypadEnvironment
 
 
 
-        Defaults to MirascopeEnvironment.DEFAULT
+        Defaults to LilypadEnvironment.DEFAULT
 
 
 
@@ -52,9 +56,9 @@ class Mirascope:
 
     Examples
     --------
-    from mirascope import Mirascope
+    from mirascope import Lilypad
 
-    client = Mirascope(
+    client = Lilypad(
         api_key="YOUR_API_KEY",
         token="YOUR_TOKEN",
     )
@@ -64,7 +68,7 @@ class Mirascope:
         self,
         *,
         base_url: typing.Optional[str] = None,
-        environment: MirascopeEnvironment = MirascopeEnvironment.DEFAULT,
+        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
         api_key: str,
         token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         timeout: typing.Optional[float] = None,
@@ -72,7 +76,11 @@ class Mirascope:
         httpx_client: typing.Optional[httpx.Client] = None,
     ):
         _defaulted_timeout = (
-            timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
+            timeout
+            if timeout is not None
+            else 60
+            if httpx_client is None
+            else httpx_client.timeout.read
         )
         self._client_wrapper = SyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
@@ -80,11 +88,14 @@ class Mirascope:
             token=token,
             httpx_client=httpx_client
             if httpx_client is not None
-            else httpx.Client(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
+            else httpx.Client(
+                timeout=_defaulted_timeout, follow_redirects=follow_redirects
+            )
             if follow_redirects is not None
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = RawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = OrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = ApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = WebhooksClient(client_wrapper=self._client_wrapper)
@@ -93,15 +104,70 @@ class Mirascope:
         self.projects_traces = ProjectsTracesClient(client_wrapper=self._client_wrapper)
         self.auth = AuthClient(client_wrapper=self._client_wrapper)
         self.users = UsersClient(client_wrapper=self._client_wrapper)
-        self.external_api_keys = ExternalApiKeysClient(client_wrapper=self._client_wrapper)
+        self.external_api_keys = ExternalApiKeysClient(
+            client_wrapper=self._client_wrapper
+        )
         self.environments = EnvironmentsClient(client_wrapper=self._client_wrapper)
         self.user_consents = UserConsentsClient(client_wrapper=self._client_wrapper)
         self.tags = TagsClient(client_wrapper=self._client_wrapper)
         self.comments = CommentsClient(client_wrapper=self._client_wrapper)
         self.settings = SettingsClient(client_wrapper=self._client_wrapper)
 
+    @property
+    def with_raw_response(self) -> RawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
 
-class AsyncMirascope:
+        Returns
+        -------
+        RawLilypad
+        """
+        return self._raw_client
+
+    def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> typing.List[SpanPublic]:
+        """
+        Get span by uuid.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        function_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+        )
+        client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+            project_uuid="project_uuid",
+            function_uuid="function_uuid",
+        )
+        """
+        _response = self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+            project_uuid, function_uuid, request_options=request_options
+        )
+        return _response.data
+
+
+class AsyncLilypad:
     """
     Use this class to access the different functions within the SDK. You can instantiate any number of clients with different configuration that will propagate to these functions.
 
@@ -110,12 +176,12 @@ class AsyncMirascope:
     base_url : typing.Optional[str]
         The base url to use for requests from the client.
 
-    environment : MirascopeEnvironment
-        The environment to use for requests from the client. from .environment import MirascopeEnvironment
+    environment : LilypadEnvironment
+        The environment to use for requests from the client. from .environment import LilypadEnvironment
 
 
 
-        Defaults to MirascopeEnvironment.DEFAULT
+        Defaults to LilypadEnvironment.DEFAULT
 
 
 
@@ -132,9 +198,9 @@ class AsyncMirascope:
 
     Examples
     --------
-    from mirascope import AsyncMirascope
+    from mirascope import AsyncLilypad
 
-    client = AsyncMirascope(
+    client = AsyncLilypad(
         api_key="YOUR_API_KEY",
         token="YOUR_TOKEN",
     )
@@ -144,7 +210,7 @@ class AsyncMirascope:
         self,
         *,
         base_url: typing.Optional[str] = None,
-        environment: MirascopeEnvironment = MirascopeEnvironment.DEFAULT,
+        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
         api_key: str,
         token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         timeout: typing.Optional[float] = None,
@@ -152,7 +218,11 @@ class AsyncMirascope:
         httpx_client: typing.Optional[httpx.AsyncClient] = None,
     ):
         _defaulted_timeout = (
-            timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
+            timeout
+            if timeout is not None
+            else 60
+            if httpx_client is None
+            else httpx_client.timeout.read
         )
         self._client_wrapper = AsyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
@@ -160,31 +230,107 @@ class AsyncMirascope:
             token=token,
             httpx_client=httpx_client
             if httpx_client is not None
-            else httpx.AsyncClient(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
+            else httpx.AsyncClient(
+                timeout=_defaulted_timeout, follow_redirects=follow_redirects
+            )
             if follow_redirects is not None
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
-        self.organizations = AsyncOrganizationsClient(client_wrapper=self._client_wrapper)
+        self._raw_client = AsyncRawLilypad(client_wrapper=self._client_wrapper)
+        self.organizations = AsyncOrganizationsClient(
+            client_wrapper=self._client_wrapper
+        )
         self.api_keys = AsyncApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
         self.projects = AsyncProjectsClient(client_wrapper=self._client_wrapper)
         self.spans = AsyncSpansClient(client_wrapper=self._client_wrapper)
-        self.projects_traces = AsyncProjectsTracesClient(client_wrapper=self._client_wrapper)
+        self.projects_traces = AsyncProjectsTracesClient(
+            client_wrapper=self._client_wrapper
+        )
         self.auth = AsyncAuthClient(client_wrapper=self._client_wrapper)
         self.users = AsyncUsersClient(client_wrapper=self._client_wrapper)
-        self.external_api_keys = AsyncExternalApiKeysClient(client_wrapper=self._client_wrapper)
+        self.external_api_keys = AsyncExternalApiKeysClient(
+            client_wrapper=self._client_wrapper
+        )
         self.environments = AsyncEnvironmentsClient(client_wrapper=self._client_wrapper)
-        self.user_consents = AsyncUserConsentsClient(client_wrapper=self._client_wrapper)
+        self.user_consents = AsyncUserConsentsClient(
+            client_wrapper=self._client_wrapper
+        )
         self.tags = AsyncTagsClient(client_wrapper=self._client_wrapper)
         self.comments = AsyncCommentsClient(client_wrapper=self._client_wrapper)
         self.settings = AsyncSettingsClient(client_wrapper=self._client_wrapper)
 
+    @property
+    def with_raw_response(self) -> AsyncRawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
 
-def _get_base_url(*, base_url: typing.Optional[str] = None, environment: MirascopeEnvironment) -> str:
+        Returns
+        -------
+        AsyncRawLilypad
+        """
+        return self._raw_client
+
+    async def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> typing.List[SpanPublic]:
+        """
+        Get span by uuid.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        function_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+                project_uuid="project_uuid",
+                function_uuid="function_uuid",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+            project_uuid, function_uuid, request_options=request_options
+        )
+        return _response.data
+
+
+def _get_base_url(
+    *, base_url: typing.Optional[str] = None, environment: LilypadEnvironment
+) -> str:
     if base_url is not None:
         return base_url
     elif environment is not None:
         return environment.value
     else:
-        raise Exception("Please pass in either base_url or environment to construct the client")
+        raise Exception(
+            "Please pass in either base_url or environment to construct the client"
+        )

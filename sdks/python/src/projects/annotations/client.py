@@ -49,9 +49,9 @@ class AnnotationsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -101,9 +101,9 @@ class AnnotationsClient:
 
         Examples
         --------
-        from mirascope import AnnotationCreate, Mirascope
+        from mirascope import AnnotationCreate, Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -137,9 +137,9 @@ class AnnotationsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -192,9 +192,9 @@ class AnnotationsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -253,9 +253,9 @@ class AsyncAnnotationsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -313,9 +313,9 @@ class AsyncAnnotationsClient:
         --------
         import asyncio
 
-        from mirascope import AnnotationCreate, AsyncMirascope
+        from mirascope import AnnotationCreate, AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -357,9 +357,9 @@ class AsyncAnnotationsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -420,9 +420,9 @@ class AsyncAnnotationsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )

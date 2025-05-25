@@ -1,0 +1,13 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "fern-api": "^0.63.6",
+      },
+    },
+  },
+  "packages": {
+    "fern-api": ["fern-api@0.63.6", "", { "bin": { "fern": "cli.cjs" } }, "sha512-6sZK5gFqb1d9G7Iw+VdpBH7mRk0O8vOwvHXVIRVFBgP2WFRc//DIjqxFvuzvmUH/80n23x4q5uxeaMCJJiDOCA=="],
+  }
+}

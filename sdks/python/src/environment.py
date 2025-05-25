@@ -3,5 +3,5 @@
 import enum
 
 
-class MirascopeEnvironment(enum.Enum):
+class LilypadEnvironment(enum.Enum):
     DEFAULT = "/v0"

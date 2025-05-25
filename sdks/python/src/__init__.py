@@ -18,11 +18,11 @@ from . import (
     users,
     webhooks,
 )
-from .client import AsyncMirascope, Mirascope
+from .client import AsyncLilypad, Lilypad
 
 __all__ = [
-    "AsyncMirascope",
-    "Mirascope",
+    "AsyncLilypad",
+    "Lilypad",
     "api_keys",
     "auth",
     "comments",

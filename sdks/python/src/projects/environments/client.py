@@ -56,9 +56,9 @@ class EnvironmentsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -95,9 +95,9 @@ class EnvironmentsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -133,9 +133,9 @@ class EnvironmentsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -169,9 +169,9 @@ class EnvironmentsClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -235,9 +235,9 @@ class AsyncEnvironmentsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -282,9 +282,9 @@ class AsyncEnvironmentsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -328,9 +328,9 @@ class AsyncEnvironmentsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -372,9 +372,9 @@ class AsyncEnvironmentsClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )

@@ -10,20 +10,20 @@ repos:
     rev: "v0.8.1"
     hooks:
       - id: ruff
-        files: "^lilypad|^tests"
+        files: "^app|^app/tests"
         args: [--fix, --config=pyproject.toml]
       - id: ruff-format
         files: "^lilypad|^tests"
         args: [--config=pyproject.toml]
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.390
+    rev: v1.1.396
     hooks:
       - id: pyright
   - repo: local
     hooks:
       - id: tests
         name: tests
-        entry: uv run pytest tests
+        entry: uv run pytest app/tests
         language: system
         types: [python]
         pass_filenames: false

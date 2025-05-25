@@ -2,9 +2,9 @@
 
 api:
   specs:
-    - openapi: mirascope.json
+    - openapi: lilypad-api.json
       overrides: ./openapi-overrides.yml
-      
+
 groups:
   python-sdk:
     generators:
@@ -15,7 +15,7 @@ groups:
           path: ../python/src
         config:
           client:
-            class_name: Mirascope
+            class_name: Lilypad
             filename: client.py
           pydantic_config:
             skip_validation: true

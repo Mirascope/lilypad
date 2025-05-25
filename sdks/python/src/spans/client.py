@@ -5,6 +5,7 @@ import typing
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.span_more_details import SpanMoreDetails
+from ..types.span_public import SpanPublic
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .raw_client import AsyncRawSpansClient, RawSpansClient
 
@@ -46,9 +47,9 @@ class SpansClient:
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -66,7 +67,7 @@ class SpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> SpanMoreDetails:
+    ) -> SpanPublic:
         """
         Update span by uuid.
 
@@ -83,14 +84,14 @@ class SpansClient:
 
         Returns
         -------
-        SpanMoreDetails
+        SpanPublic
             Successful Response
 
         Examples
         --------
-        from mirascope import Mirascope
+        from mirascope import Lilypad
 
-        client = Mirascope(
+        client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -140,9 +141,9 @@ class AsyncSpansClient:
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
@@ -166,7 +167,7 @@ class AsyncSpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> SpanMoreDetails:
+    ) -> SpanPublic:
         """
         Update span by uuid.
 
@@ -183,16 +184,16 @@ class AsyncSpansClient:
 
         Returns
         -------
-        SpanMoreDetails
+        SpanPublic
             Successful Response
 
         Examples
         --------
         import asyncio
 
-        from mirascope import AsyncMirascope
+        from mirascope import AsyncLilypad
 
-        client = AsyncMirascope(
+        client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
