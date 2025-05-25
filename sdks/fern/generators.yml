@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
+
+api:
+  specs:
+    - openapi: mirascope.json
+      overrides: ./openapi-overrides.yml
+      
+groups:
+  python-sdk:
+    generators:
+      - name: fernapi/fern-python-sdk
+        version: 4.20.3
+        output:
+          location: local-file-system
+          path: ../python/src
+        config:
+          client:
+            class_name: Mirascope
+            filename: client.py
+          pydantic_config:
+            skip_validation: true
+          exclude_types_from_init_exports: true
