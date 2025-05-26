@@ -1,0 +1,77 @@
+name: tests
+run-name: ${{ github.actor }} is testing the package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.project.name }}, ${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        project:
+          - name: "SDK"
+            directory: "sdks/python"
+            lock_file: "sdks/python/uv.lock"
+            test_path: "tests/"
+            coverage_source: "./"
+          - name: "App"
+            directory: "app"
+            lock_file: "app/uv.lock"
+            test_path: "tests/"
+            coverage_source: "lilypad/"
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.project.directory }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up uv
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]
+          then
+            powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/0.5.6/install.ps1 | iex"
+          else
+            curl -LsSf https://astral.sh/uv/0.6.12/install.sh | sh
+          fi
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: |
+          uv python install ${{ matrix.python-version }}
+          echo "${{ matrix.python-version }}" > .python-version
+
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-${{ matrix.project.name }}-${{ matrix.python-version }}-${{ hashFiles(matrix.project.lock_file) }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.project.name }}-${{ matrix.python-version }}-
+            uv-${{ runner.os }}-${{ matrix.project.name }}-
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Run Tests
+        run: uv run pytest ${{ matrix.project.test_path }} --cov=${{ matrix.project.coverage_source }} --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          working-directory: ${{ matrix.project.directory }}
+          flags: ${{ matrix.project.name }}-${{ matrix.os }}-python${{ matrix.python-version }}
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci

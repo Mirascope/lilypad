@@ -1,0 +1,75 @@
+name: lint
+run-name: ${{ github.actor }} is linting the package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lints:
+    name: Ruff, Pyright, and Codespell
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - name: "SDK"
+            directory: "sdks/python"
+            pyproject_path: "sdks/python/pyproject.toml"
+            lock_file: "sdks/python/uv.lock"
+          - name: "App"
+            directory: "app"
+            pyproject_path: "app/pyproject.toml"
+            lock_file: "app/uv.lock"
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.project.directory }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Codespell runs from root
+      - uses: codespell-project/actions-codespell@v2
+        with:
+          skip: '.git,*.lock,./app/client/pnpm-lock.yaml,./docs/pnmp-lock.yaml'
+
+      - name: Set up uv
+        run: curl -LsSf https://astral.sh/uv/0.6.12/install.sh | sh
+
+      - name: Set Up Python Environment
+        run: uv python install 3.11
+
+      - name: Restore uv cache for ${{ matrix.project.name }}
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-${{ matrix.project.name }}-${{ hashFiles(matrix.project.lock_file) }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.project.name }}-${{ hashFiles(matrix.project.lock_file) }}
+            uv-${{ runner.os }}-${{ matrix.project.name }}
+
+      - name: Install the project (${{ matrix.project.name }})
+        run: uv sync --all-extras --dev
+
+      - name: Run Ruff (${{ matrix.project.name }})
+        run: uv run ruff check .
+
+      - name: Run Pyright (${{ matrix.project.name }})
+        run: uv run pyright lilypad tests
+
+      # App-specific steps (conditional execution)
+      - name: Run uv lock for Playground
+        if: matrix.project.directory == 'app'
+        run: uv run scripts/generate-playground-requirements-lock-file.sh
+
+      - name: Check for git diff
+        if: matrix.project.directory == 'app'
+        run: |
+          git diff --exit-code playground-requirements.lock || { echo "Error: Uncommitted changes found. Please run 'uv run scripts/generate-playground-requirements-lock-file.sh'"; exit 1; }
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
