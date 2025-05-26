@@ -10,25 +10,55 @@ repos:
     rev: "v0.8.1"
     hooks:
       - id: ruff
-        files: "^app|^app/tests"
-        args: [--fix, --config=pyproject.toml]
+        name: ruff check for lilypad-app
+        files: "^app/lilypad|^app/tests"
+        args: [--fix, --config=app/pyproject.toml]
       - id: ruff-format
-        files: "^lilypad|^tests"
-        args: [--config=pyproject.toml]
+        name: ruff format for lilypad-app
+        files: "^app/lilypad|^app/tests"
+        args: [--config=app/pyproject.toml]
+      - id: ruff
+        name: ruff check for lilypad-sdk
+        files: "^sdks/python"
+        args: [ --fix, --config=sdks/python/pyproject.toml ]
+      - id: ruff-format
+        name: ruff format for lilypad-sdk
+        files: "^sdks/python"
+        args: [ --config=sdks/python/pyproject.toml ]
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.396
     hooks:
       - id: pyright
   - repo: local
     hooks:
-      - id: tests
-        name: tests
-        entry: uv run pytest app/tests
+      - id: tests-app
+        name: tests for app
+        entry: bash -c 'cd app && uv run pytest app/tests'
         language: system
         types: [python]
         pass_filenames: false
+        files: "^app/"
+      - id: tests-sdk
+        name: tests for sdk
+        entry: bash -c 'cd sdks/python && uv run pytest sdks/python/tests'
+        language: system
+        types: [ python ]
+        pass_filenames: false
+        files: "^sdks/python"
       - id: build-client
         name: build-client
         entry: bash -c 'cd client && pnpm typecheck'
         language: system
         pass_filenames: false
+      - id: generate-openapi
+        name: generate-openapi
+        entry: bash -c 'cd app && uv run python scripts/generate_python_client_schema.py generate-openapi --output openapi.json'
+        language: system
+        files: "^app/"
+        pass_filenames: false
+#      - id: generate-fern-sdk
+#        name: generate-fern-sdk
+#        entry: bash -c 'cp openapi.json sdks/fern/lilypad-api.json && cd sdks && bun run fern generate --group python-sdk'
+#        language: system
+#        files: "^sdks/fern/lilypad-api.json"
+#        pass_filenames: false
