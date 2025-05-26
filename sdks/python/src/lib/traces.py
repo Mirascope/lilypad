@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from opentelemetry.trace import format_span_id, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 
+from types.annotation_create import AnnotationCreate
 from types.evaluation_type import EvaluationType
 from types.function_public import FunctionPublic
 from types.label import Label
@@ -99,11 +100,11 @@ class _TraceBase(Generic[_T]):
             force_flush(timeout_millis=5000)
             self._flush = True
 
-    def _create_body(
+    def _create_request(
         self, project_id: str, span_uuid: str, annotation: tuple[Annotation, ...]
-    ) -> list[annotation_create_params.Body]:
+    ) -> list[AnnotationCreate]:
         return [
-            annotation_create_params.Body(
+            AnnotationCreate(
                 data=annotation.data,
                 function_uuid=self.function_uuid,
                 span_uuid=span_uuid,
@@ -138,8 +139,8 @@ class Trace(_TraceBase[_T]):
         """
         settings = get_settings()
         lilypad_client = get_sync_client(api_key=settings.api_key)
-        body = self._create_body(settings.project_id, self._get_span_uuid(lilypad_client), annotation)
-        lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, body=body)
+        request = self._create_request(settings.project_id, self._get_span_uuid(lilypad_client), annotation)
+        lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, request=request)
 
     def assign(self, *email: str) -> None:
         """Assign the trace to a user by email."""
@@ -149,8 +150,8 @@ class Trace(_TraceBase[_T]):
 
         lilypad_client.ee.projects.annotations.create(
             project_uuid=settings.project_id,
-            body=[
-                annotation_create_params.Body(
+            request=[
+                AnnotationCreate(
                     assignee_email=list(email),
                     function_uuid=self.function_uuid,
                     project_uuid=settings.project_id,
@@ -194,8 +195,8 @@ class AsyncTrace(_TraceBase[_T]):
         """
         settings = get_settings()
         lilypad_client = get_async_client(api_key=settings.api_key)
-        body = self._create_body(settings.project_id, await self._get_span_uuid(lilypad_client), annotation)
-        await lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, body=body)
+        request = self._create_request(settings.project_id, await self._get_span_uuid(lilypad_client), annotation)
+        await lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, request=request)
 
     async def assign(self, *email: str) -> None:
         """Assign the trace to a user by email."""
@@ -205,8 +206,8 @@ class AsyncTrace(_TraceBase[_T]):
         # TODO: update migrate fern client
         await async_client.ee.projects.annotations.create(
             project_uuid=settings.project_id,
-            body=[
-                annotation_create_params.Body(
+            request=[
+                AnnotationCreate(
                     assignee_email=list(email),
                     function_uuid=self.function_uuid,
                     project_uuid=settings.project_id,
