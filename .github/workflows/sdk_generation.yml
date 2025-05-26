@@ -1,0 +1,119 @@
+name: Check SDK Generation
+run-name: ${{ github.actor }} is checking SDK generation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'sdks/fern/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'sdks/fern/**'
+
+jobs:
+  check-openapi-generation:
+    name: Check OpenAPI Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        run: curl -LsSf https://astral.sh/uv/0.6.12/install.sh | sh
+
+      - name: Set up Python Environment
+        run: uv python install 3.11
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-app-${{ hashFiles('app/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-app-
+
+      - name: Install app dependencies
+        working-directory: app
+        run: uv sync --all-extras --dev
+
+      - name: Generate OpenAPI schema
+        working-directory: app
+        run: uv run python scripts/generate_python_client_schema.py generate-openapi --output ../sdks/fern/lilypad-api.json
+
+      - name: Check for OpenAPI differences
+        run: |
+          if git diff --quiet sdks/fern/lilypad-api.json; then
+            echo "✅ OpenAPI schema is up to date"
+          else
+            echo "❌ OpenAPI schema is out of sync!"
+            echo ""
+            echo "Differences found in sdks/fern/lilypad-api.json:"
+            git diff sdks/fern/lilypad-api.json
+            echo ""
+            echo "To fix this, run locally:"
+            echo "  make generate-openapi"
+            echo "  # or: cd app && uv run python scripts/generate_python_client_schema.py generate-openapi --output ../sdks/fern/lilypad-api.json"
+            echo ""
+            echo "Then commit the changes."
+            exit 1
+          fi
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
+
+  check-fern-sdk-generation:
+    name: Check Fern SDK Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('sdks/bun.lockb') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Install Fern dependencies
+        working-directory: sdks
+        run: bun install
+
+      - name: Generate Fern SDK
+        working-directory: sdks
+        run: |
+          bun run fern generate --group python-sdk --local
+          rm -fr python/src/lilypad/.git
+
+      - name: Check for Fern SDK differences
+        run: |
+          if git diff --quiet sdks/python/; then
+            echo "✅ Fern SDK is up to date"
+          else
+            echo "❌ Fern SDK is out of sync!"
+            echo ""
+            echo "Differences found in generated SDK:"
+            echo "Changed files:"
+            git diff --name-only sdks/python/
+            echo ""
+            echo "To fix this, run locally:"
+            echo "  make generate-fern-sdk"
+            echo "  # or: cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/.git"
+            echo ""
+            echo "Then commit the changes."
+            echo ""
+            echo "Note: Make sure to regenerate OpenAPI schema first if app code changed:"
+            echo "  make generate-all"
+            exit 1
+          fi
