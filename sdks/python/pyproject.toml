@@ -109,8 +109,8 @@ target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/**.py" = ["T201", "T203"]
-"tests/lib/**.py" = ["ARG", "F401"]
+"sdks/python/tests/**.py" = ["T201", "T203", "ANN", "UP007"]
+"sdks/python/tests/lib/**.py" = ["ARG", "F401"]
 
 [tool.ruff.lint]
 select = [
@@ -156,7 +156,7 @@ pythonVersion = "3.10"
 
 exclude = [
   ".venv",
-  "tests",
+  "src/tests",
   "src/lilypad/lib",
   "src/lilypad/types",
   "src/lilypad/core/unchecked_base_model.py",

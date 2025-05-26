@@ -33,7 +33,7 @@ repos:
     hooks:
       - id: tests-app
         name: tests for app
-        entry: bash -c 'cd app && uv run pytest app/tests'
+        entry: bash -c 'cd app && uv run pytest tests'
         language: system
         types: [python]
         pass_filenames: false
