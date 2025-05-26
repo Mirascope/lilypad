@@ -60,6 +60,7 @@ class OrganizationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.update()
         """
@@ -89,6 +90,7 @@ class OrganizationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.create(
             name="name",
@@ -118,6 +120,7 @@ class OrganizationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.delete()
         """
@@ -174,6 +177,7 @@ class AsyncOrganizationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -211,6 +215,7 @@ class AsyncOrganizationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -248,6 +253,7 @@ class AsyncOrganizationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

@@ -67,6 +67,7 @@ class UserConsentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.user_consents.create(
             privacy_policy_version="privacy_policy_version",
@@ -123,6 +124,7 @@ class UserConsentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.user_consents.update(
             user_consent_uuid="user_consent_uuid",
@@ -196,6 +198,7 @@ class AsyncUserConsentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -260,6 +263,7 @@ class AsyncUserConsentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

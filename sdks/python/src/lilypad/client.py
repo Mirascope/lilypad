@@ -7,18 +7,14 @@ from .api_keys.client import ApiKeysClient, AsyncApiKeysClient
 from .auth.client import AsyncAuthClient, AuthClient
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from .core.request_options import RequestOptions
 from .ee.client import AsyncEeClient, EeClient
-from .environment import LilypadEnvironment
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
 from .organizations.client import AsyncOrganizationsClient, OrganizationsClient
 from .projects.client import AsyncProjectsClient, ProjectsClient
-from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
-from .types.span_public import SpanPublic
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
@@ -30,17 +26,8 @@ class Lilypad:
 
     Parameters
     ----------
-    base_url : typing.Optional[str]
+    base_url : str
         The base url to use for requests from the client.
-
-    environment : LilypadEnvironment
-        The environment to use for requests from the client. from .environment import LilypadEnvironment
-
-
-
-        Defaults to LilypadEnvironment.DEFAULT
-
-
 
     api_key : str
     token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
@@ -60,14 +47,14 @@ class Lilypad:
     client = Lilypad(
         api_key="YOUR_API_KEY",
         token="YOUR_TOKEN",
+        base_url="https://yourhost.com/path/to/api",
     )
     """
 
     def __init__(
         self,
         *,
-        base_url: typing.Optional[str] = None,
-        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
+        base_url: str,
         api_key: str,
         token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         timeout: typing.Optional[float] = None,
@@ -78,7 +65,7 @@ class Lilypad:
             timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = SyncClientWrapper(
-            base_url=_get_base_url(base_url=base_url, environment=environment),
+            base_url=base_url,
             api_key=api_key,
             token=token,
             httpx_client=httpx_client
@@ -88,7 +75,6 @@ class Lilypad:
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
-        self._raw_client = RawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = OrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = ApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = WebhooksClient(client_wrapper=self._client_wrapper)
@@ -104,55 +90,6 @@ class Lilypad:
         self.settings = SettingsClient(client_wrapper=self._client_wrapper)
         self.ee = EeClient(client_wrapper=self._client_wrapper)
 
-    @property
-    def with_raw_response(self) -> RawLilypad:
-        """
-        Retrieves a raw implementation of this client that returns raw responses.
-
-        Returns
-        -------
-        RawLilypad
-        """
-        return self._raw_client
-
-    def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[SpanPublic]:
-        """
-        Get span by uuid.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        function_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[SpanPublic]
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-            project_uuid="project_uuid",
-            function_uuid="function_uuid",
-        )
-        """
-        _response = self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-            project_uuid, function_uuid, request_options=request_options
-        )
-        return _response.data
-
 
 class AsyncLilypad:
     """
@@ -160,17 +97,8 @@ class AsyncLilypad:
 
     Parameters
     ----------
-    base_url : typing.Optional[str]
+    base_url : str
         The base url to use for requests from the client.
-
-    environment : LilypadEnvironment
-        The environment to use for requests from the client. from .environment import LilypadEnvironment
-
-
-
-        Defaults to LilypadEnvironment.DEFAULT
-
-
 
     api_key : str
     token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
@@ -190,14 +118,14 @@ class AsyncLilypad:
     client = AsyncLilypad(
         api_key="YOUR_API_KEY",
         token="YOUR_TOKEN",
+        base_url="https://yourhost.com/path/to/api",
     )
     """
 
     def __init__(
         self,
         *,
-        base_url: typing.Optional[str] = None,
-        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
+        base_url: str,
         api_key: str,
         token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         timeout: typing.Optional[float] = None,
@@ -208,7 +136,7 @@ class AsyncLilypad:
             timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = AsyncClientWrapper(
-            base_url=_get_base_url(base_url=base_url, environment=environment),
+            base_url=base_url,
             api_key=api_key,
             token=token,
             httpx_client=httpx_client
@@ -218,7 +146,6 @@ class AsyncLilypad:
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
-        self._raw_client = AsyncRawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = AsyncOrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = AsyncApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
@@ -233,71 +160,3 @@ class AsyncLilypad:
         self.comments = AsyncCommentsClient(client_wrapper=self._client_wrapper)
         self.settings = AsyncSettingsClient(client_wrapper=self._client_wrapper)
         self.ee = AsyncEeClient(client_wrapper=self._client_wrapper)
-
-    @property
-    def with_raw_response(self) -> AsyncRawLilypad:
-        """
-        Retrieves a raw implementation of this client that returns raw responses.
-
-        Returns
-        -------
-        AsyncRawLilypad
-        """
-        return self._raw_client
-
-    async def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[SpanPublic]:
-        """
-        Get span by uuid.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        function_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[SpanPublic]
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-                project_uuid="project_uuid",
-                function_uuid="function_uuid",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = (
-            await self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-                project_uuid, function_uuid, request_options=request_options
-            )
-        )
-        return _response.data
-
-
-def _get_base_url(*, base_url: typing.Optional[str] = None, environment: LilypadEnvironment) -> str:
-    if base_url is not None:
-        return base_url
-    elif environment is not None:
-        return environment.value
-    else:
-        raise Exception("Please pass in either base_url or environment to construct the client")

@@ -80,6 +80,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.functions.run_playground(
             project_uuid="project_uuid",
@@ -171,6 +172,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

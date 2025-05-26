@@ -44,6 +44,7 @@ class UsersClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.organizations.users.list()
         """
@@ -89,6 +90,7 @@ class AsyncUsersClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

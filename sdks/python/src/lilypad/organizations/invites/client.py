@@ -48,6 +48,7 @@ class InvitesClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.invites.list()
         """
@@ -79,6 +80,7 @@ class InvitesClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.invites.get(
             invite_token="invite_token",
@@ -130,6 +132,7 @@ class InvitesClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.invites.create(
             invited_by="invited_by",
@@ -170,6 +173,7 @@ class InvitesClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.organizations.invites.remove(
             organization_invite_uuid="organization_invite_uuid",
@@ -219,6 +223,7 @@ class AsyncInvitesClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -258,6 +263,7 @@ class AsyncInvitesClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -317,6 +323,7 @@ class AsyncInvitesClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -367,6 +374,7 @@ class AsyncInvitesClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

@@ -48,6 +48,7 @@ class TagsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.tags.list(
             project_uuid="project_uuid",
@@ -99,6 +100,7 @@ class AsyncTagsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

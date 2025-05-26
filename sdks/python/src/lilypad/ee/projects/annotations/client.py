@@ -54,6 +54,7 @@ class AnnotationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.annotations.list(
             project_uuid="project_uuid",
@@ -106,6 +107,7 @@ class AnnotationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.annotations.create(
             project_uuid="project_uuid",
@@ -142,6 +144,7 @@ class AnnotationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.annotations.delete(
             annotation_uuid="annotation_uuid",
@@ -197,6 +200,7 @@ class AnnotationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.annotations.update(
             annotation_uuid="annotation_uuid",
@@ -258,6 +262,7 @@ class AsyncAnnotationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -318,6 +323,7 @@ class AsyncAnnotationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -362,6 +368,7 @@ class AsyncAnnotationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -425,6 +432,7 @@ class AsyncAnnotationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

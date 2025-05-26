@@ -65,6 +65,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_by_version(
             project_uuid="project_uuid",
@@ -104,6 +105,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_by_name(
             project_uuid="project_uuid",
@@ -140,6 +142,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_deployed_environments(
             project_uuid="project_uuid",
@@ -224,6 +227,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.create_versioned(
             project_uuid_="project_uuid",
@@ -279,6 +283,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_unique_names(
             project_uuid="project_uuid",
@@ -312,6 +317,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_latest_versions(
             project_uuid="project_uuid",
@@ -347,6 +353,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get_by_hash(
             project_uuid="project_uuid",
@@ -381,6 +388,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.list(
             project_uuid="project_uuid",
@@ -462,6 +470,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.create(
             project_uuid_="project_uuid",
@@ -519,6 +528,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.get(
             project_uuid="project_uuid",
@@ -555,6 +565,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.archive(
             project_uuid="project_uuid",
@@ -591,6 +602,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.update(
             project_uuid="project_uuid",
@@ -627,6 +639,7 @@ class FunctionsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.functions.archive_by_name(
             project_uuid="project_uuid",
@@ -689,6 +702,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -736,6 +750,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -780,6 +795,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -872,6 +888,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -935,6 +952,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -976,6 +994,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1019,6 +1038,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1061,6 +1081,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1150,6 +1171,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1215,6 +1237,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1259,6 +1282,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1303,6 +1327,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -1347,6 +1372,7 @@ class AsyncFunctionsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

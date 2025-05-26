@@ -54,6 +54,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.spans.get_aggregates(
             project_uuid="project_uuid",
@@ -92,6 +93,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.spans.get_by_id(
             project_uuid="project_uuid",
@@ -147,6 +149,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.spans.search(
             project_uuid="project_uuid",
@@ -191,6 +194,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.spans.delete(
             project_uuid="project_uuid",
@@ -245,6 +249,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -291,6 +296,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -354,6 +360,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -406,6 +413,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

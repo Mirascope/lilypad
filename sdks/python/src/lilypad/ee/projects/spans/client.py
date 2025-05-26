@@ -51,6 +51,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.spans.generate_annotation(
             span_uuid="span_uuid",
@@ -106,6 +107,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

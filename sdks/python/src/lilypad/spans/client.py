@@ -5,7 +5,6 @@ import typing
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.span_more_details import SpanMoreDetails
-from ..types.span_public import SpanPublic
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .raw_client import AsyncRawSpansClient, RawSpansClient
 
@@ -52,6 +51,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.spans.get(
             span_uuid="span_uuid",
@@ -67,7 +67,7 @@ class SpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> SpanPublic:
+    ) -> SpanMoreDetails:
         """
         Update span by uuid.
 
@@ -84,7 +84,7 @@ class SpansClient:
 
         Returns
         -------
-        SpanPublic
+        SpanMoreDetails
             Successful Response
 
         Examples
@@ -94,6 +94,7 @@ class SpansClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.spans.update(
             span_uuid="span_uuid",
@@ -146,6 +147,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -167,7 +169,7 @@ class AsyncSpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> SpanPublic:
+    ) -> SpanMoreDetails:
         """
         Update span by uuid.
 
@@ -184,7 +186,7 @@ class AsyncSpansClient:
 
         Returns
         -------
-        SpanPublic
+        SpanMoreDetails
             Successful Response
 
         Examples
@@ -196,6 +198,7 @@ class AsyncSpansClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

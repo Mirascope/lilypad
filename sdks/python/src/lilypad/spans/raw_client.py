@@ -12,7 +12,6 @@ from ..core.unchecked_base_model import construct_type
 from ..errors.unprocessable_entity_error import UnprocessableEntityError
 from ..types.http_validation_error import HttpValidationError
 from ..types.span_more_details import SpanMoreDetails
-from ..types.span_public import SpanPublic
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -78,7 +77,7 @@ class RawSpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[SpanPublic]:
+    ) -> HttpResponse[SpanMoreDetails]:
         """
         Update span by uuid.
 
@@ -95,7 +94,7 @@ class RawSpansClient:
 
         Returns
         -------
-        HttpResponse[SpanPublic]
+        HttpResponse[SpanMoreDetails]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
@@ -114,9 +113,9 @@ class RawSpansClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanPublic,
+                    SpanMoreDetails,
                     construct_type(
-                        type_=SpanPublic,  # type: ignore
+                        type_=SpanMoreDetails,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -198,7 +197,7 @@ class AsyncRawSpansClient:
         tags_by_uuid: typing.Optional[typing.Sequence[str]] = OMIT,
         tags_by_name: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[SpanPublic]:
+    ) -> AsyncHttpResponse[SpanMoreDetails]:
         """
         Update span by uuid.
 
@@ -215,7 +214,7 @@ class AsyncRawSpansClient:
 
         Returns
         -------
-        AsyncHttpResponse[SpanPublic]
+        AsyncHttpResponse[SpanMoreDetails]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
@@ -234,9 +233,9 @@ class AsyncRawSpansClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanPublic,
+                    SpanMoreDetails,
                     construct_type(
-                        type_=SpanPublic,  # type: ignore
+                        type_=SpanMoreDetails,  # type: ignore
                         object_=_response.json(),
                     ),
                 )

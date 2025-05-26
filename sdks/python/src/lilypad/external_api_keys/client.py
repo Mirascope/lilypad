@@ -47,6 +47,7 @@ class ExternalApiKeysClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.external_api_keys.list()
         """
@@ -81,6 +82,7 @@ class ExternalApiKeysClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.external_api_keys.create(
             service_name="service_name",
@@ -115,6 +117,7 @@ class ExternalApiKeysClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.external_api_keys.get(
             service_name="service_name",
@@ -146,6 +149,7 @@ class ExternalApiKeysClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.external_api_keys.delete(
             service_name="service_name",
@@ -182,6 +186,7 @@ class ExternalApiKeysClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.external_api_keys.update(
             service_name="service_name",
@@ -232,6 +237,7 @@ class AsyncExternalApiKeysClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -274,6 +280,7 @@ class AsyncExternalApiKeysClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -318,6 +325,7 @@ class AsyncExternalApiKeysClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -357,6 +365,7 @@ class AsyncExternalApiKeysClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -401,6 +410,7 @@ class AsyncExternalApiKeysClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

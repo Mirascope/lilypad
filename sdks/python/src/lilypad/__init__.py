@@ -22,44 +22,19 @@ from .client import AsyncLilypad, Lilypad
 
 __all__ = [
     "AsyncLilypad",
-    "AsyncTrace",
     "Lilypad",
-    "Lilypad",
-    "Message",
-    "NotFoundError",
-    "RequestOptions",
-    "Session",
-    "Span",
-    "Stream",
-    "Trace",
     "api_keys",
     "auth",
     "comments",
-    "configure",
     "ee",
     "environments",
     "external_api_keys",
-    "lilypad_config",
     "organizations",
     "projects",
-    "register_serializer",
-    "session",
     "settings",
-    "span",
     "spans",
     "tags",
-    "tool",
-    "trace",
-    "types",
     "user_consents",
     "users",
     "webhooks",
 ]
-
-from .core.request_options import RequestOptions
-from .errors.not_found_error import NotFoundError
-
-from .lib import trace, tool, span, session, register_serializer, lilypad_config, configure, Session, Message
-from .lib.spans import Span
-from .lib.stream import Stream
-from .lib.traces import Trace, AsyncTrace

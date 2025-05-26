@@ -61,6 +61,7 @@ class EnvironmentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.environments.deploy(
             project_uuid="project_uuid",
@@ -100,6 +101,7 @@ class EnvironmentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.environments.get_active_deployment(
             project_uuid="project_uuid",
@@ -138,6 +140,7 @@ class EnvironmentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.environments.get_function(
             project_uuid="project_uuid",
@@ -174,6 +177,7 @@ class EnvironmentsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.projects.environments.get_deployment_history(
             project_uuid="project_uuid",
@@ -240,6 +244,7 @@ class AsyncEnvironmentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -287,6 +292,7 @@ class AsyncEnvironmentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -333,6 +339,7 @@ class AsyncEnvironmentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
@@ -377,6 +384,7 @@ class AsyncEnvironmentsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 

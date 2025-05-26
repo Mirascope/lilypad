@@ -50,6 +50,7 @@ class AnnotationsClient:
         client = Lilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
         client.ee.projects.spans.annotations.list(
             project_uuid="project_uuid",
@@ -104,6 +105,7 @@ class AsyncAnnotationsClient:
         client = AsyncLilypad(
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
         )
 
 
