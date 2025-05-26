@@ -1,8 +1,6 @@
 """Tests for the middleware module in the _utils package."""
 
-import json
 import base64
-import logging
 from io import BytesIO
 from uuid import UUID, uuid4
 from unittest.mock import ANY, MagicMock, call, patch
@@ -32,7 +30,7 @@ from lilypad.lib._utils.middleware import (
     _set_call_response_attributes,
     _set_response_model_attributes,
 )
-from lilypad.types.projects.functions import FunctionPublic
+from lilypad.types.function_public import FunctionPublic
 
 
 def test_encode_gemini_part_with_string():

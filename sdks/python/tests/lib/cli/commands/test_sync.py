@@ -179,10 +179,3 @@ def override_dependencies(monkeypatch, tmp_path: Path):
         "lilypad.lib.cli.commands.sync.get_decorated_functions",
         lambda decorator_name: dummy_get_decorated_functions(decorator_name, str(dummy_file)),
     )
-    from lilypad.resources.projects.functions import NameResource
-
-    monkeypatch.setattr(
-        NameResource,
-        "retrieve_by_name",
-        lambda self, fn: DummyClient("").get_generations_by_name(fn),
-    )

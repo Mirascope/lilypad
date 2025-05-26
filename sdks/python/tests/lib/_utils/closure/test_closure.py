@@ -382,19 +382,19 @@ def test_import_with_different_dist_name_fn() -> None:
     expected_dependencies = {
         "google-ai-generativelanguage": {"extras": None, "version": "0.6.15"},
         "google-api-core": {"extras": None, "version": "2.24.2"},
-        "google-auth": {"extras": None, "version": "2.38.0"},
-        "google-cloud-aiplatform": {"extras": None, "version": "1.85.0"},
-        "google-cloud-bigquery": {"extras": None, "version": "3.30.0"},
+        "google-auth": {"extras": None, "version": "2.40.2"},
+        "google-cloud-aiplatform": {"extras": None, "version": "1.94.0"},
+        "google-cloud-bigquery": {"extras": None, "version": "3.33.0"},
         "google-cloud-core": {"extras": None, "version": "2.4.3"},
         "google-cloud-resource-manager": {"extras": None, "version": "1.14.2"},
         "google-cloud-storage": {"extras": None, "version": "2.19.0"},
-        "google-genai": {"extras": None, "version": "1.7.0"},
-        "google-generativeai": {"extras": None, "version": "0.8.4"},
+        "google-genai": {"extras": None, "version": "1.16.1"},
+        "google-generativeai": {"extras": None, "version": "0.8.5"},
         "google-resumable-media": {
             "extras": ["aiohttp", "requests"],
             "version": "2.7.2",
         },
-        "googleapis-common-protos": {"extras": None, "version": "1.69.2"},
+        "googleapis-common-protos": {"extras": None, "version": "1.70.0"},
         "grpc-google-iam-v1": {"extras": None, "version": "0.14.2"},
     }
     if sys.version_info >= (3, 11):
@@ -472,7 +472,7 @@ def test_mirascope_response_model_fn() -> None:
         },
         "pydantic": {
             "extras": None,
-            "version": "2.10.6",
+            "version": "2.11.5",
         },
     }
 
@@ -529,7 +529,7 @@ def test_nested_base_model_definitions() -> None:
         },
         "pydantic": {
             "extras": None,
-            "version": "2.10.6",
+            "version": "2.11.5",
         },
     }
 
@@ -545,7 +545,7 @@ def test_nested_handle_issue_method() -> None:
         },
         "pydantic": {
             "extras": None,
-            "version": "2.10.6",
+            "version": "2.11.5",
         },
     }
 

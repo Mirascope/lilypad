@@ -1,4 +1,4 @@
-from lilypad import configure
+from lilypad.lib import configure
 from lilypad.lib._configure import lilypad_config
 from lilypad.lib._utils.settings import get_settings
 
