@@ -156,7 +156,7 @@ pythonVersion = "3.10"
 
 exclude = [
     ".venv",
-    "src/tests",
+    "tests",
     "src/lilypad/lib",
     "src/lilypad/types",
     "src/lilypad/core/unchecked_base_model.py",
