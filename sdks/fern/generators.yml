@@ -12,7 +12,7 @@ groups:
         version: 4.20.3
         output:
           location: local-file-system
-          path: ../python/src
+          path: ../python/src/lilypad
         config:
           client:
             class_name: Lilypad
