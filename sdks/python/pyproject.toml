@@ -59,6 +59,26 @@ dev-dependencies = [
     "pre-commit>=3.8.0",
 ]
 
+
+[project.optional-dependencies]
+cli = ["typer>=0.15.2", "rich>=13.7.1"]
+openai = ["openai>=1.57.0"]
+anthropic = ["anthropic>=0.36.0"]
+azure = ["azure-ai-inference>=1.0.0b9,<2.0", "aiohttp>=3.10.5,<4.0"]
+gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
+google = ["google-genai>=1.7.0,<2", "pillow>=10.4.0,<11", "proto-plus>=1.24.0"]
+bedrock = [
+  "aioboto3>=13.2.0",
+  "boto3>=1.35.36",
+  "boto3-stubs[bedrock-runtime]>=1.35.82",
+  "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
+]
+mistral = ["mistralai>=1.0.0,<2"]
+outlines = ["outlines>=0.1.11"]
+sandbox-docker = ["docker>=7.1.0"]
+vertex = ["google-cloud-aiplatform>=1.74.0"]
+
+
 [tool.ruff]
 exclude = [
     ".bzr",
