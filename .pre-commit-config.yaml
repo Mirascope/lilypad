@@ -20,7 +20,7 @@ repos:
         files: "^app/lilypad|^app/tests"
         args: [--config=app/pyproject.toml]
       - id: ruff
-        name: ruff check for lilypad-sdk'
+        name: ruff check for lilypad-sdk
         entry: bash -c 'cd sdks/python && ruff check .'
         files: "^sdks/python"
         args: [ --fix, --config=sdks/python/pyproject.toml ]
@@ -33,6 +33,13 @@ repos:
     rev: v1.1.396
     hooks:
       - id: pyright
+        name: pyright for lilypad-sdk'
+        entry: bash -c 'cd sdks/python && pyright .'
+        files: "^sdks/python"
+      - id: pyright
+        name: pyright for lilypad-sdk'
+        entry: bash -c 'cd sdks/python && pyright .'
+        files: "^sdks/python"
   - repo: local
     hooks:
       - id: tests-app
@@ -44,7 +51,7 @@ repos:
         files: "^app/"
       - id: tests-sdk
         name: tests for sdk
-        entry: bash -c 'cd sdks/python && uv run pytest sdks/python/tests'
+        entry: bash -c 'cd sdks/python && uv run pytest .'
         language: system
         types: [ python ]
         pass_filenames: false
