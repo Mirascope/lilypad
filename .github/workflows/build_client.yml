@@ -41,6 +41,6 @@ jobs:
 
       - name: Change to client directory, install dependencies and build
         run: |
-          cd client
+          cd app/client
           pnpm install
           pnpm run build
