@@ -14,7 +14,6 @@ from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
 from .organizations.client import AsyncOrganizationsClient, OrganizationsClient
 from .projects.client import AsyncProjectsClient, ProjectsClient
-from .projects_traces.client import AsyncProjectsTracesClient, ProjectsTracesClient
 from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
@@ -95,7 +94,6 @@ class Lilypad:
         self.webhooks = WebhooksClient(client_wrapper=self._client_wrapper)
         self.projects = ProjectsClient(client_wrapper=self._client_wrapper)
         self.spans = SpansClient(client_wrapper=self._client_wrapper)
-        self.projects_traces = ProjectsTracesClient(client_wrapper=self._client_wrapper)
         self.auth = AuthClient(client_wrapper=self._client_wrapper)
         self.users = UsersClient(client_wrapper=self._client_wrapper)
         self.external_api_keys = ExternalApiKeysClient(client_wrapper=self._client_wrapper)
@@ -226,7 +224,6 @@ class AsyncLilypad:
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
         self.projects = AsyncProjectsClient(client_wrapper=self._client_wrapper)
         self.spans = AsyncSpansClient(client_wrapper=self._client_wrapper)
-        self.projects_traces = AsyncProjectsTracesClient(client_wrapper=self._client_wrapper)
         self.auth = AsyncAuthClient(client_wrapper=self._client_wrapper)
         self.users = AsyncUsersClient(client_wrapper=self._client_wrapper)
         self.external_api_keys = AsyncExternalApiKeysClient(client_wrapper=self._client_wrapper)

@@ -108,6 +108,39 @@ class TracesClient:
         )
         return _response.data
 
+    def create(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.List[SpanPublic]:
+        """
+        Create span traces.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+        )
+        client.projects.traces.create(
+            project_uuid="project_uuid",
+        )
+        """
+        _response = self._raw_client.create(project_uuid, request_options=request_options)
+        return _response.data
+
 
 class AsyncTracesClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -221,4 +254,45 @@ class AsyncTracesClient:
         _response = await self._raw_client.list(
             project_uuid, limit=limit, offset=offset, order=order, request_options=request_options
         )
+        return _response.data
+
+    async def create(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.List[SpanPublic]:
+        """
+        Create span traces.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.projects.traces.create(
+                project_uuid="project_uuid",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.create(project_uuid, request_options=request_options)
         return _response.data

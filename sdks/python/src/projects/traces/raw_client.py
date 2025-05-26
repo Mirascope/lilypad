@@ -137,6 +137,55 @@ class RawTracesClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def create(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[typing.List[SpanPublic]]:
+        """
+        Create span traces.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[typing.List[SpanPublic]]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/traces",
+            method="POST",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    typing.List[SpanPublic],
+                    construct_type(
+                        type_=typing.List[SpanPublic],  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
 
 class AsyncRawTracesClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -239,6 +288,55 @@ class AsyncRawTracesClient:
                     PaginatedSpanPublic,
                     construct_type(
                         type_=PaginatedSpanPublic,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def create(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[typing.List[SpanPublic]]:
+        """
+        Create span traces.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[typing.List[SpanPublic]]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/traces",
+            method="POST",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    typing.List[SpanPublic],
+                    construct_type(
+                        type_=typing.List[SpanPublic],  # type: ignore
                         object_=_response.json(),
                     ),
                 )
