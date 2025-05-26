@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import Any, TypeVar, Callable
+from typing import Any, TypeVar
 from threading import RLock
+from collections.abc import Callable
 
 _lock = RLock()
 
@@ -35,4 +36,4 @@ def get_serializer(type_: type[Any]) -> Callable[[Any], str] | None:
 
 SERIALIZER_REGISTRY = MappingProxyType(_serializer_registry)
 
-__all__ = ["get_serializer", "register_serializer", "SERIALIZER_REGISTRY", "SerializerMap"]
+__all__ = ["SERIALIZER_REGISTRY", "SerializerMap", "get_serializer", "register_serializer"]

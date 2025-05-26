@@ -13,7 +13,7 @@ from .._utils import Closure
 class DependencyError(Exception):
     """Represents an error caused by missing or incompatible dependencies."""
 
-    def __init__(self, message: str, module_name: str = None, error_class: str = None):
+    def __init__(self, message: str, module_name: str = None, error_class: str = None) -> None:
         self.message = message
         self.module_name = module_name
         self.error_class = error_class
@@ -63,16 +63,23 @@ class SandboxRunner(ABC):
             if returncode == 0:
                 return cast(Result, data)
 
-            if isinstance(data, dict) and "error_type" in data:
-                if data.get("is_dependency_error", False) or data["error_type"] in [
-                    "ImportError",
-                    "ModuleNotFoundError",
-                ]:
-                    raise DependencyError(
-                        message=data.get("error_message", "Unknown dependency error"),
-                        module_name=data.get("module_name"),
-                        error_class=data.get("error_type"),
-                    )
+            if (
+                isinstance(data, dict)
+                and "error_type" in data
+                and (
+                    data.get("is_dependency_error", False)
+                    or data["error_type"]
+                    in [
+                        "ImportError",
+                        "ModuleNotFoundError",
+                    ]
+                )
+            ):
+                raise DependencyError(
+                    message=data.get("error_message", "Unknown dependency error"),
+                    module_name=data.get("module_name"),
+                    error_class=data.get("error_type"),
+                )
         except orjson.JSONDecodeError:
             pass
 
@@ -99,7 +106,7 @@ class SandboxRunner(ABC):
         else:
             result_content = '{"result": result}'
 
-        base_run = "{name}(*{args}, **{kwargs})".format(name=closure.name, args=args, kwargs=kwargs)
+        base_run = f"{closure.name}(*{args}, **{kwargs})"
 
         is_async = cls._is_async_func(closure)
         if is_async:

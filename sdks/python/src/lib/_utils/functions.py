@@ -99,7 +99,7 @@ def inspect_arguments(fn: Callable, *args: Any, **kwargs: Any) -> tuple[ArgTypes
 
 
 __all__ = [
-    "inspect_arguments",
     "ArgTypes",
     "ArgValues",
+    "inspect_arguments",
 ]

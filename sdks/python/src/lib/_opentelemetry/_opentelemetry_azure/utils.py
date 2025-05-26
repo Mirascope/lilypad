@@ -99,10 +99,7 @@ def default_azure_cleanup(span: Span, metadata: AzureMetadata, buffers: list[Cho
 
 
 def get_tool_calls(message: dict | BaseModel) -> list[dict[str, Any]] | None:
-    if isinstance(message, BaseModel):
-        tool_calls = message.tool_calls  # pyright: ignore[reportAttributeAccessIssue]
-    else:
-        tool_calls = message.get("tool_calls")
+    tool_calls = message.tool_calls if isinstance(message, BaseModel) else message.get("tool_calls")  # pyright: ignore[reportAttributeAccessIssue]
     if tool_calls is None:
         return None
     calls = []

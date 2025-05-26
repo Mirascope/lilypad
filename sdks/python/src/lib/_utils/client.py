@@ -2,27 +2,26 @@
 
 from __future__ import annotations
 
+import typing
 import asyncio
 import logging
-import typing
 import weakref
+from typing import TypeVar, ParamSpec
 from functools import (
-    lru_cache,
     wraps,  # noqa: TID251
+    lru_cache,
 )
-from typing import ParamSpec, TypeVar
 
 import httpx
 
-from core.api_error import ApiError
 from environment import LilypadEnvironment
+from core.api_error import ApiError
 from errors.not_found_error import NotFoundError
 
-from ... import AsyncLilypad as _BaseAsyncLilypad
-from ... import Lilypad as _BaseLilypad
+from ... import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
+from .settings import get_settings
 from ..exceptions import LilypadPaymentRequiredError
 from .call_safely import call_safely
-from .settings import get_settings
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -55,7 +54,7 @@ class _SafeHttpClientMixin:
             LilypadPaymentRequiredError: If the error is a payment required error
             ApiError: Re-raises the original error for other cases
         """
-        if hasattr(error, 'status_code') and error.status_code == LilypadPaymentRequiredError.status_code:
+        if hasattr(error, "status_code") and error.status_code == LilypadPaymentRequiredError.status_code:
             logger.debug("Converting ApiError to LilypadPaymentRequiredError: %s", error)
             raise LilypadPaymentRequiredError(error) from None
         raise error
@@ -101,7 +100,9 @@ class _SafeHttpClientWrapper(_SafeHttpClientMixin):
 
         return attr
 
-    def _create_safe_request(self, original_request: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
+    def _create_safe_request(
+        self, original_request: typing.Callable[..., typing.Any]
+    ) -> typing.Callable[..., typing.Any]:
         """Create a safe version of the request method.
 
         Args:
@@ -110,6 +111,7 @@ class _SafeHttpClientWrapper(_SafeHttpClientMixin):
         Returns:
             Enhanced request method with error handling
         """
+
         @call_safely(_noop_fallback, exclude=(NotFoundError,))
         @wraps(original_request)
         def safe_request(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
@@ -161,7 +163,9 @@ class _SafeAsyncHttpClientWrapper(_SafeHttpClientMixin):
 
         return attr
 
-    def _create_safe_request(self, original_request: typing.Callable[..., typing.Awaitable[typing.Any]]) -> typing.Callable[..., typing.Awaitable[typing.Any]]:
+    def _create_safe_request(
+        self, original_request: typing.Callable[..., typing.Awaitable[typing.Any]]
+    ) -> typing.Callable[..., typing.Awaitable[typing.Any]]:
         """Create a safe version of the async request method.
 
         Args:
@@ -170,6 +174,7 @@ class _SafeAsyncHttpClientWrapper(_SafeHttpClientMixin):
         Returns:
             Enhanced async request method with error handling
         """
+
         @call_safely(_async_noop_fallback, exclude=(NotFoundError,))
         @wraps(original_request)
         async def safe_request(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
@@ -241,7 +246,7 @@ class Lilypad(_BaseLilypad):
         Raises:
             AttributeError: If the client wrapper doesn't have the expected structure
         """
-        if not hasattr(self, '_client_wrapper'):
+        if not hasattr(self, "_client_wrapper"):
             logger.warning("Client wrapper not found, skipping HTTP client enhancement")
             return
 
@@ -321,7 +326,7 @@ class AsyncLilypad(_BaseAsyncLilypad):
         Raises:
             AttributeError: If the client wrapper doesn't have the expected structure
         """
-        if not hasattr(self, '_client_wrapper'):
+        if not hasattr(self, "_client_wrapper"):
             logger.warning("Client wrapper not found, skipping async HTTP client enhancement")
             return
 

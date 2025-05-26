@@ -7,9 +7,9 @@ from functools import wraps
 from collections.abc import Callable, Coroutine
 
 from core.api_error import ApiError
+
 from ..exceptions import LilypadException
 from .fn_is_async import fn_is_async
-
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

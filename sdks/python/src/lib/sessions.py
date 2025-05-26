@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from collections.abc import Iterator
 
 _UNSET = object()
 
@@ -30,10 +30,7 @@ SESSION_CONTEXT: ContextVar[Session | None] = ContextVar("SESSION_CONTEXT", defa
 def session(id: str | None = _UNSET) -> Iterator[Session]:
     """Create a Session context."""
 
-    if id is _UNSET:
-        session_id = Session.generate_id()
-    else:
-        session_id = id
+    session_id = Session.generate_id() if id is _UNSET else id
     session_obj = Session(session_id)
     token = SESSION_CONTEXT.set(session_obj)
     try:

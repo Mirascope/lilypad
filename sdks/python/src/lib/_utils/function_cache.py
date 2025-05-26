@@ -5,11 +5,12 @@ from __future__ import annotations
 import asyncio
 import threading
 from time import time
-from typing import Any, Final, Generic, TypeVar, Callable, Awaitable, OrderedDict
+from typing import Any, Final, Generic, TypeVar
 from functools import lru_cache  # noqa: TID251
-from collections.abc import Coroutine
-
+from collections import OrderedDict
+from collections.abc import Callable, Awaitable, Coroutine
 from types.function_public import FunctionPublic
+
 from . import Closure
 from .client import get_sync_client, get_async_client
 
@@ -213,10 +214,10 @@ def get_cached_closure(function: FunctionPublic) -> Closure:
 
 
 __all__ = [
-    "get_function_by_hash_sync",
-    "get_function_by_hash_async",
-    "get_deployed_function_sync",
     "get_deployed_function_async",
-    "get_function_by_version_sync",
+    "get_deployed_function_sync",
+    "get_function_by_hash_async",
+    "get_function_by_hash_sync",
     "get_function_by_version_async",
+    "get_function_by_version_sync",
 ]

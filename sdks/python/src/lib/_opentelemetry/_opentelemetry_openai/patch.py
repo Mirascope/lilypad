@@ -46,10 +46,7 @@ def get_llm_request_attributes(
     operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
 ) -> dict[str, AttributeValue]:
     response_format = kwargs.get("response_format", {})
-    if isinstance(response_format, dict):
-        response_format = response_format.get("type")
-    else:
-        response_format = response_format.__name__
+    response_format = response_format.get("type") if isinstance(response_format, dict) else response_format.__name__
     attributes = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
         gen_ai_attributes.GEN_AI_REQUEST_MODEL: kwargs.get("model"),

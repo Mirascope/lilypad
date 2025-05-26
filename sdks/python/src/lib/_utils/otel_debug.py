@@ -21,7 +21,7 @@ def wrap_batch_processor(processor: BatchSpanProcessor) -> None:
         log.debug("[on_end ] enqueue span=%s  queue=%d→%d", span.name, qsize, qsize + 1)
         origin_on_end(span)
 
-    def force_flush(timeout_millis: int = 5_000):  # noqa: D401
+    def force_flush(timeout_millis: int = 5_000) -> bool:  # noqa: D401
         qsize_before = len(processor.queue)
         log.debug("[flush   ] called  queue=%d", qsize_before)
         result = origin_flush(timeout_millis)

@@ -10,13 +10,13 @@ from ._configure import configure, lilypad_config
 from .exceptions import RemoteFunctionError
 
 __all__ = [
-    "configure",
-    "lilypad_config",
     "Message",
     "RemoteFunctionError",
+    "Session",
+    "configure",
+    "lilypad_config",
     "register_serializer",
     "session",
-    "Session",
     "span",
     "tool",
     "trace",

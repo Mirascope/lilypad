@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import os
 import inspect
-
-from errors.not_found_error import NotFoundError
 from types import MappingProxyType
 from typing import (
     Any,
@@ -20,17 +18,19 @@ from typing import (
 from functools import wraps
 from contextlib import contextmanager
 from contextvars import ContextVar
+from types.label import Label
 from collections.abc import Callable, Coroutine, Generator
+from types.evaluation_type import EvaluationType
+from types.function_public import FunctionPublic
+from types.annotation_create import AnnotationCreate
 
 import orjson
 from pydantic import BaseModel
 from opentelemetry.trace import format_span_id, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 
-from types.annotation_create import AnnotationCreate
-from types.evaluation_type import EvaluationType
-from types.function_public import FunctionPublic
-from types.label import Label
+from errors.not_found_error import NotFoundError
+
 from .spans import Span
 from ._utils import (
     Closure,
@@ -40,8 +40,8 @@ from ._utils import (
     get_qualified_name,
     create_mirascope_middleware,
 )
-from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from ..client import Lilypad, AsyncLilypad
+from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from .exceptions import RemoteFunctionError
 from ._utils.json import to_text, json_dumps, fast_jsonable
 from ._utils.client import get_sync_client, get_async_client
@@ -631,7 +631,7 @@ def trace(
     If mode="wrap" is set, the function will return a Trace[_R] object with a 'response' property containing the original function's response and an 'annotate' method.
     """
 
-    decorator_tags = sorted(list(set(tags))) if tags else None
+    decorator_tags = sorted(set(tags)) if tags else None
 
     @overload
     def decorator(
@@ -669,10 +669,7 @@ def trace(
 
         signature = get_signature(fn)
 
-        if name is None:
-            trace_name = get_qualified_name(fn)
-        else:
-            trace_name = name
+        trace_name = get_qualified_name(fn) if name is None else name
         if fn_is_async(fn):
 
             @call_safely(fn)
@@ -689,7 +686,7 @@ def trace(
                     except TypeError:
                         pass
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
-                        final_args = tuple((span, *args))
+                        final_args = (span, *args)
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)
@@ -859,7 +856,7 @@ def trace(
                         pass
 
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
-                        final_args = tuple((span, *args))
+                        final_args = (span, *args)
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)
@@ -888,10 +885,7 @@ def trace(
                                 prompt_template=prompt_template,
                             )
 
-                    if versioning == "automatic":
-                        function = get_or_create_function_sync()
-                    else:
-                        function = None
+                    function = get_or_create_function_sync() if versioning == "automatic" else None
 
                     function_uuid = function.uuid if function else None
 

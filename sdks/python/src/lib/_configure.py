@@ -2,38 +2,38 @@
 
 from __future__ import annotations
 
-import importlib.util
-import logging
+import time
 import queue
 import random
+import logging
 import threading
-import time
-from collections.abc import Sequence
+import importlib.util
+from typing import Any
+from secrets import token_bytes
 from contextlib import contextmanager
 from contextvars import copy_context
-from secrets import token_bytes
-from typing import Any
+from collections.abc import Sequence, Generator
 
+from pydantic import TypeAdapter
 from opentelemetry import trace
+from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
     SpanExporter,
     SpanExportResult,
+    BatchSpanProcessor,
 )
 from opentelemetry.sdk.trace.id_generator import IdGenerator
-from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
-from pydantic import TypeAdapter
 
-from ..types.span_public import SpanPublic
-from ._utils.client import get_sync_client
-from ._utils.otel_debug import wrap_batch_processor
-from ._utils.settings import (
-    _current_settings,
-    _set_settings,
-    get_settings,
-)
 from .exceptions import LilypadException
+from ._utils.client import get_sync_client
+from ._utils.settings import (
+    get_settings,
+    _set_settings,
+    _current_settings,
+)
+from ._utils.otel_debug import wrap_batch_processor
+from ..types.span_public import SpanPublic
 
 try:
     from rich.logging import RichHandler as LogHandler
@@ -53,7 +53,7 @@ _WORKER_SLEEP = 0.2
 class _RetryPayload:
     __slots__ = ("data", "attempts")
 
-    def __init__(self, data: list[dict[str, Any]]):
+    def __init__(self, data: list[dict[str, Any]]) -> None:
         self.data = data
         self.attempts = 0
 
@@ -115,7 +115,9 @@ class _JSONSpanExporter(SpanExporter):
     def _send_once(self, payload: list[dict[str, Any]]) -> list[SpanPublic] | None:
         """Send once; return list[SpanPublic] if the API accepted the batch."""
         try:
-            raw_response = self.client.projects.traces.create(project_uuid=self.settings.project_id, request_options={"additional_body_parameters": payload}) # pyright: ignore[reportArgumentType]
+            raw_response = self.client.projects.traces.create(
+                project_uuid=self.settings.project_id, request_options={"additional_body_parameters": payload}
+            )  # pyright: ignore[reportArgumentType]
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return None
@@ -300,11 +302,10 @@ def configure(
         from ._opentelemetry import AzureInstrumentor
 
         AzureInstrumentor().instrument()
-    if importlib.util.find_spec("google") is not None:
-        if importlib.util.find_spec("google.genai") is not None:
-            from ._opentelemetry import GoogleGenAIInstrumentor
+    if importlib.util.find_spec("google") is not None and importlib.util.find_spec("google.genai") is not None:
+        from ._opentelemetry import GoogleGenAIInstrumentor
 
-            GoogleGenAIInstrumentor().instrument()
+        GoogleGenAIInstrumentor().instrument()
     if importlib.util.find_spec("botocore") is not None:
         from ._opentelemetry import BedrockInstrumentor
 
@@ -320,7 +321,7 @@ def configure(
 
 
 @contextmanager
-def lilypad_config(**override: Any):
+def lilypad_config(**override: Any) -> Generator[None, None, None]:
     token = None
     try:
         base = get_settings()

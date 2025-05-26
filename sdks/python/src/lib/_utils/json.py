@@ -23,6 +23,7 @@ from ipaddress import (
 from collections import deque, defaultdict
 from collections.abc import Callable
 
+import orjson
 from pydantic import BaseModel
 
 from .serializer_registry import SerializerMap, get_serializer
@@ -40,7 +41,6 @@ MAP_STANDARD_TYPES = {
     "NoneType": "None",
 }
 
-import orjson
 
 ORJSON_OPTS = (
     orjson.OPT_NON_STR_KEYS
@@ -399,7 +399,7 @@ def _to_json_serializable(
     if isinstance(obj, datetime.timedelta):
         return obj.total_seconds()
     if isinstance(
-        obj, (UUID, IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network, PurePath)
+        obj, UUID | IPv4Address | IPv4Interface | IPv4Network | IPv6Address | IPv6Interface | IPv6Network | PurePath
     ):
         return str(obj)
     if isinstance(obj, dict):
@@ -416,7 +416,7 @@ def _any_to_text(val: Any, custom_serializers: SerializerMap | None = None) -> s
     try:
         serialized_value = _to_json_serializable(val, custom_serializers=custom_serializers)
         # if the result itself is already a JSON-safe primitive, return as-is
-        if isinstance(serialized_value, (str, int, float, bool)) or serialized_value is None:
+        if isinstance(serialized_value, str | int | float | bool) or serialized_value is None:
             return serialized_value
         return orjson.dumps(serialized_value, option=ORJSON_OPTS).decode()
     except (TypeError, orjson.JSONEncodeError):
@@ -438,7 +438,7 @@ def to_text(value: Any, custom_serializers: SerializerMap | None = None) -> str:
     """Guarantee TEXT representation for span attributes."""
     if isinstance(value, str):
         return value
-    if isinstance(value, (int, float, bool, type(None))):
+    if isinstance(value, int | float | bool | type(None)):
         return str(value)
     return _any_to_text(value, custom_serializers)
 

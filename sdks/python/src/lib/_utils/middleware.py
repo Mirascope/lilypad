@@ -4,23 +4,23 @@ from __future__ import annotations
 
 import base64
 import logging
-from collections.abc import Callable, Generator
-from contextlib import _GeneratorContextManager, contextmanager
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
 from uuid import UUID
+from typing import TYPE_CHECKING, Any, TypeVar, NoReturn, ParamSpec, cast
+from contextlib import contextmanager, _GeneratorContextManager
+from collections.abc import Callable, Generator
 
 import orjson
-from mirascope.core import base as mb
-from mirascope.integrations import middleware_factory
-from mirascope.integrations._middleware_factory import AsyncFunc, SyncFunc
-from opentelemetry.trace import Span, SpanContext, Status, StatusCode, get_tracer
-from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
+from mirascope.core import base as mb
+from opentelemetry.trace import Span, Status, StatusCode, SpanContext, get_tracer
+from mirascope.integrations import middleware_factory
+from opentelemetry.util.types import AttributeValue
+from mirascope.integrations._middleware_factory import SyncFunc, AsyncFunc
 
-from .functions import ArgTypes, ArgValues
-from .json import fast_jsonable, json_dumps
+from .json import json_dumps, fast_jsonable
 from .settings import get_settings
+from .functions import ArgTypes, ArgValues
 
 if TYPE_CHECKING:
     from types.function_public import FunctionPublic
@@ -38,7 +38,7 @@ except ImportError:
     class PIL:
         class WebPImagePlugin:
             class WebPImageFile:
-                def save(self, *args, **kwargs):
+                def save(self, *args: Any, **kwargs: Any) -> NoReturn:
                     raise NotImplementedError("Pillow is not installed. Please install Pillow to use this feature.")
 
 
@@ -154,7 +154,7 @@ def encode_gemini_part(
     return part
 
 
-def safe_serialize(response_obj):
+def safe_serialize(response_obj: Any) -> str:
     """
     Safely serialize a Pydantic object containing Protobuf fields without using model_dump
     """
@@ -195,7 +195,7 @@ def recursive_process_value(value: Any) -> dict | list | str | int | float | boo
         return result
 
     # Handle basic types directly
-    if isinstance(value, (str, int, float, bool)):
+    if isinstance(value, str | int | float | bool):
         return value
 
     # Handle lists
@@ -244,7 +244,7 @@ def _set_response_model_attributes(  # noqa: D401
         response_obj: mb.BaseCallResponse | None = getattr(result, "_response", None)
         _set_call_response_attributes(response_obj, span, trace_type)
     else:
-        completion = result if isinstance(result, (str, int, float, bool)) else str(result)
+        completion = result if isinstance(result, str | int | float | bool) else str(result)
 
     attr_key = f"lilypad.{trace_type}."
     attributes = {f"{attr_key}response_model": completion}

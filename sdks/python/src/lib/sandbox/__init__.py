@@ -11,7 +11,7 @@ with suppress(ImportError):
 
 __all__ = [
     "DockerSandboxRunner",
-    "SubprocessSandboxRunner",
-    "SandboxRunner",
     "DockerSandboxRunner",
+    "SandboxRunner",
+    "SubprocessSandboxRunner",
 ]

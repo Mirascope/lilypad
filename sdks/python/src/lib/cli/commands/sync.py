@@ -9,16 +9,12 @@ import importlib
 from typing import Any, TypeAlias
 from pathlib import Path
 from textwrap import dedent
+from types.function_public import FunctionPublic
 
 import typer
 from rich import print
-from pydantic import TypeAdapter
 from rich.table import Table
 from rich.console import Console
-
-from ..._utils.client import get_sync_client
-from ..._utils.settings import get_settings
-from types.function_public import FunctionPublic
 
 from ...traces import (
     TRACE_MODULE_NAME,
@@ -27,7 +23,9 @@ from ...traces import (
     disable_recording,
     get_decorated_functions,
 )
+from ..._utils.client import get_sync_client
 from ..._utils.closure import Closure, _run_ruff
+from ..._utils.settings import get_settings
 
 app = typer.Typer()
 console = Console()
@@ -207,10 +205,7 @@ def _parse_return_type(signature_text: str) -> str:
         normalized = _normalize_signature(signature_text)
         module = ast.parse(normalized)
         func_def = module.body[0]
-        if func_def.returns is not None:  # pyright: ignore [reportAttributeAccessIssue]
-            ret = ast.unparse(func_def.returns).strip()  # pyright: ignore [reportAttributeAccessIssue]
-        else:
-            ret = "Any"
+        ret = ast.unparse(func_def.returns).strip() if func_def.returns is not None else "Any"  # pyright: ignore [reportAttributeAccessIssue]
         if DEBUG:
             print(f"[DEBUG] Parsed return type from normalized signature: {normalized} => {ret}")
         return ret
@@ -357,7 +352,6 @@ class {class_name}(Protocol):
     if DEBUG:
         print(f"[DEBUG] Generated stub content for function '{func_name}':\n{content}")
     return dedent(content)
-
 
 
 def sync_command(
