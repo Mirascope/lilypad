@@ -1,56 +1,56 @@
 paths:
   /ee/projects/{project_uuid}/annotations:
     get:
-      x-fern-sdk-group-name: [projects, annotations]
+      x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: list
     post:
       x-fern-sdk-group-name: [projects, annotations]
       x-fern-sdk-method-name: create
   /ee/projects/{project_uuid}/annotations/{annotation_uuid}:
     delete:
-      x-fern-sdk-group-name: [projects, annotations]
+      x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: delete
     patch:
       x-fern-sdk-group-name: [projects, annotations]
       x-fern-sdk-method-name: update
   /ee/projects/{project_uuid}/functions/{function_uuid}/annotations:
     get:
-      x-fern-sdk-group-name: [projects, functions, annotations]
+      x-fern-sdk-group-name: [ee, projects, functions, annotations]
       x-fern-sdk-method-name: list
   /ee/projects/{project_uuid}/spans/{span_uuid}/annotations:
     get:
-      x-fern-sdk-group-name: [projects, spans, annotations]
+      x-fern-sdk-group-name: [ee, projects, spans, annotations]
       x-fern-sdk-method-name: list
   /ee/projects/{project_uuid}/functions/{function_uuid}/annotations/metrics:
     get:
-      x-fern-sdk-group-name: [projects, functions, annotations]
+      x-fern-sdk-group-name: [ee, projects, functions, annotations]
       x-fern-sdk-method-name: getMetrics
   /ee/projects/{project_uuid}/spans/{span_uuid}/generate-annotation:
     get:
-      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-group-name: [ee, projects, spans]
       x-fern-sdk-method-name: generateAnnotation
   /ee/projects/{project_uuid}/functions/{function_uuid}/playground:
     post:
-      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-group-name: [ee, projects, functions]
       x-fern-sdk-method-name: runPlayground
   /ee/organizations/license:
     get:
-      x-fern-sdk-group-name: [organizations]
+      x-fern-sdk-group-name: [ee, organizations]
       x-fern-sdk-method-name: getLicense
   /ee/user-organizations/users:
     get:
-      x-fern-sdk-group-name: [organizations, users]
+      x-fern-sdk-group-name: [ee, organizations, users]
       x-fern-sdk-method-name: list
   /ee/user-organizations:
     get:
-      x-fern-sdk-group-name: [organizations]
+      x-fern-sdk-group-name: [ee, organizations]
       x-fern-sdk-method-name: list
     post:
-      x-fern-sdk-group-name: [organizations]
+      x-fern-sdk-group-name: [ee, organizations]
       x-fern-sdk-method-name: create
   /ee/user-organizations/{user_organization_uuid}:
     delete:
-      x-fern-sdk-group-name: [organizations]
+      x-fern-sdk-group-name: [ee, organizations]
       x-fern-sdk-method-name: delete
     patch:
       x-fern-sdk-group-name: [organizations]
