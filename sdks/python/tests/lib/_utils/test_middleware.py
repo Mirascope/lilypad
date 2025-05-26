@@ -375,7 +375,7 @@ async def test_handle_structured_stream_async_sets_attributes():
 def test_get_custom_context_manager():
     """Test _get_custom_context_manager function."""
     mock_function = MagicMock(spec=FunctionPublic)
-    mock_function.uuid = UUID("123e4567-e89b-12d3-a456-426614174123")
+    mock_function.uuid_ = UUID("123e4567-e89b-12d3-a456-426614174123")
     mock_function.signature = "def fn(param: str): pass"
     mock_function.code = "def fn(param: str):\n    return f'Hello {param}'"
     mock_function.version_num = 1
@@ -401,7 +401,7 @@ def test_get_custom_context_manager():
             expected_attributes = {
                 "lilypad.project_uuid": str(project_uuid),
                 "lilypad.is_async": is_async,
-                "lilypad.function.uuid": str(mock_function.uuid),
+                "lilypad.function.uuid": str(mock_function.uuid_),
                 "lilypad.type": "mirascope.v1",
                 "lilypad.function.name": fn_mock.__name__,
                 "lilypad.function.signature": mock_function.signature,

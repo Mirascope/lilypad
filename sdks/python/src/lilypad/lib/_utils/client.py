@@ -18,7 +18,6 @@ from ... import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
 from .settings import get_settings
 from ..exceptions import LilypadPaymentRequiredError
 from .call_safely import call_safely
-from ...environment import LilypadEnvironment
 from ...core.api_error import ApiError
 from ...errors.not_found_error import NotFoundError
 
@@ -198,7 +197,6 @@ class Lilypad(_BaseLilypad):
         self,
         *,
         base_url: str | None = None,
-        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
         api_key: str,
         token: str | typing.Callable[[], str] | None = None,
         timeout: float | None = None,
@@ -209,7 +207,6 @@ class Lilypad(_BaseLilypad):
 
         Args:
             base_url: The base URL for API requests
-            environment: The environment to use for requests
             api_key: API key for authentication (required)
             token: Optional token for additional authentication
             timeout: Request timeout in seconds
@@ -224,7 +221,6 @@ class Lilypad(_BaseLilypad):
             # Initialize the base client first
             super().__init__(
                 base_url=base_url,
-                environment=environment,
                 api_key=api_key,
                 token=token,
                 timeout=timeout,
@@ -278,7 +274,6 @@ class AsyncLilypad(_BaseAsyncLilypad):
         self,
         *,
         base_url: str | None = None,
-        environment: LilypadEnvironment = LilypadEnvironment.DEFAULT,
         api_key: str,
         token: str | typing.Callable[[], str] | None = None,
         timeout: float | None = None,
@@ -289,7 +284,6 @@ class AsyncLilypad(_BaseAsyncLilypad):
 
         Args:
             base_url: The base URL for API requests
-            environment: The environment to use for requests
             api_key: API key for authentication (required)
             token: Optional token for additional authentication
             timeout: Request timeout in seconds
@@ -304,7 +298,6 @@ class AsyncLilypad(_BaseAsyncLilypad):
             # Initialize the base client first
             super().__init__(
                 base_url=base_url,
-                environment=environment,
                 api_key=api_key,
                 token=token,
                 timeout=timeout,
