@@ -10,19 +10,19 @@ repos:
     rev: "v0.8.1"
     hooks:
       - id: ruff
-        name: ruff check for lilypad-app
+        name: bash -c 'cd app && ruff check for lilypad-app'
         files: "^app/lilypad|^app/tests"
         args: [--fix, --config=app/pyproject.toml]
       - id: ruff-format
-        name: ruff format for lilypad-app
+        name: bash -c 'cd app && ruff format for lilypad-app'
         files: "^app/lilypad|^app/tests"
         args: [--config=app/pyproject.toml]
       - id: ruff
-        name: ruff check for lilypad-sdk
+        name: bash -c 'cd sdks/python && ruff check for lilypad-sdk'
         files: "^sdks/python"
         args: [ --fix, --config=sdks/python/pyproject.toml ]
       - id: ruff-format
-        name: ruff format for lilypad-sdk
+        name: bash -c 'cd sdks/python && ruff format for lilypad-sdk'
         files: "^sdks/python"
         args: [ --config=sdks/python/pyproject.toml ]
   - repo: https://github.com/RobertCraigie/pyright-python
@@ -47,7 +47,7 @@ repos:
         files: "^sdks/python"
       - id: build-client
         name: build-client
-        entry: bash -c 'cd client && pnpm typecheck'
+        entry: bash -c 'cd app/client && pnpm typecheck'
         language: system
         pass_filenames: false
       - id: generate-openapi
