@@ -13,6 +13,9 @@ jobs:
   lints:
     name: Ruff, Pyright, and Codespell
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
 
     steps:
       - uses: actions/checkout@v3
@@ -24,8 +27,6 @@ jobs:
       - name: Set Up Python Environment
         run: uv python install 3.11
 
-      - name: change to the sdk directory
-        run: cd sdk/python
 
       - name: Restore uv cache
         uses: actions/cache@v4
