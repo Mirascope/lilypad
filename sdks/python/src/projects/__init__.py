@@ -2,6 +2,6 @@
 
 # isort: skip_file
 
-from . import annotations, environments, functions, spans, tags, traces
+from . import environments, functions, spans, tags, traces
 
-__all__ = ["annotations", "environments", "functions", "spans", "tags", "traces"]
+__all__ = ["environments", "functions", "spans", "tags", "traces"]

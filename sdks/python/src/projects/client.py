@@ -5,7 +5,6 @@ import typing
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.project_public import ProjectPublic
-from .annotations.client import AnnotationsClient, AsyncAnnotationsClient
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .functions.client import AsyncFunctionsClient, FunctionsClient
 from .raw_client import AsyncRawProjectsClient, RawProjectsClient
@@ -20,8 +19,6 @@ OMIT = typing.cast(typing.Any, ...)
 class ProjectsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._raw_client = RawProjectsClient(client_wrapper=client_wrapper)
-        self.annotations = AnnotationsClient(client_wrapper=client_wrapper)
-
         self.functions = FunctionsClient(client_wrapper=client_wrapper)
 
         self.spans = SpansClient(client_wrapper=client_wrapper)
@@ -203,8 +200,6 @@ class ProjectsClient:
 class AsyncProjectsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._raw_client = AsyncRawProjectsClient(client_wrapper=client_wrapper)
-        self.annotations = AsyncAnnotationsClient(client_wrapper=client_wrapper)
-
         self.functions = AsyncFunctionsClient(client_wrapper=client_wrapper)
 
         self.spans = AsyncSpansClient(client_wrapper=client_wrapper)
