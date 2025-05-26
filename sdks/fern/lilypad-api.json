@@ -7,12 +7,9 @@
   "paths": {
     "/ee/projects/{project_uuid}/annotations": {
       "post": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Create Annotations",
         "description": "Create an annotation.\n\nArgs:\n    project_uuid: The project UUID.\n    annotations_service: The annotation service.\n    project_service: The project service.\n    annotations_create: The annotation create model.\n\nReturns:\n    AnnotationPublic: The created annotation.\n\nRaises:\n    HTTPException: If the span has already been assigned to a user and has\n    not been labeled yet.",
-        "operationId": "create_annotations",
+        "operationId": "create_annotations_ee_projects__project_uuid__annotations_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -57,7 +54,7 @@
                   "items": {
                     "$ref": "#/components/schemas/AnnotationPublic"
                   },
-                  "title": "Response Create Annotations"
+                  "title": "Response Create Annotations Ee Projects  Project Uuid  Annotations Post"
                 }
               }
             }
@@ -75,12 +72,9 @@
         }
       },
       "get": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Get Annotations By Project",
         "description": "Get annotations by project.",
-        "operationId": "get_annotations_by_project",
+        "operationId": "get_annotations_by_project_ee_projects__project_uuid__annotations_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -131,12 +125,9 @@
     },
     "/ee/projects/{project_uuid}/annotations/{annotation_uuid}": {
       "patch": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Update Annotation",
         "description": "Update an annotation.",
-        "operationId": "update_annotation",
+        "operationId": "update_annotation_ee_projects__project_uuid__annotations__annotation_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -201,12 +192,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Delete Annotation",
         "description": "Delete an annotation.",
-        "operationId": "delete_annotation",
+        "operationId": "delete_annotation_ee_projects__project_uuid__annotations__annotation_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -264,12 +252,9 @@
     },
     "/ee/projects/{project_uuid}/functions/{function_uuid}/annotations": {
       "get": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Get Annotations By Functions",
         "description": "Get annotations by functions.",
-        "operationId": "get_annotations_by_functions",
+        "operationId": "get_annotations_by_functions_ee_projects__project_uuid__functions__function_uuid__annotations_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -330,12 +315,9 @@
     },
     "/ee/projects/{project_uuid}/spans/{span_uuid}/annotations": {
       "get": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Get Annotations By Spans",
         "description": "Get annotations by functions.",
-        "operationId": "get_annotations_by_spans",
+        "operationId": "get_annotations_by_spans_ee_projects__project_uuid__spans__span_uuid__annotations_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -396,12 +378,9 @@
     },
     "/ee/projects/{project_uuid}/functions/{function_uuid}/annotations/metrics": {
       "get": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Get Annotation Metrics By Function",
         "description": "Get annotation metrics by function.",
-        "operationId": "get_annotation_metrics_by_function",
+        "operationId": "get_annotation_metrics_by_function_ee_projects__project_uuid__functions__function_uuid__annotations_metrics_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -458,12 +437,9 @@
     },
     "/ee/projects/{project_uuid}/spans/{span_uuid}/generate-annotation": {
       "get": {
-        "tags": [
-          "Annotations"
-        ],
         "summary": "Generate Annotation",
         "description": "Stream function.",
-        "operationId": "generate_annotation",
+        "operationId": "generate_annotation_ee_projects__project_uuid__spans__span_uuid__generate_annotation_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -518,12 +494,9 @@
     },
     "/ee/projects/{project_uuid}/functions/{function_uuid}/playground": {
       "post": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Run Function in Playground",
         "description": "Executes a function with specified parameters in a secure playground environment.",
-        "operationId": "run_playground",
+        "operationId": "run_playground_ee_projects__project_uuid__functions__function_uuid__playground_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -630,12 +603,9 @@
     },
     "/ee/organizations/license": {
       "get": {
-        "tags": [
-          "Organizations"
-        ],
         "summary": "Get License",
         "description": "Get the license information for the organization",
-        "operationId": "get_license",
+        "operationId": "get_license_ee_organizations_license_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -660,12 +630,9 @@
     },
     "/ee/user-organizations/users": {
       "get": {
-        "tags": [
-          "UserOrganizations"
-        ],
         "summary": "Get Users By Organization",
         "description": "Get all users of an organization.",
-        "operationId": "get_users_by_organization",
+        "operationId": "get_users_by_organization_ee_user_organizations_users_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -694,12 +661,9 @@
     },
     "/ee/user-organizations": {
       "get": {
-        "tags": [
-          "UserOrganizations"
-        ],
         "summary": "Get User Organizations",
         "description": "Get all user organizations.",
-        "operationId": "get_user_organizations",
+        "operationId": "get_user_organizations_ee_user_organizations_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -726,12 +690,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "UserOrganizations"
-        ],
         "summary": "Create User Organization",
         "description": "Create user organization",
-        "operationId": "create_user_organization",
+        "operationId": "create_user_organization_ee_user_organizations_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -776,12 +737,9 @@
     },
     "/ee/user-organizations/{user_organization_uuid}": {
       "patch": {
-        "tags": [
-          "UserOrganizations"
-        ],
         "summary": "Update User Organization",
         "description": "Updates user organization",
-        "operationId": "update_user_organization",
+        "operationId": "update_user_organization_ee_user_organizations__user_organization_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -836,12 +794,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "UserOrganizations"
-        ],
         "summary": "Delete User Organizations",
         "description": "Delete user organization by uuid",
-        "operationId": "delete_user_organizations",
+        "operationId": "delete_user_organizations_ee_user_organizations__user_organization_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -889,12 +844,9 @@
     },
     "/api-keys": {
       "get": {
-        "tags": [
-          "APIKeys"
-        ],
         "summary": "Get Api Keys",
         "description": "Get an API keys.",
-        "operationId": "get_api_keys",
+        "operationId": "get_api_keys_api_keys_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -921,12 +873,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "APIKeys"
-        ],
         "summary": "Post Api Key",
         "description": "Create an API key and returns the full key.",
-        "operationId": "post_api_key",
+        "operationId": "post_api_key_api_keys_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -972,12 +921,9 @@
     },
     "/api-keys/{api_key_uuid}": {
       "delete": {
-        "tags": [
-          "APIKeys"
-        ],
         "summary": "Delete Api Key",
         "description": "Delete an API key.",
-        "operationId": "delete_api_key",
+        "operationId": "delete_api_key_api_keys__api_key_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1025,12 +971,9 @@
     },
     "/webhooks/stripe": {
       "post": {
-        "tags": [
-          "Billing"
-        ],
         "summary": "Stripe Webhook",
         "description": "Handle Stripe webhook events.\n\nThis endpoint receives webhook events from Stripe and updates the billing records.",
-        "operationId": "stripe_webhook",
+        "operationId": "stripe_webhook_webhooks_stripe_post",
         "parameters": [
           {
             "name": "Stripe-Signature",
@@ -1075,12 +1018,9 @@
     },
     "/projects/{project_uuid}/functions/name/{function_name}/version/{version_num}": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Function By Version",
         "description": "Get function by name.",
-        "operationId": "get_function_by_version",
+        "operationId": "get_function_by_version_projects__project_uuid__functions_name__function_name__version__version_num__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1145,12 +1085,9 @@
     },
     "/projects/{project_uuid}/functions/name/{function_name}": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Functions By Name",
         "description": "Get function by name.",
-        "operationId": "get_functions_by_name",
+        "operationId": "get_functions_by_name_projects__project_uuid__functions_name__function_name__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1210,12 +1147,9 @@
     },
     "/projects/{project_uuid}/functions/name/{function_name}/environments": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Deployed Function By Names",
         "description": "Get the deployed function by function name and environment name.",
-        "operationId": "get_deployed_function_by_names",
+        "operationId": "get_deployed_function_by_names_projects__project_uuid__functions_name__function_name__environments_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1271,12 +1205,9 @@
     },
     "/projects/{project_uuid}/versioned-functions": {
       "post": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Create Versioned Function",
         "description": "Create a managed function.",
-        "operationId": "create_versioned_function",
+        "operationId": "create_versioned_function_projects__project_uuid__versioned_functions_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1333,12 +1264,9 @@
     },
     "/projects/{project_uuid}/functions/metadata/names": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Unique Function Names",
         "description": "Get all unique function names.",
-        "operationId": "get_unique_function_names",
+        "operationId": "get_unique_function_names_projects__project_uuid__functions_metadata_names_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1389,12 +1317,9 @@
     },
     "/projects/{project_uuid}/functions/metadata/names/versions": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Latest Version Unique Function Names",
         "description": "Get all unique function names.",
-        "operationId": "get_latest_version_unique_function_names",
+        "operationId": "get_latest_version_unique_function_names_projects__project_uuid__functions_metadata_names_versions_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1445,12 +1370,9 @@
     },
     "/projects/{project_uuid}/functions/hash/{function_hash}": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Function By Hash",
         "description": "Get function by hash.",
-        "operationId": "get_function_by_hash",
+        "operationId": "get_function_by_hash_projects__project_uuid__functions_hash__function_hash__get",
         "security": [
           {
             "APIKeyHeader": []
@@ -1506,12 +1428,9 @@
     },
     "/projects/{project_uuid}/functions": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Functions",
         "description": "Grab all functions.",
-        "operationId": "get_functions",
+        "operationId": "get_functions_projects__project_uuid__functions_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1560,12 +1479,9 @@
         }
       },
       "post": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Create New Function",
         "description": "Create a new function version.",
-        "operationId": "create_new_function",
+        "operationId": "create_new_function_projects__project_uuid__functions_post",
         "security": [
           {
             "APIKeyHeader": []
@@ -1622,12 +1538,9 @@
     },
     "/projects/{project_uuid}/functions/{function_uuid}": {
       "get": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Get Function",
         "description": "Grab function by UUID.",
-        "operationId": "get_function",
+        "operationId": "get_function_projects__project_uuid__functions__function_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1682,12 +1595,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Update Function",
         "description": "Update a function.",
-        "operationId": "update_function",
+        "operationId": "update_function_projects__project_uuid__functions__function_uuid__patch",
         "security": [
           {
             "APIKeyHeader": []
@@ -1752,12 +1662,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Archive Function",
         "description": "Archive a function and delete spans by function UUID.",
-        "operationId": "archive_function",
+        "operationId": "archive_function_projects__project_uuid__functions__function_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1815,12 +1722,9 @@
     },
     "/projects/{project_uuid}/functions/names/{function_name}": {
       "delete": {
-        "tags": [
-          "Functions"
-        ],
         "summary": "Archive Functions By Name",
         "description": "Archive a function by name and delete spans by function name.",
-        "operationId": "archive_functions_by_name",
+        "operationId": "archive_functions_by_name_projects__project_uuid__functions_names__function_name__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1877,12 +1781,9 @@
     },
     "/organizations-invites/": {
       "get": {
-        "tags": [
-          "OrganizationInvites"
-        ],
         "summary": "Get Organization Invites",
         "description": "Get an organization invite.",
-        "operationId": "get_organization_invites",
+        "operationId": "get_organization_invites_organizations_invites__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1911,12 +1812,9 @@
     },
     "/organizations-invites/{invite_token}": {
       "get": {
-        "tags": [
-          "OrganizationInvites"
-        ],
         "summary": "Get Organization Invite",
         "description": "Get an organization invite.",
-        "operationId": "get_organization_invite",
+        "operationId": "get_organization_invite_organizations_invites__invite_token__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -1962,12 +1860,9 @@
     },
     "/organizations-invites": {
       "post": {
-        "tags": [
-          "OrganizationInvites"
-        ],
         "summary": "Create Organization Invite",
         "description": "Create an organization invite.",
-        "operationId": "create_organization_invite",
+        "operationId": "create_organization_invite_organizations_invites_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2012,12 +1907,9 @@
     },
     "/organizations-invites/{organization_invite_uuid}": {
       "delete": {
-        "tags": [
-          "OrganizationInvites"
-        ],
         "summary": "Remove Organization Invite",
         "description": "Remove an organization invite.",
-        "operationId": "remove_organization_invite",
+        "operationId": "remove_organization_invite_organizations_invites__organization_invite_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2065,12 +1957,9 @@
     },
     "/projects": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
         "summary": "Get Projects",
         "description": "Get all projects.",
-        "operationId": "get_projects",
+        "operationId": "get_projects_projects_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2097,12 +1986,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "Projects"
-        ],
         "summary": "Create Project",
         "description": "Create a project",
-        "operationId": "create_project",
+        "operationId": "create_project_projects_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2147,12 +2033,9 @@
     },
     "/projects/{project_uuid}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
         "summary": "Get Project",
         "description": "Get a project.",
-        "operationId": "get_project",
+        "operationId": "get_project_projects__project_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2197,12 +2080,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "Projects"
-        ],
         "summary": "Patch Project",
         "description": "Update a project.",
-        "operationId": "patch_project",
+        "operationId": "patch_project_projects__project_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2257,12 +2137,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
         "summary": "Delete Project",
         "description": "Delete a project",
-        "operationId": "delete_project",
+        "operationId": "delete_project_projects__project_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2310,12 +2187,9 @@
     },
     "/spans/{span_uuid}": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Get Span",
         "description": "Get span by uuid.",
-        "operationId": "get_span",
+        "operationId": "get_span_spans__span_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2360,12 +2234,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Update Span",
         "description": "Update span by uuid.",
-        "operationId": "update_span",
+        "operationId": "update_span_spans__span_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2422,12 +2293,9 @@
     },
     "/projects/{project_uuid}/spans/metadata": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Get Aggregates By Project Uuid",
         "description": "Get aggregated span by project uuid.",
-        "operationId": "get_aggregates_by_project_uuid",
+        "operationId": "get_aggregates_by_project_uuid_projects__project_uuid__spans_metadata_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2486,12 +2354,9 @@
     },
     "/projects/{project_uuid}/spans/{span_id}": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Get Span By Span Id",
         "description": "Get span by project_uuid and span_id.",
-        "operationId": "get_span_by_span_id",
+        "operationId": "get_span_by_span_id_projects__project_uuid__spans__span_id__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2547,12 +2412,9 @@
     },
     "/projects/{project_uuid}/functions/{function_uuid}/spans/metadata": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Get Aggregates By Function Uuid",
         "description": "Get aggregated span by function uuid.",
-        "operationId": "get_aggregates_by_function_uuid",
+        "operationId": "get_aggregates_by_function_uuid_projects__project_uuid__functions__function_uuid__spans_metadata_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2621,12 +2483,9 @@
     },
     "/projects/{project_uuid}/spans": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Search Traces",
         "description": "Search for traces in OpenSearch.",
-        "operationId": "search_traces",
+        "operationId": "search_traces_projects__project_uuid__spans_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2767,12 +2626,9 @@
     },
     "/projects/{project_uuid}/spans/{span_uuid}": {
       "delete": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Delete Spans",
         "description": "Delete spans by UUID.",
-        "operationId": "delete_spans",
+        "operationId": "delete_spans_projects__project_uuid__spans__span_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2830,12 +2686,9 @@
     },
     "/projects/{project_uuid}/functions/{function_uuid}/spans/paginated": {
       "get": {
-        "tags": [
-          "Spans"
-        ],
         "summary": "Get Spans By Function Uuid Paginated",
         "description": "Get spans for a function with pagination (new, non-breaking).",
-        "operationId": "get_spans_by_function_uuid_paginated",
+        "operationId": "get_spans_by_function_uuid_paginated_projects__project_uuid__functions__function_uuid__spans_paginated_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2933,12 +2786,9 @@
     },
     "/projects/{project_uuid}/traces/{span_id}/root": {
       "get": {
-        "tags": [
-          "Traces"
-        ],
         "summary": "Get Trace By Span Uuid",
         "description": "Get traces by project UUID.",
-        "operationId": "get_trace_by_span_uuid",
+        "operationId": "get_trace_by_span_uuid_projects__project_uuid__traces__span_id__root_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2994,12 +2844,9 @@
     },
     "/projects/{project_uuid}/traces": {
       "get": {
-        "tags": [
-          "Traces"
-        ],
         "summary": "Get Traces By Project Uuid",
         "description": "Get traces by project UUID.",
-        "operationId": "get_traces_by_project_uuid",
+        "operationId": "get_traces_by_project_uuid_projects__project_uuid__traces_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3085,12 +2932,9 @@
         }
       },
       "post": {
-        "tags": [
-          "Traces"
-        ],
         "summary": "Traces",
         "description": "Create span traces.",
-        "operationId": "traces",
+        "operationId": "traces_projects__project_uuid__traces_post",
         "security": [
           {
             "APIKeyHeader": []
@@ -3141,12 +2985,9 @@
     },
     "/auth/github/callback": {
       "get": {
-        "tags": [
-          "GitHub"
-        ],
         "summary": "Github Callback",
         "description": "Callback for GitHub OAuth.\n\nSaves the user and organization or retrieves the user after authenticating\nwith GitHub.",
-        "operationId": "github_callback",
+        "operationId": "github_callback_auth_github_callback_get",
         "parameters": [
           {
             "name": "code",
@@ -3184,12 +3025,9 @@
     },
     "/auth/google/callback": {
       "get": {
-        "tags": [
-          "Google"
-        ],
         "summary": "Google Callback",
         "description": "Callback for Google OAuth.\n\nSaves the user and organization or retrieves the user after authenticating\nwith Google.",
-        "operationId": "google_callback",
+        "operationId": "google_callback_auth_google_callback_get",
         "parameters": [
           {
             "name": "code",
@@ -3227,12 +3065,9 @@
     },
     "/users/{activeOrganizationUuid}": {
       "put": {
-        "tags": [
-          "Users"
-        ],
         "summary": "Update User Active Organization Id",
         "description": "Update users active organization uuid.",
-        "operationId": "update_user_active_organization_id",
+        "operationId": "update_user_active_organization_id_users__activeOrganizationUuid__put",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3279,12 +3114,9 @@
     },
     "/users": {
       "patch": {
-        "tags": [
-          "Users"
-        ],
         "summary": "Update User Keys",
         "description": "Update users keys.",
-        "operationId": "update_user_keys",
+        "operationId": "update_user_keys_users_patch",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3330,12 +3162,9 @@
     },
     "/current-user": {
       "get": {
-        "tags": [
-          "Users"
-        ],
         "summary": "Get User",
         "description": "Get user.",
-        "operationId": "get_user",
+        "operationId": "get_user_current_user_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3360,12 +3189,9 @@
     },
     "/organizations": {
       "post": {
-        "tags": [
-          "Organizations"
-        ],
         "summary": "Create Organization",
         "description": "Create an organization.",
-        "operationId": "create_organization",
+        "operationId": "create_organization_organizations_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3408,12 +3234,9 @@
         ]
       },
       "delete": {
-        "tags": [
-          "Organizations"
-        ],
         "summary": "Delete Organization",
         "description": "Delete an organization.",
-        "operationId": "delete_organization",
+        "operationId": "delete_organization_organizations_delete",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3436,12 +3259,9 @@
         ]
       },
       "patch": {
-        "tags": [
-          "Organizations"
-        ],
         "summary": "Update Organization",
         "description": "Update an organization.",
-        "operationId": "update_organization",
+        "operationId": "update_organization_organizations_patch",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3486,12 +3306,9 @@
     },
     "/external-api-keys": {
       "get": {
-        "tags": [
-          "ExternalAPIKeys"
-        ],
         "summary": "List External Api Keys",
         "description": "List all external API keys for the user with masked values.",
-        "operationId": "list_external_api_keys",
+        "operationId": "list_external_api_keys_external_api_keys_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3518,12 +3335,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "ExternalAPIKeys"
-        ],
         "summary": "Store External Api Key",
         "description": "Store an external API key for a given service.",
-        "operationId": "store_external_api_key",
+        "operationId": "store_external_api_key_external_api_keys_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3568,12 +3382,9 @@
     },
     "/external-api-keys/{service_name}": {
       "get": {
-        "tags": [
-          "ExternalAPIKeys"
-        ],
         "summary": "Get External Api Key",
         "description": "Retrieve an external API key for a given service.",
-        "operationId": "get_external_api_key",
+        "operationId": "get_external_api_key_external_api_keys__service_name__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3617,12 +3428,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "ExternalAPIKeys"
-        ],
         "summary": "Update External Api Key",
         "description": "Update users keys.",
-        "operationId": "update_external_api_key",
+        "operationId": "update_external_api_key_external_api_keys__service_name__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3676,12 +3484,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "ExternalAPIKeys"
-        ],
         "summary": "Delete External Api Key",
         "description": "Delete an external API key for a given service.",
-        "operationId": "delete_external_api_key",
+        "operationId": "delete_external_api_key_external_api_keys__service_name__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3728,12 +3533,9 @@
     },
     "/environments": {
       "get": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Get Environments",
         "description": "Get all environments for a project.",
-        "operationId": "get_environments",
+        "operationId": "get_environments_environments_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3760,12 +3562,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Create Environment",
         "description": "Create a new environment.",
-        "operationId": "create_environment",
+        "operationId": "create_environment_environments_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3810,12 +3609,9 @@
     },
     "/environments/{environment_uuid}": {
       "get": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Get Environment",
         "description": "Get environment by UUID.",
-        "operationId": "get_environment",
+        "operationId": "get_environment_environments__environment_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3860,12 +3656,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Delete Environment",
         "description": "Delete an environment.",
-        "operationId": "delete_environment",
+        "operationId": "delete_environment_environments__environment_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -3913,12 +3706,9 @@
     },
     "/projects/{project_uuid}/environments/{environment_uuid}/deploy": {
       "post": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Deploy Function",
         "description": "Deploy a function to an environment.",
-        "operationId": "deploy_function",
+        "operationId": "deploy_function_projects__project_uuid__environments__environment_uuid__deploy_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4001,12 +3791,9 @@
     },
     "/projects/{project_uuid}/environments/{environment_uuid}/deployment": {
       "get": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Get Active Deployment",
         "description": "Get active deployment for an environment.",
-        "operationId": "get_active_deployment",
+        "operationId": "get_active_deployment_projects__project_uuid__environments__environment_uuid__deployment_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4063,12 +3850,9 @@
     },
     "/projects/{project_uuid}/environments/{environment_uuid}/function": {
       "get": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Get Environment Function",
         "description": "Get the currently active function for an environment.",
-        "operationId": "get_environment_function",
+        "operationId": "get_environment_function_projects__project_uuid__environments__environment_uuid__function_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4125,12 +3909,9 @@
     },
     "/projects/{project_uuid}/environments/{environment_uuid}/history": {
       "get": {
-        "tags": [
-          "Environments"
-        ],
         "summary": "Get Deployment History",
         "description": "Get deployment history for an environment.",
-        "operationId": "get_deployment_history",
+        "operationId": "get_deployment_history_projects__project_uuid__environments__environment_uuid__history_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4191,12 +3972,9 @@
     },
     "/user-consents": {
       "post": {
-        "tags": [
-          "UserConsents"
-        ],
         "summary": "Post User Consent",
         "description": "Store user consent.",
-        "operationId": "post_user_consent",
+        "operationId": "post_user_consent_user_consents_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4241,12 +4019,9 @@
     },
     "/user-consents/{user_consent_uuid}": {
       "patch": {
-        "tags": [
-          "UserConsents"
-        ],
         "summary": "Update User Consent",
         "description": "Update user consent.",
-        "operationId": "update_user_consent",
+        "operationId": "update_user_consent_user_consents__user_consent_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4303,12 +4078,9 @@
     },
     "/tags": {
       "get": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Get Tags",
         "description": "Get all tags.",
-        "operationId": "get_tags",
+        "operationId": "get_tags_tags_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4335,12 +4107,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Create Tag",
         "description": "Create a tag",
-        "operationId": "create_tag",
+        "operationId": "create_tag_tags_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4385,12 +4154,9 @@
     },
     "/projects/{project_uuid}/tags": {
       "get": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Get Tags By Project",
         "description": "Get all tags by project.",
-        "operationId": "get_tags_by_project",
+        "operationId": "get_tags_by_project_projects__project_uuid__tags_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4441,12 +4207,9 @@
     },
     "/tags/{tag_uuid}": {
       "get": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Get Tag",
         "description": "Get a tag.",
-        "operationId": "get_tag",
+        "operationId": "get_tag_tags__tag_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4491,12 +4254,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Patch Tag",
         "description": "Update a tag.",
-        "operationId": "patch_tag",
+        "operationId": "patch_tag_tags__tag_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4551,12 +4311,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Tags"
-        ],
         "summary": "Delete Tag",
         "description": "Delete a tag",
-        "operationId": "delete_tag",
+        "operationId": "delete_tag_tags__tag_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4604,12 +4361,9 @@
     },
     "/comments": {
       "get": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Get Comments",
         "description": "Get all comments.",
-        "operationId": "get_comments",
+        "operationId": "get_comments_comments_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4636,12 +4390,9 @@
         ]
       },
       "post": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Create Comment",
         "description": "Create a comment",
-        "operationId": "create_comment",
+        "operationId": "create_comment_comments_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4686,12 +4437,9 @@
     },
     "/spans/{span_uuid}/comments": {
       "get": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Get Comments By Spans",
         "description": "Get all comments by span.",
-        "operationId": "get_comments_by_spans",
+        "operationId": "get_comments_by_spans_spans__span_uuid__comments_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4742,12 +4490,9 @@
     },
     "/comments/{comment_uuid}": {
       "get": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Get Comment",
         "description": "Get a comment.",
-        "operationId": "get_comment",
+        "operationId": "get_comment_comments__comment_uuid__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4792,12 +4537,9 @@
         }
       },
       "patch": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Patch Comment",
         "description": "Update a comment.",
-        "operationId": "patch_comment",
+        "operationId": "patch_comment_comments__comment_uuid__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4852,12 +4594,9 @@
         }
       },
       "delete": {
-        "tags": [
-          "Comments"
-        ],
         "summary": "Delete Comment",
         "description": "Delete a comment",
-        "operationId": "delete_comment",
+        "operationId": "delete_comment_comments__comment_uuid__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -4905,12 +4644,9 @@
     },
     "/settings": {
       "get": {
-        "tags": [
-          "Settings"
-        ],
         "summary": "Get Settings Client",
         "description": "Get the configuration.",
-        "operationId": "get_settings_client",
+        "operationId": "get_settings_client_settings_get",
         "responses": {
           "200": {
             "description": "Successful Response",
