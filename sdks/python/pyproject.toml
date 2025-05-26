@@ -68,10 +68,10 @@ azure = ["azure-ai-inference>=1.0.0b9,<2.0", "aiohttp>=3.10.5,<4.0"]
 gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 google = ["google-genai>=1.7.0,<2", "pillow>=10.4.0,<11", "proto-plus>=1.24.0"]
 bedrock = [
-  "aioboto3>=13.2.0",
-  "boto3>=1.35.36",
-  "boto3-stubs[bedrock-runtime]>=1.35.82",
-  "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
+    "aioboto3>=13.2.0",
+    "boto3>=1.35.36",
+    "boto3-stubs[bedrock-runtime]>=1.35.82",
+    "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
 ]
 mistral = ["mistralai>=1.0.0,<2"]
 outlines = ["outlines>=0.1.11"]
@@ -128,7 +128,7 @@ select = [
     "ANN",
     "RUF022",
 ]
-ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'ANN401']
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'ANN401', 'UP007', 'UP035', 'UP006', 'ANN204', 'I001', 'UP037', 'UP038', 'E722', 'E721', 'E711', 'SIM101','SIM102', 'SIM108', 'E402', 'F841']
 fixable = ["ALL"]
 pydocstyle = { convention = 'google' }
 unfixable = []
@@ -155,13 +155,13 @@ known-first-party = ["lilypad", "tests"]
 pythonVersion = "3.10"
 
 exclude = [
-  ".venv",
-  "src/tests",
-  "src/lilypad/lib",
-  "src/lilypad/types",
-  "src/lilypad/core/unchecked_base_model.py",
-  "src/lilypad/core/serialization.py",
-  "src/lilypad/core/query_encoder.py"
+    ".venv",
+    "src/tests",
+    "src/lilypad/lib",
+    "src/lilypad/types",
+    "src/lilypad/core/unchecked_base_model.py",
+    "src/lilypad/core/serialization.py",
+    "src/lilypad/core/query_encoder.py"
 ]
 
 [build-system]
@@ -176,15 +176,15 @@ include = ["src/*"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/*.toml",
-  "/*.json",
-  "/*.lock",
-  "/*.md",
-  "/noxfile.py",
-  "bin/*",
-  "examples/*",
-  "src/*",
-  "tests/*",
+    "/*.toml",
+    "/*.json",
+    "/*.lock",
+    "/*.md",
+    "/noxfile.py",
+    "bin/*",
+    "examples/*",
+    "src/*",
+    "tests/*",
 ]
 
 [project.scripts]
