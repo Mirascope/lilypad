@@ -42,7 +42,7 @@ _DEFAULT_DEPLOY_TTL = 30.0  # seconds
 def get_function_by_hash_sync(project_uuid: str, function_hash: str) -> FunctionPublic:
     """Synchronous, cached `retrieve_by_hash`."""
     client = get_sync_client()
-    return client.projects.functions.retrieve_by_hash(
+    return client.projects.functions.get_by_hash(
         project_uuid=project_uuid,
         function_hash=function_hash,
     )
@@ -59,7 +59,7 @@ async def get_function_by_hash_async(project_uuid: str, function_hash: str) -> F
             return _hash_async_cache[key]
 
         client = get_async_client()
-        fn = await client.projects.functions.retrieve_by_hash(
+        fn = await client.projects.functions.get_by_hash(
             project_uuid=project_uuid,
             function_hash=function_hash,
         )
@@ -75,7 +75,7 @@ def get_function_by_version_sync(
 ) -> FunctionPublic:
     """Synchronous, cached `retrieve_by_version`."""
     client = get_sync_client()
-    return client.projects.functions.name.retrieve_by_version(
+    return client.projects.functions.get_by_version(
         project_uuid=project_uuid,
         function_name=function_name,
         version_num=version_num,
@@ -97,7 +97,7 @@ async def get_function_by_version_async(
             return _version_async_cache[key]
 
         client = get_async_client()
-        fn = await client.projects.functions.name.retrieve_by_version(
+        fn = await client.projects.functions.get_by_version(
             project_uuid=project_uuid,
             function_name=function_name,
             version_num=version_num,
@@ -127,7 +127,7 @@ def get_deployed_function_sync(
                 return fn
 
     client = get_sync_client()
-    fn = client.projects.functions.name.retrieve_deployed(
+    fn = client.projects.functions.get_deployed_environments(
         project_uuid=project_uuid,
         function_name=function_name,
     )
@@ -160,7 +160,7 @@ async def get_deployed_function_async(
                 return entry[1]
 
         client = get_async_client()
-        fn = await client.projects.functions.name.retrieve_deployed(
+        fn = await client.projects.functions.get_deployed_environments(
             project_uuid=project_uuid,
             function_name=function_name,
         )

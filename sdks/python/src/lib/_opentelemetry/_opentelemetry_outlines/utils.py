@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from opentelemetry.trace import Span
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad.lib._utils.json import json_dumps
+from lib._utils import json_dumps
 
 P = ParamSpec("P")
 

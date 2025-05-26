@@ -103,11 +103,14 @@ exclude = [
     "node_modules",
     "venv",
 ]
-line-length = 88
+line-length = 120
+output-format = "grouped"
 target-version = "py310"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"tests/**.py" = ["T201", "T203"]
+"tests/lib/**.py" = ["ARG", "F401"]
 
 [tool.ruff.lint]
 select = [
@@ -136,10 +139,30 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+docstring-code-format = true
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"functools.lru_cache".msg = "This function does not retain type information for the wrapped function's arguments; The `lru_cache` function from `_utils` should be used instead"
+
+[tool.ruff.lint.isort]
+length-sort = true
+length-sort-straight = true
+combine-as-imports = true
+extra-standard-library = ["typing_extensions"]
+known-first-party = ["lilypad", "tests"]
 
 [tool.pyright]
-venvPath = "."
-venv = ".venv"
+pythonVersion = "3.10"
+
+exclude = [
+  ".venv",
+  "tests",
+  "src/lib",
+  "src/types",
+  "src/core/unchecked_base_model.py",
+  "src/core/serialization.py",
+  "src/core/query_encoder.py"
+]
 
 [build-system]
 requires = ["hatchling"]

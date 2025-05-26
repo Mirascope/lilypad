@@ -2,34 +2,38 @@
 
 from __future__ import annotations
 
-import time
+import importlib.util
+import logging
 import queue
 import random
-import logging
 import threading
-import importlib.util
-from typing import Any
-from secrets import token_bytes
+import time
+from collections.abc import Sequence
 from contextlib import contextmanager
 from contextvars import copy_context
-from collections.abc import Sequence
+from secrets import token_bytes
+from typing import Any
 
-from pydantic import TypeAdapter
 from opentelemetry import trace
-from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
-from opentelemetry.sdk.trace import IdGenerator, ReadableSpan, TracerProvider
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
     SpanExporter,
     SpanExportResult,
-    BatchSpanProcessor,
 )
+from opentelemetry.sdk.trace.id_generator import IdGenerator
+from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
+from pydantic import TypeAdapter
 
-from .exceptions import LilypadException
-from ._utils.client import get_sync_client
-from ._utils.settings import get_settings, _set_settings, _current_settings, _default_settings
-from ._utils.otel_debug import wrap_batch_processor
 from ..types.span_public import SpanPublic
-
+from ._utils.client import get_sync_client
+from ._utils.otel_debug import wrap_batch_processor
+from ._utils.settings import (
+    _current_settings,
+    _set_settings,
+    get_settings,
+)
+from .exceptions import LilypadException
 
 try:
     from rich.logging import RichHandler as LogHandler
@@ -111,7 +115,7 @@ class _JSONSpanExporter(SpanExporter):
     def _send_once(self, payload: list[dict[str, Any]]) -> list[SpanPublic] | None:
         """Send once; return list[SpanPublic] if the API accepted the batch."""
         try:
-            raw_response = self.client.projects.traces.create(project_uuid=self.settings.project_id, extra_body=payload)
+            raw_response = self.client.projects.traces.create(project_uuid=self.settings.project_id, request_options={"additional_body_parameters": payload}) # pyright: ignore[reportArgumentType]
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return None
@@ -148,7 +152,7 @@ class _JSONSpanExporter(SpanExporter):
 
     def shutdown(self) -> None:
         self._stop.set()
-        self._q.put(None)
+        self._q.put(None)  # pyright: ignore[reportArgumentType]
         self._worker.join(timeout=5)
         if self._worker.is_alive():
             self.log.warning("Worker did not exit in time – dropping remaining spans")
@@ -209,7 +213,7 @@ class _JSONSpanExporter(SpanExporter):
             "end_time": span.end_time,
             "attributes": dict(span.attributes.items()) if span.attributes else {},
             "status": span.status.status_code.name,
-            "session_id": span.attributes.get("lilypad.session_id"),
+            "session_id": span.attributes.get("lilypad.session_id") if span.attributes else None,
             "events": [
                 {
                     "name": event.name,
