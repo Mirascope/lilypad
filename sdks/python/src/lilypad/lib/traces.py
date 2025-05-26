@@ -518,7 +518,7 @@ def _set_span_attributes(
     if decorator_tags is not None:
         span_attribute["lilypad.trace.tags"] = decorator_tags
     if function:
-        function_uuid = function.uuid
+        function_uuid = function.uuid_
         span_attribute[f"lilypad.{trace_type}.signature"] = function.signature
         span_attribute[f"lilypad.{trace_type}.code"] = function.code
     else:
@@ -720,7 +720,7 @@ def trace(
                     else:
                         function = None
 
-                    function_uuid = function.uuid if function else None
+                    function_uuid = function.uuid_ if function else None
 
                     trace_attribute = _construct_trace_attributes(
                         trace_type=_get_trace_type(function),
@@ -887,7 +887,7 @@ def trace(
 
                     function = get_or_create_function_sync() if versioning == "automatic" else None
 
-                    function_uuid = function.uuid if function else None
+                    function_uuid = function.uuid_ if function else None
 
                     trace_attribute = _construct_trace_attributes(
                         trace_type=_get_trace_type(function),

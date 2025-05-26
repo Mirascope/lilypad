@@ -122,7 +122,7 @@ def local_command(
             if _wait_for_server(lilypad_client):
                 project = lilypad_client.post_project(project_name)
                 with open(config_path, "w") as f:
-                    data["project_uuid"] = str(project.uuid)
+                    data["project_uuid"] = str(project.uuid_)
                     json.dump(data, f, indent=4)
         except KeyboardInterrupt:
             print("Shutting down...")

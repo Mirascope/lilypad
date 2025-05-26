@@ -199,7 +199,7 @@ _CLOSURE_CACHE: Final[_LRU[Closure]] = _LRU(_MAX_ENTRIES)
 
 def get_cached_closure(function: FunctionPublic) -> Closure:
     """Return a `Closure` for *function*, caching by its UUID."""
-    key = str(function.uuid)
+    key = str(function.uuid_)
 
     def _build() -> Closure:
         return Closure(

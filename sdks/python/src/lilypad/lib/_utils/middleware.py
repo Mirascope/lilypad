@@ -98,7 +98,7 @@ def _get_custom_context_manager(
             if decorator_tags is not None:
                 attributes["lilypad.trace.tags"] = decorator_tags
             attribute_type = "mirascope.v1"
-            attributes["lilypad.function.uuid"] = str(function.uuid)
+            attributes["lilypad.function.uuid"] = str(function.uuid_)
             attributes["lilypad.function.name"] = fn.__name__
             attributes["lilypad.function.signature"] = function.signature
             attributes["lilypad.function.code"] = function.code
