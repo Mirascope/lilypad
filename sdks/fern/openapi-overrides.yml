@@ -4,14 +4,14 @@ paths:
       x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: list
     post:
-      x-fern-sdk-group-name: [projects, annotations]
+      x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: create
   /ee/projects/{project_uuid}/annotations/{annotation_uuid}:
     delete:
       x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: delete
     patch:
-      x-fern-sdk-group-name: [projects, annotations]
+      x-fern-sdk-group-name: [ee, projects, annotations]
       x-fern-sdk-method-name: update
   /ee/projects/{project_uuid}/functions/{function_uuid}/annotations:
     get:
