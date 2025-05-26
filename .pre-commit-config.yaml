@@ -6,6 +6,7 @@ repos:
         additional_dependencies:
           - tomli
         exclude: "client/pnpm-lock.yaml|docs/pnpm-lock.yaml"
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.8.1"
     hooks:
@@ -23,23 +24,23 @@ repos:
         name: ruff check for lilypad-sdk
         entry: bash -c 'cd sdks/python && ruff check .'
         files: "^sdks/python"
-        args: [ --fix, --config=sdks/python/pyproject.toml ]
+        args: [--fix, --config=sdks/python/pyproject.toml]
       - id: ruff-format
-        name: ruff format for lilypad-sdk'
+        name: ruff format for lilypad-sdk
         entry: bash -c 'cd sdks/python && ruff format .'
         files: "^sdks/python"
-        args: [ --config=sdks/python/pyproject.toml ]
+        args: [--config=sdks/python/pyproject.toml]
+
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.396
     hooks:
       - id: pyright
-        name: pyright for lilypad-sdk'
-        entry: bash -c 'cd sdks/python && pyright .'
+        name: pyright for lilypad-sdk
+        entry: bash -c 'cd sdks/python && uv sync --all-extras --dev && uv run pyright .'
         files: "^sdks/python"
-      - id: pyright
-        name: pyright for lilypad-sdk'
-        entry: bash -c 'cd sdks/python && pyright .'
-        files: "^sdks/python"
+        types: [python]
+        pass_filenames: false
+
   - repo: local
     hooks:
       - id: tests-app
@@ -49,24 +50,28 @@ repos:
         types: [python]
         pass_filenames: false
         files: "^app/"
+
       - id: tests-sdk
         name: tests for sdk
-        entry: bash -c 'cd sdks/python && uv run pytest .'
+        entry: bash -c 'cd sdks/python && uv sync --all-extras --dev && uv pip install -e . && uv run pytest .'
         language: system
-        types: [ python ]
+        types: [python]
         pass_filenames: false
         files: "^sdks/python"
+
       - id: build-client
         name: build-client
         entry: bash -c 'cd app/client && pnpm typecheck'
         language: system
         pass_filenames: false
+
       - id: generate-openapi
         name: generate-openapi
         entry: bash -c 'cd app && uv run python scripts/generate_python_client_schema.py generate-openapi --output openapi.json'
         language: system
         files: "^app/"
         pass_filenames: false
+
 #      - id: generate-fern-sdk
 #        name: generate-fern-sdk
 #        entry: bash -c 'cp openapi.json sdks/fern/lilypad-api.json && cd sdks && bun run fern generate --group python-sdk'
