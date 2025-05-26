@@ -29,39 +29,6 @@ class AnnotationsClient:
         """
         return self._raw_client
 
-    def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[AnnotationPublic]:
-        """
-        Get annotations by project.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[AnnotationPublic]
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.projects.annotations.list(
-            project_uuid="project_uuid",
-        )
-        """
-        _response = self._raw_client.list(project_uuid, request_options=request_options)
-        return _response.data
-
     def create(
         self,
         project_uuid: str,
@@ -113,42 +80,6 @@ class AnnotationsClient:
         )
         """
         _response = self._raw_client.create(project_uuid, request=request, request_options=request_options)
-        return _response.data
-
-    def delete(
-        self, annotation_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> bool:
-        """
-        Delete an annotation.
-
-        Parameters
-        ----------
-        annotation_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        bool
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.projects.annotations.delete(
-            annotation_uuid="annotation_uuid",
-            project_uuid="project_uuid",
-        )
-        """
-        _response = self._raw_client.delete(annotation_uuid, project_uuid, request_options=request_options)
         return _response.data
 
     def update(
@@ -231,47 +162,6 @@ class AsyncAnnotationsClient:
         """
         return self._raw_client
 
-    async def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[AnnotationPublic]:
-        """
-        Get annotations by project.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[AnnotationPublic]
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.projects.annotations.list(
-                project_uuid="project_uuid",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.list(project_uuid, request_options=request_options)
-        return _response.data
-
     async def create(
         self,
         project_uuid: str,
@@ -331,50 +221,6 @@ class AsyncAnnotationsClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.create(project_uuid, request=request, request_options=request_options)
-        return _response.data
-
-    async def delete(
-        self, annotation_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> bool:
-        """
-        Delete an annotation.
-
-        Parameters
-        ----------
-        annotation_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        bool
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.projects.annotations.delete(
-                annotation_uuid="annotation_uuid",
-                project_uuid="project_uuid",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.delete(annotation_uuid, project_uuid, request_options=request_options)
         return _response.data
 
     async def update(

@@ -2,10 +2,10 @@
 
 import typing
 
-from ....core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from ....core.request_options import RequestOptions
-from ....types.annotation_metrics import AnnotationMetrics
-from ....types.annotation_public import AnnotationPublic
+from .....core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .....core.request_options import RequestOptions
+from .....types.annotation_metrics import AnnotationMetrics
+from .....types.annotation_public import AnnotationPublic
 from .raw_client import AsyncRawAnnotationsClient, RawAnnotationsClient
 
 
@@ -52,7 +52,7 @@ class AnnotationsClient:
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
-        client.projects.functions.annotations.list(
+        client.ee.projects.functions.annotations.list(
             project_uuid="project_uuid",
             function_uuid="function_uuid",
         )
@@ -88,7 +88,7 @@ class AnnotationsClient:
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
-        client.projects.functions.annotations.get_metrics(
+        client.ee.projects.functions.annotations.get_metrics(
             function_uuid="function_uuid",
             project_uuid="project_uuid",
         )
@@ -145,7 +145,7 @@ class AsyncAnnotationsClient:
 
 
         async def main() -> None:
-            await client.projects.functions.annotations.list(
+            await client.ee.projects.functions.annotations.list(
                 project_uuid="project_uuid",
                 function_uuid="function_uuid",
             )
@@ -189,7 +189,7 @@ class AsyncAnnotationsClient:
 
 
         async def main() -> None:
-            await client.projects.functions.annotations.get_metrics(
+            await client.ee.projects.functions.annotations.get_metrics(
                 function_uuid="function_uuid",
                 project_uuid="project_uuid",
             )

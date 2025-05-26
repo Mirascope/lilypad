@@ -25,55 +25,6 @@ class RawAnnotationsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[typing.List[AnnotationPublic]]:
-        """
-        Get annotations by project.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[typing.List[AnnotationPublic]]
-            Successful Response
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"ee/projects/{jsonable_encoder(project_uuid)}/annotations",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    typing.List[AnnotationPublic],
-                    construct_type(
-                        type_=typing.List[AnnotationPublic],  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
     def create(
         self,
         project_uuid: str,
@@ -129,57 +80,6 @@ class RawAnnotationsClient:
                     typing.List[AnnotationPublic],
                     construct_type(
                         type_=typing.List[AnnotationPublic],  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def delete(
-        self, annotation_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[bool]:
-        """
-        Delete an annotation.
-
-        Parameters
-        ----------
-        annotation_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[bool]
-            Successful Response
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"ee/projects/{jsonable_encoder(project_uuid)}/annotations/{jsonable_encoder(annotation_uuid)}",
-            method="DELETE",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    bool,
-                    construct_type(
-                        type_=bool,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -286,55 +186,6 @@ class AsyncRawAnnotationsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[typing.List[AnnotationPublic]]:
-        """
-        Get annotations by project.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[typing.List[AnnotationPublic]]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"ee/projects/{jsonable_encoder(project_uuid)}/annotations",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    typing.List[AnnotationPublic],
-                    construct_type(
-                        type_=typing.List[AnnotationPublic],  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
     async def create(
         self,
         project_uuid: str,
@@ -390,57 +241,6 @@ class AsyncRawAnnotationsClient:
                     typing.List[AnnotationPublic],
                     construct_type(
                         type_=typing.List[AnnotationPublic],  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def delete(
-        self, annotation_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[bool]:
-        """
-        Delete an annotation.
-
-        Parameters
-        ----------
-        annotation_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[bool]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"ee/projects/{jsonable_encoder(project_uuid)}/annotations/{jsonable_encoder(annotation_uuid)}",
-            method="DELETE",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    bool,
-                    construct_type(
-                        type_=bool,  # type: ignore
                         object_=_response.json(),
                     ),
                 )

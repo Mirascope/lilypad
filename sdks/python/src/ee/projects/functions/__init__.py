@@ -2,3 +2,6 @@
 
 # isort: skip_file
 
+from . import annotations
+
+__all__ = ["annotations"]

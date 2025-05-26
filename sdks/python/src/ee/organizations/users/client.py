@@ -4,43 +4,37 @@ import typing
 
 from ....core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ....core.request_options import RequestOptions
-from ....types.annotation_public import AnnotationPublic
-from .raw_client import AsyncRawAnnotationsClient, RawAnnotationsClient
+from ....types.user_public import UserPublic
+from .raw_client import AsyncRawUsersClient, RawUsersClient
 
 
-class AnnotationsClient:
+class UsersClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
-        self._raw_client = RawAnnotationsClient(client_wrapper=client_wrapper)
+        self._raw_client = RawUsersClient(client_wrapper=client_wrapper)
 
     @property
-    def with_raw_response(self) -> RawAnnotationsClient:
+    def with_raw_response(self) -> RawUsersClient:
         """
         Retrieves a raw implementation of this client that returns raw responses.
 
         Returns
         -------
-        RawAnnotationsClient
+        RawUsersClient
         """
         return self._raw_client
 
-    def list(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[AnnotationPublic]:
+    def list(self, *, request_options: typing.Optional[RequestOptions] = None) -> typing.List[UserPublic]:
         """
-        Get annotations by functions.
+        Get all users of an organization.
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_uuid : str
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        typing.List[AnnotationPublic]
+        typing.List[UserPublic]
             Successful Response
 
         Examples
@@ -51,48 +45,39 @@ class AnnotationsClient:
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
-        client.projects.spans.annotations.list(
-            project_uuid="project_uuid",
-            span_uuid="span_uuid",
-        )
+        client.ee.organizations.users.list()
         """
-        _response = self._raw_client.list(project_uuid, span_uuid, request_options=request_options)
+        _response = self._raw_client.list(request_options=request_options)
         return _response.data
 
 
-class AsyncAnnotationsClient:
+class AsyncUsersClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
-        self._raw_client = AsyncRawAnnotationsClient(client_wrapper=client_wrapper)
+        self._raw_client = AsyncRawUsersClient(client_wrapper=client_wrapper)
 
     @property
-    def with_raw_response(self) -> AsyncRawAnnotationsClient:
+    def with_raw_response(self) -> AsyncRawUsersClient:
         """
         Retrieves a raw implementation of this client that returns raw responses.
 
         Returns
         -------
-        AsyncRawAnnotationsClient
+        AsyncRawUsersClient
         """
         return self._raw_client
 
-    async def list(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[AnnotationPublic]:
+    async def list(self, *, request_options: typing.Optional[RequestOptions] = None) -> typing.List[UserPublic]:
         """
-        Get annotations by functions.
+        Get all users of an organization.
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_uuid : str
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        typing.List[AnnotationPublic]
+        typing.List[UserPublic]
             Successful Response
 
         Examples
@@ -108,13 +93,10 @@ class AsyncAnnotationsClient:
 
 
         async def main() -> None:
-            await client.projects.spans.annotations.list(
-                project_uuid="project_uuid",
-                span_uuid="span_uuid",
-            )
+            await client.ee.organizations.users.list()
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.list(project_uuid, span_uuid, request_options=request_options)
+        _response = await self._raw_client.list(request_options=request_options)
         return _response.data

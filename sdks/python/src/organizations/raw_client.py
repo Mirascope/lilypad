@@ -10,9 +10,7 @@ from ..core.request_options import RequestOptions
 from ..core.unchecked_base_model import construct_type
 from ..errors.unprocessable_entity_error import UnprocessableEntityError
 from ..types.http_validation_error import HttpValidationError
-from ..types.license_info import LicenseInfo
 from ..types.organization_public import OrganizationPublic
-from ..types.user_organization_table import UserOrganizationTable
 from ..types.user_public import UserPublic
 
 # this is used as the default value for optional parameters
@@ -23,71 +21,64 @@ class RawOrganizationsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get_license(self, *, request_options: typing.Optional[RequestOptions] = None) -> HttpResponse[LicenseInfo]:
+    def update(
+        self,
+        *,
+        name: typing.Optional[str] = OMIT,
+        license: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[OrganizationPublic]:
         """
-        Get the license information for the organization
+        Update an organization.
 
         Parameters
         ----------
+        name : typing.Optional[str]
+
+        license : typing.Optional[str]
+
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[LicenseInfo]
+        HttpResponse[OrganizationPublic]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
-            "ee/organizations/license",
-            method="GET",
+            "organizations",
+            method="PATCH",
+            json={
+                "name": name,
+                "license": license,
+            },
+            headers={
+                "content-type": "application/json",
+            },
             request_options=request_options,
+            omit=OMIT,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    LicenseInfo,
+                    OrganizationPublic,
                     construct_type(
-                        type_=LicenseInfo,  # type: ignore
+                        type_=OrganizationPublic,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def list(
-        self, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[typing.List[UserOrganizationTable]]:
-        """
-        Get all user organizations.
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[typing.List[UserOrganizationTable]]
-            Successful Response
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "ee/user-organizations",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    typing.List[UserOrganizationTable],
-                    construct_type(
-                        type_=typing.List[UserOrganizationTable],  # type: ignore
-                        object_=_response.json(),
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
                     ),
                 )
-                return HttpResponse(response=_response, data=_data)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
@@ -183,13 +174,18 @@ class RawOrganizationsClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def update(
+
+class AsyncRawOrganizationsClient:
+    def __init__(self, *, client_wrapper: AsyncClientWrapper):
+        self._client_wrapper = client_wrapper
+
+    async def update(
         self,
         *,
         name: typing.Optional[str] = OMIT,
         license: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[OrganizationPublic]:
+    ) -> AsyncHttpResponse[OrganizationPublic]:
         """
         Update an organization.
 
@@ -204,10 +200,10 @@ class RawOrganizationsClient:
 
         Returns
         -------
-        HttpResponse[OrganizationPublic]
+        AsyncHttpResponse[OrganizationPublic]
             Successful Response
         """
-        _response = self._client_wrapper.httpx_client.request(
+        _response = await self._client_wrapper.httpx_client.request(
             "organizations",
             method="PATCH",
             json={
@@ -229,7 +225,7 @@ class RawOrganizationsClient:
                         object_=_response.json(),
                     ),
                 )
-                return HttpResponse(response=_response, data=_data)
+                return AsyncHttpResponse(response=_response, data=_data)
             if _response.status_code == 422:
                 raise UnprocessableEntityError(
                     headers=dict(_response.headers),
@@ -241,83 +237,6 @@ class RawOrganizationsClient:
                         ),
                     ),
                 )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-
-class AsyncRawOrganizationsClient:
-    def __init__(self, *, client_wrapper: AsyncClientWrapper):
-        self._client_wrapper = client_wrapper
-
-    async def get_license(
-        self, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[LicenseInfo]:
-        """
-        Get the license information for the organization
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[LicenseInfo]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "ee/organizations/license",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    LicenseInfo,
-                    construct_type(
-                        type_=LicenseInfo,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def list(
-        self, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[typing.List[UserOrganizationTable]]:
-        """
-        Get all user organizations.
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[typing.List[UserOrganizationTable]]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "ee/user-organizations",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    typing.List[UserOrganizationTable],
-                    construct_type(
-                        type_=typing.List[UserOrganizationTable],  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
@@ -408,69 +327,6 @@ class AsyncRawOrganizationsClient:
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def update(
-        self,
-        *,
-        name: typing.Optional[str] = OMIT,
-        license: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[OrganizationPublic]:
-        """
-        Update an organization.
-
-        Parameters
-        ----------
-        name : typing.Optional[str]
-
-        license : typing.Optional[str]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[OrganizationPublic]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "organizations",
-            method="PATCH",
-            json={
-                "name": name,
-                "license": license,
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    OrganizationPublic,
-                    construct_type(
-                        type_=OrganizationPublic,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)

@@ -9,14 +9,12 @@ from ...types.scope import Scope
 from ...types.span_more_details import SpanMoreDetails
 from ...types.span_public import SpanPublic
 from ...types.time_frame import TimeFrame
-from .annotations.client import AnnotationsClient, AsyncAnnotationsClient
 from .raw_client import AsyncRawSpansClient, RawSpansClient
 
 
 class SpansClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._raw_client = RawSpansClient(client_wrapper=client_wrapper)
-        self.annotations = AnnotationsClient(client_wrapper=client_wrapper)
 
     @property
     def with_raw_response(self) -> RawSpansClient:
@@ -28,42 +26,6 @@ class SpansClient:
         RawSpansClient
         """
         return self._raw_client
-
-    def generate_annotation(
-        self, span_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.Optional[typing.Any]:
-        """
-        Stream function.
-
-        Parameters
-        ----------
-        span_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.Optional[typing.Any]
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.projects.spans.generate_annotation(
-            span_uuid="span_uuid",
-            project_uuid="project_uuid",
-        )
-        """
-        _response = self._raw_client.generate_annotation(span_uuid, project_uuid, request_options=request_options)
-        return _response.data
 
     def get_aggregates(
         self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
@@ -242,7 +204,6 @@ class SpansClient:
 class AsyncSpansClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._raw_client = AsyncRawSpansClient(client_wrapper=client_wrapper)
-        self.annotations = AsyncAnnotationsClient(client_wrapper=client_wrapper)
 
     @property
     def with_raw_response(self) -> AsyncRawSpansClient:
@@ -254,50 +215,6 @@ class AsyncSpansClient:
         AsyncRawSpansClient
         """
         return self._raw_client
-
-    async def generate_annotation(
-        self, span_uuid: str, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.Optional[typing.Any]:
-        """
-        Stream function.
-
-        Parameters
-        ----------
-        span_uuid : str
-
-        project_uuid : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.Optional[typing.Any]
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.projects.spans.generate_annotation(
-                span_uuid="span_uuid",
-                project_uuid="project_uuid",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.generate_annotation(span_uuid, project_uuid, request_options=request_options)
-        return _response.data
 
     async def get_aggregates(
         self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None

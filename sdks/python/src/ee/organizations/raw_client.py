@@ -10,181 +10,125 @@ from ...core.jsonable_encoder import jsonable_encoder
 from ...core.request_options import RequestOptions
 from ...core.unchecked_base_model import construct_type
 from ...errors.unprocessable_entity_error import UnprocessableEntityError
-from ...types.aggregate_metrics import AggregateMetrics
 from ...types.http_validation_error import HttpValidationError
-from ...types.scope import Scope
-from ...types.span_more_details import SpanMoreDetails
-from ...types.span_public import SpanPublic
-from ...types.time_frame import TimeFrame
+from ...types.license_info import LicenseInfo
+from ...types.user_organization_table import UserOrganizationTable
+from ...types.user_public import UserPublic
+
+# this is used as the default value for optional parameters
+OMIT = typing.cast(typing.Any, ...)
 
 
-class RawSpansClient:
+class RawOrganizationsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[typing.List[AggregateMetrics]]:
+    def get_license(self, *, request_options: typing.Optional[RequestOptions] = None) -> HttpResponse[LicenseInfo]:
         """
-        Get aggregated span by project uuid.
+        Get the license information for the organization
 
         Parameters
         ----------
-        project_uuid : str
-
-        time_frame : TimeFrame
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[typing.List[AggregateMetrics]]
+        HttpResponse[LicenseInfo]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/metadata",
+            "ee/organizations/license",
             method="GET",
-            params={
-                "time_frame": time_frame,
-            },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[AggregateMetrics],
+                    LicenseInfo,
                     construct_type(
-                        type_=typing.List[AggregateMetrics],  # type: ignore
+                        type_=LicenseInfo,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[SpanMoreDetails]:
+    def list(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[typing.List[UserOrganizationTable]]:
         """
-        Get span by project_uuid and span_id.
+        Get all user organizations.
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_id : str
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[SpanMoreDetails]
+        HttpResponse[typing.List[UserOrganizationTable]]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
+            "ee/user-organizations",
             method="GET",
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanMoreDetails,
+                    typing.List[UserOrganizationTable],
                     construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
+                        type_=typing.List[UserOrganizationTable],  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def search(
-        self,
-        project_uuid: str,
-        *,
-        query_string: typing.Optional[str] = None,
-        time_range_start: typing.Optional[int] = None,
-        time_range_end: typing.Optional[int] = None,
-        limit: typing.Optional[int] = None,
-        scope: typing.Optional[Scope] = None,
-        type: typing.Optional[str] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[typing.List[SpanPublic]]:
+    def create(
+        self, *, token: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[UserPublic]:
         """
-        Search for traces in OpenSearch.
+        Create user organization
 
         Parameters
         ----------
-        project_uuid : str
-
-        query_string : typing.Optional[str]
-
-        time_range_start : typing.Optional[int]
-
-        time_range_end : typing.Optional[int]
-
-        limit : typing.Optional[int]
-
-        scope : typing.Optional[Scope]
-
-        type : typing.Optional[str]
+        token : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[typing.List[SpanPublic]]
+        HttpResponse[UserPublic]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans",
-            method="GET",
-            params={
-                "query_string": query_string,
-                "time_range_start": time_range_start,
-                "time_range_end": time_range_end,
-                "limit": limit,
-                "scope": scope,
-                "type": type,
+            "ee/user-organizations",
+            method="POST",
+            json={
+                "token": token,
+            },
+            headers={
+                "content-type": "application/json",
             },
             request_options=request_options,
+            omit=OMIT,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[SpanPublic],
+                    UserPublic,
                     construct_type(
-                        type_=typing.List[SpanPublic],  # type: ignore
+                        type_=UserPublic,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -206,16 +150,14 @@ class RawSpansClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, user_organization_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[bool]:
         """
-        Delete spans by UUID.
+        Delete user organization by uuid
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_uuid : str
+        user_organization_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -226,7 +168,7 @@ class RawSpansClient:
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_uuid)}",
+            f"ee/user-organizations/{jsonable_encoder(user_organization_uuid)}",
             method="DELETE",
             request_options=request_options,
         )
@@ -257,173 +199,118 @@ class RawSpansClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
 
-class AsyncRawSpansClient:
+class AsyncRawOrganizationsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[typing.List[AggregateMetrics]]:
+    async def get_license(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[LicenseInfo]:
         """
-        Get aggregated span by project uuid.
+        Get the license information for the organization
 
         Parameters
         ----------
-        project_uuid : str
-
-        time_frame : TimeFrame
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[typing.List[AggregateMetrics]]
+        AsyncHttpResponse[LicenseInfo]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/metadata",
+            "ee/organizations/license",
             method="GET",
-            params={
-                "time_frame": time_frame,
-            },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[AggregateMetrics],
+                    LicenseInfo,
                     construct_type(
-                        type_=typing.List[AggregateMetrics],  # type: ignore
+                        type_=LicenseInfo,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[SpanMoreDetails]:
+    async def list(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[typing.List[UserOrganizationTable]]:
         """
-        Get span by project_uuid and span_id.
+        Get all user organizations.
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_id : str
-
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[SpanMoreDetails]
+        AsyncHttpResponse[typing.List[UserOrganizationTable]]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
+            "ee/user-organizations",
             method="GET",
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanMoreDetails,
+                    typing.List[UserOrganizationTable],
                     construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
+                        type_=typing.List[UserOrganizationTable],  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def search(
-        self,
-        project_uuid: str,
-        *,
-        query_string: typing.Optional[str] = None,
-        time_range_start: typing.Optional[int] = None,
-        time_range_end: typing.Optional[int] = None,
-        limit: typing.Optional[int] = None,
-        scope: typing.Optional[Scope] = None,
-        type: typing.Optional[str] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[typing.List[SpanPublic]]:
+    async def create(
+        self, *, token: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[UserPublic]:
         """
-        Search for traces in OpenSearch.
+        Create user organization
 
         Parameters
         ----------
-        project_uuid : str
-
-        query_string : typing.Optional[str]
-
-        time_range_start : typing.Optional[int]
-
-        time_range_end : typing.Optional[int]
-
-        limit : typing.Optional[int]
-
-        scope : typing.Optional[Scope]
-
-        type : typing.Optional[str]
+        token : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[typing.List[SpanPublic]]
+        AsyncHttpResponse[UserPublic]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans",
-            method="GET",
-            params={
-                "query_string": query_string,
-                "time_range_start": time_range_start,
-                "time_range_end": time_range_end,
-                "limit": limit,
-                "scope": scope,
-                "type": type,
+            "ee/user-organizations",
+            method="POST",
+            json={
+                "token": token,
+            },
+            headers={
+                "content-type": "application/json",
             },
             request_options=request_options,
+            omit=OMIT,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[SpanPublic],
+                    UserPublic,
                     construct_type(
-                        type_=typing.List[SpanPublic],  # type: ignore
+                        type_=UserPublic,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -445,16 +332,14 @@ class AsyncRawSpansClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, user_organization_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> AsyncHttpResponse[bool]:
         """
-        Delete spans by UUID.
+        Delete user organization by uuid
 
         Parameters
         ----------
-        project_uuid : str
-
-        span_uuid : str
+        user_organization_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -465,7 +350,7 @@ class AsyncRawSpansClient:
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_uuid)}",
+            f"ee/user-organizations/{jsonable_encoder(user_organization_uuid)}",
             method="DELETE",
             request_options=request_options,
         )

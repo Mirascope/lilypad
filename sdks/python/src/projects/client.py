@@ -22,9 +22,9 @@ class ProjectsClient:
         self._raw_client = RawProjectsClient(client_wrapper=client_wrapper)
         self.annotations = AnnotationsClient(client_wrapper=client_wrapper)
 
-        self.spans = SpansClient(client_wrapper=client_wrapper)
-
         self.functions = FunctionsClient(client_wrapper=client_wrapper)
+
+        self.spans = SpansClient(client_wrapper=client_wrapper)
 
         self.traces = TracesClient(client_wrapper=client_wrapper)
 
@@ -205,9 +205,9 @@ class AsyncProjectsClient:
         self._raw_client = AsyncRawProjectsClient(client_wrapper=client_wrapper)
         self.annotations = AsyncAnnotationsClient(client_wrapper=client_wrapper)
 
-        self.spans = AsyncSpansClient(client_wrapper=client_wrapper)
-
         self.functions = AsyncFunctionsClient(client_wrapper=client_wrapper)
+
+        self.spans = AsyncSpansClient(client_wrapper=client_wrapper)
 
         self.traces = AsyncTracesClient(client_wrapper=client_wrapper)
 

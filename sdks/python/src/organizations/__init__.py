@@ -2,6 +2,6 @@
 
 # isort: skip_file
 
-from . import invites, users
+from . import invites
 
-__all__ = ["invites", "users"]
+__all__ = ["invites"]

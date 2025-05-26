@@ -3,12 +3,12 @@
 import typing
 
 import httpx
-
 from .api_keys.client import ApiKeysClient, AsyncApiKeysClient
 from .auth.client import AsyncAuthClient, AuthClient
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from .core.request_options import RequestOptions
+from .ee.client import AsyncEeClient, EeClient
 from .environment import LilypadEnvironment
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
@@ -76,11 +76,7 @@ class Lilypad:
         httpx_client: typing.Optional[httpx.Client] = None,
     ):
         _defaulted_timeout = (
-            timeout
-            if timeout is not None
-            else 60
-            if httpx_client is None
-            else httpx_client.timeout.read
+            timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = SyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
@@ -88,9 +84,7 @@ class Lilypad:
             token=token,
             httpx_client=httpx_client
             if httpx_client is not None
-            else httpx.Client(
-                timeout=_defaulted_timeout, follow_redirects=follow_redirects
-            )
+            else httpx.Client(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
             if follow_redirects is not None
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
@@ -104,14 +98,13 @@ class Lilypad:
         self.projects_traces = ProjectsTracesClient(client_wrapper=self._client_wrapper)
         self.auth = AuthClient(client_wrapper=self._client_wrapper)
         self.users = UsersClient(client_wrapper=self._client_wrapper)
-        self.external_api_keys = ExternalApiKeysClient(
-            client_wrapper=self._client_wrapper
-        )
+        self.external_api_keys = ExternalApiKeysClient(client_wrapper=self._client_wrapper)
         self.environments = EnvironmentsClient(client_wrapper=self._client_wrapper)
         self.user_consents = UserConsentsClient(client_wrapper=self._client_wrapper)
         self.tags = TagsClient(client_wrapper=self._client_wrapper)
         self.comments = CommentsClient(client_wrapper=self._client_wrapper)
         self.settings = SettingsClient(client_wrapper=self._client_wrapper)
+        self.ee = EeClient(client_wrapper=self._client_wrapper)
 
     @property
     def with_raw_response(self) -> RawLilypad:
@@ -125,11 +118,7 @@ class Lilypad:
         return self._raw_client
 
     def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-        self,
-        project_uuid: str,
-        function_uuid: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
+        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[SpanPublic]:
         """
         Get span by uuid.
@@ -218,11 +207,7 @@ class AsyncLilypad:
         httpx_client: typing.Optional[httpx.AsyncClient] = None,
     ):
         _defaulted_timeout = (
-            timeout
-            if timeout is not None
-            else 60
-            if httpx_client is None
-            else httpx_client.timeout.read
+            timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = AsyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
@@ -230,36 +215,27 @@ class AsyncLilypad:
             token=token,
             httpx_client=httpx_client
             if httpx_client is not None
-            else httpx.AsyncClient(
-                timeout=_defaulted_timeout, follow_redirects=follow_redirects
-            )
+            else httpx.AsyncClient(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
             if follow_redirects is not None
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
         self._raw_client = AsyncRawLilypad(client_wrapper=self._client_wrapper)
-        self.organizations = AsyncOrganizationsClient(
-            client_wrapper=self._client_wrapper
-        )
+        self.organizations = AsyncOrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = AsyncApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
         self.projects = AsyncProjectsClient(client_wrapper=self._client_wrapper)
         self.spans = AsyncSpansClient(client_wrapper=self._client_wrapper)
-        self.projects_traces = AsyncProjectsTracesClient(
-            client_wrapper=self._client_wrapper
-        )
+        self.projects_traces = AsyncProjectsTracesClient(client_wrapper=self._client_wrapper)
         self.auth = AsyncAuthClient(client_wrapper=self._client_wrapper)
         self.users = AsyncUsersClient(client_wrapper=self._client_wrapper)
-        self.external_api_keys = AsyncExternalApiKeysClient(
-            client_wrapper=self._client_wrapper
-        )
+        self.external_api_keys = AsyncExternalApiKeysClient(client_wrapper=self._client_wrapper)
         self.environments = AsyncEnvironmentsClient(client_wrapper=self._client_wrapper)
-        self.user_consents = AsyncUserConsentsClient(
-            client_wrapper=self._client_wrapper
-        )
+        self.user_consents = AsyncUserConsentsClient(client_wrapper=self._client_wrapper)
         self.tags = AsyncTagsClient(client_wrapper=self._client_wrapper)
         self.comments = AsyncCommentsClient(client_wrapper=self._client_wrapper)
         self.settings = AsyncSettingsClient(client_wrapper=self._client_wrapper)
+        self.ee = AsyncEeClient(client_wrapper=self._client_wrapper)
 
     @property
     def with_raw_response(self) -> AsyncRawLilypad:
@@ -273,11 +249,7 @@ class AsyncLilypad:
         return self._raw_client
 
     async def get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-        self,
-        project_uuid: str,
-        function_uuid: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
+        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[SpanPublic]:
         """
         Get span by uuid.
@@ -317,20 +289,18 @@ class AsyncLilypad:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
-            project_uuid, function_uuid, request_options=request_options
+        _response = (
+            await self._raw_client.get_span_by_function_uuid_projects_project_uuid_functions_function_uuid_spans_get(
+                project_uuid, function_uuid, request_options=request_options
+            )
         )
         return _response.data
 
 
-def _get_base_url(
-    *, base_url: typing.Optional[str] = None, environment: LilypadEnvironment
-) -> str:
+def _get_base_url(*, base_url: typing.Optional[str] = None, environment: LilypadEnvironment) -> str:
     if base_url is not None:
         return base_url
     elif environment is not None:
         return environment.value
     else:
-        raise Exception(
-            "Please pass in either base_url or environment to construct the client"
-        )
+        raise Exception("Please pass in either base_url or environment to construct the client")

@@ -8,12 +8,8 @@ from ...core.request_options import RequestOptions
 from ...types.common_call_params import CommonCallParams
 from ...types.dependency_info import DependencyInfo
 from ...types.function_public import FunctionPublic
-from ...types.playground_success_response import PlaygroundSuccessResponse
-from ...types.provider import Provider
-from .annotations.client import AnnotationsClient, AsyncAnnotationsClient
 from .raw_client import AsyncRawFunctionsClient, RawFunctionsClient
 from .spans.client import AsyncSpansClient, SpansClient
-from .types.playground_parameters_arg_values_value import PlaygroundParametersArgValuesValue
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -22,8 +18,6 @@ OMIT = typing.cast(typing.Any, ...)
 class FunctionsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._raw_client = RawFunctionsClient(client_wrapper=client_wrapper)
-        self.annotations = AnnotationsClient(client_wrapper=client_wrapper)
-
         self.spans = SpansClient(client_wrapper=client_wrapper)
 
     @property
@@ -36,78 +30,6 @@ class FunctionsClient:
         RawFunctionsClient
         """
         return self._raw_client
-
-    def run_playground(
-        self,
-        project_uuid: str,
-        function_uuid: str,
-        *,
-        arg_values: typing.Dict[str, PlaygroundParametersArgValuesValue],
-        provider: Provider,
-        model: str,
-        prompt_template: str,
-        arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
-        call_params: typing.Optional[CommonCallParams] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> PlaygroundSuccessResponse:
-        """
-        Executes a function with specified parameters in a secure playground environment.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        function_uuid : str
-
-        arg_values : typing.Dict[str, PlaygroundParametersArgValuesValue]
-
-        provider : Provider
-
-        model : str
-
-        prompt_template : str
-
-        arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
-
-        call_params : typing.Optional[CommonCallParams]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        PlaygroundSuccessResponse
-            Function executed successfully.
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.projects.functions.run_playground(
-            project_uuid="project_uuid",
-            function_uuid="function_uuid",
-            arg_values={"key": 1},
-            provider="openai",
-            model="model",
-            prompt_template="prompt_template",
-        )
-        """
-        _response = self._raw_client.run_playground(
-            project_uuid,
-            function_uuid,
-            arg_values=arg_values,
-            provider=provider,
-            model=model,
-            prompt_template=prompt_template,
-            arg_types=arg_types,
-            call_params=call_params,
-            request_options=request_options,
-        )
-        return _response.data
 
     def get_by_version(
         self,
@@ -718,8 +640,6 @@ class FunctionsClient:
 class AsyncFunctionsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._raw_client = AsyncRawFunctionsClient(client_wrapper=client_wrapper)
-        self.annotations = AsyncAnnotationsClient(client_wrapper=client_wrapper)
-
         self.spans = AsyncSpansClient(client_wrapper=client_wrapper)
 
     @property
@@ -732,86 +652,6 @@ class AsyncFunctionsClient:
         AsyncRawFunctionsClient
         """
         return self._raw_client
-
-    async def run_playground(
-        self,
-        project_uuid: str,
-        function_uuid: str,
-        *,
-        arg_values: typing.Dict[str, PlaygroundParametersArgValuesValue],
-        provider: Provider,
-        model: str,
-        prompt_template: str,
-        arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
-        call_params: typing.Optional[CommonCallParams] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> PlaygroundSuccessResponse:
-        """
-        Executes a function with specified parameters in a secure playground environment.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        function_uuid : str
-
-        arg_values : typing.Dict[str, PlaygroundParametersArgValuesValue]
-
-        provider : Provider
-
-        model : str
-
-        prompt_template : str
-
-        arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
-
-        call_params : typing.Optional[CommonCallParams]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        PlaygroundSuccessResponse
-            Function executed successfully.
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.projects.functions.run_playground(
-                project_uuid="project_uuid",
-                function_uuid="function_uuid",
-                arg_values={"key": 1},
-                provider="openai",
-                model="model",
-                prompt_template="prompt_template",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.run_playground(
-            project_uuid,
-            function_uuid,
-            arg_values=arg_values,
-            provider=provider,
-            model=model,
-            prompt_template=prompt_template,
-            arg_types=arg_types,
-            call_params=call_params,
-            request_options=request_options,
-        )
-        return _response.data
 
     async def get_by_version(
         self,

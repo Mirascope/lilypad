@@ -3,16 +3,16 @@
 import typing
 from json.decoder import JSONDecodeError
 
-from ....core.api_error import ApiError
-from ....core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from ....core.http_response import AsyncHttpResponse, HttpResponse
-from ....core.jsonable_encoder import jsonable_encoder
-from ....core.request_options import RequestOptions
-from ....core.unchecked_base_model import construct_type
-from ....errors.unprocessable_entity_error import UnprocessableEntityError
-from ....types.annotation_metrics import AnnotationMetrics
-from ....types.annotation_public import AnnotationPublic
-from ....types.http_validation_error import HttpValidationError
+from .....core.api_error import ApiError
+from .....core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .....core.http_response import AsyncHttpResponse, HttpResponse
+from .....core.jsonable_encoder import jsonable_encoder
+from .....core.request_options import RequestOptions
+from .....core.unchecked_base_model import construct_type
+from .....errors.unprocessable_entity_error import UnprocessableEntityError
+from .....types.annotation_metrics import AnnotationMetrics
+from .....types.annotation_public import AnnotationPublic
+from .....types.http_validation_error import HttpValidationError
 
 
 class RawAnnotationsClient:

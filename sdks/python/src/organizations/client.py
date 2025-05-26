@@ -4,13 +4,10 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.license_info import LicenseInfo
 from ..types.organization_public import OrganizationPublic
-from ..types.user_organization_table import UserOrganizationTable
 from ..types.user_public import UserPublic
 from .invites.client import AsyncInvitesClient, InvitesClient
 from .raw_client import AsyncRawOrganizationsClient, RawOrganizationsClient
-from .users.client import AsyncUsersClient, UsersClient
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -19,8 +16,6 @@ OMIT = typing.cast(typing.Any, ...)
 class OrganizationsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._raw_client = RawOrganizationsClient(client_wrapper=client_wrapper)
-        self.users = UsersClient(client_wrapper=client_wrapper)
-
         self.invites = InvitesClient(client_wrapper=client_wrapper)
 
     @property
@@ -34,18 +29,28 @@ class OrganizationsClient:
         """
         return self._raw_client
 
-    def get_license(self, *, request_options: typing.Optional[RequestOptions] = None) -> LicenseInfo:
+    def update(
+        self,
+        *,
+        name: typing.Optional[str] = OMIT,
+        license: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> OrganizationPublic:
         """
-        Get the license information for the organization
+        Update an organization.
 
         Parameters
         ----------
+        name : typing.Optional[str]
+
+        license : typing.Optional[str]
+
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        LicenseInfo
+        OrganizationPublic
             Successful Response
 
         Examples
@@ -56,36 +61,9 @@ class OrganizationsClient:
             api_key="YOUR_API_KEY",
             token="YOUR_TOKEN",
         )
-        client.organizations.get_license()
+        client.organizations.update()
         """
-        _response = self._raw_client.get_license(request_options=request_options)
-        return _response.data
-
-    def list(self, *, request_options: typing.Optional[RequestOptions] = None) -> typing.List[UserOrganizationTable]:
-        """
-        Get all user organizations.
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[UserOrganizationTable]
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.organizations.list()
-        """
-        _response = self._raw_client.list(request_options=request_options)
+        _response = self._raw_client.update(name=name, license=license, request_options=request_options)
         return _response.data
 
     def create(self, *, name: str, request_options: typing.Optional[RequestOptions] = None) -> OrganizationPublic:
@@ -146,7 +124,24 @@ class OrganizationsClient:
         _response = self._raw_client.delete(request_options=request_options)
         return _response.data
 
-    def update(
+
+class AsyncOrganizationsClient:
+    def __init__(self, *, client_wrapper: AsyncClientWrapper):
+        self._raw_client = AsyncRawOrganizationsClient(client_wrapper=client_wrapper)
+        self.invites = AsyncInvitesClient(client_wrapper=client_wrapper)
+
+    @property
+    def with_raw_response(self) -> AsyncRawOrganizationsClient:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        AsyncRawOrganizationsClient
+        """
+        return self._raw_client
+
+    async def update(
         self,
         *,
         name: typing.Optional[str] = OMIT,
@@ -172,52 +167,6 @@ class OrganizationsClient:
 
         Examples
         --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-        client.organizations.update()
-        """
-        _response = self._raw_client.update(name=name, license=license, request_options=request_options)
-        return _response.data
-
-
-class AsyncOrganizationsClient:
-    def __init__(self, *, client_wrapper: AsyncClientWrapper):
-        self._raw_client = AsyncRawOrganizationsClient(client_wrapper=client_wrapper)
-        self.users = AsyncUsersClient(client_wrapper=client_wrapper)
-
-        self.invites = AsyncInvitesClient(client_wrapper=client_wrapper)
-
-    @property
-    def with_raw_response(self) -> AsyncRawOrganizationsClient:
-        """
-        Retrieves a raw implementation of this client that returns raw responses.
-
-        Returns
-        -------
-        AsyncRawOrganizationsClient
-        """
-        return self._raw_client
-
-    async def get_license(self, *, request_options: typing.Optional[RequestOptions] = None) -> LicenseInfo:
-        """
-        Get the license information for the organization
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        LicenseInfo
-            Successful Response
-
-        Examples
-        --------
         import asyncio
 
         from mirascope import AsyncLilypad
@@ -229,49 +178,12 @@ class AsyncOrganizationsClient:
 
 
         async def main() -> None:
-            await client.organizations.get_license()
+            await client.organizations.update()
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.get_license(request_options=request_options)
-        return _response.data
-
-    async def list(
-        self, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[UserOrganizationTable]:
-        """
-        Get all user organizations.
-
-        Parameters
-        ----------
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        typing.List[UserOrganizationTable]
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.organizations.list()
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.list(request_options=request_options)
+        _response = await self._raw_client.update(name=name, license=license, request_options=request_options)
         return _response.data
 
     async def create(self, *, name: str, request_options: typing.Optional[RequestOptions] = None) -> OrganizationPublic:
@@ -346,49 +258,4 @@ class AsyncOrganizationsClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.delete(request_options=request_options)
-        return _response.data
-
-    async def update(
-        self,
-        *,
-        name: typing.Optional[str] = OMIT,
-        license: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> OrganizationPublic:
-        """
-        Update an organization.
-
-        Parameters
-        ----------
-        name : typing.Optional[str]
-
-        license : typing.Optional[str]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        OrganizationPublic
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.organizations.update()
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.update(name=name, license=license, request_options=request_options)
         return _response.data
