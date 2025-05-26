@@ -1,5 +1,5 @@
-name: lint
-run-name: ${{ github.actor }} is linting the package
+name: lint for sdk
+run-name: ${{ github.actor }} is linting the sdk
 
 on:
   push:
