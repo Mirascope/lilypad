@@ -74,7 +74,7 @@ bedrock = [
     "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
 ]
 mistral = ["mistralai>=1.0.0,<2"]
-outlines = ["outlines>=0.1.11"]
+# outlines = ["outlines>=0.1.11"]
 sandbox-docker = ["docker>=7.1.0"]
 vertex = ["google-cloud-aiplatform>=1.74.0"]
 
@@ -128,7 +128,32 @@ select = [
     "ANN",
     "RUF022",
 ]
-ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'ANN401', 'UP007', 'UP035', 'UP006', 'ANN204', 'I001', 'UP037', 'UP038', 'E722', 'E721', 'E711', 'SIM101','SIM102', 'SIM108', 'E402', 'F841']
+ignore = [
+    'D105',
+    'D107',
+    'D205',
+    'D415',
+    'E501',
+    'B011',
+    'B028',
+    'B904',
+    'ANN401',
+    'UP007',
+    'UP035',
+    'UP006',
+    'ANN204',
+    'I001',
+    'UP037',
+    'UP038',
+    'E722',
+    'E721',
+    'E711',
+    'SIM101',
+    'SIM102',
+    'SIM108',
+    'E402',
+    'F841',
+]
 fixable = ["ALL"]
 pydocstyle = { convention = 'google' }
 unfixable = []
@@ -154,11 +179,7 @@ known-first-party = ["lilypad", "tests"]
 [tool.pyright]
 pythonVersion = "3.10"
 
-exclude = [
-    ".venv",
-    "tests",
-    "src/lilypad",
-]
+exclude = [".venv", "tests", "src/lilypad"]
 
 [build-system]
 requires = ["hatchling"]
@@ -171,17 +192,7 @@ packages = ["src/lilypad"]
 include = ["src/*"]
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/*.toml",
-    "/*.json",
-    "/*.lock",
-    "/*.md",
-    "/noxfile.py",
-    "bin/*",
-    "examples/*",
-    "src/*",
-    "tests/*",
-]
+include = ["/*.toml", "/*.json", "/*.lock", "/*.md", "src/*", "tests/*"]
 
 [project.scripts]
 lilypad = "lilypad.cli.main:app"
