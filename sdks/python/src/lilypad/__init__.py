@@ -17,12 +17,14 @@ from .generated import (
     user_consents,
     users,
     webhooks,
+    types,
 )
 from .generated.client import AsyncLilypad, Lilypad
-from .spans import span
+from .spans import span, Span
+from .stream import Stream
 from .tools import tool
 from ._utils import register_serializer
-from .traces import trace
+from .traces import trace, AsyncTrace, Trace
 from .messages import Message
 from .sessions import Session, session
 from ._configure import configure, lilypad_config
