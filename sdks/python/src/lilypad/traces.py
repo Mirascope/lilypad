@@ -125,7 +125,7 @@ class Trace(_TraceBase[_T]):
     def _get_span_uuid(self, client: Lilypad) -> str | None:
         if not self._flush:
             self._force_flush()
-        response = client.projects.functions.spans.list(
+        response = client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
         for span in response:
@@ -170,7 +170,8 @@ class Trace(_TraceBase[_T]):
         settings = get_settings()
         client = get_sync_client(api_key=settings.api_key)
         span_uuid = self._get_span_uuid(client)
-        client.projects.spans.update_tags(span_uuid=span_uuid, tags_by_name=tag_list)
+        client.spans.update(span_uuid=span_uuid, tags_by_name=tag_list)
+        return None
 
 
 class AsyncTrace(_TraceBase[_T]):
@@ -181,7 +182,7 @@ class AsyncTrace(_TraceBase[_T]):
     async def _get_span_uuid(self, client: AsyncLilypad) -> str | None:
         if not self._flush:
             self._force_flush()
-        response = await client.projects.functions.spans.list(
+        response = await client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
         for span in response:
@@ -226,7 +227,8 @@ class AsyncTrace(_TraceBase[_T]):
         settings = get_settings()
         client = get_async_client(api_key=settings.api_key)
         span_uuid = await self._get_span_uuid(client)
-        await client.projects.spans.update_tags(span_uuid=span_uuid, tags_by_name=tag_list)
+        await client.spans.update(span_uuid=span_uuid, tags_by_name=tag_list)
+        return None
 
 
 # Type definitions for decorator registry
@@ -704,7 +706,8 @@ def trace(
                             )
                         except NotFoundError:
                             return await async_lilypad_client.projects.functions.create(
-                                path_project_uuid=settings.project_id,
+                                project_uuid_=settings.project_id,
+                                project_uuid=settings.project_id,
                                 code=closure.code,
                                 hash=closure.hash,
                                 name=closure.name,
@@ -874,7 +877,8 @@ def trace(
                             )
                         except NotFoundError:
                             return lilypad_client.projects.functions.create(
-                                path_project_uuid=settings.project_id,
+                                project_uuid_=settings.project_id,
+                                project_uuid=settings.project_id,
                                 code=closure.code,
                                 hash=closure.hash,
                                 name=closure.name,
