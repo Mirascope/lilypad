@@ -673,8 +673,11 @@ def trace(
 
         trace_name = get_qualified_name(fn) if name is None else name
         if fn_is_async(fn):
+            async def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                """Fallback: execute only the user function without any API interactions."""
+                return await fn(*args, **kwargs)
 
-            @call_safely(fn)
+            @call_safely(execute_user_function_only)
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with Span(trace_name) as span:
@@ -697,8 +700,6 @@ def trace(
 
                     closure = Closure.from_fn(fn)
 
-                    @call_safely(fn)
-                    @wraps(fn)
                     async def get_or_create_function_async() -> FunctionPublic | None:
                         try:
                             return await get_function_by_hash_async(
@@ -778,7 +779,6 @@ def trace(
                 if sandbox is None:
                     sandbox = SubprocessSandboxRunner(os.environ.copy())
 
-                @call_safely(fn)  # pyright: ignore [reportArgumentType]
                 @wraps(fn)
                 def _inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                     result = sandbox.execute_function(
@@ -843,8 +843,11 @@ def trace(
             inner_async.remote = _deployed_version_async
             return inner_async
         else:
+            def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                """Fallback: execute only the user function without any API interactions."""
+                return fn(*args, **kwargs)
 
-            @call_safely(fn)
+            @call_safely(execute_user_function_only)
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 with Span(trace_name) as span:
@@ -868,8 +871,6 @@ def trace(
 
                     closure = Closure.from_fn(fn)
 
-                    @call_safely(fn)
-                    @wraps(fn)
                     def get_or_create_function_sync() -> FunctionPublic | None:
                         try:
                             return get_function_by_hash_sync(
@@ -952,7 +953,6 @@ def trace(
                 if sandbox is None:
                     sandbox = SubprocessSandboxRunner(os.environ.copy())
 
-                @call_safely(fn)  # pyright: ignore [reportArgumentType]
                 @wraps(fn)
                 def _inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                     result = sandbox.execute_function(
