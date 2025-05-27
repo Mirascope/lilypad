@@ -45,6 +45,7 @@ class _SafeRawClientWrapper:
     def __getattr__(self, name):
         attr = getattr(self._raw_client, name)
         if callable(attr):
+
             @wraps(attr)
             def wrapper(*args, **kwargs):
                 try:
@@ -53,6 +54,7 @@ class _SafeRawClientWrapper:
                     if e.status_code == 404:
                         raise NotFoundError(body=e.body, headers=e.headers)
                     raise e
+
             return wrapper
         return attr
 
@@ -66,6 +68,7 @@ class _SafeAsyncRawClientWrapper:
     def __getattr__(self, name):
         attr = getattr(self._raw_client, name)
         if callable(attr):
+
             @wraps(attr)
             async def wrapper(*args, **kwargs):
                 try:
@@ -74,6 +77,7 @@ class _SafeAsyncRawClientWrapper:
                     if e.status_code == 404:
                         raise NotFoundError(body=e.body, headers=e.headers)
                     raise e
+
             return wrapper
         return attr
 
@@ -137,7 +141,7 @@ class Lilypad(_BaseLilypad):
         """
         try:
             # Wrap all raw clients in projects
-            if hasattr(self, 'projects'):
+            if hasattr(self, "projects"):
                 self._wrap_raw_clients(self.projects)
                 logger.debug("Successfully wrapped all RawClients")
 
@@ -148,19 +152,19 @@ class Lilypad(_BaseLilypad):
     def _wrap_raw_clients(self, client_obj):
         """Recursively wrap all _raw_client attributes."""
         # Wrap the main _raw_client if it exists
-        if hasattr(client_obj, '_raw_client'):
-            original_raw_client = getattr(client_obj, '_raw_client')
+        if hasattr(client_obj, "_raw_client"):
+            original_raw_client = getattr(client_obj, "_raw_client")
             if original_raw_client is not None:
                 wrapped_raw_client = _SafeRawClientWrapper(original_raw_client)
-                setattr(client_obj, '_raw_client', wrapped_raw_client)
+                setattr(client_obj, "_raw_client", wrapped_raw_client)
                 logger.debug("Wrapped _raw_client: %s", type(original_raw_client).__name__)
 
         # Recursively check all attributes for sub-clients
         for attr_name in dir(client_obj):
-            if not attr_name.startswith('_'):
+            if not attr_name.startswith("_"):
                 try:
                     attr_obj = getattr(client_obj, attr_name)
-                    if hasattr(attr_obj, '_raw_client'):
+                    if hasattr(attr_obj, "_raw_client"):
                         self._wrap_raw_clients(attr_obj)
                 except Exception:
                     # Skip attributes that can't be accessed
@@ -226,7 +230,7 @@ class AsyncLilypad(_BaseAsyncLilypad):
         """
         try:
             # Wrap all raw clients in projects
-            if hasattr(self, 'projects'):
+            if hasattr(self, "projects"):
                 self._wrap_raw_clients(self.projects)
                 logger.debug("Successfully wrapped all AsyncRawClients")
 
@@ -237,19 +241,19 @@ class AsyncLilypad(_BaseAsyncLilypad):
     def _wrap_raw_clients(self, client_obj):
         """Recursively wrap all _raw_client attributes."""
         # Wrap the main _raw_client if it exists
-        if hasattr(client_obj, '_raw_client'):
-            original_raw_client = getattr(client_obj, '_raw_client')
+        if hasattr(client_obj, "_raw_client"):
+            original_raw_client = getattr(client_obj, "_raw_client")
             if original_raw_client is not None:
                 wrapped_raw_client = _SafeAsyncRawClientWrapper(original_raw_client)
-                setattr(client_obj, '_raw_client', wrapped_raw_client)
+                setattr(client_obj, "_raw_client", wrapped_raw_client)
                 logger.debug("Wrapped async _raw_client: %s", type(original_raw_client).__name__)
 
         # Recursively check all attributes for sub-clients
         for attr_name in dir(client_obj):
-            if not attr_name.startswith('_'):
+            if not attr_name.startswith("_"):
                 try:
                     attr_obj = getattr(client_obj, attr_name)
-                    if hasattr(attr_obj, '_raw_client'):
+                    if hasattr(attr_obj, "_raw_client"):
                         self._wrap_raw_clients(attr_obj)
                 except Exception:
                     # Skip attributes that can't be accessed

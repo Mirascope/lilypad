@@ -1,4 +1,4 @@
-.PHONY: setup dev test test-app test-sdk lint lint-app lint-sdk generate generate-openapi generate-sdk generate-client clean
+.PHONY: setup dev test test-app test-sdk lint lint-app lint-sdk format format-app format-sdk fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean
 
 setup:
 	command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -26,6 +26,22 @@ lint-app:
 
 lint-sdk:
 	cd sdks/python && uv run ruff check .
+
+format: format-app format-sdk
+
+format-app:
+	cd app && uv run ruff format .
+
+format-sdk:
+	cd sdks/python && uv run ruff format .
+
+fix: fix-app fix-sdk
+
+fix-app:
+	cd app && uv run ruff check --fix .
+
+fix-sdk:
+	cd sdks/python && uv run ruff check --fix .
 
 generate: generate-openapi generate-sdk generate-client
 

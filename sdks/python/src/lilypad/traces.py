@@ -673,6 +673,7 @@ def trace(
 
         trace_name = get_qualified_name(fn) if name is None else name
         if fn_is_async(fn):
+
             async def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 """Fallback: execute only the user function without any API interactions."""
                 return await fn(*args, **kwargs)
@@ -843,6 +844,7 @@ def trace(
             inner_async.remote = _deployed_version_async
             return inner_async
         else:
+
             def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 """Fallback: execute only the user function without any API interactions."""
                 return fn(*args, **kwargs)
