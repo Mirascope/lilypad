@@ -14,7 +14,7 @@ from functools import (
 
 import httpx
 
-from ... import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
+from ...client import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
 from .settings import get_settings
 from ..exceptions import LilypadPaymentRequiredError
 from .call_safely import call_safely
