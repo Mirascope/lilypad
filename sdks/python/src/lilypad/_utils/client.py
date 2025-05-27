@@ -16,8 +16,6 @@ import httpx
 
 from ..generated.client import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
 from .settings import get_settings
-from ..exceptions import LilypadPaymentRequiredError
-from .call_safely import call_safely
 from ..generated.core.api_error import ApiError
 from ..generated.errors.not_found_error import NotFoundError
 
@@ -38,150 +36,46 @@ async def _async_noop_fallback(*_args: object, **_kwargs: object) -> None:
     return None
 
 
-class _SafeHttpClientMixin:
-    """Mixin class providing common error handling logic for HTTP clients."""
+class _SafeRawClientWrapper:
+    """Generic wrapper for any RawClient that converts 404 ApiError to NotFoundError."""
 
-    @staticmethod
-    def _handle_api_error(error: ApiError) -> None:
-        """Handle API errors with appropriate conversion.
+    def __init__(self, raw_client):
+        self._raw_client = raw_client
 
-        Args:
-            error: The API error to handle
-
-        Raises:
-            LilypadPaymentRequiredError: If the error is a payment required error
-            ApiError: Re-raises the original error for other cases
-        """
-        if hasattr(error, "status_code") and error.status_code == LilypadPaymentRequiredError.status_code:
-            logger.debug("Converting ApiError to LilypadPaymentRequiredError: %s", error)
-            raise LilypadPaymentRequiredError(error) from None
-        raise error
-
-
-class _SafeHttpClientWrapper(_SafeHttpClientMixin):
-    """Thread-safe wrapper for synchronous HTTP client with error handling."""
-
-    def __init__(self, wrapped_client: typing.Any) -> None:
-        """Initialize the wrapper with the original HTTP client.
-
-        Args:
-            wrapped_client: The original HTTP client to wrap
-
-        Raises:
-            TypeError: If wrapped_client is None
-        """
-        if wrapped_client is None:
-            raise TypeError("wrapped_client cannot be None")
-        self._wrapped_client = wrapped_client
-
-    def __getattr__(self, name: str) -> typing.Any:
-        """Delegate attribute access to the wrapped client.
-
-        Args:
-            name: Attribute name to access
-
-        Returns:
-            The attribute from the wrapped client, with request method enhanced
-
-        Raises:
-            AttributeError: If the attribute doesn't exist on the wrapped client
-        """
-        try:
-            attr = getattr(self._wrapped_client, name)
-        except AttributeError:
-            logger.warning("Attribute '%s' not found on wrapped client", name)
-            raise
-
-        # Wrap the request method with error handling
-        if name == "request" and callable(attr):
-            return self._create_safe_request(attr)
-
+    def __getattr__(self, name):
+        attr = getattr(self._raw_client, name)
+        if callable(attr):
+            @wraps(attr)
+            def wrapper(*args, **kwargs):
+                try:
+                    return attr(*args, **kwargs)
+                except ApiError as e:
+                    if e.status_code == 404:
+                        raise NotFoundError(body=e.body, headers=e.headers)
+                    raise e
+            return wrapper
         return attr
 
-    def _create_safe_request(
-        self, original_request: typing.Callable[..., typing.Any]
-    ) -> typing.Callable[..., typing.Any]:
-        """Create a safe version of the request method.
 
-        Args:
-            original_request: The original request method
+class _SafeAsyncRawClientWrapper:
+    """Generic wrapper for any AsyncRawClient that converts 404 ApiError to NotFoundError."""
 
-        Returns:
-            Enhanced request method with error handling
-        """
+    def __init__(self, raw_client):
+        self._raw_client = raw_client
 
-        @call_safely(_noop_fallback, exclude=(NotFoundError,))
-        @wraps(original_request)
-        def safe_request(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-            try:
-                return original_request(*args, **kwargs)
-            except ApiError as e:
-                self._handle_api_error(e)
-
-        return safe_request
-
-
-class _SafeAsyncHttpClientWrapper(_SafeHttpClientMixin):
-    """Thread-safe wrapper for asynchronous HTTP client with error handling."""
-
-    def __init__(self, wrapped_client: typing.Any) -> None:
-        """Initialize the wrapper with the original HTTP client.
-
-        Args:
-            wrapped_client: The original async HTTP client to wrap
-
-        Raises:
-            TypeError: If wrapped_client is None
-        """
-        if wrapped_client is None:
-            raise TypeError("wrapped_client cannot be None")
-        self._wrapped_client = wrapped_client
-
-    def __getattr__(self, name: str) -> typing.Any:
-        """Delegate attribute access to the wrapped client.
-
-        Args:
-            name: Attribute name to access
-
-        Returns:
-            The attribute from the wrapped client, with request method enhanced
-
-        Raises:
-            AttributeError: If the attribute doesn't exist on the wrapped client
-        """
-        try:
-            attr = getattr(self._wrapped_client, name)
-        except AttributeError:
-            logger.warning("Attribute '%s' not found on wrapped async client", name)
-            raise
-
-        # Wrap the request method with error handling
-        if name == "request" and callable(attr):
-            return self._create_safe_request(attr)
-
+    def __getattr__(self, name):
+        attr = getattr(self._raw_client, name)
+        if callable(attr):
+            @wraps(attr)
+            async def wrapper(*args, **kwargs):
+                try:
+                    return await attr(*args, **kwargs)
+                except ApiError as e:
+                    if e.status_code == 404:
+                        raise NotFoundError(body=e.body, headers=e.headers)
+                    raise e
+            return wrapper
         return attr
-
-    def _create_safe_request(
-        self, original_request: typing.Callable[..., typing.Awaitable[typing.Any]]
-    ) -> typing.Callable[..., typing.Awaitable[typing.Any]]:
-        """Create a safe version of the async request method.
-
-        Args:
-            original_request: The original async request method
-
-        Returns:
-            Enhanced async request method with error handling
-        """
-
-        @call_safely(_async_noop_fallback, exclude=(NotFoundError,))
-        @wraps(original_request)
-        async def safe_request(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-            try:
-                return await original_request(*args, **kwargs)
-            except ApiError as e:
-                self._handle_api_error(e)
-
-        return safe_request
 
 
 class Lilypad(_BaseLilypad):
@@ -241,24 +135,36 @@ class Lilypad(_BaseLilypad):
         Raises:
             AttributeError: If the client wrapper doesn't have the expected structure
         """
-        if not hasattr(self, "_client_wrapper"):
-            logger.warning("Client wrapper not found, skipping HTTP client enhancement")
-            return
-
-        if not hasattr(self._client_wrapper, "httpx_client"):
-            logger.warning("HTTP client not found in client wrapper, skipping enhancement")
-            return
-
         try:
-            original_client = self._client_wrapper.httpx_client
-            if original_client is not None:
-                self._client_wrapper.httpx_client = _SafeHttpClientWrapper(original_client)
-                logger.debug("Successfully enhanced HTTP client with error handling")
-            else:
-                logger.warning("HTTP client is None, cannot enhance")
+            # Wrap all raw clients in projects
+            if hasattr(self, 'projects'):
+                self._wrap_raw_clients(self.projects)
+                logger.debug("Successfully wrapped all RawClients")
+
         except Exception as e:
             logger.error("Failed to enhance HTTP client: %s", e)
             # Don't raise here - allow the client to work without enhancement
+
+    def _wrap_raw_clients(self, client_obj):
+        """Recursively wrap all _raw_client attributes."""
+        # Wrap the main _raw_client if it exists
+        if hasattr(client_obj, '_raw_client'):
+            original_raw_client = getattr(client_obj, '_raw_client')
+            if original_raw_client is not None:
+                wrapped_raw_client = _SafeRawClientWrapper(original_raw_client)
+                setattr(client_obj, '_raw_client', wrapped_raw_client)
+                logger.debug("Wrapped _raw_client: %s", type(original_raw_client).__name__)
+
+        # Recursively check all attributes for sub-clients
+        for attr_name in dir(client_obj):
+            if not attr_name.startswith('_'):
+                try:
+                    attr_obj = getattr(client_obj, attr_name)
+                    if hasattr(attr_obj, '_raw_client'):
+                        self._wrap_raw_clients(attr_obj)
+                except Exception:
+                    # Skip attributes that can't be accessed
+                    pass
 
 
 class AsyncLilypad(_BaseAsyncLilypad):
@@ -318,24 +224,36 @@ class AsyncLilypad(_BaseAsyncLilypad):
         Raises:
             AttributeError: If the client wrapper doesn't have the expected structure
         """
-        if not hasattr(self, "_client_wrapper"):
-            logger.warning("Client wrapper not found, skipping async HTTP client enhancement")
-            return
-
-        if not hasattr(self._client_wrapper, "httpx_client"):
-            logger.warning("Async HTTP client not found in client wrapper, skipping enhancement")
-            return
-
         try:
-            original_client = self._client_wrapper.httpx_client
-            if original_client is not None:
-                self._client_wrapper.httpx_client = _SafeAsyncHttpClientWrapper(original_client)
-                logger.debug("Successfully enhanced async HTTP client with error handling")
-            else:
-                logger.warning("Async HTTP client is None, cannot enhance")
+            # Wrap all raw clients in projects
+            if hasattr(self, 'projects'):
+                self._wrap_raw_clients(self.projects)
+                logger.debug("Successfully wrapped all AsyncRawClients")
+
         except Exception as e:
             logger.error("Failed to enhance async HTTP client: %s", e)
             # Don't raise here - allow the client to work without enhancement
+
+    def _wrap_raw_clients(self, client_obj):
+        """Recursively wrap all _raw_client attributes."""
+        # Wrap the main _raw_client if it exists
+        if hasattr(client_obj, '_raw_client'):
+            original_raw_client = getattr(client_obj, '_raw_client')
+            if original_raw_client is not None:
+                wrapped_raw_client = _SafeAsyncRawClientWrapper(original_raw_client)
+                setattr(client_obj, '_raw_client', wrapped_raw_client)
+                logger.debug("Wrapped async _raw_client: %s", type(original_raw_client).__name__)
+
+        # Recursively check all attributes for sub-clients
+        for attr_name in dir(client_obj):
+            if not attr_name.startswith('_'):
+                try:
+                    attr_obj = getattr(client_obj, attr_name)
+                    if hasattr(attr_obj, '_raw_client'):
+                        self._wrap_raw_clients(attr_obj)
+                except Exception:
+                    # Skip attributes that can't be accessed
+                    pass
 
 
 @lru_cache(maxsize=256)
