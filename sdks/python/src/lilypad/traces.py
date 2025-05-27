@@ -18,18 +18,18 @@ from typing import (
 from functools import wraps
 from contextlib import contextmanager
 from contextvars import ContextVar
-from ..types.label import Label
+from .generated.types.label import Label
 from collections.abc import Callable, Coroutine, Generator
-from ..types.evaluation_type import EvaluationType
-from ..types.function_public import FunctionPublic
-from ..types.annotation_create import AnnotationCreate
+from .generated.types.evaluation_type import EvaluationType
+from .generated.types.function_public import FunctionPublic
+from .generated.types.annotation_create import AnnotationCreate
 
 import orjson
 from pydantic import BaseModel
 from opentelemetry.trace import format_span_id, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 
-from ..errors.not_found_error import NotFoundError
+from .generated.errors.not_found_error import NotFoundError
 
 from .spans import Span
 from ._utils import (
@@ -40,7 +40,7 @@ from ._utils import (
     get_qualified_name,
     create_mirascope_middleware,
 )
-from ..client import Lilypad, AsyncLilypad
+from .generated.client import Lilypad, AsyncLilypad
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
 from .exceptions import RemoteFunctionError
 from ._utils.json import to_text, json_dumps, fast_jsonable
