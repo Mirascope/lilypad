@@ -80,7 +80,7 @@ class Span:
         current_session = SESSION_CONTEXT.get()
         if current_session and current_session.id is not None:
             self._span.set_attribute("lilypad.session_id", current_session.id)
-        self._is_root = getattr(self._span, "parent") is None
+        self._is_root = self._span.parent is None
         self._condition = None
         self._lock_acquired = False
 

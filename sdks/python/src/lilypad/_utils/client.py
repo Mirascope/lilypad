@@ -6,7 +6,7 @@ import typing
 import asyncio
 import logging
 import weakref
-from typing import TypeVar, ParamSpec
+from typing import TypeVar, ParamSpec, Any
 from functools import (
     wraps,  # noqa: TID251
     lru_cache,
@@ -39,15 +39,15 @@ async def _async_noop_fallback(*_args: object, **_kwargs: object) -> None:
 class _SafeRawClientWrapper:
     """Generic wrapper for any RawClient that converts 404 ApiError to NotFoundError."""
 
-    def __init__(self, raw_client):
+    def __init__(self, raw_client: object):
         self._raw_client = raw_client
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         attr = getattr(self._raw_client, name)
         if callable(attr):
 
             @wraps(attr)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 try:
                     return attr(*args, **kwargs)
                 except ApiError as e:
@@ -62,15 +62,15 @@ class _SafeRawClientWrapper:
 class _SafeAsyncRawClientWrapper:
     """Generic wrapper for any AsyncRawClient that converts 404 ApiError to NotFoundError."""
 
-    def __init__(self, raw_client):
+    def __init__(self, raw_client: object) -> None:
         self._raw_client = raw_client
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> typing.Callable[..., Any]:
         attr = getattr(self._raw_client, name)
         if callable(attr):
 
             @wraps(attr)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 try:
                     return await attr(*args, **kwargs)
                 except ApiError as e:
@@ -149,14 +149,14 @@ class Lilypad(_BaseLilypad):
             logger.error("Failed to enhance HTTP client: %s", e)
             # Don't raise here - allow the client to work without enhancement
 
-    def _wrap_raw_clients(self, client_obj):
+    def _wrap_raw_clients(self, client_obj: object) -> None:
         """Recursively wrap all _raw_client attributes."""
         # Wrap the main _raw_client if it exists
         if hasattr(client_obj, "_raw_client"):
-            original_raw_client = getattr(client_obj, "_raw_client")
+            original_raw_client = client_obj._raw_client
             if original_raw_client is not None:
                 wrapped_raw_client = _SafeRawClientWrapper(original_raw_client)
-                setattr(client_obj, "_raw_client", wrapped_raw_client)
+                client_obj._raw_client = wrapped_raw_client
                 logger.debug("Wrapped _raw_client: %s", type(original_raw_client).__name__)
 
         # Recursively check all attributes for sub-clients
@@ -238,14 +238,14 @@ class AsyncLilypad(_BaseAsyncLilypad):
             logger.error("Failed to enhance async HTTP client: %s", e)
             # Don't raise here - allow the client to work without enhancement
 
-    def _wrap_raw_clients(self, client_obj):
+    def _wrap_raw_clients(self, client_obj: object) -> None:
         """Recursively wrap all _raw_client attributes."""
         # Wrap the main _raw_client if it exists
         if hasattr(client_obj, "_raw_client"):
-            original_raw_client = getattr(client_obj, "_raw_client")
+            original_raw_client = client_obj._raw_client
             if original_raw_client is not None:
                 wrapped_raw_client = _SafeAsyncRawClientWrapper(original_raw_client)
-                setattr(client_obj, "_raw_client", wrapped_raw_client)
+                client_obj._raw_client = wrapped_raw_client
                 logger.debug("Wrapped async _raw_client: %s", type(original_raw_client).__name__)
 
         # Recursively check all attributes for sub-clients

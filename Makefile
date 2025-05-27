@@ -38,10 +38,10 @@ format-sdk:
 fix: fix-app fix-sdk
 
 fix-app:
-	cd app && uv run ruff check --fix .
+	cd app && uv run ruff check --fix --unsafe-fixes .
 
 fix-sdk:
-	cd sdks/python && uv run ruff check --fix .
+	cd sdks/python && uv run ruff check --fix --unsafe-fixes .
 
 generate: generate-openapi generate-sdk generate-client
 
