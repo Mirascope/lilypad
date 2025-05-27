@@ -3,14 +3,14 @@
 import base64
 from io import BytesIO
 from uuid import UUID, uuid4
-from unittest.mock import ANY, MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import PIL.Image
 import PIL.WebPImagePlugin
 from pydantic import BaseModel
 from mirascope import BaseMessageParam
-from opentelemetry.trace import Span, Status, SpanKind, StatusCode, SpanContext
+from opentelemetry.trace import Span, Status, StatusCode
 from mirascope.core.base._utils._base_type import BaseType as mb_BaseType
 
 # Import the module directly to reference its contents
@@ -18,8 +18,6 @@ from lilypad.lib._utils import json_dumps, middleware, fast_jsonable, encode_gem
 
 # Import specific items needed for testing/patching
 from lilypad.lib._utils.middleware import (
-    SyncFunc,
-    AsyncFunc,
     mb,
     _Handlers,
     _handle_error,
