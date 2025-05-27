@@ -2,6 +2,16 @@
 
 # isort: skip_file
 
+from .core.request_options import RequestOptions
+
+from .errors.not_found_error import NotFoundError
+
+from .lib import Message, Session, configure, lilypad_config, register_serializer, session, tool
+from .lib.spans import Span, span
+from .lib.stream import Stream
+
+from .lib.traces import AsyncTrace, Trace, trace
+
 from . import (
     api_keys,
     auth,
