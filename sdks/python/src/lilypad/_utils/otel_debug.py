@@ -1,6 +1,7 @@
 import logging
 
-from opentelemetry.sdk.trace.export import ReadableSpan, BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace import ReadableSpan
 
 log = logging.getLogger("lilypad.otel-debug")
 log.setLevel(logging.DEBUG)

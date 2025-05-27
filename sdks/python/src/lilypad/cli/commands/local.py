@@ -14,6 +14,7 @@ from importlib.resources import files
 import typer
 from rich import print
 
+from ..._utils.client import get_sync_client
 from ...generated import Lilypad
 from ._utils import get_and_create_config
 from ..._utils.settings import get_settings
@@ -109,7 +110,7 @@ def local_command(
         data["port"] = new_port
     with open(config_path, "w") as f:
         json.dump(data, f, indent=4)
-    lilypad_client = Lilypad()
+    lilypad_client = get_sync_client()
     process = _start_lilypad(Path.cwd(), new_port)
 
     def signal_handler(sig: int, frame: FrameType | None) -> None:
@@ -120,7 +121,7 @@ def local_command(
     if not existing_project:
         try:
             if _wait_for_server(lilypad_client):
-                project = lilypad_client.post_project(project_name)
+                project = lilypad_client.projects.create(name=project_name)
                 with open(config_path, "w") as f:
                     data["project_uuid"] = str(project.uuid_)
                     json.dump(data, f, indent=4)
