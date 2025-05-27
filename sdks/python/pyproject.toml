@@ -157,11 +157,7 @@ pythonVersion = "3.10"
 exclude = [
     ".venv",
     "tests",
-    "src/lilypad/lib",
-    "src/lilypad/types",
-    "src/lilypad/core/unchecked_base_model.py",
-    "src/lilypad/core/serialization.py",
-    "src/lilypad/core/query_encoder.py"
+    "src/lilypad",
 ]
 
 [build-system]

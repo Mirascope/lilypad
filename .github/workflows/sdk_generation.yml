@@ -109,7 +109,7 @@ jobs:
             echo ""
             echo "To fix this, run locally:"
             echo "  make generate-fern-sdk"
-            echo "  # or: cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/.git"
+            echo "  # or: cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/generated/.git"
             echo ""
             echo "Then commit the changes."
             echo ""

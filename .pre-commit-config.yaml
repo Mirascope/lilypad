@@ -74,7 +74,7 @@ repos:
 
       - id: generate-fern-sdk
         name: generate-fern-sdk
-        entry: bash -c 'cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/.git'
+        entry: bash -c 'cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/generated/.git'
         language: system
         files: "^sdks/fern/lilypad-api.json"
         pass_filenames: false
