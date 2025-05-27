@@ -64,7 +64,7 @@ _R_CO = TypeVar("_R_CO", covariant=True)
 _T = TypeVar("_T")
 
 
-TRACE_MODULE_NAME = "lilypad.lib.traces"
+TRACE_MODULE_NAME = "lilypad.traces"
 
 
 def _get_trace_type(function: FunctionPublic | None) -> Literal["trace", "function"]:
