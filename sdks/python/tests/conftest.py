@@ -54,6 +54,7 @@ async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncLilypad]:
     async with AsyncLilypad(base_url=base_url, api_key=api_key, _strict_response_validation=strict) as client:
         yield client
 
+
 def pytest_configure(config: pytest.Config):
     """Configure pytest."""
     os.environ["LILYPAD_ENVIRONMENT"] = "test"
