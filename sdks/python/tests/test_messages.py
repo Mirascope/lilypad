@@ -22,7 +22,7 @@ from mirascope.core.base.call_response import _BaseToolT
 from openai.types.chat.chat_completion import Choice
 from mirascope.core.openai.call_response import OpenAICallResponse
 
-from lilypad.lib.messages import Message
+from lilypad.messages import Message
 
 
 class MockResponse(

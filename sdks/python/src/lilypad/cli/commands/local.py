@@ -14,7 +14,7 @@ from importlib.resources import files
 import typer
 from rich import print
 
-from .... import Lilypad
+from ...generated import Lilypad
 from ._utils import get_and_create_config
 from ..._utils.settings import get_settings
 

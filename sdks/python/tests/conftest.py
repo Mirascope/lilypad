@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+import pytest
 import os
+
 import logging
 from typing import TYPE_CHECKING, Iterator, AsyncIterator
 
-import pytest
 from pytest_asyncio import is_async_test
 
 from lilypad import Lilypad, AsyncLilypad
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest  # pyright: ignore[reportPrivateImportUsage]
+
+
+api_key = "My API Key"
 
 pytest.register_assert_rewrite("tests.utils")
 
@@ -49,3 +53,10 @@ async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncLilypad]:
 
     async with AsyncLilypad(base_url=base_url, api_key=api_key, _strict_response_validation=strict) as client:
         yield client
+
+def pytest_configure(config: pytest.Config):
+    """Configure pytest."""
+    os.environ["LILYPAD_ENVIRONMENT"] = "test"
+    os.environ["LILYPAD_API_KEY"] = api_key
+    # Dummy project ID as UUID4
+    os.environ["LILYPAD_PROJECT_ID"] = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"

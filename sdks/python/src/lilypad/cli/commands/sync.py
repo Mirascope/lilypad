@@ -9,7 +9,7 @@ import importlib
 from typing import Any, TypeAlias
 from pathlib import Path
 from textwrap import dedent
-from lilypad.types.function_public import FunctionPublic
+from ...generated.types.function_public import FunctionPublic
 
 import typer
 from rich import print

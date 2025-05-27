@@ -33,7 +33,7 @@ from ._utils.settings import (
     _current_settings,
 )
 from ._utils.otel_debug import wrap_batch_processor
-from ..types.span_public import SpanPublic
+from .generated.types.span_public import SpanPublic
 
 try:
     from rich.logging import RichHandler as LogHandler

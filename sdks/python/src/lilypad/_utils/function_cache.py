@@ -12,7 +12,7 @@ from collections.abc import Callable, Awaitable, Coroutine
 
 from . import Closure
 from .client import get_sync_client, get_async_client
-from ...types.function_public import FunctionPublic
+from ..generated.types.function_public import FunctionPublic
 
 _HASH_SYNC_MAX = 2_048
 _hash_async_lock = asyncio.Lock()

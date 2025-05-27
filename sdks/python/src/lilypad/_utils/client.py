@@ -14,12 +14,12 @@ from functools import (
 
 import httpx
 
-from ...client import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
+from ..generated.client import Lilypad as _BaseLilypad, AsyncLilypad as _BaseAsyncLilypad
 from .settings import get_settings
 from ..exceptions import LilypadPaymentRequiredError
 from .call_safely import call_safely
-from ...core.api_error import ApiError
-from ...errors.not_found_error import NotFoundError
+from ..generated.core.api_error import ApiError
+from ..generated.errors.not_found_error import NotFoundError
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

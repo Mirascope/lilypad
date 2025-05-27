@@ -23,7 +23,7 @@ from .settings import get_settings
 from .functions import ArgTypes, ArgValues
 
 if TYPE_CHECKING:
-    from ...types.function_public import FunctionPublic
+    from ..generated.types.function_public import FunctionPublic
 
 
 _P = ParamSpec("_P")

@@ -13,8 +13,8 @@ from opentelemetry.trace import Span as OTSpan, StatusCode, get_tracer, get_trac
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from ..lib.sessions import SESSION_CONTEXT
-from ..lib._utils.json import json_dumps
+from .sessions import SESSION_CONTEXT
+from ._utils.json import json_dumps
 
 _trace_level: ContextVar[int] = ContextVar("_trace_level", default=0)
 
