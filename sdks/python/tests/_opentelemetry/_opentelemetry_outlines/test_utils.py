@@ -7,7 +7,7 @@ import pytest
 from pydantic import BaseModel
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad.lib._opentelemetry._opentelemetry_outlines.utils import (
+from lilypad._opentelemetry._opentelemetry_outlines.utils import (
     record_prompts,
     set_choice_event,
     record_stop_sequences,

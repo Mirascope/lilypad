@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from lilypad.lib.cli.commands.sync import (
+from lilypad.cli.commands.sync import (
     _merge_parameters,
     _parse_return_type,
     _normalize_signature,
@@ -145,7 +145,7 @@ def test_generate_protocol_stub_content(is_async, wrapped, expected):
 
 def dummy_get_decorated_functions(decorator_name: str, dummy_file_path: str):
     """Dummy get_decorated_functions function"""
-    return {"lilypad.lib.generation": [(dummy_file_path, "my_func", 1, "pkg.dummy")]}
+    return {"lilypad.generation": [(dummy_file_path, "my_func", 1, "pkg.dummy")]}
 
 
 class DummyClient:
@@ -176,6 +176,6 @@ def override_dependencies(monkeypatch, tmp_path: Path):
     pkg_dir.mkdir(exist_ok=True)
     dummy_file = (pkg_dir / "dummy.py").resolve()
     monkeypatch.setattr(
-        "lilypad.lib.cli.commands.sync.get_decorated_functions",
+        "lilypad.cli.commands.sync.get_decorated_functions",
         lambda decorator_name: dummy_get_decorated_functions(decorator_name, str(dummy_file)),
     )

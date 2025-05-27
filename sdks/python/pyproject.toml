@@ -184,4 +184,4 @@ include = [
 ]
 
 [project.scripts]
-lilypad = "lilypad.lib.cli.main:app"
+lilypad = "lilypad.cli.main:app"

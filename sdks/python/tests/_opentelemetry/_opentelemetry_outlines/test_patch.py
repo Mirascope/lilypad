@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from opentelemetry.trace import Span, StatusCode
 
-from lilypad.lib._opentelemetry._opentelemetry_outlines.patch import (
+from lilypad._opentelemetry._opentelemetry_outlines.patch import (
     model_generate,
     model_generate_async,
     model_generate_stream,

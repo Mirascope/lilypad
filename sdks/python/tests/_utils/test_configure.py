@@ -1,5 +1,5 @@
-from lilypad.lib._configure import lilypad_config, configure
-from lilypad.lib._utils.settings import get_settings
+from lilypad._configure import lilypad_config, configure
+from lilypad._utils.settings import get_settings
 
 
 def test_configure_and_ctx():

@@ -6,7 +6,7 @@ from unittest.mock import Mock, AsyncMock
 import pytest
 from opentelemetry.trace import StatusCode
 
-from lilypad.lib._opentelemetry._opentelemetry_anthropic.patch import (
+from lilypad._opentelemetry._opentelemetry_anthropic.patch import (
     chat_completions_create,
     chat_completions_create_async,
 )

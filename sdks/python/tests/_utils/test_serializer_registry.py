@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass
 
-from lilypad.lib._utils.json import fast_jsonable
-from lilypad.lib._utils.serializer_registry import register_serializer
+from lilypad._utils.json import fast_jsonable
+from lilypad._utils.serializer_registry import register_serializer
 
 
 @dataclass

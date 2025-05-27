@@ -17,9 +17,7 @@ from mirascope.core import BaseMessageParam, openai, prompt_template
 from openai.types.chat import ChatCompletionUserMessageParam
 from google.generativeai.generative_models import GenerativeModel
 
-import tests.lib._utils.closure.closure_test_functions.other
-import tests.lib._utils.closure.closure_test_functions.other as cloth
-from lilypad.lib._utils import Closure
+from lilypad._utils import Closure
 
 from . import other, other as oth
 from .other import (
@@ -377,7 +375,7 @@ def user_defined_dotted_import_fn() -> str:
     def user_defined_dotted_import_fn() -> str:
         return imported_fn()
     """
-    return tests._utils.closure.closure_test_functions.other.imported_fn()
+    return other.imported_fn()
 
 
 def user_defined_aliased_dotted_import_fn() -> str:
@@ -389,7 +387,7 @@ def user_defined_aliased_dotted_import_fn() -> str:
     def user_defined_aliased_dotted_import_fn() -> str:
         return imported_fn()
     """
-    return cloth.imported_fn()
+    return oth.imported_fn()
 
 
 def annotated_input_arg_fn(var: Any) -> str:
@@ -510,7 +508,7 @@ def closure_inside_decorator_fn() -> str:
     from collections.abc import Callable
     from functools import wraps
 
-    from lilypad.lib._utils import Closure
+    from lilypad._utils import Closure
 
 
     def _decorator(fn: Callable) -> Callable[[], Closure]:
@@ -534,7 +532,7 @@ def closure_inside_imported_decorator_fn() -> str:
     from collections.abc import Callable
     from functools import wraps
 
-    from lilypad.lib._utils import Closure
+    from lilypad._utils import Closure
 
 
     def imported_decorator(fn: Callable) -> Callable[[], Closure]:

@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 import pytest
 
-from lilypad.lib._utils import Closure, get_qualified_name
+from lilypad._utils import Closure, get_qualified_name
 
 from .closure_test_functions import (
     sub_fn,
@@ -603,7 +603,7 @@ def test_from_fn_failure(monkeypatch):
     def fake_run_ruff(code: str) -> str:
         raise RuntimeError("Ruff failed")
 
-    monkeypatch.setattr("lilypad.lib._utils.closure._run_ruff", fake_run_ruff)
+    monkeypatch.setattr("lilypad._utils.closure._run_ruff", fake_run_ruff)
 
     def dummy_func(x):
         return x

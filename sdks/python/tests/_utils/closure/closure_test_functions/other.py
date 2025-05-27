@@ -8,7 +8,7 @@ from collections.abc import Callable
 from pydantic import Field, BaseModel
 from mirascope.core import FromCallArgs, openai
 
-from lilypad.lib._utils import Closure
+from lilypad._utils import Closure
 
 
 def imported_fn() -> str:

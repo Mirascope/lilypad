@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad.lib._opentelemetry._opentelemetry_anthropic.utils import (
+from lilypad._opentelemetry._opentelemetry_anthropic.utils import (
     AnthropicMetadata,
     AnthropicChunkHandler,
     get_message_event,

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad.lib._opentelemetry._opentelemetry_bedrock.utils import (
+from lilypad._opentelemetry._opentelemetry_bedrock.utils import (
     BedrockMetadata,
     BedrockChunkHandler,
     default_bedrock_cleanup,

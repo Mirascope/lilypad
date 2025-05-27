@@ -1,6 +1,6 @@
-from lilypad.lib import configure
-from lilypad.lib._configure import lilypad_config
-from lilypad.lib._utils.settings import get_settings
+from lilypad import configure
+from lilypad._configure import lilypad_config
+from lilypad._utils.settings import get_settings
 
 
 def test_configure_updates_settings():

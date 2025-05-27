@@ -6,8 +6,8 @@ from collections.abc import Generator
 
 import pytest
 
-from lilypad.lib.spans import span
-from lilypad.lib._utils import json_dumps
+from lilypad.spans import span
+from lilypad._utils import json_dumps
 
 dummy_spans: list["DummySpan"] = []
 
@@ -103,7 +103,7 @@ def reset_dummy_spans() -> Generator[None, None, None]:
 @pytest.fixture(autouse=True)
 def patch_get_tracer(monkeypatch) -> None:
     """Patch get_tracer to return a DummyTracer instance."""
-    monkeypatch.setattr("lilypad.lib.spans.get_tracer", lambda _: DummyTracer())
+    monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
 
 
 def test_basic_sync_span() -> None:

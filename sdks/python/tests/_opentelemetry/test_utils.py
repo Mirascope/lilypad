@@ -5,7 +5,7 @@ from unittest.mock import Mock, AsyncMock, create_autospec
 import pytest
 from opentelemetry.trace import StatusCode
 
-from lilypad.lib._opentelemetry._utils import (
+from lilypad._opentelemetry._utils import (
     ChoiceBuffer,
     StreamWrapper,
     ToolCallBuffer,

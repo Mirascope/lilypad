@@ -3,7 +3,7 @@
 import pytest
 from mirascope.core import BaseTool
 
-from lilypad.lib.tools import tool
+from lilypad.tools import tool
 
 
 # Sample functions and tools for testing
