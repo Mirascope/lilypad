@@ -10,13 +10,40 @@ on:
       - main
 
 jobs:
-  lints:
-    name: Ruff, Pyright, and Codespell
+  codespell:
+    name: Codespell
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - uses: codespell-project/actions-codespell@v2
+        with:
+          skip: '.git,*.lock,./app/client/pnpm-lock.yaml,./docs/pnpm-lock.yaml'
+
+  lint-python:
+    name: Lint Python (${{ matrix.project.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - name: "SDK"
+            directory: "sdks/python"
+            lock_file: "sdks/python/uv.lock"
+            has_playground: false
+            pyright_paths: "src/lilypad tests"
+            ruff_paths: "."
+          - name: "App"
+            directory: "app"
+            lock_file: "app/uv.lock"
+            has_playground: true
+            pyright_paths: "lilypad tests"
+            ruff_paths: "."
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.project.directory }}
+
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Set up uv
         run: curl -LsSf https://astral.sh/uv/0.6.12/install.sh | sh
@@ -24,30 +51,36 @@ jobs:
       - name: Set Up Python Environment
         run: uv python install 3.11
 
-      - name: Restore uv cache
+      - name: Restore uv cache for ${{ matrix.project.name }}
         uses: actions/cache@v4
         with:
           path: /tmp/.uv-cache
-          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-${{ matrix.project.name }}-${{ hashFiles(matrix.project.lock_file) }}
           restore-keys: |
-            uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-            uv-${{ runner.os }}
+            uv-${{ runner.os }}-${{ matrix.project.name }}-
 
       - name: Install the project
         run: uv sync --all-extras --dev
 
       - name: Run Ruff
-        run: uv run ruff check .
+        run: uv run ruff check ${{ matrix.project.ruff_paths }}
 
       - name: Run Pyright
-        run: uv run pyright lilypad tests
+        env:
+          PYRIGHT_PYTHON_FORCE_VERSION: latest
+        run: uv run pyright ${{ matrix.project.pyright_paths }}
 
       - name: Run uv lock for Playground
+        if: matrix.project.has_playground
         run: uv run scripts/generate-playground-requirements-lock-file.sh
 
       - name: Check for git diff
+        if: matrix.project.has_playground
         run: |
-          git diff --exit-code playground-requirements.lock || { echo "Error: Uncommitted changes found. Please run 'uv run scripts/generate-playground-requirements-lock-file.sh'"; exit 1; }
+          git diff --exit-code playground-requirements.lock || { 
+            echo "Error: Uncommitted changes found. Please run 'uv run scripts/generate-playground-requirements-lock-file.sh'"
+            exit 1
+          }
 
       - name: Minimize uv cache
         run: uv cache prune --ci
