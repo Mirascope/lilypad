@@ -315,10 +315,25 @@ def _extract_types(annotation: Any) -> set[type]:
         else:
             for arg in annotation.__args__:
                 types_found |= _extract_types(arg)
-    elif isinstance(annotation, type):
+    elif isinstance(annotation, type) and not _is_stdlib_or_builtin(annotation):
         types_found.add(annotation)
     return types_found
 
+def _is_stdlib_or_builtin(obj: Any) -> bool:
+    """Check if an object is part of the Python standard library or built-in types."""
+    if not hasattr(obj, "__module__"):
+        return False
+
+    module_name = obj.__module__
+    if not module_name:
+        return False
+
+    return (
+        module_name in sys.stdlib_module_names
+        or module_name.startswith("collections.")
+        or module_name.startswith("typing.")
+        or module_name in {"abc", "typing", "builtins", "_collections_abc"}
+    )
 
 class _DefinitionCollector(ast.NodeVisitor):
     def __init__(self, module: ModuleType, used_names: list[str], site_packages: set[str]) -> None:
@@ -332,7 +347,7 @@ class _DefinitionCollector(ast.NodeVisitor):
     def visit_Name(self, node: ast.Name) -> None:
         if node.id in self.used_names:
             candidate = getattr(self.module, node.id, None)
-            if callable(candidate):
+            if callable(candidate) and not _is_stdlib_or_builtin(candidate):
                 self.definitions_to_include.append(candidate)
         self.generic_visit(node)
 
@@ -575,6 +590,8 @@ class _DependencyCollector:
 
     def _collect_imports_and_source_code(self, definition: Callable[..., Any] | type, include_source: bool) -> None:
         try:
+            if _is_stdlib_or_builtin(definition):
+                return
             if isinstance(definition, property):
                 if definition.fget is None:
                     return
@@ -752,7 +769,7 @@ def _run_ruff(code: str) -> str:
 
     try:
         proc = subprocess.run(
-            ["ruff", "check", "--isolated", "--select=I", "--fix", str(tmp_path)],
+            ["ruff", "check", "--isolated", "--select=I001", "--fix", str(tmp_path)],
             capture_output=True,
             text=True,
         )
