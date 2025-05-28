@@ -2,20 +2,20 @@
 
 api:
   specs:
-    - openapi: mirascope.json
+    - openapi: lilypad-api.json
       overrides: ./openapi-overrides.yml
-      
+
 groups:
   python-sdk:
     generators:
       - name: fernapi/fern-python-sdk
-        version: 4.20.3
+        version: 4.21.2
         output:
           location: local-file-system
-          path: ../python/src
+          path: ../python/src/lilypad/generated
         config:
           client:
-            class_name: Mirascope
+            class_name: Lilypad
             filename: client.py
           pydantic_config:
             skip_validation: true
