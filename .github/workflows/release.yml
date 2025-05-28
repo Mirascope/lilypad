@@ -22,6 +22,8 @@ jobs:
             echo "language=python" >> $GITHUB_OUTPUT
           elif [[ $TAG_NAME == ts/* ]]; then
             echo "language=typescript" >> $GITHUB_OUTPUT
+          elif [[ $TAG_NAME == app/* ]]; then
+            exit 0
           else
             echo "Unknown language prefix in tag: $TAG_NAME"
             exit 1
