@@ -214,7 +214,9 @@ export const LilypadPanelTab = ({
       label: "Code",
       value: TraceTab.CODE,
       component: span.code ? (
-        <CodeBlock language="python" code={span.code} className="h-full" />
+        <div className="flex flex-col h-0 flex-1">
+          <CodeBlock language="python" code={span.code} className="flex-1 overflow-hidden" />
+        </div>
       ) : null,
     },
     {
