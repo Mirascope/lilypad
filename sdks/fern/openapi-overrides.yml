@@ -1,0 +1,327 @@
+paths:
+  /ee/projects/{project_uuid}/annotations:
+    get:
+      x-fern-sdk-group-name: [ee, projects, annotations]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [ee, projects, annotations]
+      x-fern-sdk-method-name: create
+  /ee/projects/{project_uuid}/annotations/{annotation_uuid}:
+    delete:
+      x-fern-sdk-group-name: [ee, projects, annotations]
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: [ee, projects, annotations]
+      x-fern-sdk-method-name: update
+  /ee/projects/{project_uuid}/functions/{function_uuid}/annotations:
+    get:
+      x-fern-sdk-group-name: [ee, projects, functions, annotations]
+      x-fern-sdk-method-name: list
+  /ee/projects/{project_uuid}/spans/{span_uuid}/annotations:
+    get:
+      x-fern-sdk-group-name: [ee, projects, spans, annotations]
+      x-fern-sdk-method-name: list
+  /ee/projects/{project_uuid}/functions/{function_uuid}/annotations/metrics:
+    get:
+      x-fern-sdk-group-name: [ee, projects, functions, annotations]
+      x-fern-sdk-method-name: getMetrics
+  /ee/projects/{project_uuid}/spans/{span_uuid}/generate-annotation:
+    get:
+      x-fern-sdk-group-name: [ee, projects, spans]
+      x-fern-sdk-method-name: generateAnnotation
+  /ee/projects/{project_uuid}/functions/{function_uuid}/playground:
+    post:
+      x-fern-sdk-group-name: [ee, projects, functions]
+      x-fern-sdk-method-name: runPlayground
+  /ee/organizations/license:
+    get:
+      x-fern-sdk-group-name: [ee, organizations]
+      x-fern-sdk-method-name: getLicense
+  /ee/user-organizations/users:
+    get:
+      x-fern-sdk-group-name: [ee, organizations, users]
+      x-fern-sdk-method-name: list
+  /ee/user-organizations:
+    get:
+      x-fern-sdk-group-name: [ee, organizations]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [ee, organizations]
+      x-fern-sdk-method-name: create
+  /ee/user-organizations/{user_organization_uuid}:
+    delete:
+      x-fern-sdk-group-name: [ee, organizations]
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: [organizations]
+      x-fern-sdk-method-name: update
+  /api-keys:
+    get:
+      x-fern-sdk-group-name: [apiKeys]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [apiKeys]
+      x-fern-sdk-method-name: create
+  /api-keys/{api_key_uuid}:
+    delete:
+      x-fern-sdk-group-name: [apiKeys]
+      x-fern-sdk-method-name: delete
+  /webhooks/stripe:
+    post:
+      x-fern-sdk-group-name: [webhooks]
+      x-fern-sdk-method-name: handleStripe
+  /projects/{project_uuid}/functions/name/{function_name}/version/{version_num}:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getByVersion
+  /projects/{project_uuid}/functions/name/{function_name}:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getByName
+  /projects/{project_uuid}/functions/name/{function_name}/environments:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getDeployedEnvironments
+  /projects/{project_uuid}/versioned-functions:
+    post:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: createVersioned
+  /projects/{project_uuid}/functions/metadata/names:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getUniqueNames
+  /projects/{project_uuid}/functions/metadata/names/versions:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getLatestVersions
+  /projects/{project_uuid}/functions/hash/{function_hash}:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: getByHash
+  /projects/{project_uuid}/functions:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: create
+  /projects/{project_uuid}/functions/{function_uuid}:
+    get:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: archive
+    patch:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: update
+  /projects/{project_uuid}/functions/names/{function_name}:
+    delete:
+      x-fern-sdk-group-name: [projects, functions]
+      x-fern-sdk-method-name: archiveByName
+  /organizations-invites/:
+    get:
+      x-fern-sdk-group-name: [organizations, invites]
+      x-fern-sdk-method-name: list
+  /organizations-invites/{invite_token}:
+    get:
+      x-fern-sdk-group-name: [organizations, invites]
+      x-fern-sdk-method-name: get
+  /organizations-invites:
+    post:
+      x-fern-sdk-group-name: [organizations, invites]
+      x-fern-sdk-method-name: create
+  /organizations-invites/{organization_invite_uuid}:
+    delete:
+      x-fern-sdk-group-name: [organizations, invites]
+      x-fern-sdk-method-name: remove
+  /projects:
+    get:
+      x-fern-sdk-group-name: [projects]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [projects]
+      x-fern-sdk-method-name: create
+  /projects/{project_uuid}:
+    get:
+      x-fern-sdk-group-name: [projects]
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: [projects]
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: [projects]
+      x-fern-sdk-method-name: update
+  /spans/{span_uuid}:
+    get:
+      x-fern-sdk-group-name: [spans]
+      x-fern-sdk-method-name: get
+    patch:
+      x-fern-sdk-group-name: [spans]
+      x-fern-sdk-method-name: update
+  /projects/{project_uuid}/spans/metadata:
+    get:
+      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-method-name: getAggregates
+  /projects/{project_uuid}/spans/{span_id}:
+    get:
+      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-method-name: getById
+  /projects/{project_uuid}/functions/{function_uuid}/spans/metadata:
+    get:
+      x-fern-sdk-group-name: [projects, functions, spans]
+      x-fern-sdk-method-name: getAggregates
+  /projects/{project_uuid}/spans:
+    get:
+      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-method-name: search
+  /projects/{project_uuid}/spans/{span_uuid}:
+    delete:
+      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-method-name: delete
+  /projects/{project_uuid}/functions/{function_uuid}/spans/paginated:
+    get:
+      x-fern-sdk-group-name: [projects, functions, spans]
+      x-fern-sdk-method-name: listPaginated
+  /projects/{project_uuid}/traces/{span_id}/root:
+    get:
+      x-fern-sdk-group-name: [projects, traces]
+      x-fern-sdk-method-name: getRoot
+  /projects/{project_uuid}/traces:
+    get:
+      x-fern-sdk-group-name: [projects, traces]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [projects, traces]
+      x-fern-sdk-method-name: create
+  /auth/github/callback:
+    get:
+      x-fern-sdk-group-name: auth
+      x-fern-sdk-method-name: handleGithubCallback
+  /auth/google/callback:
+    get:
+      x-fern-sdk-group-name: auth
+      x-fern-sdk-method-name: handleGoogleCallback
+  /users/{activeOrganizationUuid}:
+    put:
+      x-fern-sdk-group-name: users
+      x-fern-sdk-method-name: setActiveOrganization
+  /users:
+    patch:
+      x-fern-sdk-group-name: users
+      x-fern-sdk-method-name: updateApiKeys
+  /current-user:
+    get:
+      x-fern-sdk-group-name: users
+      x-fern-sdk-method-name: getCurrentUser
+  /organizations:
+    post:
+      x-fern-sdk-group-name: organizations
+      x-fern-sdk-method-name: create
+    delete:
+      x-fern-sdk-group-name: organizations
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: organizations
+      x-fern-sdk-method-name: update
+  /external-api-keys:
+    get:
+      x-fern-sdk-group-name: externalApiKeys
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: externalApiKeys
+      x-fern-sdk-method-name: create
+  /external-api-keys/{service_name}:
+    get:
+      x-fern-sdk-group-name: externalApiKeys
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: externalApiKeys
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: externalApiKeys
+      x-fern-sdk-method-name: update
+  /environments:
+    get:
+      x-fern-sdk-group-name: environments
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: environments
+      x-fern-sdk-method-name: create
+  /environments/{environment_uuid}:
+    get:
+      x-fern-sdk-group-name: environments
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: environments
+      x-fern-sdk-method-name: delete
+  /projects/{project_uuid}/environments/{environment_uuid}/deploy:
+    post:
+      x-fern-sdk-group-name: [projects, environments]
+      x-fern-sdk-method-name: deploy
+  /projects/{project_uuid}/environments/{environment_uuid}/deployment:
+    get:
+      x-fern-sdk-group-name: [projects, environments]
+      x-fern-sdk-method-name: getActiveDeployment
+  /projects/{project_uuid}/environments/{environment_uuid}/function:
+    get:
+      x-fern-sdk-group-name: [projects, environments]
+      x-fern-sdk-method-name: getFunction
+  /projects/{project_uuid}/environments/{environment_uuid}/history:
+    get:
+      x-fern-sdk-group-name: [projects, environments]
+      x-fern-sdk-method-name: getDeploymentHistory
+  /user-consents:
+    post:
+      x-fern-sdk-group-name: [userConsents]
+      x-fern-sdk-method-name: create
+  /user-consents/{user_consent_uuid}:
+    patch:
+      x-fern-sdk-group-name: [userConsents]
+      x-fern-sdk-method-name: update
+  /tags:
+    get:
+      x-fern-sdk-group-name: [tags]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [tags]
+      x-fern-sdk-method-name: create
+  /projects/{project_uuid}/tags:
+    get:
+      x-fern-sdk-group-name: [projects, tags]
+      x-fern-sdk-method-name: list
+  /tags/{tag_uuid}:
+    get:
+      x-fern-sdk-group-name: [tags]
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: [tags]
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: [tags]
+      x-fern-sdk-method-name: update
+  /comments:
+    get:
+      x-fern-sdk-group-name: [comments]
+      x-fern-sdk-method-name: list
+    post:
+      x-fern-sdk-group-name: [comments]
+      x-fern-sdk-method-name: create
+  /spans/{span_uuid}/comments:
+    get:
+      x-fern-sdk-group-name: [spans, comments]
+      x-fern-sdk-method-name: list
+  /comments/{comment_uuid}:
+    get:
+      x-fern-sdk-group-name: [comments]
+      x-fern-sdk-method-name: get
+    delete:
+      x-fern-sdk-group-name: [comments]
+      x-fern-sdk-method-name: delete
+    patch:
+      x-fern-sdk-group-name: [comments]
+      x-fern-sdk-method-name: update
+  /settings:
+    get:
+      x-fern-sdk-group-name: [settings]
+      x-fern-sdk-method-name: get
