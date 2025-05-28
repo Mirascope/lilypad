@@ -1,6 +1,6 @@
 [project]
 name = "lilypad-sdk"
-version = "0.5.1"
+version = "0.6.0"
 description = "The official Python library for the Lilypad API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -128,7 +128,32 @@ select = [
     "ANN",
     "RUF022",
 ]
-ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'ANN401', 'UP007', 'UP035', 'UP006', 'ANN204', 'I001', 'UP037', 'UP038', 'E722', 'E721', 'E711', 'SIM101','SIM102', 'SIM108', 'E402', 'F841']
+ignore = [
+    'D105',
+    'D107',
+    'D205',
+    'D415',
+    'E501',
+    'B011',
+    'B028',
+    'B904',
+    'ANN401',
+    'UP007',
+    'UP035',
+    'UP006',
+    'ANN204',
+    'I001',
+    'UP037',
+    'UP038',
+    'E722',
+    'E721',
+    'E711',
+    'SIM101',
+    'SIM102',
+    'SIM108',
+    'E402',
+    'F841',
+]
 fixable = ["ALL"]
 pydocstyle = { convention = 'google' }
 unfixable = []
@@ -154,11 +179,7 @@ known-first-party = ["lilypad", "tests"]
 [tool.pyright]
 pythonVersion = "3.10"
 
-exclude = [
-    ".venv",
-    "tests",
-    "src/lilypad",
-]
+exclude = [".venv", "tests", "src/lilypad"]
 
 [build-system]
 requires = ["hatchling"]

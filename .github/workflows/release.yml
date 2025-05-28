@@ -1,0 +1,55 @@
+name: release
+run-name: ${{ github.actor }} is releasing ${{ github.ref_name }}
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  detect-language:
+    runs-on: ubuntu-latest
+    outputs:
+      language: ${{ steps.set-language.outputs.language }}
+    steps:
+      - name: Determine language from tag
+        id: set-language
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [[ $TAG_NAME == py/* ]]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          elif [[ $TAG_NAME == ts/* ]]; then
+            echo "language=typescript" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown language prefix in tag: $TAG_NAME"
+            exit 1
+          fi
+
+  release-python:
+    needs: detect-language
+    if: needs.detect-language.outputs.language == 'python'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up uv
+        run: curl -LsSf https://astral.sh/uv/0.7.8/install.sh | sh
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Change to Python directory
+        run: cd sdks/python
+
+      - name: Build Package
+        working-directory: ./python
+        run: uv build
+
+      - name: Publish Python Package
+        working-directory: ./python
+        run: uv publish
