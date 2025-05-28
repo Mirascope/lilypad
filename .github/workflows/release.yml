@@ -49,9 +49,9 @@ jobs:
         run: cd sdks/python
 
       - name: Build Package
-        working-directory: ./python
+        working-directory: ./sdks/python
         run: uv build
 
       - name: Publish Python Package
-        working-directory: ./python
+        working-directory: ./sdks/python
         run: uv publish
