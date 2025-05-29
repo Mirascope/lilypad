@@ -70,6 +70,9 @@ def test_project_for_duplicates(
 ) -> ProjectTable:
     """Create test project."""
     org, _ = test_org_and_user
+    # Assert org.uuid is not None for type checking
+    assert org.uuid is not None
+    
     project = ProjectTable(
         uuid=uuid.uuid4(),
         name="Duplicate Test Project",
@@ -103,6 +106,10 @@ def test_duplicate_span_handling(
     # Create the same span twice
     span1 = create_test_span(span_id, "Test Span")
     span2 = create_test_span(span_id, "Test Span Duplicate")  # Same span_id!
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_duplicates.uuid is not None
+    assert test_project_for_duplicates.organization_uuid is not None
     
     # First insertion should succeed
     result1 = span_service.create_bulk_records(
@@ -142,6 +149,10 @@ def test_mixed_duplicate_and_new_spans(
     # First batch: create two spans
     span1 = create_test_span(span_id1, "Span 1")
     span2 = create_test_span(span_id2, "Span 2")
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_duplicates.uuid is not None
+    assert test_project_for_duplicates.organization_uuid is not None
     
     result1 = span_service.create_bulk_records(
         [span1, span2],
@@ -187,6 +198,10 @@ def test_all_duplicates_batch(
         create_test_span(span_id1, "Span 1"),
         create_test_span(span_id2, "Span 2"),
     ]
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_duplicates.uuid is not None
+    assert test_project_for_duplicates.organization_uuid is not None
     
     result1 = span_service.create_bulk_records(
         spans,

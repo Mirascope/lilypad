@@ -75,6 +75,9 @@ def test_project_for_spans(
 ) -> ProjectTable:
     """Create test project."""
     org, _ = test_org_and_user
+    # Assert org.uuid is not None for type checking
+    assert org.uuid is not None
+    
     project = ProjectTable(
         uuid=uuid.uuid4(),
         name="Span Test Project",
@@ -114,6 +117,10 @@ def test_child_span_before_parent(
         parent_span_id=parent_span_id,  # Parent doesn't exist yet
         name="Child Operation",
     )
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_spans.uuid is not None
+    assert test_project_for_spans.organization_uuid is not None
     
     # This should succeed even though parent doesn't exist
     span_service.create_bulk_records(
@@ -173,23 +180,32 @@ def test_multiple_pending_children(
     # Create multiple children before parent
     child_creates = []
     for child_id in child_ids:
+        now = datetime.now(timezone.utc)
         child_create = SpanCreate(
             span_id=child_id,
-            trace_id=trace_id,
             parent_span_id=parent_span_id,
-            name=f"Child {child_id[:8]}",
-            start_time=datetime.now(timezone.utc),
-            end_time=datetime.now(timezone.utc),
             scope=Scope.LILYPAD,
             type=SpanType.FUNCTION,
-                attributes={},
-            events=[],
-            links=[],
-            resource={"attributes": {"service.name": "test"}},
-            instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-            data={},
+            data={
+                "span_id": child_id,
+                "trace_id": trace_id,
+                "parent_span_id": parent_span_id,
+                "name": f"Child {child_id[:8]}",
+                "start_time": int(now.timestamp() * 1e9),
+                "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+                "attributes": {},
+                "events": [],
+                "links": [],
+                "resource": {"attributes": {"service.name": "test"}},
+                "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+            },
+            duration_ms=100,
         )
         child_creates.append(child_create)
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_spans.uuid is not None
+    assert test_project_for_spans.organization_uuid is not None
     
     span_service.create_bulk_records(
         child_creates,
@@ -208,21 +224,26 @@ def test_multiple_pending_children(
         assert child_span.parent_span_id == parent_span_id  # Direct reference works!
     
     # Create parent
+    now = datetime.now(timezone.utc)
     parent_create = SpanCreate(
         span_id=parent_span_id,
-        trace_id=trace_id,
         parent_span_id=None,
-        name="Parent Operation",
-        start_time=datetime.now(timezone.utc),
-        end_time=datetime.now(timezone.utc),
         scope=Scope.LILYPAD,
         type=SpanType.FUNCTION,
-        attributes={},
-        events=[],
-        links=[],
-        resource={"attributes": {"service.name": "test"}},
-        instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-        data={},
+        data={
+            "span_id": parent_span_id,
+            "trace_id": trace_id,
+            "parent_span_id": None,
+            "name": "Parent Operation",
+            "start_time": int(now.timestamp() * 1e9),
+            "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+            "attributes": {},
+            "events": [],
+            "links": [],
+            "resource": {"attributes": {"service.name": "test"}},
+            "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+        },
+        duration_ms=100,
     )
     
     span_service.create_bulk_records(
@@ -245,6 +266,7 @@ def test_multiple_pending_children(
             select(SpanTable).where(SpanTable.span_id == child_id)
         ).first()
         db_session.refresh(child_span)
+        assert child_span is not None
         assert child_span.parent_status == ParentStatus.RESOLVED
         assert child_span.parent_span_id == parent_span_id  # Relationship works!
 
@@ -272,29 +294,38 @@ def test_nested_out_of_order_spans(
     ]
     
     for span_id, parent_id, name in spans_data:
+        now = datetime.now(timezone.utc)
         span_create = SpanCreate(
             span_id=span_id,
-            trace_id=trace_id,
             parent_span_id=parent_id,
-            name=name,
-            start_time=datetime.now(timezone.utc),
-            end_time=datetime.now(timezone.utc),
             scope=Scope.LILYPAD,
             type=SpanType.FUNCTION,
-                attributes={},
-            events=[],
-            links=[],
-            resource={"attributes": {"service.name": "test"}},
-            instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-            data={},
+            data={
+                "span_id": span_id,
+                "trace_id": trace_id,
+                "parent_span_id": parent_id,
+                "name": name,
+                "start_time": int(now.timestamp() * 1e9),
+                "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+                "attributes": {},
+                "events": [],
+                "links": [],
+                "resource": {"attributes": {"service.name": "test"}},
+                "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+            },
+            duration_ms=100,
         )
         
+        # Assert UUIDs are not None for type checking
+        assert test_project_for_spans.uuid is not None
+        assert test_project_for_spans.organization_uuid is not None
+        
         span_service.create_bulk_records(
-        [span_create],
-        billing_service=None,
-        project_uuid=test_project_for_spans.uuid,
-        organization_uuid=test_project_for_spans.organization_uuid,
-    )
+            [span_create],
+            billing_service=None,
+            project_uuid=test_project_for_spans.uuid,
+            organization_uuid=test_project_for_spans.organization_uuid,
+        )
     
     # Check final state - all spans should be resolved since parents were created
     all_span_ids = [level3_id, level2_id, level1_id, root_id]
@@ -312,21 +343,25 @@ def test_nested_out_of_order_spans(
     level3 = db_session.exec(
         select(SpanTable).where(SpanTable.span_id == level3_id)
     ).first()
+    assert level3 is not None
     assert level3.parent_span_id == level2_id
     
     level2 = db_session.exec(
         select(SpanTable).where(SpanTable.span_id == level2_id)
     ).first()
+    assert level2 is not None
     assert level2.parent_span_id == level1_id
     
     level1 = db_session.exec(
         select(SpanTable).where(SpanTable.span_id == level1_id)
     ).first()
+    assert level1 is not None
     assert level1.parent_span_id == root_id
     
     root = db_session.exec(
         select(SpanTable).where(SpanTable.span_id == root_id)
     ).first()
+    assert root is not None
     assert root.parent_span_id is None
 
 
@@ -341,22 +376,31 @@ def test_orphaned_span_cleanup(
     missing_parent_id = str(uuid.uuid4())
     
     # Create a span with a parent that will never arrive
+    now = datetime.now(timezone.utc)
     orphan_create = SpanCreate(
         span_id=orphan_span_id,
-        trace_id=trace_id,
         parent_span_id=missing_parent_id,
-        name="Orphaned Span",
-        start_time=datetime.now(timezone.utc),
-        end_time=datetime.now(timezone.utc),
         scope=Scope.LILYPAD,
         type=SpanType.FUNCTION,
-        attributes={},
-        events=[],
-        links=[],
-        resource={"attributes": {"service.name": "test"}},
-        instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-        data={},
+        data={
+            "span_id": orphan_span_id,
+            "trace_id": trace_id,
+            "parent_span_id": missing_parent_id,
+            "name": "Orphaned Span",
+            "start_time": int(now.timestamp() * 1e9),
+            "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+            "attributes": {},
+            "events": [],
+            "links": [],
+            "resource": {"attributes": {"service.name": "test"}},
+            "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+        },
+        duration_ms=100,
     )
+    
+    # Assert UUIDs are not None for type checking
+    assert test_project_for_spans.uuid is not None
+    assert test_project_for_spans.organization_uuid is not None
     
     span_service.create_bulk_records(
         [orphan_create],
@@ -369,6 +413,7 @@ def test_orphaned_span_cleanup(
     orphan = db_session.exec(
         select(SpanTable).where(SpanTable.span_id == orphan_span_id)
     ).first()
+    assert orphan is not None
     assert orphan.parent_status == ParentStatus.PENDING
     
     # Run cleanup (with very short max_age for testing)
@@ -392,54 +437,74 @@ def test_span_status_counts(
     
     # Create some resolved spans
     for i in range(3):
+        now = datetime.now(timezone.utc)
+        span_id = str(uuid.uuid4())
         span_create = SpanCreate(
-            span_id=str(uuid.uuid4()),
-            trace_id=trace_id,
+            span_id=span_id,
             parent_span_id=None,
-            name=f"Resolved {i}",
-            start_time=datetime.now(timezone.utc),
-            end_time=datetime.now(timezone.utc),
             scope=Scope.LILYPAD,
             type=SpanType.FUNCTION,
-                attributes={},
-            events=[],
-            links=[],
-            resource={"attributes": {"service.name": "test"}},
-            instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-            data={},
+            data={
+                "span_id": span_id,
+                "trace_id": trace_id,
+                "parent_span_id": None,
+                "name": f"Resolved {i}",
+                "start_time": int(now.timestamp() * 1e9),
+                "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+                "attributes": {},
+                "events": [],
+                "links": [],
+                "resource": {"attributes": {"service.name": "test"}},
+                "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+            },
+            duration_ms=100,
         )
+        # Assert UUIDs are not None for type checking
+        assert test_project_for_spans.uuid is not None
+        assert test_project_for_spans.organization_uuid is not None
+        
         span_service.create_bulk_records(
-        [span_create],
-        billing_service=None,
-        project_uuid=test_project_for_spans.uuid,
-        organization_uuid=test_project_for_spans.organization_uuid,
-    )
+            [span_create],
+            billing_service=None,
+            project_uuid=test_project_for_spans.uuid,
+            organization_uuid=test_project_for_spans.organization_uuid,
+        )
     
     # Create some pending spans
     missing_parent = str(uuid.uuid4())
     for i in range(2):
+        now = datetime.now(timezone.utc)
+        span_id = str(uuid.uuid4())
         span_create = SpanCreate(
-            span_id=str(uuid.uuid4()),
-            trace_id=trace_id,
+            span_id=span_id,
             parent_span_id=missing_parent,
-            name=f"Pending {i}",
-            start_time=datetime.now(timezone.utc),
-            end_time=datetime.now(timezone.utc),
             scope=Scope.LILYPAD,
             type=SpanType.FUNCTION,
-                attributes={},
-            events=[],
-            links=[],
-            resource={"attributes": {"service.name": "test"}},
-            instrumentation_scope={"name": "lilypad", "version": "1.0.0"},
-            data={},
+            data={
+                "span_id": span_id,
+                "trace_id": trace_id,
+                "parent_span_id": missing_parent,
+                "name": f"Pending {i}",
+                "start_time": int(now.timestamp() * 1e9),
+                "end_time": int((now + timedelta(milliseconds=100)).timestamp() * 1e9),
+                "attributes": {},
+                "events": [],
+                "links": [],
+                "resource": {"attributes": {"service.name": "test"}},
+                "instrumentation_scope": {"name": "lilypad", "version": "1.0.0"},
+            },
+            duration_ms=100,
         )
+        # Assert UUIDs are not None for type checking
+        assert test_project_for_spans.uuid is not None
+        assert test_project_for_spans.organization_uuid is not None
+        
         span_service.create_bulk_records(
-        [span_create],
-        billing_service=None,
-        project_uuid=test_project_for_spans.uuid,
-        organization_uuid=test_project_for_spans.organization_uuid,
-    )
+            [span_create],
+            billing_service=None,
+            project_uuid=test_project_for_spans.uuid,
+            organization_uuid=test_project_for_spans.organization_uuid,
+        )
     
     # Get counts
     resolved_count = db_session.exec(
