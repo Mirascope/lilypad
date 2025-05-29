@@ -52,12 +52,12 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     create_model: type[SpanCreate] = SpanCreate
 
     def find_all_spans(
-        self, 
-        project_uuid: UUID, 
-        *, 
-        limit: int | None = None, 
+        self,
+        project_uuid: UUID,
+        *,
+        limit: int | None = None,
         offset: int = 0,
-        order: str = "desc"
+        order: str = "desc",
     ) -> Sequence[SpanTable]:
         """Get all spans for a project regardless of parent status."""
         stmt = (
@@ -73,12 +73,12 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
             .offset(offset)
         )
-        
+
         if limit is not None:
             stmt = stmt.limit(limit)
-            
+
         return self.session.exec(stmt).all()
-    
+
     def count_all_spans(self, project_uuid: UUID) -> int:
         """Count all spans in a project regardless of parent status."""
         stmt = (
@@ -90,14 +90,14 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         )
         return self.session.exec(stmt).one()
-    
+
     def find_traces_with_pending(
-        self, 
-        project_uuid: UUID, 
-        *, 
-        limit: int | None = None, 
+        self,
+        project_uuid: UUID,
+        *,
+        limit: int | None = None,
         offset: int = 0,
-        order: str = "desc"
+        order: str = "desc",
     ) -> Sequence[SpanTable]:
         """Get root spans plus PENDING child spans (treated as temporary roots)."""
         stmt = (
@@ -106,9 +106,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 or_(
-                    self.table.parent_span_id.is_(None), # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
-                    self.table.parent_status == ParentStatus.PENDING  # PENDING spans
-                )
+                    self.table.parent_span_id.is_(None),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                    self.table.parent_status == ParentStatus.PENDING,  # PENDING spans
+                ),
             )
             .order_by(
                 self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
@@ -120,12 +120,12 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]
             )
         )
-        
+
         if limit is not None:
             stmt = stmt.limit(limit)
-            
+
         return self.session.exec(stmt).all()
-    
+
     def count_traces_with_pending(self, project_uuid: UUID) -> int:
         """Count root spans plus PENDING child spans."""
         stmt = (
@@ -136,8 +136,8 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.project_uuid == project_uuid,
                 or_(
                     self.table.parent_span_id.is_(None),  # type: ignore  # Root spans
-                    self.table.parent_status == ParentStatus.PENDING  # PENDING spans
-                )
+                    self.table.parent_status == ParentStatus.PENDING,  # PENDING spans
+                ),
             )
         )
         return self.session.exec(stmt).one()
@@ -415,16 +415,14 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         for span_create in spans_create:
             # Skip if span already exists (handle duplicates gracefully)
             existing_span = self.session.exec(
-                select(self.table).where(
-                    self.table.span_id == span_create.span_id
-                )
+                select(self.table).where(self.table.span_id == span_create.span_id)
             ).first()
-            
+
             if existing_span:
                 # Span already exists, skip it
                 logger.info(f"Span {span_create.span_id} already exists, skipping")
                 continue
-            
+
             # Set parent status for monitoring (optional - mainly for cleanup)
             parent_status = ParentStatus.RESOLVED
             if span_create.parent_span_id:
@@ -467,7 +465,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if not spans_to_add:
             logger.info("All spans were duplicates, nothing to insert")
             return []
-            
+
         self.session.add_all(spans_to_add)
         self.session.flush()
 
@@ -505,10 +503,10 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
     def resolve_pending_children(self, parent_span_id: str) -> int:
         """Find and resolve any child spans waiting for this parent.
-        
+
         Args:
             parent_span_id: The span_id of the parent that just arrived
-            
+
         Returns:
             Number of child spans resolved
         """
@@ -517,21 +515,23 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             pending_children = self.session.exec(
                 select(self.table).where(
                     self.table.parent_span_id == parent_span_id,
-                    self.table.parent_status == ParentStatus.PENDING
+                    self.table.parent_status == ParentStatus.PENDING,
                 )
             ).all()
-            
+
             resolved_count = 0
             for child in pending_children:
                 child.parent_status = ParentStatus.RESOLVED
                 resolved_count += 1
-            
+
             if resolved_count > 0:
                 self.session.flush()
-                logger.info(f"Resolved {resolved_count} pending child spans for parent {parent_span_id}")
-                
+                logger.info(
+                    f"Resolved {resolved_count} pending child spans for parent {parent_span_id}"
+                )
+
             return resolved_count
-            
+
         except Exception as e:
             logger.error(f"Error resolving pending children: {e}")
             # Don't fail the main operation if this fails

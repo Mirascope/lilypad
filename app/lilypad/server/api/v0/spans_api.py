@@ -6,7 +6,6 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from pydantic import BaseModel
 from sqlmodel import func, select
 
 from ..._utils import get_current_user
@@ -14,7 +13,7 @@ from ...models import SpanTable
 from ...models.spans import ParentStatus, Scope
 from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import SpanMoreDetails
-from ...schemas.spans import SpanPublic, SpanUpdate
+from ...schemas.spans import SpanPublic, SpanStatusPublic, SpanUpdate
 from ...schemas.users import UserPublic
 from ...services.functions import FunctionService
 from ...services.opensearch import (
@@ -225,22 +224,13 @@ async def get_spans_by_function_uuid_paginated(
     )
 
 
-class SpanStatusResponse(BaseModel):
-    """Response model for span status endpoint"""
-
-    resolved: int
-    pending: int
-    orphaned: int
-    total: int
-
-
 @spans_router.get(
-    "/projects/{project_uuid}/spans/status", response_model=SpanStatusResponse
+    "/projects/{project_uuid}/spans/status", response_model=SpanStatusPublic
 )
 async def get_span_status(
     project_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
-) -> SpanStatusResponse:
+) -> SpanStatusPublic:
     """Get status of pending/resolved spans."""
     try:
         # Count by status
@@ -265,7 +255,7 @@ async def get_span_status(
             )
         ).one()
 
-        return SpanStatusResponse(
+        return SpanStatusPublic(
             resolved=resolved_count,
             pending=pending_count,
             orphaned=orphaned_count,
