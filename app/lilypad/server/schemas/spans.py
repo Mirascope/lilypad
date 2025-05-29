@@ -100,3 +100,12 @@ class SpanPublic(SpanBase):
             "tags": span.tags,
             **span.model_dump(exclude={"child_spans", "data"}),
         }
+
+
+class SpanStatusPublic(BaseModel):
+    """Response model for span status endpoint"""
+
+    resolved: int
+    pending: int
+    orphaned: int
+    total: int

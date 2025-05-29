@@ -1,17 +1,19 @@
 """The `/spans` API router."""
 
+import logging
 from collections.abc import Sequence
 from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from sqlmodel import func, select
 
 from ..._utils import get_current_user
 from ...models import SpanTable
-from ...models.spans import Scope
+from ...models.spans import ParentStatus, Scope
 from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import SpanMoreDetails
-from ...schemas.spans import SpanPublic, SpanUpdate
+from ...schemas.spans import SpanPublic, SpanStatusPublic, SpanUpdate
 from ...schemas.users import UserPublic
 from ...services.functions import FunctionService
 from ...services.opensearch import (
@@ -21,6 +23,7 @@ from ...services.opensearch import (
 )
 from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 
+logger = logging.getLogger(__name__)
 spans_router = APIRouter()
 
 
@@ -219,6 +222,65 @@ async def get_spans_by_function_uuid_paginated(
         offset=offset,
         total=total,
     )
+
+
+@spans_router.get(
+    "/projects/{project_uuid}/spans/status", response_model=SpanStatusPublic
+)
+async def get_span_status(
+    project_uuid: UUID,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> SpanStatusPublic:
+    """Get status of pending/resolved spans."""
+    try:
+        # Count by status
+        resolved_count = span_service.session.exec(
+            select(func.count()).where(
+                SpanTable.project_uuid == project_uuid,
+                SpanTable.parent_status == ParentStatus.RESOLVED,
+            )
+        ).one()
+
+        pending_count = span_service.session.exec(
+            select(func.count()).where(
+                SpanTable.project_uuid == project_uuid,
+                SpanTable.parent_status == ParentStatus.PENDING,
+            )
+        ).one()
+
+        orphaned_count = span_service.session.exec(
+            select(func.count()).where(
+                SpanTable.project_uuid == project_uuid,
+                SpanTable.parent_status == ParentStatus.ORPHANED,
+            )
+        ).one()
+
+        return SpanStatusPublic(
+            resolved=resolved_count,
+            pending=pending_count,
+            orphaned=orphaned_count,
+            total=resolved_count + pending_count + orphaned_count,
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+
+
+@spans_router.post("/projects/{project_uuid}/spans/cleanup")
+async def trigger_cleanup(
+    project_uuid: UUID,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    background_tasks: BackgroundTasks,
+    current_user: Annotated[UserPublic, Depends(get_current_user)],
+) -> dict[str, str]:
+    """Manual cleanup trigger for testing"""
+
+    async def run_cleanup() -> None:
+        count = span_service.cleanup_orphaned_spans()
+        logger.info(f"Cleanup completed. Cleaned up {count} orphaned spans.")
+
+    background_tasks.add_task(run_cleanup)
+    return {"message": "Cleanup task scheduled"}
 
 
 __all__ = ["spans_router"]
