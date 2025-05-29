@@ -38,6 +38,14 @@ class SpanType(str, Enum):
     MIRASCOPE_V1 = "mirascope.v1"
 
 
+class ParentStatus(str, Enum):
+    """Parent span resolution status"""
+
+    RESOLVED = "resolved"
+    PENDING = "pending"
+    ORPHANED = "orphaned"
+
+
 class SpanBase(SQLModel):
     """Span base model"""
 
@@ -55,8 +63,10 @@ class SpanBase(SQLModel):
     parent_span_id: str | None = Field(
         default=None,
         index=True,
-        foreign_key=f"{SPAN_TABLE_NAME}.span_id",
-        ondelete="CASCADE",
+    )
+    parent_status: ParentStatus = Field(
+        default=ParentStatus.RESOLVED,
+        index=True,
     )
     session_id: str | None = Field(
         default=None,
@@ -76,6 +86,8 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
             "project_uuid",
             postgresql_where=text("parent_span_id IS NULL"),
         ),
+        Index("idx_spans_parent_status", "parent_status"),
+        Index("idx_spans_pending_parent", "parent_span_id", "parent_status"),
     )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
@@ -102,12 +114,13 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
         sa_relationship_kwargs={
             "lazy": "selectin",  # codespell:ignore selectin
             "order_by": "SpanTable.created_at.desc()",
+            "primaryjoin": "foreign(remote(SpanTable.parent_span_id)) == SpanTable.span_id",
         },
         cascade_delete=True,
     )
     parent_span: Optional["SpanTable"] = Relationship(
         back_populates="child_spans",
         sa_relationship_kwargs={
-            "remote_side": "SpanTable.span_id",
+            "primaryjoin": "foreign(SpanTable.parent_span_id) == remote(SpanTable.span_id)",
         },
     )

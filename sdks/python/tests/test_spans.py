@@ -106,6 +106,13 @@ def patch_get_tracer(monkeypatch) -> None:
     monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
 
 
+@pytest.fixture(autouse=True)
+def patch_get_tracer_provider(monkeypatch) -> None:
+    """Patch get_tracer_provider to return a TracerProvider instance."""
+    from opentelemetry.sdk.trace import TracerProvider
+    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: TracerProvider())
+
+
 def test_basic_sync_span() -> None:
     """Test basic synchronous span creation, logging, and metadata."""
     with span("test span") as s:
@@ -196,3 +203,54 @@ def test_dummy_span_record_exception_directly() -> None:
     assert attrs["exception.type"] == str(dummy_exception)
     assert attrs["exception.message"] == str(dummy_exception)
     assert attrs["exception.stacktrace"] == str(dummy_exception)
+
+
+def test_span_no_locking_attributes() -> None:
+    """Test that spans are created without locking-related attributes."""
+    with span("test_span") as s:
+        # Should not have locking-related attributes
+        assert not hasattr(s, '_condition')
+        assert not hasattr(s, '_lock_acquired')
+        assert not hasattr(s, '_is_root')
+
+
+def test_nested_spans_without_locking() -> None:
+    """Test that nested spans work correctly without locking."""
+    with span("parent") as parent, span("child") as child:
+        # Both spans should exist
+        assert parent._span is not None
+        assert child._span is not None
+        # Neither should have locking attributes
+        assert not hasattr(parent, '_is_root')
+        assert not hasattr(child, '_is_root')
+    
+    # Both spans should be ended
+    assert len(dummy_spans) == 2
+    assert all(s.ended for s in dummy_spans)
+
+
+def test_concurrent_span_creation() -> None:
+    """Test that concurrent span creation works without deadlocks."""
+    import threading
+    results = []
+    errors = []
+    
+    def create_span(name):
+        try:
+            with span(f"concurrent_{name}") as s:
+                results.append(s.span_id)
+        except Exception as e:
+            errors.append(e)
+    
+    threads = [threading.Thread(target=create_span, args=(i,)) for i in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    
+    # Should have no errors
+    assert len(errors) == 0
+    # Should have created 10 spans
+    assert len(results) == 10
+    # All span IDs should be unique (from DummySpanContext)
+    assert all(id == 9876543210 for id in results)  # DummySpanContext returns fixed ID

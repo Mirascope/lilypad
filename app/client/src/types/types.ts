@@ -786,6 +786,16 @@ export interface PaginatedSpanPublic {
 }
 
 /**
+ * ParentStatus
+ * Parent span resolution status
+ */
+export enum ParentStatus {
+  RESOLVED = "resolved",
+  PENDING = "pending",
+  ORPHANED = "orphaned",
+}
+
+/**
  * PlaygroundErrorDetail
  * Detailed information about a playground error.
  */
@@ -1023,6 +1033,11 @@ export interface SpanPublic {
   data?: object;
   /** Parent Span Id */
   parent_span_id?: string | null;
+  /**
+   * Parent span resolution status
+   * @default "resolved"
+   */
+  parent_status?: ParentStatus;
   /** Session Id */
   session_id?: string | null;
   /**
@@ -1053,6 +1068,21 @@ export interface SpanPublic {
   tags: TagPublic[];
   /** Score */
   score?: number | null;
+}
+
+/**
+ * SpanStatusResponse
+ * Response model for span status endpoint
+ */
+export interface SpanStatusResponse {
+  /** Resolved */
+  resolved: number;
+  /** Pending */
+  pending: number;
+  /** Orphaned */
+  orphaned: number;
+  /** Total */
+  total: number;
 }
 
 /**

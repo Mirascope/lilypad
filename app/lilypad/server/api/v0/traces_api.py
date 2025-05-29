@@ -73,12 +73,22 @@ async def get_traces_by_project_uuid(
     order: Literal["asc", "desc"] = Query(
         "desc", pattern="^(asc|desc)$", examples=["asc", "desc"]
     ),
+    include_pending: bool = Query(
+        False, description="Include PENDING child spans as temporary root traces"
+    ),
 ) -> Paginated[SpanPublic]:
     """Get traces by project UUID."""
-    items = span_service.find_all_no_parent_spans(
-        project_uuid, limit=limit, offset=offset, order=order
-    )
-    total = span_service.count_no_parent_spans(project_uuid)
+    if include_pending:
+        items = span_service.find_traces_with_pending(
+            project_uuid, limit=limit, offset=offset, order=order
+        )
+        total = span_service.count_traces_with_pending(project_uuid)
+    else:
+        items = span_service.find_all_no_parent_spans(
+            project_uuid, limit=limit, offset=offset, order=order
+        )
+        total = span_service.count_no_parent_spans(project_uuid)
+    
     return Paginated(
         items=[SpanPublic.model_validate(item) for item in items],
         limit=limit,
@@ -91,6 +101,7 @@ async def _process_span(
     trace: dict,
     parent_to_children: dict[str, list[dict]],
     span_creates: list[SpanCreate],
+    processed_span_ids: set[str] | None = None,
 ) -> SpanCreate:
     """Process a span and its children."""
     # Process all children first (bottom-up approach)
@@ -98,13 +109,16 @@ async def _process_span(
     total_input_tokens = 0
     total_output_tokens = 0
     for child in parent_to_children[trace["span_id"]]:
-        span = await _process_span(child, parent_to_children, span_creates)
-        if span.cost is not None:
-            total_child_cost += span.cost
-        if span.input_tokens is not None:
-            total_input_tokens += span.input_tokens
-        if span.output_tokens is not None:
-            total_output_tokens += span.output_tokens
+        if processed_span_ids is None or child["span_id"] not in processed_span_ids:
+            span = await _process_span(child, parent_to_children, span_creates, processed_span_ids)
+            if processed_span_ids is not None:
+                processed_span_ids.add(child["span_id"])
+            if span.cost is not None:
+                total_child_cost += span.cost
+            if span.input_tokens is not None:
+                total_input_tokens += span.input_tokens
+            if span.output_tokens is not None:
+                total_output_tokens += span.output_tokens
 
     if trace["instrumentation_scope"]["name"] == "lilypad":
         scope = Scope.LILYPAD
@@ -218,11 +232,23 @@ async def traces(
     for trace in traces_json:
         if parent_span_id := trace.get("parent_span_id"):
             parent_to_children[parent_span_id].append(trace)
-    # Find root spans (spans with no parents) and process each tree
+    
+    # Process ALL spans, not just root spans
+    # This ensures child spans that arrive before their parents are still stored
+    processed_span_ids = set()
+    
+    # First, process root spans and their complete subtrees
     root_spans = [span for span in traces_json if span.get("parent_span_id") is None]
-
     for root_span in root_spans:
-        await _process_span(root_span, parent_to_children, span_creates)
+        await _process_span(root_span, parent_to_children, span_creates, processed_span_ids)
+        processed_span_ids.add(root_span["span_id"])
+    
+    # Then, process any remaining spans that weren't part of a complete tree
+    # These are spans whose parents are not in the current batch
+    for trace in traces_json:
+        if trace["span_id"] not in processed_span_ids:
+            await _process_span(trace, parent_to_children, span_creates, processed_span_ids)
+            processed_span_ids.add(trace["span_id"])
     project = project_service.find_record_no_organization(project_uuid)
     span_tables = span_service.create_bulk_records(
         span_creates,
@@ -235,7 +261,8 @@ async def traces(
         background_tasks.add_task(
             index_traces_in_opensearch, project_uuid, trace_dicts, opensearch_service
         )
-    return [span for span in span_tables if span.parent_span_id is None]
+    # Return all spans, not just root spans, so child spans appear in real-time
+    return span_tables
 
 
 __all__ = ["traces_router"]

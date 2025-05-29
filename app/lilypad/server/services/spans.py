@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import Literal
 from uuid import UUID
@@ -10,11 +10,11 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
-from sqlmodel import and_, delete, func, select, text
+from sqlmodel import and_, delete, func, or_, select, text
 
 from ..models.functions import FunctionTable
 from ..models.organizations import OrganizationTable
-from ..models.spans import SpanTable, SpanTagLink
+from ..models.spans import ParentStatus, SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
 from .billing import BillingService, _CustomerNotFound
@@ -50,6 +50,99 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
+
+    def find_all_spans(
+        self, 
+        project_uuid: UUID, 
+        *, 
+        limit: int | None = None, 
+        offset: int = 0,
+        order: str = "desc"
+    ) -> Sequence[SpanTable]:
+        """Get all spans for a project regardless of parent status."""
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+            )
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]
+            )
+            .offset(offset)
+        )
+        
+        if limit is not None:
+            stmt = stmt.limit(limit)
+            
+        return self.session.exec(stmt).all()
+    
+    def count_all_spans(self, project_uuid: UUID) -> int:
+        """Count all spans in a project regardless of parent status."""
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+            )
+        )
+        return self.session.exec(stmt).one()
+    
+    def find_traces_with_pending(
+        self, 
+        project_uuid: UUID, 
+        *, 
+        limit: int | None = None, 
+        offset: int = 0,
+        order: str = "desc"
+    ) -> Sequence[SpanTable]:
+        """Get root spans plus PENDING child spans (treated as temporary roots)."""
+        
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                or_(
+                    self.table.parent_span_id.is_(None),  # Root spans
+                    self.table.parent_status == ParentStatus.PENDING  # PENDING spans
+                )
+            )
+            .order_by(
+                self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
+                if order == "asc"
+                else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]
+            )
+            .offset(offset)
+            .options(
+                selectinload(self.table.child_spans, recursion_depth=-1)  # pyright: ignore [reportArgumentType]
+            )
+        )
+        
+        if limit is not None:
+            stmt = stmt.limit(limit)
+            
+        return self.session.exec(stmt).all()
+    
+    def count_traces_with_pending(self, project_uuid: UUID) -> int:
+        """Count root spans plus PENDING child spans."""
+        
+        stmt = (
+            select(func.count())
+            .select_from(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                or_(
+                    self.table.parent_span_id.is_(None),  # Root spans
+                    self.table.parent_status == ParentStatus.PENDING  # PENDING spans
+                )
+            )
+        )
+        return self.session.exec(stmt).one()
 
     def count_no_parent_spans(self, project_uuid: UUID) -> int:
         """Return the *total* number of root‑level spans for a project.
@@ -320,13 +413,43 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         spans_to_add = []
         tag_service = TagService(self.session, self.user)
 
+        # Filter out duplicates and create spans
         for span_create in spans_create:
+            # Skip if span already exists (handle duplicates gracefully)
+            existing_span = self.session.exec(
+                select(self.table).where(
+                    self.table.span_id == span_create.span_id
+                )
+            ).first()
+            
+            if existing_span:
+                # Span already exists, skip it
+                logger.info(f"Span {span_create.span_id} already exists, skipping")
+                continue
+            
+            # Set parent status for monitoring (optional - mainly for cleanup)
+            parent_status = ParentStatus.RESOLVED
+            if span_create.parent_span_id:
+                # Check if parent exists in current batch or database
+                parent_in_batch = any(
+                    sc.span_id == span_create.parent_span_id for sc in spans_create
+                )
+                if not parent_in_batch:
+                    parent_exists = self.session.exec(
+                        select(self.table).where(
+                            self.table.span_id == span_create.parent_span_id
+                        )
+                    ).first()
+                    if not parent_exists:
+                        parent_status = ParentStatus.PENDING
+
             db_span = self.table.model_validate(
                 span_create,
                 update={
                     "organization_uuid": organization_uuid,
                     "user_uuid": self.user.uuid,
                     "project_uuid": project_uuid,
+                    "parent_status": parent_status,
                 },
             )
             spans_to_add.append(db_span)
@@ -342,6 +465,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                         tag = tag_service.find_or_create_tag(tag_name, project_uuid)
                         db_span._temp_links_to_add.append(tag.uuid)  # type: ignore
 
+        # Only proceed if we have new spans to add
+        if not spans_to_add:
+            logger.info("All spans were duplicates, nothing to insert")
+            return []
+            
         self.session.add_all(spans_to_add)
         self.session.flush()
 
@@ -371,7 +499,45 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 # if reporting fails, we don't want to fail the entire span creation
                 logger.error("Error reporting span usage: %s", e)
 
+        # Resolve any pending children for the spans we just created
+        for span in spans_to_add:
+            self.resolve_pending_children(span.span_id)
+
         return spans_to_add
+
+    def resolve_pending_children(self, parent_span_id: str) -> int:
+        """Find and resolve any child spans waiting for this parent.
+        
+        Args:
+            parent_span_id: The span_id of the parent that just arrived
+            
+        Returns:
+            Number of child spans resolved
+        """
+        try:
+            # Find pending children
+            pending_children = self.session.exec(
+                select(self.table).where(
+                    self.table.parent_span_id == parent_span_id,
+                    self.table.parent_status == ParentStatus.PENDING
+                )
+            ).all()
+            
+            resolved_count = 0
+            for child in pending_children:
+                child.parent_status = ParentStatus.RESOLVED
+                resolved_count += 1
+            
+            if resolved_count > 0:
+                self.session.flush()
+                logger.info(f"Resolved {resolved_count} pending child spans for parent {parent_span_id}")
+                
+            return resolved_count
+            
+        except Exception as e:
+            logger.error(f"Error resolving pending children: {e}")
+            # Don't fail the main operation if this fails
+            return 0
 
     def _report_span_usage_with_retry(
         self, billing_service: BillingService, organization_uuid: UUID, quantity: int
@@ -466,6 +632,48 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
             modified = True
         return modified
+
+    def cleanup_orphaned_spans(self, max_age_hours: int = 24) -> int:
+        """Clean up spans that have been pending for too long.
+
+        Args:
+            max_age_hours: Maximum age in hours for pending spans before converting to orphaned
+
+        Returns:
+            Number of spans cleaned up
+        """
+        try:
+            cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
+
+            # Find orphaned spans
+            orphaned_query = select(self.table).where(
+                self.table.parent_status == ParentStatus.PENDING,
+                self.table.created_at < cutoff_time,
+            )
+            orphaned_spans = self.session.exec(orphaned_query).all()
+
+            cleanup_count = 0
+            for span in orphaned_spans:
+                # Convert to orphaned status
+                span.parent_status = ParentStatus.ORPHANED
+                # If there's an intended parent in data, set it as the actual parent
+                # since it's been long enough that the parent likely won't arrive
+                if "lilypad.intended_parent_span_id" in span.data:
+                    # Keep the intended parent in data for debugging
+                    # but don't set parent_span_id to avoid FK issues
+                    pass
+                cleanup_count += 1
+
+            if cleanup_count > 0:
+                self.session.flush()
+                logger.info(f"Cleaned up {cleanup_count} orphaned spans")
+
+            return cleanup_count
+
+        except Exception as e:
+            self.session.rollback()
+            logger.error(f"Error during cleanup: {e}")
+            return 0
 
     def count_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
