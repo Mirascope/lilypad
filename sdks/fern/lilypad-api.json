@@ -2815,7 +2815,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SpanStatusResponse"
+                  "$ref": "#/components/schemas/SpanStatusPublic"
                 }
               }
             }
@@ -7142,7 +7142,7 @@
         "title": "SpanPublic",
         "description": "Span public model"
       },
-      "SpanStatusResponse": {
+      "SpanStatusPublic": {
         "properties": {
           "resolved": {
             "type": "integer",
@@ -7168,7 +7168,7 @@
           "orphaned",
           "total"
         ],
-        "title": "SpanStatusResponse",
+        "title": "SpanStatusPublic",
         "description": "Response model for span status endpoint"
       },
       "SpanType": {

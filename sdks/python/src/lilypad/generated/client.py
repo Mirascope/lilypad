@@ -17,7 +17,7 @@ from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
-from .types.span_status_response import SpanStatusResponse
+from .types.span_status_public import SpanStatusPublic
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
@@ -107,7 +107,7 @@ class Lilypad:
 
     def get_span_status_projects_project_uuid_spans_status_get(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> SpanStatusResponse:
+    ) -> SpanStatusPublic:
         """
         Get status of pending/resolved spans.
 
@@ -120,7 +120,7 @@ class Lilypad:
 
         Returns
         -------
-        SpanStatusResponse
+        SpanStatusPublic
             Successful Response
 
         Examples
@@ -262,7 +262,7 @@ class AsyncLilypad:
 
     async def get_span_status_projects_project_uuid_spans_status_get(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> SpanStatusResponse:
+    ) -> SpanStatusPublic:
         """
         Get status of pending/resolved spans.
 
@@ -275,7 +275,7 @@ class AsyncLilypad:
 
         Returns
         -------
-        SpanStatusResponse
+        SpanStatusPublic
             Successful Response
 
         Examples

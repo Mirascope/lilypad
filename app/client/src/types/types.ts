@@ -1071,10 +1071,10 @@ export interface SpanPublic {
 }
 
 /**
- * SpanStatusResponse
+ * SpanStatusPublic
  * Response model for span status endpoint
  */
-export interface SpanStatusResponse {
+export interface SpanStatusPublic {
   /** Resolved */
   resolved: number;
   /** Pending */

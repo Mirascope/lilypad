@@ -11,7 +11,7 @@ from .core.request_options import RequestOptions
 from .core.unchecked_base_model import construct_type
 from .errors.unprocessable_entity_error import UnprocessableEntityError
 from .types.http_validation_error import HttpValidationError
-from .types.span_status_response import SpanStatusResponse
+from .types.span_status_public import SpanStatusPublic
 
 
 class RawLilypad:
@@ -20,7 +20,7 @@ class RawLilypad:
 
     def get_span_status_projects_project_uuid_spans_status_get(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[SpanStatusResponse]:
+    ) -> HttpResponse[SpanStatusPublic]:
         """
         Get status of pending/resolved spans.
 
@@ -33,7 +33,7 @@ class RawLilypad:
 
         Returns
         -------
-        HttpResponse[SpanStatusResponse]
+        HttpResponse[SpanStatusPublic]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
@@ -44,9 +44,9 @@ class RawLilypad:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanStatusResponse,
+                    SpanStatusPublic,
                     construct_type(
-                        type_=SpanStatusResponse,  # type: ignore
+                        type_=SpanStatusPublic,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -123,7 +123,7 @@ class AsyncRawLilypad:
 
     async def get_span_status_projects_project_uuid_spans_status_get(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[SpanStatusResponse]:
+    ) -> AsyncHttpResponse[SpanStatusPublic]:
         """
         Get status of pending/resolved spans.
 
@@ -136,7 +136,7 @@ class AsyncRawLilypad:
 
         Returns
         -------
-        AsyncHttpResponse[SpanStatusResponse]
+        AsyncHttpResponse[SpanStatusPublic]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
@@ -147,9 +147,9 @@ class AsyncRawLilypad:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    SpanStatusResponse,
+                    SpanStatusPublic,
                     construct_type(
-                        type_=SpanStatusResponse,  # type: ignore
+                        type_=SpanStatusPublic,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
