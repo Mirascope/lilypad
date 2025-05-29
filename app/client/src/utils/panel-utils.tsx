@@ -221,7 +221,7 @@ export const LilypadPanelTab = ({
       label: "Signature",
       value: TraceTab.SIGNATURE,
       component: span.signature ? (
-        <CodeBlock language="python" code={span.signature} className="h-full" />
+        <CodeBlock language="python" code={span.signature} className="h-full overflow-auto" />
       ) : null,
     },
   ];
