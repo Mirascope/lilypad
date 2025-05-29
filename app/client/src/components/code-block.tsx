@@ -67,7 +67,7 @@ export function CodeBlock({
   return (
     <div
       ref={codeRef}
-      className={cn(codeBlockBaseStyles, `${showLineNumbers && "show-line-numbers"}`, "flex flex-col", className)}
+      className={cn(codeBlockBaseStyles, `${showLineNumbers && "show-line-numbers"}`, className)}
     >
       {/* Buttons - positioned based on block size */}
       <div
@@ -79,7 +79,7 @@ export function CodeBlock({
         <CopyButton content={stripHighlightMarkers(code)} onCopy={onCopy} />
       </div>
 
-      <div className="highlight-container flex-1 overflow-auto">
+      <div className="highlight-container w-full overflow-auto">
         <div
           className="text-sm [&_code]:block [&_code]:w-fit [&_code]:min-w-full [&>pre]:overflow-x-auto [&>pre]:py-3 [&>pre]:pr-5 [&>pre]:pl-4"
           dangerouslySetInnerHTML={{ __html: highlightedCode.themeHtml }}
