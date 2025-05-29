@@ -106,7 +106,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 or_(
-                    self.table.parent_span_id.is_(None),  # Root spans
+                    self.table.parent_span_id.is_(None), # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                     self.table.parent_status == ParentStatus.PENDING  # PENDING spans
                 )
             )
@@ -135,7 +135,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 or_(
-                    self.table.parent_span_id.is_(None),  # Root spans
+                    self.table.parent_span_id.is_(None),  # type: ignore  # Root spans
                     self.table.parent_status == ParentStatus.PENDING  # PENDING spans
                 )
             )
