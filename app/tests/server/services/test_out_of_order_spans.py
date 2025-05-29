@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlmodel import Session, select, func
+from sqlmodel import Session, func, select
 
 from lilypad.server.models import (
     OrganizationTable,

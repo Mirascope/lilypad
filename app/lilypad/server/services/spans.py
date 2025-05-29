@@ -100,7 +100,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         order: str = "desc"
     ) -> Sequence[SpanTable]:
         """Get root spans plus PENDING child spans (treated as temporary roots)."""
-        
         stmt = (
             select(self.table)
             .where(
@@ -129,7 +128,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     
     def count_traces_with_pending(self, project_uuid: UUID) -> int:
         """Count root spans plus PENDING child spans."""
-        
         stmt = (
             select(func.count())
             .select_from(self.table)
