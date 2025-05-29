@@ -12,6 +12,7 @@ from ..core.serialization import FieldMetadata
 from ..core.unchecked_base_model import UncheckedBaseModel
 from .annotation_public import AnnotationPublic
 from .function_public import FunctionPublic
+from .parent_status import ParentStatus
 from .scope import Scope
 from .span_type import SpanType
 from .tag_public import TagPublic
@@ -32,6 +33,7 @@ class SpanPublic(UncheckedBaseModel):
     duration_ms: typing.Optional[float] = None
     data: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = None
     parent_span_id: typing.Optional[str] = None
+    parent_status: typing.Optional[ParentStatus] = None
     session_id: typing.Optional[str] = None
     uuid_: typing_extensions.Annotated[str, FieldMetadata(alias="uuid")]
     project_uuid: str

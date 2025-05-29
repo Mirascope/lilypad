@@ -78,6 +78,7 @@ class RawTracesClient:
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
+        include_pending: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[PaginatedSpanPublic]:
         """
@@ -92,6 +93,9 @@ class RawTracesClient:
         offset : typing.Optional[int]
 
         order : typing.Optional[Order]
+
+        include_pending : typing.Optional[bool]
+            Include PENDING child spans as temporary root traces
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -108,6 +112,7 @@ class RawTracesClient:
                 "limit": limit,
                 "offset": offset,
                 "order": order,
+                "include_pending": include_pending,
             },
             request_options=request_options,
         )
@@ -249,6 +254,7 @@ class AsyncRawTracesClient:
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
+        include_pending: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[PaginatedSpanPublic]:
         """
@@ -263,6 +269,9 @@ class AsyncRawTracesClient:
         offset : typing.Optional[int]
 
         order : typing.Optional[Order]
+
+        include_pending : typing.Optional[bool]
+            Include PENDING child spans as temporary root traces
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -279,6 +288,7 @@ class AsyncRawTracesClient:
                 "limit": limit,
                 "offset": offset,
                 "order": order,
+                "include_pending": include_pending,
             },
             request_options=request_options,
         )

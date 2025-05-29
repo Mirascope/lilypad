@@ -7,14 +7,17 @@ from .api_keys.client import ApiKeysClient, AsyncApiKeysClient
 from .auth.client import AsyncAuthClient, AuthClient
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .core.request_options import RequestOptions
 from .ee.client import AsyncEeClient, EeClient
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
 from .organizations.client import AsyncOrganizationsClient, OrganizationsClient
 from .projects.client import AsyncProjectsClient, ProjectsClient
+from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
+from .types.span_status_response import SpanStatusResponse
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
@@ -75,6 +78,7 @@ class Lilypad:
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = RawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = OrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = ApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = WebhooksClient(client_wrapper=self._client_wrapper)
@@ -89,6 +93,89 @@ class Lilypad:
         self.comments = CommentsClient(client_wrapper=self._client_wrapper)
         self.settings = SettingsClient(client_wrapper=self._client_wrapper)
         self.ee = EeClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> RawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        RawLilypad
+        """
+        return self._raw_client
+
+    def get_span_status_projects_project_uuid_spans_status_get(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> SpanStatusResponse:
+        """
+        Get status of pending/resolved spans.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        SpanStatusResponse
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.get_span_status_projects_project_uuid_spans_status_get(
+            project_uuid="project_uuid",
+        )
+        """
+        _response = self._raw_client.get_span_status_projects_project_uuid_spans_status_get(
+            project_uuid, request_options=request_options
+        )
+        return _response.data
+
+    def trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.Dict[str, str]:
+        """
+        Manual cleanup trigger for testing
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.Dict[str, str]
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+            project_uuid="project_uuid",
+        )
+        """
+        _response = self._raw_client.trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+            project_uuid, request_options=request_options
+        )
+        return _response.data
 
 
 class AsyncLilypad:
@@ -146,6 +233,7 @@ class AsyncLilypad:
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = AsyncRawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = AsyncOrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = AsyncApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
@@ -160,3 +248,102 @@ class AsyncLilypad:
         self.comments = AsyncCommentsClient(client_wrapper=self._client_wrapper)
         self.settings = AsyncSettingsClient(client_wrapper=self._client_wrapper)
         self.ee = AsyncEeClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> AsyncRawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        AsyncRawLilypad
+        """
+        return self._raw_client
+
+    async def get_span_status_projects_project_uuid_spans_status_get(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> SpanStatusResponse:
+        """
+        Get status of pending/resolved spans.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        SpanStatusResponse
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.get_span_status_projects_project_uuid_spans_status_get(
+                project_uuid="project_uuid",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_span_status_projects_project_uuid_spans_status_get(
+            project_uuid, request_options=request_options
+        )
+        return _response.data
+
+    async def trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.Dict[str, str]:
+        """
+        Manual cleanup trigger for testing
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.Dict[str, str]
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+                project_uuid="project_uuid",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.trigger_cleanup_projects_project_uuid_spans_cleanup_post(
+            project_uuid, request_options=request_options
+        )
+        return _response.data

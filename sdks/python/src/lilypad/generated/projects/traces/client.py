@@ -69,6 +69,7 @@ class TracesClient:
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
+        include_pending: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> PaginatedSpanPublic:
         """
@@ -83,6 +84,9 @@ class TracesClient:
         offset : typing.Optional[int]
 
         order : typing.Optional[Order]
+
+        include_pending : typing.Optional[bool]
+            Include PENDING child spans as temporary root traces
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -106,7 +110,12 @@ class TracesClient:
         )
         """
         _response = self._raw_client.list(
-            project_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            include_pending=include_pending,
+            request_options=request_options,
         )
         return _response.data
 
@@ -212,6 +221,7 @@ class AsyncTracesClient:
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
+        include_pending: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> PaginatedSpanPublic:
         """
@@ -226,6 +236,9 @@ class AsyncTracesClient:
         offset : typing.Optional[int]
 
         order : typing.Optional[Order]
+
+        include_pending : typing.Optional[bool]
+            Include PENDING child spans as temporary root traces
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -257,7 +270,12 @@ class AsyncTracesClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.list(
-            project_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            include_pending=include_pending,
+            request_options=request_options,
         )
         return _response.data
 
