@@ -319,6 +319,7 @@ def _extract_types(annotation: Any) -> set[type]:
         types_found.add(annotation)
     return types_found
 
+
 def _is_stdlib_or_builtin(obj: Any) -> bool:
     """Check if an object is part of the Python standard library or built-in types."""
     if not hasattr(obj, "__module__"):
@@ -334,6 +335,7 @@ def _is_stdlib_or_builtin(obj: Any) -> bool:
         or module_name.startswith("typing.")
         or module_name in {"abc", "typing", "builtins", "_collections_abc"}
     )
+
 
 class _DefinitionCollector(ast.NodeVisitor):
     def __init__(self, module: ModuleType, used_names: list[str], site_packages: set[str]) -> None:
