@@ -165,9 +165,7 @@ export const LilypadPanelTab = ({
     {
       label: "Response Model",
       value: TraceTab.RESPONSE,
-      component: span.response_model ? (
-        <JsonView shortenTextAfterLength={100} value={span.response_model} />
-      ) : null,
+      component: span.response_model ? renderResponseModel(span.response_model) : null,
     },
     {
       label: "Messages",
@@ -214,7 +212,7 @@ export const LilypadPanelTab = ({
       label: "Code",
       value: TraceTab.CODE,
       component: span.code ? (
-        <CodeBlock language="python" code={span.code} className="h-full" />
+        <CodeBlock language="python" code={span.code} className="h-full overflow-auto" />
       ) : null,
     },
     {
@@ -291,6 +289,14 @@ export const MessagesContainer = ({ messages }: { messages: MessageParam[] }) =>
       </div>
     </div>
   );
+};
+
+const renderResponseModel = (responseModel: any) => {
+  if (typeof responseModel === "object") {
+    return <JsonView shortenTextAfterLength={100} value={responseModel} />;
+  } else {
+    return <ReactMarkdown className="professional p-2">{responseModel}</ReactMarkdown>;
+  }
 };
 export const renderOutput = (output: string) => {
   const jsonOutput = safelyParseJSON(output);

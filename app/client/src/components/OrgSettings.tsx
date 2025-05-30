@@ -5,7 +5,7 @@ import LilypadDialog from "@/components/LilypadDialog";
 import { NotFound } from "@/components/NotFound";
 import { UpdateOrganizationDialog } from "@/components/OrganizationDialog";
 import { ProjectsTable } from "@/components/projects/ProjectsTable";
-import { SubscriptionManager } from "@/components/stripe/SubscriptionManager";
+// import { SubscriptionManager } from "@/components/stripe/SubscriptionManager";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -52,7 +52,7 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
         <Typography variant="h3">{activeUserOrg?.organization.name}&apos;s Settings</Typography>
         {isHovered && <Pencil className="size-4 text-gray-500" onClick={() => setOpen(true)} />}
       </div>
-      <SubscriptionManager />
+      {/* <SubscriptionManager /> */}
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
       <UserTable />
       <ProjectsTable />

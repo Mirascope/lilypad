@@ -214,7 +214,7 @@ export interface BillingPublic {
   /** Last Usage Report */
   last_usage_report?: string | null;
   /** Metadata */
-  metadata?: object;
+  metadata_?: object;
   /**
    * Uuid
    * @format uuid
@@ -787,8 +787,7 @@ export interface OrganizationPublic {
    * @format uuid
    */
   uuid: string;
-  /** Schema for public billing information. */
-  billing: BillingPublic;
+  billing?: BillingPublic | null;
 }
 
 /**
@@ -1040,7 +1039,28 @@ export interface SpanMoreDetails {
   /** Response */
   response?: object | null;
   /** Response Model */
-  response_model?: object | null;
+  response_model?:
+    | Record<
+        string,
+        | string
+        | number
+        | boolean
+        | Record<string, string | number | boolean | null>
+        | (string | number | boolean | null)[]
+        | null
+      >
+    | (
+        | string
+        | number
+        | boolean
+        | Record<string, string | number | boolean | null>
+        | (string | number | boolean | null)[]
+        | null
+      )[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 
 /**
