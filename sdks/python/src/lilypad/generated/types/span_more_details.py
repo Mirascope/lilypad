@@ -10,6 +10,7 @@ from ..core.unchecked_base_model import UncheckedBaseModel
 from .event import Event
 from .message_param import MessageParam
 from .scope import Scope
+from .span_more_details_response_model import SpanMoreDetailsResponseModel
 from .tag_public import TagPublic
 
 
@@ -42,7 +43,7 @@ class SpanMoreDetails(UncheckedBaseModel):
     session_id: typing.Optional[str] = None
     span_id: str
     response: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = None
-    response_model: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = None
+    response_model: typing.Optional[SpanMoreDetailsResponseModel] = None
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2
