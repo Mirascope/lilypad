@@ -165,8 +165,9 @@ services:
       KAFKA_JMX_HOSTNAME: localhost
       KAFKA_LOG_RETENTION_HOURS: 168  # 7 days retention
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
-      - kafka-data:/var/lib/kafka/data
+      - kafka-data:/var/lib/kafka
     networks:
       - app-network
     healthcheck:
