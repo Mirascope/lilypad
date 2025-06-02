@@ -1,6 +1,5 @@
 """Tests for the middleware module in the _utils package."""
 
-import json
 import base64
 from io import BytesIO
 from uuid import UUID, uuid4
@@ -10,7 +9,7 @@ import pytest
 import PIL.Image
 import PIL.WebPImagePlugin
 from pydantic import BaseModel
-from mirascope import TextPart, ImagePart, BaseMessageParam
+from mirascope import BaseMessageParam
 from opentelemetry.trace import Span, Status, StatusCode
 from mirascope.core.base._utils._base_type import BaseType as mb_BaseType
 
