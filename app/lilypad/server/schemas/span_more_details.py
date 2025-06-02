@@ -444,8 +444,13 @@ def convert_mirascope_messages(
                     and content_item.get("type") == "audio"
                 ):
                     content_parts.append(handle_audio(content_item))
-                elif isinstance(content_item, str):
-                    content_parts.append(_TextPart(type="text", text=content_item))
+                elif (
+                    isinstance(content_item, dict)
+                    and content_item.get("type") == "text"
+                ):
+                    content_parts.append(
+                        _TextPart(type="text", text=content_item.get("text", ""))
+                    )
             if content_parts:
                 structured_messages.append(
                     MessageParam(
