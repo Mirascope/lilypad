@@ -44,9 +44,10 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_DATA_DIR: /var/lib/zookeeper/data
+      ZOOKEEPER_LOG_DIR: /var/lib/zookeeper/log
     volumes:
-      - zookeeper-data:/data
-      - zookeeper-logs:/datalog
+      - zookeeper-data:/var/lib/zookeeper
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "2181"]
       interval: 30s
@@ -86,5 +87,4 @@ services:
 volumes:
   postgres-data:
   zookeeper-data:
-  zookeeper-logs:
   kafka-data:
