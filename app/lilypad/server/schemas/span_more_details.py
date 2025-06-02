@@ -451,6 +451,8 @@ def convert_mirascope_messages(
                     content_parts.append(
                         _TextPart(type="text", text=content_item.get("text", ""))
                     )
+                elif isinstance(content_item, str):
+                    content_parts.append(_TextPart(type="text", text=content_item))
             if content_parts:
                 structured_messages.append(
                     MessageParam(
