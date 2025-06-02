@@ -22,6 +22,7 @@ from lilypad._utils.middleware import (
     _Handlers,
     _handle_error,
     safe_serialize,
+    bytes_serializer,
     _handle_error_async,
     _get_custom_context_manager,
     create_mirascope_middleware,
@@ -153,10 +154,8 @@ def test_set_call_response_attributes_with_bytes_serialization():
     orig_fast = _json.fast_jsonable
 
     def fast_side_effect(val, *args, **kwargs):
-        # Handle bytes serialization by converting to base64
-        if isinstance(val, bytes):
-            return base64.b64encode(val).decode("utf-8")
-        # For other types, use the original function
+        if val is response.common_messages or val is response.common_message_param:
+            raise TypeError
         return orig_fast(val, *args, **kwargs)
 
     with patch("lilypad._utils.middleware.fast_jsonable", side_effect=fast_side_effect):
@@ -168,6 +167,25 @@ def test_set_call_response_attributes_with_bytes_serialization():
         }
 
         span.set_attributes.assert_called_once_with(expected_attributes)
+
+
+def test_bytes_serializer():
+    test_bytes = b"hello world"
+    result = bytes_serializer(test_bytes)
+    expected = base64.b64encode(test_bytes).decode("utf-8")
+    assert result == expected
+
+    empty_bytes = b""
+    result = bytes_serializer(empty_bytes)
+    expected = base64.b64encode(empty_bytes).decode("utf-8")
+    assert result == expected
+
+    result = bytes_serializer(b"test")
+    assert isinstance(result, str)
+
+
+# Run the test
+test_bytes_serializer()
 
 
 def test_set_response_model_attributes_base_model_with_messages():
