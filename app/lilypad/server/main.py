@@ -20,6 +20,8 @@ from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
 from lilypad.server._utils.posthog import setup_posthog_middleware
+from lilypad.server.services.kafka_setup import KafkaSetupService
+from lilypad.server.services.span_queue_processor import get_span_queue_processor
 
 from .api import v0_api
 from .settings import get_settings
@@ -44,10 +46,41 @@ def run_migrations() -> None:
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
-    """Run the migrations on startup."""
+    """Run the migrations and optional setup on startup."""
     log.info("Running migrations")
     run_migrations()
+
+    # Optional Kafka topic setup
+    if settings.kafka_auto_setup_topics:
+        log.info("Running Kafka topic setup")
+        try:
+            kafka_setup = KafkaSetupService(settings)
+            kafka_setup.setup_topics()
+        except Exception as e:
+            log.error(f"Kafka setup failed (non-fatal): {e}")
+            # Continue startup even if Kafka setup fails
+
+    # Start span queue processor if Kafka is configured
+    queue_processor = None
+    if settings.kafka_bootstrap_servers:
+        log.info("Starting span queue processor")
+        try:
+            queue_processor = get_span_queue_processor()
+            await queue_processor.start()
+            log.info("Span queue processor started successfully")
+        except Exception as e:
+            log.error(f"Failed to start span queue processor (non-fatal): {e}")
+            # Continue startup even if processor fails
+
     yield
+
+    # Cleanup on shutdown
+    if queue_processor:
+        log.info("Stopping span queue processor")
+        try:
+            await queue_processor.stop()
+        except Exception as e:
+            log.error(f"Error stopping queue processor: {e}")
 
 
 origins = [

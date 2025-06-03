@@ -136,8 +136,11 @@ def test_post_traces(
         json=trace_data,
     )
     assert response.status_code == 200
-    spans = response.json()
-    assert spans[0]["span_id"] == "test_span_2"
+    result = response.json()
+    # Since Kafka is not available in tests, it should process synchronously
+    assert result["status"] == "processed"
+    assert result["span_count"] == 1
+    assert "message" in result
 
 
 def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):

@@ -2,7 +2,6 @@
 
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
@@ -31,8 +30,10 @@ from ...models.spans import Scope, SpanTable
 from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
+from ...schemas.traces import TracesQueueResponse
 from ...services import OpenSearchService, SpanService, get_opensearch_service
 from ...services.billing import BillingService
+from ...services.kafka import KafkaService
 from ...services.projects import ProjectService
 
 traces_router = APIRouter()
@@ -179,7 +180,7 @@ async def index_traces_in_opensearch(
 
 
 @traces_router.post(
-    "/projects/{project_uuid}/traces", response_model=Sequence[SpanPublic]
+    "/projects/{project_uuid}/traces", response_model=TracesQueueResponse
 )
 async def traces(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
@@ -189,11 +190,12 @@ async def traces(
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    kafka_service: Annotated[KafkaService, Depends(KafkaService)],
     background_tasks: BackgroundTasks,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
     billing_service: Annotated[BillingService, Depends(BillingService)],
-) -> Sequence[SpanTable]:
-    """Create span traces."""
+) -> TracesQueueResponse:
+    """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
         tier = license.tier
         num_traces = span_service.count_by_current_month()
@@ -211,31 +213,64 @@ async def traces(
 
     # Process the traces
     traces_json: list[dict] = await request.json()
-    span_creates: list[SpanCreate] = []
-    parent_to_children = defaultdict(list)
 
-    # Build the parent-child relationships
+    # Add project UUID to each span's attributes for queue processing
     for trace in traces_json:
-        if parent_span_id := trace.get("parent_span_id"):
-            parent_to_children[parent_span_id].append(trace)
-    # Find root spans (spans with no parents) and process each tree
-    root_spans = [span for span in traces_json if span.get("parent_span_id") is None]
+        if "attributes" not in trace:
+            trace["attributes"] = {}
+        trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
-    for root_span in root_spans:
-        await _process_span(root_span, parent_to_children, span_creates)
-    project = project_service.find_record_no_organization(project_uuid)
-    span_tables = span_service.create_bulk_records(
-        span_creates,
-        billing_service if is_lilypad_cloud else None,
-        project_uuid,
-        project.organization_uuid,
-    )
-    if opensearch_service.is_enabled:
-        trace_dicts = [span.model_dump() for span in span_tables]
-        background_tasks.add_task(
-            index_traces_in_opensearch, project_uuid, trace_dicts, opensearch_service
+    # Try to send to Kafka queue
+    kafka_available = await kafka_service.send_spans_batch(traces_json)
+
+    if kafka_available:
+        # Queue processing successful
+        logger.info(f"Queued {len(traces_json)} spans for project {project_uuid}")
+        return TracesQueueResponse(
+            trace_status="queued",
+            span_count=len(traces_json),
+            message="Spans queued for processing",
         )
-    return [span for span in span_tables if span.parent_span_id is None]
+    else:
+        # Fallback to synchronous processing if Kafka is not available
+        logger.warning("Kafka not available, falling back to synchronous processing")
+
+        span_creates: list[SpanCreate] = []
+        parent_to_children = defaultdict(list)
+
+        # Build the parent-child relationships
+        for trace in traces_json:
+            if parent_span_id := trace.get("parent_span_id"):
+                parent_to_children[parent_span_id].append(trace)
+        # Find root spans (spans with no parents) and process each tree
+        root_spans = [
+            span for span in traces_json if span.get("parent_span_id") is None
+        ]
+
+        for root_span in root_spans:
+            await _process_span(root_span, parent_to_children, span_creates)
+        project = project_service.find_record_no_organization(project_uuid)
+        span_tables = span_service.create_bulk_records(
+            span_creates,
+            billing_service if is_lilypad_cloud else None,
+            project_uuid,
+            project.organization_uuid,
+        )
+        if opensearch_service.is_enabled:
+            trace_dicts = [span.model_dump() for span in span_tables]
+            background_tasks.add_task(
+                index_traces_in_opensearch,
+                project_uuid,
+                trace_dicts,
+                opensearch_service,
+            )
+
+        # Return consistent response format
+        return TracesQueueResponse(
+            trace_status="processed",
+            span_count=len(span_tables),
+            message="Spans processed synchronously",
+        )
 
 
 __all__ = ["traces_router"]
