@@ -62,6 +62,7 @@ dependencies = [
     "cryptography>=43.0.3",
     "opensearch-py>=2.8.0",
     "stripe>=12.1.0",
+    "kafka-python>=2.2.10",
 ]
 
 [project.urls]
