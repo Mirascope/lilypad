@@ -138,7 +138,7 @@ def test_post_traces(
     assert response.status_code == 200
     result = response.json()
     # Since Kafka is not available in tests, it should process synchronously
-    assert result["status"] == "processed"
+    assert result["trace_status"] == "processed"
     assert result["span_count"] == 1
     assert "message" in result
 
