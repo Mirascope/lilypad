@@ -72,7 +72,7 @@ class _JSONSpanExporter(SpanExporter):
         span_data = [self._span_to_dict(span) for span in spans]
 
         try:
-            raw_response = self.client.projects.traces.create(
+            response = self.client.projects.traces.create(
                 project_uuid=self.settings.project_id, request_options={"additional_body_parameters": span_data}
             )  # pyright: ignore[reportArgumentType]
         except LilypadException as exc:
@@ -82,24 +82,12 @@ class _JSONSpanExporter(SpanExporter):
             self.log.error("Unexpected error sending spans: %s", exc)
             return SpanExportResult.FAILURE
 
-        if raw_response is None:
-            self.log.warning("Server responded with None")
-            return SpanExportResult.FAILURE
-
-        # Handle queue response format
-        if isinstance(raw_response, dict):
-            status = raw_response.get("status")
-            span_count = raw_response.get("span_count", 0)
-            if status in ("queued", "processed"):
-                self.log.debug(f"Spans {status}: {span_count} spans")
-                if status == "queued" and span_count > 0:
-                    self.log.info(
-                        f"View traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
-                    )
-                return SpanExportResult.SUCCESS
-
-        self.log.warning(f"Unexpected response format: {type(raw_response)}")
-        return SpanExportResult.FAILURE
+        self.log.debug(f"Spans {response.trace_status}: {response.span_count} spans")
+        if response.trace_status == "queued" and response.span_count > 0:
+            self.log.info(
+                f"View traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
+            )
+        return SpanExportResult.SUCCESS
 
     def shutdown(self) -> None:
         """Shutdown the exporter."""
