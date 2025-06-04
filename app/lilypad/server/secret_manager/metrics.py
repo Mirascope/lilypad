@@ -2,8 +2,8 @@
 
 import logging
 import time
-from collections.abc import Generator, Iterator
-from contextlib import contextmanager, _GeneratorContextManager
+from collections.abc import Generator
+from contextlib import _GeneratorContextManager, contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
