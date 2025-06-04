@@ -61,7 +61,7 @@ repos:
 
       - id: build-client
         name: build-client
-        entry: bash -c 'cd app/client && pnpm typecheck'
+        entry: bash -c 'cd app/client && bun typecheck'
         language: system
         pass_filenames: false
 

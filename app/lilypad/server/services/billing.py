@@ -95,16 +95,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 stripe_customer_id=customer.id,
             )
 
-            # subscription = stripe.Subscription.create(
-            #     customer=customer.id,
-            #     items=[{"price": stripe_cloud_free_price_id}, {}],
-            # )
-
             if existing_billing:
                 existing_billing.stripe_customer_id = customer.id
-                # existing_billing.stripe_subscription_id = subscription.id
                 existing_billing.subscription_status = SubscriptionStatus.ACTIVE
-                # existing_billing.stripe_price_id = stripe_cloud_free_price_id
                 self.session.add(existing_billing)
             else:
                 self.create_record(billing_data, organization_uuid=organization.uuid)

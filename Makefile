@@ -3,7 +3,7 @@
 setup:
 	command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 	command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
-	cd app/client && pnpm install
+	cd app/client && bun install
 	cd app && uv sync --all-extras --dev
 	cd sdks/python && uv sync --all-extras --dev
 	cd sdks && bun install
@@ -73,7 +73,7 @@ generate-sdk:
 	cd sdks && bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/.git
 
 generate-client:
-	cd app/client && pnpm generate:api:v0
+	cd app/client && bun generate:api:v0
 
 clean:
 	find . -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
