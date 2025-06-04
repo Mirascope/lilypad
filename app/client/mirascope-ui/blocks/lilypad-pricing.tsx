@@ -3,18 +3,14 @@ import { ButtonLink } from "@/mirascope-ui/ui/button-link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/mirascope-ui/ui/tabs";
 import { Check, X } from "lucide-react";
 
-// Feature row component for displaying features with the same value across tiers
-const FeatureRow = ({
-  feature,
-  free,
-  pro,
-  team,
-}: {
+interface FeatureRowProps {
   feature: string;
   free: string | boolean;
   pro: string | boolean;
   team: string | boolean;
-}) => {
+}
+// Feature row component for displaying features with the same value across tiers
+const FeatureRow = ({ feature, free, pro, team }: FeatureRowProps) => {
   // If all tiers have the exact same value (and it's not a boolean)
   const allSameNonBoolean = free === pro && pro === team && typeof free === "string" && free !== "";
 
@@ -85,6 +81,16 @@ const FeatureRow = ({
   );
 };
 
+interface PricingTierProps {
+  name: string;
+  price: string;
+  description: string;
+  buttonText?: string;
+  buttonLink?: string;
+  customButton?: React.ReactNode;
+  badge?: "Open Beta" | "Closed Beta";
+  variant?: "default" | "outline";
+}
 // Pricing tier component
 const PricingTier = ({
   name,
@@ -95,16 +101,7 @@ const PricingTier = ({
   customButton,
   badge,
   variant = "default",
-}: {
-  name: string;
-  price: string;
-  description: string;
-  buttonText?: string;
-  buttonLink?: string;
-  customButton?: React.ReactNode;
-  badge?: "Open Beta" | "Closed Beta";
-  variant?: "default" | "outline";
-}) => (
+}: PricingTierProps) => (
   <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
     <div className={cn("bg-background px-6 py-8")}>
       <div className="mb-2 flex items-center gap-2">
@@ -139,16 +136,7 @@ const PricingTier = ({
 );
 
 // Feature comparison table component
-const FeatureComparisonTable = ({
-  features,
-}: {
-  features: {
-    feature: string;
-    free: string | boolean;
-    pro: string | boolean;
-    team: string | boolean;
-  }[];
-}) => (
+export const FeatureComparisonTable = ({ features }: { features: FeatureRowProps[] }) => (
   <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
     <div className="border-b border-border bg-accent px-4 py-5 sm:px-6">
       <h3 className="text-lg font-medium text-accent-foreground">Feature Comparison</h3>
@@ -164,13 +152,7 @@ const FeatureComparisonTable = ({
 
       {/* Table rows */}
       {features.map((feat, i) => (
-        <FeatureRow
-          key={i}
-          feature={feat.feature}
-          free={feat.free}
-          pro={feat.pro}
-          team={feat.team}
-        />
+        <FeatureRow key={i} {...feat} />
       ))}
     </div>
   </div>
@@ -196,48 +178,47 @@ interface PricingActions {
   };
 }
 
+// Cloud hosted features
+export const cloudHostedFeatures = [
+  { feature: "Projects", free: "Unlimited", pro: "Unlimited", team: "Unlimited" },
+  { feature: "Users", free: "2", pro: "10", team: "Unlimited" },
+  {
+    feature: "Tracing",
+    free: "30k spans / month",
+    pro: "100k spans / month (thereafter $1 per 10k)",
+    team: "1M spans / month (thereafter $1 per 10k)",
+  },
+  { feature: "Data Retention", free: "30 days", pro: "90 days", team: "180 days" },
+  { feature: "Versioned Functions", free: true, pro: true, team: true },
+  { feature: "Playground", free: true, pro: true, team: true },
+  { feature: "Comparisons", free: true, pro: true, team: true },
+  { feature: "Annotations", free: true, pro: true, team: true },
+  { feature: "Support (Community)", free: true, pro: true, team: true },
+  { feature: "Support (Chat / Email)", free: false, pro: true, team: true },
+  { feature: "Support (Private Slack)", free: false, pro: false, team: true },
+  { feature: "API Rate Limits", free: "10 / minute", pro: "100 / minute", team: "1000 / minute" },
+];
+
+// Self-hosted features
+export const selfHostedFeatures = [
+  { feature: "Projects", free: "Unlimited", pro: "Unlimited", team: "Unlimited" },
+  { feature: "Users", free: "Unlimited", pro: "As licensed", team: "As licensed" },
+  { feature: "Tracing", free: "No limits", pro: "No limits", team: "No limits" },
+  { feature: "Data Retention", free: "No limits", pro: "No limits", team: "No limits" },
+  { feature: "Versioned Functions", free: true, pro: true, team: true },
+  { feature: "Playground", free: false, pro: true, team: true },
+  { feature: "Comparisons", free: false, pro: true, team: true },
+  { feature: "Annotations", free: false, pro: true, team: true },
+  { feature: "Support (Community)", free: true, pro: true, team: true },
+  { feature: "Support (Chat / Email)", free: false, pro: true, team: true },
+  { feature: "Support (Private Slack)", free: false, pro: false, team: true },
+  { feature: "API Rate Limits", free: "No limits", pro: "No limits", team: "No limits" },
+];
 interface LilypadPricingProps {
   actions: PricingActions;
 }
 
 export function LilypadPricing({ actions }: LilypadPricingProps) {
-  // Cloud hosted features
-  const cloudHostedFeatures = [
-    { feature: "Projects", free: "Unlimited", pro: "Unlimited", team: "Unlimited" },
-    { feature: "Users", free: "2", pro: "10", team: "Unlimited" },
-    {
-      feature: "Tracing",
-      free: "30k spans / month",
-      pro: "100k spans / month (thereafter $1 per 10k)",
-      team: "1M spans / month (thereafter $1 per 10k)",
-    },
-    { feature: "Data Retention", free: "30 days", pro: "90 days", team: "180 days" },
-    { feature: "Versioned Functions", free: true, pro: true, team: true },
-    { feature: "Playground", free: true, pro: true, team: true },
-    { feature: "Comparisons", free: true, pro: true, team: true },
-    { feature: "Annotations", free: true, pro: true, team: true },
-    { feature: "Support (Community)", free: true, pro: true, team: true },
-    { feature: "Support (Chat / Email)", free: false, pro: true, team: true },
-    { feature: "Support (Private Slack)", free: false, pro: false, team: true },
-    { feature: "API Rate Limits", free: "10 / minute", pro: "100 / minute", team: "1000 / minute" },
-  ];
-
-  // Self-hosted features
-  const selfHostedFeatures = [
-    { feature: "Projects", free: "Unlimited", pro: "Unlimited", team: "Unlimited" },
-    { feature: "Users", free: "Unlimited", pro: "As licensed", team: "As licensed" },
-    { feature: "Tracing", free: "No limits", pro: "No limits", team: "No limits" },
-    { feature: "Data Retention", free: "No limits", pro: "No limits", team: "No limits" },
-    { feature: "Versioned Functions", free: true, pro: true, team: true },
-    { feature: "Playground", free: false, pro: true, team: true },
-    { feature: "Comparisons", free: false, pro: true, team: true },
-    { feature: "Annotations", free: false, pro: true, team: true },
-    { feature: "Support (Community)", free: true, pro: true, team: true },
-    { feature: "Support (Chat / Email)", free: false, pro: true, team: true },
-    { feature: "Support (Private Slack)", free: false, pro: false, team: true },
-    { feature: "API Rate Limits", free: "No limits", pro: "No limits", team: "No limits" },
-  ];
-
   return (
     <div className="px-4 py-4">
       <div className="mx-auto max-w-4xl">
@@ -261,38 +242,7 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
 
           {/* Hosted By Us Tab Content */}
           <TabsContent value="hosted">
-            <div className="mb-10 grid gap-8 md:grid-cols-3">
-              <PricingTier
-                name="Free"
-                price="$0"
-                description="For individuals just getting started"
-                buttonText={actions.hosted.free.buttonText}
-                buttonLink={actions.hosted.free.buttonLink}
-                badge="Open Beta"
-                variant={actions.hosted.free.variant}
-                customButton={actions.hosted.free.customButton}
-              />
-              <PricingTier
-                name="Pro"
-                price="TBD"
-                description="For teams with more advanced needs"
-                buttonText={actions.hosted.pro.buttonText}
-                buttonLink={actions.hosted.pro.buttonLink}
-                badge="Closed Beta"
-                variant={actions.hosted.pro.variant ?? "outline"}
-                customButton={actions.hosted.pro.customButton}
-              />
-              <PricingTier
-                name="Team"
-                price="TBD"
-                description="For larger teams requiring dedicated support"
-                buttonText={actions.hosted.team.buttonText}
-                buttonLink={actions.hosted.team.buttonLink}
-                badge="Closed Beta"
-                variant={actions.hosted.team.variant ?? "outline"}
-                customButton={actions.hosted.team.customButton}
-              />
-            </div>
+            <LilypadCloudPricing hostedActions={actions.hosted} />
 
             {/* Feature comparison table */}
             <FeatureComparisonTable features={cloudHostedFeatures} />
@@ -346,8 +296,8 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
                 How long will the open beta last?
               </h3>
               <p className="text-muted-foreground">
-                The open beta period is ongoing, and we'll provide advance notice before moving to
-                paid plans.
+                The open beta period is ongoing, and we&apos;ll provide advance notice before moving
+                to paid plans.
               </p>
             </div>
             <div>
@@ -382,3 +332,53 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
     </div>
   );
 }
+
+export const LilypadCloudPricing = ({
+  hostedActions,
+}: {
+  hostedActions: {
+    free: TierAction;
+    pro: TierAction;
+    team: TierAction;
+  };
+}) => {
+  const pricingTiers: PricingTierProps[] = [
+    {
+      name: "Free",
+      price: "$0",
+      description: "For individuals just getting started",
+      buttonText: hostedActions.free.buttonText,
+      buttonLink: hostedActions.free.buttonLink,
+      badge: "Open Beta",
+      variant: hostedActions.free.variant,
+      customButton: hostedActions.free.customButton,
+    },
+    {
+      name: "Pro",
+      price: "TBD",
+      description: "For teams with more advanced needs",
+      buttonText: hostedActions.pro.buttonText,
+      buttonLink: hostedActions.pro.buttonLink,
+      badge: "Closed Beta",
+      variant: hostedActions.pro.variant ?? "outline",
+      customButton: hostedActions.pro.customButton,
+    },
+    {
+      name: "Team",
+      price: "TBD",
+      description: "For larger teams requiring dedicated support",
+      buttonText: hostedActions.team.buttonText,
+      buttonLink: hostedActions.team.buttonLink,
+      badge: "Closed Beta",
+      variant: hostedActions.team.variant ?? "outline",
+      customButton: hostedActions.team.customButton,
+    },
+  ];
+  return (
+    <div className="mb-10 grid gap-8 md:grid-cols-3">
+      {pricingTiers.map((tier) => (
+        <PricingTier key={tier.name} {...tier} />
+      ))}
+    </div>
+  );
+};

@@ -68,7 +68,7 @@ client = Lilypad(
     base_url="https://yourhost.com/path/to/api",
 )
 client.create_checkout_session_stripe_create_checkout_session_post(
-    plan_type="free",
+    tier=1,
 )
 
 ```
@@ -85,7 +85,7 @@ client.create_checkout_session_stripe_create_checkout_session_post(
 <dl>
 <dd>
 
-**plan_type:** `PlanType` 
+**tier:** `Tier` 
     
 </dd>
 </dl>

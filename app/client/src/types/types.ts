@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint:disable */
+// @ts-nocheck
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -8,6 +9,121 @@
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
+
+/**
+ * UserRole
+ * User role enum.
+ */
+export enum UserRole {
+  OWNER = "owner",
+  ADMIN = "admin",
+  MEMBER = "member",
+}
+
+/**
+ * TimeFrame
+ * Timeframe for aggregation
+ */
+export enum TimeFrame {
+  DAY = "day",
+  WEEK = "week",
+  MONTH = "month",
+  LIFETIME = "lifetime",
+}
+
+/**
+ * Tier
+ * License tier enum.
+ */
+export enum Tier {
+  FREE = 0,
+  PRO = 1,
+  TEAM = 2,
+  ENTERPRISE = 3,
+}
+
+/**
+ * SubscriptionStatus
+ * Subscription status enum based on Stripe's subscription statuses.
+ */
+export enum SubscriptionStatus {
+  ACTIVE = "active",
+  PAST_DUE = "past_due",
+  UNPAID = "unpaid",
+  CANCELED = "canceled",
+  INCOMPLETE = "incomplete",
+  INCOMPLETE_EXPIRED = "incomplete_expired",
+  TRIALING = "trialing",
+  PAUSED = "paused",
+}
+
+/**
+ * SpanType
+ * Span type
+ */
+export enum SpanType {
+  FUNCTION = "function",
+  TRACE = "trace",
+  MIRASCOPE_V_1 = "mirascope.v1",
+}
+
+/**
+ * Scope
+ * Instrumentation Scope name of the span
+ */
+export enum Scope {
+  LILYPAD = "lilypad",
+  LLM = "llm",
+}
+
+/**
+ * Provider
+ * Provider name enum
+ */
+export enum Provider {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  OPENROUTER = "openrouter",
+  GEMINI = "gemini",
+}
+
+/**
+ * PlaygroundErrorType
+ * Categorizes the types of errors that can occur during playground execution.
+ */
+export enum PlaygroundErrorType {
+  TIMEOUT_ERROR = "TimeoutError",
+  CONFIGURATION_ERROR = "ConfigurationError",
+  SUBPROCESS_ERROR = "SubprocessError",
+  OUTPUT_PARSING_ERROR = "OutputParsingError",
+  OUTPUT_MARKER_ERROR = "OutputMarkerError",
+  INTERNAL_PLAYGROUND_ERROR = "InternalPlaygroundError",
+  EXECUTION_ERROR = "ExecutionError",
+  BAD_REQUEST_ERROR = "BadRequestError",
+  NOT_FOUND_ERROR = "NotFoundError",
+  INVALID_INPUT_ERROR = "InvalidInputError",
+  API_KEY_ISSUE = "ApiKeyIssue",
+  UNEXPECTED_SERVER_ERROR = "UnexpectedServerError",
+}
+
+/**
+ * Label
+ * Label enum
+ */
+export enum Label {
+  PASS = "pass",
+  FAIL = "fail",
+}
+
+/**
+ * EvaluationType
+ * Evaluation type enum
+ */
+export enum EvaluationType {
+  MANUAL = "manual",
+  VERIFIED = "verified",
+  EDITED = "edited",
+}
 
 /**
  * APIKeyCreate
@@ -453,16 +569,6 @@ export interface EnvironmentPublic {
 }
 
 /**
- * EvaluationType
- * Evaluation type enum
- */
-export enum EvaluationType {
-  MANUAL = "manual",
-  VERIFIED = "verified",
-  EDITED = "edited",
-}
-
-/**
  * Event
  * Event model.
  */
@@ -656,15 +762,6 @@ export interface HTTPValidationError {
 }
 
 /**
- * Label
- * Label enum
- */
-export enum Label {
-  PASS = "pass",
-  FAIL = "fail",
-}
-
-/**
  * LicenseInfo
  * Pydantic model for license validation
  */
@@ -835,16 +932,6 @@ export interface PaginatedSpanPublic {
 }
 
 /**
- * PlanType
- * Enum for different plan types.
- */
-export enum PlanType {
-  FREE = "free",
-  PRO = "pro",
-  TEAM = "team",
-}
-
-/**
  * PlaygroundErrorDetail
  * Detailed information about a playground error.
  */
@@ -873,25 +960,6 @@ export interface PlaygroundErrorDetail {
 export interface PlaygroundErrorResponse {
   /** Detailed information about a playground error. */
   error: PlaygroundErrorDetail;
-}
-
-/**
- * PlaygroundErrorType
- * Categorizes the types of errors that can occur during playground execution.
- */
-export enum PlaygroundErrorType {
-  TIMEOUT_ERROR = "TimeoutError",
-  CONFIGURATION_ERROR = "ConfigurationError",
-  SUBPROCESS_ERROR = "SubprocessError",
-  OUTPUT_PARSING_ERROR = "OutputParsingError",
-  OUTPUT_MARKER_ERROR = "OutputMarkerError",
-  INTERNAL_PLAYGROUND_ERROR = "InternalPlaygroundError",
-  EXECUTION_ERROR = "ExecutionError",
-  BAD_REQUEST_ERROR = "BadRequestError",
-  NOT_FOUND_ERROR = "NotFoundError",
-  INVALID_INPUT_ERROR = "InvalidInputError",
-  API_KEY_ISSUE = "ApiKeyIssue",
-  UNEXPECTED_SERVER_ERROR = "UnexpectedServerError",
 }
 
 /**
@@ -957,26 +1025,6 @@ export interface ProjectPublic {
    * @format date-time
    */
   created_at: string;
-}
-
-/**
- * Provider
- * Provider name enum
- */
-export enum Provider {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic",
-  OPENROUTER = "openrouter",
-  GEMINI = "gemini",
-}
-
-/**
- * Scope
- * Instrumentation Scope name of the span
- */
-export enum Scope {
-  LILYPAD = "lilypad",
-  LLM = "llm",
 }
 
 /** SettingsPublic */
@@ -1115,16 +1163,6 @@ export interface SpanPublic {
 }
 
 /**
- * SpanType
- * Span type
- */
-export enum SpanType {
-  FUNCTION = "function",
-  TRACE = "trace",
-  MIRASCOPE_V_1 = "mirascope.v1",
-}
-
-/**
  * SpanUpdate
  * Span update model
  */
@@ -1140,8 +1178,8 @@ export interface SpanUpdate {
  * Response model for Stripe checkout session creation.
  */
 export interface StripeCheckoutSession {
-  /** Enum for different plan types. */
-  plan_type: PlanType;
+  /** License tier enum. */
+  tier: Tier;
 }
 
 /**
@@ -1155,21 +1193,6 @@ export interface StripeWebhookResponse {
   event?: string | null;
   /** Message */
   message?: string | null;
-}
-
-/**
- * SubscriptionStatus
- * Subscription status enum based on Stripe's subscription statuses.
- */
-export enum SubscriptionStatus {
-  ACTIVE = "active",
-  PAST_DUE = "past_due",
-  UNPAID = "unpaid",
-  CANCELED = "canceled",
-  INCOMPLETE = "incomplete",
-  INCOMPLETE_EXPIRED = "incomplete_expired",
-  TRIALING = "trialing",
-  PAUSED = "paused",
 }
 
 /**
@@ -1213,28 +1236,6 @@ export interface TagPublic {
    * @format uuid
    */
   organization_uuid: string;
-}
-
-/**
- * Tier
- * License tier enum.
- */
-export enum Tier {
-  FREE = 0,
-  PRO = 1,
-  TEAM = 2,
-  ENTERPRISE = 3,
-}
-
-/**
- * TimeFrame
- * Timeframe for aggregation
- */
-export enum TimeFrame {
-  DAY = "day",
-  WEEK = "week",
-  MONTH = "month",
-  LIFETIME = "lifetime",
 }
 
 /**
@@ -1409,16 +1410,6 @@ export interface UserPublic {
   /** Scopes */
   scopes?: string[];
   user_consents?: UserConsentPublic | null;
-}
-
-/**
- * UserRole
- * User role enum.
- */
-export enum UserRole {
-  OWNER = "owner",
-  ADMIN = "admin",
-  MEMBER = "member",
 }
 
 /** ValidationError */

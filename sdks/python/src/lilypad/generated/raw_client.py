@@ -10,7 +10,7 @@ from .core.request_options import RequestOptions
 from .core.unchecked_base_model import construct_type
 from .errors.unprocessable_entity_error import UnprocessableEntityError
 from .types.http_validation_error import HttpValidationError
-from .types.plan_type import PlanType
+from .types.tier import Tier
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -55,12 +55,12 @@ class RawLilypad:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def create_checkout_session_stripe_create_checkout_session_post(
-        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[str]:
         """
         Parameters
         ----------
-        plan_type : PlanType
+        tier : Tier
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -74,7 +74,7 @@ class RawLilypad:
             "stripe/create-checkout-session",
             method="POST",
             json={
-                "plan_type": plan_type,
+                "tier": tier,
             },
             headers={
                 "content-type": "application/json",
@@ -148,12 +148,12 @@ class AsyncRawLilypad:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def create_checkout_session_stripe_create_checkout_session_post(
-        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
     ) -> AsyncHttpResponse[str]:
         """
         Parameters
         ----------
-        plan_type : PlanType
+        tier : Tier
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -167,7 +167,7 @@ class AsyncRawLilypad:
             "stripe/create-checkout-session",
             method="POST",
             json={
-                "plan_type": plan_type,
+                "tier": tier,
             },
             headers={
                 "content-type": "application/json",

@@ -17,7 +17,7 @@ from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
-from .types.plan_type import PlanType
+from .types.tier import Tier
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
@@ -137,12 +137,12 @@ class Lilypad:
         return _response.data
 
     def create_checkout_session_stripe_create_checkout_session_post(
-        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
     ) -> str:
         """
         Parameters
         ----------
-        plan_type : PlanType
+        tier : Tier
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -162,11 +162,11 @@ class Lilypad:
             base_url="https://yourhost.com/path/to/api",
         )
         client.create_checkout_session_stripe_create_checkout_session_post(
-            plan_type="free",
+            tier=1,
         )
         """
         _response = self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
-            plan_type=plan_type, request_options=request_options
+            tier=tier, request_options=request_options
         )
         return _response.data
 
@@ -292,12 +292,12 @@ class AsyncLilypad:
         return _response.data
 
     async def create_checkout_session_stripe_create_checkout_session_post(
-        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
     ) -> str:
         """
         Parameters
         ----------
-        plan_type : PlanType
+        tier : Tier
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -322,13 +322,13 @@ class AsyncLilypad:
 
         async def main() -> None:
             await client.create_checkout_session_stripe_create_checkout_session_post(
-                plan_type="free",
+                tier=1,
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
-            plan_type=plan_type, request_options=request_options
+            tier=tier, request_options=request_options
         )
         return _response.data

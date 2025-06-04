@@ -1,7 +1,6 @@
 """The `/billing` API router for handling Stripe webhooks."""
 
 import logging
-from enum import Enum
 from typing import Annotated
 
 import stripe
@@ -9,6 +8,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlmodel import Session
 from stripe import SignatureVerificationError
+
+from ee.validate import Tier
 
 from ..._utils.auth import get_current_user
 from ...db import get_session
@@ -30,18 +31,10 @@ HANDLED_EVENT_TYPES = {
 }
 
 
-class PlanType(Enum):
-    """Enum for different plan types."""
-
-    FREE = "free"
-    PRO = "pro"
-    TEAM = "team"
-
-
 class StripeCheckoutSession(BaseModel):
     """Response model for Stripe checkout session creation."""
 
-    plan_type: PlanType
+    tier: Tier
 
 
 @billing_router.post("/stripe/customer-portal")
@@ -85,11 +78,11 @@ def create_checkout_session(
     try:
         settings = get_settings()
         PRICE_MAP = {
-            PlanType.PRO: [
+            Tier.PRO: [
                 {"price": settings.stripe_cloud_pro_flat_price_id, "quantity": 1},
                 {"price": settings.stripe_cloud_pro_meter_price_id},
             ],
-            PlanType.TEAM: [
+            Tier.TEAM: [
                 {"price": settings.stripe_cloud_team_flat_price_id, "quantity": 1},
                 {"price": settings.stripe_cloud_team_meter_price_id},
             ],
@@ -121,7 +114,7 @@ def create_checkout_session(
                 items.append({"id": item["id"], "deleted": True})
 
             # Add new items
-            items.extend(PRICE_MAP[stripe_checkout_session.plan_type])
+            items.extend(PRICE_MAP[stripe_checkout_session.tier])
             if not organization.billing.stripe_subscription_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -137,7 +130,7 @@ def create_checkout_session(
                 mode="subscription",
                 customer=customer_id,
                 success_url=f"{settings.client_url}/settings/overview",
-                line_items=PRICE_MAP[stripe_checkout_session.plan_type],
+                line_items=PRICE_MAP[stripe_checkout_session.tier],
             )
             if not session.url:
                 raise HTTPException(

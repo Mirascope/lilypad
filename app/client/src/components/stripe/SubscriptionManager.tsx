@@ -1,10 +1,14 @@
-import { LilypadPricing } from "@/mirascope-ui/blocks/lilypad-pricing";
+import {
+  cloudHostedFeatures,
+  FeatureComparisonTable,
+  LilypadCloudPricing,
+} from "@/mirascope-ui/blocks/lilypad-pricing";
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
 import { Typography } from "@/src/components/ui/typography";
 import { licenseQueryOptions } from "@/src/ee/utils/organizations";
-import { PlanType } from "@/src/types/types";
-import { tier, useCreateCheckoutSession, useCreateCustomerPortal } from "@/src/utils/billing";
+import { Tier } from "@/src/types/types";
+import { useCreateCheckoutSession, useCreateCustomerPortal } from "@/src/utils/billing";
 import { formatDate } from "@/src/utils/strings";
 import { userQueryOptions } from "@/src/utils/users";
 import { loadStripe } from "@stripe/stripe-js";
@@ -18,12 +22,12 @@ loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY as string).catch(() => {
 export const StripeSubscriptionButton = ({
   buttonText,
   variant = "default",
-  planType,
+  tier,
   disabled,
 }: {
   buttonText?: string;
   variant?: "default" | "outline";
-  planType: PlanType;
+  tier: Tier;
   disabled?: boolean;
 }) => {
   const [loading, setLoading] = useState(false);
@@ -35,7 +39,7 @@ export const StripeSubscriptionButton = ({
     try {
       // Call your backend to create a customer portal session
       const url = await createCheckoutSession.mutateAsync({
-        plan_type: planType,
+        tier,
       });
       // Redirect to the customer portal
       window.location.href = url;
@@ -87,7 +91,7 @@ export const SubscriptionManager = () => {
     (userOrg) => userOrg.organization.uuid === user?.active_organization_uuid
   );
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
-  const planType = tier[licenseInfo.tier] ?? "Free";
+  const tier = licenseInfo?.tier;
   const billing = userOrganization?.organization.billing;
   return (
     <div className="flex flex-col gap-4">
@@ -102,53 +106,35 @@ export const SubscriptionManager = () => {
           </AlertDescription>
         </Alert>
       )}
-      <LilypadPricing
-        actions={{
-          hosted: {
-            free: {
-              customButton: <ManageSubscription />,
-              variant: "default",
-            },
-            pro: {
-              customButton: (
-                <StripeSubscriptionButton
-                  planType={PlanType.PRO}
-                  buttonText={planType === "Pro" ? "Current Plan" : "Change to Pro"}
-                  disabled={planType === "Pro" || !!billing?.cancel_at_period_end}
-                />
-              ),
-              variant: "default",
-            },
-            team: {
-              customButton: (
-                <StripeSubscriptionButton
-                  planType={PlanType.TEAM}
-                  buttonText={planType === "Team" ? "Current Plan" : "Change to Team"}
-                  disabled={planType === "Team" || !!billing?.cancel_at_period_end}
-                />
-              ),
-              variant: "default",
-            },
+      <LilypadCloudPricing
+        hostedActions={{
+          free: {
+            customButton: <ManageSubscription />,
+            variant: "default",
           },
-          selfHosted: {
-            free: {
-              buttonText: "Download",
-              buttonLink: "/download",
-              variant: "default",
-            },
-            pro: {
-              buttonText: "Get License",
-              buttonLink: "/pricing/self-hosted-pro",
-              variant: "default",
-            },
-            team: {
-              buttonText: "Request Demo",
-              buttonLink: "/demo",
-              variant: "outline",
-            },
+          pro: {
+            customButton: (
+              <StripeSubscriptionButton
+                tier={Tier.PRO}
+                buttonText={tier === Tier.PRO ? "Current Plan" : "Change to Pro"}
+                disabled={tier === Tier.PRO || !!billing?.cancel_at_period_end}
+              />
+            ),
+            variant: "default",
+          },
+          team: {
+            customButton: (
+              <StripeSubscriptionButton
+                tier={Tier.TEAM}
+                buttonText={tier === Tier.TEAM ? "Current Plan" : "Change to Team"}
+                disabled={tier === Tier.TEAM || !!billing?.cancel_at_period_end}
+              />
+            ),
+            variant: "default",
           },
         }}
       />
+      <FeatureComparisonTable features={cloudHostedFeatures} />
     </div>
   );
 };

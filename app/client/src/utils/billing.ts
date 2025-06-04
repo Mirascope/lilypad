@@ -1,13 +1,7 @@
 import api from "@/src/api";
-import { StripeCheckoutSession, Tier } from "@/src/types/types";
+import { StripeCheckoutSession } from "@/src/types/types";
 import { useMutation } from "@tanstack/react-query";
 
-export const tier = {
-  [Tier.FREE]: "Free",
-  [Tier.PRO]: "Pro",
-  [Tier.TEAM]: "Team",
-  [Tier.ENTERPRISE]: "Enterprise",
-};
 export const createCustomerPortal = async () => {
   return (await api.post<string>(`/stripe/customer-portal`)).data;
 };

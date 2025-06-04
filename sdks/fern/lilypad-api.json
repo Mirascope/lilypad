@@ -6510,16 +6510,6 @@
         ],
         "title": "Paginated[SpanPublic]"
       },
-      "PlanType": {
-        "type": "string",
-        "enum": [
-          "free",
-          "pro",
-          "team"
-        ],
-        "title": "PlanType",
-        "description": "Enum for different plan types."
-      },
       "PlaygroundErrorDetail": {
         "properties": {
           "type": {
@@ -7285,13 +7275,13 @@
       },
       "StripeCheckoutSession": {
         "properties": {
-          "plan_type": {
-            "$ref": "#/components/schemas/PlanType"
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
           }
         },
         "type": "object",
         "required": [
-          "plan_type"
+          "tier"
         ],
         "title": "StripeCheckoutSession",
         "description": "Response model for Stripe checkout session creation."

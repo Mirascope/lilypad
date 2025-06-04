@@ -1,3 +1,5 @@
+import { isLilypadCloud } from "@/src/ee/utils/common";
+import { licenseQueryOptions } from "@/src/ee/utils/organizations";
 import { FontToggle } from "@/src/components/FontToggle";
 import LilypadDialog from "@/src/components/LilypadDialog";
 import { ModeToggle } from "@/src/components/mode-toggle";
@@ -7,8 +9,6 @@ import { DialogClose, DialogFooter } from "@/src/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Typography } from "@/src/components/ui/typography";
-import { isLilypadCloud } from "@/src/ee/utils/common";
-import { licenseQueryOptions } from "@/src/ee/utils/organizations";
 import { OrganizationUpdate, Tier } from "@/src/types/types";
 import { useUpdateOrganizationMutation } from "@/src/utils/organizations";
 import { userQueryOptions } from "@/src/utils/users";

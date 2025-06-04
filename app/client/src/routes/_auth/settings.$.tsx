@@ -6,6 +6,8 @@ import { Tab, TabGroup } from "@/src/components/TabGroup";
 import TableSkeleton from "@/src/components/TableSkeleton";
 import { TagsTable } from "@/src/components/TagsTable";
 import { Typography } from "@/src/components/ui/typography";
+import { isLilypadCloud } from "@/src/ee/utils/common";
+import { UserRole } from "@/src/types/types";
 import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
@@ -28,6 +30,8 @@ const Settings = () => {
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   const [open, setOpen] = useState<boolean>(false);
+
+  const showBillingTab = isLilypadCloud() && activeUserOrg?.role === UserRole.OWNER;
 
   const tabs: Tab[] = [
     {
@@ -87,22 +91,26 @@ const Settings = () => {
         </Suspense>
       ) : null,
     },
-    {
-      label: (
-        <div className="flex items-center gap-1">
-          <CreditCard />
-          <span>Billing</span>
-        </div>
-      ),
-      value: "billing",
-      component: activeUserOrg ? (
-        <Suspense fallback={<TableSkeleton />}>
-          <div className="p-2">
-            <SubscriptionManager />
-          </div>
-        </Suspense>
-      ) : null,
-    },
+    ...(showBillingTab
+      ? [
+          {
+            label: (
+              <div className="flex items-center gap-1">
+                <CreditCard />
+                <span>Billing</span>
+              </div>
+            ),
+            value: "billing",
+            component: activeUserOrg ? (
+              <Suspense fallback={<TableSkeleton />}>
+                <div className="p-2">
+                  <SubscriptionManager />
+                </div>
+              </Suspense>
+            ) : null,
+          },
+        ]
+      : []),
     {
       label: (
         <div className="flex items-center gap-1">
