@@ -1,16 +1,23 @@
-import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
-import { $findErrorTemplateNodes } from "@/ee/components/lexical/template-node";
-import { useRunPlaygroundMutation } from "@/ee/utils/functions";
-import { FormItemValue, simplifyFormItem } from "@/ee/utils/input-utils";
+import { PLAYGROUND_TRANSFORMERS } from "@/src/ee/components/lexical/markdown-transformers";
+import { $findErrorTemplateNodes } from "@/src/ee/components/lexical/template-node";
+import { useRunPlaygroundMutation } from "@/src/ee/utils/functions";
+import { FormItemValue, simplifyFormItem } from "@/src/ee/utils/input-utils";
 import {
   FunctionCreate,
   FunctionPublic,
   PlaygroundErrorDetail,
   PlaygroundParameters,
-} from "@/types/types";
-import { useCreateVersionedFunctionMutation, usePatchFunctionMutation } from "@/utils/functions";
-import { getAvailableProviders, useBaseEditorForm, validateInputs } from "@/utils/playground-utils";
-import { userQueryOptions } from "@/utils/users";
+} from "@/src/types/types";
+import {
+  useCreateVersionedFunctionMutation,
+  usePatchFunctionMutation,
+} from "@/src/utils/functions";
+import {
+  getAvailableProviders,
+  useBaseEditorForm,
+  validateInputs,
+} from "@/src/utils/playground-utils";
+import { userQueryOptions } from "@/src/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";

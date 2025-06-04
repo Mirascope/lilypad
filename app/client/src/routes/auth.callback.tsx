@@ -1,7 +1,10 @@
-import { useAuth } from "@/auth";
-import { UserConsentUpdate } from "@/types/types";
-import { callbackCodeQueryOptions, fetchVersions } from "@/utils/auth";
-import { useCreateUserConsentMutation, useUpdateUserConsentMutation } from "@/utils/user_consents";
+import { useAuth } from "@/src/auth";
+import { UserConsentUpdate } from "@/src/types/types";
+import { callbackCodeQueryOptions, fetchVersions } from "@/src/utils/auth";
+import {
+  useCreateUserConsentMutation,
+  useUpdateUserConsentMutation,
+} from "@/src/utils/user_consents";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";

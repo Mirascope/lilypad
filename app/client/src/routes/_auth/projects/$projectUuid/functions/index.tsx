@@ -1,8 +1,8 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { CodeBlock } from "@/components/code-block";
-import { LilypadLoading } from "@/components/LilypadLoading";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { CodeBlock } from "@/src/components/code-block";
+import { LilypadLoading } from "@/src/components/LilypadLoading";
+import { Button } from "@/src/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -11,24 +11,24 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/src/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Typography } from "@/components/ui/typography";
-import { ProcessedData, useProjectAggregates } from "@/hooks/use-project-aggregates";
-import { FunctionTab } from "@/types/functions";
-import { FunctionPublic, TimeFrame } from "@/types/types";
+} from "@/src/components/ui/dropdown-menu";
+import { Typography } from "@/src/components/ui/typography";
+import { ProcessedData, useProjectAggregates } from "@/src/hooks/use-project-aggregates";
+import { FunctionTab } from "@/src/types/functions";
+import { FunctionPublic, TimeFrame } from "@/src/types/types";
 import {
   fetchFunctionsByName,
   functionKeys,
   uniqueLatestVersionFunctionNamesQueryOptions,
   useArchiveFunctionByNameMutation,
-} from "@/utils/functions";
+} from "@/src/utils/functions";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { Clock, DollarSign, MoreHorizontal, Trash } from "lucide-react";

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Form,
   FormControl,
@@ -6,12 +6,12 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { EnvironmentCreate } from "@/types/types";
-import { useCreateEnvironmentMutation } from "@/utils/environments";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { Switch } from "@/src/components/ui/switch";
+import { Textarea } from "@/src/components/ui/textarea";
+import { EnvironmentCreate } from "@/src/types/types";
+import { useCreateEnvironmentMutation } from "@/src/utils/environments";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 

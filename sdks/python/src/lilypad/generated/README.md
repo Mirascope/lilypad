@@ -27,7 +27,7 @@ client = Lilypad(
     token="YOUR_TOKEN",
     base_url="https://yourhost.com/path/to/api",
 )
-client.create_portal_session_stripe_create_customer_portal_session_post()
+client.create_customer_portal_stripe_customer_portal_post()
 ```
 
 ## Async Client
@@ -47,7 +47,7 @@ client = AsyncLilypad(
 
 
 async def main() -> None:
-    await client.create_portal_session_stripe_create_customer_portal_session_post()
+    await client.create_customer_portal_stripe_customer_portal_post()
 
 
 asyncio.run(main())
@@ -62,7 +62,7 @@ will be thrown.
 from mirascope.core.api_error import ApiError
 
 try:
-    client.create_portal_session_stripe_create_customer_portal_session_post(...)
+    client.create_customer_portal_stripe_customer_portal_post(...)
 except ApiError as e:
     print(e.status_code)
     print(e.body)
@@ -81,8 +81,10 @@ from mirascope import Lilypad
 client = Lilypad(
     ...,
 )
-response = client.with_raw_response.create_portal_session_stripe_create_customer_portal_session_post(
-    ...
+response = (
+    client.with_raw_response.create_customer_portal_stripe_customer_portal_post(
+        ...
+    )
 )
 print(response.headers)  # access the response headers
 print(response.data)  # access the underlying object
@@ -103,7 +105,7 @@ A request is deemed retryable when any of the following HTTP status codes is ret
 Use the `max_retries` request option to configure this behavior.
 
 ```python
-client.create_portal_session_stripe_create_customer_portal_session_post(..., request_options={
+client.create_customer_portal_stripe_customer_portal_post(..., request_options={
     "max_retries": 1
 })
 ```
@@ -123,7 +125,7 @@ client = Lilypad(
 
 
 # Override timeout for a specific method
-client.create_portal_session_stripe_create_customer_portal_session_post(..., request_options={
+client.create_customer_portal_stripe_customer_portal_post(..., request_options={
     "timeout_in_seconds": 1
 })
 ```

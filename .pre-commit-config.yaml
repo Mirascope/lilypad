@@ -5,7 +5,7 @@ repos:
       - id: codespell
         additional_dependencies:
           - tomli
-        exclude: "client/pnpm-lock.yaml|docs/pnpm-lock.yaml"
+        exclude: "client/pnpm-lock.yaml|docs/pnpm-lock.yaml|client/bun.lock"
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.8.1"

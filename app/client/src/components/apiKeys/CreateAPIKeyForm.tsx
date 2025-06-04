@@ -1,14 +1,14 @@
-import { useAuth } from "@/auth";
-import { APIKeyCreate } from "@/types/types";
-import { useCreateApiKeyMutation } from "@/utils/api-keys";
-import { environmentsQueryOptions } from "@/utils/environments";
-import { projectsQueryOptions } from "@/utils/projects";
+import { useAuth } from "@/src/auth";
+import { APIKeyCreate } from "@/src/types/types";
+import { useCreateApiKeyMutation } from "@/src/utils/api-keys";
+import { environmentsQueryOptions } from "@/src/utils/environments";
+import { projectsQueryOptions } from "@/src/utils/projects";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Dispatch, SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Form,
   FormControl,
@@ -16,15 +16,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/components/ui/select";
 
 interface APIKeyFormProps {
   setApiKey: Dispatch<SetStateAction<string | null>>;

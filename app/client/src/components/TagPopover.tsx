@@ -1,8 +1,8 @@
-import { Badge } from "@/components/ui/badge";
-import { Combobox } from "@/components/ui/combobox";
-import { TagPublic } from "@/types/types";
-import { spanQueryOptions, useUpdateSpanMutation } from "@/utils/spans";
-import { tagsByProjectsQueryOptions, useCreateTagMutation } from "@/utils/tags";
+import { Badge } from "@/src/components/ui/badge";
+import { Combobox } from "@/src/components/ui/combobox";
+import { TagPublic } from "@/src/types/types";
+import { spanQueryOptions, useUpdateSpanMutation } from "@/src/utils/spans";
+import { tagsByProjectsQueryOptions, useCreateTagMutation } from "@/src/utils/tags";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

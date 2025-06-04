@@ -1,10 +1,10 @@
-import { CreateAPIKeyDialog } from "@/components/apiKeys/CreateAPIKeyDialog";
-import { DeleteAPIKeyDialog } from "@/components/apiKeys/DeleteAPIKeyDialog";
-import { DataTable } from "@/components/DataTable";
-import { Typography } from "@/components/ui/typography";
-import { APIKeyPublic } from "@/types/types";
-import { apiKeysQueryOptions } from "@/utils/api-keys";
-import { formatDate } from "@/utils/strings";
+import { CreateAPIKeyDialog } from "@/src/components/apiKeys/CreateAPIKeyDialog";
+import { DeleteAPIKeyDialog } from "@/src/components/apiKeys/DeleteAPIKeyDialog";
+import { DataTable } from "@/src/components/DataTable";
+import { Typography } from "@/src/components/ui/typography";
+import { APIKeyPublic } from "@/src/types/types";
+import { apiKeysQueryOptions } from "@/src/utils/api-keys";
+import { formatDate } from "@/src/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useRef } from "react";

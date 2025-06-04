@@ -196,7 +196,7 @@ export interface AnnotationUpdate {
  */
 export interface BillingPublic {
   /** Stripe Customer Id */
-  stripe_customer_id?: string | null;
+  stripe_customer_id: string | null;
   /** Stripe Subscription Id */
   stripe_subscription_id?: string | null;
   /** Stripe Price Id */
@@ -213,6 +213,12 @@ export interface BillingPublic {
   usage_quantity?: number;
   /** Last Usage Report */
   last_usage_report?: string | null;
+  /**
+   * Cancel At Period End
+   * Whether the subscription should be canceled at the end of the period
+   * @default false
+   */
+  cancel_at_period_end?: boolean | null;
   /** Metadata */
   metadata_?: object;
   /**
@@ -829,6 +835,16 @@ export interface PaginatedSpanPublic {
 }
 
 /**
+ * PlanType
+ * Enum for different plan types.
+ */
+export enum PlanType {
+  FREE = "free",
+  PRO = "pro",
+  TEAM = "team",
+}
+
+/**
  * PlaygroundErrorDetail
  * Detailed information about a playground error.
  */
@@ -1039,28 +1055,7 @@ export interface SpanMoreDetails {
   /** Response */
   response?: object | null;
   /** Response Model */
-  response_model?:
-    | Record<
-        string,
-        | string
-        | number
-        | boolean
-        | Record<string, string | number | boolean | null>
-        | (string | number | boolean | null)[]
-        | null
-      >
-    | (
-        | string
-        | number
-        | boolean
-        | Record<string, string | number | boolean | null>
-        | (string | number | boolean | null)[]
-        | null
-      )[]
-    | string
-    | number
-    | boolean
-    | null;
+  response_model?: object | null;
 }
 
 /**
@@ -1138,6 +1133,15 @@ export interface SpanUpdate {
   tags_by_uuid?: string[] | null;
   /** Tags By Name */
   tags_by_name?: string[] | null;
+}
+
+/**
+ * StripeCheckoutSession
+ * Response model for Stripe checkout session creation.
+ */
+export interface StripeCheckoutSession {
+  /** Enum for different plan types. */
+  plan_type: PlanType;
 }
 
 /**

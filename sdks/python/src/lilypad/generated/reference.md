@@ -1,5 +1,5 @@
 # Reference
-<details><summary><code>client.<a href="src/mirascope/client.py">create_portal_session_stripe_create_customer_portal_session_post</a>()</code></summary>
+<details><summary><code>client.<a href="src/mirascope/client.py">create_customer_portal_stripe_customer_portal_post</a>()</code></summary>
 <dl>
 <dd>
 
@@ -19,7 +19,7 @@ client = Lilypad(
     token="YOUR_TOKEN",
     base_url="https://yourhost.com/path/to/api",
 )
-client.create_portal_session_stripe_create_customer_portal_session_post()
+client.create_customer_portal_stripe_customer_portal_post()
 
 ```
 </dd>
@@ -31,6 +31,64 @@ client.create_portal_session_stripe_create_customer_portal_session_post()
 
 <dl>
 <dd>
+
+<dl>
+<dd>
+
+**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.<a href="src/mirascope/client.py">create_checkout_session_stripe_create_checkout_session_post</a>(...)</code></summary>
+<dl>
+<dd>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```python
+from mirascope import Lilypad
+
+client = Lilypad(
+    api_key="YOUR_API_KEY",
+    token="YOUR_TOKEN",
+    base_url="https://yourhost.com/path/to/api",
+)
+client.create_checkout_session_stripe_create_checkout_session_post(
+    plan_type="free",
+)
+
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**plan_type:** `PlanType` 
+    
+</dd>
+</dl>
 
 <dl>
 <dd>

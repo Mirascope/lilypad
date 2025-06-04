@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -6,10 +6,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/command";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/src/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { cn } from "@/src/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Control, FieldPath, FieldValues, PathValue } from "react-hook-form";

@@ -1,4 +1,4 @@
-import { ForbiddenBoundary } from "@/components/ForbiddenBoundary";
+import { ForbiddenBoundary } from "@/src/components/ForbiddenBoundary";
 import {
   ErrorComponent,
   ErrorComponentProps,

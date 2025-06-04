@@ -24,6 +24,11 @@ class BillingPublic(UncheckedBaseModel):
     subscription_current_period_end: typing.Optional[dt.datetime] = None
     usage_quantity: typing.Optional[int] = None
     last_usage_report: typing.Optional[dt.datetime] = None
+    cancel_at_period_end: typing.Optional[bool] = pydantic.Field(default=None)
+    """
+    Whether the subscription should be canceled at the end of the period
+    """
+
     metadata: typing_extensions.Annotated[
         typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]], FieldMetadata(alias="metadata_")
     ] = None

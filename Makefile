@@ -1,4 +1,4 @@
-.PHONY: setup dev test test-app test-sdk lint lint-app lint-sdk format format-app format-sdk fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean
+.PHONY: setup dev dev-build-backend test test-app test-sdk lint lint-app lint-sdk format format-app format-sdk fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean
 
 setup:
 	command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -10,6 +10,9 @@ setup:
 
 dev:
 	docker-compose up -d
+
+dev-build-backend:
+	docker compose --env-file app/.env.dev -f app/docker-compose.dev.yml up postgres lilypad opensearch --watch --build
 
 test: test-app test-sdk
 

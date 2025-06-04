@@ -17,9 +17,13 @@ from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
+from .types.plan_type import PlanType
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
+
+# this is used as the default value for optional parameters
+OMIT = typing.cast(typing.Any, ...)
 
 
 class Lilypad:
@@ -104,7 +108,7 @@ class Lilypad:
         """
         return self._raw_client
 
-    def create_portal_session_stripe_create_customer_portal_session_post(
+    def create_customer_portal_stripe_customer_portal_post(
         self, *, request_options: typing.Optional[RequestOptions] = None
     ) -> str:
         """
@@ -127,10 +131,42 @@ class Lilypad:
             token="YOUR_TOKEN",
             base_url="https://yourhost.com/path/to/api",
         )
-        client.create_portal_session_stripe_create_customer_portal_session_post()
+        client.create_customer_portal_stripe_customer_portal_post()
         """
-        _response = self._raw_client.create_portal_session_stripe_create_customer_portal_session_post(
-            request_options=request_options
+        _response = self._raw_client.create_customer_portal_stripe_customer_portal_post(request_options=request_options)
+        return _response.data
+
+    def create_checkout_session_stripe_create_checkout_session_post(
+        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        plan_type : PlanType
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.create_checkout_session_stripe_create_checkout_session_post(
+            plan_type="free",
+        )
+        """
+        _response = self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
+            plan_type=plan_type, request_options=request_options
         )
         return _response.data
 
@@ -217,7 +253,7 @@ class AsyncLilypad:
         """
         return self._raw_client
 
-    async def create_portal_session_stripe_create_customer_portal_session_post(
+    async def create_customer_portal_stripe_customer_portal_post(
         self, *, request_options: typing.Optional[RequestOptions] = None
     ) -> str:
         """
@@ -245,12 +281,54 @@ class AsyncLilypad:
 
 
         async def main() -> None:
-            await client.create_portal_session_stripe_create_customer_portal_session_post()
+            await client.create_customer_portal_stripe_customer_portal_post()
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.create_portal_session_stripe_create_customer_portal_session_post(
+        _response = await self._raw_client.create_customer_portal_stripe_customer_portal_post(
             request_options=request_options
+        )
+        return _response.data
+
+    async def create_checkout_session_stripe_create_checkout_session_post(
+        self, *, plan_type: PlanType, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        plan_type : PlanType
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.create_checkout_session_stripe_create_checkout_session_post(
+                plan_type="free",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
+            plan_type=plan_type, request_options=request_options
         )
         return _response.data

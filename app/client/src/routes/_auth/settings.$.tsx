@@ -1,14 +1,15 @@
-import { HomeSettings } from "@/components/HomeSettings";
-import { KeysSettings } from "@/components/KeysSettings";
-import { OrgSettings } from "@/components/OrgSettings";
-import { Tab, TabGroup } from "@/components/TabGroup";
-import TableSkeleton from "@/components/TableSkeleton";
-import { TagsTable } from "@/components/TagsTable";
-import { Typography } from "@/components/ui/typography";
-import { userQueryOptions } from "@/utils/users";
+import { HomeSettings } from "@/src/components/HomeSettings";
+import { KeysSettings } from "@/src/components/KeysSettings";
+import { OrgSettings } from "@/src/components/OrgSettings";
+import { SubscriptionManager } from "@/src/components/stripe/SubscriptionManager";
+import { Tab, TabGroup } from "@/src/components/TabGroup";
+import TableSkeleton from "@/src/components/TableSkeleton";
+import { TagsTable } from "@/src/components/TagsTable";
+import { Typography } from "@/src/components/ui/typography";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { Building2, KeyRound, SettingsIcon, Tag } from "lucide-react";
+import { Building2, CreditCard, KeyRound, SettingsIcon, Tag } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
@@ -82,6 +83,22 @@ const Settings = () => {
         >
           <div className="p-2">
             <OrgSettings open={open} setOpen={setOpen} />
+          </div>
+        </Suspense>
+      ) : null,
+    },
+    {
+      label: (
+        <div className="flex items-center gap-1">
+          <CreditCard />
+          <span>Billing</span>
+        </div>
+      ),
+      value: "billing",
+      component: activeUserOrg ? (
+        <Suspense fallback={<TableSkeleton />}>
+          <div className="p-2">
+            <SubscriptionManager />
           </div>
         </Suspense>
       ) : null,

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,10 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
-import { UserOrganizationPublic, UserPublic } from "@/types/types";
-import { useDeleteUserOrganizationMutation } from "@/utils/users";
+} from "@/src/components/ui/dialog";
+import { Form } from "@/src/components/ui/form";
+import { UserOrganizationPublic, UserPublic } from "@/src/types/types";
+import { useDeleteUserOrganizationMutation } from "@/src/utils/users";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

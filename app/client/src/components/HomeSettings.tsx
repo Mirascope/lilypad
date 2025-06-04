@@ -1,17 +1,17 @@
-import { FontToggle } from "@/components/FontToggle";
-import LilypadDialog from "@/components/LilypadDialog";
-import { ModeToggle } from "@/components/mode-toggle";
-import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
-import { Button } from "@/components/ui/button";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { Typography } from "@/components/ui/typography";
-import { isLilypadCloud } from "@/ee/utils/common";
-import { licenseQueryOptions } from "@/ee/utils/organizations";
-import { OrganizationUpdate, Tier } from "@/types/types";
-import { useUpdateOrganizationMutation } from "@/utils/organizations";
-import { userQueryOptions } from "@/utils/users";
+import { FontToggle } from "@/src/components/FontToggle";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { ModeToggle } from "@/src/components/mode-toggle";
+import { CreateOrganizationDialog } from "@/src/components/OrganizationDialog";
+import { Button } from "@/src/components/ui/button";
+import { DialogClose, DialogFooter } from "@/src/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
+import { Textarea } from "@/src/components/ui/textarea";
+import { Typography } from "@/src/components/ui/typography";
+import { isLilypadCloud } from "@/src/ee/utils/common";
+import { licenseQueryOptions } from "@/src/ee/utils/organizations";
+import { OrganizationUpdate, Tier } from "@/src/types/types";
+import { useUpdateOrganizationMutation } from "@/src/utils/organizations";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -31,54 +31,57 @@ export const HomeSettings = () => {
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());
   const [open, setOpen] = useState<boolean>(false);
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Typography variant="h4">Personal Information</Typography>
-        <div className="grid gap-4">
-          <UneditableInput label="Name" value={user.first_name} />
-          <UneditableInput label="Email" value={user.email} />
+    <>
+      <Typography variant="h3">Profile</Typography>
+      <div className="flex flex-col gap-6">
+        <div>
+          <Typography variant="h5">Personal Information</Typography>
+          <div className="grid gap-4">
+            <UneditableInput label="Name" value={user.first_name} />
+            <UneditableInput label="Email" value={user.email} />
+          </div>
+          <div className="my-2 flex flex-col">
+            <label className="text-sm font-medium text-muted-foreground">Theme</label>
+            <ModeToggle />
+          </div>
+          <div className="my-2 flex flex-col">
+            <label className="text-sm font-medium text-muted-foreground">Font</label>
+            <FontToggle />
+          </div>
         </div>
-        <div className="my-2 flex flex-col">
-          <label className="text-sm font-medium text-muted-foreground">Theme</label>
-          <ModeToggle />
+        <div>
+          <Typography variant="h5">Organization</Typography>
+          <div className="grid gap-4">
+            {userOrganization ? (
+              <>
+                <UneditableInput label="Name" value={userOrganization.organization.name} />
+                <UneditableInput
+                  label="Plan"
+                  value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
+                />
+                {!isLilypadCloud() && (
+                  <div>
+                    <LilypadDialog
+                      title="Change Plan"
+                      description="Contact william@mirascope.com to obtain a new license key."
+                      buttonProps={{
+                        variant: "default",
+                      }}
+                      text={"Upgrade plan"}
+                    >
+                      <ChangePlan />
+                    </LilypadDialog>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Button onClick={() => setOpen(true)}>Create Organization</Button>
+            )}
+          </div>
         </div>
-        <div className="my-2 flex flex-col">
-          <label className="text-sm font-medium text-muted-foreground">Font</label>
-          <FontToggle />
-        </div>
+        <CreateOrganizationDialog open={open} setOpen={setOpen} />
       </div>
-      <div>
-        <Typography variant="h4">Organization</Typography>
-        <div className="grid gap-4">
-          {userOrganization ? (
-            <>
-              <UneditableInput label="Name" value={userOrganization.organization.name} />
-              <UneditableInput
-                label="Plan"
-                value={`${isLilypadCloud() ? "Cloud" : "Self-Host"} ${tier[licenseInfo.tier]} Plan`}
-              />
-              {!isLilypadCloud() && (
-                <div>
-                  <LilypadDialog
-                    title="Change Plan"
-                    description="Contact william@mirascope.com to obtain a new license key."
-                    buttonProps={{
-                      variant: "default",
-                    }}
-                    text={"Upgrade plan"}
-                  >
-                    <ChangePlan />
-                  </LilypadDialog>
-                </div>
-              )}
-            </>
-          ) : (
-            <Button onClick={() => setOpen(true)}>Create Organization</Button>
-          )}
-        </div>
-      </div>
-      <CreateOrganizationDialog open={open} setOpen={setOpen} />
-    </div>
+    </>
   );
 };
 

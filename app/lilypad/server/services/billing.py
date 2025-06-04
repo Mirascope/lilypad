@@ -46,18 +46,17 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             The tier of the organization
         """
         billing = self.session.exec(
-            select(BillingTable)
-            .where(BillingTable.organization_uuid == organization_uuid)
-            .order_by(desc(BillingTable.created_at))
+            select(self.table)
+            .where(self.table.organization_uuid == organization_uuid)
+            .order_by(desc(self.table.created_at))
         ).first()
-
         if not billing or not billing.stripe_price_id:
             return Tier.FREE
 
         # Determine tier based on stripe_price_id
-        if billing.stripe_price_id == settings.stripe_cloud_team_price_id:
+        if billing.stripe_price_id == settings.stripe_cloud_team_flat_price_id:
             return Tier.TEAM
-        elif billing.stripe_price_id == settings.stripe_cloud_pro_price_id:
+        elif billing.stripe_price_id == settings.stripe_cloud_pro_flat_price_id:
             return Tier.PRO
         else:
             return Tier.FREE
@@ -77,12 +76,6 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
             )
-        stripe_cloud_free_price_id = settings.stripe_cloud_free_price_id
-        if not stripe_cloud_free_price_id:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Free price ID not configured",
-            )
         existing_billing = self.session.exec(
             select(BillingTable).where(
                 BillingTable.organization_uuid == organization.uuid
@@ -97,33 +90,21 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 name=organization.name,
                 metadata={"organization_uuid": str(organization.uuid)},
             )
-            # Create a subscription to enable metering
-            subscription = stripe.Subscription.create(
-                customer=customer.id,
-                items=[{"price": stripe_cloud_free_price_id}],
-            )
-
-            # Create a billing record for this customer
-            subscription_status = None
-            try:
-                if hasattr(subscription, "status"):
-                    subscription_status = SubscriptionStatus(subscription.status)
-            except ValueError:
-                # If the status is not in our enum, log it but don't fail
-                pass
 
             billing_data = BillingCreate(
                 stripe_customer_id=customer.id,
-                stripe_subscription_id=subscription.id,
-                stripe_price_id=stripe_cloud_free_price_id,
-                subscription_status=subscription_status,
             )
+
+            # subscription = stripe.Subscription.create(
+            #     customer=customer.id,
+            #     items=[{"price": stripe_cloud_free_price_id}, {}],
+            # )
 
             if existing_billing:
                 existing_billing.stripe_customer_id = customer.id
-                existing_billing.stripe_subscription_id = subscription.id
-                existing_billing.stripe_price_id = stripe_cloud_free_price_id
-                existing_billing.subscription_status = subscription_status
+                # existing_billing.stripe_subscription_id = subscription.id
+                existing_billing.subscription_status = SubscriptionStatus.ACTIVE
+                # existing_billing.stripe_price_id = stripe_cloud_free_price_id
                 self.session.add(existing_billing)
             else:
                 self.create_record(billing_data, organization_uuid=organization.uuid)
@@ -140,6 +121,74 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error creating Stripe customer: {str(e)}",
+            )
+
+    def delete_customer_and_billing(self, organization_uuid: uuid.UUID) -> None:
+        """Delete a Stripe customer for an organization and then delete billing row.
+
+        Args:
+            organization_uuid: The UUID of the organization
+        """
+        if not stripe.api_key:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Stripe API key not configured",
+            )
+        billing = self.session.exec(
+            select(self.table)
+            .where(self.table.organization_uuid == organization_uuid)
+            .order_by(desc(self.table.created_at))
+        ).first()
+        if not billing or not billing.stripe_customer_id:
+            raise _CustomerNotFound()
+
+        try:
+            stripe.Customer.delete(billing.stripe_customer_id)
+            self.session.delete(billing)
+            self.session.commit()
+        except InvalidRequestError as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Stripe customer not found: {str(e)}",
+            )
+        except StripeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error deleting Stripe customer: {str(e)}",
+            )
+
+    def update_customer(
+        self, customer_id: str, new_name: str
+    ) -> stripe.Customer | None:
+        """Update a Stripe customer by ID.
+
+        Args:
+            customer_id: The Stripe customer ID
+            new_name: The new name for the customer
+
+        Returns:
+            The updated Stripe customer or None if not found
+        """
+        if not stripe.api_key:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Stripe API key not configured",
+            )
+
+        try:
+            customer = stripe.Customer.modify(
+                customer_id,
+                name=new_name,
+            )
+            if not customer:
+                raise _CustomerNotFound()
+            return customer
+        except InvalidRequestError:
+            return None
+        except StripeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error updating Stripe customer: {str(e)}",
             )
 
     def get_customer(self, customer_id: str) -> stripe.Customer | None:
@@ -246,6 +295,33 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         ).first()
 
     @classmethod
+    def update_billing(
+        cls,
+        session: Session,
+        subscription: Any,
+        data: dict,
+    ) -> BillingTable | None:
+        """Update billing information from a Stripe subscription.
+
+        Args:
+            session: The SQLAlchemy session
+            subscription: The Stripe subscription object
+            data: The data to update in the billing record
+        Returns:
+            The updated billing record or None if not found
+        """
+        billing = cls.find_by_subscription_id(
+            session, subscription.id
+        ) or cls.find_by_customer_id(session, getattr(subscription, "customer", None))
+        if billing is None:
+            return None
+
+        billing.sqlmodel_update(data)
+        session.add(billing)
+        session.flush()
+        return billing
+
+    @classmethod
     def update_from_subscription(
         cls,
         session: Session,
@@ -286,6 +362,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             billing.subscription_current_period_end = datetime.fromtimestamp(
                 subscription.current_period_end, tz=timezone.utc
             )
+        if getattr(subscription, "cancel_at_period_end", None):
+            billing.cancel_at_period_end = True
 
         items_obj = _get(subscription, "items")
         data_list = _get(items_obj, "data", [])

@@ -1,6 +1,6 @@
-import { FormCombobox } from "@/components/FormCombobox";
-import { Button } from "@/components/ui/button";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { FormCombobox } from "@/src/components/FormCombobox";
+import { Button } from "@/src/components/ui/button";
+import { DialogClose, DialogFooter } from "@/src/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -8,10 +8,10 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from "@/components/ui/form";
-import { useCreateAnnotationsMutation } from "@/ee/utils/annotations";
-import { AnnotationCreate, SpanMoreDetails, SpanPublic } from "@/types/types";
-import { usersByOrganizationQueryOptions } from "@/utils/users";
+} from "@/src/components/ui/form";
+import { useCreateAnnotationsMutation } from "@/src/ee/utils/annotations";
+import { AnnotationCreate, SpanMoreDetails, SpanPublic } from "@/src/types/types";
+import { usersByOrganizationQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";

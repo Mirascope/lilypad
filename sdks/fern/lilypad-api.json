@@ -969,10 +969,10 @@
         }
       }
     },
-    "/stripe/create-customer-portal-session": {
+    "/stripe/customer-portal": {
       "post": {
-        "summary": "Create Portal Session",
-        "operationId": "create_portal_session_stripe_create_customer_portal_session_post",
+        "summary": "Create Customer Portal",
+        "operationId": "create_customer_portal_stripe_customer_portal_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -980,7 +980,54 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Portal Session Stripe Create Customer Portal Session Post"
+                  "title": "Response Create Customer Portal Stripe Customer Portal Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/stripe/create-checkout-session": {
+      "post": {
+        "summary": "Create Checkout Session",
+        "operationId": "create_checkout_session_stripe_create_checkout_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StripeCheckoutSession"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Checkout Session Stripe Create Checkout Session Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -5265,6 +5312,19 @@
             ],
             "title": "Last Usage Report"
           },
+          "cancel_at_period_end": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel At Period End",
+            "description": "Whether the subscription should be canceled at the end of the period",
+            "default": false
+          },
           "metadata_": {
             "type": "object",
             "title": "Metadata"
@@ -5287,6 +5347,7 @@
         },
         "type": "object",
         "required": [
+          "stripe_customer_id",
           "uuid",
           "organization_uuid",
           "created_at"
@@ -6449,6 +6510,16 @@
         ],
         "title": "Paginated[SpanPublic]"
       },
+      "PlanType": {
+        "type": "string",
+        "enum": [
+          "free",
+          "pro",
+          "team"
+        ],
+        "title": "PlanType",
+        "description": "Enum for different plan types."
+      },
       "PlaygroundErrorDetail": {
         "properties": {
           "type": {
@@ -7211,6 +7282,19 @@
         "type": "object",
         "title": "SpanUpdate",
         "description": "Span update model"
+      },
+      "StripeCheckoutSession": {
+        "properties": {
+          "plan_type": {
+            "$ref": "#/components/schemas/PlanType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_type"
+        ],
+        "title": "StripeCheckoutSession",
+        "description": "Response model for Stripe checkout session creation."
       },
       "StripeWebhookResponse": {
         "properties": {

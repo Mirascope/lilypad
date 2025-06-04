@@ -1,5 +1,5 @@
-import api from "@/api";
-import { EnvironmentCreate, EnvironmentPublic } from "@/types/types";
+import api from "@/src/api";
+import { EnvironmentCreate, EnvironmentPublic } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 
