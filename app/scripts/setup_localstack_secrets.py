@@ -52,7 +52,7 @@ def wait_for_localstack(max_retries: int = 30, retry_delay: int = 2) -> bool:
     return False
 
 
-def create_test_secrets():
+def create_test_secrets() -> None:
     """Create test secrets in LocalStack."""
     if not wait_for_localstack():
         print(
