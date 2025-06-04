@@ -72,8 +72,8 @@ async def create_customer_portal(
 
         return session.url
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Invalid API key")
 
 
 @billing_router.post("/stripe/create-checkout-session", response_model=str)
@@ -146,10 +146,10 @@ def create_checkout_session(
                 )
             return session.url
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating portal session: {str(e)}",
+            detail="Error creating portal session",
         )
 
 
@@ -178,8 +178,10 @@ async def stripe_webhook(
         event = stripe.Webhook.construct_event(
             payload_bytes, stripe_signature, settings.stripe_webhook_secret
         )
-    except (ValueError, SignatureVerificationError) as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except (ValueError, SignatureVerificationError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Webhook error"
+        )
     if event.type in HANDLED_EVENT_TYPES:
         subscription = event.data.object
         if event.type == "customer.subscription.deleted":  # Downgrade to free plan
