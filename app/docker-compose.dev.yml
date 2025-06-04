@@ -57,9 +57,16 @@ services:
       - LILYPAD_KAFKA_MAX_CONCURRENT_TRACES=${LILYPAD_KAFKA_MAX_CONCURRENT_TRACES:-1000}
       - LILYPAD_KAFKA_MAX_SPANS_PER_TRACE=${LILYPAD_KAFKA_MAX_SPANS_PER_TRACE:-500}
       - LILYPAD_KAFKA_BUFFER_TTL_SECONDS=${LILYPAD_KAFKA_BUFFER_TTL_SECONDS:-300}
+      # AWS LocalStack configuration
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - SECRET_MANAGER_TYPE=${SECRET_MANAGER_TYPE:-AWS_SECRET_MANAGER}
     depends_on:
       - postgres
       - kafka
+      - localstack
     networks:
       - app-network
 
@@ -193,11 +200,35 @@ services:
     networks:
       - app-network
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"  # LocalStack Gateway
+    environment:
+      - SERVICES=secretsmanager,kms
+      - DEBUG=0
+      - AWS_DEFAULT_REGION=us-east-1
+      - PERSISTENCE=1  # Enable persistence for secrets
+      - LOCALSTACK_HOST=localstack
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - localstack-data:/var/lib/localstack
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 volumes:
   postgres-data:
   opensearch-data:
   zookeeper-data:
   kafka-data:
+  localstack-data:
 
 networks:
   app-network:
