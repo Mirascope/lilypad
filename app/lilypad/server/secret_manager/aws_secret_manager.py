@@ -14,7 +14,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 if TYPE_CHECKING:
-    from mypy_boto3_secretsmanager import SecretsManagerClient
+    from types_boto3_secretsmanager import SecretsManagerClient
 else:
     SecretsManagerClient = Any
 
@@ -260,15 +260,15 @@ class AWSSecretManager(SecretManager):
 
         if self._metrics:
             with self._metrics.measure_operation(OperationType.CREATE):
-                return self._store_secret_internal(
+                return self._store_secret_internal(  # pyright: ignore[reportReturnType]
                     secret_name, secret, description, name
                 )
         else:
-            return self._store_secret_internal(secret_name, secret, description, name)
+            return self._store_secret_internal(secret_name, secret, description, name)  # pyright: ignore[reportReturnType]
 
     def _store_secret_internal(
         self, secret_name: str, secret: str, description: str | None, original_name: str
-    ) -> str:
+    ) -> str | None:
         """Internal method to store secret with atomic create-or-update."""
         # Try to create first (avoids race condition)
         try:
@@ -282,7 +282,7 @@ class AWSSecretManager(SecretManager):
             if self.config.kms_key_id:
                 create_params["KmsKeyId"] = self.config.kms_key_id
 
-            response = self.client.create_secret(**create_params)
+            response = self.client.create_secret(**create_params)  # pyright: ignore[reportArgumentType]
             logger.debug("Created new secret")
             return response["ARN"]
 
@@ -374,7 +374,7 @@ class AWSSecretManager(SecretManager):
         else:
             return self._update_secret_internal(secret_id, secret)
 
-    def _update_secret_internal(self, secret_id: str, secret: str) -> bool:
+    def _update_secret_internal(self, secret_id: str, secret: str) -> bool:  # pyright: ignore[reportReturnType]
         """Internal method to update secret."""
         try:
             self.client.update_secret(
@@ -406,23 +406,23 @@ class AWSSecretManager(SecretManager):
         else:
             return self._delete_secret_internal(secret_id)
 
-    def _delete_secret_internal(self, secret_id: str) -> bool:
+    def _delete_secret_internal(self, secret_id: str) -> bool:  # pyright: ignore[reportReturnType]
         """Internal method to delete secret."""
         try:
             delete_params = {"SecretId": secret_id}
 
             if self.config.force_delete:
-                delete_params["ForceDeleteWithoutRecovery"] = True
+                delete_params["ForceDeleteWithoutRecovery"] = True  # pyright: ignore[reportArgumentType]
                 logger.warning("Force deleting secret without recovery")
             else:
-                delete_params["RecoveryWindowInDays"] = (
+                delete_params["RecoveryWindowInDays"] = (  # pyright: ignore[reportArgumentType]
                     self.config.DEFAULT_RECOVERY_WINDOW_DAYS
                 )
                 logger.info(
                     f"Scheduling secret deletion with {self.config.DEFAULT_RECOVERY_WINDOW_DAYS}-day recovery window"
                 )
 
-            self.client.delete_secret(**delete_params)
+            self.client.delete_secret(**delete_params)  # pyright: ignore[reportArgumentType]
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
@@ -430,7 +430,7 @@ class AWSSecretManager(SecretManager):
                 logger.debug("Secret not found for deletion")
                 return False
             else:
-                self._handle_client_error(e, "delete")
+                self._handle_client_error(e, "delete")  # pyright: ignore[reportReturnType]
 
     def get_secret_id_by_name(self, name: str) -> str | None:
         """Retrieve the secret ID (ARN) by name.

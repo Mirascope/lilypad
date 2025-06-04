@@ -2,8 +2,8 @@
 
 import logging
 import time
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager, _GeneratorContextManager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -63,7 +63,9 @@ class SecretMetrics:
             self.operations[op_type] = OperationMetrics()
 
     @contextmanager
-    def measure_operation(self, operation: OperationType) -> Iterator[None]:
+    def measure_operation(
+        self, operation: OperationType
+    ) -> Generator[None, None, None]:
         """Context manager to measure operation duration and track metrics."""
         start_time = time.time()
         error_occurred = False
@@ -161,7 +163,9 @@ class MetricsCollector:
         """Initialize a new metrics collector instance."""
         self.metrics = SecretMetrics()
 
-    def measure_operation(self, operation: OperationType) -> Iterator[None]:
+    def measure_operation(
+        self, operation: OperationType
+    ) -> _GeneratorContextManager[None, None, None]:
         """Delegate to metrics instance for backward compatibility."""
         return self.metrics.measure_operation(operation)
 
