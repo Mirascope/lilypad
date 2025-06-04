@@ -221,7 +221,7 @@ async def traces(
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
     # Try to send to Kafka queue
-    kafka_available = await kafka_service.send_spans_batch(traces_json)
+    kafka_available = kafka_service.send_spans_batch(traces_json)
 
     if kafka_available:
         # Queue processing successful

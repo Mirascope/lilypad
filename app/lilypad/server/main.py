@@ -66,7 +66,7 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
         log.info("Starting span queue processor")
         try:
             queue_processor = get_span_queue_processor()
-            await queue_processor.start()
+            queue_processor.start()
             log.info("Span queue processor started successfully")
         except Exception as e:
             log.error(f"Failed to start span queue processor (non-fatal): {e}")
@@ -78,7 +78,7 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     if queue_processor:
         log.info("Stopping span queue processor")
         try:
-            await queue_processor.stop()
+            queue_processor.stop()
         except Exception as e:
             log.error(f"Error stopping queue processor: {e}")
 

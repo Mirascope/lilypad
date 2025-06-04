@@ -1,17 +1,17 @@
 """Span Queue Processor service for consuming spans from Kafka and handling dependency resolution."""
 
-import asyncio
-import contextlib
 import json
 import logging
+import threading
 import time
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import select
 
-from kafka import KafkaConsumer  # type: ignore
-from kafka.errors import KafkaError  # type: ignore
+from kafka import KafkaConsumer
+from kafka.errors import KafkaError
 
 from ..db.session import get_session
 from ..models.users import UserTable
@@ -100,7 +100,9 @@ class SpanQueueProcessor:
         self.consumer: KafkaConsumer | None = None
         self.trace_buffers: dict[str, TraceBuffer] = {}
         self._running = False
-        self._cleanup_task: asyncio.Task | None = None
+        self._cleanup_thread: threading.Thread | None = None
+        self._process_thread: threading.Thread | None = None
+        self._lock = threading.Lock()  # Thread-safe access to trace_buffers
 
     def initialize(self) -> bool:
         """Initialize Kafka consumer."""
@@ -120,6 +122,7 @@ class SpanQueueProcessor:
                 max_poll_records=100,
                 session_timeout_ms=30000,
                 heartbeat_interval_ms=10000,
+                consumer_timeout_ms=1000,  # Timeout for poll to avoid blocking forever
             )
             logger.info("Kafka consumer initialized successfully")
             return True
@@ -128,7 +131,7 @@ class SpanQueueProcessor:
             logger.error(f"Failed to initialize Kafka consumer: {e}")
             return False
 
-    async def start(self) -> None:
+    def start(self) -> None:
         """Start the queue processor."""
         if not self.initialize():
             logger.warning("Queue processor not started due to initialization failure")
@@ -136,85 +139,98 @@ class SpanQueueProcessor:
 
         self._running = True
 
-        # Start cleanup task
-        self._cleanup_task = asyncio.create_task(self._cleanup_incomplete_traces())
+        # Start cleanup thread
+        self._cleanup_thread = threading.Thread(target=self._cleanup_incomplete_traces, daemon=True)
+        self._cleanup_thread.start()
 
-        # Start processing in background
-        asyncio.create_task(self._process_queue())
+        # Start processing thread
+        self._process_thread = threading.Thread(target=self._process_queue, daemon=True)
+        self._process_thread.start()
 
         logger.info("Queue processor started")
 
-    async def stop(self) -> None:
+    def stop(self) -> None:
         """Stop the queue processor."""
         self._running = False
 
-        if self._cleanup_task:
-            self._cleanup_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._cleanup_task
+        if self._cleanup_thread and self._cleanup_thread.is_alive():
+            self._cleanup_thread.join(timeout=5)
+
+        if self._process_thread and self._process_thread.is_alive():
+            self._process_thread.join(timeout=5)
 
         if self.consumer:
             self.consumer.close()
 
         logger.info("Queue processor stopped")
 
-    async def _process_queue(self) -> None:
+    def _process_queue(self) -> None:
         """Main queue processing loop."""
+        logger.info("Starting queue processing loop")
         while self._running:
             try:
                 # Poll for messages
-                messages = self.consumer.poll(timeout_ms=1000)
+                messages = self.consumer.poll(timeout_ms=1000, max_records=100)
+
+                if messages:
+                    msg_count = sum(len(msgs) for msgs in messages.values())
+                    logger.info(f"Received {msg_count} messages from Kafka")
 
                 for _topic_partition, records in messages.items():
                     for record in records:
-                        await self._process_message(record)
+                        if not self._running:
+                            break
+                        self._process_message(record)
 
             except KafkaError as e:
                 logger.error(f"Kafka error in processing loop: {e}")
-                await asyncio.sleep(5)  # Back off on error
+                time.sleep(5)  # Back off on error
             except Exception as e:
                 logger.error(f"Unexpected error in processing loop: {e}")
-                await asyncio.sleep(5)
+                time.sleep(5)
 
-    async def _process_message(self, record: Any) -> None:
+    def _process_message(self, record: Any) -> None:
         """Process a single message from the queue."""
         try:
             span_data = record.value
+            logger.error(f"Processing span data: {span_data}")
             trace_id = span_data.get("trace_id")
 
             if not trace_id:
                 logger.warning("Span missing trace_id, skipping")
                 return
 
-            # Add span to buffer
-            if trace_id not in self.trace_buffers:
-                if len(self.trace_buffers) >= self.settings.kafka_max_concurrent_traces:
-                    # Force process oldest trace to make room
-                    await self._force_process_oldest_trace()
+            with self._lock:
+                # Add span to buffer
+                if trace_id not in self.trace_buffers:
+                    if len(self.trace_buffers) >= self.settings.kafka_max_concurrent_traces:
+                        # Force process oldest trace to make room
+                        self._force_process_oldest_trace()
 
-                self.trace_buffers[trace_id] = TraceBuffer(trace_id)
+                    self.trace_buffers[trace_id] = TraceBuffer(trace_id)
 
-            buffer = self.trace_buffers[trace_id]
+                buffer = self.trace_buffers[trace_id]
 
-            # Check span limit per trace
-            if len(buffer.spans) >= self.settings.kafka_max_spans_per_trace:
-                logger.warning(
-                    f"Trace {trace_id} exceeded max spans limit, processing early"
-                )
-                await self._process_trace(trace_id)
-                return
+                # Check span limit per trace
+                if len(buffer.spans) >= self.settings.kafka_max_spans_per_trace:
+                    logger.warning(
+                        f"Trace {trace_id} exceeded max spans limit, processing early"
+                    )
+                    self._process_trace(trace_id)
+                    return
 
-            buffer.add_span(span_data)
+                buffer.add_span(span_data)
 
-            # Check if trace is complete
-            if buffer.is_complete():
-                await self._process_trace(trace_id)
+                # Check if trace is complete
+                if buffer.is_complete():
+                    self._process_trace(trace_id)
 
         except Exception as e:
             logger.error(f"Error processing message: {e}")
 
-    async def _process_trace(self, trace_id: str) -> None:
+    def _process_trace(self, trace_id: str) -> None:
         """Process a complete trace."""
+        logger.info(f"Processing trace {trace_id}")
         buffer = self.trace_buffers.get(trace_id)
         if not buffer:
             return
@@ -226,6 +242,8 @@ class SpanQueueProcessor:
             if not ordered_spans:
                 logger.warning(f"No spans to process for trace {trace_id}")
                 return
+
+            logger.info(f"Processing {len(ordered_spans)} spans for trace {trace_id}")
 
             # Extract project UUID from first span
             first_span = ordered_spans[0]
@@ -241,16 +259,34 @@ class SpanQueueProcessor:
             # Create spans in database
             # Using synchronous session since we're in an async context
             for session in get_session():
-                # Get system user for span creation
-                system_user = (
-                    session.query(UserTable)
-                    .filter(UserTable.email == "system@lilypad.com")
-                    .first()
-                )
+                # Get or create system user for span creation
+                system_user = session.exec(
+                    select(UserTable).where(UserTable.email == "system@lilypad.com")
+                ).first()
 
                 if not system_user:
-                    logger.error("System user not found")
-                    return
+                    # Create system user if it doesn't exist
+                    try:
+                        system_user = UserTable(
+                            uuid=UUID("00000000-0000-0000-0000-000000000000"),
+                            email="system@lilypad.com",
+                            first_name="System",
+                            last_name="User",
+                        )
+                        session.add(system_user)
+                        session.commit()
+                        logger.info("Created system user")
+                    except IntegrityError:
+                        # Another process may have created it, try to fetch again
+                        session.rollback()
+                        system_user = session.exec(
+                            select(UserTable).where(
+                                UserTable.email == "system@lilypad.com"
+                            )
+                        ).first()
+                        if not system_user:
+                            logger.error("Failed to create or retrieve system user")
+                            return
 
                 # Get project and organization
                 project_service = ProjectService(session, system_user)
@@ -322,51 +358,51 @@ class SpanQueueProcessor:
             duration_ms=span_data.get("duration_ms", 0),
         )
 
-    async def _cleanup_incomplete_traces(self) -> None:
+    def _cleanup_incomplete_traces(self) -> None:
         """Periodically cleanup incomplete traces that have timed out."""
         while self._running:
             try:
-                await asyncio.sleep(self.settings.kafka_cleanup_interval_seconds)
+                time.sleep(self.settings.kafka_cleanup_interval_seconds)
 
                 current_time = time.time()
                 traces_to_process = []
 
-                for trace_id, buffer in list(self.trace_buffers.items()):
-                    age = current_time - buffer.created_at
-                    if age > self.settings.kafka_buffer_ttl_seconds:
-                        traces_to_process.append(trace_id)
+                with self._lock:
+                    for trace_id, buffer in list(self.trace_buffers.items()):
+                        age = current_time - buffer.created_at
+                        if age > self.settings.kafka_buffer_ttl_seconds:
+                            traces_to_process.append(trace_id)
 
                 for trace_id in traces_to_process:
                     logger.warning(
                         f"Force processing incomplete trace {trace_id} due to timeout"
                     )
-                    await self._force_process_incomplete_trace(trace_id)
+                    self._force_process_incomplete_trace(trace_id)
 
-            except asyncio.CancelledError:
-                break
             except Exception as e:
                 logger.error(f"Error in cleanup task: {e}")
 
-    async def _force_process_incomplete_trace(self, trace_id: str) -> None:
+    def _force_process_incomplete_trace(self, trace_id: str) -> None:
         """Force process an incomplete trace by setting missing parents to null."""
-        buffer = self.trace_buffers.get(trace_id)
-        if not buffer:
-            return
+        with self._lock:
+            buffer = self.trace_buffers.get(trace_id)
+            if not buffer:
+                return
 
-        # Update spans with missing parents
-        span_ids = buffer.span_ids
-        for span_data in buffer.spans.values():
-            parent_id = span_data.get("parent_span_id")
-            if parent_id and parent_id not in span_ids:
-                logger.warning(
-                    f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')}"
-                )
-                span_data["parent_span_id"] = None
+            # Update spans with missing parents
+            span_ids = buffer.span_ids
+            for span_data in buffer.spans.values():
+                parent_id = span_data.get("parent_span_id")
+                if parent_id and parent_id not in span_ids:
+                    logger.warning(
+                        f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')}"
+                    )
+                    span_data["parent_span_id"] = None
 
         # Now process the trace
-        await self._process_trace(trace_id)
+        self._process_trace(trace_id)
 
-    async def _force_process_oldest_trace(self) -> None:
+    def _force_process_oldest_trace(self) -> None:
         """Force process the oldest trace to make room for new ones."""
         if not self.trace_buffers:
             return
@@ -378,7 +414,7 @@ class SpanQueueProcessor:
         )
 
         logger.warning(f"Force processing oldest trace {oldest_trace_id} to make room")
-        await self._force_process_incomplete_trace(oldest_trace_id)
+        self._force_process_incomplete_trace(oldest_trace_id)
 
 
 # Singleton instance

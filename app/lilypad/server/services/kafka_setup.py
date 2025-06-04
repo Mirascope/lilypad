@@ -39,11 +39,13 @@ class KafkaSetupService:
                 f"Connecting to Kafka at {self.settings.kafka_bootstrap_servers}"
             )
 
-            # Create admin client
+            # Create admin client with connection timeout
             self.admin_client = KafkaAdminClient(
                 bootstrap_servers=self.settings.kafka_bootstrap_servers,
                 client_id="lilypad-setup",
                 request_timeout_ms=30000,
+                connections_max_idle_ms=60000,  # 60 seconds
+                api_version_auto_timeout_ms=10000,  # 10 seconds for version check
             )
 
             # Define topic
@@ -72,6 +74,13 @@ class KafkaSetupService:
                 logger.info(
                     f"Topic '{self.settings.kafka_topic_span_ingestion}' already exists"
                 )
+            except Exception as e:
+                if "already exists" in str(e).lower():
+                    logger.info(
+                        f"Topic '{self.settings.kafka_topic_span_ingestion}' already exists"
+                    )
+                else:
+                    raise
 
             return True
 

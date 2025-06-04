@@ -54,7 +54,7 @@ class KafkaService:
             logger.error(f"Failed to initialize Kafka producer: {e}")
             return False
 
-    async def send_span(self, span_data: dict[str, Any]) -> bool:
+    def send_span(self, span_data: dict[str, Any]) -> bool:
         """Send a span to the span ingestion topic.
 
         Args:
@@ -92,7 +92,7 @@ class KafkaService:
             logger.error(f"Unexpected error sending span to Kafka: {e}")
             return False
 
-    async def send_spans_batch(self, spans: list[dict[str, Any]]) -> bool:
+    def send_spans_batch(self, spans: list[dict[str, Any]]) -> bool:
         """Send multiple spans to Kafka in batch.
 
         Args:
@@ -108,7 +108,7 @@ class KafkaService:
         success_count = 0
 
         for span in spans:
-            if await self.send_span(span):
+            if self.send_span(span):
                 success_count += 1
 
         # Flush to ensure all messages are sent

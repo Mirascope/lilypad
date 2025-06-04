@@ -2,7 +2,7 @@
 
 import time
 from collections.abc import Generator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
@@ -209,7 +209,7 @@ async def test_process_llm_span_with_openrouter():
 
     with patch(
         "lilypad.server.api.v0.traces_api.calculate_openrouter_cost",
-        new_callable=AsyncMock,
+        new_callable=MagicMock,
     ) as mock_calc:
         mock_calc.return_value = 0.123
         result = await _process_span(trace, parent_to_children, span_creates)
@@ -325,3 +325,201 @@ async def test_process_span_without_cost_calculation():
     assert result.cost == 0
     assert result.input_tokens == 100
     assert result.output_tokens == 50
+
+
+def test_create_traces_with_kafka_success(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test creating traces with Kafka queue (success case)."""
+    traces_data = [
+        {
+            "span_id": "span_root",
+            "trace_id": "trace123",
+            "parent_span_id": None,
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 1000,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+        {
+            "span_id": "span_child",
+            "trace_id": "trace123",
+            "parent_span_id": "span_root",
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 500,
+            "attributes": {
+                "lilypad.type": "function",
+                gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS: 100,
+                gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS: 50,
+                gen_ai_attributes.GEN_AI_SYSTEM: "anthropic",
+                gen_ai_attributes.GEN_AI_RESPONSE_MODEL: "claude-2.0",
+            },
+            "instrumentation_scope": {"name": "other"},
+        },
+    ]
+    
+    # Import necessary modules
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.services.kafka import KafkaService
+    
+    # Create mock Kafka service
+    mock_kafka_service = MagicMock(spec=KafkaService)
+    mock_kafka_service.send_spans_batch = MagicMock(return_value=True)
+    
+    # Override the dependency
+    def override_kafka_service():
+        return mock_kafka_service
+    
+    api.dependency_overrides[KafkaService] = override_kafka_service
+    
+    try:
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            json=traces_data,
+            headers={"X-API-Key": test_api_key.key_hash},
+        )
+        
+        if response.status_code != 200:
+            pass
+        assert response.status_code == 200
+        data = response.json()
+        assert data["trace_status"] == "queued"
+        assert data["span_count"] == 2
+        assert data["message"] == "Spans queued for processing"
+        
+        # Verify Kafka was called
+        mock_kafka_service.send_spans_batch.assert_called_once()
+        sent_spans = mock_kafka_service.send_spans_batch.call_args[0][0]
+        assert len(sent_spans) == 2
+        # Verify project UUID was added to attributes
+        assert sent_spans[0]["attributes"]["lilypad.project.uuid"] == str(test_project.uuid)
+    finally:
+        # Clean up override
+        api.dependency_overrides.pop(KafkaService, None)
+
+
+def test_create_traces_kafka_unavailable_fallback(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test creating traces when Kafka is unavailable (fallback to sync)."""
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.services.kafka import KafkaService
+    
+    traces_data = [
+        {
+            "span_id": "span_root",
+            "trace_id": "trace123",
+            "parent_span_id": None,
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 1000,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+    ]
+    
+    # Create mock Kafka service
+    mock_kafka_service = MagicMock(spec=KafkaService)
+    mock_kafka_service.send_spans_batch = MagicMock(return_value=False)
+    
+    # Override the dependency
+    def override_kafka_service():
+        return mock_kafka_service
+    
+    api.dependency_overrides[KafkaService] = override_kafka_service
+    
+    try:
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            json=traces_data,
+            headers={"X-API-Key": test_api_key.key_hash},
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["trace_status"] == "processed"
+        assert data["span_count"] == 1
+        assert data["message"] == "Spans processed synchronously"
+    finally:
+        # Clean up override
+        api.dependency_overrides.pop(KafkaService, None)
+
+
+def test_create_traces_cloud_limit_exceeded(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+):
+    """Test creating traces when cloud limit is exceeded."""
+    traces_data = [
+        {
+            "span_id": "span_root",
+            "trace_id": "trace123",
+            "parent_span_id": None,
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 1000,
+            "attributes": {},
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+    ]
+    
+    # Mock cloud limits
+    with patch("lilypad.server.api.v0.traces_api.is_lilypad_cloud", return_value=True), \
+         patch("lilypad.server.api.v0.traces_api.get_organization_license") as mock_license, \
+         patch("lilypad.server.api.v0.traces_api.SpanService") as mock_span_service:
+        
+        # Create a mock license object
+        mock_license_obj = MagicMock()
+        mock_license_obj.tier = MagicMock()
+        mock_license_obj.tier.name = "FREE"
+        mock_license.return_value = mock_license_obj
+        
+        # Mock cloud features
+        with patch("lilypad.server.api.v0.traces_api.cloud_features") as mock_features:
+            mock_features.__getitem__.return_value = MagicMock(traces_per_month=10000)
+            
+            # Mock span count to exceed limit
+            mock_span_service.return_value.count_by_current_month.return_value = 10001
+            
+            response = client.post(
+                f"/v0/projects/{test_project.uuid}/traces",
+                json=traces_data,
+                headers={"X-API-Key": test_api_key.key_hash},
+            )
+    
+    assert response.status_code == 402
+    assert "Exceeded the maximum number of traces" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_process_span_with_kafka_attributes():
+    """Test processing span preserves Kafka-required attributes."""
+    trace = {
+        "span_id": "span1",
+        "trace_id": "trace123",
+        "start_time": 1000,
+        "end_time": 2000,
+        "attributes": {
+            "lilypad.project.uuid": "550e8400-e29b-41d4-a716-446655440000",
+            "lilypad.function.uuid": "660e8400-e29b-41d4-a716-446655440000",
+        },
+        "instrumentation_scope": {"name": "lilypad"},
+    }
+    parent_to_children = {"span1": []}
+    span_creates = []
+    
+    result = await _process_span(trace, parent_to_children, span_creates)
+    
+    # Original attributes should be preserved in data
+    assert result.data["attributes"]["lilypad.project.uuid"] == "550e8400-e29b-41d4-a716-446655440000"
