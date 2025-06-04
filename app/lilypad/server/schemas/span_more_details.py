@@ -545,6 +545,11 @@ def parse_nested_json(data: Any) -> Any:
         return data
 
 
+SimpleValue = str | int | float | bool | None
+NestedValue = SimpleValue | dict[str, SimpleValue] | list[SimpleValue]
+ResponseModel = dict[str, NestedValue] | list[NestedValue] | SimpleValue
+
+
 class SpanMoreDetails(BaseModel):
     """Span more details model."""
 
@@ -572,7 +577,7 @@ class SpanMoreDetails(BaseModel):
     session_id: str | None = None
     span_id: str
     response: dict[str, Any] | None = None
-    response_model: dict[str, Any] | None = None
+    response_model: ResponseModel = None
 
     @classmethod
     def from_span(cls, span: SpanTable) -> SpanMoreDetails:

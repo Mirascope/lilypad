@@ -996,7 +996,28 @@ export interface SpanMoreDetails {
   /** Response */
   response?: object | null;
   /** Response Model */
-  response_model?: object | null;
+  response_model?:
+    | Record<
+        string,
+        | string
+        | number
+        | boolean
+        | Record<string, string | number | boolean | null>
+        | (string | number | boolean | null)[]
+        | null
+      >
+    | (
+        | string
+        | number
+        | boolean
+        | Record<string, string | number | boolean | null>
+        | (string | number | boolean | null)[]
+        | null
+      )[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 
 /**
