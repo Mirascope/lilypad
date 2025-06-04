@@ -122,6 +122,11 @@ def create_checkout_session(
 
             # Add new items
             items.extend(PRICE_MAP[stripe_checkout_session.plan_type])
+            if not organization.billing.stripe_subscription_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Stripe subscription ID not found",
+                )
             stripe.Subscription.modify(
                 organization.billing.stripe_subscription_id,
                 items=items,
