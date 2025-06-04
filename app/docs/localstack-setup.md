@@ -32,10 +32,12 @@ cp .env.dev.example .env.dev
 ```
 
 Key environment variables for LocalStack:
-- `AWS_ENDPOINT_URL=http://localstack:4566` - Points to LocalStack instead of real AWS
-- `SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER` - Use AWS Secret Manager (via LocalStack)
+- `AWS_ENDPOINT_URL=http://localstack:4566` - Points to LocalStack instead of real AWS (use `http://localhost:4566` when running from host)
+- `LILYPAD_SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER` - Use AWS Secret Manager (via LocalStack)
+- `LILYPAD_AWS_REGION=us-east-1` - AWS region configuration
 - `AWS_ACCESS_KEY_ID=test` - Dummy credentials for LocalStack
 - `AWS_SECRET_ACCESS_KEY=test` - Dummy credentials for LocalStack
+- `AWS_DEFAULT_REGION=us-east-1` - Default AWS region
 
 ### 3. Initialize Test Secrets
 
@@ -52,12 +54,25 @@ This creates test secrets like:
 - `lilypad/anthropic-key`
 - `lilypad/database/password`
 
-### 4. Test the Integration
+### 4. Verify the Setup
 
-Run the test script to verify everything is working:
+To verify LocalStack is working correctly:
 
 ```bash
-python scripts/localstack_integration_test.py
+# Check LocalStack health
+curl http://localhost:4566/_localstack/health
+
+# List secrets (should show the test secrets)
+AWS_ENDPOINT_URL=http://localhost:4566 aws secretsmanager list-secrets --region us-east-1
+
+# Or use the Python SDK
+python -c "
+import os
+os.environ['AWS_ENDPOINT_URL'] = 'http://localhost:4566'
+import boto3
+client = boto3.client('secretsmanager', region_name='us-east-1')
+print(client.list_secrets())
+"
 ```
 
 ## Using LocalStack in Development
@@ -87,28 +102,31 @@ The implementation automatically checks the `AWS_ENDPOINT_URL` environment varia
 
 ### Use LocalStack (Development)
 ```bash
-# In .env.dev
-AWS_ENDPOINT_URL=http://localstack:4566
+# In .env or .env.dev
+LILYPAD_SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER
+LILYPAD_AWS_REGION=us-east-1
+AWS_ENDPOINT_URL=http://localhost:4566  # Use http://localstack:4566 if running in Docker
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
-SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER
+AWS_DEFAULT_REGION=us-east-1
 ```
 
 ### Use Real AWS (Production)
 ```bash
-# In .env.dev (or production env)
+# In .env or production environment
+LILYPAD_SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER
+LILYPAD_AWS_REGION=us-east-1  # Your preferred region
 # AWS_ENDPOINT_URL=  # Comment out or remove
 AWS_ACCESS_KEY_ID=your-real-access-key
 AWS_SECRET_ACCESS_KEY=your-real-secret-key
 AWS_DEFAULT_REGION=us-east-1
-SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER
 ```
 
-### Use Supabase Vault (Alternative)
+### Use Supabase Vault (Default)
 ```bash
-# In .env.dev
-SECRET_MANAGER_TYPE=SUPABASE_VAULT
-# No AWS configuration needed
+# In .env or .env.dev
+LILYPAD_SECRET_MANAGER_TYPE=SUPABASE_VAULT
+# Or simply omit this variable to use the default
 ```
 
 ## LocalStack Dashboard
@@ -116,6 +134,15 @@ SECRET_MANAGER_TYPE=SUPABASE_VAULT
 You can view LocalStack resources at:
 - Health check: http://localhost:4566/_localstack/health
 - Dashboard: http://localhost:4566/_localstack/dashboard (if enabled)
+
+## Important: Endpoint URL Configuration
+
+When using LocalStack, the `AWS_ENDPOINT_URL` value depends on where your code is running:
+
+- **From host machine** (e.g., running `uv run fastapi dev`): Use `http://localhost:4566`
+- **From Docker container** (e.g., using `docker-compose up`): Use `http://localstack:4566`
+
+This is because Docker containers use internal networking where services are referenced by their container names.
 
 ## Troubleshooting
 
