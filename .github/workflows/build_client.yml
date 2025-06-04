@@ -26,4 +26,6 @@ jobs:
           bun install
 
       - name: Run typecheck
-        run: bun run typecheck
+        run: |
+          cd app/client
+          bun typecheck
