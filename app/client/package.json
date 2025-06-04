@@ -6,11 +6,11 @@
   "homepage": "lilypad",
   "scripts": {
     "dev": "bun vite",
-    "build": "tsc -b && bun vite build --emptyOutDir",
+    "build": "bun run tsc -b && bun vite build --emptyOutDir",
     "build:notypescript": "bun vite build --emptyOutDir",
     "build:local": "NODE_ENV=development bun vite build --mode development --emptyOutDir",
     "lint": "eslint .",
-    "typecheck": "tsc --project tsconfig.app.json",
+    "typecheck": "bun run tsc --noEmit",
     "preview": "bun vite preview",
     "prettier": "prettier --write .",
     "generate:api:v0": "node scripts/generate-api-types.js generate --url http://127.0.0.1:8000/v0/openapi.json --output src/types",
