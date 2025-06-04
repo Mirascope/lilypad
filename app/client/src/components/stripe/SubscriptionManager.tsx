@@ -11,9 +11,9 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-loadStripe(
-  "pk_test_51RMYFER6LYGqZiYL4aomVpnpfeqGA1lxLdv32En1f2q9NkDGp1ul0d3Ryf7rlr1az5HHZTQEZIdRGBrfabueZfFj00IwUTYnky"
-);
+loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY as string).catch(() => {
+  console.error("Failed to load Stripe");
+});
 
 export const StripeSubscriptionButton = ({
   buttonText,
