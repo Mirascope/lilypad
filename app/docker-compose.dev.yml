@@ -56,8 +56,15 @@ services:
       - LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID=${LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID:-price_...}
       - LILYPAD_STRIPE_CLOUD_TEAM_METER_PRICE_ID=${LILYPAD_STRIPE_CLOUD_TEAM_METER_PRICE_ID:-...}
       - LILYPAD_STRIPE_WEBHOOK_SECRET=${LILYPAD_STRIPE_WEBHOOK_SECRET:-whsec_...}
+      - LILYPAD_KAFKA_BOOTSTRAP_SERVERS=${LILYPAD_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      - LILYPAD_KAFKA_TOPIC_SPAN_INGESTION=${LILYPAD_KAFKA_TOPIC_SPAN_INGESTION:-span-ingestion}
+      - LILYPAD_KAFKA_CONSUMER_GROUP=${LILYPAD_KAFKA_CONSUMER_GROUP:-lilypad-span-processor}
+      - LILYPAD_KAFKA_MAX_CONCURRENT_TRACES=${LILYPAD_KAFKA_MAX_CONCURRENT_TRACES:-1000}
+      - LILYPAD_KAFKA_MAX_SPANS_PER_TRACE=${LILYPAD_KAFKA_MAX_SPANS_PER_TRACE:-500}
+      - LILYPAD_KAFKA_BUFFER_TTL_SECONDS=${LILYPAD_KAFKA_BUFFER_TTL_SECONDS:-300}
     depends_on:
       - postgres
+      - kafka
     networks:
       - app-network
 
@@ -119,9 +126,90 @@ services:
     depends_on:
       - opensearch
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_DATA_DIR: /var/lib/zookeeper/data
+      ZOOKEEPER_LOG_DIR: /var/lib/zookeeper/log
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_LOG_RETENTION_HOURS: 168 # 7 days retention
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "localhost:29092",
+          "--list",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: lilypad-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_READONLY: false
+    networks:
+      - app-network
+
 volumes:
   postgres-data:
   opensearch-data:
+  zookeeper-data:
+  kafka-data:
 
 networks:
   app-network:
