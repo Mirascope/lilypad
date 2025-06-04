@@ -33,8 +33,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
-      - name: Change to client directory, install dependencies and build
+      - name: Change to client directory, run typecheck
         run: |
           cd app/client
           bun install
-          bun run build
+          bun run typecheck
