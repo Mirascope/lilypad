@@ -43,7 +43,7 @@ class KafkaService:
         # Retry logic for Kafka initialization
         max_retries = 3
         retry_delay = 1  # Start with 1 second
-        
+
         for attempt in range(max_retries):
             try:
                 self.producer = AIOKafkaProducer(
@@ -59,7 +59,9 @@ class KafkaService:
                 )
                 await self.producer.start()
                 self._initialized = True
-                logger.info("Kafka producer initialized successfully")
+                logger.info(
+                    f"✅ Kafka producer initialized successfully - Bootstrap servers: {self.settings.kafka_bootstrap_servers}"
+                )
                 return True
 
             except Exception as e:
@@ -71,9 +73,11 @@ class KafkaService:
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    logger.error(f"Failed to initialize Kafka producer after {max_retries} attempts: {e}")
+                    logger.error(
+                        f"Failed to initialize Kafka producer after {max_retries} attempts: {e}"
+                    )
                     return False
-        
+
         return False
 
     async def send_span(self, span_data: dict[str, Any], user_id: UUID) -> bool:
@@ -101,14 +105,17 @@ class KafkaService:
                 value={**span_data, "user_id": str(user_id)},
             )
 
-            logger.debug(
-                f"Span sent to Kafka - Topic: {metadata.topic}, "
-                f"Partition: {metadata.partition}, Offset: {metadata.offset}"
+            logger.info(
+                f"✅ Span sent to Kafka - Span ID: {span_data.get('span_id', 'unknown')}, "
+                f"Topic: {metadata.topic}, Partition: {metadata.partition}, "
+                f"Offset: {metadata.offset}, User: {user_id}"
             )
             return True
 
         except KafkaError as e:
-            logger.error(f"Failed to send span to Kafka: {e}")
+            logger.error(
+                f"❌ Failed to send span to Kafka - Span ID: {span_data.get('span_id', 'unknown')}, Error: {e}"
+            )
             return False
         except Exception as e:
             logger.error(f"Unexpected error sending span to Kafka: {e}")
@@ -127,7 +134,9 @@ class KafkaService:
             bool: True if all spans sent successfully, False otherwise
         """
         if not self._initialized and not await self.initialize():
-            logger.warning("Kafka not available, spans will be processed synchronously")
+            logger.warning(
+                "⚠️ Kafka not initialized - spans will be processed synchronously"
+            )
             return False
 
         success_count = 0
@@ -143,9 +152,13 @@ class KafkaService:
             logger.error(f"Error flushing Kafka producer: {e}")
 
         success = success_count == len(spans)
-        if not success:
+        if success:
+            logger.info(
+                f"✅ Batch sent to Kafka successfully - Total: {len(spans)} spans, User: {user_id}"
+            )
+        else:
             logger.warning(
-                f"Partial batch send: {success_count}/{len(spans)} spans sent successfully"
+                f"⚠️ Partial batch send to Kafka - Success: {success_count}/{len(spans)} spans, User: {user_id}"
             )
 
         return success

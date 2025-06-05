@@ -216,6 +216,9 @@ async def traces(
 
     # Process the traces
     traces_json: list[dict] = await request.json()
+    logger.info(
+        f"Received {len(traces_json)} spans - Project: {project_uuid}, User: {user.uuid}"
+    )
     logger.debug(traces_json)
     # Add project UUID to each span's attributes for queue processing
     for trace in traces_json:
@@ -224,13 +227,18 @@ async def traces(
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
     # Try to send to Kafka queue
+    logger.info(
+        f"Attempting to send {len(traces_json)} spans to Kafka queue - Project: {project_uuid}, User: {user.uuid}"
+    )
     kafka_available = await kafka_service.send_spans_batch(
         traces_json, user_id=user.uuid
     )
 
     if kafka_available:
         # Queue processing successful
-        logger.info(f"Queued {len(traces_json)} spans for project {project_uuid}")
+        logger.info(
+            f"Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
+        )
         return TracesQueueResponse(
             trace_status="queued",
             span_count=len(traces_json),
@@ -238,7 +246,9 @@ async def traces(
         )
     else:
         # Fallback to synchronous processing if Kafka is not available
-        logger.warning("Kafka not available, falling back to synchronous processing")
+        logger.warning(
+            f"Kafka not available, falling back to synchronous processing - Project: {project_uuid}, Spans: {len(traces_json)}"
+        )
 
         span_creates: list[SpanCreate] = []
         parent_to_children = defaultdict(list)

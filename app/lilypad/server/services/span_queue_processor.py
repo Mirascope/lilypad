@@ -123,7 +123,7 @@ class SpanQueueProcessor:
         # Retry logic for Kafka initialization
         max_retries = 5
         retry_delay = 2  # Start with 2 seconds
-        
+
         for attempt in range(max_retries):
             try:
                 self.consumer = AIOKafkaConsumer(
@@ -142,11 +142,16 @@ class SpanQueueProcessor:
                     connections_max_idle_ms=540000,
                 )
                 await self.consumer.start()
-                logger.info("Kafka consumer initialized successfully")
+                logger.info(
+                    f"Kafka consumer initialized - Topic: {self.settings.kafka_topic_span_ingestion}, Group: {self.settings.kafka_consumer_group}"
+                )
                 return True
 
             except Exception as e:
-                if "GroupCoordinatorNotAvailableError" in str(e) and attempt < max_retries - 1:
+                if (
+                    "GroupCoordinatorNotAvailableError" in str(e)
+                    and attempt < max_retries - 1
+                ):
                     logger.warning(
                         f"Kafka not ready yet (attempt {attempt + 1}/{max_retries}), "
                         f"retrying in {retry_delay} seconds: {e}"
@@ -154,14 +159,16 @@ class SpanQueueProcessor:
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    logger.error(f"Failed to initialize Kafka consumer after {attempt + 1} attempts: {e}")
+                    logger.error(
+                        f"Failed to initialize Kafka consumer after {attempt + 1} attempts: {e}"
+                    )
                     return False
-        
+
         return False
 
     async def start(self) -> None:
         """Start the queue processor."""
-        logger.info("Starting queue processor...")
+        logger.info("Starting span queue processor - checking for messages...")
 
         if not await self.initialize():
             logger.warning("Queue processor not started due to initialization failure")
@@ -196,11 +203,11 @@ class SpanQueueProcessor:
         if self.consumer:
             await self.consumer.stop()
 
-        logger.info("Queue processor stopped")
+        logger.info("Queue processor stopped - processed messages until shutdown")
 
     async def _process_queue(self) -> None:
         """Main queue processing loop."""
-        logger.info("Starting queue processing loop")
+        logger.info("Starting queue processing loop - polling for messages...")
         while self._running:
             try:
                 # Fetch messages with timeout
@@ -208,7 +215,7 @@ class SpanQueueProcessor:
 
                 if records:
                     msg_count = sum(len(msgs) for msgs in records.values())
-                    logger.info(f"Received {msg_count} messages from Kafka")
+                    logger.info(f"Received {msg_count} messages from Kafka queue")
                 else:
                     logger.debug("No messages received from Kafka in this poll")
 
@@ -216,6 +223,9 @@ class SpanQueueProcessor:
                     for record in messages:
                         if not self._running:
                             break
+                        logger.info(
+                            f"Processing message - Topic: {record.topic}, Partition: {record.partition}, Offset: {record.offset}"
+                        )
                         await self._process_message(record)
 
             except KafkaError as e:
@@ -236,7 +246,9 @@ class SpanQueueProcessor:
             trace_id = span_data.get("trace_id")
 
             if not trace_id:
-                logger.warning("Span missing trace_id, skipping")
+                logger.warning(
+                    f"Span missing trace_id, skipping - Span ID: {span_data.get('span_id', 'unknown')}"
+                )
                 return
 
             buffer_to_process = None
@@ -265,8 +277,9 @@ class SpanQueueProcessor:
                     buffer_to_process = self.trace_buffers.pop(trace_id, None)
                 else:
                     buffer.add_span(span_data)
+                    span_id = span_data.get("span_id", "unknown")
                     logger.info(
-                        f"Added span to trace {trace_id}, now has {len(buffer.spans)} spans"
+                        f"Added span to buffer - Span ID: {span_id}, Trace ID: {trace_id}, Buffer size: {len(buffer.spans)}"
                     )
 
                     # Check if trace is complete
@@ -298,7 +311,9 @@ class SpanQueueProcessor:
         Note: This method should be called after removing the buffer from
         self.trace_buffers while holding the lock.
         """
-        logger.info(f"Processing trace {trace_id}")
+        logger.info(
+            f"Starting to process complete trace - Trace ID: {trace_id}, Spans: {len(buffer.spans)}"
+        )
 
         try:
             # Get spans in dependency order
@@ -308,14 +323,18 @@ class SpanQueueProcessor:
                 logger.warning(f"No spans to process for trace {trace_id}")
                 return
 
-            logger.info(f"Processing {len(ordered_spans)} spans for trace {trace_id}")
+            logger.info(
+                f"Processing {len(ordered_spans)} spans in dependency order - Trace ID: {trace_id}"
+            )
 
             first_span = ordered_spans[0]
             attributes = first_span.get("attributes", {})
             project_uuid_str = attributes.get("lilypad.project.uuid")
 
             if not project_uuid_str:
-                logger.debug(f"No project UUID found in trace {trace_id}")
+                logger.warning(
+                    f"No project UUID found in trace {trace_id}, skipping {len(ordered_spans)} spans"
+                )
                 return
 
             project_uuid = UUID(project_uuid_str)
@@ -324,7 +343,9 @@ class SpanQueueProcessor:
             user_id = first_span.get("user_id")
             logger.debug(f"Extracted user_id: {user_id} from trace {trace_id}")
             if not user_id:
-                logger.debug(f"No user ID found in trace {trace_id}")
+                logger.warning(
+                    f"No user ID found in trace {trace_id}, skipping {len(ordered_spans)} spans"
+                )
                 return
             user_id = UUID(user_id)
 
@@ -343,7 +364,9 @@ class SpanQueueProcessor:
                 project = project_service.find_record_no_organization(project_uuid)
                 logger.debug(f"Found project: {project} for trace {trace_id}")
                 if not project:
-                    logger.debug(f"Project {project_uuid} not found")
+                    logger.warning(
+                        f"Project {project_uuid} not found, skipping trace {trace_id} with {len(ordered_spans)} spans"
+                    )
                     return
 
                 # Create span service
@@ -377,13 +400,18 @@ class SpanQueueProcessor:
 
                 # Commit is handled by the session context manager in get_session()
                 logger.info(
-                    f"Successfully processed trace {trace_id} with {len(ordered_spans)} spans"
+                    f"Successfully saved trace to database - Trace ID: {trace_id}, "
+                    f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
                 )
 
         except IntegrityError as e:
-            logger.debug(f"Database integrity error processing trace {trace_id}: {e}")
+            logger.error(
+                f"Integrity error processing trace {trace_id}: {e}. Likely parent span missing. Spans: {len(ordered_spans)}"
+            )
         except Exception as e:
-            logger.debug(f"Error processing trace {trace_id}: {e}")
+            logger.error(
+                f"Error processing trace {trace_id}: {e}, Spans: {len(ordered_spans)}"
+            )
 
     @staticmethod
     def _convert_to_span_create(span_data: dict[str, Any]) -> SpanCreate:
@@ -451,7 +479,8 @@ class SpanQueueProcessor:
                 parent_id = span_data.get("parent_span_id")
                 if parent_id and parent_id not in span_ids:
                     logger.warning(
-                        f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')}"
+                        f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')} "
+                        f"in trace {trace_id}"
                     )
                     span_data["parent_span_id"] = None
 
