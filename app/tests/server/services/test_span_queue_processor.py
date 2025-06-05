@@ -23,7 +23,30 @@ def trace_buffer():
 @pytest.fixture
 def processor():
     """Create a SpanQueueProcessor instance for testing."""
-    return SpanQueueProcessor()
+    # First reset the singleton to ensure we get a fresh instance
+    import lilypad.server.services.span_queue_processor
+
+    lilypad.server.services.span_queue_processor._processor_instance = None
+
+    # Mock get_settings before creating the processor
+    with patch(
+        "lilypad.server.services.span_queue_processor.get_settings"
+    ) as mock_get_settings:
+        # Create settings with no Kafka config
+        settings = MagicMock()
+        settings.kafka_bootstrap_servers = None
+        settings.kafka_topic_span_ingestion = "span-ingestion"
+        settings.kafka_consumer_group = "test-consumer"
+        settings.kafka_max_concurrent_traces = 1000
+        settings.kafka_max_spans_per_trace = 500
+        settings.kafka_buffer_ttl_seconds = 300
+        settings.kafka_cleanup_interval_seconds = 60
+        settings.stripe_api_key = None
+        mock_get_settings.return_value = settings
+
+        # Create a new processor directly (not through get_span_queue_processor)
+        processor = SpanQueueProcessor()
+        yield processor
 
 
 @pytest.fixture
@@ -197,7 +220,11 @@ class TestSpanQueueProcessor:
         await processor._process_message(mock_record)
 
         # Should complete the trace
-        processor._process_trace.assert_called_once_with("trace123")
+        # The method is called with trace_id and buffer
+        assert processor._process_trace.call_count == 1
+        call_args = processor._process_trace.call_args[0]
+        assert call_args[0] == "trace123"
+        assert isinstance(call_args[1], TraceBuffer)
 
     @pytest.mark.asyncio
     async def test_process_message_incomplete_trace(self, processor, mock_settings):
@@ -247,7 +274,11 @@ class TestSpanQueueProcessor:
         await processor._process_message(mock_record)
 
         # Should process trace due to limit
-        processor._process_trace.assert_called_once_with("trace123")
+        # The method is called with trace_id and buffer
+        assert processor._process_trace.call_count == 1
+        call_args = processor._process_trace.call_args[0]
+        assert call_args[0] == "trace123"
+        assert isinstance(call_args[1], TraceBuffer)
 
     @pytest.mark.asyncio
     async def test_force_process_incomplete_trace(self, processor):
@@ -263,7 +294,11 @@ class TestSpanQueueProcessor:
 
         # Parent should be set to None
         assert buffer.spans["child"]["parent_span_id"] is None
-        processor._process_trace.assert_called_once_with("trace123")
+        # The method is called with trace_id and buffer
+        assert processor._process_trace.call_count == 1
+        call_args = processor._process_trace.call_args[0]
+        assert call_args[0] == "trace123"
+        assert isinstance(call_args[1], TraceBuffer)
 
     @pytest.mark.asyncio
     async def test_cleanup_incomplete_traces(self):
@@ -364,7 +399,7 @@ class TestSpanQueueProcessor:
         processor.trace_buffers["trace123"] = buffer
 
         # Mock dependencies
-        mock_session = AsyncMock()
+        mock_session = MagicMock()
         mock_user = MagicMock()
         mock_project = MagicMock()
         mock_project.organization_uuid = uuid4()
@@ -383,19 +418,27 @@ class TestSpanQueueProcessor:
             patch("lilypad.server.services.span_queue_processor.BillingService"),
         ):
             # Setup mocks
-            mock_get_session.return_value.__aiter__.return_value = [mock_session]
-            
-            # Mock the exec result as an async operation
+            # Create a synchronous generator for get_session
+            def mock_session_generator():
+                yield mock_session
+
+            mock_get_session.return_value = mock_session_generator()
+
+            # Mock the exec result as a synchronous operation
             mock_result = MagicMock()
             mock_result.first.return_value = mock_user
-            mock_session.exec = AsyncMock(return_value=mock_result)
+            mock_session.exec.return_value = mock_result
 
             mock_project_service.return_value.find_record_no_organization.return_value = mock_project
             mock_span_service.return_value.create_bulk_records = MagicMock()
 
-            await processor._process_trace("trace123")
+            # Remove the buffer before processing (as per method contract)
+            del processor.trace_buffers["trace123"]
 
-            # Verify trace was processed and removed from buffer
+            await processor._process_trace("trace123", buffer)
+
+            # Verify trace was processed
+            # Buffer should already be removed before calling _process_trace
             assert "trace123" not in processor.trace_buffers
             mock_span_service.return_value.create_bulk_records.assert_called_once()
 

@@ -111,37 +111,53 @@ def test_post_traces(
     test_api_key: APIKeyTable,
 ):
     """Test posting trace data creates expected spans."""
-    current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
+    from lilypad.server.services.kafka import get_kafka_service
 
-    trace_data = [
-        {
-            "span_id": "test_span_2",
-            "instrumentation_scope": {"name": "lilypad"},
-            "start_time": current_time,
-            "end_time": current_time + 100,
-            "attributes": {
-                "lilypad.project_uuid": str(test_project.uuid),
-                "lilypad.type": "function",
-                "lilypad.function.uuid": str(test_function.uuid),
-                "lilypad.function.name": "test_function",
-                "lilypad.function.signature": "def test(): pass",
-                "lilypad.function.code": "def test(): pass",
-            },
-            "name": "test_function",
-        }
-    ]
+    # Mock Kafka to be unavailable
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_spans_batch = AsyncMock(return_value=False)
 
-    response = client.post(
-        f"/projects/{test_project.uuid}/traces",
-        headers={"X-API-Key": test_api_key.key_hash},
-        json=trace_data,
-    )
-    assert response.status_code == 200
-    result = response.json()
-    # Since Kafka is not available in tests, it should process synchronously
-    assert result["trace_status"] == "processed"
-    assert result["span_count"] == 1
-    assert "message" in result
+    # Override the FastAPI dependency
+    from fastapi import FastAPI
+
+    app: FastAPI = client.app
+    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
+
+    try:
+        current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
+
+        trace_data = [
+            {
+                "span_id": "test_span_2",
+                "instrumentation_scope": {"name": "lilypad"},
+                "start_time": current_time,
+                "end_time": current_time + 100,
+                "attributes": {
+                    "lilypad.project_uuid": str(test_project.uuid),
+                    "lilypad.type": "function",
+                    "lilypad.function.uuid": str(test_function.uuid),
+                    "lilypad.function.name": "test_function",
+                    "lilypad.function.signature": "def test(): pass",
+                    "lilypad.function.code": "def test(): pass",
+                },
+                "name": "test_function",
+            }
+        ]
+
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            headers={"X-API-Key": test_api_key.key_hash},
+            json=trace_data,
+        )
+        assert response.status_code == 200
+        result = response.json()
+        # Since Kafka is mocked to be unavailable, it should process synchronously
+        assert result["trace_status"] == "processed"
+        assert result["span_count"] == 1
+        assert "message" in result
+    finally:
+        # Clean up the override
+        app.dependency_overrides.pop(get_kafka_service, None)
 
 
 def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
@@ -364,18 +380,19 @@ def test_create_traces_with_kafka_success(
     ]
 
     # Import necessary modules
-    from lilypad.server.api.v0.main import api
-    from lilypad.server.services.kafka import KafkaService
+    from lilypad.server.services.kafka import get_kafka_service
 
     # Create mock Kafka service
-    mock_kafka_service = MagicMock(spec=KafkaService)
+    mock_kafka_service = MagicMock()
     mock_kafka_service.send_spans_batch = AsyncMock(return_value=True)
 
-    # Override the dependency
-    def override_kafka_service():
-        return mock_kafka_service
+    # Override the FastAPI dependency
+    from fastapi import FastAPI
 
-    api.dependency_overrides[KafkaService] = override_kafka_service
+    app: FastAPI = client.app
+
+    # Override the dependency
+    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
 
     try:
         response = client.post(
@@ -384,8 +401,6 @@ def test_create_traces_with_kafka_success(
             headers={"X-API-Key": test_api_key.key_hash},
         )
 
-        if response.status_code != 200:
-            pass
         assert response.status_code == 200
         data = response.json()
         assert data["trace_status"] == "queued"
@@ -401,8 +416,8 @@ def test_create_traces_with_kafka_success(
             test_project.uuid
         )
     finally:
-        # Clean up override
-        api.dependency_overrides.pop(KafkaService, None)
+        # Clean up the override
+        app.dependency_overrides.pop(get_kafka_service, None)
 
 
 def test_create_traces_kafka_unavailable_fallback(
@@ -412,8 +427,7 @@ def test_create_traces_kafka_unavailable_fallback(
     test_function: FunctionTable,
 ):
     """Test creating traces when Kafka is unavailable (fallback to sync)."""
-    from lilypad.server.api.v0.main import api
-    from lilypad.server.services.kafka import KafkaService
+    from lilypad.server.services.kafka import get_kafka_service
 
     traces_data = [
         {
@@ -430,15 +444,17 @@ def test_create_traces_kafka_unavailable_fallback(
         },
     ]
 
-    # Create mock Kafka service
-    mock_kafka_service = MagicMock(spec=KafkaService)
+    # Create mock Kafka service that returns False (unavailable)
+    mock_kafka_service = MagicMock()
     mock_kafka_service.send_spans_batch = AsyncMock(return_value=False)
 
-    # Override the dependency
-    def override_kafka_service():
-        return mock_kafka_service
+    # Override the FastAPI dependency
+    from fastapi import FastAPI
 
-    api.dependency_overrides[KafkaService] = override_kafka_service
+    app: FastAPI = client.app
+
+    # Override the dependency
+    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
 
     try:
         response = client.post(
@@ -453,8 +469,8 @@ def test_create_traces_kafka_unavailable_fallback(
         assert data["span_count"] == 1
         assert data["message"] == "Spans processed synchronously"
     finally:
-        # Clean up override
-        api.dependency_overrides.pop(KafkaService, None)
+        # Clean up the override
+        app.dependency_overrides.pop(get_kafka_service, None)
 
 
 def test_create_traces_cloud_limit_exceeded(

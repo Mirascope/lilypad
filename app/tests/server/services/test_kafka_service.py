@@ -12,11 +12,30 @@ from lilypad.server.services.kafka import KafkaService
 @pytest.fixture
 def kafka_service():
     """Create a KafkaService instance for testing."""
-    service = KafkaService()
-    # Reset the service state
-    service.producer = None
-    service._initialized = False
-    return service
+    # First reset the singleton to ensure we get a fresh instance
+    import lilypad.server.services.kafka
+
+    lilypad.server.services.kafka._kafka_service_instance = None
+
+    # Mock get_settings before creating the service
+    with patch("lilypad.server.services.kafka.get_settings") as mock_get_settings:
+        # Create settings with no Kafka config
+        settings = MagicMock()
+        settings.kafka_bootstrap_servers = None
+        settings.kafka_topic_span_ingestion = "span-ingestion"
+        mock_get_settings.return_value = settings
+
+        # Create a new service directly (not through get_kafka_service)
+        service = KafkaService()
+        # Force reset the service state just in case
+        service.producer = None
+        service._initialized = False
+
+        yield service
+
+        # Cleanup after test
+        service.producer = None
+        service._initialized = False
 
 
 @pytest.fixture
@@ -113,9 +132,9 @@ async def test_send_span_success(kafka_service, mock_settings):
 
     assert result is True
     mock_producer.send_and_wait.assert_called_once_with(
-        topic="span-ingestion", 
-        key="trace123", 
-        value={**span_data, "user_id": str(user_id)}
+        topic="span-ingestion",
+        key="trace123",
+        value={**span_data, "user_id": str(user_id)},
     )
 
 

@@ -311,7 +311,7 @@ class SpanQueueProcessor:
             user_id = UUID(user_id)
 
             logger.debug(f"Processing spans for user: {user_id}")
-            # Process with proper session management (synchronous)
+            # Process with proper session management
             for session in get_session():
                 result = session.exec(
                     select(UserTable).where(UserTable.uuid == user_id)

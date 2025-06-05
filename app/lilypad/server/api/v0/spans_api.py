@@ -51,6 +51,35 @@ async def get_aggregates_by_project_uuid(
     return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
 
 
+@spans_router.get(
+    "/projects/{project_uuid}/spans/recent",
+    response_model=RecentSpansResponse,
+)
+async def get_recent_spans(
+    project_uuid: UUID,
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    since: Annotated[
+        datetime | None, Query(description="Get spans created since this timestamp")
+    ] = None,
+) -> RecentSpansResponse:
+    """Get spans created recently for real-time polling.
+
+    If no 'since' parameter is provided, returns spans from the last 30 seconds.
+    """
+    if not since:
+        since = datetime.now(UTC) - timedelta(seconds=30)
+
+    # Get recent spans
+    recent_spans = span_service.get_spans_since(project_uuid, since)
+
+    return RecentSpansResponse(
+        spans=[SpanPublic.model_validate(span) for span in recent_spans],
+        timestamp=datetime.now(UTC),
+        project_uuid=str(project_uuid),
+    )
+
+
 # Order matters, this endpoint should be last
 @spans_router.get(
     "/projects/{project_uuid}/spans/{span_id}", response_model=SpanMoreDetails
@@ -220,35 +249,6 @@ async def get_spans_by_function_uuid_paginated(
         limit=limit,
         offset=offset,
         total=total,
-    )
-
-
-@spans_router.get(
-    "/projects/{project_uuid}/spans/recent",
-    response_model=RecentSpansResponse,
-)
-async def get_recent_spans(
-    project_uuid: UUID,
-    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
-    span_service: Annotated[SpanService, Depends(SpanService)],
-    since: Annotated[
-        datetime | None, Query(description="Get spans created since this timestamp")
-    ] = None,
-) -> RecentSpansResponse:
-    """Get spans created recently for real-time polling.
-
-    If no 'since' parameter is provided, returns spans from the last 30 seconds.
-    """
-    if not since:
-        since = datetime.now(UTC) - timedelta(seconds=30)
-
-    # Get recent spans
-    recent_spans = span_service.get_spans_since(project_uuid, since)
-
-    return RecentSpansResponse(
-        spans=[SpanPublic.model_validate(span) for span in recent_spans],
-        timestamp=datetime.now(UTC),
-        project_uuid=str(project_uuid),
     )
 
 

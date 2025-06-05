@@ -195,7 +195,9 @@ def test_get_recent_spans_wrong_project(
         headers={"X-API-Key": test_api_key.key_hash},
     )
 
-    assert response.status_code == 404
+    # API key validation fails with 400 when project doesn't match
+    assert response.status_code == 400
+    assert "Invalid Project ID" in response.json()["detail"]
 
 
 def test_get_recent_spans_ordering(

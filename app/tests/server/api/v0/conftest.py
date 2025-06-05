@@ -102,6 +102,45 @@ def get_test_organization_license():
     return override_get_organization_license
 
 
+@pytest.fixture(autouse=True)
+async def reset_singletons():
+    """Reset service singletons after each test."""
+    yield
+    # Reset the singletons after test
+    import lilypad.server.services.kafka
+    import lilypad.server.services.span_queue_processor
+
+    # Close Kafka service if it exists
+    if lilypad.server.services.kafka._kafka_service_instance is not None:
+        kafka_instance = lilypad.server.services.kafka._kafka_service_instance
+        if hasattr(kafka_instance, "producer") and kafka_instance.producer is not None:
+            try:
+                await kafka_instance.close()
+            except Exception:
+                pass
+        kafka_instance._initialized = False
+
+    # Close span queue processor if it exists
+    if lilypad.server.services.span_queue_processor._processor_instance is not None:
+        processor_instance = (
+            lilypad.server.services.span_queue_processor._processor_instance
+        )
+        if hasattr(processor_instance, "_running"):
+            processor_instance._running = False
+        if (
+            hasattr(processor_instance, "consumer")
+            and processor_instance.consumer is not None
+        ):
+            try:
+                await processor_instance.stop()
+            except Exception:
+                pass
+
+    # Reset the singletons
+    lilypad.server.services.kafka._kafka_service_instance = None
+    lilypad.server.services.span_queue_processor._processor_instance = None
+
+
 @pytest.fixture
 def client(
     session: Session,
@@ -207,7 +246,10 @@ def test_environment(
 
 @pytest.fixture
 def test_api_key(
-    session: Session, test_project: ProjectTable, test_environment: EnvironmentTable
+    session: Session,
+    test_project: ProjectTable,
+    test_environment: EnvironmentTable,
+    test_user: UserTable,
 ) -> Generator[APIKeyTable, None, None]:
     """Create a test api key.
 
@@ -215,6 +257,7 @@ def test_api_key(
         session: Database session
         test_project: Parent project
         test_environment: Parent environment
+        test_user: Test user
 
     Yields:
         APIKeyTable
@@ -224,7 +267,7 @@ def test_api_key(
 
     api_key = APIKeyTable(
         key_hash="test_key",
-        user_uuid=uuid4(),
+        user_uuid=test_user.uuid,
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",
         project_uuid=test_project.uuid,
