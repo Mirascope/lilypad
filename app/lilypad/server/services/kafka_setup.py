@@ -108,13 +108,17 @@ class KafkaSetupService:
             # List topics to verify
             try:
                 topics = await self.admin_client.describe_topics()
-                topic_names = [t.topic for t in topics]
-                logger.info(f"Available Kafka topics: {topic_names}")
-                
-                if self.settings.kafka_topic_span_ingestion in topic_names:
-                    logger.info(f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist")
+                # topics is a list of TopicMetadata objects
+                if isinstance(topics, list):
+                    topic_names = [t.topic for t in topics]
+                    logger.info(f"Available Kafka topics: {topic_names}")
+                    
+                    if self.settings.kafka_topic_span_ingestion in topic_names:
+                        logger.info(f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist")
+                    else:
+                        logger.warning(f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' not found in topic list")
                 else:
-                    logger.warning(f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' not found in topic list")
+                    logger.info(f"Topics info: {topics}")
             except Exception as e:
                 logger.warning(f"Failed to list topics for verification: {e}")
 
