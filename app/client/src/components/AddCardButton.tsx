@@ -1,7 +1,7 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
+import { cn } from "@/src/lib/utils";
 import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from "react";
 
 interface AddCardButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;

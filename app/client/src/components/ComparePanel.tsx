@@ -1,7 +1,7 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { LilypadPanel } from "@/components/traces/LilypadPanel";
-import { Typography } from "@/components/ui/typography";
-import { SpanPublic } from "@/types/types";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { LilypadPanel } from "@/src/components/traces/LilypadPanel";
+import { Typography } from "@/src/components/ui/typography";
+import { SpanPublic } from "@/src/types/types";
 import { Suspense, useState } from "react";
 
 interface ComparePanelProps {

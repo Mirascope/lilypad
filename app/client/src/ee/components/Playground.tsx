@@ -1,7 +1,7 @@
-import { AddCardButton } from "@/components/AddCardButton";
-import { NotFound } from "@/components/NotFound";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { AddCardButton } from "@/src/components/AddCardButton";
+import { NotFound } from "@/src/components/NotFound";
+import { Button } from "@/src/components/ui/button";
+import { Card, CardContent } from "@/src/components/ui/card";
 import {
   Form,
   FormControl,
@@ -9,15 +9,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/components/ui/select";
 import {
   Sheet,
   SheetClose,
@@ -26,13 +26,13 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Editor } from "@/ee/components/Editor";
-import { EditorParameters, usePlaygroundContainer } from "@/ee/hooks/use-playground";
-import { TypedInput } from "@/ee/utils/input-utils";
-import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
-import { BaseEditorFormFields, validateInputs } from "@/utils/playground-utils";
+} from "@/src/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { Editor } from "@/src/ee/components/Editor";
+import { EditorParameters, usePlaygroundContainer } from "@/src/ee/hooks/use-playground";
+import { TypedInput } from "@/src/ee/utils/input-utils";
+import { FunctionPublic, PlaygroundErrorDetail } from "@/src/types/types";
+import { BaseEditorFormFields, validateInputs } from "@/src/utils/playground-utils";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect } from "react";
 import { SubmitHandler, useFieldArray, useFormContext } from "react-hook-form";

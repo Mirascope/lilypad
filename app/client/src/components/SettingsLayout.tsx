@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Typography } from "@/components/ui/typography";
+import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
+import { Typography } from "@/src/components/ui/typography";
 import { LucideIcon, SettingsIcon } from "lucide-react";
 import { ReactNode } from "react";
 export const SettingsLayout = ({

@@ -1,5 +1,5 @@
-import api from "@/api";
-import { CommentCreate, CommentPublic, CommentUpdate } from "@/types/types";
+import api from "@/src/api";
+import { CommentCreate, CommentPublic, CommentUpdate } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchComments = async () => (await api.get<CommentPublic[]>("/comments")).data;

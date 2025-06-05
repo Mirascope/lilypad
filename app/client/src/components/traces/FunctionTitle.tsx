@@ -1,8 +1,8 @@
-import { CopyButton } from "@/components/CopyButton";
-import { TagPopover } from "@/components/TagPopover";
-import { Badge } from "@/components/ui/badge";
-import { Typography } from "@/components/ui/typography";
-import { SpanMoreDetails } from "@/types/types";
+import { CopyButton } from "@/src/components/CopyButton";
+import { TagPopover } from "@/src/components/TagPopover";
+import { Badge } from "@/src/components/ui/badge";
+import { Typography } from "@/src/components/ui/typography";
+import { SpanMoreDetails } from "@/src/types/types";
 
 export const FunctionTitle = ({ span }: { span: SpanMoreDetails }) => {
   const spanData: Record<string, unknown> = span.data as Record<string, unknown>;

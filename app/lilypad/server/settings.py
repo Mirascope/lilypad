@@ -71,11 +71,13 @@ class Settings(BaseSettings):
 
     # Stripe settings
     stripe_api_key: str | None = None
+    stripe_secret_api_key: str | None = None
     stripe_webhook_secret: str | None = None
     stripe_cloud_product_id: str | None = None
-    stripe_cloud_free_price_id: str | None = None
-    stripe_cloud_pro_price_id: str | None = None
-    stripe_cloud_team_price_id: str | None = None
+    stripe_cloud_pro_flat_price_id: str | None = None
+    stripe_cloud_pro_meter_price_id: str | None = None
+    stripe_cloud_team_flat_price_id: str | None = None
+    stripe_cloud_team_meter_price_id: str | None = None
     stripe_spans_metering_id: str | None = None
 
     @property

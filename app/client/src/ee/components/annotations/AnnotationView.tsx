@@ -1,5 +1,5 @@
-import { UpdateAnnotationForm } from "@/ee/components/AnnotationForm";
-import { AnnotationPublic } from "@/types/types";
+import { UpdateAnnotationForm } from "@/src/ee/components/AnnotationForm";
+import { AnnotationPublic } from "@/src/types/types";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 

@@ -1,5 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { cn } from "@/src/lib/utils";
 import { Outlet } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { JSX, ReactNode, useEffect, useRef, useState } from "react";

@@ -1,8 +1,8 @@
-import { baseURL } from "@/api";
-import { Button } from "@/components/ui/button";
-import { useEventSource } from "@/hooks/use-eventsource";
-import { AnnotationUpdate } from "@/types/types";
-import { spanQueryOptions } from "@/utils/spans";
+import { baseURL } from "@/src/api";
+import { Button } from "@/src/components/ui/button";
+import { useEventSource } from "@/src/hooks/use-eventsource";
+import { AnnotationUpdate } from "@/src/types/types";
+import { spanQueryOptions } from "@/src/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";

@@ -1,9 +1,9 @@
-import { FunctionTitle } from "@/components/traces/FunctionTitle";
-import { LilypadPanel } from "@/components/traces/LilypadPanel";
-import { Button } from "@/components/ui/button";
-import { Typography } from "@/components/ui/typography";
-import { SpanMoreDetails, SpanPublic } from "@/types/types";
-import { spanQueryOptions } from "@/utils/spans";
+import { FunctionTitle } from "@/src/components/traces/FunctionTitle";
+import { LilypadPanel } from "@/src/components/traces/LilypadPanel";
+import { Button } from "@/src/components/ui/button";
+import { Typography } from "@/src/components/ui/typography";
+import { SpanMoreDetails, SpanPublic } from "@/src/types/types";
+import { spanQueryOptions } from "@/src/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Maximize2 } from "lucide-react";
 

@@ -1,6 +1,6 @@
-import api from "@/api";
-import { PaginatedSpanPublic, SpanPublic } from "@/types/types";
-import { PAGE_SIZE } from "@/utils/constants.ts";
+import api from "@/src/api";
+import { PaginatedSpanPublic, SpanPublic } from "@/src/types/types";
+import { PAGE_SIZE } from "@/src/utils/constants.ts";
 import type { QueryFunctionContext } from "@tanstack/react-query";
 
 export const fetchTraces = async (

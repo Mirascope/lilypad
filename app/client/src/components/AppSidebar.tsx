@@ -1,15 +1,19 @@
-import { useAuth } from "@/auth";
-import { CreateOrganizationDialog } from "@/components/OrganizationDialog";
-import { AppHeader } from "@/components/sidebar/AppHeader";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAuth } from "@/src/auth";
+import { CreateOrganizationDialog } from "@/src/components/OrganizationDialog";
+import { AppHeader } from "@/src/components/sidebar/AppHeader";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/src/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
+} from "@/src/components/ui/dropdown-menu";
+import { Separator } from "@/src/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -22,14 +26,14 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarRail,
-} from "@/components/ui/sidebar";
-import { fetchAnnotationsByProjectUuid } from "@/ee/utils/annotations";
-import { Route as ProjectRoute } from "@/routes/_auth/projects/$projectUuid.index";
-import { ProjectPublic } from "@/types/types";
-import { fetchLatestVersionUniqueFunctionNames, functionKeys } from "@/utils/functions";
-import { projectsQueryOptions } from "@/utils/projects";
-import { fetchSpans } from "@/utils/spans";
-import { useUpdateActiveOrganizationMutation } from "@/utils/users";
+} from "@/src/components/ui/sidebar";
+import { fetchAnnotationsByProjectUuid } from "@/src/ee/utils/annotations";
+import { Route as ProjectRoute } from "@/src/routes/_auth/projects/$projectUuid.index";
+import { ProjectPublic } from "@/src/types/types";
+import { fetchLatestVersionUniqueFunctionNames, functionKeys } from "@/src/utils/functions";
+import { projectsQueryOptions } from "@/src/utils/projects";
+import { fetchSpans } from "@/src/utils/spans";
+import { useUpdateActiveOrganizationMutation } from "@/src/utils/users";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import {

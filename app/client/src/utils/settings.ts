@@ -1,5 +1,5 @@
-import api from "@/api";
-import { SettingsPublic } from "@/types/types";
+import api from "@/src/api";
+import { SettingsPublic } from "@/src/types/types";
 import { queryOptions } from "@tanstack/react-query";
 
 export const getSettings = async () => {

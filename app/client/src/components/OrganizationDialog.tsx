@@ -1,13 +1,13 @@
-import { useAuth } from "@/auth";
-import LilypadDialog from "@/components/LilypadDialog";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "@/src/auth";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Button } from "@/src/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import {
   useCreateOrganizationMutation,
   useUpdateOrganizationMutation,
-} from "@/utils/organizations";
-import { useUpdateActiveOrganizationMutation } from "@/utils/users";
+} from "@/src/utils/organizations";
+import { useUpdateActiveOrganizationMutation } from "@/src/utils/users";
 import { Dispatch, ReactNode, SetStateAction } from "react";
 import { DefaultValues, Path, useForm } from "react-hook-form";
 import { toast } from "sonner";

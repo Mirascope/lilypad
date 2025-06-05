@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Form,
   FormControl,
@@ -6,16 +6,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { Typography } from "@/src/components/ui/typography";
 import {
   externalApiKeysQueryOptions,
   useCreateExternalApiKeyMutation,
   useDeleteExternalApiKeyMutation,
   usePatchExternalApiKeyMutation,
-} from "@/utils/external-api-keys";
-import { useUpdateUserKeysMutation } from "@/utils/users";
+} from "@/src/utils/external-api-keys";
+import { useUpdateUserKeysMutation } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -147,7 +147,7 @@ export const KeysSettings = () => {
   ];
   return (
     <>
-      <Typography variant="h4">API Keys</Typography>
+      <Typography variant="h3">API Keys</Typography>
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">

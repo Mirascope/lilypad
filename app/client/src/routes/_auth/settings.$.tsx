@@ -1,14 +1,18 @@
-import { HomeSettings } from "@/components/HomeSettings";
-import { KeysSettings } from "@/components/KeysSettings";
-import { OrgSettings } from "@/components/OrgSettings";
-import { Tab, TabGroup } from "@/components/TabGroup";
-import TableSkeleton from "@/components/TableSkeleton";
-import { TagsTable } from "@/components/TagsTable";
-import { Typography } from "@/components/ui/typography";
-import { userQueryOptions } from "@/utils/users";
+import { HomeSettings } from "@/src/components/HomeSettings";
+import { KeysSettings } from "@/src/components/KeysSettings";
+import { OrgSettings } from "@/src/components/OrgSettings";
+import { SubscriptionManager } from "@/src/components/stripe/SubscriptionManager";
+import { Tab, TabGroup } from "@/src/components/TabGroup";
+import TableSkeleton from "@/src/components/TableSkeleton";
+import { TagsTable } from "@/src/components/TagsTable";
+import { Typography } from "@/src/components/ui/typography";
+import { isLilypadCloud } from "@/src/ee/utils/common";
+import { UserRole } from "@/src/types/types";
+import { settingsQueryOptions } from "@/src/utils/settings";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { Building2, KeyRound, SettingsIcon, Tag } from "lucide-react";
+import { Building2, CreditCard, KeyRound, SettingsIcon, Tag } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 export const Route = createFileRoute("/_auth/settings/$")({
@@ -18,6 +22,7 @@ export const Route = createFileRoute("/_auth/settings/$")({
 const Settings = () => {
   const navigate = useNavigate();
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const params = useParams({
     from: Route.id,
   });
@@ -27,6 +32,9 @@ const Settings = () => {
     (userOrg) => userOrg.organization_uuid === user.active_organization_uuid
   );
   const [open, setOpen] = useState<boolean>(false);
+
+  const showBillingTab =
+    settings.experimental && isLilypadCloud() && activeUserOrg?.role === UserRole.OWNER;
 
   const tabs: Tab[] = [
     {
@@ -86,6 +94,26 @@ const Settings = () => {
         </Suspense>
       ) : null,
     },
+    ...(showBillingTab
+      ? [
+          {
+            label: (
+              <div className="flex items-center gap-1">
+                <CreditCard />
+                <span>Billing</span>
+              </div>
+            ),
+            value: "billing",
+            component: activeUserOrg ? (
+              <Suspense fallback={<TableSkeleton />}>
+                <div className="p-2">
+                  <SubscriptionManager />
+                </div>
+              </Suspense>
+            ) : null,
+          },
+        ]
+      : []),
     {
       label: (
         <div className="flex items-center gap-1">

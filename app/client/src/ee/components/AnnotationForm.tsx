@@ -1,7 +1,7 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { FailButton } from "@/components/FailButton";
-import { SuccessButton } from "@/components/SuccessButton";
-import { Button } from "@/components/ui/button";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { FailButton } from "@/src/components/FailButton";
+import { SuccessButton } from "@/src/components/SuccessButton";
+import { Button } from "@/src/components/ui/button";
 import {
   Form,
   FormControl,
@@ -9,11 +9,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { useUpdateAnnotationMutation } from "@/ee/utils/annotations";
-import { AnnotationPublic, AnnotationUpdate, Label } from "@/types/types";
-import { userQueryOptions } from "@/utils/users";
+} from "@/src/components/ui/form";
+import { Textarea } from "@/src/components/ui/textarea";
+import { useUpdateAnnotationMutation } from "@/src/ee/utils/annotations";
+import { AnnotationPublic, AnnotationUpdate, Label } from "@/src/types/types";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { SubmitHandler, useForm, useFormContext, UseFormReturn } from "react-hook-form";

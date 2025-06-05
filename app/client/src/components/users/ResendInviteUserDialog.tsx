@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,10 +6,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { AlternativeInviteLink } from "@/components/users/InviteUserForm";
-import { OrganizationInvitePublic } from "@/types/types";
-import { useCreateOrganizationInviteMutation } from "@/utils/organizations";
+} from "@/src/components/ui/dialog";
+import { AlternativeInviteLink } from "@/src/components/users/InviteUserForm";
+import { OrganizationInvitePublic } from "@/src/types/types";
+import { useCreateOrganizationInviteMutation } from "@/src/utils/organizations";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
 export const ResendInviteUserDialog = ({

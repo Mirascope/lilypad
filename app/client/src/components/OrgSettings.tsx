@@ -1,14 +1,13 @@
-import { useAuth } from "@/auth";
-import { APIKeysTable } from "@/components/apiKeys/APIKeysTable";
-import { EnvironmentsTable } from "@/components/environments/EnvironmentsTable";
-import LilypadDialog from "@/components/LilypadDialog";
-import { NotFound } from "@/components/NotFound";
-import { UpdateOrganizationDialog } from "@/components/OrganizationDialog";
-import { PlanList } from "@/components/PlanList.tsx";
-import { ProjectsTable } from "@/components/projects/ProjectsTable";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
+import { useAuth } from "@/src/auth";
+import { APIKeysTable } from "@/src/components/apiKeys/APIKeysTable";
+import { EnvironmentsTable } from "@/src/components/environments/EnvironmentsTable";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { NotFound } from "@/src/components/NotFound";
+import { UpdateOrganizationDialog } from "@/src/components/OrganizationDialog";
+import { ProjectsTable } from "@/src/components/projects/ProjectsTable";
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
+import { Button } from "@/src/components/ui/button";
+import { DialogFooter } from "@/src/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -17,13 +16,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Typography } from "@/components/ui/typography";
-import { UserTable } from "@/components/users/UserTable";
-import { UserRole } from "@/types/types";
-import { useDeleteOrganizationMutation } from "@/utils/organizations";
-import { userQueryOptions } from "@/utils/users";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { Typography } from "@/src/components/ui/typography";
+import { UserTable } from "@/src/components/users/UserTable";
+import { UserRole } from "@/src/types/types";
+import { useDeleteOrganizationMutation } from "@/src/utils/organizations";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Pencil, Trash, TriangleAlert } from "lucide-react";
@@ -52,7 +51,6 @@ export const OrgSettings = ({ open, setOpen }: OrgSettingsProps) => {
         <Typography variant="h3">{activeUserOrg?.organization.name}&apos;s Settings</Typography>
         {isHovered && <Pencil className="size-4 text-gray-500" onClick={() => setOpen(true)} />}
       </div>
-      <PlanList />
       <UpdateOrganizationDialog open={open} setOpen={setOpen} />
       <UserTable />
       <ProjectsTable />

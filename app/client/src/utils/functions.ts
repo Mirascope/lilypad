@@ -1,5 +1,5 @@
-import api from "@/api";
-import { FunctionCreate, FunctionPublic, FunctionUpdate } from "@/types/types";
+import api from "@/src/api";
+import { FunctionCreate, FunctionPublic, FunctionUpdate } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 import { usePostHog } from "posthog-js/react";

@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button, ButtonProps } from "@/src/components/ui/button";
 import { CheckCircle } from "lucide-react";
 
 export const SuccessButton = ({ children, ...buttonProps }: ButtonProps) => {

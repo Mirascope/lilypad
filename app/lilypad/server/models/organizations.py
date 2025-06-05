@@ -38,6 +38,8 @@ class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
     tags: list["TagTable"] = Relationship(
         back_populates="organization", cascade_delete=True
     )
-    billing: "BillingTable" = Relationship(back_populates="organization")
+    billing: "BillingTable" = Relationship(
+        back_populates="organization", cascade_delete=True
+    )
     license: str | None = Field(default=None, nullable=True)
     support_services: bool = Field(default=True, nullable=False)
