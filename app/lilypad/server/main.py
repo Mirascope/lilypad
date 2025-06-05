@@ -20,10 +20,10 @@ from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
 from lilypad.server._utils.posthog import setup_posthog_middleware
+from lilypad.server.logging_config import setup_logging
 from lilypad.server.services.kafka import get_kafka_service
 from lilypad.server.services.kafka_setup import KafkaSetupService
 from lilypad.server.services.span_queue_processor import get_span_queue_processor
-from lilypad.server.logging_config import setup_logging
 
 from .api import v0_api
 from .settings import get_settings

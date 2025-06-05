@@ -110,9 +110,12 @@ class SpanQueueProcessor:
 
     async def initialize(self) -> bool:
         """Initialize Kafka consumer with retry logic."""
+        logger.info("[INIT] Starting Kafka consumer initialization")
         logger.info(
-            f"Initializing Kafka consumer with bootstrap servers: {self.settings.kafka_bootstrap_servers}"
+            f"[INIT] Bootstrap servers: {self.settings.kafka_bootstrap_servers}"
         )
+        logger.info(f"[INIT] Topic: {self.settings.kafka_topic_span_ingestion}")
+        logger.info(f"[INIT] Consumer group: {self.settings.kafka_consumer_group}")
 
         if not self.settings.kafka_bootstrap_servers:
             logger.warning(
@@ -141,12 +144,12 @@ class SpanQueueProcessor:
                     request_timeout_ms=40000,  # Increased timeout
                     connections_max_idle_ms=540000,
                 )
+                logger.info(f"[INIT] Attempt {attempt + 1}: Starting consumer...")
                 await self.consumer.start()
+                logger.info("[INIT] Consumer started successfully")
                 logger.info(
                     f"✅ Kafka consumer initialized - Topic: {self.settings.kafka_topic_span_ingestion}, Group: {self.settings.kafka_consumer_group}"
                 )
-                # Force log flush
-                logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
                 return True
 
             except Exception as e:
@@ -170,26 +173,34 @@ class SpanQueueProcessor:
 
     async def start(self) -> None:
         """Start the queue processor."""
-        logger.info("Starting span queue processor - checking for messages...")
+        logger.info("[START] Beginning span queue processor startup")
+        logger.info("🚀 Starting span queue processor - checking for messages...")
 
-        if not await self.initialize():
-            logger.warning("Queue processor not started due to initialization failure")
+        logger.info("[START] Calling initialize()")
+        init_result = await self.initialize()
+        logger.info(f"[START] Initialize result: {init_result}")
+
+        if not init_result:
+            logger.warning(
+                "[START] Queue processor not started due to initialization failure"
+            )
             return
 
+        logger.info("[START] Setting _running to True")
         self._running = True
 
         # Start cleanup task
+        logger.info("[START] Creating cleanup task")
         self._cleanup_task = asyncio.create_task(self._cleanup_incomplete_traces())
         logger.info("🧹 Cleanup task started")
-        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
         # Start processing task
+        logger.info("[START] Creating processing task")
         self._process_task = asyncio.create_task(self._process_queue())
         logger.info("🔄 Processing task started")
-        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
+        logger.info("[START] All tasks created")
         logger.info("✅ Queue processor fully started - waiting for messages")
-        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
     async def stop(self) -> None:
         """Stop the queue processor."""
@@ -212,24 +223,27 @@ class SpanQueueProcessor:
 
     async def _process_queue(self) -> None:
         """Main queue processing loop."""
+        logger.info("[QUEUE] Entering _process_queue method")
         logger.info("🔄 Starting queue processing loop - polling for messages...")
-        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
         poll_count = 0
+        logger.info(f"[QUEUE] _running status: {self._running}")
         while self._running:
             try:
                 # Fetch messages with timeout
+                if poll_count == 0:
+                    logger.info("[QUEUE] First poll - calling getmany()")
                 records = await self.consumer.getmany(timeout_ms=1000, max_records=100)  # pyright: ignore [reportOptionalMemberAccess]
 
                 poll_count += 1
                 if records:
                     msg_count = sum(len(msgs) for msgs in records.values())
                     logger.info(f"📦 Received {msg_count} messages from Kafka queue")
-                    logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
                 else:
                     # Log every 10th poll to show it's alive
                     if poll_count % 10 == 0:
-                        logger.info(f"🔍 Polling for messages... (poll #{poll_count}, no messages yet)")
-                        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
+                        logger.info(
+                            f"🔍 Polling for messages... (poll #{poll_count}, no messages yet)"
+                        )
 
                 for _topic_partition, messages in records.items():
                     for record in messages:
@@ -454,8 +468,12 @@ class SpanQueueProcessor:
 
     async def _cleanup_incomplete_traces(self) -> None:
         """Periodically cleanup incomplete traces that have timed out."""
+        logger.info("[CLEANUP] Cleanup task started")
         while self._running:
             try:
+                logger.info(
+                    f"[CLEANUP] Sleeping for {self.settings.kafka_cleanup_interval_seconds} seconds"
+                )
                 await asyncio.sleep(self.settings.kafka_cleanup_interval_seconds)
 
                 current_time = time.time()

@@ -33,12 +33,20 @@ class KafkaService:
         Returns:
             bool: True if initialization successful, False otherwise
         """
+        logger.info("[KAFKA-INIT] Starting Kafka producer initialization")
+
         if self._initialized:
+            logger.info("[KAFKA-INIT] Producer already initialized")
             return True
 
         if not self.settings.kafka_bootstrap_servers:
-            logger.info("Kafka not configured, skipping initialization")
+            logger.info("[KAFKA-INIT] 📌 Kafka not configured, skipping initialization")
             return False
+
+        logger.info(
+            f"[KAFKA-INIT] Bootstrap servers: {self.settings.kafka_bootstrap_servers}"
+        )
+        logger.info(f"[KAFKA-INIT] Topic: {self.settings.kafka_topic_span_ingestion}")
 
         # Retry logic for Kafka initialization
         max_retries = 3
@@ -46,6 +54,9 @@ class KafkaService:
 
         for attempt in range(max_retries):
             try:
+                logger.info(
+                    f"[KAFKA-INIT] Attempt {attempt + 1}/{max_retries}: Creating producer"
+                )
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers=self.settings.kafka_bootstrap_servers,
                     value_serializer=lambda v: json.dumps(v).encode("utf-8"),
@@ -57,8 +68,10 @@ class KafkaService:
                     retry_backoff_ms=100,
                     connections_max_idle_ms=540000,
                 )
+                logger.info("[KAFKA-INIT] Starting producer...")
                 await self.producer.start()
                 self._initialized = True
+                logger.info("[KAFKA-INIT] Producer started successfully")
                 logger.info(
                     f"✅ Kafka producer initialized successfully - Bootstrap servers: {self.settings.kafka_bootstrap_servers}"
                 )
@@ -90,13 +103,19 @@ class KafkaService:
         Returns:
             bool: True if sent successfully, False otherwise
         """
+        span_id = span_data.get("span_id", "unknown")
+        logger.info(f"[KAFKA-SEND] Sending span {span_id} to Kafka")
+
         if not self._initialized and not await self.initialize():
-            logger.warning("Kafka not available, span will be processed synchronously")
+            logger.warning(
+                f"[KAFKA-SEND] ⚠️ Kafka not initialized - span {span_id} will be processed synchronously"
+            )
             return False
 
         try:
             # Use trace_id as partition key for ordering within traces
             key = span_data.get("trace_id")
+            logger.info(f"[KAFKA-SEND] Using trace_id as key: {key}")
 
             # Send message asynchronously
             metadata = await self.producer.send_and_wait(  # pyright: ignore [reportOptionalMemberAccess]
@@ -110,8 +129,6 @@ class KafkaService:
                 f"Topic: {metadata.topic}, Partition: {metadata.partition}, "
                 f"Offset: {metadata.offset}, User: {user_id}"
             )
-            # Force log flush
-            logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
             return True
 
         except KafkaError as e:
@@ -135,9 +152,11 @@ class KafkaService:
         Returns:
             bool: True if all spans sent successfully, False otherwise
         """
+        logger.info(f"[KAFKA-BATCH] Starting batch send of {len(spans)} spans")
+
         if not self._initialized and not await self.initialize():
             logger.warning(
-                "⚠️ Kafka not initialized - spans will be processed synchronously"
+                f"[KAFKA-BATCH] ⚠️ Kafka not initialized - {len(spans)} spans will be processed synchronously"
             )
             return False
 
@@ -149,18 +168,20 @@ class KafkaService:
 
         # Flush to ensure all messages are sent
         try:
+            logger.info("[KAFKA-BATCH] Flushing producer...")
             await self.producer.flush()  # pyright: ignore [reportOptionalMemberAccess]
+            logger.info("[KAFKA-BATCH] Flush completed")
         except KafkaError as e:
-            logger.error(f"Error flushing Kafka producer: {e}")
+            logger.error(f"[KAFKA-BATCH] Error flushing Kafka producer: {e}")
 
         success = success_count == len(spans)
         if success:
             logger.info(
-                f"✅ Batch sent to Kafka successfully - Total: {len(spans)} spans, User: {user_id}"
+                f"[KAFKA-BATCH] ✅ Batch sent to Kafka successfully - Total: {len(spans)} spans, User: {user_id}"
             )
         else:
             logger.warning(
-                f"⚠️ Partial batch send to Kafka - Success: {success_count}/{len(spans)} spans, User: {user_id}"
+                f"[KAFKA-BATCH] ⚠️ Partial batch send to Kafka - Success: {success_count}/{len(spans)} spans, User: {user_id}"
             )
 
         return success

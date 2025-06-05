@@ -217,9 +217,9 @@ async def traces(
     # Process the traces
     traces_json: list[dict] = await request.json()
     logger.info(
-        f"Received {len(traces_json)} spans - Project: {project_uuid}, User: {user.uuid}"
+        f"[TRACES-API] 📨 Received {len(traces_json)} spans - Project: {project_uuid}, User: {user.uuid}"
     )
-    logger.debug(traces_json)
+    logger.debug(f"[TRACES-API] Span data: {traces_json}")
     # Add project UUID to each span's attributes for queue processing
     for trace in traces_json:
         if "attributes" not in trace:
@@ -228,16 +228,20 @@ async def traces(
 
     # Try to send to Kafka queue
     logger.info(
-        f"Attempting to send {len(traces_json)} spans to Kafka queue - Project: {project_uuid}, User: {user.uuid}"
+        f"[TRACES-API] 🚀 Attempting to send {len(traces_json)} spans to Kafka queue - Project: {project_uuid}, User: {user.uuid}"
     )
+    logger.info("[TRACES-API] Calling kafka_service.send_spans_batch()")
     kafka_available = await kafka_service.send_spans_batch(
         traces_json, user_id=user.uuid
+    )
+    logger.info(
+        f"[TRACES-API] kafka_service.send_spans_batch() returned: {kafka_available}"
     )
 
     if kafka_available:
         # Queue processing successful
         logger.info(
-            f"Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
+            f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
         )
         return TracesQueueResponse(
             trace_status="queued",
@@ -247,7 +251,7 @@ async def traces(
     else:
         # Fallback to synchronous processing if Kafka is not available
         logger.warning(
-            f"Kafka not available, falling back to synchronous processing - Project: {project_uuid}, Spans: {len(traces_json)}"
+            f"[TRACES-API] ⚠️ Kafka not available, falling back to synchronous processing - Project: {project_uuid}, Spans: {len(traces_json)}"
         )
 
         span_creates: list[SpanCreate] = []
