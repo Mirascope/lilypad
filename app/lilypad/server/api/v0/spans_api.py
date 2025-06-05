@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
-from ..._utils import get_current_user
+from ..._utils import get_current_user, validate_api_key_project_strict
 from ...models import SpanTable
 from ...models.spans import Scope
 from ...schemas.pagination import Paginated
@@ -229,6 +229,7 @@ async def get_spans_by_function_uuid_paginated(
 )
 async def get_recent_spans(
     project_uuid: UUID,
+    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     span_service: Annotated[SpanService, Depends(SpanService)],
     since: Annotated[
         datetime | None, Query(description="Get spans created since this timestamp")

@@ -44,77 +44,77 @@ def mock_settings():
 
 class TestTraceBuffer:
     """Tests for TraceBuffer class."""
-    
+
     def test_add_span(self, trace_buffer):
         """Test adding spans to buffer."""
         span1 = {"span_id": "span1", "data": "test1"}
         span2 = {"span_id": "span2", "data": "test2"}
-        
+
         trace_buffer.add_span(span1)
         trace_buffer.add_span(span2)
-        
+
         assert len(trace_buffer.spans) == 2
         assert trace_buffer.spans["span1"] == span1
         assert trace_buffer.spans["span2"] == span2
-    
+
     def test_span_ids(self, trace_buffer):
         """Test getting span IDs."""
         trace_buffer.add_span({"span_id": "span1"})
         trace_buffer.add_span({"span_id": "span2"})
-        
+
         span_ids = trace_buffer.span_ids
-        
+
         assert span_ids == {"span1", "span2"}
-    
+
     def test_is_complete_no_dependencies(self, trace_buffer):
         """Test completeness check with no dependencies."""
         trace_buffer.add_span({"span_id": "span1", "parent_span_id": None})
         trace_buffer.add_span({"span_id": "span2", "parent_span_id": None})
-        
+
         assert trace_buffer.is_complete() is True
-    
+
     def test_is_complete_with_satisfied_dependencies(self, trace_buffer):
         """Test completeness check with satisfied dependencies."""
         trace_buffer.add_span({"span_id": "parent", "parent_span_id": None})
         trace_buffer.add_span({"span_id": "child", "parent_span_id": "parent"})
-        
+
         assert trace_buffer.is_complete() is True
-    
+
     def test_is_complete_with_missing_parent(self, trace_buffer):
         """Test completeness check with missing parent."""
         trace_buffer.add_span({"span_id": "child", "parent_span_id": "parent"})
-        
+
         assert trace_buffer.is_complete() is False
-    
+
     def test_get_dependency_order_simple(self, trace_buffer):
         """Test dependency ordering with simple hierarchy."""
         parent = {"span_id": "parent", "parent_span_id": None}
         child = {"span_id": "child", "parent_span_id": "parent"}
-        
+
         trace_buffer.add_span(child)  # Add child first
         trace_buffer.add_span(parent)
-        
+
         ordered = trace_buffer.get_dependency_order()
-        
+
         assert len(ordered) == 2
         assert ordered[0]["span_id"] == "parent"
         assert ordered[1]["span_id"] == "child"
-    
+
     def test_get_dependency_order_complex(self, trace_buffer):
         """Test dependency ordering with complex hierarchy."""
         root = {"span_id": "root", "parent_span_id": None}
         child1 = {"span_id": "child1", "parent_span_id": "root"}
         child2 = {"span_id": "child2", "parent_span_id": "root"}
         grandchild = {"span_id": "grandchild", "parent_span_id": "child1"}
-        
+
         # Add in random order
         trace_buffer.add_span(grandchild)
         trace_buffer.add_span(child2)
         trace_buffer.add_span(root)
         trace_buffer.add_span(child1)
-        
+
         ordered = trace_buffer.get_dependency_order()
-        
+
         assert len(ordered) == 4
         assert ordered[0]["span_id"] == "root"
         # Children should come after root, grandchild after child1
@@ -126,171 +126,178 @@ class TestTraceBuffer:
 
 class TestSpanQueueProcessor:
     """Tests for SpanQueueProcessor class."""
-    
+
     def test_initialize_success(self):
         """Test successful initialization."""
         mock_consumer = MagicMock()
-        
-        with patch("lilypad.server.services.span_queue_processor.get_settings") as mock_get_settings:
+
+        with patch(
+            "lilypad.server.services.span_queue_processor.get_settings"
+        ) as mock_get_settings:
             settings = MagicMock()
             settings.kafka_bootstrap_servers = "localhost:9092"
             settings.kafka_topic_span_ingestion = "span-ingestion"
             settings.kafka_consumer_group = "test-consumer"
             mock_get_settings.return_value = settings
-            
+
             processor = SpanQueueProcessor()
-            
-            with patch("lilypad.server.services.span_queue_processor.KafkaConsumer", return_value=mock_consumer):
+
+            with patch(
+                "lilypad.server.services.span_queue_processor.KafkaConsumer",
+                return_value=mock_consumer,
+            ):
                 result = processor.initialize()
-                
+
                 assert result is True
                 assert processor.consumer is mock_consumer
-    
+
     def test_initialize_no_kafka(self, processor):
         """Test initialization when Kafka is not configured."""
         with patch("lilypad.server.services.span_queue_processor.get_settings") as mock:
             settings = MagicMock()
             settings.kafka_bootstrap_servers = None
             mock.return_value = settings
-            
+
             result = processor.initialize()
-            
+
             assert result is False
             assert processor.consumer is None
-    
+
     def test_process_message_complete_trace(self, processor, mock_settings):
         """Test processing a message that completes a trace."""
         # Setup
         processor._running = True
-        
+
         # Mock the process_trace method
         processor._process_trace = MagicMock()
-        
+
         # Create message
         parent_span = {
             "trace_id": "trace123",
             "span_id": "parent",
             "parent_span_id": None,
-            "attributes": {"lilypad.project.uuid": str(uuid4())}
+            "attributes": {"lilypad.project.uuid": str(uuid4())},
         }
-        
+
         mock_record = MagicMock()
         mock_record.value = parent_span
-        
+
         # Add child span to buffer first
         processor.trace_buffers["trace123"] = TraceBuffer("trace123")
-        processor.trace_buffers["trace123"].add_span({
-            "trace_id": "trace123",
-            "span_id": "child",
-            "parent_span_id": "parent"
-        })
-        
+        processor.trace_buffers["trace123"].add_span(
+            {"trace_id": "trace123", "span_id": "child", "parent_span_id": "parent"}
+        )
+
         # Process parent span
         processor._process_message(mock_record)
-        
+
         # Should complete the trace
         processor._process_trace.assert_called_once_with("trace123")
-    
+
     def test_process_message_incomplete_trace(self, processor, mock_settings):
         """Test processing a message that doesn't complete a trace."""
         processor._running = True
         processor._process_trace = MagicMock()
-        
+
         # Create child span message (parent missing)
         child_span = {
             "trace_id": "trace123",
             "span_id": "child",
             "parent_span_id": "parent",  # Parent doesn't exist yet
-            "attributes": {"lilypad.project.uuid": str(uuid4())}
+            "attributes": {"lilypad.project.uuid": str(uuid4())},
         }
-        
+
         mock_record = MagicMock()
         mock_record.value = child_span
-        
+
         processor._process_message(mock_record)
-        
+
         # Should not process trace yet
         processor._process_trace.assert_not_called()
         assert "trace123" in processor.trace_buffers
-    
+
     def test_process_message_max_spans_limit(self, processor, mock_settings):
         """Test processing when max spans per trace is exceeded."""
         processor._running = True
         processor._process_trace = MagicMock()
         mock_settings.kafka_max_spans_per_trace = 2
-        
+
         # Create buffer with 2 spans already
         processor.trace_buffers["trace123"] = TraceBuffer("trace123")
         processor.trace_buffers["trace123"].add_span({"span_id": "span1"})
         processor.trace_buffers["trace123"].add_span({"span_id": "span2"})
-        
+
         # Try to add third span
         new_span = {
             "trace_id": "trace123",
             "span_id": "span3",
-            "attributes": {"lilypad.project.uuid": str(uuid4())}
+            "attributes": {"lilypad.project.uuid": str(uuid4())},
         }
-        
+
         mock_record = MagicMock()
         mock_record.value = new_span
-        
+
         processor._process_message(mock_record)
-        
+
         # Should process trace due to limit
         processor._process_trace.assert_called_once_with("trace123")
-    
+
     def test_force_process_incomplete_trace(self, processor):
         """Test force processing an incomplete trace."""
         processor._process_trace = MagicMock()
-        
+
         # Create incomplete trace
         buffer = TraceBuffer("trace123")
-        buffer.add_span({
-            "span_id": "child",
-            "parent_span_id": "missing_parent"
-        })
+        buffer.add_span({"span_id": "child", "parent_span_id": "missing_parent"})
         processor.trace_buffers["trace123"] = buffer
-        
+
         processor._force_process_incomplete_trace("trace123")
-        
+
         # Parent should be set to None
         assert buffer.spans["child"]["parent_span_id"] is None
         processor._process_trace.assert_called_once_with("trace123")
-    
+
     def test_cleanup_incomplete_traces(self):
         """Test cleanup of timed-out traces."""
-        with patch("lilypad.server.services.span_queue_processor.get_settings") as mock_get_settings:
+        with patch(
+            "lilypad.server.services.span_queue_processor.get_settings"
+        ) as mock_get_settings:
             settings = MagicMock()
             settings.kafka_bootstrap_servers = "localhost:9092"
             settings.kafka_buffer_ttl_seconds = 1  # 1 second TTL
             settings.kafka_cleanup_interval_seconds = 0.1  # Fast cleanup
             mock_get_settings.return_value = settings
-            
+
             processor = SpanQueueProcessor()
             processor._running = True
             processor._force_process_incomplete_trace = MagicMock()
-            
+
             # Create old trace
             old_buffer = TraceBuffer("old_trace")
             old_buffer.created_at = time.time() - 2  # 2 seconds old
             processor.trace_buffers["old_trace"] = old_buffer
-            
+
             # Create new trace
             new_buffer = TraceBuffer("new_trace")
             processor.trace_buffers["new_trace"] = new_buffer
-            
+
             # Run cleanup in a thread
-            cleanup_thread = threading.Thread(target=processor._cleanup_incomplete_traces)
+            cleanup_thread = threading.Thread(
+                target=processor._cleanup_incomplete_traces
+            )
             cleanup_thread.start()
             time.sleep(0.2)  # Let it run one iteration
             processor._running = False
             cleanup_thread.join(timeout=1)
-            
+
             # Only old trace should be processed
             processor._force_process_incomplete_trace.assert_called_with("old_trace")
             # Verify new trace was not processed
-            assert all(args[0][0] != "new_trace" for args in processor._force_process_incomplete_trace.call_args_list)
-    
+            assert all(
+                args[0][0] != "new_trace"
+                for args in processor._force_process_incomplete_trace.call_args_list
+            )
+
     def test_convert_to_span_create(self, processor):
         """Test converting span data to SpanCreate object."""
         span_data = {
@@ -303,12 +310,12 @@ class TestSpanQueueProcessor:
             "scope": "llm",
             "attributes": {
                 "lilypad.type": "function",  # Use valid SpanType
-                "lilypad.function.uuid": str(uuid4())
-            }
+                "lilypad.function.uuid": str(uuid4()),
+            },
         }
-        
+
         span_create = processor._convert_to_span_create(span_data)
-        
+
         assert span_create.span_id == "span123"
         assert span_create.parent_span_id == "parent123"
         assert span_create.cost == 0.5
@@ -317,53 +324,64 @@ class TestSpanQueueProcessor:
         assert span_create.duration_ms == 1000
         assert span_create.scope == "llm"
         assert span_create.type == "function"
-    
+
     def test_process_trace_success(self, processor):
         """Test successful trace processing."""
         project_uuid = uuid4()
         function_uuid = uuid4()
-        
+
         # Create trace buffer
         buffer = TraceBuffer("trace123")
-        buffer.add_span({
-            "span_id": "parent",
-            "parent_span_id": None,
-            "attributes": {
-                "lilypad.project.uuid": str(project_uuid),
-                "lilypad.function.uuid": str(function_uuid)
+        buffer.add_span(
+            {
+                "span_id": "parent",
+                "parent_span_id": None,
+                "attributes": {
+                    "lilypad.project.uuid": str(project_uuid),
+                    "lilypad.function.uuid": str(function_uuid),
+                },
             }
-        })
-        buffer.add_span({
-            "span_id": "child",
-            "parent_span_id": "parent",
-            "attributes": {
-                "lilypad.project.uuid": str(project_uuid),
-                "lilypad.function.uuid": str(function_uuid)
+        )
+        buffer.add_span(
+            {
+                "span_id": "child",
+                "parent_span_id": "parent",
+                "attributes": {
+                    "lilypad.project.uuid": str(project_uuid),
+                    "lilypad.function.uuid": str(function_uuid),
+                },
             }
-        })
+        )
         processor.trace_buffers["trace123"] = buffer
-        
+
         # Mock dependencies
         mock_session = MagicMock()
         mock_user = MagicMock()
         mock_project = MagicMock()
         mock_project.organization_uuid = uuid4()
-        
-        with patch("lilypad.server.services.span_queue_processor.get_session") as mock_get_session, \
-             patch("lilypad.server.services.span_queue_processor.select"), \
-             patch("lilypad.server.services.span_queue_processor.ProjectService") as mock_project_service, \
-             patch("lilypad.server.services.span_queue_processor.SpanService") as mock_span_service, \
-             patch("lilypad.server.services.span_queue_processor.BillingService"):
-            
+
+        with (
+            patch(
+                "lilypad.server.services.span_queue_processor.get_session"
+            ) as mock_get_session,
+            patch("lilypad.server.services.span_queue_processor.select"),
+            patch(
+                "lilypad.server.services.span_queue_processor.ProjectService"
+            ) as mock_project_service,
+            patch(
+                "lilypad.server.services.span_queue_processor.SpanService"
+            ) as mock_span_service,
+            patch("lilypad.server.services.span_queue_processor.BillingService"),
+        ):
             # Setup mocks
             mock_get_session.return_value = [mock_session]
             mock_session.exec.return_value.first.return_value = mock_user
-            
+
             mock_project_service.return_value.find_record_no_organization.return_value = mock_project
             mock_span_service.return_value.create_bulk_records = MagicMock()
-            
+
             processor._process_trace("trace123")
-            
+
             # Verify trace was processed and removed from buffer
             assert "trace123" not in processor.trace_buffers
             mock_span_service.return_value.create_bulk_records.assert_called_once()
@@ -373,5 +391,5 @@ def test_get_span_queue_processor_singleton():
     """Test that get_span_queue_processor returns a singleton."""
     processor1 = get_span_queue_processor()
     processor2 = get_span_queue_processor()
-    
+
     assert processor1 is processor2

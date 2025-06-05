@@ -3,6 +3,7 @@
 import json
 import logging
 from typing import Any
+from uuid import UUID
 
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
@@ -54,11 +55,12 @@ class KafkaService:
             logger.error(f"Failed to initialize Kafka producer: {e}")
             return False
 
-    def send_span(self, span_data: dict[str, Any]) -> bool:
+    def send_span(self, span_data: dict[str, Any], user_id: UUID) -> bool:
         """Send a span to the span ingestion topic.
 
         Args:
             span_data: Span data dictionary
+            user_id: User ID associated with the span
 
         Returns:
             bool: True if sent successfully, False otherwise
@@ -73,7 +75,9 @@ class KafkaService:
 
             # Send message asynchronously
             future = self.producer.send(
-                topic=self.settings.kafka_topic_span_ingestion, key=key, value=span_data
+                topic=self.settings.kafka_topic_span_ingestion,
+                key=key,
+                value={**span_data, "user_id": str(user_id)},
             )
 
             # Wait for send to complete (with timeout)
@@ -92,11 +96,12 @@ class KafkaService:
             logger.error(f"Unexpected error sending span to Kafka: {e}")
             return False
 
-    def send_spans_batch(self, spans: list[dict[str, Any]]) -> bool:
+    def send_spans_batch(self, spans: list[dict[str, Any]], user_id: UUID) -> bool:
         """Send multiple spans to Kafka in batch.
 
         Args:
             spans: List of span data dictionaries
+            user_id: User ID associated with the spans
 
         Returns:
             bool: True if all spans sent successfully, False otherwise
@@ -108,7 +113,7 @@ class KafkaService:
         success_count = 0
 
         for span in spans:
-            if self.send_span(span):
+            if self.send_span(span, user_id):
                 success_count += 1
 
         # Flush to ensure all messages are sent

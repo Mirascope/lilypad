@@ -24,6 +24,7 @@ from ee.validate import LicenseInfo
 from ....ee.server.features import cloud_features
 from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
 from ..._utils import (
+    get_current_user,
     validate_api_key_project_strict,
 )
 from ...models.spans import Scope, SpanTable
@@ -31,6 +32,7 @@ from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...schemas.traces import TracesQueueResponse
+from ...schemas.users import UserPublic
 from ...services import OpenSearchService, SpanService, get_opensearch_service
 from ...services.billing import BillingService
 from ...services.kafka import KafkaService
@@ -194,6 +196,7 @@ async def traces(
     background_tasks: BackgroundTasks,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
     billing_service: Annotated[BillingService, Depends(BillingService)],
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -213,7 +216,7 @@ async def traces(
 
     # Process the traces
     traces_json: list[dict] = await request.json()
-
+    logger.debug(traces_json)
     # Add project UUID to each span's attributes for queue processing
     for trace in traces_json:
         if "attributes" not in trace:
@@ -221,7 +224,7 @@ async def traces(
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
     # Try to send to Kafka queue
-    kafka_available = kafka_service.send_spans_batch(traces_json)
+    kafka_available = kafka_service.send_spans_batch(traces_json, user_id=user.uuid)
 
     if kafka_available:
         # Queue processing successful

@@ -140,7 +140,9 @@ class SpanQueueProcessor:
         self._running = True
 
         # Start cleanup thread
-        self._cleanup_thread = threading.Thread(target=self._cleanup_incomplete_traces, daemon=True)
+        self._cleanup_thread = threading.Thread(
+            target=self._cleanup_incomplete_traces, daemon=True
+        )
         self._cleanup_thread.start()
 
         # Start processing thread
@@ -193,7 +195,7 @@ class SpanQueueProcessor:
         """Process a single message from the queue."""
         try:
             span_data = record.value
-            logger.error(f"Processing span data: {span_data}")
+            logger.debug(f"Processing span data: {span_data}")
             trace_id = span_data.get("trace_id")
 
             if not trace_id:
@@ -203,7 +205,10 @@ class SpanQueueProcessor:
             with self._lock:
                 # Add span to buffer
                 if trace_id not in self.trace_buffers:
-                    if len(self.trace_buffers) >= self.settings.kafka_max_concurrent_traces:
+                    if (
+                        len(self.trace_buffers)
+                        >= self.settings.kafka_max_concurrent_traces
+                    ):
                         # Force process oldest trace to make room
                         self._force_process_oldest_trace()
 
@@ -245,7 +250,6 @@ class SpanQueueProcessor:
 
             logger.info(f"Processing {len(ordered_spans)} spans for trace {trace_id}")
 
-            # Extract project UUID from first span
             first_span = ordered_spans[0]
             attributes = first_span.get("attributes", {})
             project_uuid_str = attributes.get("lilypad.project.uuid")
@@ -256,69 +260,53 @@ class SpanQueueProcessor:
 
             project_uuid = UUID(project_uuid_str)
 
-            # Create spans in database
-            # Using synchronous session since we're in an async context
-            for session in get_session():
-                # Get or create system user for span creation
-                system_user = session.exec(
-                    select(UserTable).where(UserTable.email == "system@lilypad.com")
-                ).first()
+            session = next(get_session())
 
-                if not system_user:
-                    # Create system user if it doesn't exist
-                    try:
-                        system_user = UserTable(
-                            uuid=UUID("00000000-0000-0000-0000-000000000000"),
-                            email="system@lilypad.com",
-                            first_name="System",
-                            last_name="User",
-                        )
-                        session.add(system_user)
-                        session.commit()
-                        logger.info("Created system user")
-                    except IntegrityError:
-                        # Another process may have created it, try to fetch again
-                        session.rollback()
-                        system_user = session.exec(
-                            select(UserTable).where(
-                                UserTable.email == "system@lilypad.com"
-                            )
-                        ).first()
-                        if not system_user:
-                            logger.error("Failed to create or retrieve system user")
-                            return
-
-                # Get project and organization
-                project_service = ProjectService(session, system_user)
-                project = project_service.find_record_no_organization(project_uuid)
-                if not project:
-                    logger.error(f"Project {project_uuid} not found")
-                    return
-
-                # Create span service
-                span_service = SpanService(session, system_user)
-
-                # Convert to SpanCreate objects
-                span_creates = []
-                for span_data in ordered_spans:
-                    # Process span data similar to the original _process_span function
-                    span_create = self._convert_to_span_create(span_data)
-                    span_creates.append(span_create)
-
-                # Determine if we need billing service
-                billing_service = None
-                if self.settings.stripe_api_key:
-                    billing_service = BillingService(session, system_user)
-
-                # Create spans in bulk
-                span_service.create_bulk_records(
-                    span_creates,
-                    billing_service,
-                    project_uuid,
-                    project.organization_uuid,
+            user_id = first_span.pop("user_id", None)
+            if not user_id:
+                logger.error(f"No user ID found in trace {trace_id}")
+                return
+            user_id = UUID(user_id)
+            user = session.exec(
+                select(UserTable).where(
+                    UserTable.uuid == user_id,
                 )
+            ).first()
+            if not user:
+                logger.error(f"User {user_id} not found for trace {trace_id}")
+                return
 
-                break  # Exit after first iteration
+            project_service = ProjectService(session, user)
+            project = project_service.find_record_no_organization(project_uuid)
+            if not project:
+                logger.error(f"Project {project_uuid} not found")
+                return
+
+            # Create span service
+            span_service = SpanService(session, user)
+
+            # Convert to SpanCreate objects
+            span_creates = []
+            for span_data in ordered_spans:
+                # Process span data similar to the original _process_span function
+                span_create = self._convert_to_span_create(span_data)
+                span_creates.append(span_create)
+
+            # Determine if we need billing service
+            billing_service = None
+            if self.settings.stripe_api_key:
+                billing_service = BillingService(session, user)
+
+            # Create spans in bulk
+            span_service.create_bulk_records(
+                span_creates,
+                billing_service,
+                project_uuid,
+                project.organization_uuid,
+            )
+
+            # Commit the transaction to ensure spans are persisted
+            session.commit()
 
             logger.info(
                 f"Successfully processed trace {trace_id} with {len(ordered_spans)} spans"
