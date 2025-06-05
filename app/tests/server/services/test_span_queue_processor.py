@@ -1,6 +1,7 @@
 """Tests for SpanQueueProcessor."""
 
 import asyncio
+import contextlib
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -330,10 +331,8 @@ class TestSpanQueueProcessor:
             await asyncio.sleep(0.1)  # Let it run one iteration
             processor._running = False
             cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await cleanup_task
-            except asyncio.CancelledError:
-                pass
 
             # Only old trace should be processed
             processor._force_process_incomplete_trace.assert_called_with("old_trace")

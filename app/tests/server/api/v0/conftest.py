@@ -1,5 +1,6 @@
 """Pytest configuration for FastAPI tests."""
 
+import contextlib
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -114,10 +115,8 @@ async def reset_singletons():
     if lilypad.server.services.kafka._kafka_service_instance is not None:
         kafka_instance = lilypad.server.services.kafka._kafka_service_instance
         if hasattr(kafka_instance, "producer") and kafka_instance.producer is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await kafka_instance.close()
-            except Exception:
-                pass
         kafka_instance._initialized = False
 
     # Close span queue processor if it exists
@@ -131,10 +130,8 @@ async def reset_singletons():
             hasattr(processor_instance, "consumer")
             and processor_instance.consumer is not None
         ):
-            try:
+            with contextlib.suppress(Exception):
                 await processor_instance.stop()
-            except Exception:
-                pass
 
     # Reset the singletons
     lilypad.server.services.kafka._kafka_service_instance = None
