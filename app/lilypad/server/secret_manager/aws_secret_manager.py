@@ -288,6 +288,7 @@ class AWSSecretManager(SecretManager):
 
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
+            error_message = e.response.get("Error", {}).get("Message", "")
 
             if error_code == AWSErrorCode.RESOURCE_EXISTS:
                 # Secret exists, update it
@@ -313,6 +314,38 @@ class AWSSecretManager(SecretManager):
 
                 except ClientError as update_error:
                     self._handle_client_error(update_error, "update")
+            elif (
+                error_code == AWSErrorCode.INVALID_REQUEST
+                and "scheduled for deletion" in error_message
+            ):
+                # Secret is scheduled for deletion, restore it first
+                try:
+                    logger.debug(
+                        f"Secret {secret_name} is scheduled for deletion, restoring it"
+                    )
+                    self.client.restore_secret(SecretId=secret_name)
+
+                    # Get the ARN after restoration
+                    describe_response = self.client.describe_secret(
+                        SecretId=secret_name
+                    )
+                    secret_arn = describe_response["ARN"]
+
+                    # Update the restored secret
+                    update_params = {
+                        "SecretId": secret_arn,
+                        "SecretString": secret,
+                    }
+
+                    if description:
+                        update_params["Description"] = description
+
+                    self.client.update_secret(**update_params)
+                    logger.debug("Restored and updated secret")
+                    return secret_arn
+
+                except ClientError as restore_error:
+                    self._handle_client_error(restore_error, "restore")
             else:
                 self._handle_client_error(e, "create")
 
