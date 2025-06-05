@@ -6,8 +6,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/pop
 import { useSearch } from "@/src/hooks/use-search";
 import { cn } from "@/src/lib/utils";
 import { SpanPublic } from "@/src/types/types";
-import { settingsQueryOptions } from "@/src/utils/settings";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Loader, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -26,8 +24,6 @@ export const SearchBar = ({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const { spans: searchResults, isLoading, search, updateFilters } = useSearch(projectUuid);
-
-  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
 
   useEffect(() => {
     if (searchResults) {
@@ -83,8 +79,6 @@ export const SearchBar = ({
     setEndDate(undefined);
     updateFilters({ time_range_end: undefined });
   };
-
-  if (!settings.experimental) return null;
 
   return (
     <form onSubmit={handleSearchSubmit}>

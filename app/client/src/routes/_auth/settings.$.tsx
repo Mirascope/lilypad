@@ -8,6 +8,7 @@ import { TagsTable } from "@/src/components/TagsTable";
 import { Typography } from "@/src/components/ui/typography";
 import { isLilypadCloud } from "@/src/ee/utils/common";
 import { UserRole } from "@/src/types/types";
+import { settingsQueryOptions } from "@/src/utils/settings";
 import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_auth/settings/$")({
 const Settings = () => {
   const navigate = useNavigate();
   const { data: user } = useSuspenseQuery(userQueryOptions());
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
   const params = useParams({
     from: Route.id,
   });
@@ -31,7 +33,8 @@ const Settings = () => {
   );
   const [open, setOpen] = useState<boolean>(false);
 
-  const showBillingTab = isLilypadCloud() && activeUserOrg?.role === UserRole.OWNER;
+  const showBillingTab =
+    settings.experimental && isLilypadCloud() && activeUserOrg?.role === UserRole.OWNER;
 
   const tabs: Tab[] = [
     {
