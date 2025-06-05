@@ -85,23 +85,11 @@ interface PricingTierProps {
   name: string;
   price: string;
   description: string;
-  buttonText?: string;
-  buttonLink?: string;
-  customButton?: React.ReactNode;
+  button: React.ReactNode;
   badge?: "Open Beta" | "Closed Beta";
-  variant?: "default" | "outline";
 }
 // Pricing tier component
-const PricingTier = ({
-  name,
-  price,
-  description,
-  buttonText,
-  buttonLink,
-  customButton,
-  badge,
-  variant = "default",
-}: PricingTierProps) => (
+const PricingTier = ({ name, price, description, button, badge }: PricingTierProps) => (
   <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
     <div className={cn("bg-background px-6 py-8")}>
       <div className="mb-2 flex items-center gap-2">
@@ -126,11 +114,7 @@ const PricingTier = ({
           <span className="ml-1 text-sm text-muted-foreground">/ month</span>
         )}
       </div>
-      {customButton ?? (
-        <ButtonLink href={buttonLink ?? "/"} className="w-full" variant={variant}>
-          {buttonText}
-        </ButtonLink>
-      )}
+      {button}
     </div>
   </div>
 );
@@ -159,10 +143,7 @@ export const FeatureComparisonTable = ({ features }: { features: FeatureRowProps
 );
 
 interface TierAction {
-  buttonText?: string;
-  buttonLink?: string;
-  variant?: "default" | "outline";
-  customButton?: React.ReactNode;
+  button: React.ReactNode;
 }
 
 interface PricingActions {
@@ -255,28 +236,22 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
                 name="Free"
                 price="$0"
                 description="For individuals just getting started"
-                buttonText={actions.selfHosted.free.buttonText}
-                buttonLink={actions.selfHosted.free.buttonLink}
                 badge="Open Beta"
-                variant={actions.selfHosted.free.variant}
+                button={actions.selfHosted.free.button}
               />
               <PricingTier
                 name="Pro"
                 price="TBD"
                 description="For teams with more advanced needs"
-                buttonText={actions.selfHosted.pro.buttonText}
-                buttonLink={actions.selfHosted.pro.buttonLink}
                 badge="Closed Beta"
-                variant={actions.selfHosted.pro.variant ?? "outline"}
+                button={actions.selfHosted.pro.button}
               />
               <PricingTier
                 name="Team"
                 price="TBD"
                 description="For larger teams requiring dedicated support"
-                buttonText={actions.selfHosted.team.buttonText}
-                buttonLink={actions.selfHosted.team.buttonLink}
                 badge="Closed Beta"
-                variant={actions.selfHosted.team.variant ?? "outline"}
+                button={actions.selfHosted.team.button}
               />
             </div>
 
@@ -319,7 +294,7 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
           <p className="text-muted-foreground">
             Join our{" "}
             <ButtonLink
-              href="https://join.slack.com/t/mirascope-community/shared_invite/zt-2ilqhvmki-FB6LWluInUCkkjYD3oSjNA"
+              href="https://mirascope.com/slack-invite?"
               variant="link"
               className="h-auto p-0"
             >
@@ -347,31 +322,22 @@ export const LilypadCloudPricing = ({
       name: "Free",
       price: "$0",
       description: "For individuals just getting started",
-      buttonText: hostedActions.free.buttonText,
-      buttonLink: hostedActions.free.buttonLink,
       badge: "Open Beta",
-      variant: hostedActions.free.variant,
-      customButton: hostedActions.free.customButton,
+      button: hostedActions.free.button,
     },
     {
       name: "Pro",
       price: "TBD",
       description: "For teams with more advanced needs",
-      buttonText: hostedActions.pro.buttonText,
-      buttonLink: hostedActions.pro.buttonLink,
       badge: "Closed Beta",
-      variant: hostedActions.pro.variant ?? "outline",
-      customButton: hostedActions.pro.customButton,
+      button: hostedActions.pro.button,
     },
     {
       name: "Team",
       price: "TBD",
       description: "For larger teams requiring dedicated support",
-      buttonText: hostedActions.team.buttonText,
-      buttonLink: hostedActions.team.buttonLink,
       badge: "Closed Beta",
-      variant: hostedActions.team.variant ?? "outline",
-      customButton: hostedActions.team.customButton,
+      button: hostedActions.team.button,
     },
   ];
   return (

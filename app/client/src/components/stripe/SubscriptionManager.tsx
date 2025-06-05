@@ -109,28 +109,25 @@ export const SubscriptionManager = () => {
       <LilypadCloudPricing
         hostedActions={{
           free: {
-            customButton: <ManageSubscription />,
-            variant: "default",
+            button: <ManageSubscription />,
           },
           pro: {
-            customButton: (
+            button: (
               <StripeSubscriptionButton
                 tier={Tier.PRO}
                 buttonText={tier === Tier.PRO ? "Current Plan" : "Change to Pro"}
                 disabled={tier === Tier.PRO || !!billing?.cancel_at_period_end}
               />
             ),
-            variant: "default",
           },
           team: {
-            customButton: (
+            button: (
               <StripeSubscriptionButton
                 tier={Tier.TEAM}
                 buttonText={tier === Tier.TEAM ? "Current Plan" : "Change to Team"}
                 disabled={tier === Tier.TEAM || !!billing?.cancel_at_period_end}
               />
             ),
-            variant: "default",
           },
         }}
       />
