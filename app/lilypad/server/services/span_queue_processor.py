@@ -341,6 +341,9 @@ class SpanQueueProcessor:
             f"Starting to process complete trace - Trace ID: {trace_id}, Spans: {len(buffer.spans)}"
         )
 
+        # Initialize ordered_spans to handle exceptions
+        ordered_spans: list[dict[str, Any]] = []
+
         try:
             # Get spans in dependency order
             ordered_spans = buffer.get_dependency_order()
