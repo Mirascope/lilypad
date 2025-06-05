@@ -56,10 +56,8 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
         log.info("Running Kafka topic setup")
         try:
             kafka_setup = KafkaSetupService(settings)
-            # Run async setup_topics in sync context
-            import asyncio
-
-            asyncio.run(kafka_setup.setup_topics())
+            # We're already in an async context, so just await directly
+            await kafka_setup.setup_topics()
         except Exception as e:
             log.error(f"Kafka setup failed (non-fatal): {e}")
             # Continue startup even if Kafka setup fails
