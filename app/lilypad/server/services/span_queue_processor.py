@@ -143,8 +143,10 @@ class SpanQueueProcessor:
                 )
                 await self.consumer.start()
                 logger.info(
-                    f"Kafka consumer initialized - Topic: {self.settings.kafka_topic_span_ingestion}, Group: {self.settings.kafka_consumer_group}"
+                    f"✅ Kafka consumer initialized - Topic: {self.settings.kafka_topic_span_ingestion}, Group: {self.settings.kafka_consumer_group}"
                 )
+                # Force log flush
+                logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
                 return True
 
             except Exception as e:
@@ -178,13 +180,16 @@ class SpanQueueProcessor:
 
         # Start cleanup task
         self._cleanup_task = asyncio.create_task(self._cleanup_incomplete_traces())
-        logger.info("Cleanup task started")
+        logger.info("🧹 Cleanup task started")
+        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
         # Start processing task
         self._process_task = asyncio.create_task(self._process_queue())
-        logger.info("Processing task started")
+        logger.info("🔄 Processing task started")
+        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
-        logger.info("Queue processor fully started")
+        logger.info("✅ Queue processor fully started - waiting for messages")
+        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
     async def stop(self) -> None:
         """Stop the queue processor."""
@@ -207,17 +212,24 @@ class SpanQueueProcessor:
 
     async def _process_queue(self) -> None:
         """Main queue processing loop."""
-        logger.info("Starting queue processing loop - polling for messages...")
+        logger.info("🔄 Starting queue processing loop - polling for messages...")
+        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
+        poll_count = 0
         while self._running:
             try:
                 # Fetch messages with timeout
                 records = await self.consumer.getmany(timeout_ms=1000, max_records=100)  # pyright: ignore [reportOptionalMemberAccess]
 
+                poll_count += 1
                 if records:
                     msg_count = sum(len(msgs) for msgs in records.values())
-                    logger.info(f"Received {msg_count} messages from Kafka queue")
+                    logger.info(f"📦 Received {msg_count} messages from Kafka queue")
+                    logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
                 else:
-                    logger.debug("No messages received from Kafka in this poll")
+                    # Log every 10th poll to show it's alive
+                    if poll_count % 10 == 0:
+                        logger.info(f"🔍 Polling for messages... (poll #{poll_count}, no messages yet)")
+                        logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
 
                 for _topic_partition, messages in records.items():
                     for record in messages:

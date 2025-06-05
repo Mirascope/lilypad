@@ -10,14 +10,32 @@ def setup_logging():
     # Get log level from environment variable
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     
+    # Create a handler that flushes immediately
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(getattr(logging, log_level, logging.INFO))
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+    )
+    
     # Configure root logger
     logging.basicConfig(
         level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        stream=sys.stdout,  # Ensure output goes to stdout
+        handlers=[handler],
         force=True  # Override any existing configuration
     )
+    
+    # Force flush after each log message
+    class FlushHandler(logging.StreamHandler):
+        def emit(self, record):
+            super().emit(record)
+            self.flush()
+    
+    # Replace handler with flush handler
+    logging.root.handlers = [FlushHandler(sys.stdout)]
+    logging.root.handlers[0].setFormatter(handler.formatter)
     
     # Set specific loggers to INFO level to ensure our logs are visible
     loggers_to_configure = [

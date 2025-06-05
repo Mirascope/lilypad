@@ -110,6 +110,8 @@ class KafkaService:
                 f"Topic: {metadata.topic}, Partition: {metadata.partition}, "
                 f"Offset: {metadata.offset}, User: {user_id}"
             )
+            # Force log flush
+            logging.getLogger().handlers[0].flush() if logging.getLogger().handlers else None
             return True
 
         except KafkaError as e:
