@@ -1,8 +1,8 @@
-import { LilypadLoading } from "@/components/LilypadLoading";
-import { Typography } from "@/components/ui/typography";
-import { VersionedPlayground } from "@/ee/components/VersionedPlayground";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { functionsByNameQueryOptions } from "@/utils/functions";
+import { LilypadLoading } from "@/src/components/LilypadLoading";
+import { Typography } from "@/src/components/ui/typography";
+import { VersionedPlayground } from "@/src/ee/components/VersionedPlayground";
+import { useFeatureAccess } from "@/src/hooks/use-featureaccess";
+import { functionsByNameQueryOptions } from "@/src/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { Suspense } from "react";

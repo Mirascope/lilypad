@@ -1,5 +1,5 @@
-import { AggregateMetrics, TimeFrame } from "@/types/types";
-import { aggregatesByProjectQueryOptions } from "@/utils/spans";
+import { AggregateMetrics, TimeFrame } from "@/src/types/types";
+import { aggregatesByProjectQueryOptions } from "@/src/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 

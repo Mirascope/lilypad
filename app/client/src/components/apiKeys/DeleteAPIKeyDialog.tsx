@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,10 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { APIKeyPublic } from "@/types/types";
-import { useDeleteApiKeyMutation } from "@/utils/api-keys";
+} from "@/src/components/ui/dialog";
+import { cn } from "@/src/lib/utils";
+import { APIKeyPublic } from "@/src/types/types";
+import { useDeleteApiKeyMutation } from "@/src/utils/api-keys";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
 export const DeleteAPIKeyDialog = ({ apiKey }: { apiKey: APIKeyPublic }) => {

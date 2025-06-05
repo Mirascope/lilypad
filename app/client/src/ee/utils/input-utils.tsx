@@ -1,7 +1,7 @@
-import { AddCardButton } from "@/components/AddCardButton";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AddCardButton } from "@/src/components/AddCardButton";
+import { Button } from "@/src/components/ui/button";
+import { Card, CardContent } from "@/src/components/ui/card";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   FormControl,
   FormDescription,
@@ -9,15 +9,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/components/ui/select";
 import { FileText, Image, Music, Upload, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {

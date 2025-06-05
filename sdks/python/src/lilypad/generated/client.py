@@ -7,17 +7,23 @@ from .api_keys.client import ApiKeysClient, AsyncApiKeysClient
 from .auth.client import AsyncAuthClient, AuthClient
 from .comments.client import AsyncCommentsClient, CommentsClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .core.request_options import RequestOptions
 from .ee.client import AsyncEeClient, EeClient
 from .environments.client import AsyncEnvironmentsClient, EnvironmentsClient
 from .external_api_keys.client import AsyncExternalApiKeysClient, ExternalApiKeysClient
 from .organizations.client import AsyncOrganizationsClient, OrganizationsClient
 from .projects.client import AsyncProjectsClient, ProjectsClient
+from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
+from .types.tier import Tier
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
 from .webhooks.client import AsyncWebhooksClient, WebhooksClient
+
+# this is used as the default value for optional parameters
+OMIT = typing.cast(typing.Any, ...)
 
 
 class Lilypad:
@@ -75,6 +81,7 @@ class Lilypad:
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = RawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = OrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = ApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = WebhooksClient(client_wrapper=self._client_wrapper)
@@ -89,6 +96,79 @@ class Lilypad:
         self.comments = CommentsClient(client_wrapper=self._client_wrapper)
         self.settings = SettingsClient(client_wrapper=self._client_wrapper)
         self.ee = EeClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> RawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        RawLilypad
+        """
+        return self._raw_client
+
+    def create_customer_portal_stripe_customer_portal_post(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.create_customer_portal_stripe_customer_portal_post()
+        """
+        _response = self._raw_client.create_customer_portal_stripe_customer_portal_post(request_options=request_options)
+        return _response.data
+
+    def create_checkout_session_stripe_create_checkout_session_post(
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        tier : Tier
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.create_checkout_session_stripe_create_checkout_session_post(
+            tier=1,
+        )
+        """
+        _response = self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
+            tier=tier, request_options=request_options
+        )
+        return _response.data
 
 
 class AsyncLilypad:
@@ -146,6 +226,7 @@ class AsyncLilypad:
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = AsyncRawLilypad(client_wrapper=self._client_wrapper)
         self.organizations = AsyncOrganizationsClient(client_wrapper=self._client_wrapper)
         self.api_keys = AsyncApiKeysClient(client_wrapper=self._client_wrapper)
         self.webhooks = AsyncWebhooksClient(client_wrapper=self._client_wrapper)
@@ -160,3 +241,94 @@ class AsyncLilypad:
         self.comments = AsyncCommentsClient(client_wrapper=self._client_wrapper)
         self.settings = AsyncSettingsClient(client_wrapper=self._client_wrapper)
         self.ee = AsyncEeClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> AsyncRawLilypad:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        AsyncRawLilypad
+        """
+        return self._raw_client
+
+    async def create_customer_portal_stripe_customer_portal_post(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.create_customer_portal_stripe_customer_portal_post()
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.create_customer_portal_stripe_customer_portal_post(
+            request_options=request_options
+        )
+        return _response.data
+
+    async def create_checkout_session_stripe_create_checkout_session_post(
+        self, *, tier: Tier, request_options: typing.Optional[RequestOptions] = None
+    ) -> str:
+        """
+        Parameters
+        ----------
+        tier : Tier
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        str
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.create_checkout_session_stripe_create_checkout_session_post(
+                tier=1,
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
+            tier=tier, request_options=request_options
+        )
+        return _response.data

@@ -1,8 +1,8 @@
-import { LilypadLoading } from "@/components/LilypadLoading";
-import { SearchBar } from "@/components/SearchBar";
-import { TracesTable } from "@/components/traces/TracesTable";
-import { usePaginatedSpansByFunction } from "@/hooks/use-paginated-query.tsx";
-import { SpanPublic } from "@/types/types";
+import { LilypadLoading } from "@/src/components/LilypadLoading";
+import { SearchBar } from "@/src/components/SearchBar";
+import { TracesTable } from "@/src/components/traces/TracesTable";
+import { usePaginatedSpansByFunction } from "@/src/hooks/use-paginated-query.tsx";
+import { SpanPublic } from "@/src/types/types";
 import { useMemo, useState } from "react";
 
 export const CompareTracesTable = ({

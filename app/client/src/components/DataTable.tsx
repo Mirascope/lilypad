@@ -1,13 +1,13 @@
-import { useAuth, UserConfig } from "@/auth";
-import { Button } from "@/components/ui/button";
+import { useAuth, UserConfig } from "@/src/auth";
+import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+} from "@/src/components/ui/dropdown-menu";
+import { Input } from "@/src/components/ui/input";
+import { ScrollArea, ScrollBar } from "@/src/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -15,9 +15,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useTable } from "@/hooks/use-table";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/table";
+import { useTable } from "@/src/hooks/use-table";
+import { cn } from "@/src/lib/utils";
 import {
   ColumnDef,
   ColumnFiltersState,

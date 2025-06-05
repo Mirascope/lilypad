@@ -1,4 +1,4 @@
-import { LilypadLogo } from "@/components/lilypad-logo";
+import { LilypadLogo } from "@/src/components/lilypad-logo";
 import React from "react";
 import { cn } from "../lib/utils";
 

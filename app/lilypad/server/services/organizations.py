@@ -42,10 +42,6 @@ class OrganizationService(BaseService[OrganizationTable, OrganizationCreate]):
         """
         # Create the organization record
         organization = super().create_record(data)
-
-        billing_service: BillingService | None = kwargs.get("billing_service")
-        if billing_service and "email" in kwargs and kwargs["email"]:
-            billing_service.create_customer(organization, kwargs["email"])
         return organization
 
     def create_stripe_customer(

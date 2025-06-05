@@ -1,5 +1,5 @@
-import { PaginatedSpanPublic } from "@/types/types";
-import { tracesInfiniteQueryOptions, type TracePageParam } from "@/utils/traces";
+import { PaginatedSpanPublic } from "@/src/types/types";
+import { tracesInfiniteQueryOptions, type TracePageParam } from "@/src/utils/traces";
 import { InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 

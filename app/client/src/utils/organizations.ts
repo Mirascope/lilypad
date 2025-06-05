@@ -1,4 +1,4 @@
-import api from "@/api";
+import api from "@/src/api";
 import {
   OrganizationCreate,
   OrganizationInviteCreate,
@@ -6,7 +6,7 @@ import {
   OrganizationPublic,
   OrganizationUpdate,
   UserPublic,
-} from "@/types/types";
+} from "@/src/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const getOrganizationInvite = async (inviteToken: string) => {

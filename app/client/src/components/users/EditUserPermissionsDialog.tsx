@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,22 +8,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+} from "@/src/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/components/ui/select";
 import {
   UserOrganizationPublic,
   UserOrganizationUpdate,
   UserPublic,
   UserRole,
-} from "@/types/types";
-import { useUpdateUserOrganizationMutation } from "@/utils/users";
+} from "@/src/types/types";
+import { useUpdateUserOrganizationMutation } from "@/src/utils/users";
 import { PencilLine } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

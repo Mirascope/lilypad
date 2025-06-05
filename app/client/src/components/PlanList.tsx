@@ -1,9 +1,9 @@
-import LilypadDialog from "@/components/LilypadDialog.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Typography } from "@/components/ui/typography";
-import { isLilypadCloud } from "@/ee/utils/common.ts";
-import { licenseQueryOptions } from "@/ee/utils/organizations.ts";
-import { Tier } from "@/types/types.ts";
+import LilypadDialog from "@/src/components/LilypadDialog.tsx";
+import { Badge } from "@/src/components/ui/badge.tsx";
+import { Typography } from "@/src/components/ui/typography";
+import { isLilypadCloud } from "@/src/ee/utils/common.ts";
+import { licenseQueryOptions } from "@/src/ee/utils/organizations.ts";
+import { Tier } from "@/src/types/types.ts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 const tier = {

@@ -1,6 +1,6 @@
-import { DataTable } from "@/components/DataTable";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { DataTable } from "@/src/components/DataTable";
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/src/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,24 +19,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { TagPublic } from "@/types/types";
-import { projectsQueryOptions } from "@/utils/projects";
-import { formatDate } from "@/utils/strings";
+} from "@/src/components/ui/select";
+import { Typography } from "@/src/components/ui/typography";
+import { TagPublic } from "@/src/types/types";
+import { projectsQueryOptions } from "@/src/utils/projects";
+import { formatDate } from "@/src/utils/strings";
 import {
   tagsQueryOptions,
   useCreateTagMutation,
   useDeleteTagMutation,
   useUpdateTagMutation,
-} from "@/utils/tags";
+} from "@/src/utils/tags";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
@@ -98,22 +99,27 @@ export const TagsTable = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-1">
-      <div>
-        <CreateTagButton />
+    <>
+      <Typography variant="h3" className="mb-4">
+        Tags
+      </Typography>
+      <div className="flex flex-col gap-1">
+        <div>
+          <CreateTagButton />
+        </div>
+        <DataTable<TagPublic>
+          columns={columns}
+          data={data}
+          virtualizerRef={virtualizerRef}
+          virtualizerOptions={{
+            count: data.length,
+            estimateSize: () => 45,
+            overscan: 5,
+          }}
+          hideColumnButton
+        />
       </div>
-      <DataTable<TagPublic>
-        columns={columns}
-        data={data}
-        virtualizerRef={virtualizerRef}
-        virtualizerOptions={{
-          count: data.length,
-          estimateSize: () => 45,
-          overscan: 5,
-        }}
-        hideColumnButton
-      />
-    </div>
+    </>
   );
 };
 

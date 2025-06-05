@@ -4,9 +4,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { FunctionTab } from "@/types/functions";
-import { functionsByNameQueryOptions } from "@/utils/functions";
+} from "@/src/components/ui/select";
+import { FunctionTab } from "@/src/types/functions";
+import { functionsByNameQueryOptions } from "@/src/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";

@@ -53,6 +53,7 @@ async def _test_kafka_connection() -> bool:
                 logger.warning(
                     "⚠ Warning: Expected 6 partitions but found %d", partition_count
                 )
+
         else:
             logger.error("✗ Topic '%s' does not exist", topic)
             return False
@@ -66,6 +67,7 @@ async def _test_kafka_connection() -> bool:
 
     # Test producer
     producer = None
+
     try:
         producer = AIOKafkaProducer(
             bootstrap_servers=bootstrap_servers,
@@ -107,7 +109,6 @@ async def _test_kafka_connection() -> bool:
         await consumer.start()
 
         logger.info("✓ Successfully created consumer")
-
     except Exception as e:
         logger.error("✗ Failed to create consumer: %s", e)
         return False

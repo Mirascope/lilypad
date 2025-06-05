@@ -1,8 +1,8 @@
-import { LilypadLogo } from "@/components/lilypad-logo";
-import { Badge } from "@/components/ui/badge";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Typography } from "@/components/ui/typography";
-import { ProjectPublic } from "@/types/types";
+import { LilypadLogo } from "@/src/components/lilypad-logo";
+import { Badge } from "@/src/components/ui/badge";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/src/components/ui/sidebar";
+import { Typography } from "@/src/components/ui/typography";
+import { ProjectPublic } from "@/src/types/types";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 

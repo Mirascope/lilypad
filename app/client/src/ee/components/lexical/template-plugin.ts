@@ -1,4 +1,4 @@
-import { EditorParameters } from "@/ee/hooks/use-playground";
+import { EditorParameters } from "@/src/ee/hooks/use-playground";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { mergeRegister } from "@lexical/utils";
 import {

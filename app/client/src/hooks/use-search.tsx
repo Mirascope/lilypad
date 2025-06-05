@@ -1,5 +1,5 @@
-import { Scope } from "@/types/types";
-import { spansSearchQueryOptions } from "@/utils/spans";
+import { Scope } from "@/src/types/types";
+import { spansSearchQueryOptions } from "@/src/utils/spans";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 

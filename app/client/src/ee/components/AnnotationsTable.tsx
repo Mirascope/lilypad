@@ -1,7 +1,7 @@
-import { DataTable } from "@/components/DataTable";
-import { Button } from "@/components/ui/button";
-import { AnnotationPublic, Label } from "@/types/types";
-import { usersByOrganizationQueryOptions } from "@/utils/users";
+import { DataTable } from "@/src/components/DataTable";
+import { Button } from "@/src/components/ui/button";
+import { AnnotationPublic, Label } from "@/src/types/types";
+import { usersByOrganizationQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { NotebookPen } from "lucide-react";

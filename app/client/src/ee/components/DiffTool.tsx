@@ -1,5 +1,5 @@
-import { CodeBlock } from "@/components/code-block";
-import { Button } from "@/components/ui/button";
+import { CodeBlock } from "@/src/components/code-block";
+import { Button } from "@/src/components/ui/button";
 import { diffArrays } from "diff";
 import { useState } from "react";
 import { BuiltinLanguage, BundledLanguage } from "shiki";

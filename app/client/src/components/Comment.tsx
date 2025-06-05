@@ -1,19 +1,19 @@
-import LilypadDialog from "@/components/LilypadDialog";
-import { Button } from "@/components/ui/button";
-import { DialogClose } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
-import { Editor } from "@/ee/components/Editor";
-import { PLAYGROUND_TRANSFORMERS } from "@/ee/components/lexical/markdown-transformers";
-import { CommentCreate, CommentPublic, CommentUpdate, UserPublic } from "@/types/types";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Button } from "@/src/components/ui/button";
+import { DialogClose } from "@/src/components/ui/dialog";
+import { Form } from "@/src/components/ui/form";
+import { Separator } from "@/src/components/ui/separator";
+import { Editor } from "@/src/ee/components/Editor";
+import { PLAYGROUND_TRANSFORMERS } from "@/src/ee/components/lexical/markdown-transformers";
+import { CommentCreate, CommentPublic, CommentUpdate, UserPublic } from "@/src/types/types";
 import {
   commentsBySpanQueryOptions,
   useCreateCommentMutation,
   useDeleteCommentMutation,
   useUpdateCommentMutation,
-} from "@/utils/comments";
-import { formatRelativeTime } from "@/utils/strings";
-import { userQueryOptions, usersByOrganizationQueryOptions } from "@/utils/users";
+} from "@/src/utils/comments";
+import { formatRelativeTime } from "@/src/utils/strings";
+import { userQueryOptions, usersByOrganizationQueryOptions } from "@/src/utils/users";
 import { $convertToMarkdownString } from "@lexical/markdown";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CLEAR_EDITOR_COMMAND, LexicalEditor } from "lexical";

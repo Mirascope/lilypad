@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/components/ui/select";
 import { $createCodeNode } from "@lexical/code";
 import {
   INSERT_ORDERED_LIST_COMMAND,

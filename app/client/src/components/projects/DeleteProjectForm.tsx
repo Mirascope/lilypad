@@ -1,5 +1,5 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
+import { Button } from "@/src/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,10 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { ProjectPublic } from "@/types/types";
-import { useDeleteProjectMutation } from "@/utils/projects";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { ProjectPublic } from "@/src/types/types";
+import { useDeleteProjectMutation } from "@/src/utils/projects";
 import { useNavigate } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 import { useForm } from "react-hook-form";

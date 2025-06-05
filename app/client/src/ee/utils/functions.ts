@@ -1,10 +1,10 @@
-import api from "@/api";
+import api from "@/src/api";
 import {
+  PlaygroundErrorDetail,
+  PlaygroundErrorResponse,
   PlaygroundParameters,
   PlaygroundSuccessResponse,
-  PlaygroundErrorResponse,
-  PlaygroundErrorDetail,
-} from "@/types/types";
+} from "@/src/types/types";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 

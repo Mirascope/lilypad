@@ -1,6 +1,6 @@
-import api from "@/api";
-import { useAuth } from "@/auth";
-import { ProjectCreate, ProjectPublic } from "@/types/types";
+import api from "@/src/api";
+import { useAuth } from "@/src/auth";
+import { ProjectCreate, ProjectPublic } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 

@@ -1,7 +1,7 @@
-import { useAuth } from "@/auth";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { organizationInviteQueryOptions } from "@/utils/organizations";
-import { useCreateUserOrganizationMutation } from "@/utils/users";
+import { useAuth } from "@/src/auth";
+import { Alert, AlertDescription } from "@/src/components/ui/alert";
+import { organizationInviteQueryOptions } from "@/src/utils/organizations";
+import { useCreateUserOrganizationMutation } from "@/src/utils/users";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";

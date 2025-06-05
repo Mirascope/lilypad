@@ -1,20 +1,20 @@
-import LilypadDialog from "@/components/LilypadDialog";
-import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Button } from "@/src/components/ui/button";
+import { Combobox } from "@/src/components/ui/combobox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Typography } from "@/components/ui/typography";
-import { FunctionPublic } from "@/types/types";
+} from "@/src/components/ui/select";
+import { Typography } from "@/src/components/ui/typography";
+import { FunctionPublic } from "@/src/types/types";
 import {
   functionsByNameQueryOptions,
   uniqueLatestVersionFunctionNamesQueryOptions,
   useArchiveFunctionMutation,
-} from "@/utils/functions";
+} from "@/src/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { GitCompare, Trash } from "lucide-react";
@@ -63,7 +63,7 @@ export const VersionedPlayground = ({
   };
 
   return (
-    <div className="flex w-full flex-col gap-1 p-6">
+    <div className="flex w-full flex-col gap-1 p-4">
       <Typography variant="h3">Playground</Typography>
       <div className="flex gap-2">
         <Combobox

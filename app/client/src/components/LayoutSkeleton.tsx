@@ -1,6 +1,6 @@
-import SidebarSkeleton from "@/components/SidebarSkeleton";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
+import SidebarSkeleton from "@/src/components/SidebarSkeleton";
+import { SidebarProvider } from "@/src/components/ui/sidebar";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 const MainContent = () => (
   <div className="grid h-full w-full grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
