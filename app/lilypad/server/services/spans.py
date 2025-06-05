@@ -420,8 +420,8 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
             .options(
                 selectinload(
-                    self.table.child_spans,
-                    recursion_depth=-1,  # pyright: ignore [reportArgumentType]
+                    self.table.child_spans,  # pyright: ignore [reportArgumentType]
+                    recursion_depth=-1,
                 )  # Load all children
             )
         )
