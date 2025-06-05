@@ -72,6 +72,11 @@ class KafkaSetupService:
                         f"Failed to connect to Kafka after {max_retries} attempts: {e}"
                     )
                     return False
+        
+        # Check if admin client was successfully created
+        if not self.admin_client:
+            logger.error("Admin client is not initialized")
+            return False
 
         try:
             # Define topic
