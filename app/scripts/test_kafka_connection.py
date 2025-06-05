@@ -36,12 +36,12 @@ async def _test_kafka_connection() -> bool:
         if isinstance(metadata, dict):
             logger.info("Cluster metadata: %s", metadata)
         else:
-            logger.info("Cluster ID: %s", getattr(metadata, 'cluster_id', 'N/A'))
-            logger.info("Controller ID: %s", getattr(metadata, 'controller_id', 'N/A'))
+            logger.info("Cluster ID: %s", getattr(metadata, "cluster_id", "N/A"))
+            logger.info("Controller ID: %s", getattr(metadata, "controller_id", "N/A"))
 
         # Get topic metadata
         topic_metadata = await admin_client.describe_topics([topic])
-        
+
         if topic_metadata and topic_metadata[0].topic == topic:
             topic_info = topic_metadata[0]
             partition_count = len(topic_info.partitions)
@@ -122,7 +122,7 @@ async def _test_kafka_connection() -> bool:
 async def main() -> None:
     """Main async function."""
     await asyncio.sleep(2)  # Wait for services to be ready
-    
+
     success = await _test_kafka_connection()
     sys.exit(0 if success else 1)
 
@@ -130,6 +130,7 @@ async def main() -> None:
 def test_kafka_connection() -> bool:
     """Pytest wrapper for Kafka connection test."""
     import pytest
+
     pytest.skip("This is a manual test script, not a unit test")
     return True
 

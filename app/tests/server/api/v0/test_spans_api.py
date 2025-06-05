@@ -1,7 +1,7 @@
 """Tests for the spans API."""
 
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -25,7 +25,7 @@ def test_spans(
     test_user,
 ) -> list[SpanTable]:
     """Create test spans with various timestamps."""
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     spans = []
 
     # Create spans with different timestamps
@@ -112,7 +112,7 @@ def test_get_recent_spans_no_since_parameter(
 
     # Check timestamp is recent
     timestamp = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
-    assert (datetime.now(UTC) - timestamp).total_seconds() < 5
+    assert (datetime.now(timezone.utc) - timestamp).total_seconds() < 5
 
 
 def test_get_recent_spans_with_since_parameter(
@@ -123,7 +123,7 @@ def test_get_recent_spans_with_since_parameter(
 ):
     """Test getting recent spans with specific 'since' timestamp."""
     # Get spans from last 3 minutes
-    since = datetime.now(UTC) - timedelta(minutes=3)
+    since = datetime.now(timezone.utc) - timedelta(minutes=3)
 
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
@@ -156,7 +156,7 @@ def test_get_recent_spans_empty_result(
 ):
     """Test getting recent spans with future timestamp (empty result)."""
     # Use a future timestamp
-    since = datetime.now(UTC) + timedelta(hours=1)
+    since = datetime.now(timezone.utc) + timedelta(hours=1)
 
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
@@ -208,7 +208,7 @@ def test_get_recent_spans_ordering(
 ):
     """Test that recent spans are ordered by created_at descending."""
     # Get spans from last 5 minutes
-    since = datetime.now(UTC) - timedelta(minutes=5)
+    since = datetime.now(timezone.utc) - timedelta(minutes=5)
 
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
@@ -258,7 +258,7 @@ def test_get_recent_spans_performance(
 ):
     """Test recent spans endpoint performance with many spans."""
     # Create 100 spans
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     for i in range(100):
         span = SpanTable(
             organization_uuid=test_project.organization_uuid,

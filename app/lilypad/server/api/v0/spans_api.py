@@ -1,7 +1,7 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -68,14 +68,14 @@ async def get_recent_spans(
     If no 'since' parameter is provided, returns spans from the last 30 seconds.
     """
     if not since:
-        since = datetime.now(UTC) - timedelta(seconds=30)
+        since = datetime.now(timezone.utc) - timedelta(seconds=30)
 
     # Get recent spans
     recent_spans = span_service.get_spans_since(project_uuid, since)
 
     return RecentSpansResponse(
         spans=[SpanPublic.model_validate(span) for span in recent_spans],
-        timestamp=datetime.now(UTC),
+        timestamp=datetime.now(timezone.utc),
         project_uuid=str(project_uuid),
     )
 
