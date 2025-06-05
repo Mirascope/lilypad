@@ -105,33 +105,51 @@ class KafkaSetupService:
                     logger.error(f"Failed to create topic: {e}")
                     raise
 
-            # List topics to verify
+            # Verify the specific topic exists
             try:
-                topics_result = await self.admin_client.describe_topics()
-                logger.debug(f"describe_topics returned type: {type(topics_result)}, value: {topics_result}")
+                # Describe the specific topic we just created
+                topic_metadata_list = await self.admin_client.describe_topics([self.settings.kafka_topic_span_ingestion])
                 
-                # Handle different return types from describe_topics
-                topic_names = []
-                if isinstance(topics_result, dict):
-                    # If it's a dict, it might have topics as values
-                    for topic_name, topic_info in topics_result.items():
-                        if isinstance(topic_name, str):
-                            topic_names.append(topic_name)
-                elif isinstance(topics_result, list):
-                    # If it's a list of TopicMetadata objects
-                    topic_names = [t.topic if hasattr(t, 'topic') else str(t) for t in topics_result]
-                else:
-                    logger.warning(f"Unexpected type from describe_topics: {type(topics_result)}")
-                
-                if topic_names:
-                    logger.info(f"Available Kafka topics: {topic_names}")
-                    if self.settings.kafka_topic_span_ingestion in topic_names:
-                        logger.info(f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist")
+                if topic_metadata_list and len(topic_metadata_list) > 0:
+                    topic_metadata = topic_metadata_list[0]
+                    
+                    # Handle dict response (aiokafka returns dicts, not objects)
+                    if isinstance(topic_metadata, dict):
+                        topic_name = topic_metadata.get('topic')
+                        partitions = topic_metadata.get('partitions', [])
+                        partition_count = len(partitions)
+                        
+                        if topic_name == self.settings.kafka_topic_span_ingestion:
+                            logger.info(
+                                f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist "
+                                f"with {partition_count} partitions"
+                            )
+                        else:
+                            logger.warning(
+                                f"⚠ Topic metadata returned but name doesn't match: "
+                                f"expected '{self.settings.kafka_topic_span_ingestion}', got '{topic_name}'"
+                            )
                     else:
-                        logger.warning(f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' not found in topic list")
+                        # Fallback for object-based response (if aiokafka changes in future)
+                        if hasattr(topic_metadata, 'topic') and topic_metadata.topic == self.settings.kafka_topic_span_ingestion:
+                            partition_count = len(topic_metadata.partitions) if hasattr(topic_metadata, 'partitions') else 0
+                            logger.info(
+                                f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist "
+                                f"with {partition_count} partitions"
+                            )
+                        else:
+                            logger.warning(
+                                "⚠ Topic metadata returned but doesn't match expected format"
+                            )
+                else:
+                    logger.warning(
+                        f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' verification failed - "
+                        f"no metadata returned"
+                    )
                         
             except Exception as e:
-                logger.warning(f"Failed to list topics for verification: {e}")
+                logger.warning(f"Failed to verify topic: {e}")
+                # Not critical - topic creation already succeeded or existed
 
             return True
 
