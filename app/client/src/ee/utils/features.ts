@@ -48,7 +48,7 @@ export const selfHostedFeatures: FeatureSettings[] = [
 ];
 export const cloudFeatures: FeatureSettings[] = [
   {
-    users: 1,
+    users: 2,
     traces: true,
     functions: true,
     diffTooling: true,
@@ -57,7 +57,7 @@ export const cloudFeatures: FeatureSettings[] = [
     vibeSynthesis: true,
   },
   {
-    users: 5,
+    users: 10,
     traces: true,
     functions: true,
     diffTooling: true,
