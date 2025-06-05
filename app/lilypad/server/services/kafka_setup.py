@@ -3,9 +3,9 @@
 import contextlib
 import logging
 
-from kafka import KafkaAdminClient
-from kafka.admin import NewTopic
-from kafka.errors import KafkaError, TopicAlreadyExistsError
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+from aiokafka.errors import KafkaError, TopicAlreadyExistsError
+
 from lilypad.server.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -16,9 +16,9 @@ class KafkaSetupService:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.admin_client: KafkaAdminClient | None = None
+        self.admin_client: AIOKafkaAdminClient | None = None
 
-    def setup_topics(self) -> bool:
+    async def setup_topics(self) -> bool:
         """Create required Kafka topics if they don't exist.
 
         Returns:
@@ -39,14 +39,14 @@ class KafkaSetupService:
                 f"Connecting to Kafka at {self.settings.kafka_bootstrap_servers}"
             )
 
-            # Create admin client with connection timeout
-            self.admin_client = KafkaAdminClient(
+            # Create admin client
+            self.admin_client = AIOKafkaAdminClient(
                 bootstrap_servers=self.settings.kafka_bootstrap_servers,
                 client_id="lilypad-setup",
-                request_timeout_ms=30000,
-                connections_max_idle_ms=60000,  # 60 seconds
-                api_version_auto_timeout_ms=10000,  # 10 seconds for version check
             )
+
+            # Start the admin client
+            await self.admin_client.start()
 
             # Define topic
             topic = NewTopic(
@@ -61,14 +61,10 @@ class KafkaSetupService:
 
             # Create topic
             try:
-                fs = self.admin_client.create_topics([topic], validate_only=False)
-                for topic_name, f in fs.items():
-                    try:
-                        f.result()  # Wait for operation to complete
-                        logger.info(f"Topic '{topic_name}' created successfully")
-                    except Exception as e:
-                        logger.error(f"Failed to create topic '{topic_name}': {e}")
-                        return False
+                await self.admin_client.create_topics([topic])
+                logger.info(
+                    f"Topic '{self.settings.kafka_topic_span_ingestion}' created successfully"
+                )
 
             except TopicAlreadyExistsError:
                 logger.info(
@@ -94,4 +90,4 @@ class KafkaSetupService:
         finally:
             if self.admin_client:
                 with contextlib.suppress(Exception):
-                    self.admin_client.close()
+                    await self.admin_client.close()
