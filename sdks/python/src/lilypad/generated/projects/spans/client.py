@@ -68,6 +68,49 @@ class SpansClient:
         )
         return _response.data
 
+    def get_recent(
+        self,
+        project_uuid: str,
+        *,
+        since: typing.Optional[dt.datetime] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> RecentSpansResponse:
+        """
+        Get spans created recently for real-time polling.
+
+        If no 'since' parameter is provided, returns spans from the last 30 seconds.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        since : typing.Optional[dt.datetime]
+            Get spans created since this timestamp
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        RecentSpansResponse
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.projects.spans.get_recent(
+            project_uuid="project_uuid",
+        )
+        """
+        _response = self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
+        return _response.data
+
     def get_by_id(
         self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> SpanMoreDetails:
@@ -206,49 +249,6 @@ class SpansClient:
         _response = self._raw_client.delete(project_uuid, span_uuid, request_options=request_options)
         return _response.data
 
-    def get_recent(
-        self,
-        project_uuid: str,
-        *,
-        since: typing.Optional[dt.datetime] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> RecentSpansResponse:
-        """
-        Get spans created recently for real-time polling.
-
-        If no 'since' parameter is provided, returns spans from the last 30 seconds.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        since : typing.Optional[dt.datetime]
-            Get spans created since this timestamp
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        RecentSpansResponse
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-            base_url="https://yourhost.com/path/to/api",
-        )
-        client.projects.spans.get_recent(
-            project_uuid="project_uuid",
-        )
-        """
-        _response = self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
-        return _response.data
-
 
 class AsyncSpansClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -310,6 +310,57 @@ class AsyncSpansClient:
         _response = await self._raw_client.get_aggregates(
             project_uuid, time_frame=time_frame, request_options=request_options
         )
+        return _response.data
+
+    async def get_recent(
+        self,
+        project_uuid: str,
+        *,
+        since: typing.Optional[dt.datetime] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> RecentSpansResponse:
+        """
+        Get spans created recently for real-time polling.
+
+        If no 'since' parameter is provided, returns spans from the last 30 seconds.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        since : typing.Optional[dt.datetime]
+            Get spans created since this timestamp
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        RecentSpansResponse
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.projects.spans.get_recent(
+                project_uuid="project_uuid",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
         return _response.data
 
     async def get_by_id(
@@ -472,55 +523,4 @@ class AsyncSpansClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.delete(project_uuid, span_uuid, request_options=request_options)
-        return _response.data
-
-    async def get_recent(
-        self,
-        project_uuid: str,
-        *,
-        since: typing.Optional[dt.datetime] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> RecentSpansResponse:
-        """
-        Get spans created recently for real-time polling.
-
-        If no 'since' parameter is provided, returns spans from the last 30 seconds.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        since : typing.Optional[dt.datetime]
-            Get spans created since this timestamp
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        RecentSpansResponse
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-            base_url="https://yourhost.com/path/to/api",
-        )
-
-
-        async def main() -> None:
-            await client.projects.spans.get_recent(
-                project_uuid="project_uuid",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
         return _response.data

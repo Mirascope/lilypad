@@ -79,6 +79,67 @@ class RawSpansClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def get_recent(
+        self,
+        project_uuid: str,
+        *,
+        since: typing.Optional[dt.datetime] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[RecentSpansResponse]:
+        """
+        Get spans created recently for real-time polling.
+
+        If no 'since' parameter is provided, returns spans from the last 30 seconds.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        since : typing.Optional[dt.datetime]
+            Get spans created since this timestamp
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[RecentSpansResponse]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
+            method="GET",
+            params={
+                "since": serialize_datetime(since) if since is not None else None,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    RecentSpansResponse,
+                    construct_type(
+                        type_=RecentSpansResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
     def get_by_id(
         self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[SpanMoreDetails]:
@@ -259,67 +320,6 @@ class RawSpansClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def get_recent(
-        self,
-        project_uuid: str,
-        *,
-        since: typing.Optional[dt.datetime] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[RecentSpansResponse]:
-        """
-        Get spans created recently for real-time polling.
-
-        If no 'since' parameter is provided, returns spans from the last 30 seconds.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        since : typing.Optional[dt.datetime]
-            Get spans created since this timestamp
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[RecentSpansResponse]
-            Successful Response
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
-            method="GET",
-            params={
-                "since": serialize_datetime(since) if since is not None else None,
-            },
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    RecentSpansResponse,
-                    construct_type(
-                        type_=RecentSpansResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
 
 class AsyncRawSpansClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -359,6 +359,67 @@ class AsyncRawSpansClient:
                     typing.List[AggregateMetrics],
                     construct_type(
                         type_=typing.List[AggregateMetrics],  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_recent(
+        self,
+        project_uuid: str,
+        *,
+        since: typing.Optional[dt.datetime] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[RecentSpansResponse]:
+        """
+        Get spans created recently for real-time polling.
+
+        If no 'since' parameter is provided, returns spans from the last 30 seconds.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        since : typing.Optional[dt.datetime]
+            Get spans created since this timestamp
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[RecentSpansResponse]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
+            method="GET",
+            params={
+                "since": serialize_datetime(since) if since is not None else None,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    RecentSpansResponse,
+                    construct_type(
+                        type_=RecentSpansResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -539,67 +600,6 @@ class AsyncRawSpansClient:
                     bool,
                     construct_type(
                         type_=bool,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def get_recent(
-        self,
-        project_uuid: str,
-        *,
-        since: typing.Optional[dt.datetime] = None,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[RecentSpansResponse]:
-        """
-        Get spans created recently for real-time polling.
-
-        If no 'since' parameter is provided, returns spans from the last 30 seconds.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        since : typing.Optional[dt.datetime]
-            Get spans created since this timestamp
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[RecentSpansResponse]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
-            method="GET",
-            params={
-                "since": serialize_datetime(since) if since is not None else None,
-            },
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    RecentSpansResponse,
-                    construct_type(
-                        type_=RecentSpansResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
