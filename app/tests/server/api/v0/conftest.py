@@ -264,7 +264,7 @@ def test_api_key(
 
     api_key = APIKeyTable(
         key_hash="test_key",
-        user_uuid=test_user.uuid,
+        user_uuid=test_user.uuid,  # pyright: ignore [reportArgumentType]
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",
         project_uuid=test_project.uuid,

@@ -78,7 +78,7 @@ class KafkaService:
             key = span_data.get("trace_id")
 
             # Send message asynchronously
-            metadata = await self.producer.send_and_wait(
+            metadata = await self.producer.send_and_wait(  # pyright: ignore [reportOptionalMemberAccess]
                 topic=self.settings.kafka_topic_span_ingestion,
                 key=key,
                 value={**span_data, "user_id": str(user_id)},
@@ -121,7 +121,7 @@ class KafkaService:
 
         # Flush to ensure all messages are sent
         try:
-            await self.producer.flush()
+            await self.producer.flush()  # pyright: ignore [reportOptionalMemberAccess]
         except KafkaError as e:
             logger.error(f"Error flushing Kafka producer: {e}")
 

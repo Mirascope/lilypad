@@ -186,7 +186,7 @@ class SpanQueueProcessor:
         while self._running:
             try:
                 # Fetch messages with timeout
-                records = await self.consumer.getmany(timeout_ms=1000, max_records=100)
+                records = await self.consumer.getmany(timeout_ms=1000, max_records=100)  # pyright: ignore [reportOptionalMemberAccess]
 
                 if records:
                     msg_count = sum(len(msgs) for msgs in records.values())
@@ -321,7 +321,7 @@ class SpanQueueProcessor:
                     logger.debug(f"User {user_id} not found for trace {trace_id}")
                     return
 
-                project_service = ProjectService(session, user)
+                project_service = ProjectService(session, user)  # pyright: ignore [reportArgumentType]
                 project = project_service.find_record_no_organization(project_uuid)
                 logger.debug(f"Found project: {project} for trace {trace_id}")
                 if not project:
@@ -329,7 +329,7 @@ class SpanQueueProcessor:
                     return
 
                 # Create span service
-                span_service = SpanService(session, user)
+                span_service = SpanService(session, user)  # pyright: ignore [reportArgumentType]
 
                 # Convert to SpanCreate objects
                 span_creates = []
@@ -346,7 +346,7 @@ class SpanQueueProcessor:
                 # Determine if we need billing service
                 billing_service = None
                 if self.settings.stripe_api_key:
-                    billing_service = BillingService(session, user)
+                    billing_service = BillingService(session, user)  # pyright: ignore [reportArgumentType]
 
                 # Create spans in bulk
                 # Note: create_bulk_records should NOT commit, let get_session handle it

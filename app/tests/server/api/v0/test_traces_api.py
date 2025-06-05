@@ -120,7 +120,7 @@ def test_post_traces(
     # Override the FastAPI dependency
     from fastapi import FastAPI
 
-    app: FastAPI = client.app
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
     app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
 
     try:
@@ -389,7 +389,7 @@ def test_create_traces_with_kafka_success(
     # Override the FastAPI dependency
     from fastapi import FastAPI
 
-    app: FastAPI = client.app
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
 
     # Override the dependency
     app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
@@ -451,7 +451,7 @@ def test_create_traces_kafka_unavailable_fallback(
     # Override the FastAPI dependency
     from fastapi import FastAPI
 
-    app: FastAPI = client.app
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
 
     # Override the dependency
     app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service

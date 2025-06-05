@@ -35,7 +35,7 @@ def test_spans(
             organization_uuid=test_project.organization_uuid,
             project_uuid=test_project.uuid,
             span_id=f"span_root_{i}",
-            trace_id=f"trace_{i}",
+            trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=None,
             type="function",
             function_uuid=test_function.uuid,
@@ -60,7 +60,7 @@ def test_spans(
             organization_uuid=test_project.organization_uuid,
             project_uuid=test_project.uuid,
             span_id=f"span_child_{i}",
-            trace_id=f"trace_{i}",
+            trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=f"span_root_{i}",
             type="function",
             function_uuid=test_function.uuid,
@@ -264,7 +264,7 @@ def test_get_recent_spans_performance(
             organization_uuid=test_project.organization_uuid,
             project_uuid=test_project.uuid,
             span_id=f"perf_span_{i}",
-            trace_id=f"perf_trace_{i}",
+            trace_id=f"perf_trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=None,
             type="function",
             function_uuid=test_function.uuid,

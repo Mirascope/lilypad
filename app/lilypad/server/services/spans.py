@@ -415,12 +415,13 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             .where(
                 self.table.project_uuid == project_uuid,
                 self.table.created_at > since,
-                self.table.parent_span_id.is_(None),  # Only root spans
+                self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
             )
-            .order_by(self.table.created_at.desc())
+            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
             .options(
                 selectinload(
-                    self.table.child_spans, recursion_depth=-1
+                    self.table.child_spans,
+                    recursion_depth=-1,  # pyright: ignore [reportArgumentType]
                 )  # Load all children
             )
         )
