@@ -20,6 +20,7 @@ from starlette.responses import Response
 from starlette.types import Scope as StarletteScope
 
 from lilypad.server._utils.posthog import setup_posthog_middleware
+from lilypad.server.services.kafka import get_kafka_service
 from lilypad.server.services.kafka_setup import KafkaSetupService
 from lilypad.server.services.span_queue_processor import get_span_queue_processor
 
@@ -60,13 +61,25 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             log.error(f"Kafka setup failed (non-fatal): {e}")
             # Continue startup even if Kafka setup fails
 
+    # Initialize Kafka service if configured
+    kafka_service = None
+    if settings.kafka_bootstrap_servers:
+        log.info("Initializing Kafka service")
+        try:
+            kafka_service = get_kafka_service()
+            await kafka_service.initialize()
+            log.info("Kafka service initialized successfully")
+        except Exception as e:
+            log.error(f"Failed to initialize Kafka service (non-fatal): {e}")
+            # Continue startup even if Kafka fails
+
     # Start span queue processor if Kafka is configured
     queue_processor = None
     if settings.kafka_bootstrap_servers:
         log.info("Starting span queue processor")
         try:
             queue_processor = get_span_queue_processor()
-            queue_processor.start()
+            await queue_processor.start()
             log.info("Span queue processor started successfully")
         except Exception as e:
             log.error(f"Failed to start span queue processor (non-fatal): {e}")
@@ -78,9 +91,16 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     if queue_processor:
         log.info("Stopping span queue processor")
         try:
-            queue_processor.stop()
+            await queue_processor.stop()
         except Exception as e:
             log.error(f"Error stopping queue processor: {e}")
+
+    if kafka_service:
+        log.info("Closing Kafka service")
+        try:
+            await kafka_service.close()
+        except Exception as e:
+            log.error(f"Error closing Kafka service: {e}")
 
 
 origins = [

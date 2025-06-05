@@ -86,7 +86,6 @@ def test_spans(
     return spans
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_no_since_parameter(
     client: TestClient,
     test_api_key: APIKeyTable,
@@ -116,7 +115,6 @@ def test_get_recent_spans_no_since_parameter(
     assert (datetime.now(UTC) - timestamp).total_seconds() < 5
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_with_since_parameter(
     client: TestClient,
     test_api_key: APIKeyTable,
@@ -150,7 +148,6 @@ def test_get_recent_spans_with_since_parameter(
             assert span["child_spans"][0]["span_id"] == "span_child_0"
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_empty_result(
     client: TestClient,
     test_api_key: APIKeyTable,
@@ -174,7 +171,6 @@ def test_get_recent_spans_empty_result(
     assert data["project_uuid"] == str(test_project.uuid)
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_unauthorized(
     client: TestClient,
     test_project: ProjectTable,
@@ -202,7 +198,6 @@ def test_get_recent_spans_wrong_project(
     assert response.status_code == 404
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_ordering(
     client: TestClient,
     test_api_key: APIKeyTable,
@@ -237,7 +232,6 @@ def test_get_recent_spans_ordering(
     assert span_ids == expected_order
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_with_invalid_since(
     client: TestClient,
     test_api_key: APIKeyTable,
@@ -253,7 +247,6 @@ def test_get_recent_spans_with_invalid_since(
     assert response.status_code == 422  # Validation error
 
 
-@pytest.mark.skip(reason="Recent spans endpoint not fully implemented")
 def test_get_recent_spans_performance(
     client: TestClient,
     test_api_key: APIKeyTable,

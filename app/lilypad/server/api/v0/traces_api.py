@@ -35,7 +35,7 @@ from ...schemas.traces import TracesQueueResponse
 from ...schemas.users import UserPublic
 from ...services import OpenSearchService, SpanService, get_opensearch_service
 from ...services.billing import BillingService
-from ...services.kafka import KafkaService
+from ...services.kafka import KafkaService, get_kafka_service
 from ...services.projects import ProjectService
 
 traces_router = APIRouter()
@@ -192,11 +192,11 @@ async def traces(
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
-    kafka_service: Annotated[KafkaService, Depends(KafkaService)],
     background_tasks: BackgroundTasks,
     project_service: Annotated[ProjectService, Depends(ProjectService)],
     billing_service: Annotated[BillingService, Depends(BillingService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
+    kafka_service: Annotated[KafkaService, Depends(get_kafka_service)],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -224,7 +224,9 @@ async def traces(
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
     # Try to send to Kafka queue
-    kafka_available = kafka_service.send_spans_batch(traces_json, user_id=user.uuid)
+    kafka_available = await kafka_service.send_spans_batch(
+        traces_json, user_id=user.uuid
+    )
 
     if kafka_available:
         # Queue processing successful

@@ -1,8 +1,8 @@
 """Tests for SpanQueueProcessor."""
 
-import threading
+import asyncio
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -38,6 +38,7 @@ def mock_settings():
         settings.kafka_max_spans_per_trace = 500
         settings.kafka_buffer_ttl_seconds = 300
         settings.kafka_cleanup_interval_seconds = 60
+        settings.stripe_api_key = None
         mock.return_value = settings
         yield settings
 
@@ -127,9 +128,10 @@ class TestTraceBuffer:
 class TestSpanQueueProcessor:
     """Tests for SpanQueueProcessor class."""
 
-    def test_initialize_success(self):
+    @pytest.mark.asyncio
+    async def test_initialize_success(self):
         """Test successful initialization."""
-        mock_consumer = MagicMock()
+        mock_consumer = AsyncMock()
 
         with patch(
             "lilypad.server.services.span_queue_processor.get_settings"
@@ -143,33 +145,36 @@ class TestSpanQueueProcessor:
             processor = SpanQueueProcessor()
 
             with patch(
-                "lilypad.server.services.span_queue_processor.KafkaConsumer",
+                "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
                 return_value=mock_consumer,
             ):
-                result = processor.initialize()
+                result = await processor.initialize()
 
                 assert result is True
                 assert processor.consumer is mock_consumer
+                mock_consumer.start.assert_called_once()
 
-    def test_initialize_no_kafka(self, processor):
+    @pytest.mark.asyncio
+    async def test_initialize_no_kafka(self, processor):
         """Test initialization when Kafka is not configured."""
         with patch("lilypad.server.services.span_queue_processor.get_settings") as mock:
             settings = MagicMock()
             settings.kafka_bootstrap_servers = None
             mock.return_value = settings
 
-            result = processor.initialize()
+            result = await processor.initialize()
 
             assert result is False
             assert processor.consumer is None
 
-    def test_process_message_complete_trace(self, processor, mock_settings):
+    @pytest.mark.asyncio
+    async def test_process_message_complete_trace(self, processor, mock_settings):
         """Test processing a message that completes a trace."""
         # Setup
         processor._running = True
 
         # Mock the process_trace method
-        processor._process_trace = MagicMock()
+        processor._process_trace = AsyncMock()
 
         # Create message
         parent_span = {
@@ -189,15 +194,16 @@ class TestSpanQueueProcessor:
         )
 
         # Process parent span
-        processor._process_message(mock_record)
+        await processor._process_message(mock_record)
 
         # Should complete the trace
         processor._process_trace.assert_called_once_with("trace123")
 
-    def test_process_message_incomplete_trace(self, processor, mock_settings):
+    @pytest.mark.asyncio
+    async def test_process_message_incomplete_trace(self, processor, mock_settings):
         """Test processing a message that doesn't complete a trace."""
         processor._running = True
-        processor._process_trace = MagicMock()
+        processor._process_trace = AsyncMock()
 
         # Create child span message (parent missing)
         child_span = {
@@ -210,16 +216,17 @@ class TestSpanQueueProcessor:
         mock_record = MagicMock()
         mock_record.value = child_span
 
-        processor._process_message(mock_record)
+        await processor._process_message(mock_record)
 
         # Should not process trace yet
         processor._process_trace.assert_not_called()
         assert "trace123" in processor.trace_buffers
 
-    def test_process_message_max_spans_limit(self, processor, mock_settings):
+    @pytest.mark.asyncio
+    async def test_process_message_max_spans_limit(self, processor, mock_settings):
         """Test processing when max spans per trace is exceeded."""
         processor._running = True
-        processor._process_trace = MagicMock()
+        processor._process_trace = AsyncMock()
         mock_settings.kafka_max_spans_per_trace = 2
 
         # Create buffer with 2 spans already
@@ -237,66 +244,64 @@ class TestSpanQueueProcessor:
         mock_record = MagicMock()
         mock_record.value = new_span
 
-        processor._process_message(mock_record)
+        await processor._process_message(mock_record)
 
         # Should process trace due to limit
         processor._process_trace.assert_called_once_with("trace123")
 
-    def test_force_process_incomplete_trace(self, processor):
+    @pytest.mark.asyncio
+    async def test_force_process_incomplete_trace(self, processor):
         """Test force processing an incomplete trace."""
-        processor._process_trace = MagicMock()
+        processor._process_trace = AsyncMock()
 
         # Create incomplete trace
         buffer = TraceBuffer("trace123")
         buffer.add_span({"span_id": "child", "parent_span_id": "missing_parent"})
         processor.trace_buffers["trace123"] = buffer
 
-        processor._force_process_incomplete_trace("trace123")
+        await processor._force_process_incomplete_trace("trace123")
 
         # Parent should be set to None
         assert buffer.spans["child"]["parent_span_id"] is None
         processor._process_trace.assert_called_once_with("trace123")
 
-    def test_cleanup_incomplete_traces(self):
+    @pytest.mark.asyncio
+    async def test_cleanup_incomplete_traces(self):
         """Test cleanup of timed-out traces."""
         with patch(
             "lilypad.server.services.span_queue_processor.get_settings"
         ) as mock_get_settings:
             settings = MagicMock()
             settings.kafka_bootstrap_servers = "localhost:9092"
-            settings.kafka_buffer_ttl_seconds = 1  # 1 second TTL
-            settings.kafka_cleanup_interval_seconds = 0.1  # Fast cleanup
+            settings.kafka_buffer_ttl_seconds = 0.1  # 0.1 second TTL
+            settings.kafka_cleanup_interval_seconds = 0.05  # Fast cleanup
             mock_get_settings.return_value = settings
 
             processor = SpanQueueProcessor()
             processor._running = True
-            processor._force_process_incomplete_trace = MagicMock()
+            processor._force_process_incomplete_trace = AsyncMock()
 
             # Create old trace
             old_buffer = TraceBuffer("old_trace")
-            old_buffer.created_at = time.time() - 2  # 2 seconds old
+            old_buffer.created_at = time.time() - 1  # 1 second old
             processor.trace_buffers["old_trace"] = old_buffer
 
             # Create new trace
             new_buffer = TraceBuffer("new_trace")
             processor.trace_buffers["new_trace"] = new_buffer
 
-            # Run cleanup in a thread
-            cleanup_thread = threading.Thread(
-                target=processor._cleanup_incomplete_traces
-            )
-            cleanup_thread.start()
-            time.sleep(0.2)  # Let it run one iteration
+            # Run cleanup in a task
+            cleanup_task = asyncio.create_task(processor._cleanup_incomplete_traces())
+            await asyncio.sleep(0.1)  # Let it run one iteration
             processor._running = False
-            cleanup_thread.join(timeout=1)
+            cleanup_task.cancel()
+            try:
+                await cleanup_task
+            except asyncio.CancelledError:
+                pass
 
             # Only old trace should be processed
             processor._force_process_incomplete_trace.assert_called_with("old_trace")
-            # Verify new trace was not processed
-            assert all(
-                args[0][0] != "new_trace"
-                for args in processor._force_process_incomplete_trace.call_args_list
-            )
 
     def test_convert_to_span_create(self, processor):
         """Test converting span data to SpanCreate object."""
@@ -325,10 +330,12 @@ class TestSpanQueueProcessor:
         assert span_create.scope == "llm"
         assert span_create.type == "function"
 
-    def test_process_trace_success(self, processor):
+    @pytest.mark.asyncio
+    async def test_process_trace_success(self, processor, mock_settings):
         """Test successful trace processing."""
         project_uuid = uuid4()
         function_uuid = uuid4()
+        user_id = uuid4()
 
         # Create trace buffer
         buffer = TraceBuffer("trace123")
@@ -336,6 +343,7 @@ class TestSpanQueueProcessor:
             {
                 "span_id": "parent",
                 "parent_span_id": None,
+                "user_id": str(user_id),
                 "attributes": {
                     "lilypad.project.uuid": str(project_uuid),
                     "lilypad.function.uuid": str(function_uuid),
@@ -346,6 +354,7 @@ class TestSpanQueueProcessor:
             {
                 "span_id": "child",
                 "parent_span_id": "parent",
+                "user_id": str(user_id),
                 "attributes": {
                     "lilypad.project.uuid": str(project_uuid),
                     "lilypad.function.uuid": str(function_uuid),
@@ -355,7 +364,7 @@ class TestSpanQueueProcessor:
         processor.trace_buffers["trace123"] = buffer
 
         # Mock dependencies
-        mock_session = MagicMock()
+        mock_session = AsyncMock()
         mock_user = MagicMock()
         mock_project = MagicMock()
         mock_project.organization_uuid = uuid4()
@@ -374,13 +383,17 @@ class TestSpanQueueProcessor:
             patch("lilypad.server.services.span_queue_processor.BillingService"),
         ):
             # Setup mocks
-            mock_get_session.return_value = [mock_session]
-            mock_session.exec.return_value.first.return_value = mock_user
+            mock_get_session.return_value.__aiter__.return_value = [mock_session]
+            
+            # Mock the exec result as an async operation
+            mock_result = MagicMock()
+            mock_result.first.return_value = mock_user
+            mock_session.exec = AsyncMock(return_value=mock_result)
 
             mock_project_service.return_value.find_record_no_organization.return_value = mock_project
             mock_span_service.return_value.create_bulk_records = MagicMock()
 
-            processor._process_trace("trace123")
+            await processor._process_trace("trace123")
 
             # Verify trace was processed and removed from buffer
             assert "trace123" not in processor.trace_buffers

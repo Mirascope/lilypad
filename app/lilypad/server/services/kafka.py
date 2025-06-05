@@ -5,12 +5,16 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from kafka import KafkaProducer
-from kafka.errors import KafkaError
+from aiokafka import AIOKafkaProducer
+from aiokafka.errors import KafkaError
 
 from ..settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# Singleton instance
+_kafka_service_instance: "KafkaService | None" = None
 
 
 class KafkaService:
@@ -19,10 +23,10 @@ class KafkaService:
     def __init__(self) -> None:
         settings = get_settings()
         self.settings = settings
-        self.producer: KafkaProducer | None = None
+        self.producer: AIOKafkaProducer | None = None
         self._initialized = False
 
-    def initialize(self) -> bool:
+    async def initialize(self) -> bool:
         """Initialize Kafka producer.
 
         Returns:
@@ -36,17 +40,17 @@ class KafkaService:
             return False
 
         try:
-            self.producer = KafkaProducer(
+            self.producer = AIOKafkaProducer(
                 bootstrap_servers=self.settings.kafka_bootstrap_servers,
                 value_serializer=lambda v: json.dumps(v).encode("utf-8"),
                 key_serializer=lambda k: k.encode("utf-8") if k else None,
                 compression_type="gzip",
                 acks="all",  # Wait for all replicas to acknowledge
-                retries=3,
-                max_in_flight_requests_per_connection=5,
+                max_request_size=1048576,  # 1MB
                 request_timeout_ms=30000,
                 retry_backoff_ms=100,
             )
+            await self.producer.start()
             self._initialized = True
             logger.info("Kafka producer initialized successfully")
             return True
@@ -55,7 +59,7 @@ class KafkaService:
             logger.error(f"Failed to initialize Kafka producer: {e}")
             return False
 
-    def send_span(self, span_data: dict[str, Any], user_id: UUID) -> bool:
+    async def send_span(self, span_data: dict[str, Any], user_id: UUID) -> bool:
         """Send a span to the span ingestion topic.
 
         Args:
@@ -65,7 +69,7 @@ class KafkaService:
         Returns:
             bool: True if sent successfully, False otherwise
         """
-        if not self._initialized and not self.initialize():
+        if not self._initialized and not await self.initialize():
             logger.warning("Kafka not available, span will be processed synchronously")
             return False
 
@@ -74,14 +78,11 @@ class KafkaService:
             key = span_data.get("trace_id")
 
             # Send message asynchronously
-            future = self.producer.send(
+            metadata = await self.producer.send_and_wait(
                 topic=self.settings.kafka_topic_span_ingestion,
                 key=key,
                 value={**span_data, "user_id": str(user_id)},
             )
-
-            # Wait for send to complete (with timeout)
-            metadata = future.get(timeout=10)
 
             logger.debug(
                 f"Span sent to Kafka - Topic: {metadata.topic}, "
@@ -96,7 +97,9 @@ class KafkaService:
             logger.error(f"Unexpected error sending span to Kafka: {e}")
             return False
 
-    def send_spans_batch(self, spans: list[dict[str, Any]], user_id: UUID) -> bool:
+    async def send_spans_batch(
+        self, spans: list[dict[str, Any]], user_id: UUID
+    ) -> bool:
         """Send multiple spans to Kafka in batch.
 
         Args:
@@ -106,19 +109,19 @@ class KafkaService:
         Returns:
             bool: True if all spans sent successfully, False otherwise
         """
-        if not self._initialized and not self.initialize():
+        if not self._initialized and not await self.initialize():
             logger.warning("Kafka not available, spans will be processed synchronously")
             return False
 
         success_count = 0
 
         for span in spans:
-            if self.send_span(span, user_id):
+            if await self.send_span(span, user_id):
                 success_count += 1
 
         # Flush to ensure all messages are sent
         try:
-            self.producer.flush(timeout=10)
+            await self.producer.flush()
         except KafkaError as e:
             logger.error(f"Error flushing Kafka producer: {e}")
 
@@ -130,14 +133,22 @@ class KafkaService:
 
         return success
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Close the Kafka producer."""
         if self.producer:
             try:
-                self.producer.close()
+                await self.producer.stop()
                 logger.info("Kafka producer closed")
             except Exception as e:
                 logger.error(f"Error closing Kafka producer: {e}")
             finally:
                 self.producer = None
                 self._initialized = False
+
+
+def get_kafka_service() -> KafkaService:
+    """Get or create the singleton KafkaService instance."""
+    global _kafka_service_instance
+    if _kafka_service_instance is None:
+        _kafka_service_instance = KafkaService()
+    return _kafka_service_instance

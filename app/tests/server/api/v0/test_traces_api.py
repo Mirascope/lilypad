@@ -3,7 +3,7 @@
 import time
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import pytest
@@ -369,7 +369,7 @@ def test_create_traces_with_kafka_success(
 
     # Create mock Kafka service
     mock_kafka_service = MagicMock(spec=KafkaService)
-    mock_kafka_service.send_spans_batch = MagicMock(return_value=True)
+    mock_kafka_service.send_spans_batch = AsyncMock(return_value=True)
 
     # Override the dependency
     def override_kafka_service():
@@ -432,7 +432,7 @@ def test_create_traces_kafka_unavailable_fallback(
 
     # Create mock Kafka service
     mock_kafka_service = MagicMock(spec=KafkaService)
-    mock_kafka_service.send_spans_batch = MagicMock(return_value=False)
+    mock_kafka_service.send_spans_batch = AsyncMock(return_value=False)
 
     # Override the dependency
     def override_kafka_service():
