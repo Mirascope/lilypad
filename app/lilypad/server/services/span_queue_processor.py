@@ -109,7 +109,7 @@ class SpanQueueProcessor:
         self._lock = asyncio.Lock()  # Async lock for thread-safe access
 
     async def initialize(self) -> bool:
-        """Initialize Kafka consumer."""
+        """Initialize Kafka consumer with retry logic."""
         logger.info(
             f"Initializing Kafka consumer with bootstrap servers: {self.settings.kafka_bootstrap_servers}"
         )
@@ -120,26 +120,44 @@ class SpanQueueProcessor:
             )
             return False
 
-        try:
-            self.consumer = AIOKafkaConsumer(
-                self.settings.kafka_topic_span_ingestion,
-                bootstrap_servers=self.settings.kafka_bootstrap_servers,
-                group_id=self.settings.kafka_consumer_group,
-                value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-                key_deserializer=lambda k: k.decode("utf-8") if k else None,
-                enable_auto_commit=True,
-                auto_offset_reset="earliest",
-                max_poll_records=100,
-                session_timeout_ms=30000,
-                heartbeat_interval_ms=10000,
-            )
-            await self.consumer.start()
-            logger.info("Kafka consumer initialized successfully")
-            return True
+        # Retry logic for Kafka initialization
+        max_retries = 5
+        retry_delay = 2  # Start with 2 seconds
+        
+        for attempt in range(max_retries):
+            try:
+                self.consumer = AIOKafkaConsumer(
+                    self.settings.kafka_topic_span_ingestion,
+                    bootstrap_servers=self.settings.kafka_bootstrap_servers,
+                    group_id=self.settings.kafka_consumer_group,
+                    value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                    key_deserializer=lambda k: k.decode("utf-8") if k else None,
+                    enable_auto_commit=True,
+                    auto_offset_reset="earliest",
+                    max_poll_records=100,
+                    session_timeout_ms=30000,
+                    heartbeat_interval_ms=10000,
+                    retry_backoff_ms=100,
+                    request_timeout_ms=40000,  # Increased timeout
+                    connections_max_idle_ms=540000,
+                )
+                await self.consumer.start()
+                logger.info("Kafka consumer initialized successfully")
+                return True
 
-        except Exception as e:
-            logger.debug(f"Failed to initialize Kafka consumer: {e}")
-            return False
+            except Exception as e:
+                if "GroupCoordinatorNotAvailableError" in str(e) and attempt < max_retries - 1:
+                    logger.warning(
+                        f"Kafka not ready yet (attempt {attempt + 1}/{max_retries}), "
+                        f"retrying in {retry_delay} seconds: {e}"
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to initialize Kafka consumer after {attempt + 1} attempts: {e}")
+                    return False
+        
+        return False
 
     async def start(self) -> None:
         """Start the queue processor."""

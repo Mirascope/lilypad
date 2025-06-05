@@ -1,5 +1,6 @@
 """Kafka setup service for creating topics on startup."""
 
+import asyncio
 import contextlib
 import logging
 
@@ -34,19 +35,43 @@ class KafkaSetupService:
             logger.info("Kafka auto-setup disabled, skipping topic setup")
             return True
 
+        # Retry logic for Kafka connection
+        max_retries = 5
+        retry_delay = 2  # Start with 2 seconds
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(
+                    f"Connecting to Kafka at {self.settings.kafka_bootstrap_servers} "
+                    f"(attempt {attempt + 1}/{max_retries})"
+                )
+
+                # Create admin client
+                self.admin_client = AIOKafkaAdminClient(
+                    bootstrap_servers=self.settings.kafka_bootstrap_servers,
+                    client_id="lilypad-setup",
+                    request_timeout_ms=30000,
+                    connections_max_idle_ms=540000,
+                )
+
+                # Start the admin client
+                await self.admin_client.start()
+                logger.info("Kafka admin client connected successfully")
+                break  # Connection successful, exit retry loop
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Failed to connect to Kafka (attempt {attempt + 1}/{max_retries}), "
+                        f"retrying in {retry_delay} seconds: {e}"
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to connect to Kafka after {max_retries} attempts: {e}")
+                    return False
+        
         try:
-            logger.info(
-                f"Connecting to Kafka at {self.settings.kafka_bootstrap_servers}"
-            )
-
-            # Create admin client
-            self.admin_client = AIOKafkaAdminClient(
-                bootstrap_servers=self.settings.kafka_bootstrap_servers,
-                client_id="lilypad-setup",
-            )
-
-            # Start the admin client
-            await self.admin_client.start()
 
             # Define topic
             topic = NewTopic(
@@ -61,6 +86,7 @@ class KafkaSetupService:
 
             # Create topic
             try:
+                logger.info(f"Creating topic '{self.settings.kafka_topic_span_ingestion}' with 6 partitions...")
                 await self.admin_client.create_topics([topic])
                 logger.info(
                     f"Topic '{self.settings.kafka_topic_span_ingestion}' created successfully"
@@ -76,16 +102,30 @@ class KafkaSetupService:
                         f"Topic '{self.settings.kafka_topic_span_ingestion}' already exists"
                     )
                 else:
+                    logger.error(f"Failed to create topic: {e}")
                     raise
+
+            # List topics to verify
+            try:
+                topics = await self.admin_client.describe_topics()
+                topic_names = [t.topic for t in topics]
+                logger.info(f"Available Kafka topics: {topic_names}")
+                
+                if self.settings.kafka_topic_span_ingestion in topic_names:
+                    logger.info(f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist")
+                else:
+                    logger.warning(f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' not found in topic list")
+            except Exception as e:
+                logger.warning(f"Failed to list topics for verification: {e}")
 
             return True
 
         except KafkaError as e:
             # Log error but don't fail startup
-            logger.warning(f"Kafka setup error (non-fatal): {e}")
+            logger.error(f"Kafka setup error (non-fatal): {e}")
             return True
         except Exception as e:
-            logger.warning(f"Unexpected error during Kafka setup (non-fatal): {e}")
+            logger.error(f"Unexpected error during Kafka setup (non-fatal): {e}", exc_info=True)
             return True
         finally:
             if self.admin_client:

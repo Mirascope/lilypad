@@ -1,5 +1,6 @@
 """Kafka service for message publishing."""
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -27,7 +28,7 @@ class KafkaService:
         self._initialized = False
 
     async def initialize(self) -> bool:
-        """Initialize Kafka producer.
+        """Initialize Kafka producer with retry logic.
 
         Returns:
             bool: True if initialization successful, False otherwise
@@ -39,25 +40,41 @@ class KafkaService:
             logger.info("Kafka not configured, skipping initialization")
             return False
 
-        try:
-            self.producer = AIOKafkaProducer(
-                bootstrap_servers=self.settings.kafka_bootstrap_servers,
-                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                key_serializer=lambda k: k.encode("utf-8") if k else None,
-                compression_type="gzip",
-                acks="all",  # Wait for all replicas to acknowledge
-                max_request_size=1048576,  # 1MB
-                request_timeout_ms=30000,
-                retry_backoff_ms=100,
-            )
-            await self.producer.start()
-            self._initialized = True
-            logger.info("Kafka producer initialized successfully")
-            return True
+        # Retry logic for Kafka initialization
+        max_retries = 3
+        retry_delay = 1  # Start with 1 second
+        
+        for attempt in range(max_retries):
+            try:
+                self.producer = AIOKafkaProducer(
+                    bootstrap_servers=self.settings.kafka_bootstrap_servers,
+                    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                    key_serializer=lambda k: k.encode("utf-8") if k else None,
+                    compression_type="gzip",
+                    acks="all",  # Wait for all replicas to acknowledge
+                    max_request_size=1048576,  # 1MB
+                    request_timeout_ms=30000,
+                    retry_backoff_ms=100,
+                    connections_max_idle_ms=540000,
+                )
+                await self.producer.start()
+                self._initialized = True
+                logger.info("Kafka producer initialized successfully")
+                return True
 
-        except Exception as e:
-            logger.error(f"Failed to initialize Kafka producer: {e}")
-            return False
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Failed to initialize Kafka producer (attempt {attempt + 1}/{max_retries}), "
+                        f"retrying in {retry_delay} seconds: {e}"
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to initialize Kafka producer after {max_retries} attempts: {e}")
+                    return False
+        
+        return False
 
     async def send_span(self, span_data: dict[str, Any], user_id: UUID) -> bool:
         """Send a span to the span ingestion topic.
