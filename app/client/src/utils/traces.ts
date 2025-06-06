@@ -60,3 +60,26 @@ export const rootTraceQueryOptions = (projectUuid: string, spanUuid: string) => 
   queryFn: () => fetchRootTrace(projectUuid, spanUuid),
   staleTime: 30_000,
 });
+
+export const fetchSpansByTraceId = async (projectUuid: string, traceId: string) => {
+  const { data } = await api.get<SpanPublic[]>(`/projects/${projectUuid}/traces/by-trace-id/${traceId}`);
+  return data;
+};
+
+export const spansByTraceIdQueryOptions = (projectUuid: string, traceId: string) => ({
+  queryKey: [`spans-by-trace-id`, projectUuid, traceId],
+  queryFn: () => fetchSpansByTraceId(projectUuid, traceId),
+  staleTime: 30_000,
+});
+
+export interface RecentSpansResponse {
+  spans: SpanPublic[];
+  timestamp: string;
+  project_uuid: string;
+}
+
+export const fetchRecentSpans = async (projectUuid: string, since?: string) => {
+  const params = since ? `?since=${encodeURIComponent(since)}` : '';
+  const { data } = await api.get<RecentSpansResponse>(`/projects/${projectUuid}/spans/recent${params}`);
+  return data;
+};

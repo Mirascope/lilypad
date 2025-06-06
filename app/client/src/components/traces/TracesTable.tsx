@@ -35,7 +35,7 @@ import {
   NotebookPen,
   SmileIcon,
 } from "lucide-react";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const tagFilter = (row: Row<SpanPublic>, columnId: string, filterValue: string): boolean => {
@@ -121,6 +121,55 @@ export const TracesTable = ({
     rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
   const selectRow = findRow(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
+
+  // Scroll to highlighted row when traceUuid changes
+  useEffect(() => {
+    if (traceUuid && virtualizerRef.current && data.length > 0) {
+      // Find the index of the row to scroll to
+      const findRowIndex = (rows: SpanPublic[], uuid: string): number => {
+        let currentIndex = 0;
+        
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].uuid === uuid) {
+            return currentIndex;
+          }
+          currentIndex++;
+          
+          // Check child spans if parent is expanded
+          const childSpans = rows[i].child_spans || [];
+          if (childSpans.length > 0) {
+            for (let j = 0; j < childSpans.length; j++) {
+              if (childSpans[j].uuid === uuid) {
+                return currentIndex;
+              }
+              currentIndex++;
+            }
+          }
+        }
+        return -1;
+      };
+
+      const rowIndex = findRowIndex(data, traceUuid);
+      if (rowIndex !== -1) {
+        // Delay to ensure the table is rendered and expanded
+        setTimeout(() => {
+          const scrollContainer = virtualizerRef.current;
+          if (scrollContainer) {
+            // Calculate the position to scroll to
+            const rowHeight = 45; // This matches estimateSize in virtualizerOptions
+            const targetPosition = rowIndex * rowHeight;
+            const containerHeight = scrollContainer.clientHeight;
+            const scrollTo = Math.max(0, targetPosition - containerHeight / 2 + rowHeight / 2);
+            
+            scrollContainer.scrollTo({
+              top: scrollTo,
+              behavior: 'smooth'
+            });
+          }
+        }, 200);
+      }
+    }
+  }, [traceUuid, data]);
 
   const prefetch = (row: SpanPublic) => {
     queryClient
@@ -480,7 +529,17 @@ export const TracesTable = ({
           overscan: 20,
         }}
         onRowHover={prefetch}
-        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customExpanded={(() => {
+          // If we're selecting a child row, expand its parent
+          if (selectRow?.parent_span_id) {
+            // Find the parent row
+            const parentRow = data.find((r) => r.span_id === selectRow.parent_span_id);
+            if (parentRow) {
+              return { [parentRow.span_id]: true };
+            }
+          }
+          return undefined;
+        })()}
         customGetRowId={(row) => row.span_id}
         filterColumn={filterColumn}
         getRowCanExpand={getRowCanExpand}

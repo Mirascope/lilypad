@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from lilypad.server.models import (
-    APIKeyTable,
     FunctionTable,
     ProjectTable,
     Scope,
@@ -88,14 +87,14 @@ def test_spans(
 
 def test_get_recent_spans_no_since_parameter(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
     test_spans: list[SpanTable],
 ):
     """Test getting recent spans without 'since' parameter (default 30 seconds)."""
+    # Note: The client fixture already overrides get_current_user
+    # so we don't need to pass authentication headers in tests
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     assert response.status_code == 200
@@ -117,7 +116,6 @@ def test_get_recent_spans_no_since_parameter(
 
 def test_get_recent_spans_with_since_parameter(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
     test_spans: list[SpanTable],
 ):
@@ -128,7 +126,6 @@ def test_get_recent_spans_with_since_parameter(
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
         params={"since": since.isoformat()},
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     assert response.status_code == 200
@@ -150,7 +147,6 @@ def test_get_recent_spans_with_since_parameter(
 
 def test_get_recent_spans_empty_result(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
     test_spans: list[SpanTable],
 ):
@@ -161,7 +157,6 @@ def test_get_recent_spans_empty_result(
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
         params={"since": since.isoformat()},
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     assert response.status_code == 200
@@ -172,37 +167,46 @@ def test_get_recent_spans_empty_result(
 
 
 def test_get_recent_spans_unauthorized(
-    client: TestClient,
     test_project: ProjectTable,
+    get_test_session,
 ):
-    """Test getting recent spans without API key."""
-    response = client.get(
-        f"/projects/{test_project.uuid}/spans/recent",
-    )
+    """Test getting recent spans without authentication."""
+    from fastapi.testclient import TestClient
 
-    assert response.status_code == 401
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.db.session import get_session
+
+    # Create a client without authentication override
+    api.dependency_overrides[get_session] = get_test_session
+    client = TestClient(api)
+
+    try:
+        response = client.get(
+            f"/projects/{test_project.uuid}/spans/recent",
+        )
+        assert response.status_code == 401
+    finally:
+        api.dependency_overrides.clear()
 
 
 def test_get_recent_spans_wrong_project(
     client: TestClient,
-    test_api_key: APIKeyTable,
 ):
     """Test getting recent spans for non-existent project."""
     fake_uuid = uuid4()
 
     response = client.get(
         f"/projects/{fake_uuid}/spans/recent",
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
-    # API key validation fails with 400 when project doesn't match
-    assert response.status_code == 400
-    assert "Invalid Project ID" in response.json()["detail"]
+    # Should return 200 with empty spans (user has access but no spans exist)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["spans"]) == 0
 
 
 def test_get_recent_spans_ordering(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
     test_spans: list[SpanTable],
 ):
@@ -213,7 +217,6 @@ def test_get_recent_spans_ordering(
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
         params={"since": since.isoformat()},
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     assert response.status_code == 200
@@ -236,14 +239,12 @@ def test_get_recent_spans_ordering(
 
 def test_get_recent_spans_with_invalid_since(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
 ):
     """Test getting recent spans with invalid 'since' parameter."""
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
         params={"since": "invalid-date"},
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     assert response.status_code == 422  # Validation error
@@ -251,7 +252,6 @@ def test_get_recent_spans_with_invalid_since(
 
 def test_get_recent_spans_performance(
     client: TestClient,
-    test_api_key: APIKeyTable,
     test_project: ProjectTable,
     session: Session,
     test_function: FunctionTable,
@@ -285,7 +285,6 @@ def test_get_recent_spans_performance(
 
     response = client.get(
         f"/projects/{test_project.uuid}/spans/recent",
-        headers={"X-API-Key": test_api_key.key_hash},
     )
 
     end_time = time.time()

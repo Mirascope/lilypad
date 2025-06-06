@@ -517,13 +517,16 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self, project_uuid: UUID, trace_id: str
     ) -> Sequence[SpanTable]:
         """Find all spans for a given trace_id."""
+        # Use PostgreSQL JSON operator
         stmt = (
             select(self.table)
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
-                self.table.data["trace_id"].astext == trace_id,
+                # PostgreSQL JSONB operator
+                text("data->>'trace_id' = :trace_id"),
             )
+            .params(trace_id=trace_id)
             .order_by(asc(self.table.created_at))
         )
         return self.session.exec(stmt).all()
