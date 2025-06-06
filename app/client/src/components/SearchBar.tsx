@@ -128,7 +128,7 @@ export const SearchBar = ({
               mode="single"
               selected={startDate}
               onSelect={handleStartDateChange}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -152,7 +152,7 @@ export const SearchBar = ({
               mode="single"
               selected={endDate}
               onSelect={handleEndDateChange}
-              initialFocus
+              autoFocus
               disabled={(date) => (startDate ? date < startDate : false)}
             />
           </PopoverContent>
