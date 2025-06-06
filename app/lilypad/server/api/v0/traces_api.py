@@ -260,9 +260,7 @@ async def traces(
     )
     logger.info("[TRACES-API] Calling kafka_service.send_batch()")
     kafka_available = await kafka_service.send_batch(traces_json)
-    logger.info(
-        f"[TRACES-API] kafka_service.send_batch() returned: {kafka_available}"
-    )
+    logger.info(f"[TRACES-API] kafka_service.send_batch() returned: {kafka_available}")
 
     if kafka_available:
         # Queue processing successful

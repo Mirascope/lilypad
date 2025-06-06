@@ -17,7 +17,7 @@ class SpanKafkaService(BaseKafkaService):
 
     def __init__(self, user: UserPublic) -> None:
         """Initialize with user context.
-        
+
         Args:
             user: The authenticated user
         """
@@ -38,55 +38,69 @@ class SpanKafkaService(BaseKafkaService):
         # Validate required fields first
         if not isinstance(data, dict):
             raise ValueError("Span data must be a dictionary")
-        
         # Ensure trace_id is present
         if not data.get("trace_id"):
             raise ValueError("Missing required field: trace_id")
-        
         # Validate string lengths for common fields
         max_string_length = 10000  # 10KB per string field
         for _key, value in data.items():
             if isinstance(value, str) and len(value) > max_string_length:
                 # Don't include user input in error message
-                raise ValueError(f"String field exceeds maximum length of {max_string_length} characters")
-        
+                raise ValueError(
+                    f"String field exceeds maximum length of {max_string_length} characters"
+                )
         # Safely get user_id
         if not self.user:
             raise ValueError("User context is missing")
-        
         try:
             user_id = str(self.user.uuid)
         except (AttributeError, TypeError):
             raise ValueError("Invalid user object - missing uuid attribute")
-        
         # Create final message
         final_message = {**data, "user_id": user_id}
-        
-        # Validate final message size using actual JSON encoding
+
+        # Validate message structure and estimate size
         try:
-            # Use the same serialization logic as Kafka producer
-            json_bytes = json.dumps(final_message, default=str, check_circular=True).encode("utf-8")
-            actual_size = len(json_bytes)
-            
-            if actual_size > 1048576:  # 1MB
-                raise ValueError(f"Message too large: {actual_size} bytes (max 1MB)")
-        except (TypeError, ValueError) as e:
-            if "circular" in str(e).lower():
-                raise ValueError("Message contains circular references")
-            raise ValueError("Invalid message data structure")
-        
+            # Quick structure validation (will catch circular references)
+            json.dumps(final_message, default=str, check_circular=True)
+
+            # Estimate size without full encoding (avoid double serialization)
+            # Rough estimate: JSON adds ~20% overhead for quotes, commas, etc.
+            estimated_size = (
+                sum(
+                    len(str(k)) + len(str(v)) + 6  # 6 bytes for ": " and ", "
+                    for k, v in final_message.items()
+                )
+                + 2
+            )  # {} brackets
+
+            # Add buffer for JSON encoding overhead
+            estimated_size = int(estimated_size * 1.3)
+
+            if estimated_size > 1048576:  # 1MB
+                raise ValueError(
+                    f"Message too large: estimated {estimated_size} bytes (max 1MB)"
+                )
+        except TypeError as e:
+            raise ValueError("Message contains non-serializable data types") from e
+        except ValueError as e:
+            # Re-raise ValueError with more specific message
+            if isinstance(e.args[0], str) and "circular" in e.args[0]:
+                raise ValueError("Message contains circular references") from e
+            raise
+
         return final_message
 
 
 # Dependency injection helper
 async def get_span_kafka_service(
-    user: Annotated[UserPublic, Depends(get_current_user)]
+    user: Annotated[UserPublic, Depends(get_current_user)],
 ) -> SpanKafkaService:
     """Get SpanKafkaService instance with dependency injection.
-    
+
     Args:
         user: Current authenticated user from dependency injection
-        
+
     Returns:
         SpanKafkaService instance
     """

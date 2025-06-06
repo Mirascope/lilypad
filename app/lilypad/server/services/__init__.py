@@ -7,11 +7,11 @@ from .environments import EnvironmentService
 from .functions import FunctionService
 from .kafka_base import BaseKafkaService
 from .kafka_producer import close_kafka_producer, get_kafka_producer
-from .span_kafka_service import SpanKafkaService, get_span_kafka_service
 from .opensearch import OpenSearchService, SearchQuery, get_opensearch_service
 from .organization_invites import OrganizationInviteService
 from .organizations import OrganizationService
 from .projects import ProjectService
+from .span_kafka_service import SpanKafkaService, get_span_kafka_service
 from .spans import SpanService
 from .tags import TagService
 from .user_consents import UserConsentService
