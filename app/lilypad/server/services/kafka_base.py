@@ -56,7 +56,7 @@ class BaseKafkaService(ABC):
         """
         producer = await get_kafka_producer()
         if not producer:
-            logger.warning(f"Kafka not available - message will not be sent to {self.topic}")
+            logger.warning("Kafka not available - message will not be sent", extra={"topic": self.topic})
             return False
         
         try:
@@ -74,22 +74,26 @@ class BaseKafkaService(ABC):
             )
             
             logger.info(
-                f"Message sent to Kafka - Topic: {metadata.topic}, "
-                f"Partition: {metadata.partition}, Offset: {metadata.offset}"
+                "Message sent to Kafka",
+                extra={
+                    "topic": metadata.topic,
+                    "partition": metadata.partition,
+                    "offset": metadata.offset
+                }
             )
             return True
             
         except asyncio.TimeoutError:
             logger.error(
-                f"Timeout sending message to Kafka topic {self.topic} "
-                f"(timeout: {KAFKA_SEND_TIMEOUT_SECONDS}s)"
+                "Timeout sending message to Kafka",
+                extra={"topic": self.topic, "timeout_seconds": KAFKA_SEND_TIMEOUT_SECONDS}
             )
             return False
         except KafkaError as e:
-            logger.error(f"Failed to send message to Kafka topic {self.topic}: {e}")
+            logger.error("Failed to send message to Kafka", extra={"topic": self.topic, "error": str(e)})
             return False
         except Exception as e:
-            logger.error(f"Unexpected error sending message to Kafka: {e}")
+            logger.error("Unexpected error sending message to Kafka", extra={"error": str(e)})
             return False
 
     async def send_batch(self, data_list: list[dict[str, Any]]) -> bool:
@@ -104,7 +108,8 @@ class BaseKafkaService(ABC):
         producer = await get_kafka_producer()
         if not producer:
             logger.warning(
-                f"Kafka not available - {len(data_list)} messages will not be sent to {self.topic}"
+                "Kafka not available - messages will not be sent",
+                extra={"topic": self.topic, "message_count": len(data_list)}
             )
             return False
         
@@ -121,8 +126,8 @@ class BaseKafkaService(ABC):
                     key = self.get_key(data)
                     message = self.transform_message(data)
                     
-                    # Send without waiting (async operation)
-                    future = await producer.send(
+                    # Send without waiting - producer.send() returns a Future
+                    future = producer.send(  # NO await here!
                         topic=self.topic,
                         key=key,
                         value=message,
@@ -130,7 +135,7 @@ class BaseKafkaService(ABC):
                     futures.append(future)
                     
                 except Exception as e:
-                    logger.error(f"Failed to prepare message for batch send: {e}")
+                    logger.error("Failed to prepare message for batch send", extra={"error": str(e)})
                     failed_count += 1
             
             # Wait for all messages to be sent with timeout
@@ -142,32 +147,25 @@ class BaseKafkaService(ABC):
                     )
                 except asyncio.TimeoutError:
                     logger.error(
-                        f"Timeout flushing Kafka batch "
-                        f"(timeout: {KAFKA_FLUSH_TIMEOUT_SECONDS}s)"
+                        "Timeout flushing Kafka batch",
+                        extra={"timeout_seconds": KAFKA_FLUSH_TIMEOUT_SECONDS}
                     )
-                    failed_count = len(futures)  # Assume all failed on timeout
-                
-                # Check results
-                for future in futures:
-                    try:
-                        # This will raise if the send failed
-                        await future
-                    except Exception as e:
-                        logger.error(f"Message failed in batch: {e}")
-                        failed_count += 1
+                    # Don't know actual failed count on timeout
+                    failed_count = len(data_list)  # Conservative estimate
             
         except KafkaError as e:
-            logger.error(f"Kafka batch send error: {e}")
+            logger.error("Kafka batch send error", extra={"error": str(e)})
             failed_count = len(data_list)  # Assume all failed
         
         success_count = len(data_list) - failed_count
         success = failed_count == 0
         
         if success:
-            logger.info(f"Batch sent successfully - Total: {len(data_list)} messages to {self.topic}")
+            logger.info("Batch sent successfully", extra={"topic": self.topic, "total": len(data_list)})
         else:
             logger.warning(
-                f"Partial batch send - Success: {success_count}/{len(data_list)} messages to {self.topic}"
+                "Partial batch send",
+                extra={"topic": self.topic, "success": success_count, "total": len(data_list)}
             )
         
         return success

@@ -37,7 +37,7 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
             logger.info("Kafka not configured, skipping initialization")
             return None
         
-        logger.info(f"Initializing Kafka producer with servers: {settings.kafka_bootstrap_servers}")
+        logger.info("Initializing Kafka producer")
         
         # Retry logic for initialization
         max_retries = 3
@@ -70,17 +70,21 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
                     try:
                         await producer.stop()
                     except Exception as cleanup_error:
-                        logger.error(f"Error cleaning up producer: {cleanup_error}")
+                        logger.error("Error cleaning up producer", extra={"error": str(cleanup_error)})
                 
                 if attempt < max_retries - 1:
                     logger.warning(
                         f"Failed to initialize Kafka producer (attempt {attempt + 1}/{max_retries}), "
-                        f"retrying in {retry_delay} seconds: {e}"
+                        f"retrying in {retry_delay} seconds",
+                        extra={"error": str(e)}
                     )
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2
                 else:
-                    logger.error(f"Failed to initialize Kafka producer after {max_retries} attempts: {e}")
+                    logger.error(
+                        f"Failed to initialize Kafka producer after {max_retries} attempts",
+                        extra={"error": str(e)}
+                    )
                     return None
         
         return None
@@ -95,6 +99,6 @@ async def close_kafka_producer() -> None:
             await _producer_instance.stop()
             logger.info("Kafka producer closed")
         except Exception as e:
-            logger.error(f"Error closing Kafka producer: {e}")
+            logger.error("Error closing Kafka producer", extra={"error": str(e)})
         finally:
             _producer_instance = None
