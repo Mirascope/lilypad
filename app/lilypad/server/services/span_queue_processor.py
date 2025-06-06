@@ -204,20 +204,37 @@ class SpanQueueProcessor:
 
     async def stop(self) -> None:
         """Stop the queue processor."""
+        logger.info("Stopping queue processor...")
         self._running = False
 
+        # Cancel and wait for cleanup task
         if self._cleanup_task and not self._cleanup_task.done():
+            logger.info("Cancelling cleanup task...")
             self._cleanup_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
+            try:
                 await self._cleanup_task
+            except asyncio.CancelledError:
+                logger.info("Cleanup task cancelled successfully")
+                pass
 
+        # Cancel and wait for process task
         if self._process_task and not self._process_task.done():
+            logger.info("Cancelling process task...")
             self._process_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
+            try:
                 await self._process_task
+            except asyncio.CancelledError:
+                logger.info("Process task cancelled successfully")
+                pass
 
+        # Stop the consumer
         if self.consumer:
-            await self.consumer.stop()
+            logger.info("Stopping Kafka consumer...")
+            try:
+                await self.consumer.stop()
+                logger.info("Kafka consumer stopped successfully")
+            except Exception as e:
+                logger.error(f"Error stopping Kafka consumer: {e}")
 
         logger.info("Queue processor stopped - processed messages until shutdown")
 

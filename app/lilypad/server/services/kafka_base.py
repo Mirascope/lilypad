@@ -181,7 +181,13 @@ class BaseKafkaService(ABC):
                                 )
 
                         # Flush to ensure all messages are sent to broker
-                        await producer.flush()
+                        try:
+                            await asyncio.wait_for(
+                                producer.flush(),
+                                timeout=5.0  # 5 second timeout for flush
+                            )
+                        except asyncio.TimeoutError:
+                            logger.warning("Timeout during Kafka flush operation")
 
                     except asyncio.TimeoutError:
                         logger.error(

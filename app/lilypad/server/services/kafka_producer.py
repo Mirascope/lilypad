@@ -159,6 +159,15 @@ async def close_kafka_producer() -> None:
         async with _producer_lock:
             if _producer_instance:
                 try:
+                    # First, flush any pending messages with a timeout
+                    logger.info("Flushing pending Kafka messages before shutdown...")
+                    try:
+                        await asyncio.wait_for(_producer_instance.flush(), timeout=5.0)
+                        logger.info("Kafka producer flushed successfully")
+                    except asyncio.TimeoutError:
+                        logger.warning("Timeout while flushing Kafka producer (5s)")
+                    
+                    # Then stop the producer
                     await _producer_instance.stop()
                     logger.info("Kafka producer closed")
                 except Exception as e:
@@ -170,9 +179,15 @@ async def close_kafka_producer() -> None:
     else:
         # If no lock exists, just clean up
         if _producer_instance:
-            with contextlib.suppress(Exception):
+            try:
+                # Try to flush before stopping
+                with contextlib.suppress(asyncio.TimeoutError):
+                    await asyncio.wait_for(_producer_instance.flush(), timeout=5.0)
                 await _producer_instance.stop()
-            _producer_instance = None
+            except Exception:
+                pass  # Suppress all exceptions during cleanup
+            finally:
+                _producer_instance = None
 
     # Clear the lock as well
     _producer_lock = None

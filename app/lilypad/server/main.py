@@ -3,6 +3,7 @@
 For development: Run fastapi dev lilypad/server/main.py
 """
 
+import asyncio
 import logging
 import subprocess
 import traceback
@@ -98,19 +99,29 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Cleanup on shutdown
+    log.info("Starting graceful shutdown...")
+    
+    # First stop the queue processor to prevent new messages
     if queue_processor:
         log.info("Stopping span queue processor")
         try:
             await queue_processor.stop()
+            log.info("Span queue processor stopped successfully")
         except Exception as e:
             log.error(f"Error stopping queue processor: {e}")
 
-    # Close Kafka producer
+    # Small delay to allow any pending tasks to complete
+    await asyncio.sleep(0.5)
+
+    # Then close Kafka producer
     log.info("Closing Kafka producer")
     try:
         await close_kafka_producer()
+        log.info("Kafka producer closed successfully")
     except Exception as e:
         log.error(f"Error closing Kafka producer: {e}")
+    
+    log.info("Graceful shutdown completed")
 
 
 origins = [
