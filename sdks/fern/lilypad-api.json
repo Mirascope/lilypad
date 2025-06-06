@@ -2984,6 +2984,68 @@
         }
       }
     },
+    "/projects/{project_uuid}/traces/by-trace-id/{trace_id}": {
+      "get": {
+        "summary": "Get Spans By Trace Id",
+        "description": "Get all spans for a given trace ID.",
+        "operationId": "get_spans_by_trace_id_projects__project_uuid__traces_by_trace_id__trace_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpanPublic"
+                  },
+                  "title": "Response Get Spans By Trace Id Projects  Project Uuid  Traces By Trace Id  Trace Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/projects/{project_uuid}/traces": {
       "get": {
         "summary": "Get Traces By Project Uuid",
@@ -7570,13 +7632,21 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "trace_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trace Ids"
           }
         },
         "type": "object",
         "required": [
           "trace_status",
           "span_count",
-          "message"
+          "message",
+          "trace_ids"
         ],
         "title": "TracesQueueResponse",
         "description": "Response model for queued traces."
