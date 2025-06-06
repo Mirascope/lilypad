@@ -36,7 +36,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
           variant: "ghost",
           size: "sm",
         }),
-        "cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+        "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground cursor-pointer",
         className
       )}
       {...props}
@@ -54,4 +54,4 @@ function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPr
   );
 }
 
-export { Tabs, TabsContent, TabsList, TabsTrigger };
+export { Tabs, TabsList, TabsTrigger, TabsContent };
