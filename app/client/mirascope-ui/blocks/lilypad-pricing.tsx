@@ -15,8 +15,8 @@ const FeatureRow = ({ feature, free, pro, team }: FeatureRowProps) => {
   const allSameNonBoolean = free === pro && pro === team && typeof free === "string" && free !== "";
 
   return (
-    <div className="border-border grid min-h-[48px] grid-cols-4 items-center gap-4 border-b py-3">
-      <div className="text-foreground text-lg font-medium">{feature}</div>
+    <div className="grid min-h-[48px] grid-cols-4 items-center gap-4 border-b border-border py-3">
+      <div className="text-lg font-medium text-foreground">{feature}</div>
 
       {allSameNonBoolean ? (
         <div className="col-span-3 text-center text-lg whitespace-pre-line">{free}</div>
@@ -26,17 +26,17 @@ const FeatureRow = ({ feature, free, pro, team }: FeatureRowProps) => {
             {typeof free === "boolean" ? (
               <div className="flex justify-center">
                 {free ? (
-                  <div className="bg-primary/30 rounded-full p-1">
+                  <div className="rounded-full bg-primary/30 p-1">
                     <Check size={16} className="text-primary" />
                   </div>
                 ) : (
-                  <div className="bg-muted rounded-full p-1">
+                  <div className="rounded-full bg-muted p-1">
                     <X size={16} className="text-muted-foreground" />
                   </div>
                 )}
               </div>
             ) : (
-              <span className="text-foreground text-lg whitespace-pre-line">{free}</span>
+              <span className="text-lg whitespace-pre-line text-foreground">{free}</span>
             )}
           </div>
 
@@ -44,17 +44,17 @@ const FeatureRow = ({ feature, free, pro, team }: FeatureRowProps) => {
             {typeof pro === "boolean" ? (
               <div className="flex justify-center">
                 {pro ? (
-                  <div className="bg-primary/30 rounded-full p-1">
+                  <div className="rounded-full bg-primary/30 p-1">
                     <Check size={16} className="text-primary" />
                   </div>
                 ) : (
-                  <div className="bg-muted rounded-full p-1">
+                  <div className="rounded-full bg-muted p-1">
                     <X size={16} className="text-muted-foreground" />
                   </div>
                 )}
               </div>
             ) : (
-              <span className="text-foreground text-lg whitespace-pre-line">{pro}</span>
+              <span className="text-lg whitespace-pre-line text-foreground">{pro}</span>
             )}
           </div>
 
@@ -62,17 +62,17 @@ const FeatureRow = ({ feature, free, pro, team }: FeatureRowProps) => {
             {typeof team === "boolean" ? (
               <div className="flex justify-center">
                 {team ? (
-                  <div className="bg-primary/30 rounded-full p-1">
+                  <div className="rounded-full bg-primary/30 p-1">
                     <Check size={16} className="text-primary" />
                   </div>
                 ) : (
-                  <div className="bg-muted rounded-full p-1">
+                  <div className="rounded-full bg-muted p-1">
                     <X size={16} className="text-muted-foreground" />
                   </div>
                 )}
               </div>
             ) : (
-              <span className="text-foreground text-lg whitespace-pre-line">{team}</span>
+              <span className="text-lg whitespace-pre-line text-foreground">{team}</span>
             )}
           </div>
         </>
@@ -90,10 +90,10 @@ interface PricingTierProps {
 }
 // Pricing tier component
 const PricingTier = ({ name, price, description, button, badge }: PricingTierProps) => (
-  <div className="border-border bg-background overflow-hidden rounded-lg border shadow-sm">
+  <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
     <div className={cn("bg-background px-6 py-8")}>
       <div className="mb-2 flex items-center gap-2">
-        <h3 className={cn("text-foreground text-xl font-semibold")}>{name}</h3>
+        <h3 className={cn("text-xl font-semibold text-foreground")}>{name}</h3>
         {badge && (
           <span
             className={cn(
@@ -107,11 +107,11 @@ const PricingTier = ({ name, price, description, button, badge }: PricingTierPro
           </span>
         )}
       </div>
-      <p className="text-muted-foreground mb-5">{description}</p>
+      <p className="mb-5 text-muted-foreground">{description}</p>
       <div className="mb-6">
-        <span className="text-foreground text-3xl font-bold">{price}</span>
+        <span className="text-3xl font-bold text-foreground">{price}</span>
         {price !== "TBD" && price !== "N/A" && (
-          <span className="text-muted-foreground ml-1 text-sm">/ month</span>
+          <span className="ml-1 text-sm text-muted-foreground">/ month</span>
         )}
       </div>
       {button}
@@ -121,17 +121,17 @@ const PricingTier = ({ name, price, description, button, badge }: PricingTierPro
 
 // Feature comparison table component
 export const FeatureComparisonTable = ({ features }: { features: FeatureRowProps[] }) => (
-  <div className="border-border bg-background overflow-hidden rounded-lg border shadow-sm">
-    <div className="border-border bg-accent border-b px-4 py-5 sm:px-6">
-      <h3 className="text-accent-foreground text-lg font-medium">Feature Comparison</h3>
+  <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+    <div className="border-b border-border bg-accent px-4 py-5 sm:px-6">
+      <h3 className="text-lg font-medium text-accent-foreground">Feature Comparison</h3>
     </div>
-    <div className="bg-background overflow-x-auto px-4 py-5 sm:p-6">
+    <div className="overflow-x-auto bg-background px-4 py-5 sm:p-6">
       {/* Table header */}
-      <div className="border-border grid grid-cols-4 gap-4 border-b pb-4">
-        <div className="text-muted-foreground text-lg font-medium">Feature</div>
-        <div className="text-muted-foreground text-center text-lg font-medium">Free</div>
-        <div className="text-muted-foreground text-center text-lg font-medium">Pro</div>
-        <div className="text-muted-foreground text-center text-lg font-medium">Team</div>
+      <div className="grid grid-cols-4 gap-4 border-b border-border pb-4">
+        <div className="text-lg font-medium text-muted-foreground">Feature</div>
+        <div className="text-center text-lg font-medium text-muted-foreground">Free</div>
+        <div className="text-center text-lg font-medium text-muted-foreground">Pro</div>
+        <div className="text-center text-lg font-medium text-muted-foreground">Team</div>
       </div>
 
       {/* Table rows */}
@@ -204,11 +204,11 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
     <div className="px-4 py-4">
       <div className="mx-auto max-w-4xl">
         <div className="mb-4 text-center">
-          <h1 className="text-foreground mb-4 text-center text-4xl font-bold">Lilypad Pricing</h1>
-          <p className="text-foreground mx-auto mb-2 max-w-2xl text-xl">
+          <h1 className="mb-4 text-center text-4xl font-bold text-foreground">Lilypad Pricing</h1>
+          <p className="mx-auto mb-2 max-w-2xl text-xl text-foreground">
             Get started with the Free plan today.
           </p>
-          <p className="text-muted-foreground mx-auto max-w-2xl text-sm italic">
+          <p className="mx-auto max-w-2xl text-sm text-muted-foreground italic">
             No credit card required.
           </p>
         </div>
@@ -261,13 +261,13 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
         </Tabs>
 
         {/* FAQ Section */}
-        <div className="border-border bg-card mt-16 rounded-lg border p-8">
-          <h2 className="text-foreground mb-4 text-2xl font-semibold">
+        <div className="mt-16 rounded-lg border border-border bg-card p-8">
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">
             Frequently Asked Questions
           </h2>
           <div className="space-y-6">
             <div>
-              <h3 className="text-foreground mb-2 text-lg font-medium">
+              <h3 className="mb-2 text-lg font-medium text-foreground">
                 How long will the open beta last?
               </h3>
               <p className="text-muted-foreground">
@@ -276,7 +276,7 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
               </p>
             </div>
             <div>
-              <h3 className="text-foreground mb-2 text-lg font-medium">
+              <h3 className="mb-2 text-lg font-medium text-foreground">
                 What happens when the beta ends?
               </h3>
               <p className="text-muted-foreground">
@@ -288,7 +288,7 @@ export function LilypadPricing({ actions }: LilypadPricingProps) {
         </div>
 
         <div className="mt-16 text-center">
-          <h2 className="text-foreground mb-4 text-2xl font-semibold">
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">
             Have questions about our pricing?
           </h2>
           <p className="text-muted-foreground">

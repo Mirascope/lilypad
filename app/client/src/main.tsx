@@ -12,43 +12,38 @@ import { FontProvider } from "@/src/components/FontProvider";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { routeTree } from "./routeTree.gen";
 
-const createRetryHandler = (nonRetryableStatusCodes: number[] = [403, 409]) => {
-  return (failureCount: number, error: Error) => {
-    const getStatusCode = (error: Error): number | null => {
-      if (!error || typeof error !== "object") return null;
-      // Check common status properties
-      if ("status" in error) return error.status as number;
-      if ("statusCode" in error) return error.statusCode as number;
-
-      if (error instanceof Error && error.message) {
-        const statusPattern = new RegExp(`\\b(${nonRetryableStatusCodes.join("|")})\\b`);
-        const match = error.message.match(statusPattern);
-        return match ? parseInt(match[1]) : null;
-      }
-
-      return null;
-    };
-
-    const statusCode = getStatusCode(error);
-    const isNonRetryableError = statusCode !== null && nonRetryableStatusCodes.includes(statusCode);
-
-    // Don't retry on non-retryable errors
-    if (isNonRetryableError) {
-      return false;
-    }
-
-    // Default behavior: retry failed requests up to 3 times
-    return failureCount < 3;
-  };
-};
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: createRetryHandler([403, 409]),
+      retry: (failureCount, error) => {
+        // Don't retry 403 errors
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error && typeof error === "object" && "status" in error && error.status === 403) ||
+          (error && typeof error === "object" && "statusCode" in error && error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        // Default behavior: retry failed queries 3 times
+        return failureCount < 3;
+      },
     },
     mutations: {
-      retry: createRetryHandler([403, 409]),
+      // Same logic for mutations
+      retry: (failureCount, error) => {
+        if (
+          (error instanceof Error && error.message.includes("403")) ||
+          (error instanceof Response && error.status === 403) ||
+          (error && typeof error === "object" && "status" in error && error.status === 403) ||
+          (error && typeof error === "object" && "statusCode" in error && error.statusCode === 403)
+        ) {
+          return false;
+        }
+
+        return failureCount < 3;
+      },
     },
   },
 });
