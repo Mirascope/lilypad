@@ -63,6 +63,7 @@ class _JSONSpanExporter(SpanExporter):
         self.settings = get_settings()
         self.client = get_sync_client(api_key=self.settings.api_key)
         self.log = logging.getLogger(__name__)
+        self._logged_trace_ids = set()  # Track which traces we've already logged
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries and send them."""
@@ -86,10 +87,27 @@ class _JSONSpanExporter(SpanExporter):
         if response.trace_status == "queued" and response.span_count > 0:
             # When using Kafka queue, we don't get database UUIDs back immediately
             # So we can only provide the generic traces URL
-            for trace_id in response.trace_ids:
-                self.log.info(
-                    f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{trace_id}"
-                )
+            unique_trace_ids = list(set(response.trace_ids))
+            
+            # Only log trace URLs that haven't been logged before
+            new_trace_ids = [tid for tid in unique_trace_ids if tid not in self._logged_trace_ids]
+            
+            if new_trace_ids:
+                # Mark these trace IDs as logged
+                self._logged_trace_ids.update(new_trace_ids)
+                
+                if len(new_trace_ids) == 1:
+                    self.log.info(
+                        f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{new_trace_ids[0]}"
+                    )
+                else:
+                    self.log.info(
+                        f"View {len(new_trace_ids)} new traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
+                    )
+                    for trace_id in new_trace_ids:
+                        self.log.debug(
+                            f"  - {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{trace_id}"
+                        )
         return SpanExportResult.SUCCESS
 
     def shutdown(self) -> None:
