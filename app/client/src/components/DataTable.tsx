@@ -260,11 +260,15 @@ export const DataTable = <T extends { uuid: string }>({
       tableRow.toggleSelected();
     }
     
-    // Then handle the detail panel as before
+    // Then handle the detail panel
     if (onRowClick) {
       onRowClick(row);
     } else {
-      if (detailRow?.uuid === row.uuid) {
+      // Compare using the same ID logic as table rows
+      const currentDetailId = detailRow ? (customGetRowId ? customGetRowId(detailRow) : detailRow.uuid) : null;
+      const clickedRowId = customGetRowId ? customGetRowId(row) : row.uuid;
+      
+      if (currentDetailId === clickedRowId) {
         onDetailPanelClose();
       } else {
         setDetailRow(row);

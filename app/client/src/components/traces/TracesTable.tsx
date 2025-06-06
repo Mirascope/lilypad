@@ -122,9 +122,11 @@ export const TracesTable = ({
   const selectRow = findRow(data, traceUuid);
   const isSubRow = selectRow?.parent_span_id;
 
-  // Scroll to highlighted row when traceUuid changes
+  // Scroll to highlighted row only on initial load or when traceUuid changes
+  const [hasScrolledToRow, setHasScrolledToRow] = useState(false);
+  
   useEffect(() => {
-    if (traceUuid && virtualizerRef.current && data.length > 0) {
+    if (traceUuid && virtualizerRef.current && data.length > 0 && !hasScrolledToRow) {
       // Find the index of the row to scroll to
       const findRowIndex = (rows: SpanPublic[], uuid: string): number => {
         let currentIndex = 0;
@@ -165,11 +167,19 @@ export const TracesTable = ({
               top: scrollTo,
               behavior: 'smooth'
             });
+            
+            // Mark that we've scrolled to prevent future auto-scrolls
+            setHasScrolledToRow(true);
           }
         }, 200);
       }
     }
-  }, [traceUuid, data]);
+  }, [traceUuid, data, hasScrolledToRow]);
+  
+  // Reset scroll flag when traceUuid changes
+  useEffect(() => {
+    setHasScrolledToRow(false);
+  }, [traceUuid]);
 
   const prefetch = (row: SpanPublic) => {
     queryClient
