@@ -69,7 +69,7 @@ const TraceContainer = () => {
 const Trace = () => {
   const { projectUuid, _splat: urlParam } = useParams({ from: Route.id });
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
-  const { selectedRows, detailRow, setDetailRow } = useTable<SpanPublic>();
+  const { selectedRows, detailRow, setDetailRow, setSelectedRows } = useTable<SpanPublic>();
   const [isComparing, setIsComparing] = useState(false);
   const features = useFeatureAccess();
   const [pageSize] = useState(INIT_LIMIT);
@@ -159,6 +159,9 @@ const Trace = () => {
       setIsPolling(false);
       toast.success("Real-time updates paused");
     } else {
+      // Clear selections when starting auto-updates to ensure smooth scrolling
+      setSelectedRows([]);
+      
       spanPollingService.start({
         projectUuid,
         interval: 5000,
@@ -169,9 +172,9 @@ const Trace = () => {
         }
       });
       setIsPolling(true);
-      toast.success("Real-time updates started");
+      toast.success("Real-time updates started (selections cleared)");
     }
-  }, [isPolling, projectUuid, handleNewSpans]);
+  }, [isPolling, projectUuid, handleNewSpans, setSelectedRows]);
 
   // Clean up polling on unmount
   useEffect(() => {

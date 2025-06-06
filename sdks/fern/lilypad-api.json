@@ -2433,10 +2433,10 @@
         "operationId": "get_recent_spans_projects__project_uuid__spans_recent_get",
         "security": [
           {
-            "APIKeyHeader": []
+            "OAuth2PasswordBearer": []
           },
           {
-            "OAuth2PasswordBearer": []
+            "APIKeyHeader": []
           }
         ],
         "parameters": [
