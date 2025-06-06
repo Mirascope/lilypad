@@ -184,7 +184,7 @@ class BaseKafkaService(ABC):
                         try:
                             await asyncio.wait_for(
                                 producer.flush(),
-                                timeout=5.0  # 5 second timeout for flush
+                                timeout=5.0,  # 5 second timeout for flush
                             )
                         except asyncio.TimeoutError:
                             logger.warning("Timeout during Kafka flush operation")

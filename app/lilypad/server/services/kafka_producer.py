@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 _producer_instance: AIOKafkaProducer | None = None
 _producer_lock: asyncio.Lock | None = None
 _lock_creation_lock = threading.Lock()  # Thread-safe lock creation
+_is_closing = False  # Flag to prevent new connections during shutdown
 
 
 # Serialization function (avoid lambda overhead)
@@ -36,7 +37,12 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
     Returns:
         The Kafka producer instance, or None if Kafka is not configured
     """
-    global _producer_instance, _producer_lock
+    global _producer_instance, _producer_lock, _is_closing
+
+    # Don't create new instances during shutdown
+    if _is_closing:
+        logger.warning("Kafka producer is shutting down, not creating new instance")
+        return None
 
     if _producer_instance is not None:
         # Check if producer is still healthy using public API
@@ -109,6 +115,8 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
                     request_timeout_ms=30000,
                     retry_backoff_ms=1000,  # 1 second retry backoff
                     connections_max_idle_ms=540000,
+                    # Reduce metadata refresh interval to prevent hanging tasks
+                    metadata_max_age_ms=300000,  # 5 minutes
                     # Note: enable_idempotence requires acks='all', so we don't use it
                 )
 
@@ -152,7 +160,10 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
 
 async def close_kafka_producer() -> None:
     """Close the Kafka producer if it exists."""
-    global _producer_instance, _producer_lock
+    global _producer_instance, _producer_lock, _is_closing
+
+    # Set closing flag to prevent new connections
+    _is_closing = True
 
     # Use lock to ensure thread-safe closure
     if _producer_lock:
@@ -166,10 +177,15 @@ async def close_kafka_producer() -> None:
                         logger.info("Kafka producer flushed successfully")
                     except asyncio.TimeoutError:
                         logger.warning("Timeout while flushing Kafka producer (5s)")
-                    
-                    # Then stop the producer
+
+                    # Stop the producer - this should clean up all internal tasks
+                    logger.info("Stopping Kafka producer...")
                     await _producer_instance.stop()
-                    logger.info("Kafka producer closed")
+
+                    # Give a small delay for internal tasks to clean up
+                    await asyncio.sleep(0.1)
+
+                    logger.info("Kafka producer closed successfully")
                 except Exception as e:
                     logger.error(
                         "Error closing Kafka producer", extra={"error": str(e)}
@@ -184,6 +200,8 @@ async def close_kafka_producer() -> None:
                 with contextlib.suppress(asyncio.TimeoutError):
                     await asyncio.wait_for(_producer_instance.flush(), timeout=5.0)
                 await _producer_instance.stop()
+                # Give a small delay for internal tasks to clean up
+                await asyncio.sleep(0.1)
             except Exception:
                 pass  # Suppress all exceptions during cleanup
             finally:
@@ -191,3 +209,6 @@ async def close_kafka_producer() -> None:
 
     # Clear the lock as well
     _producer_lock = None
+
+    # Reset closing flag (in case of restart)
+    _is_closing = False

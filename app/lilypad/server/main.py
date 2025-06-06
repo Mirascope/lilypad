@@ -100,7 +100,7 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
 
     # Cleanup on shutdown
     log.info("Starting graceful shutdown...")
-    
+
     # First stop the queue processor to prevent new messages
     if queue_processor:
         log.info("Stopping span queue processor")
@@ -110,8 +110,9 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
         except Exception as e:
             log.error(f"Error stopping queue processor: {e}")
 
-    # Small delay to allow any pending tasks to complete
-    await asyncio.sleep(0.5)
+    # Give more time for pending tasks to complete
+    log.info("Waiting for pending tasks to complete...")
+    await asyncio.sleep(1.0)
 
     # Then close Kafka producer
     log.info("Closing Kafka producer")
@@ -120,7 +121,33 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
         log.info("Kafka producer closed successfully")
     except Exception as e:
         log.error(f"Error closing Kafka producer: {e}")
-    
+
+    # Final delay to ensure all internal tasks are cleaned up
+    await asyncio.sleep(0.5)
+
+    # Collect any remaining tasks
+    try:
+        pending_tasks = [
+            task
+            for task in asyncio.all_tasks()
+            if not task.done() and task != asyncio.current_task()
+        ]
+    except AttributeError:
+        # For Python 3.9+
+        pending_tasks = [
+            task
+            for task in asyncio.all_tasks(asyncio.get_running_loop())
+            if not task.done() and task != asyncio.current_task()
+        ]
+
+    if pending_tasks:
+        log.warning(f"Found {len(pending_tasks)} pending tasks during shutdown")
+        # Cancel them
+        for task in pending_tasks:
+            task.cancel()
+        # Wait for them to complete cancellation
+        await asyncio.gather(*pending_tasks, return_exceptions=True)
+
     log.info("Graceful shutdown completed")
 
 

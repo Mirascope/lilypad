@@ -1,7 +1,6 @@
 """Span Queue Processor service for consuming spans from Kafka and handling dependency resolution."""
 
 import asyncio
-import contextlib
 import json
 import logging
 import time
