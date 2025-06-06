@@ -251,7 +251,7 @@ async def traces(
 
     # Extract unique trace IDs from spans
     trace_ids = list(
-        {trace.get("trace_id") for trace in traces_json if trace.get("trace_id")}
+        {str(trace["trace_id"]) for trace in traces_json if trace.get("trace_id")}
     )
 
     # Try to send to Kafka queue

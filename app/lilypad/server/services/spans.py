@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
-from sqlmodel import and_, delete, func, select, text
+from sqlmodel import and_, asc, delete, func, select, text
 
 from ..models.functions import FunctionTable
 from ..models.organizations import OrganizationTable
@@ -524,7 +524,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.project_uuid == project_uuid,
                 self.table.data["trace_id"].astext == trace_id,
             )
-            .order_by(self.table.created_at.asc())
+            .order_by(asc(self.table.created_at))
         )
         return self.session.exec(stmt).all()
 

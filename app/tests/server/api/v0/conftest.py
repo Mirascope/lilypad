@@ -1,6 +1,5 @@
 """Pytest configuration for FastAPI tests."""
 
-import contextlib
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -107,35 +106,11 @@ def get_test_organization_license():
 async def reset_singletons():
     """Reset service singletons after each test."""
     yield
-    # Reset the singletons after test
-    import lilypad.server.services.kafka
-    import lilypad.server.services.span_queue_processor
+    # Reset the Kafka producer after test
+    import lilypad.server.services.kafka_producer
 
-    # Close Kafka service if it exists
-    if lilypad.server.services.kafka._kafka_service_instance is not None:
-        kafka_instance = lilypad.server.services.kafka._kafka_service_instance
-        if hasattr(kafka_instance, "producer") and kafka_instance.producer is not None:
-            with contextlib.suppress(Exception):
-                await kafka_instance.close()
-        kafka_instance._initialized = False
-
-    # Close span queue processor if it exists
-    if lilypad.server.services.span_queue_processor._processor_instance is not None:
-        processor_instance = (
-            lilypad.server.services.span_queue_processor._processor_instance
-        )
-        if hasattr(processor_instance, "_running"):
-            processor_instance._running = False
-        if (
-            hasattr(processor_instance, "consumer")
-            and processor_instance.consumer is not None
-        ):
-            with contextlib.suppress(Exception):
-                await processor_instance.stop()
-
-    # Reset the singletons
-    lilypad.server.services.kafka._kafka_service_instance = None
-    lilypad.server.services.span_queue_processor._processor_instance = None
+    # Close Kafka producer if it exists
+    await lilypad.server.services.kafka_producer.close_kafka_producer()
 
 
 @pytest.fixture

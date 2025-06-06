@@ -1,6 +1,7 @@
 """Edge case tests for Kafka services."""
 
 import asyncio
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -183,9 +184,9 @@ class TestSpanKafkaServiceEdgeCases:
             data = {"trace_id": "trace-123"}
 
             # Create deeply nested structure that json.dumps can handle but is complex
-            nested = data
+            nested: dict[str, Any] = data
             for _ in range(100):
-                nested["nested"] = {"level": nested}
+                nested["nested"] = {"level": nested}  # type: ignore[assignment]
 
             # This should pass json.dumps but fail size check due to complexity
             # Actually, let's test a simpler case - just verify the code handles normal objects

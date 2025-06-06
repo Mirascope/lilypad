@@ -335,7 +335,7 @@ class TestSpanKafkaService:
             service = SpanKafkaService(mock_user)
 
             with pytest.raises(ValueError, match="Span data must be a dictionary"):
-                service.transform_message("not a dict")
+                service.transform_message("not a dict")  # type: ignore[arg-type]
 
     def test_transform_message_long_string(self, mock_user, mock_settings):
         """Test validation for oversized string fields."""
@@ -356,7 +356,7 @@ class TestSpanKafkaService:
         with patch("lilypad.server.services.span_kafka_service.get_settings") as mock:
             mock.return_value = mock_settings
 
-            service = SpanKafkaService(None)
+            service = SpanKafkaService(None)  # type: ignore[arg-type]
             data = {"trace_id": "trace-123"}
 
             with pytest.raises(ValueError, match="User context is missing"):
@@ -369,7 +369,7 @@ class TestSpanKafkaService:
 
             service = SpanKafkaService(mock_user)
             data = {"trace_id": "trace-123"}
-            data["self"] = data  # Create circular reference
+            data["self"] = data  # type: ignore[assignment]  # Create circular reference
 
             with pytest.raises(
                 ValueError,
