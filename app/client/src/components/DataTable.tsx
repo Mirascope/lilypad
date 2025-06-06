@@ -250,7 +250,7 @@ export const DataTable = <T extends { uuid: string }>({
     scrollPaddingEnd: 0,
   });
 
-  const toggleRowSelection = (row: T) => {
+  const toggleRowSelection = useCallback((row: T) => {
     // First, find the table row to toggle its selection
     const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
     const tableRow = table.getRowModel().rowsById[rowId];
@@ -274,7 +274,7 @@ export const DataTable = <T extends { uuid: string }>({
         setDetailRow(row);
       }
     }
-  };
+  }, [customGetRowId, detailRow, onDetailPanelClose, setDetailRow, onRowClick, table]);
 
   const renderRow = (
     rowInfo: {

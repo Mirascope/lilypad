@@ -160,21 +160,35 @@ const Trace = () => {
       toast.success("Real-time updates paused");
     } else {
       // Clear selections when starting auto-updates to ensure smooth scrolling
-      setSelectedRows([]);
+      if (selectedRows.length > 0) {
+        toast.info("Clearing selections for optimal real-time updates", {
+          description: "This prevents conflicts with auto-scrolling"
+        });
+        setSelectedRows([]);
+      }
       
       spanPollingService.start({
         projectUuid,
-        interval: 5000,
+        interval: Number(import.meta.env.VITE_POLLING_INTERVAL) || 5000,
         onUpdate: handleNewSpans,
         onError: (error) => {
           console.error("Polling error:", error);
-          toast.error("Failed to fetch real-time updates");
+          toast.error("Real-time updates stopped due to errors", {
+            description: "Please refresh the page to try again"
+          });
+          setIsPolling(false);
+        },
+        onMaxErrors: () => {
+          setIsPolling(false);
+          toast.error("Real-time updates disabled", {
+            description: "Too many consecutive errors. Please check your connection."
+          });
         }
       });
       setIsPolling(true);
-      toast.success("Real-time updates started (selections cleared)");
+      toast.success("Real-time updates started");
     }
-  }, [isPolling, projectUuid, handleNewSpans, setSelectedRows]);
+  }, [isPolling, projectUuid, handleNewSpans, setSelectedRows, selectedRows.length]);
 
   // Clean up polling on unmount
   useEffect(() => {
@@ -182,6 +196,22 @@ const Trace = () => {
       spanPollingService.stop();
     };
   }, []);
+  
+  // Pause polling when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (isPolling) {
+        if (document.hidden) {
+          spanPollingService.pause();
+        } else {
+          spanPollingService.resume();
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isPolling]);
 
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -272,6 +302,11 @@ const Trace = () => {
           >
             {isPolling ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
+          {isPolling && !isLoading && (
+            <span className="text-xs text-muted-foreground animate-pulse">
+              Live updating...
+            </span>
+          )}
         </Typography>
       </div>
       <div className="flex-1 overflow-auto">

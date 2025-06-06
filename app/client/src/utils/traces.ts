@@ -72,6 +72,8 @@ export const spansByTraceIdQueryOptions = (projectUuid: string, traceId: string)
   staleTime: 30_000,
 });
 
+// Import from generated types when available, otherwise define locally
+// TODO: Replace with import from generated types once API types are regenerated
 export interface RecentSpansResponse {
   spans: SpanPublic[];
   timestamp: string;

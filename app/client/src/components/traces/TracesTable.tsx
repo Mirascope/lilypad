@@ -38,6 +38,12 @@ import {
 import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+// Constants for better maintainability
+const ROW_HEIGHT = 45; // Must match virtualizerOptions.estimateSize
+const EXPANSION_ANIMATION_DELAY_MS = 200; // Wait for expand animation to complete
+const SCROLL_TO_CENTER_DELAY_MS = 100; // Delay before scrolling to ensure render
+const PREFETCH_STALE_TIME_MS = 60000; // 1 minute cache for prefetched data
+
 const tagFilter = (row: Row<SpanPublic>, columnId: string, filterValue: string): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
 
@@ -158,10 +164,9 @@ export const TracesTable = ({
           const scrollContainer = virtualizerRef.current;
           if (scrollContainer) {
             // Calculate the position to scroll to
-            const rowHeight = 45; // This matches estimateSize in virtualizerOptions
-            const targetPosition = rowIndex * rowHeight;
+            const targetPosition = rowIndex * ROW_HEIGHT;
             const containerHeight = scrollContainer.clientHeight;
-            const scrollTo = Math.max(0, targetPosition - containerHeight / 2 + rowHeight / 2);
+            const scrollTo = Math.max(0, targetPosition - containerHeight / 2 + ROW_HEIGHT / 2);
             
             scrollContainer.scrollTo({
               top: scrollTo,
@@ -171,7 +176,7 @@ export const TracesTable = ({
             // Mark that we've scrolled to prevent future auto-scrolls
             setHasScrolledToRow(true);
           }
-        }, 200);
+        }, EXPANSION_ANIMATION_DELAY_MS);
       }
     }
   }, [traceUuid, data, hasScrolledToRow]);
@@ -186,14 +191,14 @@ export const TracesTable = ({
       .prefetchQuery({
         queryKey: ["spans", row.uuid],
         queryFn: () => fetchSpan(row.uuid),
-        staleTime: 60000,
+        staleTime: PREFETCH_STALE_TIME_MS,
       })
       .catch(() => toast.error("Failed to prefetch"));
     queryClient
       .prefetchQuery({
         queryKey: ["spans", row.uuid, "comments"],
         queryFn: () => fetchCommentsBySpan(row.uuid),
-        staleTime: 60000,
+        staleTime: PREFETCH_STALE_TIME_MS,
       })
       .catch(() => toast.error("Failed to prefetch"));
   };
@@ -535,18 +540,30 @@ export const TracesTable = ({
         virtualizerRef={virtualizerRef}
         virtualizerOptions={{
           count: data.length,
-          estimateSize: () => 45,
+          estimateSize: () => ROW_HEIGHT,
           overscan: 20,
         }}
         onRowHover={prefetch}
         customExpanded={(() => {
-          // If we're selecting a child row, expand its parent
+          // If we're selecting a child row, expand all parent rows in the hierarchy
           if (selectRow?.parent_span_id) {
-            // Find the parent row
-            const parentRow = data.find((r) => r.span_id === selectRow.parent_span_id);
-            if (parentRow) {
-              return { [parentRow.span_id]: true };
-            }
+            const expandedRows: Record<string, boolean> = {};
+            
+            // Helper to find all parent span IDs in the hierarchy
+            const findAllParents = (span: SpanPublic | undefined): void => {
+              if (!span || !span.parent_span_id) return;
+              
+              // Find the parent row
+              const parentRow = data.find((r) => r.span_id === span.parent_span_id);
+              if (parentRow) {
+                expandedRows[parentRow.span_id] = true;
+                // Recursively find grandparents
+                findAllParents(parentRow);
+              }
+            };
+            
+            findAllParents(selectRow);
+            return Object.keys(expandedRows).length > 0 ? expandedRows : undefined;
           }
           return undefined;
         })()}
