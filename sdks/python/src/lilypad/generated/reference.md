@@ -105,6 +105,87 @@ client.create_checkout_session_stripe_create_checkout_session_post(
 </dl>
 </details>
 
+<details><summary><code>client.<a href="src/mirascope/client.py">get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get</a>(...)</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Get all spans for a given trace ID.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```python
+from mirascope import Lilypad
+
+client = Lilypad(
+    api_key="YOUR_API_KEY",
+    token="YOUR_TOKEN",
+    base_url="https://yourhost.com/path/to/api",
+)
+client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+    project_uuid="project_uuid",
+    trace_id="trace_id",
+)
+
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**trace_id:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Organizations
 <details><summary><code>client.organizations.<a href="src/mirascope/organizations/client.py">update</a>(...)</code></summary>
 <dl>

@@ -1028,17 +1028,6 @@ export interface ProjectPublic {
 }
 
 /**
- * Provider
- * Provider name enum
- */
-export enum Provider {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic",
-  OPENROUTER = "openrouter",
-  GEMINI = "gemini",
-}
-
-/**
  * RecentSpansResponse
  * Response model for recent spans polling endpoint.
  */
@@ -1052,15 +1041,6 @@ export interface RecentSpansResponse {
   timestamp: string;
   /** Project Uuid */
   project_uuid: string;
-}
-
-/**
- * Scope
- * Instrumentation Scope name of the span
- */
-export enum Scope {
-  LILYPAD = "lilypad",
-  LLM = "llm",
 }
 
 /** SettingsPublic */
@@ -1297,6 +1277,8 @@ export interface TracesQueueResponse {
   span_count: number;
   /** Message */
   message: string;
+  /** Trace Ids */
+  trace_ids: string[];
 }
 
 /**

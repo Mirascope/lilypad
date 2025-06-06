@@ -16,6 +16,7 @@ class TracesQueueResponse(UncheckedBaseModel):
     trace_status: TracesQueueResponseTraceStatus
     span_count: int
     message: str
+    trace_ids: typing.List[str]
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2
