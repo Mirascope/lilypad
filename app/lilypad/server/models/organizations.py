@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class OrganizationBase(SQLModel):
     """Base Organization Model."""
 
-    name: str = Field(nullable=False, unique=True, min_length=1)
+    name: str = Field(nullable=False, min_length=1)
 
 
 class OrganizationTable(OrganizationBase, BaseSQLModel, table=True):
