@@ -186,9 +186,7 @@ async def close_kafka_producer() -> None:
 
             logger.info("Kafka producer closed successfully")
         except Exception as e:
-            logger.error(
-                "Error closing Kafka producer", extra={"error": str(e)}
-            )
+            logger.error("Error closing Kafka producer", extra={"error": str(e)})
 
     # Clear the lock as well
     _producer_lock = None
