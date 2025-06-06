@@ -33,9 +33,14 @@ from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...schemas.traces import TracesQueueResponse
 from ...schemas.users import UserPublic
-from ...services import OpenSearchService, SpanService, get_opensearch_service
+from ...services import (
+    OpenSearchService,
+    SpanKafkaService,
+    SpanService,
+    get_opensearch_service,
+    get_span_kafka_service,
+)
 from ...services.billing import BillingService
-from ...services.kafka import KafkaService, get_kafka_service
 from ...services.projects import ProjectService
 
 traces_router = APIRouter()
@@ -214,7 +219,7 @@ async def traces(
     project_service: Annotated[ProjectService, Depends(ProjectService)],
     billing_service: Annotated[BillingService, Depends(BillingService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
-    kafka_service: Annotated[KafkaService, Depends(get_kafka_service)],
+    kafka_service: Annotated[SpanKafkaService, Depends(get_span_kafka_service)],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -253,12 +258,10 @@ async def traces(
     logger.info(
         f"[TRACES-API] 🚀 Attempting to send {len(traces_json)} spans to Kafka queue - Project: {project_uuid}, User: {user.uuid}"
     )
-    logger.info("[TRACES-API] Calling kafka_service.send_spans_batch()")
-    kafka_available = await kafka_service.send_spans_batch(
-        traces_json, user_id=user.uuid
-    )
+    logger.info("[TRACES-API] Calling kafka_service.send_batch()")
+    kafka_available = await kafka_service.send_batch(traces_json)
     logger.info(
-        f"[TRACES-API] kafka_service.send_spans_batch() returned: {kafka_available}"
+        f"[TRACES-API] kafka_service.send_batch() returned: {kafka_available}"
     )
 
     if kafka_available:
