@@ -88,14 +88,14 @@ class _JSONSpanExporter(SpanExporter):
             # When using Kafka queue, we don't get database UUIDs back immediately
             # So we can only provide the generic traces URL
             unique_trace_ids = list(set(response.trace_ids))
-            
+
             # Only log trace URLs that haven't been logged before
             new_trace_ids = [tid for tid in unique_trace_ids if tid not in self._logged_trace_ids]
-            
+
             if new_trace_ids:
                 # Mark these trace IDs as logged
                 self._logged_trace_ids.update(new_trace_ids)
-                
+
                 if len(new_trace_ids) == 1:
                     self.log.info(
                         f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{new_trace_ids[0]}"

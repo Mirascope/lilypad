@@ -169,18 +169,17 @@ class BaseKafkaService(ABC):
                         # Wait for all send operations to complete
                         results = await asyncio.wait_for(
                             asyncio.gather(*futures, return_exceptions=True),
-                            timeout=KAFKA_FLUSH_TIMEOUT_SECONDS
+                            timeout=KAFKA_FLUSH_TIMEOUT_SECONDS,
                         )
-                        
+
                         # Count failures
                         for result in results:
                             if isinstance(result, Exception):
                                 chunk_failed += 1
                                 logger.error(
-                                    "Message send failed",
-                                    extra={"error": str(result)}
+                                    "Message send failed", extra={"error": str(result)}
                                 )
-                                
+
                     except asyncio.TimeoutError:
                         logger.error(
                             "Timeout waiting for Kafka sends",
