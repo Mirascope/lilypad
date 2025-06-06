@@ -149,7 +149,7 @@ class BaseKafkaService(ABC):
                         message = self.transform_message(data)
 
                         # Send without waiting - producer.send() returns a Future
-                        future = producer.send(  # NO await here!
+                        future = producer.send(
                             topic=self.topic,
                             key=key,
                             value=message,
@@ -163,23 +163,35 @@ class BaseKafkaService(ABC):
                         )
                         chunk_failed += 1
 
-                # Flush this chunk
+                # Wait for all futures in this chunk to complete
                 if futures:
                     try:
-                        await asyncio.wait_for(
-                            producer.flush(), timeout=KAFKA_FLUSH_TIMEOUT_SECONDS
+                        # Wait for all send operations to complete
+                        results = await asyncio.wait_for(
+                            asyncio.gather(*futures, return_exceptions=True),
+                            timeout=KAFKA_FLUSH_TIMEOUT_SECONDS
                         )
+                        
+                        # Count failures
+                        for result in results:
+                            if isinstance(result, Exception):
+                                chunk_failed += 1
+                                logger.error(
+                                    "Message send failed",
+                                    extra={"error": str(result)}
+                                )
+                                
                     except asyncio.TimeoutError:
                         logger.error(
-                            "Timeout flushing Kafka chunk",
+                            "Timeout waiting for Kafka sends",
                             extra={
                                 "timeout_seconds": KAFKA_FLUSH_TIMEOUT_SECONDS,
                                 "chunk_start": chunk_start,
                                 "chunk_size": len(chunk),
                             },
                         )
-                        # Assume all in this chunk failed on timeout
-                        chunk_failed = len(chunk)
+                        # Assume all remaining futures failed on timeout
+                        chunk_failed += len(futures)
 
             except KafkaError as e:
                 logger.error(
