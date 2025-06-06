@@ -1,5 +1,6 @@
 """Kafka service for span message handling."""
 
+import json
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -38,8 +39,8 @@ class SpanKafkaService(BaseKafkaService):
         if not isinstance(data, dict):
             raise ValueError("Span data must be a dictionary")
         
-        # Ensure trace_id is present if we're using it as key
-        if self.get_key(data) is None and "trace_id" not in data:
+        # Ensure trace_id is present
+        if not data.get("trace_id"):
             raise ValueError("Missing required field: trace_id")
         
         # Validate string lengths for common fields
@@ -49,17 +50,29 @@ class SpanKafkaService(BaseKafkaService):
                 # Don't include user input in error message
                 raise ValueError(f"String field exceeds maximum length of {max_string_length} characters")
         
-        # Create final message
-        final_message = {**data, "user_id": str(self.user.uuid)}
+        # Safely get user_id
+        if not self.user:
+            raise ValueError("User context is missing")
         
-        # Validate final message size (limit to 1MB)
         try:
-            # Estimate size efficiently without full JSON serialization
-            # Account for JSON overhead (quotes, commas, etc)
-            estimated_size = len(str(final_message)) * 1.2
-            if estimated_size > 1048576:  # 1MB
-                raise ValueError(f"Message too large: estimated {int(estimated_size)} bytes (max 1MB)")
-        except (TypeError, ValueError):
+            user_id = str(self.user.uuid)
+        except (AttributeError, TypeError):
+            raise ValueError("Invalid user object - missing uuid attribute")
+        
+        # Create final message
+        final_message = {**data, "user_id": user_id}
+        
+        # Validate final message size using actual JSON encoding
+        try:
+            # Use the same serialization logic as Kafka producer
+            json_bytes = json.dumps(final_message, default=str, check_circular=True).encode("utf-8")
+            actual_size = len(json_bytes)
+            
+            if actual_size > 1048576:  # 1MB
+                raise ValueError(f"Message too large: {actual_size} bytes (max 1MB)")
+        except (TypeError, ValueError) as e:
+            if "circular" in str(e).lower():
+                raise ValueError("Message contains circular references")
             raise ValueError("Invalid message data structure")
         
         return final_message

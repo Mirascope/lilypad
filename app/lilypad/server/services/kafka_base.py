@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 KAFKA_SEND_TIMEOUT_SECONDS = 30
 KAFKA_FLUSH_TIMEOUT_SECONDS = 60
 
+# Batch processing settings
+MAX_BATCH_SIZE = 1000  # Process in chunks of 1000 messages
+
 
 class BaseKafkaService(ABC):
     """Abstract base class for Kafka services.
@@ -97,7 +100,7 @@ class BaseKafkaService(ABC):
             return False
 
     async def send_batch(self, data_list: list[dict[str, Any]]) -> bool:
-        """Send multiple messages to Kafka using batch optimization.
+        """Send multiple messages to Kafka using batch optimization with memory-efficient chunking.
         
         Args:
             data_list: List of message data
@@ -116,56 +119,85 @@ class BaseKafkaService(ABC):
         if not data_list:
             return True
         
-        # Prepare all messages and send them without waiting
-        futures = []
-        failed_count = 0
+        total_failed = 0
+        total_messages = len(data_list)
         
-        try:
-            for data in data_list:
-                try:
-                    key = self.get_key(data)
-                    message = self.transform_message(data)
-                    
-                    # Send without waiting - producer.send() returns a Future
-                    future = producer.send(  # NO await here!
-                        topic=self.topic,
-                        key=key,
-                        value=message,
-                    )
-                    futures.append(future)
-                    
-                except Exception as e:
-                    logger.error("Failed to prepare message for batch send", extra={"error": str(e)})
-                    failed_count += 1
+        # Process in chunks to avoid memory accumulation
+        for chunk_start in range(0, total_messages, MAX_BATCH_SIZE):
+            chunk_end = min(chunk_start + MAX_BATCH_SIZE, total_messages)
+            chunk = data_list[chunk_start:chunk_end]
             
-            # Wait for all messages to be sent with timeout
-            if futures:
-                try:
-                    await asyncio.wait_for(
-                        producer.flush(),
-                        timeout=KAFKA_FLUSH_TIMEOUT_SECONDS
-                    )
-                except asyncio.TimeoutError:
-                    logger.error(
-                        "Timeout flushing Kafka batch",
-                        extra={"timeout_seconds": KAFKA_FLUSH_TIMEOUT_SECONDS}
-                    )
-                    # Don't know actual failed count on timeout
-                    failed_count = len(data_list)  # Conservative estimate
+            futures = []
+            chunk_failed = 0
             
-        except KafkaError as e:
-            logger.error("Kafka batch send error", extra={"error": str(e)})
-            failed_count = len(data_list)  # Assume all failed
+            try:
+                # Send messages in this chunk
+                for data in chunk:
+                    try:
+                        key = self.get_key(data)
+                        message = self.transform_message(data)
+                        
+                        # Send without waiting - producer.send() returns a Future
+                        future = producer.send(  # NO await here!
+                            topic=self.topic,
+                            key=key,
+                            value=message,
+                        )
+                        futures.append(future)
+                        
+                    except Exception as e:
+                        logger.error("Failed to prepare message for batch send", extra={"error": str(e)})
+                        chunk_failed += 1
+                
+                # Flush this chunk
+                if futures:
+                    try:
+                        await asyncio.wait_for(
+                            producer.flush(),
+                            timeout=KAFKA_FLUSH_TIMEOUT_SECONDS
+                        )
+                    except asyncio.TimeoutError:
+                        logger.error(
+                            "Timeout flushing Kafka chunk",
+                            extra={
+                                "timeout_seconds": KAFKA_FLUSH_TIMEOUT_SECONDS,
+                                "chunk_start": chunk_start,
+                                "chunk_size": len(chunk)
+                            }
+                        )
+                        # Assume all in this chunk failed on timeout
+                        chunk_failed = len(chunk)
+                
+            except KafkaError as e:
+                logger.error(
+                    "Kafka chunk send error",
+                    extra={"error": str(e), "chunk_start": chunk_start}
+                )
+                chunk_failed = len(chunk)  # Assume all in chunk failed
+            
+            total_failed += chunk_failed
+            
+            # Log progress for large batches
+            if total_messages > MAX_BATCH_SIZE:
+                logger.info(
+                    "Batch progress",
+                    extra={
+                        "topic": self.topic,
+                        "processed": chunk_end,
+                        "total": total_messages,
+                        "failed_so_far": total_failed
+                    }
+                )
         
-        success_count = len(data_list) - failed_count
-        success = failed_count == 0
+        success_count = total_messages - total_failed
+        success = total_failed == 0
         
         if success:
-            logger.info("Batch sent successfully", extra={"topic": self.topic, "total": len(data_list)})
+            logger.info("Batch sent successfully", extra={"topic": self.topic, "total": total_messages})
         else:
             logger.warning(
                 "Partial batch send",
-                extra={"topic": self.topic, "success": success_count, "total": len(data_list)}
+                extra={"topic": self.topic, "success": success_count, "total": total_messages}
             )
         
         return success

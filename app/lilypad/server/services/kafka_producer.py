@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Singleton instance
 _producer_instance: AIOKafkaProducer | None = None
-_producer_lock = asyncio.Lock()
+_producer_lock: asyncio.Lock | None = None
 
 
 async def get_kafka_producer() -> AIOKafkaProducer | None:
@@ -21,10 +21,24 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
     Returns:
         The Kafka producer instance, or None if Kafka is not configured
     """
-    global _producer_instance
+    global _producer_instance, _producer_lock
     
     if _producer_instance is not None:
-        return _producer_instance
+        # Check if producer is still healthy
+        try:
+            if _producer_instance._closed:
+                logger.warning("Kafka producer was closed, recreating...")
+                _producer_instance = None
+            else:
+                return _producer_instance
+        except Exception:
+            # If we can't check status, assume it's broken
+            logger.warning("Cannot check Kafka producer status, recreating...")
+            _producer_instance = None
+    
+    # Create lock on first use (when event loop exists)
+    if _producer_lock is None:
+        _producer_lock = asyncio.Lock()
     
     async with _producer_lock:
         # Double-check pattern
@@ -49,10 +63,12 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
                 logger.info(f"Attempt {attempt + 1}/{max_retries}: Creating producer")
                 producer = AIOKafkaProducer(
                     bootstrap_servers=settings.kafka_bootstrap_servers,
-                    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                    value_serializer=lambda v: json.dumps(v, default=str, check_circular=True).encode("utf-8"),
                     key_serializer=lambda k: k.encode("utf-8") if k else None,
                     compression_type="gzip",
-                    acks="all",
+                    acks=1,  # Only wait for leader acknowledgment
+                    linger_ms=10,  # Wait up to 10ms for batching
+                    max_batch_size=16384,  # 16KB batch size
                     max_request_size=1048576,  # 1MB
                     request_timeout_ms=30000,
                     retry_backoff_ms=100,
