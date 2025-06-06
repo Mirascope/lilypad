@@ -1,13 +1,11 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useSearch } from "@/hooks/use-search";
-import { cn } from "@/lib/utils";
-import { SpanPublic } from "@/types/types";
-import { settingsQueryOptions } from "@/utils/settings";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Calendar } from "@/src/components/ui/calendar";
+import { Input } from "@/src/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { useSearch } from "@/src/hooks/use-search";
+import { cn } from "@/src/lib/utils";
+import { SpanPublic } from "@/src/types/types";
 import { format } from "date-fns";
 import { CalendarIcon, Loader, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -26,8 +24,6 @@ export const SearchBar = ({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const { spans: searchResults, isLoading, search, updateFilters } = useSearch(projectUuid);
-
-  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
 
   useEffect(() => {
     if (searchResults) {
@@ -83,8 +79,6 @@ export const SearchBar = ({
     setEndDate(undefined);
     updateFilters({ time_range_end: undefined });
   };
-
-  if (!settings.experimental) return null;
 
   return (
     <form onSubmit={handleSearchSubmit}>

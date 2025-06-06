@@ -1,8 +1,8 @@
-import { AuthContext } from "@/auth";
-import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
-import { useFont } from "@/components/FontProvider";
-import { NotFound } from "@/components/NotFound";
-import { Toaster } from "@/components/ui/sonner";
+import { AuthContext } from "@/src/auth";
+import { DefaultCatchBoundary } from "@/src/components/DefaultCatchBoundary";
+import { useFont } from "@/src/components/FontProvider";
+import { NotFound } from "@/src/components/NotFound";
+import { Toaster } from "@/src/components/ui/sonner";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";

@@ -1,4 +1,4 @@
-import { LilypadLogo } from "@/components/lilypad-logo";
+import { LilypadLogo } from "@/src/components/lilypad-logo";
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +10,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@/src/components/ui/sidebar";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 const SidebarSkeleton = () => {
   return (

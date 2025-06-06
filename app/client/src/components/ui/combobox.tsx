@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -6,10 +6,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/command";
+import { EmojiPicker, EmojiPickerContent } from "@/src/components/ui/emoji-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { cn } from "@/src/lib/utils";
 import { CheckIcon } from "@radix-ui/react-icons";
 import { Emoji } from "frimousse";
 import { SmileIcon } from "lucide-react";

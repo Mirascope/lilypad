@@ -1,9 +1,9 @@
-import { ChartSkeleton } from "@/components/ChartSkeleton";
-import { FunctionCostAndTokensChart } from "@/components/CostAndTokensChart";
-import { FunctionResponseTimeChart } from "@/components/ResponseTimeChart";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { FunctionPublic, TimeFrame } from "@/types/types";
+import { ChartSkeleton } from "@/src/components/ChartSkeleton";
+import { FunctionCostAndTokensChart } from "@/src/components/CostAndTokensChart";
+import { FunctionResponseTimeChart } from "@/src/components/ResponseTimeChart";
+import { Button } from "@/src/components/ui/button";
+import { cn } from "@/src/lib/utils";
+import { FunctionPublic, TimeFrame } from "@/src/types/types";
 import { Calendar, CalendarDays, Clock } from "lucide-react";
 import { Suspense, useState } from "react";
 

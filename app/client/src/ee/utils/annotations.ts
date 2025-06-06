@@ -1,10 +1,10 @@
-import api from "@/api";
+import api from "@/src/api";
 import {
   AnnotationCreate,
   AnnotationMetrics,
   AnnotationPublic,
   AnnotationUpdate,
-} from "@/types/types";
+} from "@/src/types/types";
 
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";

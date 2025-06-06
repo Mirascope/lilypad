@@ -1,10 +1,16 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { useAuth } from "@/auth";
-import { GithubLogin } from "@/components/GithubLogin";
-import { GoogleLogin } from "@/components/GoogleLogin";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchVersions } from "@/utils/auth";
+import { useAuth } from "@/src/auth";
+import { GithubLogin } from "@/src/components/GithubLogin";
+import { GoogleLogin } from "@/src/components/GoogleLogin";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { fetchVersions } from "@/src/utils/auth";
 import { useEffect, useState } from "react";
 
 interface LoginSearchParam {

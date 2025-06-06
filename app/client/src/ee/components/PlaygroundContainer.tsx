@@ -1,10 +1,14 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { LilypadPanel } from "@/components/traces/LilypadPanel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Playground } from "@/ee/components/Playground";
-import { usePlaygroundContainer } from "@/ee/hooks/use-playground";
-import { FunctionPublic, PlaygroundErrorDetail } from "@/types/types";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { LilypadPanel } from "@/src/components/traces/LilypadPanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/src/components/ui/resizable";
+import { Playground } from "@/src/ee/components/Playground";
+import { usePlaygroundContainer } from "@/src/ee/hooks/use-playground";
+import { FunctionPublic, PlaygroundErrorDetail } from "@/src/types/types";
 import { AlertTriangle } from "lucide-react";
 import { Suspense, useEffect, useRef } from "react";
 import { ImperativePanelHandle } from "react-resizable-panels";

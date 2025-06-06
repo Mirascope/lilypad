@@ -1,14 +1,14 @@
-import { DataTable } from "@/components/DataTable";
+import { DataTable } from "@/src/components/DataTable";
 import {
   CreateProjectDialog,
   DeleteProjectDialog,
   EditProjectDialog,
-} from "@/components/projects/ProjectDialog";
-import { Button } from "@/components/ui/button";
-import { Typography } from "@/components/ui/typography";
-import { ProjectPublic } from "@/types/types";
-import { projectsQueryOptions } from "@/utils/projects";
-import { formatDate } from "@/utils/strings";
+} from "@/src/components/projects/ProjectDialog";
+import { Button } from "@/src/components/ui/button";
+import { Typography } from "@/src/components/ui/typography";
+import { ProjectPublic } from "@/src/types/types";
+import { projectsQueryOptions } from "@/src/utils/projects";
+import { formatDate } from "@/src/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Copy } from "lucide-react";

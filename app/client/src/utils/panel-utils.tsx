@@ -1,19 +1,25 @@
-import { useAuth } from "@/auth";
-import { CodeBlock } from "@/components/code-block";
-import { AddComment, CommentCards } from "@/components/Comment";
-import { JsonView } from "@/components/JsonView";
-import { LilypadMarkdown } from "@/components/LilypadMarkdown";
-import { TabGroup } from "@/components/TabGroup";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
-import { annotationsBySpanQueryOptions } from "@/ee/utils/annotations";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { CommentTab, Tab, TraceTab } from "@/types/traces";
-import { AnnotationPublic, Event, MessageParam, SpanMoreDetails } from "@/types/types";
-import { commentsBySpanQueryOptions } from "@/utils/comments";
-import { safelyParseJSON, stringToBytes } from "@/utils/strings";
+import { useAuth } from "@/src/auth";
+import { CodeBlock } from "@/src/components/code-block";
+import { AddComment, CommentCards } from "@/src/components/Comment";
+import { JsonView } from "@/src/components/JsonView";
+import { LilypadMarkdown } from "@/src/components/LilypadMarkdown";
+import { TabGroup } from "@/src/components/TabGroup";
+import { Button } from "@/src/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import { Separator } from "@/src/components/ui/separator";
+import { AnnotationsTable } from "@/src/ee/components/AnnotationsTable";
+import { annotationsBySpanQueryOptions } from "@/src/ee/utils/annotations";
+import { useFeatureAccess } from "@/src/hooks/use-featureaccess";
+import { CommentTab, Tab, TraceTab } from "@/src/types/traces";
+import { AnnotationPublic, Event, MessageParam, SpanMoreDetails } from "@/src/types/types";
+import { commentsBySpanQueryOptions } from "@/src/utils/comments";
+import { safelyParseJSON, stringToBytes } from "@/src/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode } from "@tanstack/react-router";
 import { MessageSquareMore, NotebookPen } from "lucide-react";
@@ -165,9 +171,7 @@ export const LilypadPanelTab = ({
     {
       label: "Response Model",
       value: TraceTab.RESPONSE,
-      component: span.response_model ? (
-        <JsonView shortenTextAfterLength={100} value={span.response_model} />
-      ) : null,
+      component: span.response_model ? renderResponseModel(span.response_model) : null,
     },
     {
       label: "Messages",
@@ -214,14 +218,14 @@ export const LilypadPanelTab = ({
       label: "Code",
       value: TraceTab.CODE,
       component: span.code ? (
-        <CodeBlock language="python" code={span.code} className="h-full" />
+        <CodeBlock language="python" code={span.code} className="h-full overflow-auto" />
       ) : null,
     },
     {
       label: "Signature",
       value: TraceTab.SIGNATURE,
       component: span.signature ? (
-        <CodeBlock language="python" code={span.signature} className="h-full" />
+        <CodeBlock language="python" code={span.signature} className="h-full overflow-auto" />
       ) : null,
     },
   ];
@@ -291,6 +295,14 @@ export const MessagesContainer = ({ messages }: { messages: MessageParam[] }) =>
       </div>
     </div>
   );
+};
+
+const renderResponseModel = (responseModel: any) => {
+  if (typeof responseModel === "object") {
+    return <JsonView shortenTextAfterLength={100} value={responseModel} />;
+  } else {
+    return <ReactMarkdown className="professional p-2">{responseModel}</ReactMarkdown>;
+  }
 };
 export const renderOutput = (output: string) => {
   const jsonOutput = safelyParseJSON(output);

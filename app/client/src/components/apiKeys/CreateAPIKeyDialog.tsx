@@ -1,8 +1,8 @@
-import { CreateAPIKeyForm } from "@/components/apiKeys/CreateAPIKeyForm";
-import { CodeBlock } from "@/components/code-block";
-import { NotFound } from "@/components/NotFound";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { CreateAPIKeyForm } from "@/src/components/apiKeys/CreateAPIKeyForm";
+import { CodeBlock } from "@/src/components/code-block";
+import { NotFound } from "@/src/components/NotFound";
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/src/components/ui/dialog";
 import { PlusCircle, TriangleAlert } from "lucide-react";
 import { Dispatch, ReactNode, SetStateAction, useState } from "react";
 

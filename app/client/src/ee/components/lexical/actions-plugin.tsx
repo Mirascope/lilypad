@@ -5,11 +5,11 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { CLEAR_EDITOR_COMMAND } from "lexical";
 import { useEffect, useState } from "react";
 
-import LilypadDialog from "@/components/LilypadDialog";
-import { Button } from "@/components/ui/button";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TOGGLE_SHOW_VARIABLE_COMMAND } from "@/ee/components/lexical/template-plugin";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Button } from "@/src/components/ui/button";
+import { DialogClose, DialogFooter } from "@/src/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { TOGGLE_SHOW_VARIABLE_COMMAND } from "@/src/ee/components/lexical/template-plugin";
 import { Braces, Eye, LetterText, ListRestart, Pencil } from "lucide-react";
 
 export const ActionsPlugin = ({ isDisabled }: { isDisabled: boolean }): JSX.Element => {

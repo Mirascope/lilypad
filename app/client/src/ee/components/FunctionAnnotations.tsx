@@ -1,6 +1,6 @@
-import TableSkeleton from "@/components/TableSkeleton";
-import { AnnotationsTable } from "@/ee/components/AnnotationsTable";
-import { annotationsByFunctionQueryOptions } from "@/ee/utils/annotations";
+import TableSkeleton from "@/src/components/TableSkeleton";
+import { AnnotationsTable } from "@/src/ee/components/AnnotationsTable";
+import { annotationsByFunctionQueryOptions } from "@/src/ee/utils/annotations";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 

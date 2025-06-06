@@ -56,7 +56,7 @@ async function generateApiTypes(options) {
 
     // Prepare input options
     const apiOptions = {
-      name,
+      fileName: name,
       output: absoluteOutputPath,
       generateClient,
       codeGenConstructs,

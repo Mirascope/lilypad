@@ -62,6 +62,7 @@ dependencies = [
     "cryptography>=43.0.3",
     "opensearch-py>=2.8.0",
     "stripe>=12.1.0",
+    "kafka-python>=2.2.10",
 ]
 
 [project.urls]
@@ -184,7 +185,7 @@ venvPath = "."
 venv = ".venv"
 
 [tool.codespell]
-skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml"]
+skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml", "./client/bun.lock"]
 
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]

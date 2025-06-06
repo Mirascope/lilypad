@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     opensearch_password: str | None = None
     opensearch_use_ssl: bool = False
 
+    # Kafka settings
+    kafka_bootstrap_servers: str | None = None
+    kafka_topic_span_ingestion: str = Field(default="span-ingestion")
+    kafka_consumer_group: str = Field(default="lilypad-span-processor")
+    kafka_max_concurrent_traces: int = Field(default=1000)
+    kafka_max_spans_per_trace: int = Field(default=500)
+    kafka_buffer_ttl_seconds: int = Field(default=300)
+    kafka_cleanup_interval_seconds: int = Field(default=60)
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None
@@ -62,11 +71,13 @@ class Settings(BaseSettings):
 
     # Stripe settings
     stripe_api_key: str | None = None
+    stripe_secret_api_key: str | None = None
     stripe_webhook_secret: str | None = None
     stripe_cloud_product_id: str | None = None
-    stripe_cloud_free_price_id: str | None = None
-    stripe_cloud_pro_price_id: str | None = None
-    stripe_cloud_team_price_id: str | None = None
+    stripe_cloud_pro_flat_price_id: str | None = None
+    stripe_cloud_pro_meter_price_id: str | None = None
+    stripe_cloud_team_flat_price_id: str | None = None
+    stripe_cloud_team_meter_price_id: str | None = None
     stripe_spans_metering_id: str | None = None
 
     @property

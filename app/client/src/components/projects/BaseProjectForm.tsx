@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/src/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
 import { useForm } from "react-hook-form";
 
 export interface ProjectFormData {

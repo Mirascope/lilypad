@@ -1,5 +1,5 @@
-import { CreateEnvironmentForm } from "@/components/environments/CreateEnvironmentForm";
-import { Button } from "@/components/ui/button";
+import { CreateEnvironmentForm } from "@/src/components/environments/CreateEnvironmentForm";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/dialog";
+import { cn } from "@/src/lib/utils";
 import { PlusCircle } from "lucide-react";
 
 export const CreateEnvironmentDialog = () => {

@@ -1,5 +1,5 @@
-import { BaseProjectForm, ProjectFormData } from "@/components/projects/BaseProjectForm";
-import { useCreateProjectMutation } from "@/utils/projects";
+import { BaseProjectForm, ProjectFormData } from "@/src/components/projects/BaseProjectForm";
+import { useCreateProjectMutation } from "@/src/utils/projects";
 import { toast } from "sonner";
 interface CreateProjectFormProps {
   onSuccess?: () => void;

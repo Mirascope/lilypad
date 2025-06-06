@@ -1,11 +1,11 @@
-import { CopyButton } from "@/components/copy-button";
+import { CopyButton } from "@/src/components/copy-button";
 import {
   highlightCode,
+  initialHighlight,
   stripHighlightMarkers,
   type HighlightResult,
-  initialHighlight,
-} from "@/lib/code-highlight";
-import { cn } from "@/lib/utils";
+} from "@/src/lib/code-highlight";
+import { cn } from "@/src/lib/utils";
 import { useEffect, useRef, useState } from "react";
 
 interface CodeBlockProps {

@@ -1,10 +1,10 @@
-import { DataTable } from "@/components/DataTable";
-import { CreateEnvironmentDialog } from "@/components/environments/CreateEnvironmentDialog";
-import { DeleteEnvironmentDialog } from "@/components/environments/DeleteEnvironmentDialog";
-import { Typography } from "@/components/ui/typography";
-import { EnvironmentPublic } from "@/types/types";
-import { environmentsQueryOptions } from "@/utils/environments";
-import { formatDate } from "@/utils/strings";
+import { DataTable } from "@/src/components/DataTable";
+import { CreateEnvironmentDialog } from "@/src/components/environments/CreateEnvironmentDialog";
+import { DeleteEnvironmentDialog } from "@/src/components/environments/DeleteEnvironmentDialog";
+import { Typography } from "@/src/components/ui/typography";
+import { EnvironmentPublic } from "@/src/types/types";
+import { environmentsQueryOptions } from "@/src/utils/environments";
+import { formatDate } from "@/src/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useRef } from "react";

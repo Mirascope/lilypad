@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { DialogClose } from "@/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { DialogClose } from "@/src/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -7,11 +7,11 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { OrganizationInviteCreate, OrganizationInvitePublic } from "@/types/types";
-import { useCreateOrganizationInviteMutation } from "@/utils/organizations";
-import { userQueryOptions } from "@/utils/users";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { OrganizationInviteCreate, OrganizationInvitePublic } from "@/src/types/types";
+import { useCreateOrganizationInviteMutation } from "@/src/utils/organizations";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Copy } from "lucide-react";
 import { useState } from "react";

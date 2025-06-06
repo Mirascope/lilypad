@@ -1,5 +1,5 @@
-import api from "@/api";
-import { UserPublic } from "@/types/types";
+import api from "@/src/api";
+import { UserPublic } from "@/src/types/types";
 import { queryOptions } from "@tanstack/react-query";
 export const fetchGitHubCallbackCode = async (code: string) => {
   const params = new URLSearchParams({ code });

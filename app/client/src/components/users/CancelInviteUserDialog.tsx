@@ -1,7 +1,7 @@
-import LilypadDialog from "@/components/LilypadDialog";
-import { Button } from "@/components/ui/button";
-import { OrganizationInvitePublic } from "@/types/types";
-import { useDeleteOrganizationInviteMutation } from "@/utils/organizations";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Button } from "@/src/components/ui/button";
+import { OrganizationInvitePublic } from "@/src/types/types";
+import { useDeleteOrganizationInviteMutation } from "@/src/utils/organizations";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
 

@@ -2,20 +2,24 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Minimize2, Users } from "lucide-react";
 import { Suspense } from "react";
 
-import CardSkeleton from "@/components/CardSkeleton";
-import LilypadDialog from "@/components/LilypadDialog";
-import { FunctionTitle } from "@/components/traces/FunctionTitle";
-import { LilypadPanel } from "@/components/traces/LilypadPanel";
-import { SpanMetrics } from "@/components/traces/SpanMetrics";
-import { TraceTree } from "@/components/traces/TraceTree";
-import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Typography } from "@/components/ui/typography";
-import { QueueForm } from "@/ee/components/QueueForm";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { SpanComments } from "@/utils/panel-utils";
-import { spanQueryOptions } from "@/utils/spans";
-import { rootTraceQueryOptions } from "@/utils/traces";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { FunctionTitle } from "@/src/components/traces/FunctionTitle";
+import { LilypadPanel } from "@/src/components/traces/LilypadPanel";
+import { SpanMetrics } from "@/src/components/traces/SpanMetrics";
+import { TraceTree } from "@/src/components/traces/TraceTree";
+import { Button } from "@/src/components/ui/button";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/src/components/ui/resizable";
+import { Typography } from "@/src/components/ui/typography";
+import { QueueForm } from "@/src/ee/components/QueueForm";
+import { useFeatureAccess } from "@/src/hooks/use-featureaccess";
+import { SpanComments } from "@/src/utils/panel-utils";
+import { spanQueryOptions } from "@/src/utils/spans";
+import { rootTraceQueryOptions } from "@/src/utils/traces";
 
 export const SpanFullDetail = ({
   projectUuid,

@@ -969,6 +969,80 @@
         }
       }
     },
+    "/stripe/customer-portal": {
+      "post": {
+        "summary": "Create Customer Portal",
+        "operationId": "create_customer_portal_stripe_customer_portal_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Customer Portal Stripe Customer Portal Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/stripe/create-checkout-session": {
+      "post": {
+        "summary": "Create Checkout Session",
+        "operationId": "create_checkout_session_stripe_create_checkout_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StripeCheckoutSession"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Checkout Session Stripe Create Checkout Session Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/webhooks/stripe": {
       "post": {
         "summary": "Stripe Webhook",
@@ -5152,6 +5226,135 @@
         "title": "AnnotationUpdate",
         "description": "Annotation update model."
       },
+      "BillingPublic": {
+        "properties": {
+          "stripe_customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Customer Id"
+          },
+          "stripe_subscription_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Subscription Id"
+          },
+          "stripe_price_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Price Id"
+          },
+          "subscription_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subscription_current_period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Current Period Start"
+          },
+          "subscription_current_period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Current Period End"
+          },
+          "usage_quantity": {
+            "type": "integer",
+            "title": "Usage Quantity",
+            "default": 0
+          },
+          "last_usage_report": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Usage Report"
+          },
+          "cancel_at_period_end": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel At Period End",
+            "description": "Whether the subscription should be canceled at the end of the period",
+            "default": false
+          },
+          "metadata_": {
+            "type": "object",
+            "title": "Metadata"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "organization_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organization Uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stripe_customer_id",
+          "uuid",
+          "organization_uuid",
+          "created_at"
+        ],
+        "title": "BillingPublic",
+        "description": "Schema for public billing information."
+      },
       "CommentCreate": {
         "properties": {
           "text": {
@@ -6220,6 +6423,16 @@
             "type": "string",
             "format": "uuid",
             "title": "Uuid"
+          },
+          "billing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BillingPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7060,6 +7273,19 @@
         "title": "SpanUpdate",
         "description": "Span update model"
       },
+      "StripeCheckoutSession": {
+        "properties": {
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier"
+        ],
+        "title": "StripeCheckoutSession",
+        "description": "Response model for Stripe checkout session creation."
+      },
       "StripeWebhookResponse": {
         "properties": {
           "status": {
@@ -7100,6 +7326,21 @@
         ],
         "title": "StripeWebhookResponse",
         "description": "Response schema for Stripe webhook events."
+      },
+      "SubscriptionStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "past_due",
+          "unpaid",
+          "canceled",
+          "incomplete",
+          "incomplete_expired",
+          "trialing",
+          "paused"
+        ],
+        "title": "SubscriptionStatus",
+        "description": "Subscription status enum based on Stripe's subscription statuses."
       },
       "TagCreate": {
         "properties": {

@@ -1,24 +1,28 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { LilypadLoading } from "@/components/LilypadLoading";
-import { FunctionTitle } from "@/components/traces/FunctionTitle";
-import { LilypadPanel } from "@/components/traces/LilypadPanel";
-import { SpanMetrics } from "@/components/traces/SpanMetrics";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Separator } from "@/components/ui/separator";
-import { Typography } from "@/components/ui/typography";
-import { AnnotationView } from "@/ee/components/annotations/AnnotationView";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { LilypadLoading } from "@/src/components/LilypadLoading";
+import { FunctionTitle } from "@/src/components/traces/FunctionTitle";
+import { LilypadPanel } from "@/src/components/traces/LilypadPanel";
+import { SpanMetrics } from "@/src/components/traces/SpanMetrics";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/src/components/ui/resizable";
+import { Separator } from "@/src/components/ui/separator";
+import { Typography } from "@/src/components/ui/typography";
+import { AnnotationView } from "@/src/ee/components/annotations/AnnotationView";
 import {
   annotationsByProjectQueryOptions,
   useDeleteAnnotationMutation,
-} from "@/ee/utils/annotations";
-import { cn } from "@/lib/utils";
-import { AnnotationPublic, FunctionPublic, UserPublic } from "@/types/types";
-import { functionsQueryOptions } from "@/utils/functions";
-import { SpanComments } from "@/utils/panel-utils";
-import { formatRelativeTime } from "@/utils/strings";
-import { usersByOrganizationQueryOptions } from "@/utils/users";
+} from "@/src/ee/utils/annotations";
+import { cn } from "@/src/lib/utils";
+import { AnnotationPublic, FunctionPublic, UserPublic } from "@/src/types/types";
+import { functionsQueryOptions } from "@/src/utils/functions";
+import { SpanComments } from "@/src/utils/panel-utils";
+import { formatRelativeTime } from "@/src/utils/strings";
+import { usersByOrganizationQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { RefreshCcw, Trash } from "lucide-react";

@@ -1,9 +1,9 @@
-import { DataTable } from "@/components/DataTable";
-import LilypadDialog from "@/components/LilypadDialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DialogFooter } from "@/components/ui/dialog";
+import { DataTable } from "@/src/components/DataTable";
+import LilypadDialog from "@/src/components/LilypadDialog";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { DialogFooter } from "@/src/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,17 +11,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { EmojiPicker, EmojiPickerContent } from "@/components/ui/emoji-picker";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Typography } from "@/components/ui/typography";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/types/types";
-import { fetchCommentsBySpan } from "@/utils/comments";
-import { fetchSpan, useDeleteSpanMutation } from "@/utils/spans";
-import { formatDate } from "@/utils/strings";
+} from "@/src/components/ui/dropdown-menu";
+import { EmojiPicker, EmojiPickerContent } from "@/src/components/ui/emoji-picker";
+import { Input } from "@/src/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { Typography } from "@/src/components/ui/typography";
+import { useFeatureAccess } from "@/src/hooks/use-featureaccess";
+import { AnnotationPublic, Scope, SpanPublic, TagPublic } from "@/src/types/types";
+import { fetchCommentsBySpan } from "@/src/utils/comments";
+import { fetchSpan, useDeleteSpanMutation } from "@/src/utils/spans";
+import { formatDate } from "@/src/utils/strings";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ColumnDef, FilterFn, Row } from "@tanstack/react-table";

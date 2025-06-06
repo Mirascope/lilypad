@@ -1,6 +1,6 @@
-import { FailButton } from "@/components/FailButton";
-import { SuccessButton } from "@/components/SuccessButton";
-import { Label } from "@/types/types";
+import { FailButton } from "@/src/components/FailButton";
+import { SuccessButton } from "@/src/components/SuccessButton";
+import { Label } from "@/src/types/types";
 import { CustomNodeDefinition, CustomNodeProps } from "json-edit-react";
 import { CircleCheck, CircleX } from "lucide-react";
 

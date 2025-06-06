@@ -1,4 +1,4 @@
-import api from "@/api";
+import api from "@/src/api";
 import {
   AggregateMetrics,
   PaginatedSpanPublic,
@@ -7,7 +7,7 @@ import {
   SpanPublic,
   SpanUpdate,
   TimeFrame,
-} from "@/types/types";
+} from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchSpans = async (projectUuid?: string) => {
