@@ -237,7 +237,10 @@ class TestBaseKafkaService:
         service = self.ConcreteKafkaService()
 
         mock_producer = Mock()
-        mock_producer.send = Mock(return_value=AsyncMock())
+        # Create a mock future that can be awaited
+        mock_future = asyncio.Future()
+        mock_future.set_result(None)
+        mock_producer.send = Mock(return_value=mock_future)
         mock_producer.flush = AsyncMock()
 
         with patch("lilypad.server.services.kafka_base.get_kafka_producer") as mock:
@@ -256,7 +259,10 @@ class TestBaseKafkaService:
         service = self.ConcreteKafkaService()
 
         mock_producer = Mock()
-        mock_producer.send = Mock(return_value=AsyncMock())
+        # Create a mock future that can be awaited
+        mock_future = asyncio.Future()
+        mock_future.set_result(None)
+        mock_producer.send = Mock(return_value=mock_future)
         mock_producer.flush = AsyncMock()
 
         with patch("lilypad.server.services.kafka_base.get_kafka_producer") as mock:

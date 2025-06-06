@@ -180,6 +180,9 @@ class BaseKafkaService(ABC):
                                     "Message send failed", extra={"error": str(result)}
                                 )
 
+                        # Flush to ensure all messages are sent to broker
+                        await producer.flush()
+
                     except asyncio.TimeoutError:
                         logger.error(
                             "Timeout waiting for Kafka sends",
