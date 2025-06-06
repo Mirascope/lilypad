@@ -14,6 +14,7 @@ class TracesQueueResponse(BaseModel):
     trace_status: Literal["queued", "processed"]
     span_count: int
     message: str
+    trace_ids: list[str]
 
 
 class RecentSpansResponse(BaseModel):

@@ -86,9 +86,10 @@ class _JSONSpanExporter(SpanExporter):
         if response.trace_status == "queued" and response.span_count > 0:
             # When using Kafka queue, we don't get database UUIDs back immediately
             # So we can only provide the generic traces URL
-            self.log.info(
-                f"View traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
-            )
+            for trace_id in response.trace_ids:
+                self.log.info(
+                    f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{trace_id}"
+                )
         return SpanExportResult.SUCCESS
 
     def shutdown(self) -> None:

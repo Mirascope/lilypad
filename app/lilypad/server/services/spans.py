@@ -513,6 +513,21 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         )
         return self.session.exec(stmt).one()
 
+    def find_spans_by_trace_id(
+        self, project_uuid: UUID, trace_id: str
+    ) -> Sequence[SpanTable]:
+        """Find all spans for a given trace_id."""
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                self.table.data["trace_id"].astext == trace_id,
+            )
+            .order_by(self.table.created_at.asc())
+        )
+        return self.session.exec(stmt).all()
+
     def find_records_by_function_uuid_paged(
         self,
         project_uuid: UUID,

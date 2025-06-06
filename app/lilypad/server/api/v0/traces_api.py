@@ -66,6 +66,24 @@ async def get_trace_by_span_uuid(
 
 
 @traces_router.get(
+    "/projects/{project_uuid}/traces/by-trace-id/{trace_id}",
+    response_model=list[SpanPublic],
+)
+async def get_spans_by_trace_id(
+    project_uuid: UUID,
+    trace_id: str,
+    span_service: Annotated[SpanService, Depends(SpanService)],
+) -> list[SpanPublic]:
+    """Get all spans for a given trace ID."""
+    spans = span_service.find_spans_by_trace_id(project_uuid, trace_id)
+    if not spans:
+        raise HTTPException(
+            status_code=404, detail=f"No spans found for trace_id: {trace_id}"
+        )
+    return [SpanPublic.model_validate(span) for span in spans]
+
+
+@traces_router.get(
     "/projects/{project_uuid}/traces", response_model=Paginated[SpanPublic]
 )
 async def get_traces_by_project_uuid(
@@ -226,6 +244,11 @@ async def traces(
             trace["attributes"] = {}
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
 
+    # Extract unique trace IDs from spans
+    trace_ids = list(
+        {trace.get("trace_id") for trace in traces_json if trace.get("trace_id")}
+    )
+
     # Try to send to Kafka queue
     logger.info(
         f"[TRACES-API] 🚀 Attempting to send {len(traces_json)} spans to Kafka queue - Project: {project_uuid}, User: {user.uuid}"
@@ -247,6 +270,7 @@ async def traces(
             trace_status="queued",
             span_count=len(traces_json),
             message="Spans queued for processing",
+            trace_ids=trace_ids,
         )
     else:
         # Fallback to synchronous processing if Kafka is not available
@@ -289,6 +313,7 @@ async def traces(
             trace_status="processed",
             span_count=len(span_tables),
             message="Spans processed synchronously",
+            trace_ids=trace_ids,
         )
 
 
