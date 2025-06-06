@@ -18,8 +18,8 @@ class TestKafkaProducerEdgeCases:
     """Edge case tests for Kafka producer."""
 
     @pytest.mark.asyncio
-    async def test_producer_health_check_attribute_error(self):
-        """Test producer health check when attributes are missing."""
+    async def test_producer_returns_existing_instance(self):
+        """Test that existing producer instance is returned without health check."""
         mock_producer = MagicMock()
         # Producer has no 'client' attribute
         delattr(mock_producer, "client") if hasattr(mock_producer, "client") else None
@@ -28,6 +28,7 @@ class TestKafkaProducerEdgeCases:
 
         producer_module._producer_instance = mock_producer
         producer_module._producer_lock = asyncio.Lock()
+        producer_module._is_closing = False
 
         with patch(
             "lilypad.server.services.kafka_producer.get_settings"
@@ -42,10 +43,10 @@ class TestKafkaProducerEdgeCases:
                 new_producer = AsyncMock()
                 mock_class.return_value = new_producer
 
-                # Should recreate producer due to missing client attribute
+                # Should return existing producer without health check
                 producer = await get_kafka_producer()
-                assert producer == new_producer
-                new_producer.start.assert_called_once()
+                assert producer == mock_producer  # Returns existing instance
+                mock_class.assert_not_called()  # No new producer created
 
     @pytest.mark.asyncio
     async def test_producer_concurrent_initialization(self):
