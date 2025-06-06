@@ -111,17 +111,16 @@ def test_post_traces(
     test_api_key: APIKeyTable,
 ):
     """Test posting trace data creates expected spans."""
-    from lilypad.server.services.kafka import get_kafka_service
-
     # Mock Kafka to be unavailable
-    mock_kafka_service = MagicMock()
-    mock_kafka_service.send_spans_batch = AsyncMock(return_value=False)
-
-    # Override the FastAPI dependency
     from fastapi import FastAPI
 
+    from lilypad.server.services import get_span_kafka_service
+
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
+
     app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
-    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
 
     try:
         current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
@@ -157,7 +156,7 @@ def test_post_traces(
         assert "message" in result
     finally:
         # Clean up the override
-        app.dependency_overrides.pop(get_kafka_service, None)
+        app.dependency_overrides.pop(get_span_kafka_service, None)
 
 
 def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
@@ -380,11 +379,11 @@ def test_create_traces_with_kafka_success(
     ]
 
     # Import necessary modules
-    from lilypad.server.services.kafka import get_kafka_service
+    from lilypad.server.services import get_span_kafka_service
 
     # Create mock Kafka service
     mock_kafka_service = MagicMock()
-    mock_kafka_service.send_spans_batch = AsyncMock(return_value=True)
+    mock_kafka_service.send_batch = AsyncMock(return_value=True)
 
     # Override the FastAPI dependency
     from fastapi import FastAPI
@@ -392,7 +391,7 @@ def test_create_traces_with_kafka_success(
     app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
 
     # Override the dependency
-    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
 
     try:
         response = client.post(
@@ -408,8 +407,8 @@ def test_create_traces_with_kafka_success(
         assert data["message"] == "Spans queued for processing"
 
         # Verify Kafka was called
-        mock_kafka_service.send_spans_batch.assert_called_once()
-        sent_spans = mock_kafka_service.send_spans_batch.call_args[0][0]
+        mock_kafka_service.send_batch.assert_called_once()
+        sent_spans = mock_kafka_service.send_batch.call_args[0][0]
         assert len(sent_spans) == 2
         # Verify project UUID was added to attributes
         assert sent_spans[0]["attributes"]["lilypad.project.uuid"] == str(
@@ -417,7 +416,7 @@ def test_create_traces_with_kafka_success(
         )
     finally:
         # Clean up the override
-        app.dependency_overrides.pop(get_kafka_service, None)
+        app.dependency_overrides.pop(get_span_kafka_service, None)
 
 
 def test_create_traces_kafka_unavailable_fallback(
@@ -427,7 +426,7 @@ def test_create_traces_kafka_unavailable_fallback(
     test_function: FunctionTable,
 ):
     """Test creating traces when Kafka is unavailable (fallback to sync)."""
-    from lilypad.server.services.kafka import get_kafka_service
+    from lilypad.server.services import get_span_kafka_service
 
     traces_data = [
         {
@@ -446,7 +445,7 @@ def test_create_traces_kafka_unavailable_fallback(
 
     # Create mock Kafka service that returns False (unavailable)
     mock_kafka_service = MagicMock()
-    mock_kafka_service.send_spans_batch = AsyncMock(return_value=False)
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
 
     # Override the FastAPI dependency
     from fastapi import FastAPI
@@ -454,7 +453,7 @@ def test_create_traces_kafka_unavailable_fallback(
     app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
 
     # Override the dependency
-    app.dependency_overrides[get_kafka_service] = lambda: mock_kafka_service
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
 
     try:
         response = client.post(
@@ -470,7 +469,7 @@ def test_create_traces_kafka_unavailable_fallback(
         assert data["message"] == "Spans processed synchronously"
     finally:
         # Clean up the override
-        app.dependency_overrides.pop(get_kafka_service, None)
+        app.dependency_overrides.pop(get_span_kafka_service, None)
 
 
 def test_create_traces_cloud_limit_exceeded(
