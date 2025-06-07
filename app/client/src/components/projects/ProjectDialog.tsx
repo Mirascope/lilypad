@@ -1,8 +1,8 @@
-import { ProjectFormData } from "@/components/projects/BaseProjectForm";
-import { CreateProjectForm } from "@/components/projects/CreateProjectForm";
-import { DeleteProjectForm } from "@/components/projects/DeleteProjectForm";
-import { EditProjectForm } from "@/components/projects/EditProjectForm";
-import { Button } from "@/components/ui/button";
+import { ProjectFormData } from "@/src/components/projects/BaseProjectForm";
+import { CreateProjectForm } from "@/src/components/projects/CreateProjectForm";
+import { DeleteProjectForm } from "@/src/components/projects/DeleteProjectForm";
+import { EditProjectForm } from "@/src/components/projects/EditProjectForm";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { ProjectPublic } from "@/types/types";
+} from "@/src/components/ui/dialog";
+import { ProjectPublic } from "@/src/types/types";
 import { PencilLine, PlusCircle, Trash } from "lucide-react";
 import { ReactNode } from "react";
 interface BaseDialogProps {

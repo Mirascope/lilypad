@@ -1,5 +1,5 @@
-import { BaseProjectForm, ProjectFormData } from "@/components/projects/BaseProjectForm";
-import { useUpdateProjectMutation } from "@/utils/projects";
+import { BaseProjectForm, ProjectFormData } from "@/src/components/projects/BaseProjectForm";
+import { useUpdateProjectMutation } from "@/src/utils/projects";
 import { toast } from "sonner";
 
 interface EditProjectFormProps {

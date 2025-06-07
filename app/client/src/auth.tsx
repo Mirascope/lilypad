@@ -1,11 +1,11 @@
-import { TraceTab } from "@/types/traces";
-import { ProjectPublic, UserPublic } from "@/types/types";
+import { TraceTab } from "@/src/types/traces";
+import { ProjectPublic, UserPublic } from "@/src/types/types";
 import {
   AUTH_STORAGE_KEY,
   PRIVACY_STORAGE_KEY,
   TERMS_STORAGE_KEY,
   USER_CONFIG_STORAGE_KEY,
-} from "@/utils/constants";
+} from "@/src/utils/constants";
 import { VisibilityState } from "@tanstack/react-table";
 import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 

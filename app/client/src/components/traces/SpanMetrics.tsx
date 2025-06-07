@@ -1,7 +1,7 @@
-import { Token } from "@/assets/TokenIcon";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { SpanMoreDetails } from "@/types/types";
+import { Token } from "@/src/assets/TokenIcon";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Separator } from "@/src/components/ui/separator";
+import { SpanMoreDetails } from "@/src/types/types";
 
 import { Fragment, useEffect, useRef, useState } from "react";
 

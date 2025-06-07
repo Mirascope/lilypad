@@ -1,5 +1,5 @@
-import api from "@/api";
-import { TagCreate, TagPublic } from "@/types/types";
+import api from "@/src/api";
+import { TagCreate, TagPublic } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const fetchTags = async () => (await api.get<TagPublic[]>("/tags")).data;

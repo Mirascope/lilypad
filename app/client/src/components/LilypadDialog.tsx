@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button, ButtonProps } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { cn } from "@/src/lib/utils";
 import { ReactNode } from "react";
 
 export const LilypadDialog = ({

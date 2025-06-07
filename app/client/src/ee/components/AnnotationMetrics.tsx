@@ -5,9 +5,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Typography } from "@/components/ui/typography";
-import { annotationMetricsByFunctionQueryOptions } from "@/ee/utils/annotations";
+} from "@/src/components/ui/card";
+import { Typography } from "@/src/components/ui/typography";
+import { annotationMetricsByFunctionQueryOptions } from "@/src/ee/utils/annotations";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle, CircleX } from "lucide-react";
 import { Cell, Label, Pie, PieChart, ResponsiveContainer } from "recharts";

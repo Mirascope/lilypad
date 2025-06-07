@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { LilypadLoading } from "@/components/LilypadLoading";
-import { SpanFullDetail } from "@/components/traces/SpanFullDetail";
+import { LilypadLoading } from "@/src/components/LilypadLoading";
+import { SpanFullDetail } from "@/src/components/traces/SpanFullDetail";
 
 export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/detail/$spanUuid")({
   parseParams: (params) => ({

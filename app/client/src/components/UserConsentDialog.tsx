@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Typography } from "@/components/ui/typography";
+} from "@/src/components/ui/alert-dialog";
+import { Typography } from "@/src/components/ui/typography";
 import { Dispatch, SetStateAction } from "react";
 
 export const UserConsentDialog = ({

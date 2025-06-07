@@ -1,6 +1,6 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardFooter, CardHeader } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { cn } from "@/src/lib/utils";
 
 const CardSkeleton = ({ items = 2, className }: { items?: number; className?: string }) => {
   return (

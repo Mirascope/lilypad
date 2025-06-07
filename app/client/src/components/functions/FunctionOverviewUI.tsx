@@ -1,10 +1,10 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { CodeBlock } from "@/components/code-block";
-import { MetricCharts } from "@/components/MetricsCharts";
-import { AnnotationMetrics } from "@/ee/components/AnnotationMetrics";
-import { DiffTool } from "@/ee/components/DiffTool";
-import { useFeatureAccess } from "@/hooks/use-featureaccess";
-import { FunctionPublic } from "@/types/types";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import { CodeBlock } from "@/src/components/code-block";
+import { MetricCharts } from "@/src/components/MetricsCharts";
+import { AnnotationMetrics } from "@/src/ee/components/AnnotationMetrics";
+import { DiffTool } from "@/src/ee/components/DiffTool";
+import { useFeatureAccess } from "@/src/hooks/use-featureaccess";
+import { FunctionPublic } from "@/src/types/types";
 import { Suspense } from "react";
 
 interface FunctionOverviewUIProps {

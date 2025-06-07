@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { InviteUserForm } from "@/components/users/InviteUserForm";
-import { cn } from "@/lib/utils";
+} from "@/src/components/ui/dialog";
+import { InviteUserForm } from "@/src/components/users/InviteUserForm";
+import { cn } from "@/src/lib/utils";
 import { PlusCircle } from "lucide-react";
 
 interface InviteUserDialogProps {

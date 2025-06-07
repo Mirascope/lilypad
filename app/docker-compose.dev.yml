@@ -19,8 +19,6 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
-    env_file:
-      - .env.dev
     develop:
       watch:
         - action: sync
@@ -51,6 +49,13 @@ services:
       - LILYPAD_OPENSEARCH_PORT=${LILYPAD_OPENSEARCH_PORT:-9200}
       - LILYPAD_OPENSEARCH_USER=${LILYPAD_OPENSEARCH_USER:-admin}
       - LILYPAD_OPENSEARCH_PASSWORD=${LILYPAD_OPENSEARCH_PASSWORD:-${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-50\!w2nPBWe:}}
+      - LILYPAD_STRIPE_API_KEY=${LILYPAD_STRIPE_API_KEY:-rk_test_...}
+      - LILYPAD_STRIPE_SECRET_API_KEY=${LILYPAD_STRIPE_SECRET_API_KEY:-sk_test_...}
+      - LILYPAD_STRIPE_CLOUD_PRO_FLAT_PRICE_ID=${LILYPAD_STRIPE_CLOUD_PRO_FLAT_PRICE_ID:-price_...}
+      - LILYPAD_STRIPE_CLOUD_PRO_METER_PRICE_ID=${LILYPAD_STRIPE_CLOUD_PRO_METER_PRICE_ID:-...}
+      - LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID=${LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID:-price_...}
+      - LILYPAD_STRIPE_CLOUD_TEAM_METER_PRICE_ID=${LILYPAD_STRIPE_CLOUD_TEAM_METER_PRICE_ID:-...}
+      - LILYPAD_STRIPE_WEBHOOK_SECRET=${LILYPAD_STRIPE_WEBHOOK_SECRET:-whsec_...}
       - LILYPAD_KAFKA_BOOTSTRAP_SERVERS=${LILYPAD_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
       - LILYPAD_KAFKA_TOPIC_SPAN_INGESTION=${LILYPAD_KAFKA_TOPIC_SPAN_INGESTION:-span-ingestion}
       - LILYPAD_KAFKA_CONSUMER_GROUP=${LILYPAD_KAFKA_CONSUMER_GROUP:-lilypad-span-processor}
@@ -160,7 +165,7 @@ services:
       - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
@@ -170,15 +175,22 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_LOG_RETENTION_HOURS: 168  # 7 days retention
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 168 # 7 days retention
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka-data:/var/lib/kafka
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:29092", "--list"]
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "localhost:29092",
+          "--list",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
