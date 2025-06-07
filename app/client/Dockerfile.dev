@@ -5,10 +5,16 @@ WORKDIR /app
 # Copy package.json and bun.lockb (if available)
 COPY package*.json bun.lockb* ./
 
+
 # Install tini for better signal handling
 RUN apt-get update && apt-get install -y tini && \
     rm -rf /var/lib/apt/lists/*
 
+RUN bun add -D @mirascope/ui
+
+RUN bunx mirascope-ui init
+
+RUN bunx mirascope-ui sync
 # Expose the port the app runs on
 EXPOSE 5173
 
