@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     opensearch_password: str | None = None
     opensearch_use_ssl: bool = False
 
+    # Kafka settings
+    kafka_bootstrap_servers: str | None = None
+    kafka_topic_span_ingestion: str = Field(default="span-ingestion")
+    kafka_consumer_group: str = Field(default="lilypad-span-processor")
+    kafka_max_concurrent_traces: int = Field(default=1000)
+    kafka_max_spans_per_trace: int = Field(default=500)
+    kafka_buffer_ttl_seconds: int = Field(default=300)
+    kafka_cleanup_interval_seconds: int = Field(default=60)
+
     # Database settings
     db_host: str | None = None
     db_name: str | None = None
@@ -68,6 +77,36 @@ class Settings(BaseSettings):
     stripe_cloud_pro_price_id: str | None = None
     stripe_cloud_team_price_id: str | None = None
     stripe_spans_metering_id: str | None = None
+
+    # Secret Manager settings
+    secret_manager_type: str = Field(
+        default="SUPABASE_VAULT",
+        description="Type of secret manager to use: SUPABASE_VAULT or AWS_SECRET_MANAGER",
+    )
+    aws_region: str = Field(
+        default="us-east-1",
+        description="AWS region for Secret Manager (only used when secret_manager_type is AWS_SECRET_MANAGER)",
+    )
+    aws_secret_manager_force_delete: bool = Field(
+        default=False,
+        description="Force immediate deletion of secrets without recovery window (use with caution)",
+    )
+    aws_secret_manager_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retry attempts for AWS Secret Manager API calls",
+    )
+    aws_secret_manager_enable_metrics: bool = Field(
+        default=False,  # Changed to False by default for security
+        description="Enable metrics collection for AWS Secret Manager operations",
+    )
+    aws_secret_manager_pre_initialize: bool = Field(
+        default=False,
+        description="Pre-initialize AWS client to reduce first request latency",
+    )
+    aws_secret_manager_kms_key_id: str | None = Field(
+        default=None,
+        description="KMS key ID for encrypting secrets (optional)",
+    )
 
     @property
     def config(self) -> dict[str, Any]:

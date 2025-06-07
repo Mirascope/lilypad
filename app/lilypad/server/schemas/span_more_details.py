@@ -382,39 +382,29 @@ def convert_mirascope_messages(
         """Create a MessageParam with text content."""
         return MessageParam(role=role, content=[_TextPart(type="text", text=text)])
 
-    def handle_media_content(role: str, media_content: dict) -> MessageParam | None:
-        """Create a MessageParam with media content (image or audio)."""
-        if media_content.get("type") == "image":
-            return MessageParam(
-                role=role,
-                content=[
-                    _ImagePart(
-                        type="image",
-                        media_type=media_content["media_type"],
-                        image=media_content["image"],
-                        detail=media_content.get("detail"),
-                    )
-                ],
-            )
-        elif media_content.get("type") == "audio":
-            return MessageParam(
-                role=role,
-                content=[
-                    _AudioPart(
-                        type="audio",
-                        media_type=media_content["media_type"],
-                        audio=media_content["audio"],
-                    )
-                ],
-            )
-        return None  # Unsupported media type
-
     def handle_tool_call(tool_call: dict) -> _ToolCall:
         """Convert a tool call dict to a _ToolCall object."""
         return _ToolCall(
             type="tool_call",
             name=tool_call.get("name", ""),
             arguments=dict(tool_call.get("args", {}).items()),
+        )
+
+    def handle_image(image_content: dict) -> _ImagePart:
+        """Convert an image content dict to an _ImagePart object."""
+        return _ImagePart(
+            type="image",
+            media_type=image_content.get("media_type", "image/png"),
+            image=image_content.get("image", ""),
+            detail=image_content.get("detail"),
+        )
+
+    def handle_audio(audio_content: dict) -> _AudioPart:
+        """Convert an audio content dict to an _AudioPart object."""
+        return _AudioPart(
+            type="audio",
+            media_type=audio_content.get("media_type", "audio/mpeg"),
+            audio=audio_content.get("audio", ""),
         )
 
     for message in new_messages:
@@ -426,13 +416,17 @@ def convert_mirascope_messages(
             structured_messages.append(handle_text_content(role, content))
 
         # Handle media content (for user and system roles)
-        elif isinstance(content, dict) and role in ["user", "system"]:
-            media_message = handle_media_content(role, content)
-            if media_message:
-                structured_messages.append(media_message)
+        elif isinstance(content, dict) and content.get("type") == "image":
+            structured_messages.append(
+                MessageParam(role=role, content=[handle_image(content)])
+            )
+        elif isinstance(content, dict) and content.get("type") == "audio":
+            structured_messages.append(
+                MessageParam(role=role, content=[handle_audio(content)])
+            )
 
         # Handle assistant with tool calls
-        elif role == "assistant" and isinstance(content, list):
+        elif isinstance(content, list):
             content_parts = []
             for content_item in content:
                 if (
@@ -440,13 +434,29 @@ def convert_mirascope_messages(
                     and content_item.get("type") == "tool_call"
                 ):
                     content_parts.append(handle_tool_call(content_item))
+                elif (
+                    isinstance(content_item, dict)
+                    and content_item.get("type") == "image"
+                ):
+                    content_parts.append(handle_image(content_item))
+                elif (
+                    isinstance(content_item, dict)
+                    and content_item.get("type") == "audio"
+                ):
+                    content_parts.append(handle_audio(content_item))
+                elif (
+                    isinstance(content_item, dict)
+                    and content_item.get("type") == "text"
+                ):
+                    content_parts.append(
+                        _TextPart(type="text", text=content_item.get("text", ""))
+                    )
                 elif isinstance(content_item, str):
                     content_parts.append(_TextPart(type="text", text=content_item))
-
             if content_parts:
                 structured_messages.append(
                     MessageParam(
-                        role="assistant",
+                        role=role,
                         content=content_parts,
                     )
                 )

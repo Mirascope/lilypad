@@ -1,4 +1,4 @@
-.PHONY: setup dev test test-app test-sdk lint lint-app lint-sdk format format-app format-sdk fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean
+.PHONY: setup dev prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk lint lint-app lint-sdk format format-app format-sdk fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean
 
 setup:
 	command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -9,7 +9,25 @@ setup:
 	cd sdks && bun install
 
 dev:
-	docker-compose up -d
+	cd app && docker-compose -f docker-compose.dev.yml up -d
+
+prod:
+	cd app && docker-compose up -d
+
+dev-down:
+	cd app && docker-compose -f docker-compose.dev.yml down
+
+prod-down:
+	cd app && docker-compose down
+
+setup-kafka:
+	cd app && ./scripts/setup_kafka_topics.sh
+
+setup-kafka-prod:
+	cd app && ./scripts/setup_kafka_topics_production.sh
+
+test-kafka:
+	cd app && uv run python scripts/test_kafka_connection.py
 
 test: test-app test-sdk
 
