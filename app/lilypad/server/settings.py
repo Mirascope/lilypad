@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     kafka_max_spans_per_trace: int = Field(default=500)
     kafka_buffer_ttl_seconds: int = Field(default=300)
     kafka_cleanup_interval_seconds: int = Field(default=60)
+    kafka_auto_setup_topics: bool = Field(default=False)
 
     # Database settings
     db_host: str | None = None

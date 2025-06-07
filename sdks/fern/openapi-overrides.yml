@@ -179,6 +179,10 @@ paths:
     delete:
       x-fern-sdk-group-name: [projects, spans]
       x-fern-sdk-method-name: delete
+  /projects/{project_uuid}/spans/recent:
+    get:
+      x-fern-sdk-group-name: [projects, spans]
+      x-fern-sdk-method-name: getRecent
   /projects/{project_uuid}/functions/{function_uuid}/spans/paginated:
     get:
       x-fern-sdk-group-name: [projects, functions, spans]

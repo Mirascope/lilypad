@@ -35,7 +35,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
-import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useMemo, useState, useEffect } from "react";
 
 interface VirtualizerOptions {
   count: number;
@@ -102,7 +102,14 @@ export const DataTable = <T extends { uuid: string }>({
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   // Use our context for detail panel and selected rows
-  const { detailRow, setDetailRow, onDetailPanelClose, setSelectedRows } = useTable<T>();
+  const { detailRow, setDetailRow, onDetailPanelClose, setSelectedRows, selectedRows } = useTable<T>();
+  
+  // Sync rowSelection when selectedRows is cleared externally
+  useEffect(() => {
+    if (selectedRows.length === 0 && Object.keys(rowSelection).length > 0) {
+      setRowSelection({});
+    }
+  }, [selectedRows, rowSelection]);
 
   const fetchMoreOnBottomReached = useCallback(
     (containerRefElement?: HTMLDivElement | null) => {
@@ -243,17 +250,31 @@ export const DataTable = <T extends { uuid: string }>({
     scrollPaddingEnd: 0,
   });
 
-  const toggleRowSelection = (row: T) => {
+  const toggleRowSelection = useCallback((row: T) => {
+    // First, find the table row to toggle its selection
+    const rowId = customGetRowId ? customGetRowId(row) : row.uuid;
+    const tableRow = table.getRowModel().rowsById[rowId];
+    
+    if (tableRow) {
+      // Toggle the checkbox selection
+      tableRow.toggleSelected();
+    }
+    
+    // Then handle the detail panel
     if (onRowClick) {
       onRowClick(row);
     } else {
-      if (detailRow?.uuid === row.uuid) {
+      // Compare using the same ID logic as table rows
+      const currentDetailId = detailRow ? (customGetRowId ? customGetRowId(detailRow) : detailRow.uuid) : null;
+      const clickedRowId = customGetRowId ? customGetRowId(row) : row.uuid;
+      
+      if (currentDetailId === clickedRowId) {
         onDetailPanelClose();
       } else {
         setDetailRow(row);
       }
     }
-  };
+  }, [customGetRowId, detailRow, onDetailPanelClose, setDetailRow, onRowClick, table]);
 
   const renderRow = (
     rowInfo: {

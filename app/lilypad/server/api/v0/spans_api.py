@@ -1,6 +1,7 @@
 """The `/spans` API router."""
 
 from collections.abc import Sequence
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from ...models.spans import Scope
 from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import SpanMoreDetails
 from ...schemas.spans import SpanPublic, SpanUpdate
+from ...schemas.traces import RecentSpansResponse
 from ...schemas.users import UserPublic
 from ...services.functions import FunctionService
 from ...services.opensearch import (
@@ -47,6 +49,35 @@ async def get_aggregates_by_project_uuid(
 ) -> Sequence[AggregateMetrics]:
     """Get aggregated span by project uuid."""
     return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
+
+
+@spans_router.get(
+    "/projects/{project_uuid}/spans/recent",
+    response_model=RecentSpansResponse,
+)
+async def get_recent_spans(
+    project_uuid: UUID,
+    current_user: Annotated[UserPublic, Depends(get_current_user)],
+    span_service: Annotated[SpanService, Depends(SpanService)],
+    since: Annotated[
+        datetime | None, Query(description="Get spans created since this timestamp")
+    ] = None,
+) -> RecentSpansResponse:
+    """Get spans created recently for real-time polling.
+
+    If no 'since' parameter is provided, returns spans from the last 30 seconds.
+    """
+    if not since:
+        since = datetime.now(timezone.utc) - timedelta(seconds=30)
+
+    # Get recent spans
+    recent_spans = span_service.get_spans_since(project_uuid, since)
+
+    return RecentSpansResponse(
+        spans=[SpanPublic.model_validate(span) for span in recent_spans],
+        timestamp=datetime.now(timezone.utc),
+        project_uuid=str(project_uuid),
+    )
 
 
 # Order matters, this endpoint should be last
