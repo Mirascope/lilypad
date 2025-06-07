@@ -218,13 +218,20 @@ def recursive_process_value(value: Any) -> dict | list | str | int | float | boo
     return str(value)
 
 
+def bytes_serializer(obj: bytes) -> str:
+    """Serialize bytes to a base64 encoded string."""
+    return base64.b64encode(obj).decode("utf-8")
+
+
 def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span, trace_type: str) -> None:
     try:
         output = safe_serialize(response)
     except TypeError:
         output = str(response)
     try:
-        messages = fast_jsonable(response.common_messages + [response.common_message_param])
+        messages = fast_jsonable(
+            response.common_messages + [response.common_message_param], custom_serializers={bytes: bytes_serializer}
+        )
     except TypeError:
         messages = str(response.common_messages) + str(response.common_message_param)
     attributes: dict[str, AttributeValue] = {
