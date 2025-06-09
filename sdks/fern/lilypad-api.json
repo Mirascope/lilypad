@@ -1043,6 +1043,32 @@
         ]
       }
     },
+    "/stripe/event-summaries": {
+      "get": {
+        "summary": "Get Event Summaries",
+        "operationId": "get_event_summaries_stripe_event_summaries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/webhooks/stripe": {
       "post": {
         "summary": "Stripe Webhook",
@@ -5825,6 +5851,39 @@
         ],
         "title": "Event",
         "description": "Event model."
+      },
+      "EventSummaryResponse": {
+        "properties": {
+          "current_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Current Meter"
+          },
+          "monthly_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Monthly Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_meter",
+          "monthly_total"
+        ],
+        "title": "EventSummaryResponse",
+        "description": "Response model for event summaries."
       },
       "ExternalAPIKeyCreate": {
         "properties": {

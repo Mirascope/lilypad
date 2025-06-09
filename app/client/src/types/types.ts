@@ -587,6 +587,17 @@ export interface Event {
 }
 
 /**
+ * EventSummaryResponse
+ * Response model for event summaries.
+ */
+export interface EventSummaryResponse {
+  /** Current Meter */
+  current_meter: number;
+  /** Monthly Total */
+  monthly_total: number;
+}
+
+/**
  * ExternalAPIKeyCreate
  * Request model for creating a secret.
  */

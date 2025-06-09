@@ -51,6 +51,7 @@ services:
       - LILYPAD_OPENSEARCH_PASSWORD=${LILYPAD_OPENSEARCH_PASSWORD:-${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-50\!w2nPBWe:}}
       - LILYPAD_STRIPE_API_KEY=${LILYPAD_STRIPE_API_KEY:-rk_test_...}
       - LILYPAD_STRIPE_SECRET_API_KEY=${LILYPAD_STRIPE_SECRET_API_KEY:-sk_test_...}
+      - LILYPAD_STRIPE_SPANS_METERING_ID=${LILYPAD_STRIPE_SPANS_METERING_ID:-mtr_...}
       - LILYPAD_STRIPE_CLOUD_PRO_FLAT_PRICE_ID=${LILYPAD_STRIPE_CLOUD_PRO_FLAT_PRICE_ID:-price_...}
       - LILYPAD_STRIPE_CLOUD_PRO_METER_PRICE_ID=${LILYPAD_STRIPE_CLOUD_PRO_METER_PRICE_ID:-...}
       - LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID=${LILYPAD_STRIPE_CLOUD_TEAM_FLAT_PRICE_ID:-price_...}
@@ -216,12 +217,12 @@ services:
     image: localstack/localstack:latest
     container_name: localstack
     ports:
-      - "4566:4566"  # LocalStack Gateway
+      - "4566:4566" # LocalStack Gateway
     environment:
       - SERVICES=secretsmanager,kms
       - DEBUG=0
       - AWS_DEFAULT_REGION=us-east-1
-      - PERSISTENCE=1  # Enable persistence for secrets
+      - PERSISTENCE=1 # Enable persistence for secrets
       - LOCALSTACK_HOST=localstack
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
