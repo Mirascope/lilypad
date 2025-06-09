@@ -35,6 +35,17 @@ services:
       - LILYPAD_KAFKA_MAX_SPANS_PER_TRACE=500
       - LILYPAD_KAFKA_BUFFER_TTL_SECONDS=300
       - LILYPAD_KAFKA_AUTO_SETUP_TOPICS=true
+      # Secret Manager Configuration
+      # Option 1: Use Supabase Vault (default)
+      - LILYPAD_SECRET_MANAGER_TYPE=SUPABASE_VAULT
+      # Option 2: Use AWS Secret Manager (uncomment below and comment above)
+      # - LILYPAD_SECRET_MANAGER_TYPE=AWS_SECRET_MANAGER
+      # - LILYPAD_AWS_REGION=us-east-1
+      # - LILYPAD_AWS_SECRET_MANAGER_FORCE_DELETE=false  # Set to true for immediate deletion
+      # - LILYPAD_AWS_SECRET_MANAGER_MAX_RETRIES=3       # Retry attempts for API calls
+      # - AWS_ACCESS_KEY_ID=your-access-key-id
+      # - AWS_SECRET_ACCESS_KEY=your-secret-access-key
+      # Note: For AWS IAM roles (EC2/ECS), omit AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
     depends_on:
       - postgres
       - kafka
