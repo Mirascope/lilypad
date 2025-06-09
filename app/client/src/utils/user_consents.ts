@@ -1,5 +1,5 @@
-import api from "@/api";
-import { UserConsentCreate, UserConsentPublic, UserConsentUpdate } from "@/types/types";
+import api from "@/src/api";
+import { UserConsentCreate, UserConsentPublic, UserConsentUpdate } from "@/src/types/types";
 import { useMutation } from "@tanstack/react-query";
 
 export const postUserConsent = async (userConsentCreate: UserConsentCreate) => {

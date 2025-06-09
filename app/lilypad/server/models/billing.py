@@ -41,22 +41,29 @@ class BillingBase(SQLModel):
     """Base Billing Model."""
 
     stripe_customer_id: str | None = Field(nullable=True, index=True)
-    stripe_subscription_id: str | None = Field(nullable=True, index=True)
-    stripe_price_id: str | None = Field(nullable=True)
-    subscription_status: SubscriptionStatus | None = Field(nullable=True)
+    stripe_subscription_id: str | None = Field(nullable=True, index=True, default=None)
+    stripe_price_id: str | None = Field(nullable=True, default=None)
+    subscription_status: SubscriptionStatus | None = Field(nullable=True, default=None)
     subscription_current_period_start: datetime | None = Field(
         nullable=True,
+        default=None,
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
     )
     subscription_current_period_end: datetime | None = Field(
         nullable=True,
+        default=None,
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
     )
     # Usage tracking
     usage_quantity: int = Field(default=0)
     last_usage_report: datetime | None = Field(
+        default=None,
         nullable=True,
         sa_type=DateTime(timezone=True),  # pyright: ignore [reportArgumentType]
+    )
+    cancel_at_period_end: bool | None = Field(
+        default=False,
+        description="Whether the subscription should be canceled at the end of the period",
     )
 
     # Additional metadata

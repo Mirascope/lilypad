@@ -1,9 +1,9 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Typography } from "@/components/ui/typography";
-import { cn } from "@/lib/utils";
-import { SpanPublic } from "@/types/types";
-import { formatRelativeTime } from "@/utils/strings";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Typography } from "@/src/components/ui/typography";
+import { cn } from "@/src/lib/utils";
+import { SpanPublic } from "@/src/types/types";
+import { formatRelativeTime } from "@/src/utils/strings";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";

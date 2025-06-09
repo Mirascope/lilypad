@@ -1,8 +1,8 @@
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input, InputProps } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/src/components/ui/form";
+import { Input, InputProps } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Slider } from "@/src/components/ui/slider";
+import { Switch } from "@/src/components/ui/switch";
 import { SliderProps } from "@radix-ui/react-slider";
 import { Controller, FieldValues, Path, useFormContext } from "react-hook-form";
 

@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from ee import LicenseValidator
 from ee.validate import LicenseError
@@ -46,11 +46,9 @@ async def create_organization(
     is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
 ) -> OrganizationTable:
     """Create an organization."""
-    organization = organization_service.create_record(
-        organization_create,
-        email=user.email,
-        billing_service=billing_service if is_lilypad_cloud else None,
-    )
+    organization = organization_service.create_record(organization_create)
+    if is_lilypad_cloud and billing_service and user.email:
+        billing_service.create_customer(organization, user.email)
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(
         user_uuid=user.uuid,
@@ -64,12 +62,14 @@ async def create_organization(
 
 @organization_router.delete("/organizations", response_model=UserPublic)
 async def delete_organization(
+    request: Request,
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
     ],
     user_service: Annotated[UserService, Depends(UserService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
 ) -> UserPublic:
     """Delete an organization."""
     if not user.active_organization_uuid:
@@ -83,8 +83,11 @@ async def delete_organization(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only organization owner can remove organization",
         )
-    # Check if user is in organization
 
+    is_cloud = request is not None and is_lilypad_cloud(request)
+    if is_cloud:
+        # Order matters, we need to grab billing info before deleting the organization
+        billing_service.delete_customer_and_billing(user.active_organization_uuid)
     deleted = organization_service.delete_record_by_uuid(user.active_organization_uuid)
     if not deleted:
         raise HTTPException(
@@ -105,12 +108,14 @@ async def delete_organization(
     response_model=OrganizationPublic,
 )
 async def update_organization(
+    request: Request,
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     user_organization_service: Annotated[
         UserOrganizationService, Depends(UserOrganizationService)
     ],
     organization_update: OrganizationUpdate,
     user: Annotated[UserPublic, Depends(get_current_user)],
+    billing_service: Annotated[BillingService, Depends(BillingService)],
 ) -> OrganizationTable:
     """Update an organization."""
     # Check if user is in organization
@@ -140,7 +145,12 @@ async def update_organization(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid license key: {str(e)}",
             )
-
-    return organization_service.update_record_by_uuid(
+    updated_org = organization_service.update_record_by_uuid(
         user.active_organization_uuid, organization
     )
+    is_cloud = request is not None and is_lilypad_cloud(request)
+    if is_cloud and updated_org.billing.stripe_customer_id:
+        billing_service.update_customer(
+            updated_org.billing.stripe_customer_id, updated_org.name
+        )
+    return updated_org

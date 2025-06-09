@@ -1,6 +1,6 @@
-import { Button, ButtonProps } from "@/components/ui/button";
-import { UserConsentDialog } from "@/components/UserConsentDialog";
-import { settingsQueryOptions } from "@/utils/settings";
+import { Button, ButtonProps } from "@/src/components/ui/button";
+import { UserConsentDialog } from "@/src/components/UserConsentDialog";
+import { settingsQueryOptions } from "@/src/utils/settings";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
 interface GithubButtonProps extends ButtonProps {

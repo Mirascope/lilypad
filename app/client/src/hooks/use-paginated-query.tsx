@@ -1,6 +1,6 @@
-import { type PaginatedSpanPublic } from "@/types/types";
-import { PAGE_SIZE } from "@/utils/constants";
-import { fetchSpansByFunctionUuidPaged, type PageParam } from "@/utils/spans";
+import { type PaginatedSpanPublic } from "@/src/types/types";
+import { PAGE_SIZE } from "@/src/utils/constants";
+import { fetchSpansByFunctionUuidPaged, type PageParam } from "@/src/utils/spans";
 import { InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 

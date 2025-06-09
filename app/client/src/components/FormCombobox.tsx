@@ -1,5 +1,5 @@
-import { Combobox, MultipleComboboxProps } from "@/components/ui/combobox";
-import { FormField } from "@/components/ui/form";
+import { Combobox, MultipleComboboxProps } from "@/src/components/ui/combobox";
+import { FormField } from "@/src/components/ui/form";
 import { Control, FieldValues, Path } from "react-hook-form";
 
 type FormComboboxProps<T extends FieldValues> = Omit<

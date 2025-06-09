@@ -4,23 +4,9 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from ..models.billing import SubscriptionStatus
-
-
-class BillingBase(BaseModel):
-    """Base schema for billing operations."""
-
-    stripe_customer_id: str | None = None
-    stripe_subscription_id: str | None = None
-    stripe_price_id: str | None = None
-    subscription_status: SubscriptionStatus | None = None
-    subscription_current_period_start: datetime | None = None
-    subscription_current_period_end: datetime | None = None
-    usage_quantity: int = 0
-    last_usage_report: datetime | None = None
-    metadata: dict = Field(default_factory=dict)
+from ..models.billing import BillingBase
 
 
 class BillingCreate(BillingBase):

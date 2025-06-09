@@ -1,5 +1,5 @@
-import { UserPublic } from "@/types/types";
-import { AUTH_STORAGE_KEY } from "@/utils/constants";
+import { UserPublic } from "@/src/types/types";
+import { AUTH_STORAGE_KEY } from "@/src/utils/constants";
 import axios from "axios";
 export let baseURL = "/v0";
 if (import.meta.env.MODE === "development") {

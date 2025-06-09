@@ -1,4 +1,4 @@
-import { AUTH_STORAGE_KEY } from "@/utils/constants";
+import { AUTH_STORAGE_KEY } from "@/src/utils/constants";
 import { EventSource } from "eventsource";
 import { useCallback, useEffect, useState } from "react";
 

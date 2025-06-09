@@ -1,5 +1,5 @@
-import api from "@/api";
-import { UserOrganizationTable, UserOrganizationUpdate, UserPublic } from "@/types/types";
+import api from "@/src/api";
+import { UserOrganizationTable, UserOrganizationUpdate, UserPublic } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 export const updateActiveOrganization = async (organizationUuid: string) => {
   return (await api.put<UserPublic>(`/users/${organizationUuid}`)).data;

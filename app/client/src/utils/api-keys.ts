@@ -1,5 +1,5 @@
-import api from "@/api";
-import { APIKeyCreate, APIKeyPublic } from "@/types/types";
+import api from "@/src/api";
+import { APIKeyCreate, APIKeyPublic } from "@/src/types/types";
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostHog } from "posthog-js/react";
 

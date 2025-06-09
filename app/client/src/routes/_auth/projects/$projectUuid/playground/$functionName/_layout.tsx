@@ -1,5 +1,5 @@
-import { PlaygroundContainer } from "@/ee/components/PlaygroundContainer";
-import { functionsByNameQueryOptions } from "@/utils/functions";
+import { PlaygroundContainer } from "@/src/ee/components/PlaygroundContainer";
+import { functionsByNameQueryOptions } from "@/src/utils/functions";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 

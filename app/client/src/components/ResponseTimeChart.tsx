@@ -1,8 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Typography } from "@/components/ui/typography";
-import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/types/types";
-import { aggregatesByFunctionQueryOptions } from "@/utils/spans";
-import { formatDate } from "@/utils/strings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Typography } from "@/src/components/ui/typography";
+import { AggregateMetrics, FunctionPublic, TimeFrame } from "@/src/types/types";
+import { aggregatesByFunctionQueryOptions } from "@/src/utils/spans";
+import { formatDate } from "@/src/utils/strings";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import {
   CartesianGrid,

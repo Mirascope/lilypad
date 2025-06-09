@@ -71,12 +71,44 @@ class Settings(BaseSettings):
 
     # Stripe settings
     stripe_api_key: str | None = None
+    stripe_secret_api_key: str | None = None
     stripe_webhook_secret: str | None = None
     stripe_cloud_product_id: str | None = None
-    stripe_cloud_free_price_id: str | None = None
-    stripe_cloud_pro_price_id: str | None = None
-    stripe_cloud_team_price_id: str | None = None
+    stripe_cloud_pro_flat_price_id: str | None = None
+    stripe_cloud_pro_meter_price_id: str | None = None
+    stripe_cloud_team_flat_price_id: str | None = None
+    stripe_cloud_team_meter_price_id: str | None = None
     stripe_spans_metering_id: str | None = None
+
+    # Secret Manager settings
+    secret_manager_type: str = Field(
+        default="SUPABASE_VAULT",
+        description="Type of secret manager to use: SUPABASE_VAULT or AWS_SECRET_MANAGER",
+    )
+    aws_region: str = Field(
+        default="us-east-1",
+        description="AWS region for Secret Manager (only used when secret_manager_type is AWS_SECRET_MANAGER)",
+    )
+    aws_secret_manager_force_delete: bool = Field(
+        default=False,
+        description="Force immediate deletion of secrets without recovery window (use with caution)",
+    )
+    aws_secret_manager_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retry attempts for AWS Secret Manager API calls",
+    )
+    aws_secret_manager_enable_metrics: bool = Field(
+        default=False,  # Changed to False by default for security
+        description="Enable metrics collection for AWS Secret Manager operations",
+    )
+    aws_secret_manager_pre_initialize: bool = Field(
+        default=False,
+        description="Pre-initialize AWS client to reduce first request latency",
+    )
+    aws_secret_manager_kms_key_id: str | None = Field(
+        default=None,
+        description="KMS key ID for encrypting secrets (optional)",
+    )
 
     @property
     def config(self) -> dict[str, Any]:

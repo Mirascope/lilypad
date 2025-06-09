@@ -7,6 +7,7 @@ import typing_extensions
 from ..core.pydantic_utilities import IS_PYDANTIC_V2
 from ..core.serialization import FieldMetadata
 from ..core.unchecked_base_model import UncheckedBaseModel
+from .billing_public import BillingPublic
 
 
 class OrganizationPublic(UncheckedBaseModel):
@@ -16,6 +17,7 @@ class OrganizationPublic(UncheckedBaseModel):
 
     name: str
     uuid_: typing_extensions.Annotated[str, FieldMetadata(alias="uuid")]
+    billing: typing.Optional[BillingPublic] = None
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2

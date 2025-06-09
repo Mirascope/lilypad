@@ -1,5 +1,5 @@
-import { FormCombobox } from "@/components/FormCombobox";
-import { FormSlider } from "@/components/FormSlider";
+import { FormCombobox } from "@/src/components/FormCombobox";
+import { FormSlider } from "@/src/components/FormSlider";
 import {
   FormControl,
   FormDescription,
@@ -7,25 +7,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { ModelCombobox } from "@/components/ui/model-combobox";
+} from "@/src/components/ui/form";
+import { Input } from "@/src/components/ui/input";
+import { ModelCombobox } from "@/src/components/ui/model-combobox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { EditorParameters } from "@/ee/hooks/use-playground";
+} from "@/src/components/ui/select";
+import { EditorParameters } from "@/src/ee/hooks/use-playground";
 import {
   CommonCallParams,
   FunctionPublic,
   PlaygroundParameters,
   Provider,
   UserPublic,
-} from "@/types/types";
-import { userQueryOptions } from "@/utils/users";
+} from "@/src/types/types";
+import { userQueryOptions } from "@/src/utils/users";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { DefaultValues, Path, useForm, useFormContext, UseFormReturn } from "react-hook-form";

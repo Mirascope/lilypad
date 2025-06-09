@@ -1,6 +1,6 @@
-import { Font, useFont } from "@/components/FontProvider";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Font, useFont } from "@/src/components/FontProvider";
+import { Button } from "@/src/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
 
 const FontTooltipOption = ({
   name,

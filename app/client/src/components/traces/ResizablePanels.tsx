@@ -1,7 +1,11 @@
-import CardSkeleton from "@/components/CardSkeleton";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { TableContextType, useTable } from "@/hooks/use-table";
-import { cn } from "@/lib/utils";
+import CardSkeleton from "@/src/components/CardSkeleton";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/src/components/ui/resizable";
+import { TableContextType, useTable } from "@/src/hooks/use-table";
+import { cn } from "@/src/lib/utils";
 import { ReactNode, Suspense } from "react";
 
 type DetailContentRenderer<T> = (data: T) => ReactNode;
