@@ -22,9 +22,8 @@ import { formatRelativeTime } from "@/src/utils/strings";
 import { spansByTraceIdQueryOptions } from "@/src/utils/traces";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { GitCompare, RefreshCcw, Users, Pause, Play } from "lucide-react";
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { spanPollingService } from "@/src/services/SpanPollingService";
 
 const INIT_LIMIT = 80;
 
@@ -85,7 +84,7 @@ const Trace = () => {
     isLoading,
     dataUpdatedAt,
     refetch,
-  } = useInfiniteTraces(projectUuid, pageSize, order);
+  } = useInfiniteTraces(projectUuid, pageSize, order, isPolling);
 
   // Check if urlParam looks like a trace ID (not a UUID)
   const isTraceId = urlParam && !urlParam.includes('-');
@@ -146,16 +145,9 @@ const Trace = () => {
     }
   }, [urlParam, defaultData, spansByTraceId, isTraceId, navigate, projectUuid, setDetailRow]);
 
-  // Handle new spans from polling
-  const handleNewSpans = useCallback((newSpans: SpanPublic[]) => {
-    // Refetch to get the latest data with the new spans
-    refetch();
-  }, [refetch]);
-
   // Toggle polling
-  const togglePolling = useCallback(() => {
+  const togglePolling = () => {
     if (isPolling) {
-      spanPollingService.stop();
       setIsPolling(false);
       toast.success("Real-time updates paused");
     } else {
@@ -166,52 +158,10 @@ const Trace = () => {
         });
         setSelectedRows([]);
       }
-      
-      spanPollingService.start({
-        projectUuid,
-        interval: Number(import.meta.env.VITE_POLLING_INTERVAL) || 5000,
-        onUpdate: handleNewSpans,
-        onError: (error) => {
-          console.error("Polling error:", error);
-          toast.error("Real-time updates stopped due to errors", {
-            description: "Please refresh the page to try again"
-          });
-          setIsPolling(false);
-        },
-        onMaxErrors: () => {
-          setIsPolling(false);
-          toast.error("Real-time updates disabled", {
-            description: "Too many consecutive errors. Please check your connection."
-          });
-        }
-      });
       setIsPolling(true);
       toast.success("Real-time updates started");
     }
-  }, [isPolling, projectUuid, handleNewSpans, setSelectedRows, selectedRows.length]);
-
-  // Clean up polling on unmount
-  useEffect(() => {
-    return () => {
-      spanPollingService.stop();
-    };
-  }, []);
-  
-  // Pause polling when tab is hidden
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (isPolling) {
-        if (document.hidden) {
-          spanPollingService.pause();
-        } else {
-          spanPollingService.resume();
-        }
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isPolling]);
+  };
 
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
