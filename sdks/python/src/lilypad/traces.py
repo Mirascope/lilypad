@@ -128,9 +128,9 @@ class Trace(_TraceBase[_T]):
         response = client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
-        for span in response:
-            if span.get("span_id") == self.formated_span_id:
-                return span["uuid"]
+        for span in response.items:
+            if span.span_id == self.formated_span_id:
+                return span.uuid_
         return None
 
     def annotate(self, *annotation: Annotation) -> None:
@@ -185,9 +185,9 @@ class AsyncTrace(_TraceBase[_T]):
         response = await client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
-        for span in response:
-            if span.get("span_id") == self.formated_span_id:
-                return span["uuid"]
+        for span in response.items:
+            if span.span_id == self.formated_span_id:
+                return span.uuid_
         return None
 
     async def annotate(self, *annotation: Annotation) -> None:
