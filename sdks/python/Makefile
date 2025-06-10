@@ -1,4 +1,14 @@
-.PHONY: setup test lint typecheck format fix clean
+.PHONY: help setup test lint typecheck format fix clean
+
+help:
+	@echo "Available targets:"
+	@echo "  setup     - Install dependencies"
+	@echo "  test      - Run tests"
+	@echo "  lint      - Run linter"
+	@echo "  typecheck - Run type checker"
+	@echo "  format    - Format code"
+	@echo "  fix       - Auto-fix linting issues"
+	@echo "  clean     - Clean build artifacts"
 
 setup:
 	uv sync --all-extras --dev

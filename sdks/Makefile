@@ -1,4 +1,10 @@
-.PHONY: setup generate-sdk clean
+.PHONY: help setup generate-sdk clean
+
+help:
+	@echo "Available targets:"
+	@echo "  setup        - Install dependencies"
+	@echo "  generate-sdk - Generate Python SDK from OpenAPI"
+	@echo "  clean        - Clean generated artifacts"
 
 setup:
 	bun install
