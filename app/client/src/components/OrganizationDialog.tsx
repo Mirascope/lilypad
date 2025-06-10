@@ -1,13 +1,21 @@
 import { useAuth } from "@/src/auth";
 import LilypadDialog from "@/src/components/LilypadDialog";
 import { Button } from "@/src/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/src/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/src/components/ui/form";
 import { Input } from "@/src/components/ui/input";
 import {
   useCreateOrganizationMutation,
   useUpdateOrganizationMutation,
 } from "@/src/utils/organizations";
 import { useUpdateActiveOrganizationMutation } from "@/src/utils/users";
+import { AxiosError } from "axios";
 import { Dispatch, ReactNode, SetStateAction } from "react";
 import { DefaultValues, Path, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -38,8 +46,24 @@ export const OrganizationForm = <T extends FormData>({
 
   const handleSubmit = async () => {
     const data = { ...defaultValues, name } as T;
-    await onSubmit(data);
-    methods.reset();
+
+    try {
+      await onSubmit(data);
+      methods.reset();
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response?.status === 409) {
+        const message = "Organization with this name already exists";
+        methods.setError("name" as Path<T>, {
+          type: "conflict",
+          message,
+        });
+        toast.error(message);
+        return false;
+      }
+
+      toast.error("Failed to create organization. Please try again.");
+      return null;
+    }
   };
 
   return (
@@ -54,6 +78,7 @@ export const OrganizationForm = <T extends FormData>({
               <FormControl>
                 <Input {...field} />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -82,15 +107,13 @@ export const CreateOrganizationForm = ({ onSuccess, className }: CreateOrganizat
       .mutateAsync({
         name: data.name,
       })
-      .catch(() => {
-        toast.error("Failed to create organization");
-        return null;
+      .catch((error: AxiosError) => {
+        throw error;
       });
-
-    if (!newOrganization) return;
-
+    if (!newOrganization) {
+      return;
+    }
     toast.success("Organization created");
-
     const newSession = await updateActiveOrganizationMutation.mutateAsync({
       organizationUuid: newOrganization.uuid,
     });
