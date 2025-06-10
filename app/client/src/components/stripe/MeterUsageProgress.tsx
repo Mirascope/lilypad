@@ -18,7 +18,6 @@ const MeterUsageProgress = () => {
     month: "short",
     year: "numeric",
   });
-  eventSummaries.current_meter = 25000;
 
   const percentage = Math.min(
     (eventSummaries.current_meter / eventSummaries.monthly_total) * 100,
