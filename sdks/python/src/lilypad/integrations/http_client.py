@@ -54,11 +54,12 @@ if _HAS_REQUESTS:
 
         Example:
             Basic usage:
-            
+
             ```python
             from lilypad import trace
             from lilypad.integrations.http_client import TracedRequestsSession
-            
+
+
             @trace()
             def fetch_user_data(user_id: int) -> dict:
                 with TracedRequestsSession() as session:
@@ -67,9 +68,9 @@ if _HAS_REQUESTS:
                     response.raise_for_status()
                     return response.json()
             ```
-            
+
             Making multiple requests:
-            
+
             ```python
             @trace()
             def aggregate_data(user_id: int) -> dict:
@@ -78,32 +79,22 @@ if _HAS_REQUESTS:
                     user = session.get(f"https://api.example.com/users/{user_id}").json()
                     orders = session.get(f"https://api.example.com/orders?user={user_id}").json()
                     profile = session.get(f"https://api.example.com/profiles/{user_id}").json()
-                    
-                    return {
-                        "user": user,
-                        "orders": orders,
-                        "profile": profile
-                    }
+
+                    return {"user": user, "orders": orders, "profile": profile}
             ```
-            
+
             With custom headers and error handling:
-            
+
             ```python
             @trace()
             def call_external_api(payload: dict) -> dict:
                 with TracedRequestsSession() as session:
                     # Custom headers are preserved, trace headers are added
-                    headers = {
-                        "Content-Type": "application/json",
-                        "X-API-Key": "secret-key"
-                    }
-                    
+                    headers = {"Content-Type": "application/json", "X-API-Key": "secret-key"}
+
                     try:
                         response = session.post(
-                            "https://api.example.com/process",
-                            json=payload,
-                            headers=headers,
-                            timeout=30
+                            "https://api.example.com/process", json=payload, headers=headers, timeout=30
                         )
                         response.raise_for_status()
                         return response.json()
@@ -293,17 +284,18 @@ def get_traced_http_client(async_client: bool = False, prefer: Optional[str] = N
 
     Example:
         Getting a sync client:
-        
+
         ```python
         from lilypad import trace
         from lilypad.integrations.http_client import get_traced_http_client
-        
+
+
         @trace()
         def fetch_data(endpoint: str) -> dict:
             # Automatically selects available client (requests or httpx)
             client = get_traced_http_client()
-            
-            if hasattr(client, 'get'):  # requests-style
+
+            if hasattr(client, "get"):  # requests-style
                 response = client.get(f"https://api.example.com/{endpoint}")
                 return response.json()
             else:  # httpx-style
@@ -311,46 +303,46 @@ def get_traced_http_client(async_client: bool = False, prefer: Optional[str] = N
                     response = client.get(f"https://api.example.com/{endpoint}")
                     return response.json()
         ```
-        
+
         Getting an async client:
-        
+
         ```python
         @trace()
         async def fetch_data_async(endpoint: str) -> dict:
             # Returns a factory function for async clients
             client_factory = get_traced_http_client(async_client=True)
-            
+
             # Create client instance
             async with client_factory() as client:
                 response = await client.get(f"https://api.example.com/{endpoint}")
                 return response.json()
         ```
-        
+
         With library preference:
-        
+
         ```python
         # Prefer httpx even if requests is installed
         client = get_traced_http_client(prefer="httpx")
-        
+
         # Or via environment variable
         # export LILYPAD_HTTP_CLIENT=httpx
         client = get_traced_http_client()
         ```
-        
+
         Handling different client types:
-        
+
         ```python
         @trace()
         async def universal_fetch(url: str) -> dict:
             # Get appropriate async client
             client_factory = get_traced_http_client(async_client=True, prefer="httpx")
-            
+
             async with client_factory() as client:
                 # Works with both httpx and aiohttp
                 response = await client.get(url)
-                
+
                 # Handle response based on client type
-                if hasattr(response, 'json'):  # httpx
+                if hasattr(response, "json"):  # httpx
                     return response.json()
                 else:  # aiohttp
                     return await response.json()

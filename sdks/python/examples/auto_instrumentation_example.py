@@ -6,7 +6,7 @@ propagated without code changes.
 """
 
 import asyncio
-from typing import List
+from typing import List, Any
 import requests
 
 # Enable automatic instrumentation at the start
@@ -70,33 +70,27 @@ def retr(query: str, k: int) -> List[Document]:
 # Simulated RPC client that uses requests internally
 class RetrievalClient:
     """A client that makes HTTP calls to the retrieval service.
-    
+
     This simulates any RPC client (gRPC, JSON-RPC, custom HTTP client, etc.)
     that uses standard HTTP libraries internally.
     """
-    
+
     def __init__(self, base_url: str):
         self.base_url = base_url
-    
+
     def retr(self, query: str, k: int) -> List[Document]:
         """Make a remote call to the retrieval service.
-        
+
         Because we called instrument_http_clients(), this request
         will AUTOMATICALLY include trace context headers!
         """
         # This is just using standard requests - no special tracing code!
-        response = requests.post(
-            f"{self.base_url}/retrieve",
-            json={"query": query, "k": k}
-        )
+        response = requests.post(f"{self.base_url}/retrieve", json={"query": query, "k": k})
         response.raise_for_status()
-        
+
         # Convert response back to Document objects
         data = response.json()
-        return [
-            Document(doc["id"], doc["content"], doc["score"]) 
-            for doc in data["documents"]
-        ]
+        return [Document(doc["id"], doc["content"], doc["score"]) for doc in data["documents"]]
 
 
 # This is on the caller process
@@ -108,62 +102,54 @@ def generate(query: str, docs: List[Document]) -> str:
 
 
 @trace()
-def rag(query: str):
+def rag(query: str) -> dict[str, Any]:
     """RAG pipeline that makes remote calls.
-    
+
     This demonstrates the key feature: the remote call to client.retr()
     will automatically propagate trace context because we enabled
     auto-instrumentation. No manual header injection needed!
     """
     # Initialize client (could be any RPC client using HTTP)
     client = RetrievalClient("http://localhost:8000")
-    
+
     # This remote call automatically includes trace headers!
     # The trace will show the full distributed call stack
     docs = client.retr(query, 5)
-    
+
     # Generate answer based on retrieved docs
     answer = generate(query, docs)
-    
-    return {
-        "query": query,
-        "answer": answer,
-        "sources": [doc.id for doc in docs]
-    }
+
+    return {"query": query, "answer": answer, "sources": [doc.id for doc in docs]}
 
 
 # Example showing RPC libraries that use HTTP internally
 class HTTPBasedRPCExample:
     """Example showing how HTTP-based RPC clients work automatically."""
-    
+
     @trace()
-    def call_json_rpc_service(self, method: str, params: dict):
+    def call_json_rpc_service(self, method: str, params: dict) -> Any:
         # JSON-RPC clients that use requests/httpx internally
         # will automatically propagate trace context!
-        
+
         # Example: Many JSON-RPC libraries use requests internally
         response = requests.post(
-            "http://localhost:8080/jsonrpc",
-            json={"jsonrpc": "2.0", "method": method, "params": params, "id": 1}
+            "http://localhost:8080/jsonrpc", json={"jsonrpc": "2.0", "method": method, "params": params, "id": 1}
         )
         return response.json()["result"]
 
 
 # Example with async clients
 @trace()
-async def async_rag(query: str):
+async def async_rag(query: str) -> dict[str, Any]:
     """Async version using httpx (also automatically instrumented)."""
     import httpx
-    
+
     # Even async httpx is automatically instrumented!
     async with httpx.AsyncClient() as client:
         # Trace context is automatically added to this request
-        response = await client.post(
-            "http://localhost:8000/retrieve",
-            json={"query": query, "k": 5}
-        )
+        response = await client.post("http://localhost:8000/retrieve", json={"query": query, "k": 5})
         data = response.json()
-    
+
     # Process the results
     answer = await async_generate(query, data["documents"])
     return {"query": query, "answer": answer}
@@ -189,37 +175,28 @@ class RetrieveRequest(BaseModel):
 
 
 @app.post("/retrieve")
-async def retrieve_endpoint(request: Request, data: RetrieveRequest):
+async def retrieve_endpoint(request: Request, data: RetrieveRequest) -> dict[str, list[dict[str, Any]]]:
     """Server endpoint that extracts trace context from headers."""
-    
+
     # Extract trace context from incoming headers
     @trace(extract_from=dict(request.headers))
-    def handle_retrieve():
+    def handle_retrieve() -> List[Document]:
         # This span is automatically a child of the caller's span!
         return retr(data.query, data.k)
-    
+
     docs = handle_retrieve()
-    
-    return {
-        "documents": [
-            {"id": doc.id, "content": doc.content, "score": doc.score}
-            for doc in docs
-        ]
-    }
+
+    return {"documents": [{"id": doc.id, "content": doc.content, "score": doc.score} for doc in docs]}
 
 
-def main():
+def main() -> None:
     """Demonstrate the automatic distributed tracing."""
-    
-    print("=== Automatic Distributed Tracing Example ===\n")
-    
+
     # The key insight: We only need to call this once at startup!
-    print("1. Auto-instrumentation enabled at import time")
-    print("   All HTTP calls now automatically propagate trace context!\n")
-    
+
     # Mock the HTTP calls to avoid network errors
     from unittest.mock import patch, Mock
-    
+
     # Create mock response
     mock_response = Mock()
     mock_response.status_code = 200
@@ -229,78 +206,56 @@ def main():
             {"id": "doc2", "content": "Charles became king in 2022", "score": 0.87},
             {"id": "doc3", "content": "The British monarchy has a long history", "score": 0.72},
             {"id": "doc4", "content": "Elizabeth II was the previous monarch", "score": 0.68},
-            {"id": "doc5", "content": "The United Kingdom is a constitutional monarchy", "score": 0.64}
+            {"id": "doc5", "content": "The United Kingdom is a constitutional monarchy", "score": 0.64},
         ]
     }
-    
+
     captured_headers = {}
-    
+
     # Store original to use after patching
     original_post = requests.post
-    
-    def capture_headers(url, **kwargs):
+
+    def capture_headers(url: str, **kwargs: Any) -> Mock:
         """Capture headers to show trace propagation."""
-        headers = kwargs.get('headers', {})
+        headers = kwargs.get("headers", {})
         if headers:
             captured_headers.update(headers)
         # Call the patched version which has auto-instrumentation
         return mock_response
-    
-    with patch('requests.post', side_effect=capture_headers):
+
+    with patch("requests.post", side_effect=capture_headers):
         # Example 1: Synchronous RAG pipeline
-        print("2. Running synchronous RAG pipeline...")
         result = rag("who is the king of england?")
-        print(f"   Query: {result['query']}")
-        print(f"   Answer: {result['answer'][:100]}...")
-        print(f"   Sources: {result['sources']}")
-        
+
         # Show the trace headers that were sent
-        print("\n   🔍 Trace headers automatically added to HTTP request:")
-        for key, value in captured_headers.items():
-            if key.lower() in ['traceparent', 'b3', 'uber-trace-id']:
-                print(f"      {key}: {value}")
-        print()
-    
+        for key, _value in captured_headers.items():
+            if key.lower() in ["traceparent", "b3", "uber-trace-id"]:
+                pass
+
     # Mock async response
     async_mock_response = Mock()
     async_mock_response.status_code = 200
     async_mock_response.json.return_value = {
         "documents": [
             {"id": "doc1", "content": "Quantum computing uses quantum mechanics", "score": 0.92},
-            {"id": "doc2", "content": "Qubits are the basic unit of quantum information", "score": 0.85}
+            {"id": "doc2", "content": "Qubits are the basic unit of quantum information", "score": 0.85},
         ]
     }
-    
-    with patch('httpx.AsyncClient.post', return_value=async_mock_response):
+
+    with patch("httpx.AsyncClient.post", return_value=async_mock_response):
         # Example 2: Async pipeline
-        print("3. Running async RAG pipeline...")
         async_result = asyncio.run(async_rag("what is quantum computing?"))
-        print(f"   Query: {async_result['query']}")
-        print(f"   Answer: {async_result['answer']}\n")
-    
-    print("=== Key Benefits ===")
-    print("- No need to modify existing HTTP client code")
-    print("- Works with any HTTP-based RPC library")
-    print("- Trace context flows automatically across services")
-    print("- Single trace ID across entire distributed call")
-    print("\nThe trace shows the complete call hierarchy:")
-    print("  rag()")
-    print("    └── client.retr()  [remote call with auto-injected headers]")
-    print("         └── retr()  [on retrieval server]") 
-    print("              ├── lexical_retr()")
-    print("              ├── semantic_retr()")
-    print("              └── rerank()")
-    print("    └── generate()")
 
 
 if __name__ == "__main__":
     # To run the server:
     # python auto_instrumentation_example.py --server
-    
+
     import sys
+
     if "--server" in sys.argv:
-        print("Starting retrieval server on port 8000...")
         import uvicorn
+
         uvicorn.run(app, host="0.0.0.0", port=8000)
     else:
         main()

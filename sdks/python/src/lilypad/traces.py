@@ -729,7 +729,7 @@ def trace(
     propagation for maintaining trace continuity in microservices architectures.
 
     Args:
-        name: Optional custom name for the span. If None, uses the function's 
+        name: Optional custom name for the span. If None, uses the function's
               qualified name.
         versioning: If "automatic", enables function versioning to track code changes.
         mode: If "wrap", returns a Trace object with the response and annotation methods.
@@ -745,28 +745,31 @@ def trace(
 
     Example:
         Basic usage:
-        
+
         ```python
         from lilypad import trace
-        
+
+
         @trace()
         def process_data(data: dict) -> dict:
             # Function is automatically traced
             result = {"processed": True, "count": len(data)}
             return result
-        
+
+
         # When called, creates a span with timing and metadata
         result = process_data({"items": [1, 2, 3]})
         ```
-        
+
         Distributed tracing with HTTP services:
-        
+
         ```python
         from fastapi import FastAPI, Request
         from lilypad import trace
-        
+
         app = FastAPI()
-        
+
+
         @app.post("/process")
         async def api_endpoint(request: Request, data: dict):
             # Extract trace context from incoming HTTP headers
@@ -775,55 +778,51 @@ def trace(
                 # This span will be a child of the incoming trace
                 result = await heavy_processing(data)
                 return {"status": "success", "result": result}
-            
+
             return await process_request(data)
         ```
-        
+
         Using with explicit parent context:
-        
+
         ```python
         from opentelemetry import context as otel_context
         import threading
-        
+
+
         # In main thread
         @trace()
         def main_process(data: dict):
             # Capture current context
             current_ctx = otel_context.get_current()
-            
+
             # Pass to worker thread
-            thread = threading.Thread(
-                target=worker_process, 
-                args=(data, current_ctx)
-            )
+            thread = threading.Thread(target=worker_process, args=(data, current_ctx))
             thread.start()
-        
+
+
         # In worker thread
         def worker_process(data: dict, parent_ctx):
             @trace(parent_context=parent_ctx)
             def process_in_thread(data: dict):
                 # This span is a child of main_process span
                 return transform_data(data)
-            
+
             return process_in_thread(data)
         ```
-        
+
         With versioning and tags:
-        
+
         ```python
-        @trace(
-            versioning="automatic",
-            tags=["production", "critical"],
-            mode="wrap"
-        )
+        @trace(versioning="automatic", tags=["production", "critical"], mode="wrap")
         def ml_inference(input_data: dict) -> dict:
             prediction = model.predict(input_data)
             return {"prediction": prediction, "confidence": 0.95}
-        
+
+
         # Returns a Trace object
         result = ml_inference({"features": [1, 2, 3]})
         print(result.response)  # Access the actual result
-        result.annotate(...)    # Add annotations to the trace
+        result.annotate(...)  # Add annotations to the trace
         ```
 
     Note:

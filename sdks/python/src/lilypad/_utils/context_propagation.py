@@ -147,39 +147,41 @@ def extract_context(carrier: dict[str, Any]) -> context.Context:
 
     Example:
         Basic usage in a web handler:
-        
+
         ```python
         from fastapi import FastAPI, Request
         from lilypad import trace
         from lilypad._utils.context_propagation import extract_context
-        
+
         app = FastAPI()
-        
+
+
         @app.post("/process")
         async def process_request(request: Request, data: dict):
             # Extract trace context from incoming request headers
             context = extract_context(dict(request.headers))
-            
+
             # Use the extracted context in a traced function
             @trace(parent_context=context)
             async def process_data(data: dict) -> dict:
                 # This span will be a child of the incoming trace
                 result = await do_processing(data)
                 return result
-            
+
             return await process_data(data)
         ```
-        
+
         Manual context management:
-        
+
         ```python
         from opentelemetry import context as otel_context
         from lilypad._utils.context_propagation import extract_context
-        
+
+
         def handle_message(headers: dict, payload: dict):
             # Extract context from message headers
             ctx = extract_context(headers)
-            
+
             # Attach the context for this scope
             token = otel_context.attach(ctx)
             try:
@@ -189,26 +191,27 @@ def extract_context(carrier: dict[str, Any]) -> context.Context:
                 # Detach context when done
                 otel_context.detach(token)
         ```
-        
+
         Using with Flask:
-        
+
         ```python
         from flask import Flask, request
         from lilypad import trace
         from lilypad._utils.context_propagation import extract_context
-        
+
         app = Flask(__name__)
-        
+
+
         @app.route("/api/endpoint", methods=["POST"])
         def api_endpoint():
             # Extract context from Flask request headers
             context = extract_context(dict(request.headers))
-            
+
             @trace(parent_context=context)
             def handle_request(data):
                 # Process as child of incoming trace
                 return {"status": "processed", "data": data}
-            
+
             return handle_request(request.json)
         ```
 
@@ -217,7 +220,7 @@ def extract_context(carrier: dict[str, Any]) -> context.Context:
         - W3C TraceContext: looks for 'traceparent' header
         - B3: looks for 'b3' or 'x-b3-*' headers
         - Jaeger: looks for 'uber-trace-id' header
-        
+
         If no valid trace context is found, returns an empty context.
     """
     return _propagator.extract_context(carrier)
@@ -233,7 +236,7 @@ def inject_context(carrier: MutableMapping[str, str], context: context.Context |
     Args:
         carrier: A mutable mapping (e.g., dict) to inject trace context into.
                  Typically HTTP headers that will be sent with a request.
-        context: Optional specific context to inject. If None (default), 
+        context: Optional specific context to inject. If None (default),
                  uses the current active context.
 
     Returns:
@@ -241,61 +244,55 @@ def inject_context(carrier: MutableMapping[str, str], context: context.Context |
 
     Example:
         Basic usage with HTTP requests:
-        
+
         ```python
         import httpx
         from lilypad import trace
         from lilypad._utils.context_propagation import inject_context
-        
+
+
         @trace()
         async def call_external_service(data: dict) -> dict:
             # Create headers dict
             headers = {}
-            
+
             # Inject current trace context into headers
             inject_context(headers)
             # Now headers contains: {'traceparent': '00-trace_id-span_id-01'}
-            
+
             # Make HTTP request with trace context
             async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.example.com/process",
-                    json=data,
-                    headers=headers
-                )
+                response = await client.post("https://api.example.com/process", json=data, headers=headers)
                 return response.json()
         ```
-        
+
         Using with requests library:
-        
+
         ```python
         import requests
         from lilypad import trace
         from lilypad._utils.context_propagation import inject_context
-        
+
+
         @trace()
         def sync_call_service(payload: dict) -> dict:
             headers = {"Content-Type": "application/json"}
-            
+
             # Add trace context to existing headers
             inject_context(headers)
-            
-            response = requests.post(
-                "https://api.example.com/endpoint",
-                json=payload,
-                headers=headers
-            )
+
+            response = requests.post("https://api.example.com/endpoint", json=payload, headers=headers)
             return response.json()
         ```
-        
+
         Injecting specific context:
-        
+
         ```python
         from opentelemetry import context as otel_context
-        
+
         # Capture context from one trace
         saved_context = otel_context.get_current()
-        
+
         # Later, inject that specific context
         headers = {}
         inject_context(headers, context=saved_context)
