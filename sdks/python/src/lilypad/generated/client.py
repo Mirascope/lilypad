@@ -18,6 +18,7 @@ from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
 from .types.event_summary_response import EventSummaryResponse
+from .types.span_public import SpanPublic
 from .types.tier import Tier
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
 from .users.client import AsyncUsersClient, UsersClient
@@ -197,6 +198,45 @@ class Lilypad:
         client.get_event_summaries_stripe_event_summaries_get()
         """
         _response = self._raw_client.get_event_summaries_stripe_event_summaries_get(request_options=request_options)
+        return _response.data
+
+    def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.List[SpanPublic]:
+        """
+        Get all spans for a given trace ID.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        trace_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+            project_uuid="project_uuid",
+            trace_id="trace_id",
+        )
+        """
+        _response = self._raw_client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+            project_uuid, trace_id, request_options=request_options
+        )
         return _response.data
 
 
@@ -397,5 +437,52 @@ class AsyncLilypad:
         """
         _response = await self._raw_client.get_event_summaries_stripe_event_summaries_get(
             request_options=request_options
+        )
+        return _response.data
+
+    async def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> typing.List[SpanPublic]:
+        """
+        Get all spans for a given trace ID.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        trace_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        typing.List[SpanPublic]
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+                project_uuid="project_uuid",
+                trace_id="trace_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+            project_uuid, trace_id, request_options=request_options
         )
         return _response.data

@@ -13,6 +13,7 @@ from ...errors.unprocessable_entity_error import UnprocessableEntityError
 from ...types.http_validation_error import HttpValidationError
 from ...types.paginated_span_public import PaginatedSpanPublic
 from ...types.span_public import SpanPublic
+from ...types.traces_queue_response import TracesQueueResponse
 from .types.order import Order
 
 
@@ -139,9 +140,9 @@ class RawTracesClient:
 
     def create(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[typing.List[SpanPublic]]:
+    ) -> HttpResponse[TracesQueueResponse]:
         """
-        Create span traces.
+        Create span traces using queue-based processing.
 
         Parameters
         ----------
@@ -152,7 +153,7 @@ class RawTracesClient:
 
         Returns
         -------
-        HttpResponse[typing.List[SpanPublic]]
+        HttpResponse[TracesQueueResponse]
             Successful Response
         """
         _response = self._client_wrapper.httpx_client.request(
@@ -163,9 +164,9 @@ class RawTracesClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[SpanPublic],
+                    TracesQueueResponse,
                     construct_type(
-                        type_=typing.List[SpanPublic],  # type: ignore
+                        type_=TracesQueueResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -310,9 +311,9 @@ class AsyncRawTracesClient:
 
     async def create(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[typing.List[SpanPublic]]:
+    ) -> AsyncHttpResponse[TracesQueueResponse]:
         """
-        Create span traces.
+        Create span traces using queue-based processing.
 
         Parameters
         ----------
@@ -323,7 +324,7 @@ class AsyncRawTracesClient:
 
         Returns
         -------
-        AsyncHttpResponse[typing.List[SpanPublic]]
+        AsyncHttpResponse[TracesQueueResponse]
             Successful Response
         """
         _response = await self._client_wrapper.httpx_client.request(
@@ -334,9 +335,9 @@ class AsyncRawTracesClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    typing.List[SpanPublic],
+                    TracesQueueResponse,
                     construct_type(
-                        type_=typing.List[SpanPublic],  # type: ignore
+                        type_=TracesQueueResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )

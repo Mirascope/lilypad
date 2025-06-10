@@ -6,7 +6,8 @@ import { useMemo } from "react";
 export const useInfiniteTraces = (
   projectUuid: string,
   pageSize: number,
-  order: "asc" | "desc" = "desc"
+  order: "asc" | "desc" = "desc",
+  enablePolling: boolean = false
 ) => {
   const queryKey = ["projects", projectUuid, "traces", { order, pageSize }] as const;
   const query = useInfiniteQuery<
@@ -15,7 +16,11 @@ export const useInfiniteTraces = (
     InfiniteData<PaginatedSpanPublic, TracePageParam>,
     typeof queryKey,
     TracePageParam
-  >(tracesInfiniteQueryOptions(projectUuid, pageSize, order, queryKey));
+  >({
+    ...tracesInfiniteQueryOptions(projectUuid, pageSize, order, queryKey),
+    refetchInterval: enablePolling ? 5000 : false,
+    refetchIntervalInBackground: false,
+  });
 
   const defaultData = useMemo(
     () => query.data?.pages.flatMap((p) => p.items) ?? [],
