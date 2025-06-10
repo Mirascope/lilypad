@@ -14,7 +14,7 @@ logging.getLogger("kafka").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def test_kafka_connection() -> bool:
+def test_kafka_connection() -> None:
     """Test basic Kafka connectivity and topic configuration."""
     bootstrap_servers = os.getenv("LILYPAD_KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     topic = os.getenv("LILYPAD_KAFKA_TOPIC_SPAN_INGESTION", "span-ingestion")
@@ -45,11 +45,11 @@ def test_kafka_connection() -> bool:
                     )
         else:
             logger.error("✗ Topic '%s' does not exist", topic)
-            return False
+            assert False, f"Topic '{topic}' does not exist"
 
     except Exception as e:
         logger.error("✗ Failed to connect to Kafka admin: %s", e)
-        return False
+        raise
 
     try:
         producer = KafkaProducer(
@@ -75,7 +75,7 @@ def test_kafka_connection() -> bool:
 
     except KafkaError as e:
         logger.error("✗ Failed to send message: %s", e)
-        return False
+        raise
 
     try:
         consumer = KafkaConsumer(
@@ -92,14 +92,16 @@ def test_kafka_connection() -> bool:
 
     except Exception as e:
         logger.error("✗ Failed to create consumer: %s", e)
-        return False
+        raise
 
     logger.info("\n✅ All Kafka health checks passed!")
-    return True
 
 
 if __name__ == "__main__":
     time.sleep(2)
 
-    success = test_kafka_connection()
-    sys.exit(0 if success else 1)
+    try:
+        test_kafka_connection()
+        sys.exit(0)
+    except Exception:
+        sys.exit(1)

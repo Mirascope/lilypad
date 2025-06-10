@@ -128,25 +128,43 @@ class Trace(_TraceBase[_T]):
         response = client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
-        for span in response:
-            if span.get("span_id") == self.formated_span_id:
-                return span["uuid"]
+        for span in response.items:
+            if span.span_id == self.formated_span_id:
+                return span.uuid_
         return None
 
     def annotate(self, *annotation: Annotation) -> None:
         """
         Annotate the trace with the given annotation.
         """
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
+
         settings = get_settings()
         lilypad_client = get_sync_client(api_key=settings.api_key)
-        request = self._create_request(settings.project_id, self._get_span_uuid(lilypad_client), annotation)
+        span_uuid = self._get_span_uuid(lilypad_client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot annotate: span not found for function {self.function_uuid}")
+
+        request = self._create_request(settings.project_id, span_uuid, annotation)
         lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, request=request)
 
     def assign(self, *email: str) -> None:
         """Assign the trace to a user by email."""
-        settings = get_settings()
+        if not email:
+            raise ValueError("At least one email address must be provided")
 
+        settings = get_settings()
         lilypad_client = get_sync_client(api_key=settings.api_key)
+        span_uuid = self._get_span_uuid(lilypad_client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot assign: span not found for function {self.function_uuid}")
 
         lilypad_client.ee.projects.annotations.create(
             project_uuid=settings.project_id,
@@ -155,7 +173,7 @@ class Trace(_TraceBase[_T]):
                     assignee_email=list(email),
                     function_uuid=self.function_uuid,
                     project_uuid=settings.project_id,
-                    span_uuid=self._get_span_uuid(lilypad_client),
+                    span_uuid=span_uuid,
                 )
             ],
         )
@@ -170,6 +188,12 @@ class Trace(_TraceBase[_T]):
         settings = get_settings()
         client = get_sync_client(api_key=settings.api_key)
         span_uuid = self._get_span_uuid(client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot tag: span not found for function {self.function_uuid}")
+
         client.spans.update(span_uuid=span_uuid, tags_by_name=tag_list)
         return None
 
@@ -185,24 +209,43 @@ class AsyncTrace(_TraceBase[_T]):
         response = await client.projects.functions.spans.list_paginated(
             project_uuid=get_settings().project_id, function_uuid=self.function_uuid
         )
-        for span in response:
-            if span.get("span_id") == self.formated_span_id:
-                return span["uuid"]
+        for span in response.items:
+            if span.span_id == self.formated_span_id:
+                return span.uuid_
         return None
 
     async def annotate(self, *annotation: Annotation) -> None:
         """
         Annotate the trace with the given annotation.
         """
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
+
         settings = get_settings()
         lilypad_client = get_async_client(api_key=settings.api_key)
-        request = self._create_request(settings.project_id, await self._get_span_uuid(lilypad_client), annotation)
+        span_uuid = await self._get_span_uuid(lilypad_client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot annotate: span not found for function {self.function_uuid}")
+
+        request = self._create_request(settings.project_id, span_uuid, annotation)
         await lilypad_client.ee.projects.annotations.create(project_uuid=settings.project_id, request=request)
 
     async def assign(self, *email: str) -> None:
         """Assign the trace to a user by email."""
+        if not email:
+            raise ValueError("At least one email address must be provided")
+
         settings = get_settings()
         async_client = get_async_client(api_key=settings.api_key)
+        span_uuid = await self._get_span_uuid(async_client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot assign: span not found for function {self.function_uuid}")
 
         # TODO: update migrate fern client
         await async_client.ee.projects.annotations.create(
@@ -212,7 +255,7 @@ class AsyncTrace(_TraceBase[_T]):
                     assignee_email=list(email),
                     function_uuid=self.function_uuid,
                     project_uuid=settings.project_id,
-                    span_uuid=await self._get_span_uuid(async_client),
+                    span_uuid=span_uuid,
                 )
             ],
         )
@@ -227,6 +270,12 @@ class AsyncTrace(_TraceBase[_T]):
         settings = get_settings()
         client = get_async_client(api_key=settings.api_key)
         span_uuid = await self._get_span_uuid(client)
+
+        if span_uuid is None:
+            from lilypad.exceptions import SpanNotFoundError
+
+            raise SpanNotFoundError(f"Cannot tag: span not found for function {self.function_uuid}")
+
         await client.spans.update(span_uuid=span_uuid, tags_by_name=tag_list)
         return None
 

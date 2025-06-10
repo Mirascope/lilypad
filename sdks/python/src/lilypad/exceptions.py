@@ -57,3 +57,7 @@ class LilypadPaymentRequiredError(LilypadException):
     """Raised when an API response has a status code of 402."""
 
     status_code: Literal[402] = 402
+
+
+class SpanNotFoundError(LilypadException):
+    """Raised when a span cannot be found."""
