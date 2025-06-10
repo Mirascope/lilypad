@@ -267,7 +267,7 @@ async def traces(
         logger.info(
             f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
         )
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="queued",
             span_count=len(traces_json),
             message="Spans queued for processing",
@@ -310,12 +310,16 @@ async def traces(
             )
 
         # Return consistent response format
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="processed",
             span_count=len(span_tables),
             message="Spans processed synchronously",
             trace_ids=trace_ids,
         )
+    # Update stripe meter
+    if is_lilypad_cloud:
+        ...
+    return traces_queue_response
 
 
 __all__ = ["traces_router"]
