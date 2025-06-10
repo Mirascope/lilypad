@@ -1,9 +1,13 @@
-.PHONY: help setup dev dev-build-backend prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk lint lint-app lint-sdk lint-client format format-app format-sdk typecheck typecheck-app typecheck-sdk typecheck-client fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean clean-all
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client dev-build-backend prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk lint lint-app lint-sdk lint-client format format-app format-sdk typecheck typecheck-app typecheck-sdk typecheck-client fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean clean-all
 
 help:
 	@echo "Available targets:"
 	@echo "  setup             - Install all dependencies (uv, bun, packages)"
-	@echo "  dev               - Start development environment"
+	@echo "  dev               - Start development environment (all in Docker)"
+	@echo "  dev-services      - Start only dependency services in Docker"
+	@echo "  dev-local         - Start services in Docker, app/client locally"
+	@echo "  dev-local-app     - Start backend app locally (requires dev-services)"
+	@echo "  dev-local-client  - Start frontend client locally (requires dev-services)"
 	@echo "  dev-build-backend - Start backend services with watch mode"
 	@echo "  prod              - Start production environment"
 	@echo "  dev-down          - Stop development environment"
@@ -47,6 +51,18 @@ setup:
 # Development commands
 dev:
 	+$(MAKE) -C app dev
+
+dev-services:
+	+$(MAKE) -C app dev-services
+
+dev-local:
+	+$(MAKE) -C app dev-local
+
+dev-local-app:
+	+$(MAKE) -C app dev-local-app
+
+dev-local-client:
+	+$(MAKE) -C app dev-local-client
 
 dev-build-backend:
 	+$(MAKE) -C app dev-build-backend

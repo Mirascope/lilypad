@@ -1,9 +1,13 @@
-.PHONY: help setup dev prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test lint typecheck format fix generate-openapi clean dev-build-backend
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test lint typecheck format fix generate-openapi clean dev-build-backend
 
 help:
 	@echo "Available targets:"
 	@echo "  setup             - Install dependencies"
-	@echo "  dev               - Start development environment"
+	@echo "  dev               - Start development environment (all in Docker)"
+	@echo "  dev-services      - Start only dependency services in Docker"
+	@echo "  dev-local         - Start services in Docker, app/client locally"
+	@echo "  dev-local-app     - Start backend app locally (requires dev-services)"
+	@echo "  dev-local-client  - Start frontend client locally (requires dev-services)"
 	@echo "  dev-build-backend - Start backend services with watch mode"
 	@echo "  prod              - Start production environment"
 	@echo "  dev-down          - Stop development environment"
@@ -24,6 +28,22 @@ setup:
 
 dev:
 	docker compose --env-file .env.dev -f docker-compose.dev.yml up -d
+
+dev-services:
+	docker compose --env-file .env.dev -f docker-compose.dev.yml up -d postgres opensearch opensearch-dashboards zookeeper kafka kafka-ui localstack
+
+dev-local: dev-services
+	@echo "Starting services in Docker and app/client locally..."
+	@echo "Use 'make dev-local-app' in another terminal to start the backend"
+	@echo "Use 'make dev-local-client' in another terminal to start the frontend"
+
+dev-local-app:
+	@echo "Starting backend app locally..."
+	uv run python -m lilypad.server.main
+
+dev-local-client:
+	@echo "Starting frontend client locally..."
+	$(MAKE) -C client dev
 
 prod:
 	docker compose up -d
