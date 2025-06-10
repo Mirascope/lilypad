@@ -48,6 +48,13 @@ lint-app:
 lint-sdk:
 	cd sdks/python && uv run ruff check .
 
+typecheck: typecheck-app typecheck-sdk
+
+typecheck-app:
+	cd app && uv run pyright lilypad tests
+typecheck-sdk:
+	cd sdks/python && uv run pyright src/lilypad tests
+
 format: format-app format-sdk
 
 format-app:

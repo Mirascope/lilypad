@@ -52,6 +52,13 @@ export function TableProvider<T>({
     setDetailRowState(row);
   };
 
+  const handleDetailPanelOpen = (row: T) => {
+    setDetailRowState(row);
+    if (onPanelOpen) {
+      onPanelOpen(row);
+    }
+  };
+
   const handleDetailPanelClose = () => {
     setDetailRowState(null);
     if (onPanelClose) {
@@ -65,7 +72,7 @@ export function TableProvider<T>({
     setSelectedRows,
     detailRow,
     setDetailRow,
-    onDetailPanelOpen: handleDetailPanelClose,
+    onDetailPanelOpen: handleDetailPanelOpen,
     onDetailPanelClose: handleDetailPanelClose,
   };
 

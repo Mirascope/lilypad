@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     kafka_max_spans_per_trace: int = Field(default=500)
     kafka_buffer_ttl_seconds: int = Field(default=300)
     kafka_cleanup_interval_seconds: int = Field(default=60)
+    kafka_auto_setup_topics: bool = Field(default=False)
 
     # Database settings
     db_host: str | None = None
@@ -68,6 +69,9 @@ class Settings(BaseSettings):
     db_max_overflow: int = 2
     db_pool_recycle: int = 1800
     db_pool_pre_ping: bool = True
+    kafka_db_thread_pool_size: int = Field(
+        default=4, description="Number of threads for Kafka processor DB operations"
+    )
 
     # Stripe settings
     stripe_api_key: str | None = None
