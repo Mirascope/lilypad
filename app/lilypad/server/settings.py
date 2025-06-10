@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     db_max_overflow: int = 2
     db_pool_recycle: int = 1800
     db_pool_pre_ping: bool = True
+    kafka_db_thread_pool_size: int = Field(default=4, description="Number of threads for Kafka processor DB operations")
 
     # Stripe settings
     stripe_api_key: str | None = None
