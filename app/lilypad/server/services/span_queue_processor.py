@@ -110,7 +110,7 @@ class SpanQueueProcessor:
         # Thread pool for synchronous database operations
         self._executor = ThreadPoolExecutor(
             max_workers=self.settings.kafka_db_thread_pool_size,
-            thread_name_prefix="kafka-span-db-worker"
+            thread_name_prefix="kafka-span-db-worker",
         )
         logger.info(
             f"Initialized Kafka processor thread pool with {self.settings.kafka_db_thread_pool_size} workers "
@@ -248,7 +248,7 @@ class SpanQueueProcessor:
         # Shutdown thread pool executor
         logger.info("Shutting down thread pool executor...")
         self._executor.shutdown(wait=True, cancel_futures=False)
-        
+
         logger.info("Queue processor stopped - processed messages until shutdown")
 
     async def _process_queue(self) -> None:
@@ -361,11 +361,13 @@ class SpanQueueProcessor:
         except Exception as e:
             logger.error(f"Error processing message: {e}", exc_info=True)
 
-    def _process_trace_sync(self, trace_id: str, ordered_spans: list[dict[str, Any]]) -> None:
+    def _process_trace_sync(
+        self, trace_id: str, ordered_spans: list[dict[str, Any]]
+    ) -> None:
         """Synchronous database operations for processing a trace.
-        
+
         This method runs in a separate thread to avoid blocking the event loop.
-        
+
         Thread Safety:
         - Each thread gets its own database session via get_session()
         - No shared state between threads (trace data is passed as parameter)
@@ -374,19 +376,19 @@ class SpanQueueProcessor:
         if not ordered_spans:
             logger.warning(f"No spans to process for trace {trace_id}")
             return
-            
+
         first_span = ordered_spans[0]
         attributes = first_span.get("attributes", {})
         project_uuid_str = attributes.get("lilypad.project.uuid")
-        
+
         if not project_uuid_str:
             logger.warning(
                 f"No project UUID found in trace {trace_id}, skipping {len(ordered_spans)} spans"
             )
             return
-            
+
         project_uuid = UUID(project_uuid_str)
-        
+
         # Extract user_id from first span
         user_id = first_span.get("user_id")
         logger.debug(f"Extracted user_id: {user_id} from trace {trace_id}")
@@ -396,18 +398,16 @@ class SpanQueueProcessor:
             )
             return
         user_id = UUID(user_id)
-        
+
         logger.debug(f"Processing spans for user: {user_id}")
         # Process with proper session management
         for session in get_session():
-            result = session.exec(
-                select(UserTable).where(UserTable.uuid == user_id)
-            )
+            result = session.exec(select(UserTable).where(UserTable.uuid == user_id))
             user = result.first()
             if not user:
                 logger.debug(f"User {user_id} not found for trace {trace_id}")
                 return
-                
+
             project_service = ProjectService(session, user)  # pyright: ignore [reportArgumentType]
             project = project_service.find_record_no_organization(project_uuid)
             logger.debug(f"Found project: {project} for trace {trace_id}")
@@ -416,27 +416,25 @@ class SpanQueueProcessor:
                     f"Project {project_uuid} not found, skipping trace {trace_id} with {len(ordered_spans)} spans"
                 )
                 return
-                
+
             # Create span service
             span_service = SpanService(session, user)  # pyright: ignore [reportArgumentType]
-            
+
             # Convert to SpanCreate objects
             span_creates = []
-            logger.debug(
-                f"Converting {len(ordered_spans)} spans to SpanCreate objects"
-            )
+            logger.debug(f"Converting {len(ordered_spans)} spans to SpanCreate objects")
             for span_data in ordered_spans:
                 # Remove user_id from span data to avoid storing it
                 span_data.pop("user_id", None)
                 # Process span data similar to the original _process_span function
                 span_create = SpanQueueProcessor._convert_to_span_create(span_data)
                 span_creates.append(span_create)
-                
+
             # Determine if we need billing service
             billing_service = None
             if self.settings.stripe_api_key:
                 billing_service = BillingService(session, user)  # pyright: ignore [reportArgumentType]
-                
+
             # Create spans in bulk
             # Note: create_bulk_records should NOT commit, let get_session handle it
             span_service.create_bulk_records(
@@ -445,13 +443,13 @@ class SpanQueueProcessor:
                 project_uuid,
                 project.organization_uuid,
             )
-            
+
             # Commit is handled by the session context manager in get_session()
             logger.info(
                 f"Successfully saved trace to database - Trace ID: {trace_id}, "
                 f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
             )
-    
+
     async def _process_trace(self, trace_id: str, buffer: TraceBuffer) -> None:
         """Process a complete trace.
 
@@ -475,13 +473,12 @@ class SpanQueueProcessor:
             )
 
             # Run synchronous DB operations in thread pool to avoid blocking event loop
-            logger.debug(f"Processing trace {trace_id} in thread pool to avoid blocking")
+            logger.debug(
+                f"Processing trace {trace_id} in thread pool to avoid blocking"
+            )
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                self._executor,
-                self._process_trace_sync,
-                trace_id,
-                ordered_spans
+                self._executor, self._process_trace_sync, trace_id, ordered_spans
             )
             logger.debug(f"Trace {trace_id} processing completed in thread pool")
 
@@ -490,9 +487,7 @@ class SpanQueueProcessor:
                 f"Integrity error processing trace {trace_id}: {e}. Likely parent span missing."
             )
         except Exception as e:
-            logger.error(
-                f"Error processing trace {trace_id}: {e}"
-            )
+            logger.error(f"Error processing trace {trace_id}: {e}")
 
     @staticmethod
     def _convert_to_span_create(span_data: dict[str, Any]) -> SpanCreate:
