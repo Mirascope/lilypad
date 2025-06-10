@@ -56,7 +56,7 @@ async def _test_kafka_connection() -> bool:
 
         else:
             logger.error("✗ Topic '%s' does not exist", topic)
-            return False
+            assert False, f"Topic '{topic}' does not exist"
 
     except Exception as e:
         logger.error("✗ Failed to connect to Kafka admin: %s", e)
@@ -117,7 +117,6 @@ async def _test_kafka_connection() -> bool:
             await consumer.stop()
 
     logger.info("\n✅ All Kafka health checks passed!")
-    return True
 
 
 async def main() -> None:
