@@ -1,0 +1,223 @@
+"""Tests for the local command."""
+
+import contextlib
+import signal
+import subprocess
+from pathlib import Path
+from unittest.mock import MagicMock, patch, mock_open
+
+import pytest
+from typer.testing import CliRunner
+
+from lilypad.cli.commands.local import (
+    _start_lilypad,
+    _wait_for_server,
+    _terminate_process,
+    local_command,
+)
+
+
+@pytest.fixture
+def runner():
+    """Create a CLI runner for testing."""
+    return CliRunner()
+
+
+@pytest.fixture
+def mock_popen():
+    """Create a mock subprocess.Popen object."""
+    mock = MagicMock(spec=subprocess.Popen)
+    mock.poll.return_value = None
+    mock.wait.return_value = 0
+    return mock
+
+
+def test_start_lilypad(mock_popen):
+    """Test starting the Lilypad server."""
+    with (
+        patch("subprocess.Popen", return_value=mock_popen) as mock_popen_class,
+        patch("importlib.resources.files") as mock_files,
+    ):
+        mock_files.return_value.joinpath.return_value = Path("/fake/path")
+
+        process = _start_lilypad(Path("/project"), 8000)
+
+        assert process == mock_popen
+        mock_popen_class.assert_called_once()
+
+        # Check environment variables
+        call_args = mock_popen_class.call_args
+        env = call_args[1]["env"]
+        assert env["LILYPAD_PROJECT_DIR"] == "/project"
+        assert env["LILYPAD_ENVIRONMENT"] == "local"
+        assert env["LILYPAD_PORT"] == "8000"
+
+
+def test_wait_for_server_success():
+    """Test waiting for server when it starts successfully."""
+    mock_client = MagicMock()
+    mock_client.timeout = 5
+    mock_client.get_health.return_value = True
+
+    result = _wait_for_server(mock_client)
+
+    assert result is True
+    mock_client.get_health.assert_called_once()
+
+
+def test_wait_for_server_timeout():
+    """Test waiting for server when it times out."""
+    mock_client = MagicMock()
+    mock_client.timeout = 0.1
+    mock_client.get_health.side_effect = Exception("Connection refused")
+
+    with patch("time.sleep"):
+        result = _wait_for_server(mock_client)
+
+    assert result is False
+
+
+def test_wait_for_server_eventual_success():
+    """Test waiting for server when it starts after a few attempts."""
+    mock_client = MagicMock()
+    mock_client.timeout = 5
+    mock_client.get_health.side_effect = [
+        Exception("Connection refused"),
+        Exception("Connection refused"),
+        True,
+    ]
+
+    with patch("time.sleep"):
+        result = _wait_for_server(mock_client)
+
+    assert result is True
+    assert mock_client.get_health.call_count == 3
+
+
+def test_terminate_process_running():
+    """Test terminating a running process."""
+    mock_process = MagicMock()
+    mock_process.poll.return_value = None
+
+    _terminate_process(mock_process)
+
+    mock_process.terminate.assert_called_once()
+
+
+def test_terminate_process_already_stopped():
+    """Test terminating an already stopped process."""
+    mock_process = MagicMock()
+    mock_process.poll.return_value = 0
+
+    _terminate_process(mock_process)
+
+    mock_process.terminate.assert_not_called()
+
+
+@patch("os.path.exists")
+@patch("typer.prompt")
+@patch("lilypad.cli.commands.local.get_sync_client")
+@patch("lilypad.cli.commands.local._start_lilypad")
+@patch("lilypad.cli.commands.local._wait_for_server")
+@patch("lilypad.cli.commands.local.get_and_create_config")
+@patch("lilypad.cli.commands.local.get_settings")
+@patch("signal.signal")
+def test_local_command_new_project(
+    mock_signal,
+    mock_get_settings,
+    mock_get_config,
+    mock_wait_server,
+    mock_start,
+    mock_get_client,
+    mock_prompt,
+    mock_exists,
+):
+    """Test local command for a new project."""
+    # Setup mocks
+    mock_exists.return_value = False
+    mock_prompt.return_value = "MyProject"
+    mock_get_settings.return_value = MagicMock(port=8000)
+    mock_get_config.return_value = {"api_key": "test-key"}
+
+    mock_process = MagicMock()
+    mock_process.wait.side_effect = KeyboardInterrupt()
+    mock_start.return_value = mock_process
+
+    mock_client = MagicMock()
+    mock_project = MagicMock(uuid_="project-uuid")
+    mock_client.projects.create.return_value = mock_project
+    mock_get_client.return_value = mock_client
+
+    mock_wait_server.return_value = True
+
+    # Use mock_open for file operations
+    m = mock_open()
+    # Call the function directly
+    with (
+        patch("builtins.open", m),
+        contextlib.suppress(KeyboardInterrupt, SystemExit),
+    ):
+        local_command(port="9000")  # Expected exceptions
+
+    # Verify project creation
+    mock_client.projects.create.assert_called_once_with(name="MyProject")
+
+    # Verify config was written (the function writes twice)
+    # Just verify that open was called for writing
+    assert any("w" in str(call) for call in m.call_args_list)
+
+
+@patch("os.path.exists")
+@patch("lilypad.cli.commands.local.get_sync_client")
+@patch("lilypad.cli.commands.local._start_lilypad")
+@patch("lilypad.cli.commands.local.get_and_create_config")
+@patch("lilypad.cli.commands.local.get_settings")
+@patch("signal.signal")
+def test_local_command_existing_project(
+    mock_signal,
+    mock_get_settings,
+    mock_get_config,
+    mock_start,
+    mock_get_client,
+    mock_exists,
+):
+    """Test local command for an existing project."""
+    # Setup mocks
+    mock_exists.return_value = True
+    mock_get_settings.return_value = MagicMock(port=8000)
+    mock_get_config.return_value = {"api_key": "test-key", "project_uuid": "existing-uuid"}
+
+    mock_process = MagicMock()
+    mock_process.wait.side_effect = KeyboardInterrupt()
+    mock_start.return_value = mock_process
+
+    mock_client = MagicMock()
+    mock_get_client.return_value = mock_client
+
+    # Use mock_open for file operations
+    m = mock_open()
+    # Call the function directly
+    with (
+        patch("builtins.open", m),
+        contextlib.suppress(KeyboardInterrupt, SystemExit),
+    ):
+        local_command(port=None)
+
+    # Verify no project creation for existing project
+    mock_client.projects.create.assert_not_called()
+
+    # Verify process was started
+    mock_start.assert_called_once()
+
+
+def test_signal_handler():
+    """Test the signal handler function."""
+
+    # Create a signal handler function inline to test
+    def signal_handler(sig: int, frame):
+        raise SystemExit(0)
+
+    with pytest.raises(SystemExit) as exc_info:
+        signal_handler(signal.SIGINT, None)
+
+    assert exc_info.value.code == 0

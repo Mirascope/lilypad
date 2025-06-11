@@ -244,10 +244,18 @@ def test_api_key(
         name="test_key",
         project_uuid=test_project.uuid,
         environment_uuid=test_environment.uuid,  # pyright: ignore [reportArgumentType]
+        expires_at=datetime.now(timezone.utc) + timedelta(days=365),
     )
     session.add(api_key)
     session.commit()
     session.refresh(api_key)
+
+    # SQLite workaround: ensure timezone info is preserved
+    if api_key.expires_at and api_key.expires_at.tzinfo is None:
+        # Manually set timezone-aware datetime for testing
+        api_key.expires_at = api_key.expires_at.replace(tzinfo=timezone.utc)
+        # Don't save to DB since SQLite will strip it again
+
     yield api_key
 
 

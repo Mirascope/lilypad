@@ -104,6 +104,13 @@ def reset_dummy_spans() -> Generator[None, None, None]:
 def patch_get_tracer(monkeypatch) -> None:
     """Patch get_tracer to return a DummyTracer instance."""
     monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
+    # Also patch get_tracer_provider to return a real TracerProvider instance
+    from opentelemetry.sdk.trace import TracerProvider
+
+    class MockTracerProvider(TracerProvider):
+        pass
+
+    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider())
 
 
 def test_basic_sync_span() -> None:

@@ -9,20 +9,28 @@ def mask_secret(secret: str, visible_chars: int = 4) -> str:
     if not secret:
         return ""
 
-    visible = min(visible_chars, len(secret))
-    return secret[:visible] + "*" * max(0, len(secret) - visible)
+    # Always mask at least 1 character if the string is longer than 1 char
+    if len(secret) <= 1:
+        return "*"
+
+    visible = min(
+        visible_chars, len(secret) - 1
+    )  # Always leave at least 1 char to mask
+    return secret[:visible] + "*" * (len(secret) - visible)
 
 
 def sanitize_secret_data(data: dict[str, Any]) -> dict[str, Any]:
     """Remove or mask sensitive fields from a dictionary."""
     sensitive_patterns = [
-        re.compile(r"(?i)(pass|secret|key|token|auth|credential)"),
+        re.compile(
+            r"(?i).*(password|passwd|secret|_key|key_|^key$|keychain|token|auth|credential).*"
+        ),
     ]
 
     result = {}
     for key, value in data.items():
         # Check if key matches any sensitive pattern
-        is_sensitive = any(pattern.search(key) for pattern in sensitive_patterns)
+        is_sensitive = any(pattern.match(key) for pattern in sensitive_patterns)
 
         if isinstance(value, dict):
             result[key] = sanitize_secret_data(value)
