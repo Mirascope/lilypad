@@ -307,6 +307,7 @@ def test_function(
         hash="test_hash",
         arg_types={},
         organization_uuid=test_project.organization_uuid,
+        version_num=1,
     )
     session.add(function)
     session.commit()
