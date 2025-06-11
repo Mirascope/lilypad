@@ -71,7 +71,7 @@ def test_sanitize_secret_data_nested():
     assert sanitized["config"]["secret_key"] == "very*********"
     assert sanitized["config"]["debug"] is True
     assert sanitized["user"]["name"] == "John"
-    assert sanitized["user"]["auth_token"] == "toke******"
+    assert sanitized["user"]["auth_token"] == "toke******"  # codespell:ignore
 
 
 def test_sanitize_secret_data_case_insensitive():
