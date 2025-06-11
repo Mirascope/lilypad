@@ -54,7 +54,8 @@ def test_get_user_by_uuid(user_service: UserService, db_session: Session):
     db_session.commit()
 
     # Get by UUID
-    retrieved = user_service.find_record_by_uuid(user.uuid)  # type: ignore[arg-type]
+    assert user.uuid is not None  # Type guard
+    retrieved = user_service.find_record_by_uuid(user.uuid)
 
     assert retrieved is not None
     assert retrieved.uuid == user.uuid
@@ -80,6 +81,7 @@ def test_update_user(user_service: UserService, db_session: Session):
 
     # Update it
     update_data = {"first_name": "Updated", "last_name": "Person"}
+    assert user.uuid is not None  # Type guard
     updated = user_service.update_record_by_uuid(user.uuid, update_data)
 
     assert updated is not None
@@ -101,6 +103,7 @@ def test_update_user_email(user_service: UserService, db_session: Session):
 
     # Update email
     update_data = {"email": "new@test.com"}
+    assert user.uuid is not None  # Type guard
     updated = user_service.update_record_by_uuid(user.uuid, update_data)
 
     assert updated is not None
@@ -113,6 +116,7 @@ def test_delete_user(user_service: UserService, db_session: Session):
     user = UserTable(email="delete@test.com", first_name="To", last_name="Delete")
     db_session.add(user)
     db_session.commit()
+    assert user.uuid is not None  # Type guard
     user_uuid = user.uuid
 
     # Delete it
@@ -140,6 +144,7 @@ def test_update_user_keys(user_service: UserService, db_session: Session):
     db_session.commit()
 
     # Update keys
+    assert user.uuid is not None  # Type guard
     updated = user_service.update_record_by_uuid(
         user.uuid, {"keys": {"new": "data", "another": "key"}}
     )
@@ -205,6 +210,7 @@ def test_update_user_active_organization(db_session: Session):
     db_session.commit()
 
     # Create UserService with the actual user
+    assert user.uuid is not None  # Type guard
     user_public = UserPublic(
         uuid=user.uuid,
         email=user.email,
@@ -214,6 +220,7 @@ def test_update_user_active_organization(db_session: Session):
     user_service = UserService(session=db_session, user=user_public)
 
     # Update active organization for the current user
+    assert org.uuid is not None  # Type guard
     updated_user = user_service.update_user_active_organization_uuid(org.uuid)
 
     # Verify updated
@@ -324,6 +331,7 @@ def test_user_keys_field(user_service: UserService, db_session: Session):
     db_session.commit()
 
     # Get user
+    assert user.uuid is not None  # Type guard
     retrieved = user_service.find_record_by_uuid(user.uuid)
 
     assert retrieved is not None
@@ -331,6 +339,7 @@ def test_user_keys_field(user_service: UserService, db_session: Session):
 
     # Update keys
     update_data = {"keys": {"api_key": "new_key", "extra": "data"}}
+    assert user.uuid is not None  # Type guard
     updated = user_service.update_record_by_uuid(user.uuid, update_data)
 
     assert updated is not None

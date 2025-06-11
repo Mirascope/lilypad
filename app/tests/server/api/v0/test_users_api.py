@@ -30,6 +30,9 @@ def test_update_user_active_organization(
     session.commit()
 
     # Add user to the second organization
+    assert test_user.uuid is not None  # Type guard
+    assert org2.uuid is not None  # Type guard
+
     user_org2 = UserOrganizationTable(
         user_uuid=test_user.uuid,
         organization_uuid=org2.uuid,

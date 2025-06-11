@@ -59,14 +59,19 @@ def test_list_api_keys_multiple(
     monkeypatch,
 ):
     """Test listing multiple API keys."""
+    # Type guards
+    assert test_user.uuid is not None
+    assert test_project.uuid is not None
+    assert test_environment.uuid is not None
+
     # Create additional API keys
     for i in range(3):
         api_key = APIKeyTable(
             key_hash=f"test_key_{i}",
-            user_uuid=test_user.uuid,  # type: ignore[arg-type]
+            user_uuid=test_user.uuid,
             organization_uuid=test_project.organization_uuid,
             name=f"Test Key {i}",
-            project_uuid=test_project.uuid,  # type: ignore[arg-type]
+            project_uuid=test_project.uuid,
             environment_uuid=test_environment.uuid,
             expires_at=datetime.now(timezone.utc) + timedelta(days=365),
         )

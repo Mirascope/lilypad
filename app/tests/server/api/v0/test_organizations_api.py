@@ -67,6 +67,9 @@ def test_update_organization(
     client: TestClient, session: Session, test_user: UserTable
 ):
     """Test updating an organization."""
+    # Type guard
+    assert test_user.uuid is not None
+
     # Change user role to OWNER
     user_org = (
         session.query(UserOrganizationTable)
@@ -99,6 +102,9 @@ def test_update_organization_not_owner(
     client: TestClient, session: Session, test_user: UserTable
 ):
     """Test that non-owner users cannot update organization."""
+    # Type guard
+    assert test_user.uuid is not None
+
     # Change user role to MEMBER
     user_org = (
         session.query(UserOrganizationTable)
@@ -140,6 +146,9 @@ def test_update_organization_with_license(
     client: TestClient, session: Session, test_user: UserTable
 ):
     """Test updating organization with license key."""
+    # Type guard
+    assert test_user.uuid is not None
+
     # Change user role to OWNER
     user_org = (
         session.query(UserOrganizationTable)
@@ -174,14 +183,18 @@ def test_delete_organization(
 
     # Create billing entry for the org2
     assert org2.uuid is not None
-    billing2 = BillingTable(organization_uuid=org2.uuid)  # type: ignore[call-arg]
+    assert test_user.uuid is not None  # Type guard
+
+    billing2 = BillingTable(
+        organization_uuid=org2.uuid, stripe_customer_id="cus_test_org2"
+    )
     session.add(billing2)
     session.commit()
 
     # Add user to second org
     user_org2 = UserOrganizationTable(
-        user_uuid=test_user.uuid,  # type: ignore[arg-type]
-        organization_uuid=org2.uuid,  # type: ignore[arg-type]
+        user_uuid=test_user.uuid,
+        organization_uuid=org2.uuid,
         role=UserRole.MEMBER,
         organization=org2,
     )
@@ -214,6 +227,9 @@ def test_delete_organization_not_owner(
     client: TestClient, session: Session, test_user: UserTable
 ):
     """Test that non-owner users cannot delete organization."""
+    # Type guard
+    assert test_user.uuid is not None
+
     # Change user role to MEMBER
     user_org = (
         session.query(UserOrganizationTable)
@@ -251,6 +267,9 @@ def test_delete_last_organization(
     client: TestClient, session: Session, test_user: UserTable
 ):
     """Test deleting the last organization user belongs to."""
+    # Type guard
+    assert test_user.uuid is not None
+
     # Make sure user is owner
     user_org = (
         session.query(UserOrganizationTable)

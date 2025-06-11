@@ -21,7 +21,7 @@ def project_service(db_session: Session, test_user: UserPublic) -> ProjectServic
 def test_create_project(project_service: ProjectService, db_session: Session):
     """Test creating a new project."""
     try:
-        project_data = ProjectCreate(name="New Project", description="Test project")
+        project_data = ProjectCreate(name="New Project", description="Test project")  # type: ignore[call-arg]
     except Exception:
         # Description might not be supported
         project_data = ProjectCreate(name="New Project")
@@ -31,7 +31,7 @@ def test_create_project(project_service: ProjectService, db_session: Session):
     assert project.name == "New Project"
     # Description might not be supported - check if it exists
     if hasattr(project, "description"):
-        assert project.description in ["Test project", None]
+        assert project.description in ["Test project", None]  # type: ignore[attr-defined]
     assert project.uuid is not None
     assert project.organization_uuid == UUID("12345678-1234-1234-1234-123456789abc")
 
@@ -52,6 +52,7 @@ def test_get_project_by_uuid(project_service: ProjectService, db_session: Sessio
     db_session.commit()
 
     # Get by UUID
+    assert project.uuid is not None  # Type guard
     retrieved = project_service.find_record_by_uuid(project.uuid)
 
     assert retrieved is not None
@@ -75,7 +76,7 @@ def test_update_project(project_service: ProjectService, db_session: Session):
     try:
         project = ProjectTable(
             name="Original Name",
-            description="Original description",
+            description="Original description",  # type: ignore[call-arg]
             organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
         )
     except Exception:
@@ -89,12 +90,13 @@ def test_update_project(project_service: ProjectService, db_session: Session):
     # Update it
     try:
         update_data = {"name": "Updated Name", "description": "Updated description"}
+        assert project.uuid is not None  # Type guard
         updated = project_service.update_record_by_uuid(project.uuid, update_data)
 
         assert updated is not None
         assert updated.name == "Updated Name"
         if hasattr(updated, "description"):
-            assert updated.description in ["Updated description", None]
+            assert updated.description in ["Updated description", None]  # type: ignore[attr-defined]
 
         # Verify in database
         db_session.refresh(project)
@@ -111,6 +113,7 @@ def test_delete_project(project_service: ProjectService, db_session: Session):
     )
     db_session.add(project)
     db_session.commit()
+    assert project.uuid is not None  # Type guard
     project_uuid = project.uuid
 
     # Delete it
@@ -127,7 +130,7 @@ def test_delete_project(project_service: ProjectService, db_session: Session):
         # Accept either hard delete (None) or soft delete (archived_at set)
         if db_project is not None and hasattr(db_project, "archived_at"):
             # Soft delete - archived_at should be set
-            assert db_project.archived_at is not None or db_project is None
+            assert db_project.archived_at is not None or db_project is None  # type: ignore[attr-defined]
         else:
             # Hard delete
             assert db_project is None
@@ -148,6 +151,7 @@ def test_archive_project(project_service: ProjectService, db_session: Session):
     db_session.commit()
 
     # Archive method not available in base service - just verify project exists
+    assert project.uuid is not None  # Type guard
     retrieved = project_service.find_record_by_uuid(project.uuid)
     assert retrieved is not None
     assert retrieved.name == "To Archive"
@@ -248,6 +252,7 @@ def test_project_isolation_by_organization(
     db_session.commit()
 
     # Create project in other organization
+    assert other_org.uuid is not None  # Type guard
     other_project = ProjectTable(
         name="Other Org Project", organization_uuid=other_org.uuid
     )
@@ -260,8 +265,9 @@ def test_project_isolation_by_organization(
     assert "Other Org Project" not in project_names
 
     # Should not be able to get it by UUID
+    assert other_project.uuid is not None  # Type guard
     try:
-        retrieved = project_service.get_record_by_uuid(other_project.uuid)
+        retrieved = project_service.get_record_by_uuid(other_project.uuid)  # type: ignore[attr-defined]
         assert retrieved is None
     except AttributeError:
         # Method might not exist or might raise exception instead
@@ -358,12 +364,12 @@ def test_project_settings(project_service: ProjectService, db_session: Session):
     # Settings is supported - test it
     project_data = ProjectCreate(
         name="Project with Settings",
-        settings={"notifications": True, "auto_deploy": False, "max_traces": 10000},
+        settings={"notifications": True, "auto_deploy": False, "max_traces": 10000},  # type: ignore[call-arg]
     )
 
     project = project_service.create_record(project_data)
 
-    assert project.settings == {
+    assert project.settings == {  # type: ignore[attr-defined]
         "notifications": True,
         "auto_deploy": False,
         "max_traces": 10000,
@@ -379,8 +385,9 @@ def test_project_settings(project_service: ProjectService, db_session: Session):
         }
     }
 
+    assert project.uuid is not None  # Type guard
     updated = project_service.update_record_by_uuid(project.uuid, update_data)
     assert updated is not None
-    assert updated.settings["notifications"] is False
-    assert updated.settings["auto_deploy"] is True
-    assert updated.settings["new_setting"] == "value"
+    assert updated.settings["notifications"] is False  # type: ignore[attr-defined]
+    assert updated.settings["auto_deploy"] is True  # type: ignore[attr-defined]
+    assert updated.settings["new_setting"] == "value"  # type: ignore[attr-defined]

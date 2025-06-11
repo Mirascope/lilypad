@@ -42,6 +42,7 @@ def test_find_organization_by_uuid(
     db_session.commit()
 
     # Find by UUID
+    assert org.uuid is not None  # Type guard
     retrieved = org_service.find_record_by_uuid(org.uuid)
     assert retrieved is not None
     assert retrieved.uuid == org.uuid
@@ -65,6 +66,7 @@ def test_update_organization(org_service: OrganizationService, db_session: Sessi
 
     # Update it
     update_data = {"name": "Updated Name"}
+    assert org.uuid is not None  # Type guard
     updated = org_service.update_record_by_uuid(org.uuid, update_data)
 
     assert updated is not None
@@ -82,6 +84,7 @@ def test_delete_organization(org_service: OrganizationService, db_session: Sessi
     org = OrganizationTable(name="To Delete")
     db_session.add(org)
     db_session.commit()
+    assert org.uuid is not None  # Type guard
     org_uuid = org.uuid
 
     # Delete it
@@ -213,6 +216,7 @@ def test_get_organization_license(
     db_session.commit()
 
     # Get license
+    assert org.uuid is not None  # Type guard
     org_license = org_service.get_organization_license(org.uuid)
     assert org_license == "test-license-key"
 

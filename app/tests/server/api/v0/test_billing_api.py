@@ -1,7 +1,7 @@
 """Tests for the billing API endpoints."""
 
 from unittest.mock import Mock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -21,6 +21,9 @@ def test_create_customer_portal(
     org = OrganizationTable(name="Test Org")
     session.add(org)
     session.flush()
+
+    assert org.uuid is not None  # Type guard
+    assert test_user.uuid is not None  # Type guard
 
     billing = BillingTable(
         organization_uuid=org.uuid,
@@ -96,6 +99,9 @@ def test_create_customer_portal_no_customer_id(
     session.add(org)
     session.flush()
 
+    assert org.uuid is not None  # Type guard
+    assert test_user.uuid is not None  # Type guard
+
     billing = BillingTable(
         organization_uuid=org.uuid,
         stripe_customer_id=None,
@@ -131,6 +137,9 @@ def test_create_checkout_session_new_subscription(
     org = OrganizationTable(name="Test Org")
     session.add(org)
     session.flush()
+
+    assert org.uuid is not None  # Type guard
+    assert test_user.uuid is not None  # Type guard
 
     billing = BillingTable(
         organization_uuid=org.uuid,
@@ -176,6 +185,9 @@ def test_create_checkout_session_upgrade_subscription(
     org = OrganizationTable(name="Test Org")
     session.add(org)
     session.flush()
+
+    assert org.uuid is not None  # Type guard
+    assert test_user.uuid is not None  # Type guard
 
     billing = BillingTable(
         organization_uuid=org.uuid,
@@ -229,7 +241,7 @@ def test_stripe_webhook_subscription_created(
 
     # Create billing record
     billing = BillingTable(
-        organization_uuid="12345678-1234-1234-1234-123456789abc",
+        organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
         stripe_customer_id="cus_test123",
     )
     session.add(billing)
@@ -281,7 +293,7 @@ def test_stripe_webhook_subscription_updated(
 
     # Create billing record
     billing = BillingTable(
-        organization_uuid="12345678-1234-1234-1234-123456789abc",
+        organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
         stripe_customer_id="cus_test123",
         stripe_subscription_id="sub_test123",
         subscription_status=SubscriptionStatus.ACTIVE,
@@ -333,7 +345,7 @@ def test_stripe_webhook_subscription_deleted(
 
     # Create billing record
     billing = BillingTable(
-        organization_uuid="12345678-1234-1234-1234-123456789abc",
+        organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
         stripe_customer_id="cus_test123",
         stripe_subscription_id="sub_test123",
         subscription_status=SubscriptionStatus.ACTIVE,

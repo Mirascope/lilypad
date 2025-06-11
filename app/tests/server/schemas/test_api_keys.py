@@ -1,6 +1,7 @@
 """Tests for API key schemas."""
 
 from datetime import datetime, timezone
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -14,8 +15,8 @@ def test_api_key_create_with_timezone_aware_datetime():
     utc_time = datetime.now(timezone.utc)
     api_key = APIKeyCreate(
         name="Test Key",
-        project_uuid="123e4567-e89b-12d3-a456-426614174000",
-        environment_uuid="123e4567-e89b-12d3-a456-426614174001",
+        project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+        environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
         expires_at=utc_time,
     )
 
@@ -31,8 +32,8 @@ def test_api_key_create_with_timezone_naive_datetime():
     with pytest.raises(ValidationError) as exc_info:
         APIKeyCreate(
             name="Test Key",
-            project_uuid="123e4567-e89b-12d3-a456-426614174000",
-            environment_uuid="123e4567-e89b-12d3-a456-426614174001",
+            project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+            environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
             expires_at=naive_time,
         )
 
@@ -44,8 +45,8 @@ def test_api_key_create_without_explicit_expiration():
     """Test creating API key without explicit expiration date uses default."""
     api_key = APIKeyCreate(
         name="Test Key",
-        project_uuid="123e4567-e89b-12d3-a456-426614174000",
-        environment_uuid="123e4567-e89b-12d3-a456-426614174001",
+        project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+        environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
     )
 
     # Default is 365 days from now
@@ -64,8 +65,8 @@ def test_api_key_public_timezone_validation():
     utc_time = datetime.now(timezone.utc)
     api_key_data = APIKeyCreate(
         name="test-key",
-        project_uuid="223e4567-e89b-12d3-a456-426614174000",
-        environment_uuid="323e4567-e89b-12d3-a456-426614174000",
+        project_uuid=UUID("223e4567-e89b-12d3-a456-426614174000"),
+        environment_uuid=UUID("323e4567-e89b-12d3-a456-426614174000"),
         expires_at=utc_time,
     )
     assert api_key_data.expires_at == utc_time
@@ -74,8 +75,8 @@ def test_api_key_public_timezone_validation():
     # Test the default factory creates timezone-aware datetime
     api_key_default = APIKeyCreate(
         name="test-key-default",
-        project_uuid="223e4567-e89b-12d3-a456-426614174000",
-        environment_uuid="323e4567-e89b-12d3-a456-426614174000",
+        project_uuid=UUID("223e4567-e89b-12d3-a456-426614174000"),
+        environment_uuid=UUID("323e4567-e89b-12d3-a456-426614174000"),
     )
     assert api_key_default.expires_at.tzinfo is not None
     assert api_key_default.expires_at.tzinfo == timezone.utc
@@ -85,7 +86,7 @@ def test_api_key_create_validation_errors():
     """Test validation errors for APIKeyCreate."""
     # Missing required fields
     with pytest.raises(ValidationError) as exc_info:
-        APIKeyCreate()
+        APIKeyCreate()  # type: ignore[call-arg]
 
     errors = exc_info.value.errors()
     assert len(errors) >= 2  # At least name and project_uuid are required
@@ -95,8 +96,8 @@ def test_api_key_create_validation_errors():
     with pytest.raises(ValidationError) as exc_info:
         APIKeyCreate(
             name="Test Key",
-            project_uuid="invalid-uuid",
-            environment_uuid="123e4567-e89b-12d3-a456-426614174001",
+            project_uuid="invalid-uuid",  # type: ignore[arg-type]
+            environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
         )
 
     errors = exc_info.value.errors()
@@ -109,9 +110,9 @@ def test_api_key_create_with_non_datetime_expires_at():
     with pytest.raises(ValidationError) as exc_info:
         APIKeyCreate(
             name="Test Key",
-            project_uuid="123e4567-e89b-12d3-a456-426614174000",
-            environment_uuid="123e4567-e89b-12d3-a456-426614174001",
-            expires_at="not a datetime",
+            project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+            environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
+            expires_at="not a datetime",  # type: ignore[arg-type]
         )
 
     errors = exc_info.value.errors()
@@ -126,9 +127,9 @@ def test_api_key_create_with_iso_format_string():
     with pytest.raises(ValidationError) as exc_info:
         APIKeyCreate(
             name="Test Key",
-            project_uuid="123e4567-e89b-12d3-a456-426614174000",
-            environment_uuid="123e4567-e89b-12d3-a456-426614174001",
-            expires_at=iso_string,
+            project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+            environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
+            expires_at=iso_string,  # type: ignore[arg-type]
         )
 
     errors = exc_info.value.errors()
@@ -140,9 +141,9 @@ def test_api_key_create_with_utc_iso_string():
     iso_string = "2024-12-25T12:00:00Z"
     api_key = APIKeyCreate(
         name="Test Key",
-        project_uuid="123e4567-e89b-12d3-a456-426614174000",
-        environment_uuid="123e4567-e89b-12d3-a456-426614174001",
-        expires_at=iso_string,
+        project_uuid=UUID("123e4567-e89b-12d3-a456-426614174000"),
+        environment_uuid=UUID("123e4567-e89b-12d3-a456-426614174001"),
+        expires_at=iso_string,  # type: ignore[arg-type]
     )
 
     # Should be parsed with UTC timezone
