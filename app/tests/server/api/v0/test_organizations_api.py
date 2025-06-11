@@ -76,6 +76,7 @@ def test_update_organization(
         )
         .first()
     )
+    assert user_org is not None
     user_org.role = UserRole.OWNER
     session.commit()
 
@@ -90,6 +91,7 @@ def test_update_organization(
     # Verify in database
     org_uuid = UUID("12345678-1234-1234-1234-123456789abc")
     db_org = session.get(OrganizationTable, org_uuid)
+    assert db_org is not None
     assert db_org.name == "Updated Organization Name"
 
 
@@ -106,6 +108,7 @@ def test_update_organization_not_owner(
         )
         .first()
     )
+    assert user_org is not None
     user_org.role = UserRole.MEMBER
     session.commit()
 
@@ -146,6 +149,7 @@ def test_update_organization_with_license(
         )
         .first()
     )
+    assert user_org is not None
     user_org.role = UserRole.OWNER
     session.commit()
 
@@ -169,14 +173,15 @@ def test_delete_organization(
     session.commit()
 
     # Create billing entry for the org2
-    billing2 = BillingTable(organization_uuid=org2.uuid)
+    assert org2.uuid is not None
+    billing2 = BillingTable(organization_uuid=org2.uuid)  # type: ignore[call-arg]
     session.add(billing2)
     session.commit()
 
     # Add user to second org
     user_org2 = UserOrganizationTable(
-        user_uuid=test_user.uuid,
-        organization_uuid=org2.uuid,
+        user_uuid=test_user.uuid,  # type: ignore[arg-type]
+        organization_uuid=org2.uuid,  # type: ignore[arg-type]
         role=UserRole.MEMBER,
         organization=org2,
     )
@@ -218,6 +223,7 @@ def test_delete_organization_not_owner(
         )
         .first()
     )
+    assert user_org is not None
     user_org.role = UserRole.MEMBER
     session.commit()
 
@@ -254,6 +260,7 @@ def test_delete_last_organization(
         )
         .first()
     )
+    assert user_org is not None
     user_org.role = UserRole.OWNER
     session.commit()
 

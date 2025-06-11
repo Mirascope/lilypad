@@ -1,10 +1,11 @@
 """Tests for environment utility functions."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
+from pydantic_core import ValidationError
 from sqlmodel import Session
 
 from lilypad.server._utils.environment import get_current_environment
@@ -27,24 +28,16 @@ async def test_get_current_environment_with_api_key(db_session: Session):
         organization_uuid=env.organization_uuid,
         project_uuid=uuid4(),
         environment_uuid=env.uuid,
-        environment=env,  # Set the relationship
     )
     db_session.add(api_key)
     db_session.commit()
+    db_session.refresh(api_key)  # Refresh to load relationships
 
     # Get environment
-    with patch("lilypad.server._utils.environment.Environment") as mock_env_class:
-        mock_result = Mock()
-        mock_result.name = "production"
-        mock_result.uuid = env.uuid
-        mock_env_class.model_validate.return_value = mock_result
+    result = await get_current_environment(api_key="test-key-hash", session=db_session)
 
-        result = await get_current_environment(
-            api_key="test-key-hash", session=db_session
-        )
-
-        assert result.name == "production"
-        mock_env_class.model_validate.assert_called_once_with(env)
+    assert result.name == "production"
+    assert result.uuid == env.uuid
 
 
 @pytest.mark.asyncio
@@ -84,13 +77,10 @@ async def test_get_current_environment_api_key_without_environment(db_session: S
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     # Refresh to get the relationship
     db_session.refresh(api_key)
 
     # This should fail when trying to validate None
-    with patch("lilypad.server._utils.environment.Environment") as mock_env_class:
-        mock_env_class.model_validate.side_effect = AttributeError("'NoneType' object has no attribute")
-
-        with pytest.raises(AttributeError):
-            await get_current_environment(api_key="test-key-no-env", session=db_session)
+    with pytest.raises(ValidationError):
+        await get_current_environment(api_key="test-key-no-env", session=db_session)

@@ -54,7 +54,7 @@ def test_get_user_by_uuid(user_service: UserService, db_session: Session):
     db_session.commit()
 
     # Get by UUID
-    retrieved = user_service.find_record_by_uuid(user.uuid)
+    retrieved = user_service.find_record_by_uuid(user.uuid)  # type: ignore[arg-type]
 
     assert retrieved is not None
     assert retrieved.uuid == user.uuid

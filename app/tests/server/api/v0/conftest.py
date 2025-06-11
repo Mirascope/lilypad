@@ -95,11 +95,10 @@ def get_test_current_user(test_user: UserTable):
 
     def override_get_current_user():
         return UserPublic(
-            uuid=test_user.uuid,
+            uuid=test_user.uuid,  # type: ignore[arg-type]
             email=test_user.email,
             first_name=test_user.first_name,
             last_name=test_user.last_name,
-            picture=test_user.picture,
             active_organization_uuid=test_user.active_organization_uuid,
         )
 

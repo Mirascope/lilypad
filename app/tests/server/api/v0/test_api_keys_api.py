@@ -63,10 +63,10 @@ def test_list_api_keys_multiple(
     for i in range(3):
         api_key = APIKeyTable(
             key_hash=f"test_key_{i}",
-            user_uuid=test_user.uuid,
+            user_uuid=test_user.uuid,  # type: ignore[arg-type]
             organization_uuid=test_project.organization_uuid,
             name=f"Test Key {i}",
-            project_uuid=test_project.uuid,
+            project_uuid=test_project.uuid,  # type: ignore[arg-type]
             environment_uuid=test_environment.uuid,
             expires_at=datetime.now(timezone.utc) + timedelta(days=365),
         )
@@ -295,13 +295,8 @@ def test_delete_api_key(
         select(APIKeyTable).where(APIKeyTable.uuid == api_key_uuid)
     ).first()
 
-    # Check if key is either hard deleted or soft deleted
-    if deleted_key is None:
-        # Hard delete - key doesn't exist anymore
-        pass
-    else:
-        # Soft delete - key exists but is archived
-        assert deleted_key.archived_at is not None
+    # Check if key is hard deleted
+    assert deleted_key is None
 
     # Should not appear in list
     response = client.get("/api-keys")

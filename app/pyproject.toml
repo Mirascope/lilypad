@@ -186,7 +186,7 @@ line-ending = "auto"
 
 [tool.pyright]
 exclude = ["examples"]
-include = ["lilypad", "ee"]
+include = ["lilypad", "ee", "tests"]
 venvPath = "."
 venv = ".venv"
 
