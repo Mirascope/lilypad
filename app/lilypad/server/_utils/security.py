@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 
-def mask_secret(secret: str, visible_chars: int = 4) -> str:
+def mask_secret(secret: str | None, visible_chars: int = 4) -> str:
     """Mask a secret, leaving only the first few characters visible."""
     if not secret:
         return ""

@@ -81,14 +81,16 @@ async def test_get_current_environment_api_key_without_environment(db_session: S
         organization_uuid=uuid4(),
         project_uuid=uuid4(),
         environment_uuid=None,  # No environment
-        environment=None,
     )
     db_session.add(api_key)
     db_session.commit()
+    
+    # Refresh to get the relationship
+    db_session.refresh(api_key)
 
     # This should fail when trying to validate None
     with patch("lilypad.server._utils.environment.Environment") as mock_env_class:
-        mock_env_class.model_validate.side_effect = ValueError("Cannot validate None")
+        mock_env_class.model_validate.side_effect = AttributeError("'NoneType' object has no attribute")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             await get_current_environment(api_key="test-key-no-env", session=db_session)

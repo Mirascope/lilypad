@@ -83,11 +83,35 @@ def get_test_session(
 
 
 @pytest.fixture
+def get_test_current_user(test_user: UserTable):
+    """Override the get_current_user dependency for FastAPI.
+
+    Args:
+        test_user: The test user
+
+    Returns:
+        Callable: Function that returns UserPublic
+    """
+
+    def override_get_current_user():
+        return UserPublic(
+            uuid=test_user.uuid,
+            email=test_user.email,
+            first_name=test_user.first_name,
+            last_name=test_user.last_name,
+            picture=test_user.picture,
+            active_organization_uuid=test_user.active_organization_uuid,
+        )
+
+    return override_get_current_user
+
+
+@pytest.fixture
 def get_test_organization_license():
     """Override the get_organization_license dependency for FastAPI.
 
     Returns:
-        UserPublic: Test user
+        Callable: Function that returns LicenseInfo
     """
 
     def override_get_organization_license():
@@ -107,10 +131,14 @@ async def reset_singletons():
     """Reset service singletons after each test."""
     yield
     # Reset the Kafka producer after test
-    import lilypad.server.services.kafka_producer
+    try:
+        import lilypad.server.services.kafka_producer
 
-    # Close Kafka producer if it exists
-    await lilypad.server.services.kafka_producer.close_kafka_producer()
+        # Close Kafka producer if it exists
+        await lilypad.server.services.kafka_producer.close_kafka_producer()
+    except Exception:
+        # Ignore errors during cleanup
+        pass
 
 
 @pytest.fixture
