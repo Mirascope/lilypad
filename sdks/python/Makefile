@@ -1,20 +1,31 @@
-.PHONY: help setup test lint typecheck format fix clean
+.PHONY: help setup test test-watch test-coverage lint typecheck format fix clean update-deps build publish
 
 help:
 	@echo "Available targets:"
 	@echo "  setup     - Install dependencies"
-	@echo "  test      - Run tests"
-	@echo "  lint      - Run linter"
+	@echo "  test          - Run tests"
+	@echo "  test-watch    - Run tests in watch mode"
+	@echo "  test-coverage - Run tests with coverage report"
+	@echo "  lint          - Run linter"
 	@echo "  typecheck - Run type checker"
 	@echo "  format    - Format code"
-	@echo "  fix       - Auto-fix linting issues"
-	@echo "  clean     - Clean build artifacts"
+	@echo "  fix           - Auto-fix linting issues"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  update-deps   - Update Python dependencies"
+	@echo "  build         - Build distribution packages"
+	@echo "  publish       - Publish to PyPI (requires auth)"
 
 setup:
 	uv sync --all-extras --dev
 
 test:
 	uv run pytest
+
+test-watch:
+	uv run pytest-watch
+
+test-coverage:
+	uv run pytest --cov=lilypad --cov-report=html --cov-report=term
 
 lint:
 	uv run ruff check .
@@ -30,3 +41,15 @@ fix:
 
 clean:
 	find . -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+	rm -rf dist/ build/ *.egg-info/ htmlcov/ .coverage || true
+
+update-deps:
+	uv lock --upgrade
+	uv sync --all-extras --dev
+
+build:
+	uv build
+
+publish: build
+	@echo "Publishing to PyPI..."
+	uv publish

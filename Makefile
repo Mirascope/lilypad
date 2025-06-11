@@ -1,4 +1,4 @@
-.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client dev-build-backend prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk lint lint-app lint-sdk lint-client format format-app format-sdk typecheck typecheck-app typecheck-sdk typecheck-client fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean clean-all
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client dev-build-backend prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk test-watch lint lint-app lint-sdk lint-client format format-app format-sdk typecheck typecheck-app typecheck-sdk typecheck-client fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean clean-all db-migrate db-rollback db-reset logs logs-app logs-services check update-deps
 
 help:
 	@echo "Available targets:"
@@ -38,6 +38,15 @@ help:
 	@echo "  generate-client   - Generate TypeScript client"
 	@echo "  clean             - Clean build artifacts"
 	@echo "  clean-all         - Clean all artifacts including caches"
+	@echo "  db-migrate        - Run database migrations"
+	@echo "  db-rollback       - Rollback last database migration"
+	@echo "  db-reset          - Reset database (CAUTION: drops all data)"
+	@echo "  logs              - Show logs for all services"
+	@echo "  logs-app          - Show logs for app service"
+	@echo "  logs-services     - Show logs for dependency services"
+	@echo "  check             - Run all checks (lint, typecheck, test)"
+	@echo "  test-watch        - Run tests in watch mode"
+	@echo "  update-deps       - Update all dependencies"
 
 # Global setup
 setup:
@@ -94,6 +103,9 @@ test-app:
 
 test-sdk:
 	+$(MAKE) -C sdks/python test
+
+test-watch:
+	+$(MAKE) -C app test-watch
 
 # Linting
 lint: lint-app lint-sdk lint-client
@@ -159,4 +171,37 @@ clean:
 clean-all: clean
 	find . -name '.ruff_cache' -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name '.pytest_cache' -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Database operations
+db-migrate:
+	+$(MAKE) -C app db-migrate
+
+db-rollback:
+	+$(MAKE) -C app db-rollback
+
+db-reset:
+	+$(MAKE) -C app db-reset
+
+# Logging
+logs:
+	+$(MAKE) -C app logs
+
+logs-app:
+	+$(MAKE) -C app logs-app
+
+logs-services:
+	+$(MAKE) -C app logs-services
+
+# Combined checks
+check: lint typecheck test
+	@echo "All checks passed!"
+
+# Dependency management
+update-deps:
+	@echo "Updating Python dependencies..."
+	+$(MAKE) -C app update-deps
+	+$(MAKE) -C sdks/python update-deps
+	@echo "Updating JavaScript dependencies..."
+	+$(MAKE) -C app/client update-deps
+	+$(MAKE) -C sdks update-deps
 

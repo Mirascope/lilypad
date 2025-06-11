@@ -1,4 +1,4 @@
-.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test lint typecheck format fix generate-openapi clean dev-build-backend
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-watch lint typecheck format fix generate-openapi clean dev-build-backend db-migrate db-rollback db-reset db-revision logs logs-app logs-services update-deps
 
 help:
 	@echo "Available targets:"
@@ -22,6 +22,15 @@ help:
 	@echo "  fix               - Auto-fix linting issues"
 	@echo "  generate-openapi  - Generate OpenAPI schema"
 	@echo "  clean             - Clean build artifacts"
+	@echo "  db-migrate        - Run database migrations"
+	@echo "  db-rollback       - Rollback last database migration"
+	@echo "  db-reset          - Reset database (CAUTION: drops all data)"
+	@echo "  db-revision       - Create new database migration"
+	@echo "  logs              - Show logs for all Docker services"
+	@echo "  logs-app          - Show logs for app service"
+	@echo "  logs-services     - Show logs for dependency services"
+	@echo "  test-watch        - Run tests in watch mode"
+	@echo "  update-deps       - Update Python dependencies"
 
 setup:
 	uv sync --all-extras --dev
@@ -69,6 +78,9 @@ dev-build-backend:
 test:
 	uv run pytest
 
+test-watch:
+	uv run pytest-watch
+
 lint:
 	uv run ruff check .
 
@@ -86,3 +98,36 @@ generate-openapi:
 
 clean:
 	find . -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Database operations
+db-migrate:
+	uv run alembic upgrade head
+
+db-rollback:
+	uv run alembic downgrade -1
+
+db-reset:
+	@echo "WARNING: This will drop all data in the database!"
+	@echo "Press Ctrl+C to cancel, or wait 3 seconds to continue..."
+	@sleep 3
+	uv run alembic downgrade base
+	uv run alembic upgrade head
+
+db-revision:
+	@read -p "Enter migration message: " msg; \
+	uv run alembic revision -m "$$msg"
+
+# Logging
+logs:
+	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f
+
+logs-app:
+	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f lilypad
+
+logs-services:
+	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f postgres kafka opensearch
+
+# Dependency management
+update-deps:
+	uv lock --upgrade
+	uv sync --all-extras --dev
