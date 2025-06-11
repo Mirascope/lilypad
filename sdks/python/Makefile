@@ -1,4 +1,17 @@
-.PHONY: help setup test test-watch test-coverage lint typecheck format fix clean update-deps build publish
+# Basic Operations
+.PHONY: help setup
+
+# Testing
+.PHONY: test test-watch test-coverage
+
+# Code Quality
+.PHONY: lint typecheck format fix
+
+# Build & Release
+.PHONY: build publish
+
+# Maintenance
+.PHONY: clean update-deps
 
 help:
 	@echo "Available targets:"
@@ -22,6 +35,7 @@ test:
 	uv run pytest
 
 test-watch:
+	@command -v pytest-watch >/dev/null 2>&1 || uv add --dev pytest-watch
 	uv run pytest-watch
 
 test-coverage:

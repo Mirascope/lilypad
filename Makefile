@@ -1,4 +1,25 @@
-.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client dev-build-backend prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-app test-sdk test-watch lint lint-app lint-sdk lint-client format format-app format-sdk typecheck typecheck-app typecheck-sdk typecheck-client fix fix-app fix-sdk generate generate-openapi generate-sdk generate-client clean clean-all db-migrate db-rollback db-reset logs logs-app logs-services check update-deps
+# Development commands
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client
+.PHONY: dev-build-backend prod dev-down prod-down
+
+# Kafka commands
+.PHONY: setup-kafka setup-kafka-prod test-kafka
+
+# Testing
+.PHONY: test test-app test-sdk test-watch
+
+# Code quality
+.PHONY: lint lint-app lint-sdk lint-client
+.PHONY: format format-app format-sdk
+.PHONY: typecheck typecheck-app typecheck-sdk typecheck-client
+.PHONY: fix fix-app fix-sdk
+
+# Code generation
+.PHONY: generate generate-openapi generate-sdk generate-client
+
+# Maintenance
+.PHONY: clean clean-all db-migrate db-rollback db-reset
+.PHONY: logs logs-app logs-services check update-deps
 
 help:
 	@echo "Available targets:"
@@ -21,11 +42,11 @@ help:
 	@echo "  lint              - Run all linters"
 	@echo "  lint-app          - Run app linter"
 	@echo "  lint-sdk          - Run SDK linter"
-	@echo "  lint-client       - Run client linter"
+	@echo "  lint-client       - Run client linter (ESLint)"
 	@echo "  typecheck         - Run all type checkers"
 	@echo "  typecheck-app     - Run app type checker"
 	@echo "  typecheck-sdk     - Run SDK type checker"
-	@echo "  typecheck-client  - Run client type checker"
+	@echo "  typecheck-client  - Run client type checker (TypeScript)"
 	@echo "  format            - Format all code"
 	@echo "  format-app        - Format app code"
 	@echo "  format-sdk        - Format SDK code"
@@ -45,7 +66,7 @@ help:
 	@echo "  logs-app          - Show logs for app service"
 	@echo "  logs-services     - Show logs for dependency services"
 	@echo "  check             - Run all checks (lint, typecheck, test)"
-	@echo "  test-watch        - Run tests in watch mode"
+	@echo "  test-watch        - Run backend tests in watch mode"
 	@echo "  update-deps       - Update all dependencies"
 
 # Global setup

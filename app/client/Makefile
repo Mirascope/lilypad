@@ -1,4 +1,15 @@
-.PHONY: help setup dev build build-notypescript build-local lint typecheck preview prettier generate-api-v0 storybook build-storybook clean test test-watch test-coverage update-deps analyze
+# Development & Build
+.PHONY: help setup dev build build-notypescript build-local preview
+
+# Code Quality
+.PHONY: lint typecheck prettier
+
+
+# Tools
+.PHONY: generate-api-v0 storybook build-storybook analyze
+
+# Maintenance
+.PHONY: clean update-deps
 
 help:
 	@echo "Available targets:"
@@ -15,9 +26,6 @@ help:
 	@echo "  storybook          - Start Storybook"
 	@echo "  build-storybook    - Build Storybook"
 	@echo "  clean              - Clean build artifacts"
-	@echo "  test               - Run tests"
-	@echo "  test-watch         - Run tests in watch mode"
-	@echo "  test-coverage      - Run tests with coverage"
 	@echo "  update-deps        - Update JavaScript dependencies"
 	@echo "  analyze            - Analyze bundle size"
 
@@ -60,17 +68,12 @@ build-storybook:
 clean:
 	rm -rf dist/ build/ node_modules/.cache/ || true
 
-test:
-	bun run test
-
-test-watch:
-	bun run test:watch
-
-test-coverage:
-	bun run test:coverage
-
 update-deps:
-	bun update
+	bun update --latest
+	@echo "Dependencies updated. Don't forget to test the changes!"
 
 analyze:
-	bun run build --mode analyze
+	@echo "Note: Bundle analysis requires rollup-plugin-visualizer"
+	@echo "Install with: bun add -d rollup-plugin-visualizer"
+	@echo "Then add the plugin to vite.config.ts"
+	bun run build

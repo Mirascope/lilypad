@@ -1,4 +1,18 @@
-.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client prod dev-down prod-down setup-kafka setup-kafka-prod test-kafka test test-watch lint typecheck format fix generate-openapi clean dev-build-backend db-migrate db-rollback db-reset db-revision logs logs-app logs-services update-deps
+# Development
+.PHONY: help setup dev dev-services dev-local dev-local-app dev-local-client
+.PHONY: dev-build-backend prod dev-down prod-down
+
+# Kafka
+.PHONY: setup-kafka setup-kafka-prod test-kafka
+
+# Testing & Quality
+.PHONY: test test-watch lint typecheck format fix
+
+# Database
+.PHONY: db-migrate db-rollback db-reset db-revision
+
+# Maintenance
+.PHONY: generate-openapi clean logs logs-app logs-services update-deps
 
 help:
 	@echo "Available targets:"
@@ -47,7 +61,16 @@ dev-local: dev-services
 	@echo "Use 'make dev-local-client' in another terminal to start the frontend"
 
 dev-local-app:
+	@if [ ! -f .env.dev ]; then \
+		echo "Error: .env.dev file not found!"; \
+		echo "Please copy .env.dev.example to .env.dev and configure it"; \
+		exit 1; \
+	fi
 	@echo "Starting backend app locally..."
+	@echo "Make sure dependency services are running (make dev-services)"
+	@export LILYPAD_DB_HOST=localhost && \
+	export LILYPAD_OPENSEARCH_HOST=localhost && \
+	export LILYPAD_KAFKA_BOOTSTRAP_SERVERS=localhost:9092 && \
 	uv run python -m lilypad.server.main
 
 dev-local-client:
@@ -79,6 +102,7 @@ test:
 	uv run pytest
 
 test-watch:
+	@command -v pytest-watch >/dev/null 2>&1 || uv add --dev pytest-watch
 	uv run pytest-watch
 
 lint:
@@ -114,7 +138,8 @@ db-reset:
 	uv run alembic upgrade head
 
 db-revision:
-	@read -p "Enter migration message: " msg; \
+	@echo "Enter migration message: " && \
+	read msg && \
 	uv run alembic revision -m "$$msg"
 
 # Logging
@@ -125,7 +150,7 @@ logs-app:
 	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f lilypad
 
 logs-services:
-	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f postgres kafka opensearch
+	docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f postgres kafka opensearch zookeeper localstack kafka-ui opensearch-dashboards
 
 # Dependency management
 update-deps:

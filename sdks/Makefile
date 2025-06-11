@@ -1,3 +1,4 @@
+# All targets
 .PHONY: help setup generate-sdk clean update-deps
 
 help:
@@ -17,4 +18,5 @@ clean:
 	rm -rf python/src/lilypad/.git || true
 
 update-deps:
-	bun update
+	bun update --latest
+	@echo "Dependencies updated. Don't forget to test the changes!"
