@@ -147,7 +147,6 @@ class BaseKafkaService(ABC):
                     try:
                         key = self.get_key(data)
                         message = self.transform_message(data)
-
                         # Send without waiting - producer.send() returns a Future
                         future = producer.send(
                             topic=self.topic,

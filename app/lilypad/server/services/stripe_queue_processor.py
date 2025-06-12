@@ -54,7 +54,7 @@ class MeterBatch:
     @property
     def age_seconds(self) -> float:
         """Get age of this batch in seconds."""
-        return (datetime.utcnow() - self.created_at).total_seconds()
+        return (datetime.now(timezone.utc) - self.created_at).total_seconds()
 
 
 class StripeQueueProcessor:
@@ -295,7 +295,7 @@ class StripeQueueProcessor:
                 )
                 # Move current batch to a temporary location for immediate flush
                 self.failed_batches[
-                    f"{org_uuid}_overflow_{datetime.utcnow().timestamp()}"
+                    f"{org_uuid}_overflow_{datetime.now(timezone.utc)}"
                 ] = batch
                 # Create new batch
                 self.pending_batches[org_uuid] = MeterBatch(user_uuid, org_uuid)
@@ -316,7 +316,7 @@ class StripeQueueProcessor:
             # Check for rate limit backoff
             if self.last_rate_limit_error:
                 time_since_error = (
-                    datetime.utcnow() - self.last_rate_limit_error
+                    datetime.now(timezone.utc) - self.last_rate_limit_error
                 ).total_seconds()
                 if time_since_error < 60:
                     logger.warning("Recent rate limit error, backing off for 30s")
@@ -406,12 +406,12 @@ class StripeQueueProcessor:
 
                 # Check if it's a rate limit error
                 if "rate" in error_msg.lower() and "limit" in error_msg.lower():
-                    self.last_rate_limit_error = datetime.utcnow()
+                    self.last_rate_limit_error = datetime.now(timezone.utc)
 
                 # Add to failed batches for retry
                 async with self._batch_lock:
                     batch.attempt_count += 1
-                    batch.last_attempt = datetime.utcnow()
+                    batch.last_attempt = datetime.now(timezone.utc)
                     batch.error = error_msg
                     self.failed_batches[batch_key] = batch
 
@@ -439,7 +439,6 @@ class StripeQueueProcessor:
             billing_service = BillingService(session, user)  # pyright: ignore [reportArgumentType]
 
             # Call billing service
-            # Note: You should update your billing service to accept idempotency_key
             billing_service.report_span_usage(UUID(org_uuid), quantity=quantity)
 
             logger.info(
@@ -520,7 +519,7 @@ class StripeQueueProcessor:
             dlq_event = {
                 **event,
                 "error": error,
-                "failed_at": datetime.utcnow().isoformat(),
+                "failed_at": datetime.now(timezone.utc).isoformat(),
                 "processor": "stripe_meter",
             }
 
