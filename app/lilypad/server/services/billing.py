@@ -211,13 +211,17 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             )
 
     def report_span_usage(
-        self, organization_uuid: uuid.UUID, quantity: int = 1
+        self,
+        organization_uuid: uuid.UUID,
+        quantity: int = 1,
+        idempotency_key: str | None = None,
     ) -> None:
         """Report span usage to Stripe.
 
         Args:
             organization_uuid: The UUID of the organization
             quantity: The number of spans to report (default: 1)
+            idempotency_key: Optional idempotency key for the request
         """
         if not stripe.api_key:
             # Skip reporting if Stripe is not configured
@@ -241,7 +245,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 "value": str(quantity),
                 "stripe_customer_id": str(organization.billing.stripe_customer_id),
             },
-            identifier=str(uuid.uuid4()),
+            identifier=idempotency_key or str(uuid.uuid4()),
             timestamp=int(time.time()),
         )
 
@@ -315,13 +319,13 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         session.flush()
         return billing
 
-    async def report_span_usage_with_retry(
+    async def report_span_usage_with_fallback(
         self,
         organization_uuid: uuid.UUID,
         quantity: int,
         stripe_kafka_service: StripeKafkaService | None = None,
     ) -> None:
-        """Report span usage to Stripe with retry logic.
+        """Report span usage to Stripe Kafka queue with fallback to direct API.
 
         Args:
             organization_uuid: The organization UUID

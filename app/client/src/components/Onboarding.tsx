@@ -300,9 +300,11 @@ const OnboardCodeSnippet = () => {
   const stepperMethods = useStepper();
   const metadata = stepperMethods.getMetadata("step-2");
   return (
-    <CodeBlock
-      language="python"
-      code={`import os
+    <div className="w-full flex-1 overflow-x-auto">
+      <CodeBlock
+        className="m-0"
+        language="python"
+        code={`import os
 
 import lilypad
 from mirascope import llm, prompt_template
@@ -324,7 +326,8 @@ def answer_question(question: str): ...
 
 answer_question("What is the capital of France?")
 `}
-    />
+      />
+    </div>
   );
 };
 
@@ -357,12 +360,16 @@ const OnboardInstallLilypad = () => {
     {
       label: "pip",
       value: "pip",
-      component: <CodeBlock language="bash" code={`pip install "lilypad-sdk[google]"`} />,
+      component: (
+        <CodeBlock className="m-0" language="bash" code={`pip install "lilypad-sdk[google]"`} />
+      ),
     },
     {
       label: "uv",
       value: "uv",
-      component: <CodeBlock language="bash" code={`uv add "lilypad-sdk[google]"`} />,
+      component: (
+        <CodeBlock className="m-0" language="bash" code={`uv add "lilypad-sdk[google]"`} />
+      ),
     },
   ];
   return <TabGroup tabs={tabs} className="h-auto shrink-0" />;

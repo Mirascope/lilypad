@@ -223,7 +223,7 @@ async def traces(
     user: Annotated[UserPublic, Depends(get_current_user)],
     kafka_service: Annotated[SpanKafkaService, Depends(get_span_kafka_service)],
     stripe_kafka_service: Annotated[
-        StripeKafkaService, Depends(get_stripe_kafka_service)
+        StripeKafkaService | None, Depends(get_stripe_kafka_service)
     ],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
@@ -305,7 +305,7 @@ async def traces(
             project.organization_uuid,
         )
         try:
-            await billing_service.report_span_usage_with_retry(
+            await billing_service.report_span_usage_with_fallback(
                 project.organization_uuid, len(span_creates), stripe_kafka_service
             )
         except Exception as e:

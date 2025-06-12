@@ -7,7 +7,7 @@ from fastapi import Depends
 
 from lilypad.server._utils import get_current_user
 from lilypad.server.schemas.users import UserPublic
-from lilypad.server.settings import get_settings
+from lilypad.server.settings import Settings, get_settings
 
 from .kafka_base import BaseKafkaService
 
@@ -97,14 +97,21 @@ class StripeKafkaService(BaseKafkaService):
 
 # Dependency injection helper
 async def get_stripe_kafka_service(
+    settings: Annotated[Settings, Depends(get_settings)],
     user: Annotated[UserPublic, Depends(get_current_user)],
-) -> StripeKafkaService:
+) -> StripeKafkaService | None:
     """Get StripeKafkaService instance with dependency injection.
 
     Args:
+        settings: Application settings from dependency injection
         user: Current authenticated user from dependency injection
 
     Returns:
         StripeKafkaService instance
     """
-    return StripeKafkaService(user)
+    is_stripe_kafka_enabled = (
+        settings.kafka_bootstrap_servers
+        and settings.kafka_topic_stripe_ingestion
+        and settings.stripe_api_key
+    )
+    return StripeKafkaService(user) if is_stripe_kafka_enabled else None

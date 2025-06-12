@@ -332,7 +332,7 @@ class StripeQueueProcessor:
             # Find batches ready to send
             ready_batches = {}
             for org_uuid, batch in list(self.pending_batches.items()):
-                if batch.age_seconds >= self.batch_interval_seconds:
+                if batch.age_seconds >= self.batch_max_age_seconds:
                     ready_batches[org_uuid] = self.pending_batches.pop(org_uuid)
 
             # Also check for any overflow batches
@@ -437,9 +437,9 @@ class StripeQueueProcessor:
                 raise Exception(f"No user found for organization {org_uuid}")
 
             billing_service = BillingService(session, user)  # pyright: ignore [reportArgumentType]
-
-            # Call billing service
-            billing_service.report_span_usage(UUID(org_uuid), quantity=quantity)
+            billing_service.report_span_usage(
+                UUID(org_uuid), quantity=quantity, idempotency_key=idempotency_key
+            )
 
             logger.info(
                 f"Stripe meter updated - Org: {org_uuid}, Spans: {quantity}, "

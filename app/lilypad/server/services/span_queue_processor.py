@@ -527,17 +527,24 @@ class SpanQueueProcessor:
             )
             logger.debug(f"Trace {trace_id} processing completed in thread pool")
 
-            # Handle billing if configured (async operations)
-            if self.settings.stripe_api_key and result:
+            if result:
                 spans, org_uuid, user_uuid = result
                 try:
                     user = self._get_cached_user(user_uuid)
 
                     if user and self._session:
                         billing_service = BillingService(self._session, user)  # pyright: ignore [reportArgumentType]
-                        stripe_kafka_service = StripeKafkaService(user)  # pyright: ignore [reportArgumentType]
-
-                        await billing_service.report_span_usage_with_retry(
+                        is_stripe_kafka_enabled = (
+                            self.settings.kafka_bootstrap_servers
+                            and self.settings.kafka_topic_stripe_ingestion
+                            and self.settings.stripe_api_key
+                        )
+                        stripe_kafka_service = (
+                            StripeKafkaService(user)  # pyright: ignore [reportArgumentType]
+                            if is_stripe_kafka_enabled
+                            else None
+                        )
+                        await billing_service.report_span_usage_with_fallback(
                             org_uuid, len(spans), stripe_kafka_service
                         )
                         logger.debug(
