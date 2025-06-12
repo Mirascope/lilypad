@@ -96,7 +96,7 @@ test-kafka:
 	uv run python scripts/test_kafka_connection.py
 
 dev-build-backend:
-	docker compose --env-file .env.dev -f docker-compose.dev.yml up postgres lilypad opensearch --watch --build
+	docker compose --env-file .env.dev -f docker-compose.dev.yml up postgres lilypad opensearch kafka kafka-ui --watch --build
 
 test:
 	uv run pytest

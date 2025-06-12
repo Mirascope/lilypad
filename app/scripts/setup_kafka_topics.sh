@@ -32,26 +32,33 @@ done
 
 echo -e "${GREEN}✓ Kafka is ready!${NC}"
 
-echo -e "${YELLOW}Creating span-ingestion topic...${NC}"
-if docker exec kafka kafka-topics \
-  --bootstrap-server localhost:29092 \
-  --create \
-  --topic span-ingestion \
-  --partitions 6 \
-  --replication-factor 1 \
-  --if-not-exists \
-  --config retention.ms=604800000 \
-  --config retention.bytes=1073741824; then
-    echo -e "${GREEN}✓ Topic created successfully${NC}"
-else
-    echo -e "${RED}✗ Failed to create topic${NC}"
-    exit 1
-fi
+TOPICS=("span-ingestion" "stripe-ingestion")
+for topic in "${TOPICS[@]}"; do
+    echo -e "${YELLOW}Creating $topic topic...${NC}"
+    if docker exec kafka kafka-topics \
+        --bootstrap-server localhost:29092 \
+        --create \
+        --topic "$topic" \
+        --partitions 6 \
+        --replication-factor 1 \
+        --if-not-exists \
+        --config retention.ms=604800000 \
+        --config retention.bytes=1073741824; then
+        echo -e "${GREEN}✓ $topic topic created successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to create $topic topic${NC}"
+        exit 1
+    fi
+done
 
-echo -e "${YELLOW}Verifying topic creation...${NC}"
-docker exec kafka kafka-topics \
-  --bootstrap-server localhost:29092 \
-  --describe \
-  --topic span-ingestion
+# Verify all topics
+echo -e "${YELLOW}Verifying topic configurations...${NC}"
+for topic in "${TOPICS[@]}"; do
+    echo -e "${YELLOW}Topic: $topic${NC}"
+    docker exec kafka kafka-topics \
+        --bootstrap-server localhost:29092 \
+        --describe \
+        --topic "$topic"
+done
 
-echo -e "${GREEN}✓ Kafka topic setup complete!${NC}"
+echo -e "${GREEN}✓ Kafka topics setup complete!${NC}"

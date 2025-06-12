@@ -16,6 +16,7 @@ from ee import Tier
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
+from ..services.stripe_kafka_service import StripeKafkaService
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 
@@ -313,6 +314,67 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         session.add(billing)
         session.flush()
         return billing
+
+    async def report_span_usage_with_retry(
+        self,
+        organization_uuid: uuid.UUID,
+        quantity: int,
+        stripe_kafka_service: StripeKafkaService | None = None,
+    ) -> None:
+        """Report span usage to Stripe with retry logic.
+
+        Args:
+            organization_uuid: The organization UUID
+            quantity: Number of spans to report
+            stripe_kafka_service: Optional StripeKafkaService for async processing
+        """
+        # Try to send to Kafka queue first if service is available
+        if stripe_kafka_service:
+            usage_data = {
+                "organization_uuid": str(organization_uuid),
+                "quantity": quantity,
+                "event_type": "span_usage",
+                "user_uuid": str(self.user.uuid),
+                "trace_id": str(uuid.uuid4()),  # Generate a trace_id for Kafka
+            }
+
+            try:
+                kafka_available = await stripe_kafka_service.send_batch([usage_data])
+                if kafka_available:
+                    logger.info(
+                        f"Successfully queued span usage to Kafka - Org: {organization_uuid}, Quantity: {quantity}"
+                    )
+                    return
+                else:
+                    logger.warning(
+                        "Kafka not available for span usage, falling back to direct Stripe reporting"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to queue span usage to Kafka: {e}, falling back to direct Stripe reporting"
+                )
+
+        # Fallback to direct Stripe reporting
+        try:
+            self.report_span_usage(organization_uuid, quantity=quantity)
+        except _CustomerNotFound:
+            # We don't expect this to happen, but if it does, we need to create a customer
+            logger.info(f"Creating customer for organization {organization_uuid}")
+            organization = self.session.exec(
+                select(OrganizationTable).where(
+                    OrganizationTable.uuid == organization_uuid
+                )
+            ).first()
+
+            if not organization:
+                logger.error(f"Organization {organization_uuid} not found")
+                return
+
+            email = self.user.email
+
+            self.create_customer(organization, email)
+
+            self.report_span_usage(organization_uuid, quantity=quantity)
 
     @classmethod
     def update_from_subscription(

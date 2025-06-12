@@ -56,11 +56,11 @@ class StripeKafkaService(BaseKafkaService):
         if not self.user:
             raise ValueError("User context is missing")
         try:
-            user_id = str(self.user.uuid)
+            user_uuid = str(self.user.uuid)
         except (AttributeError, TypeError):
             raise ValueError("Invalid user object - missing uuid attribute")
         # Create final message
-        final_message = {**data, "user_id": user_id}
+        final_message = {**data, "user_uuid": user_uuid}
 
         # Validate message structure and estimate size
         try:
@@ -93,3 +93,18 @@ class StripeKafkaService(BaseKafkaService):
             raise
 
         return final_message
+
+
+# Dependency injection helper
+async def get_stripe_kafka_service(
+    user: Annotated[UserPublic, Depends(get_current_user)],
+) -> StripeKafkaService:
+    """Get StripeKafkaService instance with dependency injection.
+
+    Args:
+        user: Current authenticated user from dependency injection
+
+    Returns:
+        StripeKafkaService instance
+    """
+    return StripeKafkaService(user)

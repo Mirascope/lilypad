@@ -37,8 +37,10 @@ from ...services import (
     OpenSearchService,
     SpanKafkaService,
     SpanService,
+    StripeKafkaService,
     get_opensearch_service,
     get_span_kafka_service,
+    get_stripe_kafka_service,
 )
 from ...services.billing import BillingService
 from ...services.projects import ProjectService
@@ -220,6 +222,9 @@ async def traces(
     billing_service: Annotated[BillingService, Depends(BillingService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
     kafka_service: Annotated[SpanKafkaService, Depends(get_span_kafka_service)],
+    stripe_kafka_service: Annotated[
+        StripeKafkaService, Depends(get_stripe_kafka_service)
+    ],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -296,10 +301,16 @@ async def traces(
         project = project_service.find_record_no_organization(project_uuid)
         span_tables = span_service.create_bulk_records(
             span_creates,
-            billing_service if is_lilypad_cloud else None,
             project_uuid,
             project.organization_uuid,
         )
+        try:
+            await billing_service.report_span_usage_with_retry(
+                project.organization_uuid, len(span_creates), stripe_kafka_service
+            )
+        except Exception as e:
+            # if reporting fails, we don't want to fail the entire span creation
+            logger.error("Error reporting span usage: %s", e)
         if opensearch_service.is_enabled:
             trace_dicts = [span.model_dump() for span in span_tables]
             background_tasks.add_task(
@@ -316,9 +327,6 @@ async def traces(
             message="Spans processed synchronously",
             trace_ids=trace_ids,
         )
-    # Update stripe meter
-    if is_lilypad_cloud:
-        ...
     return traces_queue_response
 
 
