@@ -44,13 +44,13 @@ export const safelyParseJSON = (json: string): object | undefined => {
 
   return parsed;
 };
-export const formatDate = (utcDateString?: string | Date, dateOnly = true): string => {
+export const formatDate = (utcDateString?: string | number | Date, dateOnly = true): string => {
   if (!utcDateString) {
     return "";
   }
   let date;
   // Convert to Date object if it's a string
-  if (typeof utcDateString === "string") {
+  if (typeof utcDateString === "string" || typeof utcDateString === "number") {
     date = new Date(utcDateString);
   } else {
     date = utcDateString;
@@ -69,14 +69,17 @@ export const formatDate = (utcDateString?: string | Date, dateOnly = true): stri
   }).format(date);
 };
 
-export const formatRelativeTime = (utcDateString?: string | Date, shorthand = false): string => {
+export const formatRelativeTime = (
+  utcDateString?: string | number | Date,
+  shorthand = false
+): string => {
   if (!utcDateString) {
     return "";
   }
 
   let date;
   // Convert to Date object if it's a string
-  if (typeof utcDateString === "string") {
+  if (typeof utcDateString === "string" || typeof utcDateString === "number") {
     date = new Date(utcDateString);
   } else {
     date = utcDateString;

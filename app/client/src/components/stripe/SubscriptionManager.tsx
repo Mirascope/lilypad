@@ -3,6 +3,7 @@ import {
   FeatureComparisonTable,
   LilypadCloudPricing,
 } from "@/mirascope-ui/blocks/lilypad-pricing";
+import MeterUsageProgress from "@/src/components/stripe/MeterUsageProgress";
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
 import { Typography } from "@/src/components/ui/typography";
@@ -96,6 +97,8 @@ export const SubscriptionManager = () => {
   return (
     <div className="flex flex-col gap-4">
       <Typography variant="h3">Manage Plan</Typography>
+      <Typography variant="h5">Current Usage</Typography>
+      <MeterUsageProgress />
       {billing?.cancel_at_period_end && (
         <Alert variant="warning">
           <AlertTitle>Subscription Cancelled</AlertTitle>
