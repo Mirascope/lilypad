@@ -105,6 +105,54 @@ client.create_checkout_session_stripe_create_checkout_session_post(
 </dl>
 </details>
 
+<details><summary><code>client.<a href="src/mirascope/client.py">get_event_summaries_stripe_event_summaries_get</a>()</code></summary>
+<dl>
+<dd>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```python
+from mirascope import Lilypad
+
+client = Lilypad(
+    api_key="YOUR_API_KEY",
+    token="YOUR_TOKEN",
+    base_url="https://yourhost.com/path/to/api",
+)
+client.get_event_summaries_stripe_event_summaries_get()
+
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.<a href="src/mirascope/client.py">get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get</a>(...)</code></summary>
 <dl>
 <dd>
