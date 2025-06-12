@@ -31,7 +31,7 @@ export const callbackCodeQueryOptions = (provider: string, code?: string) =>
 
 export const fetchVersions = async () => {
   try {
-    const response = await fetch("https://mirascope.com/static/content-meta/policy/index.json");
+    const response = await api.get("https://mirascope.com/static/content-meta/policy/index.json");
 
     if (!response.ok) {
       throw new Error(`Failed to fetch policy data: ${response.status}`);

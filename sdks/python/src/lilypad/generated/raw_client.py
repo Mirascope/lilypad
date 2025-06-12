@@ -10,6 +10,7 @@ from .core.jsonable_encoder import jsonable_encoder
 from .core.request_options import RequestOptions
 from .core.unchecked_base_model import construct_type
 from .errors.unprocessable_entity_error import UnprocessableEntityError
+from .types.event_summary_response import EventSummaryResponse
 from .types.http_validation_error import HttpValidationError
 from .types.span_public import SpanPublic
 from .types.tier import Tier
@@ -105,6 +106,40 @@ class RawLilypad:
                         ),
                     ),
                 )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[EventSummaryResponse]:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[EventSummaryResponse]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "stripe/event-summaries",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    EventSummaryResponse,
+                    construct_type(
+                        type_=EventSummaryResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
@@ -249,6 +284,40 @@ class AsyncRawLilypad:
                         ),
                     ),
                 )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[EventSummaryResponse]:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[EventSummaryResponse]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "stripe/event-summaries",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    EventSummaryResponse,
+                    construct_type(
+                        type_=EventSummaryResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)

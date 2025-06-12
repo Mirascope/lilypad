@@ -5,6 +5,8 @@
 # Kafka
 .PHONY: setup-kafka setup-kafka-prod test-kafka
 
+# Stripe
+.PHONY: dev-stripe-webhook
 # Testing & Quality
 .PHONY: test test-watch lint typecheck format fix
 
@@ -20,6 +22,7 @@ help:
 	@echo "  dev               - Start development environment (all in Docker)"
 	@echo "  dev-services      - Start only dependency services in Docker"
 	@echo "  dev-local         - Start services in Docker, app/client locally"
+	@echo "  dev-stripe-webhook - Start Stripe webhook listener"
 	@echo "  dev-local-app     - Start backend app locally (requires dev-services)"
 	@echo "  dev-local-client  - Start frontend client locally (requires dev-services)"
 	@echo "  dev-build-backend - Start backend services with watch mode"
@@ -77,6 +80,9 @@ dev-local-client:
 	@echo "Starting frontend client locally..."
 	$(MAKE) -C client dev
 
+dev-stripe-webhook:
+	stripe listen --forward-to localhost:8000/v0/webhooks/stripe
+	
 prod:
 	docker compose up -d
 

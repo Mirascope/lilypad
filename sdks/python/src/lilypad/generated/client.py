@@ -17,6 +17,7 @@ from .raw_client import AsyncRawLilypad, RawLilypad
 from .settings.client import AsyncSettingsClient, SettingsClient
 from .spans.client import AsyncSpansClient, SpansClient
 from .tags.client import AsyncTagsClient, TagsClient
+from .types.event_summary_response import EventSummaryResponse
 from .types.span_public import SpanPublic
 from .types.tier import Tier
 from .user_consents.client import AsyncUserConsentsClient, UserConsentsClient
@@ -169,6 +170,34 @@ class Lilypad:
         _response = self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
             tier=tier, request_options=request_options
         )
+        return _response.data
+
+    def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> EventSummaryResponse:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        EventSummaryResponse
+            Successful Response
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.get_event_summaries_stripe_event_summaries_get()
+        """
+        _response = self._raw_client.get_event_summaries_stripe_event_summaries_get(request_options=request_options)
         return _response.data
 
     def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
@@ -370,6 +399,44 @@ class AsyncLilypad:
         """
         _response = await self._raw_client.create_checkout_session_stripe_create_checkout_session_post(
             tier=tier, request_options=request_options
+        )
+        return _response.data
+
+    async def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> EventSummaryResponse:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        EventSummaryResponse
+            Successful Response
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.get_event_summaries_stripe_event_summaries_get()
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_event_summaries_stripe_event_summaries_get(
+            request_options=request_options
         )
         return _response.data
 
