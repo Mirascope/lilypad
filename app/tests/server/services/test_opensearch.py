@@ -807,7 +807,7 @@ class TestGetOpenSearchService:
         mock_get_settings.return_value = mock_settings
 
         service = OpenSearchService()
-        
+
         result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
 
         assert result is False
@@ -816,7 +816,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_bulk_index_traces_exception_handling(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_bulk_index_traces_exception_handling(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test bulk_index_traces exception handling."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -828,7 +830,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         with patch.object(service, "ensure_index_exists", return_value=True):
             result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
 
@@ -838,7 +840,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_search_traces_exception_handling(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_search_traces_exception_handling(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test search_traces exception handling."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -850,7 +854,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         search_query = SearchQuery(query_string="test")
         result = service.search_traces(uuid4(), search_query)
 
@@ -859,7 +863,9 @@ class TestGetOpenSearchService:
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
-    def test_index_traces_ensure_index_fails(self, mock_opensearch_class, mock_get_settings):
+    def test_index_traces_ensure_index_fails(
+        self, mock_opensearch_class, mock_get_settings
+    ):
         """Test index_traces when ensure_index_exists fails."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -870,7 +876,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         with patch.object(service, "ensure_index_exists", return_value=False):
             result = service.index_traces(uuid4(), {"uuid": "test"})
 
@@ -879,7 +885,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_index_traces_exception_handling(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_index_traces_exception_handling(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test index_traces exception handling."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -891,7 +899,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         with patch.object(service, "ensure_index_exists", return_value=True):
             result = service.index_traces(uuid4(), {"uuid": "test"})
 
@@ -901,7 +909,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_bulk_index_traces_ensure_index_fails(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_bulk_index_traces_ensure_index_fails(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test bulk_index_traces when ensure_index_exists fails."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -912,7 +922,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         with patch.object(service, "ensure_index_exists", return_value=False):
             result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
 
@@ -922,7 +932,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_bulk_index_traces_skips_traces_without_uuid(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_bulk_index_traces_skips_traces_without_uuid(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test bulk_index_traces skips traces without UUID."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -936,7 +948,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         with patch.object(service, "ensure_index_exists", return_value=True):
             result = service.bulk_index_traces(uuid4(), [{"uuid": ""}])
 
@@ -946,7 +958,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_delete_trace_by_uuid_unexpected_result(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_delete_trace_by_uuid_unexpected_result(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test delete_trace_by_uuid with unexpected result."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -960,7 +974,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         span_uuid = uuid4()
-        
+
         result = service.delete_trace_by_uuid(uuid4(), span_uuid)
 
         assert result is False
@@ -969,7 +983,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_delete_trace_by_uuid_exception_handling(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_delete_trace_by_uuid_exception_handling(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test delete_trace_by_uuid exception handling."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -983,7 +999,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         span_uuid = uuid4()
-        
+
         result = service.delete_trace_by_uuid(uuid4(), span_uuid)
 
         assert result is False
@@ -992,7 +1008,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_delete_traces_by_function_uuid_no_index(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_delete_traces_by_function_uuid_no_index(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test delete_traces_by_function_uuid when index doesn't exist."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -1004,7 +1022,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         result = service.delete_traces_by_function_uuid(uuid4(), uuid4())
 
         assert result is True
@@ -1013,7 +1031,9 @@ class TestGetOpenSearchService:
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
     @patch("lilypad.server.services.opensearch.logger")
-    def test_delete_traces_by_function_uuid_exception_handling(self, mock_logger, mock_opensearch_class, mock_get_settings):
+    def test_delete_traces_by_function_uuid_exception_handling(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
         """Test delete_traces_by_function_uuid exception handling."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
@@ -1025,7 +1045,7 @@ class TestGetOpenSearchService:
         mock_opensearch_class.return_value = mock_client
 
         service = OpenSearchService()
-        
+
         result = service.delete_traces_by_function_uuid(uuid4(), uuid4())
 
         assert result is False

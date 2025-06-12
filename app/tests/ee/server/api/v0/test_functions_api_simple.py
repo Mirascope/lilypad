@@ -1,9 +1,6 @@
 """Simple tests for the EE functions API utility functions to achieve coverage."""
 
 import base64
-import json
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -80,7 +77,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert _validate_function_data(function)
 
     def test_validate_function_data_invalid_name(self):
@@ -90,7 +87,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_template(self):
@@ -100,7 +97,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {__dunder__}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_call_params(self):
@@ -110,7 +107,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"func": lambda x: x}  # Not JSON serializable
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_arg_types(self):
@@ -120,7 +117,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"123invalid": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_api_keys_valid(self):
@@ -130,9 +127,9 @@ class TestValidationFunctions:
             "ANTHROPIC_API_KEY": "sk-ant-abcdef1234567890",
             "OTHER_VAR": "some_value",
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert "OPENAI_API_KEY" in result
         assert "ANTHROPIC_API_KEY" in result
         assert "OTHER_VAR" in result
@@ -144,9 +141,9 @@ class TestValidationFunctions:
             "ANTHROPIC_API_KEY": "sk-test`whoami`",
             "GOOGLE_API_KEY": "valid_key_with_underscore_and_dash-123",
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert result["OPENAI_API_KEY"] == ""
         assert result["ANTHROPIC_API_KEY"] == ""
         assert result["GOOGLE_API_KEY"] == "valid_key_with_underscore_and_dash-123"
@@ -157,9 +154,9 @@ class TestValidationFunctions:
             "OPENAI_API_KEY": "too_short",
             "ANTHROPIC_API_KEY": "way_too_long_" + "x" * 200,
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert result["OPENAI_API_KEY"] == ""
         assert result["ANTHROPIC_API_KEY"] == ""
 
@@ -169,7 +166,7 @@ class TestValidationFunctions:
             "OPENAI_API_KEY": "sk-test123",
             "ANTHROPIC_API_KEY": "sk-ant-test123",
         }
-        
+
         assert _validate_provider_api_key("openai", api_keys)
         assert _validate_provider_api_key("anthropic", api_keys)
         assert not _validate_provider_api_key("gemini", api_keys)
@@ -179,9 +176,9 @@ class TestValidationFunctions:
         """Test argument sanitization."""
         arg_types = {"arg1": "str", "arg2": "int", "arg3": "bytes"}
         arg_values = {"arg1": "hello", "arg2": 42, "arg4": "extra"}
-        
+
         result = sanitize_arg_types_and_values(arg_types, arg_values)
-        
+
         expected = {
             "arg1": ("str", "hello"),
             "arg2": ("int", 42),
@@ -196,14 +193,14 @@ class TestDecodeBytes:
         """Test decoding valid base64 strings."""
         test_data = b"hello world"
         encoded = base64.b64encode(test_data).decode("utf-8")
-        
+
         arg_types_and_values = {
             "image": ("bytes", encoded),
             "text": ("str", "hello"),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
-        
+
         assert result["image"] == test_data
         assert result["text"] == "hello"
 
@@ -212,7 +209,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", "invalid_base64!"),
         }
-        
+
         with pytest.raises(ValueError, match="Invalid Base64 encoding"):
             _decode_bytes(arg_types_and_values)
 
@@ -221,7 +218,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", None),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
         assert result["image"] is None
 
@@ -231,7 +228,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", test_data),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
         assert result["image"] == test_data
 
@@ -240,7 +237,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", 123),  # Invalid type
         }
-        
+
         with pytest.raises(ValueError, match="Expected base64 encoded string"):
             _decode_bytes(arg_types_and_values)
 
@@ -253,9 +250,9 @@ class TestLimitResources:
     def test_limit_resources_success(self, mock_resource):
         """Test successful resource limiting."""
         mock_resource.getrlimit.return_value = (8192, 16384)
-        
+
         _limit_resources(180, 8192)
-        
+
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_CPU, (180, 180))
         mock_resource.setrlimit.assert_any_call(
             mock_resource.RLIMIT_AS, (8192 * 1024 * 1024, 8192 * 1024 * 1024)
@@ -272,7 +269,7 @@ class TestLimitResources:
     def test_limit_resources_exception(self, mock_resource):
         """Test resource limiting with exception."""
         mock_resource.setrlimit.side_effect = Exception("Permission denied")
-        
+
         # Should not raise exception, just log error
         _limit_resources(180, 8192)
 
@@ -285,12 +282,12 @@ class TestEdgeCases:
         # Empty and None templates should be valid
         assert _validate_template_string(None)
         assert _validate_template_string("")
-        
+
         # Balanced braces
         assert _validate_template_string("No braces")
         assert _validate_template_string("Single {var}")
         assert _validate_template_string("Multiple {var1} and {var2}")
-        
+
         # Unbalanced braces should be invalid
         assert not _validate_template_string("Missing close {var")
         assert not _validate_template_string("Missing open var}")
@@ -299,11 +296,11 @@ class TestEdgeCases:
     def test_provider_mapping_edge_cases(self):
         """Test provider API key mapping edge cases."""
         api_keys = {"OPENAI_API_KEY": "test", "ANTHROPIC_API_KEY": "test2"}
-        
+
         # Case insensitive provider names
         assert _validate_provider_api_key("OpenAI", api_keys)
         assert _validate_provider_api_key("ANTHROPIC", api_keys)
-        
+
         # Unknown providers
         assert not _validate_provider_api_key("unknown_provider", api_keys)
         assert not _validate_provider_api_key("", api_keys)
@@ -314,7 +311,7 @@ class TestEdgeCases:
         arg_types_and_values = {"data": ("bytes", "")}
         result = _decode_bytes(arg_types_and_values)
         assert result["data"] == b""
-        
+
         # Valid base64 with padding
         test_data = "test"
         encoded = base64.b64encode(test_data.encode()).decode()
@@ -328,7 +325,7 @@ class TestEdgeCases:
         env_vars = {"OPENAI_API_KEY": ""}
         result = _validate_api_keys(env_vars)
         assert result["OPENAI_API_KEY"] == ""
-        
+
         # Missing keys
         env_vars = {}
         result = _validate_api_keys(env_vars)
@@ -342,15 +339,15 @@ class TestEdgeCases:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str", "trace_ctx": "TraceContext"}
-        
+
         assert _validate_function_data(function)
-        
+
         # Function with None values
         function = Mock()
         function.name = "valid_function"
         function.prompt_template = None
         function.call_params = None
         function.arg_types = {}
-        
+
         # Should still validate successfully
         assert _validate_function_data(function)

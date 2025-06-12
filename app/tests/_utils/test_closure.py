@@ -433,11 +433,13 @@ def test_closure_serialization():
 
 def test_get_qualified_name_with_locals():
     """Test get_qualified_name with local function."""
+
     def outer():
         def inner():
             return "inner"
+
         return inner
-    
+
     inner_fn = outer()
     result = get_qualified_name(inner_fn)
     assert result == "inner"  # Should return part after "<locals>."
@@ -503,19 +505,20 @@ def empty_function():
 def test_name_collector():
     """Test _NameCollector functionality."""
     import ast
+
     from lilypad._utils.closure import _NameCollector
 
-    code = '''
+    code = """
 def test():
     x = variable
     func_call()
     obj.attribute
     nested.attr.chain
-'''
+"""
     tree = ast.parse(code.strip())
     collector = _NameCollector()
     collector.visit(tree)
-    
+
     # Should collect various name types
     assert "variable" in collector.used_names
     assert "func_call" in collector.used_names
@@ -525,21 +528,22 @@ def test():
 def test_import_collector():
     """Test _ImportCollector functionality."""
     import ast
+
     from lilypad._utils.closure import _ImportCollector
-    
-    code = '''
+
+    code = """
 import os
 from sys import path
 import json as j
 used_module = os.path.join("a", "b")
-'''
+"""
     tree = ast.parse(code.strip())
     used_names = ["os", "path", "j"]
     site_packages = set()
-    
+
     collector = _ImportCollector(used_names, site_packages)
     collector.visit(tree)
-    
+
     # Should collect imports that are used
     assert len(collector.imports) > 0
 
@@ -547,18 +551,19 @@ used_module = os.path.join("a", "b")
 def test_local_assignment_collector():
     """Test _LocalAssignmentCollector functionality."""
     import ast
+
     from lilypad._utils.closure import _LocalAssignmentCollector
 
-    code = '''
+    code = """
 def test():
     x = 5
     y: int = 10
     z = x + y
-'''
+"""
     tree = ast.parse(code.strip())
     collector = _LocalAssignmentCollector()
     collector.visit(tree)
-    
+
     # Should collect local assignments
     assert "x" in collector.assignments
     assert "y" in collector.assignments
@@ -566,11 +571,12 @@ def test():
 
 
 def test_global_assignment_collector():
-    """Test _GlobalAssignmentCollector functionality.""" 
+    """Test _GlobalAssignmentCollector functionality."""
     import ast
+
     from lilypad._utils.closure import _GlobalAssignmentCollector
 
-    code = '''
+    code = """
 GLOBAL_VAR = 42
 GLOBAL_ANNOTATED: int = 100
 
@@ -579,12 +585,12 @@ def function():
 
 class TestClass:
     class_var = 2
-'''
+"""
     used_names = ["GLOBAL_VAR", "GLOBAL_ANNOTATED"]
     collector = _GlobalAssignmentCollector(used_names, code)
     tree = ast.parse(code.strip())
     collector.visit(tree)
-    
+
     # Should collect global assignments but not local/class ones
     assert len(collector.assignments) >= 1
 
@@ -592,21 +598,22 @@ class TestClass:
 def test_collect_parameter_names():
     """Test _collect_parameter_names functionality."""
     import ast
+
     from lilypad._utils.closure import _collect_parameter_names
 
-    code = '''
+    code = """
 def func(a, b, *args, c=None, **kwargs):
     pass
 
 def func2(x, y):
     pass
-'''
+"""
     tree = ast.parse(code.strip())
     params = _collect_parameter_names(tree)
-    
+
     # Should collect all parameter names
     assert "a" in params
-    assert "b" in params  
+    assert "b" in params
     assert "args" in params
     assert "c" in params
     assert "kwargs" in params
@@ -616,7 +623,8 @@ def func2(x, y):
 
 def test_extract_types():
     """Test _extract_types functionality."""
-    from typing import List, Optional, Union
+    from typing import Union
+
     from lilypad._utils.closure import _extract_types
 
     # Test basic type
@@ -624,10 +632,10 @@ def test_extract_types():
     assert int in types_found
 
     # Test generic type
-    types_found = _extract_types(List[str])
+    types_found = _extract_types(list[str])
     assert str in types_found
 
-    # Test union type  
+    # Test union type
     types_found = _extract_types(Union[int, str])
     assert int in types_found
     assert str in types_found
@@ -655,7 +663,7 @@ def function():
     """Docstring to remove."""
     return 42
 '''
-    
+
     cleaned = _clean_source_from_string(code)
     assert '"""Docstring to remove."""' not in cleaned
     assert "return 42" in cleaned
@@ -667,11 +675,12 @@ def test_get_class_source_from_method():
 
     class TestClass:
         """Test class docstring."""
+
         def method(self):
             return "test"
 
     obj = TestClass()
-    
+
     try:
         source = get_class_source_from_method(obj.method)
         assert "class TestClass" in source
@@ -683,21 +692,22 @@ def test_get_class_source_from_method():
 def test_qualified_name_rewriter():
     """Test _QualifiedNameRewriter functionality."""
     import libcst as cst
+
     from lilypad._utils.closure import _QualifiedNameRewriter
 
-    code = '''
+    code = """
 import some_module as sm
 result = sm.function()
 local_func()
-'''
-    
+"""
+
     local_names = {"local_func"}
     user_defined_imports = {"from some_module import function as sm"}
-    
+
     tree = cst.parse_module(code.strip())
     rewriter = _QualifiedNameRewriter(local_names, user_defined_imports)
     modified = tree.visit(rewriter)
-    
+
     # Should process the code
     assert modified.code is not None
 
@@ -712,7 +722,7 @@ def test_dependency_collector_with_property():
             return 42
 
     collector = _DependencyCollector()
-    
+
     # Test with property
     try:
         collector._collect_imports_and_source_code(TestClass.prop, True)
@@ -724,6 +734,7 @@ def test_dependency_collector_with_property():
 def test_dependency_collector_with_cached_property():
     """Test _DependencyCollector with cached_property."""
     from functools import cached_property
+
     from lilypad._utils.closure import _DependencyCollector
 
     class TestClass:
@@ -732,7 +743,7 @@ def test_dependency_collector_with_cached_property():
             return 42
 
     collector = _DependencyCollector()
-    
+
     # Test with cached_property
     try:
         collector._collect_imports_and_source_code(TestClass.cached_prop, True)
@@ -745,12 +756,12 @@ def test_run_ruff():
     """Test run_ruff functionality."""
     from lilypad._utils.closure import run_ruff
 
-    code = '''
+    code = """
 import    os
 def  test(  ):
     return   42
-'''
-    
+"""
+
     formatted = run_ruff(code)
     # Should be formatted
     assert "import os" in formatted

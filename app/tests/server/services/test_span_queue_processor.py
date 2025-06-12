@@ -908,8 +908,9 @@ class TestAdditionalCoverage:
         # Mock consumer
         mock_consumer = AsyncMock()
         from aiokafka.errors import KafkaError
-        
+
         call_count = 0
+
         async def side_effect(*args, **kwargs):
             nonlocal call_count
             call_count += 1
@@ -944,8 +945,9 @@ class TestAdditionalCoverage:
 
         # Mock consumer
         mock_consumer = AsyncMock()
-        
+
         call_count = 0
+
         async def side_effect(*args, **kwargs):
             nonlocal call_count
             call_count += 1
@@ -980,8 +982,9 @@ class TestAdditionalCoverage:
 
         # Mock consumer
         mock_consumer = AsyncMock()
-        
+
         call_count = 0
+
         async def side_effect(*args, **kwargs):
             nonlocal call_count
             call_count += 1
@@ -992,13 +995,15 @@ class TestAdditionalCoverage:
         mock_consumer.getmany.side_effect = side_effect
         processor.consumer = mock_consumer
 
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             await processor._process_queue()
 
         # Should log every 10th poll when no messages
         assert mock_logger.info.call_count >= 1
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_process_message_with_exception(self, mock_get_settings):
         """Test _process_message handles exceptions."""
@@ -1014,7 +1019,9 @@ class TestAdditionalCoverage:
 
         # Mock lock to raise exception
         with (
-            patch.object(processor._lock, "__aenter__", side_effect=Exception("Lock error")),
+            patch.object(
+                processor._lock, "__aenter__", side_effect=Exception("Lock error")
+            ),
             patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
         ):
             await processor._process_message(mock_record)
@@ -1034,17 +1041,21 @@ class TestAdditionalCoverage:
         # Empty buffer
         buffer = TraceBuffer("trace-123")
 
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             await processor._process_trace("trace-123", buffer)
 
-        mock_logger.warning.assert_called_with("No spans to process for trace trace-123")
+        mock_logger.warning.assert_called_with(
+            "No spans to process for trace trace-123"
+        )
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_process_trace_integrity_error(self, mock_get_settings):
         """Test _process_trace handles IntegrityError."""
         from sqlalchemy.exc import IntegrityError
-        
+
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
@@ -1060,8 +1071,10 @@ class TestAdditionalCoverage:
         ):
             mock_loop = Mock()
             mock_get_loop.return_value = mock_loop
-            mock_loop.run_in_executor = AsyncMock(side_effect=IntegrityError("stmt", "params", "orig"))
-            
+            mock_loop.run_in_executor = AsyncMock(
+                side_effect=IntegrityError("stmt", "params", "orig")
+            )
+
             await processor._process_trace("trace-123", buffer)
 
         mock_logger.error.assert_called()
@@ -1085,8 +1098,10 @@ class TestAdditionalCoverage:
         ):
             mock_loop = Mock()
             mock_get_loop.return_value = mock_loop
-            mock_loop.run_in_executor = AsyncMock(side_effect=Exception("Processing error"))
-            
+            mock_loop.run_in_executor = AsyncMock(
+                side_effect=Exception("Processing error")
+            )
+
             await processor._process_trace("trace-123", buffer)
 
         mock_logger.error.assert_called()
@@ -1105,6 +1120,7 @@ class TestAdditionalCoverage:
         processor._running = True
 
         call_count = 0
+
         async def mock_sleep(seconds):
             nonlocal call_count
             call_count += 1
@@ -1123,7 +1139,9 @@ class TestAdditionalCoverage:
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
-    async def test_force_process_incomplete_trace_missing_buffer(self, mock_get_settings):
+    async def test_force_process_incomplete_trace_missing_buffer(
+        self, mock_get_settings
+    ):
         """Test _force_process_incomplete_trace with missing buffer."""
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
@@ -1154,14 +1172,18 @@ class TestAdditionalCoverage:
             }
         ]
 
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             processor._process_trace_sync("trace-123", ordered_spans)
 
         mock_logger.warning.assert_called()
 
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     @patch("lilypad.server.services.span_queue_processor.get_session")
-    def test_process_trace_sync_user_not_found(self, mock_get_session, mock_get_settings):
+    def test_process_trace_sync_user_not_found(
+        self, mock_get_session, mock_get_settings
+    ):
         """Test _process_trace_sync when user is not found."""
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
@@ -1187,7 +1209,9 @@ class TestAdditionalCoverage:
             }
         ]
 
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             processor._process_trace_sync("trace-123", ordered_spans)
 
         mock_logger.debug.assert_called()
@@ -1231,7 +1255,9 @@ class TestAdditionalCoverage:
             }
         ]
 
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             processor._process_trace_sync("trace-123", ordered_spans)
 
         mock_logger.warning.assert_called()
@@ -1245,8 +1271,14 @@ class TestAdditionalCoverage:
 
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
-        with patch("lilypad.server.services.span_queue_processor.get_settings", return_value=mock_settings):
+        with patch(
+            "lilypad.server.services.span_queue_processor.get_settings",
+            return_value=mock_settings,
+        ):
             processor = get_span_queue_processor()
 
         assert isinstance(processor, SpanQueueProcessor)
-        assert lilypad.server.services.span_queue_processor._processor_instance is processor
+        assert (
+            lilypad.server.services.span_queue_processor._processor_instance
+            is processor
+        )

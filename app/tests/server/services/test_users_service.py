@@ -373,34 +373,35 @@ def test_get_user_not_found_in_database(db_session: Session):
     # Create a user that doesn't exist in the database
     nonexistent_user = UserPublic(
         uuid=uuid4(),
-        email="nonexistent@test.com", 
+        email="nonexistent@test.com",
         first_name="Nonexistent",
-        active_organization_uuid=None
+        active_organization_uuid=None,
     )
-    
+
     user_service = UserService(session=db_session, user=nonexistent_user)
-    
+
     # get_user() should raise HTTPException when the user is not found
     from fastapi import HTTPException
+
     with pytest.raises(HTTPException) as exc_info:
         user_service.get_user()
-    
+
     assert exc_info.value.status_code == 404
     assert "Record for users not found" in str(exc_info.value.detail)
 
 
 def test_update_user_keys_method(db_session: Session):
     """Test update_user_keys method (lines 46-51)."""
-    # Create a user in the database  
+    # Create a user in the database
     user = UserTable(
         email="updatekeys@test.com",
-        first_name="Update", 
+        first_name="Update",
         last_name="Keys",
-        keys={"old_key": "old_value"}
+        keys={"old_key": "old_value"},
     )
     db_session.add(user)
     db_session.commit()
-    
+
     # Create UserService with the actual user
     assert user.uuid is not None  # Type guard
     user_public = UserPublic(
@@ -410,15 +411,15 @@ def test_update_user_keys_method(db_session: Session):
         active_organization_uuid=user.active_organization_uuid,
     )
     user_service = UserService(session=db_session, user=user_public)
-    
+
     # Test update_user_keys method
     new_keys = {"api_key": "new_secret", "another_key": "another_value"}
     updated_user = user_service.update_user_keys(new_keys)
-    
+
     # Verify the keys were updated
     assert updated_user.keys == new_keys
     assert updated_user.uuid == user.uuid
-    
+
     # Verify in database
     db_session.refresh(user)
     assert user.keys == new_keys

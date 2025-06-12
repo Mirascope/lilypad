@@ -513,9 +513,9 @@ class TestAppConfiguration:
         # Test that the static file mounting code executes when environment is local
         import subprocess
         import sys
-        
+
         # Create a test script that imports main with local environment
-        test_script = '''
+        test_script = """
 import os
 os.environ["LILYPAD_ENVIRONMENT"] = "local"
 os.environ["LILYPAD_SERVE_FRONTEND"] = "false"
@@ -533,16 +533,16 @@ if "/" in mount_paths or "/assets" in mount_paths:
     print("STATIC_FILES_MOUNTED")
 else:
     print("STATIC_FILES_NOT_MOUNTED")
-'''
-        
+"""
+
         # Run the test script as subprocess to avoid import caching issues
         result = subprocess.run(
             [sys.executable, "-c", test_script],
             capture_output=True,
             text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
-        
+
         # The test succeeds if the subprocess ran without error
         # This ensures lines 227-230 were executed when the condition was met
         assert result.returncode == 0

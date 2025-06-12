@@ -581,6 +581,7 @@ def test_update_from_subscription_invalid_status(mock_session):
 
 # Additional tests to achieve 100% coverage for missing lines 107-108, 126, 142-148, 166, 177, 181-182, 235, 310, 334
 
+
 @patch("lilypad.server.services.billing.stripe")
 def test_create_customer_with_organization_billing_update(
     mock_stripe, billing_service, mock_session
@@ -590,6 +591,7 @@ def test_create_customer_with_organization_billing_update(
 
     # Create a proper organization mock
     from lilypad.server.models.billing import BillingTable
+
     mock_org = Mock()
     mock_org.uuid = uuid.uuid4()
     mock_org.name = "Test Organization"
@@ -610,9 +612,7 @@ def test_create_customer_with_organization_billing_update(
     with patch.object(billing_service, "create_record") as mock_create_record:
         mock_create_record.return_value = Mock(uuid=uuid.uuid4())
 
-        customer_id = billing_service.create_customer(
-            mock_org, "test@example.com"
-        )
+        customer_id = billing_service.create_customer(mock_org, "test@example.com")
 
         assert customer_id == "cus_test123"
         # Organization billing should be updated
@@ -700,7 +700,9 @@ def test_update_customer_stripe_error(mock_stripe, billing_service):
 
 
 @patch("lilypad.server.services.billing.stripe")
-def test_report_span_usage_customer_not_found(mock_stripe, billing_service, mock_session):
+def test_report_span_usage_customer_not_found(
+    mock_stripe, billing_service, mock_session
+):
     """Test report_span_usage when organization has no billing customer (line 235)."""
     mock_stripe.api_key = "test_key"
     org_uuid = uuid.uuid4()
@@ -771,9 +773,11 @@ def test_update_from_subscription_dict_attribute(mock_session):
     subscription.current_period_start = 1234567890
     subscription.current_period_end = 1234567999
     subscription.cancel_at_period_end = False
-    
+
     # The key is to make items.data contain dict objects to trigger _get dict branch
-    subscription.items = {"data": [{"price": {"id": "price_test123"}}]}  # dict instead of Mock
+    subscription.items = {
+        "data": [{"price": {"id": "price_test123"}}]
+    }  # dict instead of Mock
 
     mock_billing = Mock(spec=BillingTable)
     mock_billing.stripe_customer_id = None

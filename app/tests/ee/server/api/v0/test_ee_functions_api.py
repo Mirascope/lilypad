@@ -1,12 +1,10 @@
 """Tests for the EE functions API playground functionality."""
 
 import base64
-import json
 import tempfile
-import uuid
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,9 +24,7 @@ from lilypad.ee.server.api.v0.functions_api import (
 )
 from lilypad.server.models import FunctionTable, ProjectTable
 from lilypad.server.schemas.functions import (
-    AcceptedValue,
     PlaygroundErrorType,
-    PlaygroundParameters,
     Provider,
 )
 from lilypad.server.schemas.users import UserPublic
@@ -104,7 +100,7 @@ class TestValidationFunctions:
         assert not _validate_python_identifier("invalid.name")
         assert not _validate_python_identifier("class")  # Python keyword
         # Note: len is in dir(__builtins__) check, but the actual implementation may vary
-        result = _validate_python_identifier("len")
+        _validate_python_identifier("len")
         # Just verify it's being checked, don't assert exact result
 
     def test_validate_template_string_valid(self):
@@ -147,7 +143,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert _validate_function_data(function)
 
     def test_validate_function_data_invalid_name(self):
@@ -157,7 +153,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_template(self):
@@ -167,7 +163,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {__dunder__}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_call_params(self):
@@ -177,7 +173,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"func": lambda x: x}  # Not JSON serializable
         function.arg_types = {"arg1": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_function_data_invalid_arg_types(self):
@@ -187,7 +183,7 @@ class TestValidationFunctions:
         function.prompt_template = "Hello {arg1}"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"123invalid": "str"}
-        
+
         assert not _validate_function_data(function)
 
     def test_validate_api_keys_valid(self):
@@ -197,9 +193,9 @@ class TestValidationFunctions:
             "ANTHROPIC_API_KEY": "sk-ant-abcdef1234567890",
             "OTHER_VAR": "some_value",
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert "OPENAI_API_KEY" in result
         assert "ANTHROPIC_API_KEY" in result
         assert "OTHER_VAR" in result
@@ -211,9 +207,9 @@ class TestValidationFunctions:
             "ANTHROPIC_API_KEY": "sk-test`whoami`",
             "GOOGLE_API_KEY": "valid_key_with_underscore_and_dash-123",
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert result["OPENAI_API_KEY"] == ""
         assert result["ANTHROPIC_API_KEY"] == ""
         assert result["GOOGLE_API_KEY"] == "valid_key_with_underscore_and_dash-123"
@@ -224,9 +220,9 @@ class TestValidationFunctions:
             "OPENAI_API_KEY": "too_short",
             "ANTHROPIC_API_KEY": "way_too_long_" + "x" * 200,
         }
-        
+
         result = _validate_api_keys(env_vars)
-        
+
         assert result["OPENAI_API_KEY"] == ""
         assert result["ANTHROPIC_API_KEY"] == ""
 
@@ -236,7 +232,7 @@ class TestValidationFunctions:
             "OPENAI_API_KEY": "sk-test123",
             "ANTHROPIC_API_KEY": "sk-ant-test123",
         }
-        
+
         assert _validate_provider_api_key("openai", api_keys)
         assert _validate_provider_api_key("anthropic", api_keys)
         assert not _validate_provider_api_key("gemini", api_keys)
@@ -246,9 +242,9 @@ class TestValidationFunctions:
         """Test argument sanitization."""
         arg_types = {"arg1": "str", "arg2": "int", "arg3": "bytes"}
         arg_values = {"arg1": "hello", "arg2": 42, "arg4": "extra"}
-        
+
         result = sanitize_arg_types_and_values(arg_types, arg_values)
-        
+
         expected = {
             "arg1": ("str", "hello"),
             "arg2": ("int", 42),
@@ -263,14 +259,14 @@ class TestDecodeBytes:
         """Test decoding valid base64 strings."""
         test_data = b"hello world"
         encoded = base64.b64encode(test_data).decode("utf-8")
-        
+
         arg_types_and_values = {
             "image": ("bytes", encoded),
             "text": ("str", "hello"),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
-        
+
         assert result["image"] == test_data
         assert result["text"] == "hello"
 
@@ -279,7 +275,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", "invalid_base64!"),
         }
-        
+
         with pytest.raises(ValueError, match="Invalid Base64 encoding"):
             _decode_bytes(arg_types_and_values)
 
@@ -288,7 +284,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", None),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
         assert result["image"] is None
 
@@ -298,7 +294,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", test_data),
         }
-        
+
         result = _decode_bytes(arg_types_and_values)
         assert result["image"] == test_data
 
@@ -307,7 +303,7 @@ class TestDecodeBytes:
         arg_types_and_values = {
             "image": ("bytes", 123),  # Invalid type
         }
-        
+
         with pytest.raises(ValueError, match="Expected base64 encoded string"):
             _decode_bytes(arg_types_and_values)
 
@@ -320,9 +316,9 @@ class TestLimitResources:
     def test_limit_resources_success(self, mock_resource):
         """Test successful resource limiting."""
         mock_resource.getrlimit.return_value = (8192, 16384)
-        
+
         _limit_resources(180, 8192)
-        
+
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_CPU, (180, 180))
         mock_resource.setrlimit.assert_any_call(
             mock_resource.RLIMIT_AS, (8192 * 1024 * 1024, 8192 * 1024 * 1024)
@@ -339,7 +335,7 @@ class TestLimitResources:
     def test_limit_resources_exception(self, mock_resource):
         """Test resource limiting with exception."""
         mock_resource.setrlimit.side_effect = Exception("Permission denied")
-        
+
         # Should not raise exception, just log error
         _limit_resources(180, 8192)
 
@@ -354,7 +350,7 @@ class TestRunPlayground:
         mock_settings = Mock()
         mock_settings.playground_venv_path = "/tmp/test_venv"
         mock_get_settings.return_value = mock_settings
-        
+
         # Create a temporary python executable
         with tempfile.TemporaryDirectory() as tmpdir:
             venv_path = Path(tmpdir) / "venv"
@@ -363,18 +359,18 @@ class TestRunPlayground:
             python_exe = bin_path / "python"
             python_exe.write_text("#!/bin/bash\necho 'mock python'")
             python_exe.chmod(0o755)
-            
+
             mock_settings.playground_venv_path = str(venv_path)
-            
+
             # Mock successful subprocess run
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = '__JSON_START__{"result": "success"}__JSON_END__'
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = _run_playground("print('hello')", {"ENV_VAR": "value"})
-            
+
             assert result == {"result": "success"}
 
     @patch("lilypad.ee.server.api.v0.functions_api.get_settings")
@@ -383,9 +379,9 @@ class TestRunPlayground:
         mock_settings = Mock()
         mock_settings.playground_venv_path = "/nonexistent/path"
         mock_get_settings.return_value = mock_settings
-        
+
         result = _run_playground("print('hello')", {"ENV_VAR": "value"})
-        
+
         assert "error" in result
         assert result["error"]["type"] == PlaygroundErrorType.CONFIGURATION
 
@@ -396,7 +392,7 @@ class TestRunPlayground:
         mock_settings = Mock()
         mock_settings.playground_venv_path = "/tmp/test_venv"
         mock_get_settings.return_value = mock_settings
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             venv_path = Path(tmpdir) / "venv"
             bin_path = venv_path / "bin"
@@ -404,15 +400,16 @@ class TestRunPlayground:
             python_exe = bin_path / "python"
             python_exe.write_text("#!/bin/bash\necho 'mock python'")
             python_exe.chmod(0o755)
-            
+
             mock_settings.playground_venv_path = str(venv_path)
-            
+
             # Mock timeout exception
             from subprocess import TimeoutExpired
+
             mock_run.side_effect = TimeoutExpired("python", 60)
-            
+
             result = _run_playground("print('hello')", {"ENV_VAR": "value"})
-            
+
             assert "error" in result
             assert result["error"]["type"] == PlaygroundErrorType.TIMEOUT
 
@@ -423,7 +420,7 @@ class TestRunPlayground:
         mock_settings = Mock()
         mock_settings.playground_venv_path = "/tmp/test_venv"
         mock_get_settings.return_value = mock_settings
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             venv_path = Path(tmpdir) / "venv"
             bin_path = venv_path / "bin"
@@ -431,18 +428,18 @@ class TestRunPlayground:
             python_exe = bin_path / "python"
             python_exe.write_text("#!/bin/bash\necho 'mock python'")
             python_exe.chmod(0o755)
-            
+
             mock_settings.playground_venv_path = str(venv_path)
-            
+
             # Mock failed execution
             mock_result = Mock()
             mock_result.returncode = 1
             mock_result.stdout = ""
             mock_result.stderr = "ValueError: Something went wrong"
             mock_run.return_value = mock_result
-            
+
             result = _run_playground("print('hello')", {"ENV_VAR": "value"})
-            
+
             assert "error" in result
             assert result["error"]["type"] == PlaygroundErrorType.EXECUTION_ERROR
 
@@ -453,7 +450,7 @@ class TestRunPlayground:
         mock_settings = Mock()
         mock_settings.playground_venv_path = "/tmp/test_venv"
         mock_get_settings.return_value = mock_settings
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             venv_path = Path(tmpdir) / "venv"
             bin_path = venv_path / "bin"
@@ -461,18 +458,18 @@ class TestRunPlayground:
             python_exe = bin_path / "python"
             python_exe.write_text("#!/bin/bash\necho 'mock python'")
             python_exe.chmod(0o755)
-            
+
             mock_settings.playground_venv_path = str(venv_path)
-            
+
             # Mock successful run but no output markers
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = "Some output without markers"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = _run_playground("print('hello')", {"ENV_VAR": "value"})
-            
+
             assert "error" in result
             assert result["error"]["type"] == PlaygroundErrorType.OUTPUT_MARKER
 
@@ -487,19 +484,16 @@ class TestPlaygroundAPI:
         """Test playground run with non-existent function."""
         # Import the EE API to ensure it's loaded
         from lilypad.ee.server.api.v0.functions_api import run_playground
-        
-        playground_params = {
-            "provider": "openai",
-            "model": "gpt-4",
-            "arg_values": {},
-        }
-        
+
+
         # Test the function directly instead of via HTTP
-        with patch("lilypad.ee.server.api.v0.functions_api.FunctionService") as mock_function_service:
+        with patch(
+            "lilypad.ee.server.api.v0.functions_api.FunctionService"
+        ) as mock_function_service:
             mock_service = Mock()
             mock_service.find_record_by_uuid.return_value = None
             mock_function_service.return_value = mock_service
-            
+
             with pytest.raises(Exception):  # Should raise HTTPException
                 run_playground(
                     test_project.uuid,
@@ -527,20 +521,20 @@ class TestPlaygroundAPI:
         mock_external_api_service = Mock()
         mock_external_api_service.list_api_keys.return_value = {}
         mock_external_api_service_cls.return_value = mock_external_api_service
-        
+
         mock_span_service_cls.return_value = Mock()
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 400
         assert "Missing API key" in str(response.json())
 
@@ -565,34 +559,37 @@ class TestPlaygroundAPI:
         mock_span, mock_span_service_instance = mock_span_service
         mock_external_api_service_cls.return_value = mock_external_api_service
         mock_span_service_cls.return_value = mock_span_service_instance
-        
+
         # Mock successful formatting
         mock_run_ruff.return_value = "formatted_code"
-        
+
         # Mock successful playground execution
         mock_run_playground.return_value = {
             "result": "Hello test",
             "span_id": "test_span_id",
         }
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "result" in data
         assert "trace_context" in data
 
     def test_run_playground_invalid_provider(
-        self, client: TestClient, test_project: ProjectTable, test_function_with_template: FunctionTable
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+        test_function_with_template: FunctionTable,
     ):
         """Test playground run with invalid provider format."""
         playground_params = {
@@ -600,17 +597,20 @@ class TestPlaygroundAPI:
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 400
         assert "Invalid provider" in str(response.json())
 
     def test_run_playground_invalid_arg_name(
-        self, client: TestClient, test_project: ProjectTable, test_function_with_template: FunctionTable
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+        test_function_with_template: FunctionTable,
     ):
         """Test playground run with invalid argument name."""
         playground_params = {
@@ -619,17 +619,20 @@ class TestPlaygroundAPI:
             "arg_types": {"123invalid": "str"},
             "arg_values": {"123invalid": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 400
         assert "Invalid argument name" in str(response.json())
 
     def test_run_playground_invalid_base64(
-        self, client: TestClient, test_project: ProjectTable, test_function_with_template: FunctionTable
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+        test_function_with_template: FunctionTable,
     ):
         """Test playground run with invalid base64 encoding."""
         playground_params = {
@@ -638,12 +641,12 @@ class TestPlaygroundAPI:
             "arg_types": {"image": "bytes"},
             "arg_values": {"image": "invalid_base64!"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 400
         assert "Invalid argument value encoding" in str(response.json())
 
@@ -661,18 +664,18 @@ class TestPlaygroundAPI:
         mock_external_api_service = Mock()
         mock_external_api_service.list_api_keys.side_effect = Exception("API key error")
         mock_external_api_service_cls.return_value = mock_external_api_service
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 500
         assert "Failed to retrieve external API keys" in str(response.json())
 
@@ -697,27 +700,27 @@ class TestPlaygroundAPI:
         mock_span, mock_span_service_instance = mock_span_service
         mock_external_api_service_cls.return_value = mock_external_api_service
         mock_span_service_cls.return_value = mock_span_service_instance
-        
+
         # Mock ruff formatting failure
         mock_run_ruff.side_effect = Exception("Ruff error")
-        
+
         # Mock successful playground execution
         mock_run_playground.return_value = {
             "result": "Hello test",
             "span_id": "test_span_id",
         }
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         # Should still succeed, just use unformatted code
         assert response.status_code == 200
 
@@ -742,9 +745,9 @@ class TestPlaygroundAPI:
         mock_span, mock_span_service_instance = mock_span_service
         mock_external_api_service_cls.return_value = mock_external_api_service
         mock_span_service_cls.return_value = mock_span_service_instance
-        
+
         mock_run_ruff.return_value = "formatted_code"
-        
+
         # Mock playground execution error
         mock_run_playground.return_value = {
             "error": {
@@ -753,18 +756,18 @@ class TestPlaygroundAPI:
                 "details": "Test error details",
             }
         }
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 400
         assert "error" in response.json()
 
@@ -786,35 +789,38 @@ class TestPlaygroundAPI:
     ):
         """Test playground run with missing span_id in response."""
         mock_external_api_service_cls.return_value = mock_external_api_service
-        
+
         # Mock span service that doesn't find span
         mock_span_service_instance = Mock()
         mock_span_service_instance.get_record_by_span_id.return_value = None
         mock_span_service_cls.return_value = mock_span_service_instance
-        
+
         mock_run_ruff.return_value = "formatted_code"
-        
+
         # Mock playground execution without span_id
         mock_run_playground.return_value = {
             "result": "Hello test",
         }
-        
+
         playground_params = {
             "provider": "openai",
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
+
         response = client.post(
             f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
-        
+
         assert response.status_code == 500
         assert "Missing span_id" in str(response.json())
 
     def test_run_playground_unexpected_error(
-        self, client: TestClient, test_project: ProjectTable, test_function_with_template: FunctionTable
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+        test_function_with_template: FunctionTable,
     ):
         """Test playground run with unexpected error."""
         # Force an unexpected error by using invalid project UUID format
@@ -823,17 +829,21 @@ class TestPlaygroundAPI:
             "model": "gpt-4",
             "arg_values": {"arg1": "test"},
         }
-        
-        with patch("lilypad.ee.server.api.v0.functions_api.FunctionService") as mock_service:
+
+        with patch(
+            "lilypad.ee.server.api.v0.functions_api.FunctionService"
+        ) as mock_service:
             mock_service_instance = Mock()
-            mock_service_instance.find_record_by_uuid.side_effect = Exception("Unexpected error")
+            mock_service_instance.find_record_by_uuid.side_effect = Exception(
+                "Unexpected error"
+            )
             mock_service.return_value = mock_service_instance
-            
+
             response = client.post(
                 f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
                 json=playground_params,
             )
-            
+
             assert response.status_code == 500
             assert "unexpected server error" in str(response.json()).lower()
 
@@ -849,7 +859,7 @@ class TestEdgeCases:
         function.prompt_template = "Valid template"
         function.call_params = {"temperature": 0.7}
         function.arg_types = {"arg1": "str"}
-        
+
         # This would be caught by _validate_function_data in the API
         assert not _validate_function_data(function)
 
@@ -858,12 +868,12 @@ class TestEdgeCases:
         # Empty and None templates should be valid
         assert _validate_template_string(None)
         assert _validate_template_string("")
-        
+
         # Balanced braces
         assert _validate_template_string("No braces")
         assert _validate_template_string("Single {var}")
         assert _validate_template_string("Multiple {var1} and {var2}")
-        
+
         # Unbalanced braces should be invalid
         assert not _validate_template_string("Missing close {var")
         assert not _validate_template_string("Missing open var}")
@@ -872,11 +882,11 @@ class TestEdgeCases:
     def test_provider_mapping_edge_cases(self):
         """Test provider API key mapping edge cases."""
         api_keys = {"OPENAI_API_KEY": "test", "ANTHROPIC_API_KEY": "test2"}
-        
+
         # Case insensitive provider names
         assert _validate_provider_api_key("OpenAI", api_keys)
         assert _validate_provider_api_key("ANTHROPIC", api_keys)
-        
+
         # Unknown providers
         assert not _validate_provider_api_key("unknown_provider", api_keys)
         assert not _validate_provider_api_key("", api_keys)
@@ -887,7 +897,7 @@ class TestEdgeCases:
         arg_types_and_values = {"data": ("bytes", "")}
         result = _decode_bytes(arg_types_and_values)
         assert result["data"] == b""
-        
+
         # Valid base64 with padding
         test_data = "test"
         encoded = base64.b64encode(test_data.encode()).decode()

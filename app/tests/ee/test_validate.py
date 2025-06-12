@@ -3,9 +3,9 @@
 import base64
 import json
 import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, mock_open
-from uuid import UUID, uuid4
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, mock_open, patch
+from uuid import uuid4
 
 import pytest
 from cryptography.hazmat.primitives import hashes, serialization
@@ -50,16 +50,14 @@ class TestTier:
 
     def test_tier_json_schema(self):
         """Test tier JSON schema generation."""
-        from pydantic.json_schema import GenerateJsonSchema
-        
         # Mock core schema and handler
         mock_core_schema = Mock()
         mock_handler = Mock()
         mock_handler.return_value = {"type": "integer"}
         mock_handler.resolve_ref_schema.return_value = {"type": "integer"}
-        
+
         result = Tier.__get_pydantic_json_schema__(mock_core_schema, mock_handler)
-        
+
         assert "x-enum-varnames" in result
         assert result["x-enum-varnames"] == ["FREE", "PRO", "TEAM", "ENTERPRISE"]
 
@@ -81,7 +79,7 @@ class TestEnsureUtc:
         # Create datetime in EST (UTC-5)
         est = timezone(timedelta(hours=-5))
         dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=est)
-        
+
         result = _ensure_utc(dt)
         assert result.tzinfo == timezone.utc
         # Should be converted to 17:00 UTC
@@ -102,7 +100,7 @@ class TestLicenseInfo:
         """Test creating LicenseInfo."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=30)
         org_uuid = uuid4()
-        
+
         license_info = LicenseInfo(
             customer="Test Customer",
             license_id="test-license-123",
@@ -110,7 +108,7 @@ class TestLicenseInfo:
             tier=Tier.ENTERPRISE,
             organization_uuid=org_uuid,
         )
-        
+
         assert license_info.customer == "Test Customer"
         assert license_info.license_id == "test-license-123"
         assert license_info.expires_at == expires_at
@@ -120,7 +118,7 @@ class TestLicenseInfo:
     def test_license_info_is_expired_false(self):
         """Test license that is not expired."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-        
+
         license_info = LicenseInfo(
             customer="Test Customer",
             license_id="test-license-123",
@@ -128,13 +126,13 @@ class TestLicenseInfo:
             tier=Tier.ENTERPRISE,
             organization_uuid=uuid4(),
         )
-        
+
         assert not license_info.is_expired
 
     def test_license_info_is_expired_true(self):
         """Test license that is expired."""
         expires_at = datetime.now(timezone.utc) - timedelta(days=1)
-        
+
         license_info = LicenseInfo(
             customer="Test Customer",
             license_id="test-license-123",
@@ -142,13 +140,13 @@ class TestLicenseInfo:
             tier=Tier.ENTERPRISE,
             organization_uuid=uuid4(),
         )
-        
+
         assert license_info.is_expired
 
     def test_license_info_none_organization_uuid(self):
         """Test license with None organization UUID."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-        
+
         license_info = LicenseInfo(
             customer="Test Customer",
             license_id="test-license-123",
@@ -156,7 +154,7 @@ class TestLicenseInfo:
             tier=Tier.ENTERPRISE,
             organization_uuid=None,
         )
-        
+
         assert license_info.organization_uuid is None
 
 
@@ -176,14 +174,14 @@ class TestLicenseValidator:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         # Mock file reading
         mock_file = mock_open(read_data=public_key_pem.decode())
         mock_path = Mock()
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         validator = LicenseValidator()
         assert validator.public_key is not None
         assert validator.cache_duration == 3600
@@ -191,8 +189,10 @@ class TestLicenseValidator:
     @patch("ee.validate.resources.files")
     def test_license_validator_init_file_not_found(self, mock_resources):
         """Test LicenseValidator initialization with missing file."""
-        mock_resources.return_value.joinpath.return_value.open.side_effect = FileNotFoundError("File not found")
-        
+        mock_resources.return_value.joinpath.return_value.open.side_effect = (
+            FileNotFoundError("File not found")
+        )
+
         with pytest.raises(LicenseError, match="Failed to load public key"):
             LicenseValidator()
 
@@ -205,7 +205,7 @@ class TestLicenseValidator:
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         with pytest.raises(LicenseError, match="Failed to load public key"):
             LicenseValidator()
 
@@ -214,20 +214,20 @@ class TestLicenseValidator:
         """Test LicenseValidator initialization with non-RSA key."""
         # Create an EC key instead of RSA
         from cryptography.hazmat.primitives.asymmetric import ec
-        
+
         private_key = ec.generate_private_key(ec.SECP256R1())
         public_key = private_key.public_key()
         public_key_pem = public_key.serialize(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         mock_file = mock_open(read_data=public_key_pem.decode())
         mock_path = Mock()
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         with pytest.raises(LicenseError, match="Public key must be an RSA key"):
             LicenseValidator()
 
@@ -241,15 +241,15 @@ class TestLicenseValidator:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         mock_file = mock_open(read_data=public_key_pem.decode())
         mock_path = Mock()
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         validator = LicenseValidator()
-        
+
         # Create cached license info
         cached_license = LicenseInfo(
             customer="Test Customer",
@@ -260,11 +260,11 @@ class TestLicenseValidator:
         )
         validator._license_cache = cached_license
         validator._cache_timestamp = time.time()
-        
+
         # Mock organization service
         org_uuid = uuid4()
         mock_org_service = Mock()
-        
+
         # Should return cached result
         result = validator.validate_license(org_uuid, mock_org_service)
         assert result == cached_license
@@ -280,20 +280,20 @@ class TestLicenseValidator:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         mock_file = mock_open(read_data=public_key_pem.decode())
         mock_path = Mock()
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         validator = LicenseValidator()
-        
+
         # Mock organization service returning no license
         org_uuid = uuid4()
         mock_org_service = Mock()
         mock_org_service.get_organization_license.return_value = None
-        
+
         result = validator.validate_license(org_uuid, mock_org_service)
         assert result is None
         assert validator._license_cache is None
@@ -308,15 +308,15 @@ class TestLicenseValidator:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         mock_file = mock_open(read_data=public_key_pem.decode())
         mock_path = Mock()
         mock_path.open.return_value.__enter__ = mock_file
         mock_path.open.return_value.__exit__ = Mock(return_value=None)
         mock_resources.return_value.joinpath.return_value = mock_path
-        
+
         validator = LicenseValidator()
-        
+
         # Create cached license info
         cached_license = LicenseInfo(
             customer="Old Customer",
@@ -327,12 +327,12 @@ class TestLicenseValidator:
         )
         validator._license_cache = cached_license
         validator._cache_timestamp = time.time()
-        
+
         # Mock organization service with new license
         org_uuid = uuid4()
         mock_org_service = Mock()
         mock_org_service.get_organization_license.return_value = "new.license.key"
-        
+
         # Mock verify_license to return new license
         new_license = LicenseInfo(
             customer="New Customer",
@@ -341,9 +341,11 @@ class TestLicenseValidator:
             tier=Tier.ENTERPRISE,
             organization_uuid=org_uuid,
         )
-        
-        with patch.object(validator, 'verify_license', return_value=new_license):
-            result = validator.validate_license(org_uuid, mock_org_service, refresh=True)
+
+        with patch.object(validator, "verify_license", return_value=new_license):
+            result = validator.validate_license(
+                org_uuid, mock_org_service, refresh=True
+            )
             assert result == new_license
             assert validator._license_cache == new_license
 
@@ -359,18 +361,20 @@ class TestVerifyLicense:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        
+
         with patch("ee.validate.resources.files") as mock_resources:
             mock_file = mock_open(read_data=public_key_pem.decode())
             mock_path = Mock()
             mock_path.open.return_value.__enter__ = mock_file
             mock_path.open.return_value.__exit__ = Mock(return_value=None)
             mock_resources.return_value.joinpath.return_value = mock_path
-            
+
             validator = LicenseValidator()
             return validator, private_key
 
-    def _create_valid_license_key(self, private_key, organization_uuid=None, expired=False):
+    def _create_valid_license_key(
+        self, private_key, organization_uuid=None, expired=False
+    ):
         """Helper to create a valid license key."""
         org_uuid = organization_uuid or uuid4()
         expires_at = datetime.now(timezone.utc)
@@ -378,7 +382,7 @@ class TestVerifyLicense:
             expires_at += timedelta(days=30)
         else:
             expires_at -= timedelta(days=1)
-        
+
         data = {
             "customer": "Test Customer",
             "license_id": "test-license-123",
@@ -386,7 +390,7 @@ class TestVerifyLicense:
             "tier": Tier.ENTERPRISE.value,
             "organization_uuid": str(org_uuid),
         }
-        
+
         data_bytes = json.dumps(data).encode("utf-8")
         signature = private_key.sign(
             data_bytes,
@@ -396,19 +400,19 @@ class TestVerifyLicense:
             ),
             hashes.SHA256(),
         )
-        
+
         data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
         sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
-        
+
         return f"{data_b64}.{sig_b64}", org_uuid
 
     def test_verify_license_valid(self):
         """Test verifying a valid license."""
         validator, private_key = self._create_test_validator()
         license_key, org_uuid = self._create_valid_license_key(private_key)
-        
+
         result = validator.verify_license(license_key, org_uuid)
-        
+
         assert isinstance(result, LicenseInfo)
         assert result.customer == "Test Customer"
         assert result.license_id == "test-license-123"
@@ -418,7 +422,7 @@ class TestVerifyLicense:
     def test_verify_license_invalid_format(self):
         """Test verifying license with invalid format."""
         validator, _ = self._create_test_validator()
-        
+
         with pytest.raises(LicenseError, match="Invalid license key format"):
             validator.verify_license("invalid_format")
 
@@ -426,18 +430,18 @@ class TestVerifyLicense:
         """Test verifying license with invalid signature."""
         validator, private_key = self._create_test_validator()
         license_key, _ = self._create_valid_license_key(private_key)
-        
+
         # Corrupt the signature
         data_part, sig_part = license_key.split(".")
         corrupted_license = f"{data_part}.{sig_part[:-1]}X"
-        
+
         with pytest.raises(LicenseError, match="Invalid license signature"):
             validator.verify_license(corrupted_license)
 
     def test_verify_license_invalid_json(self):
         """Test verifying license with invalid JSON data."""
         validator, private_key = self._create_test_validator()
-        
+
         # Create license with invalid JSON
         invalid_data = b"invalid json data"
         signature = private_key.sign(
@@ -448,11 +452,11 @@ class TestVerifyLicense:
             ),
             hashes.SHA256(),
         )
-        
+
         data_b64 = base64.urlsafe_b64encode(invalid_data).rstrip(b"=").decode("ascii")
         sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
         license_key = f"{data_b64}.{sig_b64}"
-        
+
         with pytest.raises(LicenseError, match="Invalid license format"):
             validator.verify_license(license_key)
 
@@ -460,22 +464,24 @@ class TestVerifyLicense:
         """Test verifying license with organization UUID mismatch."""
         validator, private_key = self._create_test_validator()
         license_key, org_uuid = self._create_valid_license_key(private_key)
-        
+
         different_org_uuid = uuid4()
-        
-        with pytest.raises(LicenseError, match="License key does not match organization"):
+
+        with pytest.raises(
+            LicenseError, match="License key does not match organization"
+        ):
             validator.verify_license(license_key, different_org_uuid)
 
     def test_verify_license_invalid_data_fields(self):
         """Test verifying license with invalid data fields."""
         validator, private_key = self._create_test_validator()
-        
+
         # Create license with missing required fields
         data = {
             "customer": "Test Customer",
             # Missing license_id, exp, tier, organization_uuid
         }
-        
+
         data_bytes = json.dumps(data).encode("utf-8")
         signature = private_key.sign(
             data_bytes,
@@ -485,11 +491,11 @@ class TestVerifyLicense:
             ),
             hashes.SHA256(),
         )
-        
+
         data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
         sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
         license_key = f"{data_b64}.{sig_b64}"
-        
+
         with pytest.raises(LicenseError, match="Invalid license data"):
             validator.verify_license(license_key)
 
@@ -509,10 +515,10 @@ class TestGenerateLicense:
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
         )
-        
+
         expires_at = datetime.now(timezone.utc) + timedelta(days=30)
         org_uuid = str(uuid4())
-        
+
         with patch("builtins.open", mock_open(read_data=private_key_pem.decode())):
             license_key = generate_license(
                 private_key_path="/fake/path/private.pem",
@@ -523,7 +529,7 @@ class TestGenerateLicense:
                 tier=Tier.ENTERPRISE,
                 organization_uuid=org_uuid,
             )
-        
+
         # Verify the generated license has correct format
         assert "." in license_key
         data_part, sig_part = license_key.split(".")
@@ -547,7 +553,7 @@ class TestGenerateLicense:
     def test_generate_license_non_rsa_key(self):
         """Test generating license with non-RSA private key."""
         from cryptography.hazmat.primitives.asymmetric import ec
-        
+
         # Create an EC key instead of RSA
         private_key = ec.generate_private_key(ec.SECP256R1())
         private_key_pem = private_key.serialize(
@@ -555,7 +561,7 @@ class TestGenerateLicense:
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
         )
-        
+
         with patch("builtins.open", mock_open(read_data=private_key_pem.decode())):
             with pytest.raises(LicenseError, match="Private key must be an RSA key"):
                 generate_license(
@@ -582,7 +588,7 @@ class TestLicenseError:
         """Test LicenseError inheritance."""
         error = LicenseError("Test error")
         assert isinstance(error, Exception)
-        
+
         # Can be caught as Exception
         try:
             raise error
@@ -602,16 +608,16 @@ class TestEdgeCases:
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
-            
+
             mock_file = mock_open(read_data=public_key_pem.decode())
             mock_path = Mock()
             mock_path.open.return_value.__enter__ = mock_file
             mock_path.open.return_value.__exit__ = Mock(return_value=None)
             mock_resources.return_value.joinpath.return_value = mock_path
-            
+
             validator = LicenseValidator()
             validator.cache_duration = 1  # 1 second cache
-            
+
             # Create cached license info
             cached_license = LicenseInfo(
                 customer="Test Customer",
@@ -622,12 +628,12 @@ class TestEdgeCases:
             )
             validator._license_cache = cached_license
             validator._cache_timestamp = time.time() - 2  # 2 seconds ago (expired)
-            
+
             # Mock organization service
             org_uuid = uuid4()
             mock_org_service = Mock()
             mock_org_service.get_organization_license.return_value = None
-            
+
             # Should not use expired cache
             result = validator.validate_license(org_uuid, mock_org_service)
             assert result is None
@@ -642,15 +648,15 @@ class TestEdgeCases:
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
-            
+
             mock_file = mock_open(read_data=public_key_pem.decode())
             mock_path = Mock()
             mock_path.open.return_value.__enter__ = mock_file
             mock_path.open.return_value.__exit__ = Mock(return_value=None)
             mock_resources.return_value.joinpath.return_value = mock_path
-            
+
             validator = LicenseValidator()
-            
+
             # Create valid license
             org_uuid = uuid4()
             data = {
@@ -660,7 +666,7 @@ class TestEdgeCases:
                 "tier": Tier.ENTERPRISE.value,
                 "organization_uuid": str(org_uuid),
             }
-            
+
             data_bytes = json.dumps(data).encode("utf-8")
             signature = private_key.sign(
                 data_bytes,
@@ -670,11 +676,11 @@ class TestEdgeCases:
                 ),
                 hashes.SHA256(),
             )
-            
+
             data_b64 = base64.urlsafe_b64encode(data_bytes).rstrip(b"=").decode("ascii")
             sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
             license_key = f"{data_b64}.{sig_b64}"
-            
+
             # Verify without organization check (expected_organization_uuid=None)
             result = validator.verify_license(license_key, None)
             assert isinstance(result, LicenseInfo)
