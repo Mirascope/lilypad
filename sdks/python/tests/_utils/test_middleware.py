@@ -651,8 +651,7 @@ def test_get_custom_context_manager_with_decorator_tags():
         arg_types = {}
         arg_values = {}
         context_manager_factory = _get_custom_context_manager(
-            function, arg_types, arg_values, is_async, prompt_template, project_uuid,
-            decorator_tags=decorator_tags
+            function, arg_types, arg_values, is_async, prompt_template, project_uuid, decorator_tags=decorator_tags
         )
         with context_manager_factory(fn_mock) as cm_span:
             assert cm_span == span_mock
@@ -682,7 +681,7 @@ def test_create_mirascope_middleware_with_function_none():
     mock_cm_factory = MagicMock(return_value=mock_cm_instance)
     mock_factory_return = MagicMock()
     mock_handlers = MagicMock()
-    
+
     with (
         patch(
             "lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
@@ -702,7 +701,7 @@ def test_create_mirascope_middleware_with_function_none():
 
         # Verify that _Handlers is called with "trace" when function is None
         middleware._Handlers.assert_called_once_with("trace")
-        
+
         mock_get_cm.assert_called_once_with(
             function,
             mock_arg_types,

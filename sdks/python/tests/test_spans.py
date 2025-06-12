@@ -6,7 +6,7 @@ from collections.abc import Generator
 
 import pytest
 
-from lilypad.spans import span
+from lilypad.spans import span, Span
 from lilypad._utils import json_dumps
 
 dummy_spans: list["DummySpan"] = []
@@ -203,3 +203,80 @@ def test_dummy_span_record_exception_directly() -> None:
     assert attrs["exception.type"] == str(dummy_exception)
     assert attrs["exception.message"] == str(dummy_exception)
     assert attrs["exception.stacktrace"] == str(dummy_exception)
+
+
+def test_unconfigured_lilypad(monkeypatch) -> None:
+    """Test span behavior when Lilypad is not configured."""
+    # Reset the warning flag to ensure the warning is logged
+    Span._warned_not_configured = False
+
+    # Patch get_tracer_provider to return something that's not a TracerProvider
+    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: object())
+
+    # Create a span and verify it's a no-op
+    with span("unconfigured test") as s:
+        s.info("this should be ignored")
+        s.metadata(test="value")
+
+        # Test span_id and opentelemetry_span properties with _noop=True
+        assert s.span_id == 0
+        assert s.opentelemetry_span is None
+
+    # The span should be a no-op, so no dummy spans should be created
+    assert len(dummy_spans) == 0
+
+
+def test_metadata_with_none_span() -> None:
+    """Test metadata method when _span is None."""
+    s = Span("test")
+    # Don't enter the context manager, so _span remains None
+    s.metadata(test="value")
+    # No assertion needed, just verifying it doesn't raise an exception
+
+
+def test_metadata_serialization_exception(monkeypatch) -> None:
+    """Test exception handling in metadata serialization."""
+
+    # Create a class that raises an exception when json_dumps is called
+    class UnserializableObject:
+        def __repr__(self) -> str:
+            return "UnserializableObject()"
+
+    # Patch json_dumps to raise an exception
+    def mock_json_dumps(obj):
+        if isinstance(obj, UnserializableObject):
+            raise TypeError("Cannot serialize UnserializableObject")
+        return json_dumps(obj)
+
+    monkeypatch.setattr("lilypad.spans.json_dumps", mock_json_dumps)
+
+    # Create a span and add metadata with the unserializable object
+    with span("metadata exception test") as s:
+        s.metadata(unserializable=UnserializableObject())
+
+    # Verify the metadata was added as a string representation
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.attributes.get("unserializable") == "UnserializableObject()"
+
+
+def test_finish_method() -> None:
+    """Test the finish method directly."""
+    # Create a span without using the context manager
+    s = Span("finish test")
+    s._span = DummySpan("finish test")
+    s._token = "mock_token"
+    s._finished = False
+
+    # Call finish
+    s.finish()
+
+    # Verify the span was ended
+    assert s._span.ended is True
+    assert s._finished is True
+
+    # Call finish again (should be a no-op)
+    s.finish()
+
+    # Still just one end call
+    assert s._span.ended is True

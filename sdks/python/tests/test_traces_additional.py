@@ -1,7 +1,7 @@
 """Additional tests for traces.py to improve coverage."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from lilypad.traces import (
     _get_trace_type,
     Annotation,

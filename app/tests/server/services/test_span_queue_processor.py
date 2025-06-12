@@ -889,3 +889,364 @@ class TestGetSpanQueueProcessor:
         result = get_span_queue_processor()
 
         assert result is existing_processor
+
+
+class TestAdditionalCoverage:
+    """Additional tests to improve coverage."""
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_queue_kafka_error(self, mock_get_settings):
+        """Test _process_queue handles KafkaError."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+        processor._running = True
+
+        # Mock consumer
+        mock_consumer = AsyncMock()
+        from aiokafka.errors import KafkaError
+        
+        call_count = 0
+        async def side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise KafkaError("Kafka connection error")
+            else:
+                processor._running = False
+                return {}
+
+        mock_consumer.getmany.side_effect = side_effect
+        processor.consumer = mock_consumer
+
+        with (
+            patch("asyncio.sleep") as mock_sleep,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            await processor._process_queue()
+
+        mock_sleep.assert_called_with(5)
+        mock_logger.debug.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_queue_unexpected_error(self, mock_get_settings):
+        """Test _process_queue handles unexpected errors."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+        processor._running = True
+
+        # Mock consumer
+        mock_consumer = AsyncMock()
+        
+        call_count = 0
+        async def side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise ValueError("Unexpected error")
+            else:
+                processor._running = False
+                return {}
+
+        mock_consumer.getmany.side_effect = side_effect
+        processor.consumer = mock_consumer
+
+        with (
+            patch("asyncio.sleep") as mock_sleep,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            await processor._process_queue()
+
+        mock_sleep.assert_called_with(5)
+        mock_logger.debug.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_queue_with_poll_logging(self, mock_get_settings):
+        """Test _process_queue poll logging."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+        processor._running = True
+
+        # Mock consumer
+        mock_consumer = AsyncMock()
+        
+        call_count = 0
+        async def side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count >= 11:  # Stop after 11 polls to trigger the logging condition
+                processor._running = False
+            return {}
+
+        mock_consumer.getmany.side_effect = side_effect
+        processor.consumer = mock_consumer
+
+        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+            await processor._process_queue()
+
+        # Should log every 10th poll when no messages
+        assert mock_logger.info.call_count >= 1
+
+    @pytest.mark.asyncio  
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_message_with_exception(self, mock_get_settings):
+        """Test _process_message handles exceptions."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        mock_record = Mock()
+        mock_record.key = "test-key"
+        mock_record.value = {"trace_id": "trace-123", "span_id": "span-1"}
+
+        # Mock lock to raise exception
+        with (
+            patch.object(processor._lock, "__aenter__", side_effect=Exception("Lock error")),
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            await processor._process_message(mock_record)
+
+        mock_logger.error.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_trace_no_spans(self, mock_get_settings):
+        """Test _process_trace with no spans."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        # Empty buffer
+        buffer = TraceBuffer("trace-123")
+
+        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+            await processor._process_trace("trace-123", buffer)
+
+        mock_logger.warning.assert_called_with("No spans to process for trace trace-123")
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_trace_integrity_error(self, mock_get_settings):
+        """Test _process_trace handles IntegrityError."""
+        from sqlalchemy.exc import IntegrityError
+        
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        buffer = TraceBuffer("trace-123")
+        buffer.add_span({"span_id": "span-1", "parent_span_id": None})
+
+        with (
+            patch("asyncio.get_event_loop") as mock_get_loop,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            mock_loop = Mock()
+            mock_get_loop.return_value = mock_loop
+            mock_loop.run_in_executor = AsyncMock(side_effect=IntegrityError("stmt", "params", "orig"))
+            
+            await processor._process_trace("trace-123", buffer)
+
+        mock_logger.error.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_process_trace_general_exception(self, mock_get_settings):
+        """Test _process_trace handles general exceptions."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        buffer = TraceBuffer("trace-123")
+        buffer.add_span({"span_id": "span-1", "parent_span_id": None})
+
+        with (
+            patch("asyncio.get_event_loop") as mock_get_loop,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            mock_loop = Mock()
+            mock_get_loop.return_value = mock_loop
+            mock_loop.run_in_executor = AsyncMock(side_effect=Exception("Processing error"))
+            
+            await processor._process_trace("trace-123", buffer)
+
+        mock_logger.error.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_cleanup_incomplete_traces_exception(self, mock_get_settings):
+        """Test _cleanup_incomplete_traces handles exceptions."""
+        mock_settings = Mock()
+        mock_settings.kafka_cleanup_interval_seconds = 1
+        mock_settings.kafka_buffer_ttl_seconds = 2
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+        processor._running = True
+
+        call_count = 0
+        async def mock_sleep(seconds):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise Exception("Sleep error")
+            else:
+                processor._running = False
+
+        with (
+            patch("asyncio.sleep", side_effect=mock_sleep),
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            await processor._cleanup_incomplete_traces()
+
+        mock_logger.debug.assert_called()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_force_process_incomplete_trace_missing_buffer(self, mock_get_settings):
+        """Test _force_process_incomplete_trace with missing buffer."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        # No buffer exists for this trace_id
+        with patch.object(processor, "_process_trace") as mock_process_trace:
+            await processor._force_process_incomplete_trace("nonexistent-trace")
+
+        mock_process_trace.assert_not_called()
+
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    def test_process_trace_sync_no_user_id(self, mock_get_settings):
+        """Test _process_trace_sync with missing user_id."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        ordered_spans = [
+            {
+                "span_id": "span-1",
+                "attributes": {"lilypad.project.uuid": str(uuid4())},
+                # Missing user_id
+            }
+        ]
+
+        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+            processor._process_trace_sync("trace-123", ordered_spans)
+
+        mock_logger.warning.assert_called()
+
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    @patch("lilypad.server.services.span_queue_processor.get_session")
+    def test_process_trace_sync_user_not_found(self, mock_get_session, mock_get_settings):
+        """Test _process_trace_sync when user is not found."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        # Mock session
+        mock_session = Mock()
+        mock_get_session.return_value = [mock_session]
+
+        # Mock user query to return None
+        mock_result = Mock()
+        mock_result.first.return_value = None
+        mock_session.exec.return_value = mock_result
+
+        user_id = uuid4()
+        ordered_spans = [
+            {
+                "span_id": "span-1",
+                "user_id": str(user_id),
+                "attributes": {"lilypad.project.uuid": str(uuid4())},
+            }
+        ]
+
+        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+            processor._process_trace_sync("trace-123", ordered_spans)
+
+        mock_logger.debug.assert_called()
+
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
+    @patch("lilypad.server.services.span_queue_processor.get_session")
+    @patch("lilypad.server.services.span_queue_processor.ProjectService")
+    def test_process_trace_sync_project_not_found(
+        self, mock_project_service_class, mock_get_session, mock_get_settings
+    ):
+        """Test _process_trace_sync when project is not found."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        processor = SpanQueueProcessor()
+
+        # Mock session
+        mock_session = Mock()
+        mock_get_session.return_value = [mock_session]
+
+        # Mock user
+        mock_user = Mock()
+        mock_user.uuid = uuid4()
+        mock_result = Mock()
+        mock_result.first.return_value = mock_user
+        mock_session.exec.return_value = mock_result
+
+        # Mock project service to return None
+        mock_project_service = Mock()
+        mock_project_service.find_record_no_organization.return_value = None
+        mock_project_service_class.return_value = mock_project_service
+
+        user_id = uuid4()
+        project_uuid = uuid4()
+        ordered_spans = [
+            {
+                "span_id": "span-1",
+                "user_id": str(user_id),
+                "attributes": {"lilypad.project.uuid": str(project_uuid)},
+            }
+        ]
+
+        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+            processor._process_trace_sync("trace-123", ordered_spans)
+
+        mock_logger.warning.assert_called()
+
+    def test_get_span_queue_processor_first_call(self):
+        """Test get_span_queue_processor creates new instance on first call."""
+        import lilypad.server.services.span_queue_processor
+
+        # Clear singleton
+        lilypad.server.services.span_queue_processor._processor_instance = None
+
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        with patch("lilypad.server.services.span_queue_processor.get_settings", return_value=mock_settings):
+            processor = get_span_queue_processor()
+
+        assert isinstance(processor, SpanQueueProcessor)
+        assert lilypad.server.services.span_queue_processor._processor_instance is processor

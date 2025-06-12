@@ -1,6 +1,5 @@
 """Tests for Azure OpenTelemetry utils."""
 
-import pytest
 from unittest.mock import Mock
 from lilypad._opentelemetry._opentelemetry_azure.utils import (
     AzureMetadata,

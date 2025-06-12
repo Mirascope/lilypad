@@ -1,9 +1,8 @@
 """Tests for Docker sandbox runner."""
 
 import io
-import json
 import tarfile
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import pytest
 
 from lilypad.sandbox.docker import DockerSandboxRunner, _DEFAULT_IMAGE
@@ -328,5 +327,5 @@ class TestDockerSandboxRunner:
         with tarfile.open(fileobj=stream, mode="r") as tar:
             info = tar.getmember("test.py")
             assert info.name == "test.py"
-            assert info.size == len("print('test')".encode("utf-8"))
+            assert info.size == len(b"print('test')")
             assert info.isfile()

@@ -1,7 +1,6 @@
 """Tests for Outlines OpenTelemetry instrumentor."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from lilypad._opentelemetry._opentelemetry_outlines import (
     OutlinesInstrumentor,
     _patched_targets,

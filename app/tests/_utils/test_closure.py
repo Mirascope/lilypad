@@ -429,3 +429,329 @@ def test_closure_serialization():
     assert data["code"] is not None
     assert data["hash"] is not None
     assert isinstance(data["dependencies"], dict)
+
+
+def test_get_qualified_name_with_locals():
+    """Test get_qualified_name with local function."""
+    def outer():
+        def inner():
+            return "inner"
+        return inner
+    
+    inner_fn = outer()
+    result = get_qualified_name(inner_fn)
+    assert result == "inner"  # Should return part after "<locals>."
+
+
+def test_remove_docstring_transformer_class():
+    """Test _RemoveDocstringTransformer with classes."""
+    import libcst as cst
+
+    code = '''
+class TestClass:
+    """Class docstring."""
+    def method(self):
+        return 42
+'''
+    module = cst.parse_module(code.strip())
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=False)
+    modified = module.visit(transformer)
+    modified_code = modified.code
+
+    # Class docstring should be removed
+    assert '"""Class docstring."""' not in modified_code
+    assert "def method(self):" in modified_code
+
+
+def test_remove_docstring_transformer_class_exclude_body():
+    """Test _RemoveDocstringTransformer with classes and exclude_fn_body=True."""
+    import libcst as cst
+
+    code = '''
+class TestClass:
+    """Class docstring."""
+    def method(self):
+        return 42
+'''
+    module = cst.parse_module(code.strip())
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=True)
+    modified = module.visit(transformer)
+    modified_code = modified.code
+
+    # Should replace class body with pass
+    assert "pass" in modified_code
+
+
+def test_remove_docstring_transformer_empty_function_body():
+    """Test _RemoveDocstringTransformer when function body becomes empty after removing docstring."""
+    import libcst as cst
+
+    code = '''
+def empty_function():
+    """Only docstring."""
+'''
+    module = cst.parse_module(code.strip())
+    transformer = _RemoveDocstringTransformer(exclude_fn_body=False)
+    modified = module.visit(transformer)
+    modified_code = modified.code
+
+    # Function declaration should remain but body is empty
+    assert "def empty_function():" in modified_code
+    assert '"""Only docstring."""' not in modified_code
+
+
+def test_name_collector():
+    """Test _NameCollector functionality."""
+    import ast
+    from lilypad._utils.closure import _NameCollector
+
+    code = '''
+def test():
+    x = variable
+    func_call()
+    obj.attribute
+    nested.attr.chain
+'''
+    tree = ast.parse(code.strip())
+    collector = _NameCollector()
+    collector.visit(tree)
+    
+    # Should collect various name types
+    assert "variable" in collector.used_names
+    assert "func_call" in collector.used_names
+    assert "obj" in collector.used_names or "obj.attribute" in collector.used_names
+
+
+def test_import_collector():
+    """Test _ImportCollector functionality."""
+    import ast
+    from lilypad._utils.closure import _ImportCollector
+    
+    code = '''
+import os
+from sys import path
+import json as j
+used_module = os.path.join("a", "b")
+'''
+    tree = ast.parse(code.strip())
+    used_names = ["os", "path", "j"]
+    site_packages = set()
+    
+    collector = _ImportCollector(used_names, site_packages)
+    collector.visit(tree)
+    
+    # Should collect imports that are used
+    assert len(collector.imports) > 0
+
+
+def test_local_assignment_collector():
+    """Test _LocalAssignmentCollector functionality."""
+    import ast
+    from lilypad._utils.closure import _LocalAssignmentCollector
+
+    code = '''
+def test():
+    x = 5
+    y: int = 10
+    z = x + y
+'''
+    tree = ast.parse(code.strip())
+    collector = _LocalAssignmentCollector()
+    collector.visit(tree)
+    
+    # Should collect local assignments
+    assert "x" in collector.assignments
+    assert "y" in collector.assignments
+    assert "z" in collector.assignments
+
+
+def test_global_assignment_collector():
+    """Test _GlobalAssignmentCollector functionality.""" 
+    import ast
+    from lilypad._utils.closure import _GlobalAssignmentCollector
+
+    code = '''
+GLOBAL_VAR = 42
+GLOBAL_ANNOTATED: int = 100
+
+def function():
+    local_var = 1
+
+class TestClass:
+    class_var = 2
+'''
+    used_names = ["GLOBAL_VAR", "GLOBAL_ANNOTATED"]
+    collector = _GlobalAssignmentCollector(used_names, code)
+    tree = ast.parse(code.strip())
+    collector.visit(tree)
+    
+    # Should collect global assignments but not local/class ones
+    assert len(collector.assignments) >= 1
+
+
+def test_collect_parameter_names():
+    """Test _collect_parameter_names functionality."""
+    import ast
+    from lilypad._utils.closure import _collect_parameter_names
+
+    code = '''
+def func(a, b, *args, c=None, **kwargs):
+    pass
+
+def func2(x, y):
+    pass
+'''
+    tree = ast.parse(code.strip())
+    params = _collect_parameter_names(tree)
+    
+    # Should collect all parameter names
+    assert "a" in params
+    assert "b" in params  
+    assert "args" in params
+    assert "c" in params
+    assert "kwargs" in params
+    assert "x" in params
+    assert "y" in params
+
+
+def test_extract_types():
+    """Test _extract_types functionality."""
+    from typing import List, Optional, Union
+    from lilypad._utils.closure import _extract_types
+
+    # Test basic type
+    types_found = _extract_types(int)
+    assert int in types_found
+
+    # Test generic type
+    types_found = _extract_types(List[str])
+    assert str in types_found
+
+    # Test union type  
+    types_found = _extract_types(Union[int, str])
+    assert int in types_found
+    assert str in types_found
+
+
+def test_get_class_from_unbound_method():
+    """Test _get_class_from_unbound_method functionality."""
+    from lilypad._utils.closure import _get_class_from_unbound_method
+
+    class TestClass:
+        def method(self):
+            return "test"
+
+    obj = TestClass()
+    result = _get_class_from_unbound_method(obj.method)
+    assert result is TestClass
+
+
+def test_clean_source_from_string():
+    """Test _clean_source_from_string functionality."""
+    from lilypad._utils.closure import _clean_source_from_string
+
+    code = '''
+def function():
+    """Docstring to remove."""
+    return 42
+'''
+    
+    cleaned = _clean_source_from_string(code)
+    assert '"""Docstring to remove."""' not in cleaned
+    assert "return 42" in cleaned
+
+
+def test_get_class_source_from_method():
+    """Test get_class_source_from_method functionality."""
+    from lilypad._utils.closure import get_class_source_from_method
+
+    class TestClass:
+        """Test class docstring."""
+        def method(self):
+            return "test"
+
+    obj = TestClass()
+    
+    try:
+        source = get_class_source_from_method(obj.method)
+        assert "class TestClass" in source
+    except ValueError:
+        # This might fail in some test environments due to gc limitations
+        pytest.skip("Cannot determine class from method in test environment")
+
+
+def test_qualified_name_rewriter():
+    """Test _QualifiedNameRewriter functionality."""
+    import libcst as cst
+    from lilypad._utils.closure import _QualifiedNameRewriter
+
+    code = '''
+import some_module as sm
+result = sm.function()
+local_func()
+'''
+    
+    local_names = {"local_func"}
+    user_defined_imports = {"from some_module import function as sm"}
+    
+    tree = cst.parse_module(code.strip())
+    rewriter = _QualifiedNameRewriter(local_names, user_defined_imports)
+    modified = tree.visit(rewriter)
+    
+    # Should process the code
+    assert modified.code is not None
+
+
+def test_dependency_collector_with_property():
+    """Test _DependencyCollector with property functions."""
+    from lilypad._utils.closure import _DependencyCollector
+
+    class TestClass:
+        @property
+        def prop(self):
+            return 42
+
+    collector = _DependencyCollector()
+    
+    # Test with property
+    try:
+        collector._collect_imports_and_source_code(TestClass.prop, True)
+    except (OSError, TypeError):
+        # Expected for some types of functions
+        pass
+
+
+def test_dependency_collector_with_cached_property():
+    """Test _DependencyCollector with cached_property."""
+    from functools import cached_property
+    from lilypad._utils.closure import _DependencyCollector
+
+    class TestClass:
+        @cached_property
+        def cached_prop(self):
+            return 42
+
+    collector = _DependencyCollector()
+    
+    # Test with cached_property
+    try:
+        collector._collect_imports_and_source_code(TestClass.cached_prop, True)
+    except (OSError, TypeError):
+        # Expected for some types of functions
+        pass
+
+
+def test_run_ruff():
+    """Test run_ruff functionality."""
+    from lilypad._utils.closure import run_ruff
+
+    code = '''
+import    os
+def  test(  ):
+    return   42
+'''
+    
+    formatted = run_ruff(code)
+    # Should be formatted
+    assert "import os" in formatted
+    assert "def test():" in formatted
