@@ -40,7 +40,7 @@ class TestTier:
 
     def test_tier_invalid_string(self):
         """Test creating tier from invalid string."""
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             Tier._missing_("INVALID")
 
     def test_tier_invalid_type(self):
@@ -170,7 +170,7 @@ class TestLicenseValidator:
             key_size=2048,
         )
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -217,7 +217,7 @@ class TestLicenseValidator:
 
         private_key = ec.generate_private_key(ec.SECP256R1())
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -237,7 +237,7 @@ class TestLicenseValidator:
         # Setup validator
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -276,7 +276,7 @@ class TestLicenseValidator:
         # Setup validator
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -304,7 +304,7 @@ class TestLicenseValidator:
         # Setup validator
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -357,7 +357,7 @@ class TestVerifyLicense:
         """Helper to create a test validator with mock setup."""
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
@@ -510,7 +510,7 @@ class TestGenerateLicense:
             public_exponent=65537,
             key_size=2048,
         )
-        private_key_pem = private_key.serialize(
+        private_key_pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
@@ -556,7 +556,7 @@ class TestGenerateLicense:
 
         # Create an EC key instead of RSA
         private_key = ec.generate_private_key(ec.SECP256R1())
-        private_key_pem = private_key.serialize(
+        private_key_pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),

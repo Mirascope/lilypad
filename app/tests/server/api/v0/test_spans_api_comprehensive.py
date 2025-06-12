@@ -45,6 +45,7 @@ def test_spans_comprehensive(
             duration_ms=1000 + i * 100,
             created_at=now - timedelta(minutes=i),
             data={
+                "name": f"test_span_{i}",
                 "attributes": {
                     "lilypad.type": "function",
                     "lilypad.function.uuid": str(test_function.uuid),

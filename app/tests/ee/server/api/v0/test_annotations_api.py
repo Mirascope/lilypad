@@ -95,7 +95,7 @@ class TestCreateAnnotations:
             ]
 
             response = client.post(
-                f"/projects/{test_project.uuid}/annotations",
+                f"/ee/projects/{test_project.uuid}/annotations",
                 json=annotations_create,
             )
 
@@ -150,7 +150,7 @@ class TestCreateAnnotations:
             ]
 
             response = client.post(
-                f"/projects/{test_project.uuid}/annotations",
+                f"/ee/projects/{test_project.uuid}/annotations",
                 json=annotations_create,
             )
 
@@ -186,7 +186,7 @@ class TestCreateAnnotations:
         ]
 
         response = client.post(
-            f"/projects/{test_project.uuid}/annotations",
+            f"/ee/projects/{test_project.uuid}/annotations",
             json=annotations_create,
         )
 
@@ -220,7 +220,7 @@ class TestCreateAnnotations:
         ]
 
         response = client.post(
-            f"/projects/{test_project.uuid}/annotations",
+            f"/ee/projects/{test_project.uuid}/annotations",
             json=annotations_create,
         )
 
@@ -264,7 +264,7 @@ class TestCreateAnnotations:
             ]
 
             response = client.post(
-                f"/projects/{test_project.uuid}/annotations",
+                f"/ee/projects/{test_project.uuid}/annotations",
                 json=annotations_create,
             )
 
@@ -300,7 +300,7 @@ class TestUpdateAnnotation:
             update_data = {"data": {"updated": "annotation"}}
 
             response = client.patch(
-                f"/projects/{test_project.uuid}/annotations/{annotation_uuid}",
+                f"/ee/projects/{test_project.uuid}/annotations/{annotation_uuid}",
                 json=update_data,
             )
 
@@ -329,7 +329,7 @@ class TestDeleteAnnotation:
         annotation_uuid = uuid4()
 
         response = client.delete(
-            f"/projects/{test_project.uuid}/annotations/{annotation_uuid}"
+            f"/ee/projects/{test_project.uuid}/annotations/{annotation_uuid}"
         )
 
         assert response.status_code == 200
@@ -354,7 +354,7 @@ class TestDeleteAnnotation:
         annotation_uuid = uuid4()
 
         response = client.delete(
-            f"/projects/{test_project.uuid}/annotations/{annotation_uuid}"
+            f"/ee/projects/{test_project.uuid}/annotations/{annotation_uuid}"
         )
 
         assert response.status_code == 200
@@ -391,7 +391,7 @@ class TestGetAnnotations:
             function_uuid = uuid4()
 
             response = client.get(
-                f"/projects/{test_project.uuid}/functions/{function_uuid}/annotations"
+                f"/ee/projects/{test_project.uuid}/functions/{function_uuid}/annotations"
             )
 
             assert response.status_code == 200
@@ -426,7 +426,7 @@ class TestGetAnnotations:
             span_uuid = uuid4()
 
             response = client.get(
-                f"/projects/{test_project.uuid}/spans/{span_uuid}/annotations"
+                f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/annotations"
             )
 
             assert response.status_code == 200
@@ -458,7 +458,7 @@ class TestGetAnnotations:
         ) as mock_span_details:
             mock_span_details.return_value = {"test": "data"}
 
-            response = client.get(f"/projects/{test_project.uuid}/annotations")
+            response = client.get(f"/ee/projects/{test_project.uuid}/annotations")
 
             assert response.status_code == 200
             mock_annotation_service.find_records_by_project_uuid.assert_called_once_with(
@@ -488,7 +488,7 @@ class TestAnnotationMetrics:
         function_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/functions/{function_uuid}/annotations/metrics"
+            f"/ee/projects/{test_project.uuid}/functions/{function_uuid}/annotations/metrics"
         )
 
         assert response.status_code == 200
@@ -537,7 +537,7 @@ class TestGenerateAnnotation:
         span_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
         )
 
         assert response.status_code == 200
@@ -585,7 +585,7 @@ class TestGenerateAnnotation:
         span_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
         )
 
         assert response.status_code == 200
@@ -630,7 +630,7 @@ class TestGenerateAnnotation:
         span_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
         )
 
         assert response.status_code == 200
@@ -657,7 +657,7 @@ class TestGenerateAnnotation:
         span_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
         )
 
         assert response.status_code == 404
@@ -726,7 +726,7 @@ class TestEdgeCases:
             ]
 
             response = client.post(
-                f"/projects/{test_project.uuid}/annotations",
+                f"/ee/projects/{test_project.uuid}/annotations",
                 json=annotations_create,
             )
 
@@ -772,7 +772,7 @@ class TestEdgeCases:
         span_uuid = uuid4()
 
         response = client.get(
-            f"/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
         )
 
         assert response.status_code == 200

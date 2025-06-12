@@ -531,7 +531,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -576,7 +576,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -599,7 +599,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -621,7 +621,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -643,7 +643,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -672,7 +672,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -717,7 +717,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -764,7 +764,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -809,7 +809,7 @@ class TestPlaygroundAPI:
         }
 
         response = client.post(
-            f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+            f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
             json=playground_params,
         )
 
@@ -840,7 +840,7 @@ class TestPlaygroundAPI:
             mock_service.return_value = mock_service_instance
 
             response = client.post(
-                f"/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
+                f"/ee/projects/{test_project.uuid}/functions/{test_function_with_template.uuid}/playground",
                 json=playground_params,
             )
 

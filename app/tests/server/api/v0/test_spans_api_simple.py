@@ -39,6 +39,7 @@ def test_span_simple(
         duration_ms=1000.0,
         created_at=datetime.now(timezone.utc),
         data={
+            "name": "simple_test_span",
             "attributes": {
                 "lilypad.type": "function",
                 "lilypad.function.uuid": str(test_function.uuid),
