@@ -598,3 +598,121 @@ def test_create_mirascope_middleware():
             handle_error_async=middleware._handle_error_async,
         )
         assert middleware_decorator == mock_factory_return
+
+
+def test_get_custom_context_manager_with_function_none():
+    """Test _get_custom_context_manager when function is None (Lilypad not configured)."""
+    function = None  # This is the key test case for the bug fix
+    is_async = False
+    prompt_template = "prompt template"
+    fn_mock = MagicMock()
+    fn_mock.__name__ = "my_decorated_func"
+
+    tracer_mock = MagicMock()
+    span_mock = MagicMock(spec=Span)
+    tracer_mock.start_as_current_span.return_value.__enter__.return_value = span_mock
+    project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
+
+    with patch("lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
+        arg_types = {"param": "str"}
+        arg_values = {"param": "world"}
+        context_manager_factory = _get_custom_context_manager(
+            function, arg_types, arg_values, is_async, prompt_template, project_uuid
+        )
+        with context_manager_factory(fn_mock) as cm_span:
+            assert cm_span == span_mock
+            # When function is None, we should only set basic attributes
+            expected_attributes = {
+                "lilypad.project_uuid": str(project_uuid),
+                "lilypad.is_async": is_async,
+                "lilypad.type": "trace",  # Should be "trace" when function is None
+                "lilypad.trace.arg_types": json_dumps(arg_types),
+                "lilypad.trace.arg_values": json_dumps(arg_values),
+                "lilypad.trace.prompt_template": prompt_template,
+            }
+            span_mock.set_attributes.assert_called_once_with(expected_attributes)
+
+
+def test_get_custom_context_manager_with_decorator_tags():
+    """Test _get_custom_context_manager with decorator tags."""
+    function = None
+    is_async = False
+    prompt_template = None
+    fn_mock = MagicMock()
+    fn_mock.__name__ = "tagged_func"
+    decorator_tags = ["tag1", "tag2"]
+
+    tracer_mock = MagicMock()
+    span_mock = MagicMock(spec=Span)
+    tracer_mock.start_as_current_span.return_value.__enter__.return_value = span_mock
+    project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
+
+    with patch("lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
+        arg_types = {}
+        arg_values = {}
+        context_manager_factory = _get_custom_context_manager(
+            function, arg_types, arg_values, is_async, prompt_template, project_uuid,
+            decorator_tags=decorator_tags
+        )
+        with context_manager_factory(fn_mock) as cm_span:
+            assert cm_span == span_mock
+            expected_attributes = {
+                "lilypad.project_uuid": str(project_uuid),
+                "lilypad.is_async": is_async,
+                "lilypad.trace.tags": decorator_tags,
+                "lilypad.type": "trace",
+                "lilypad.trace.arg_types": json_dumps(arg_types),
+                "lilypad.trace.arg_values": json_dumps(arg_values),
+                "lilypad.trace.prompt_template": "",
+            }
+            span_mock.set_attributes.assert_called_once_with(expected_attributes)
+
+
+def test_create_mirascope_middleware_with_function_none():
+    """Test create_mirascope_middleware when function is None."""
+    function = None  # Key test case
+    mock_arg_types = {"param": "str"}
+    mock_arg_values = {"param": "value"}
+    is_async = False
+    prompt_template = None
+    project_uuid = uuid4()
+    mock_span_context_holder = MagicMock()
+
+    mock_cm_instance = MagicMock()
+    mock_cm_factory = MagicMock(return_value=mock_cm_instance)
+    mock_factory_return = MagicMock()
+    mock_handlers = MagicMock()
+    
+    with (
+        patch(
+            "lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
+        ) as mock_middleware_factory,
+        patch("lilypad._utils.middleware._get_custom_context_manager", return_value=mock_cm_factory) as mock_get_cm,
+        patch("lilypad._utils.middleware._Handlers", return_value=mock_handlers),
+    ):
+        middleware_decorator = create_mirascope_middleware(
+            function,
+            mock_arg_types,
+            mock_arg_values,
+            is_async,
+            prompt_template,
+            project_uuid,
+            mock_span_context_holder,
+        )
+
+        # Verify that _Handlers is called with "trace" when function is None
+        middleware._Handlers.assert_called_once_with("trace")
+        
+        mock_get_cm.assert_called_once_with(
+            function,
+            mock_arg_types,
+            mock_arg_values,
+            is_async,
+            prompt_template,
+            project_uuid,
+            mock_span_context_holder,
+            None,
+            None,
+        )
+
+        assert middleware_decorator == mock_factory_return
