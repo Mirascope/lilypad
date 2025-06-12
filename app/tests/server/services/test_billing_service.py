@@ -577,3 +577,255 @@ def test_update_from_subscription_invalid_status(mock_session):
         assert result == mock_billing
         assert mock_billing.subscription_status is None
         mock_logger.warning.assert_called_once()
+
+
+# Additional tests to achieve 100% coverage for missing lines 107-108, 126, 142-148, 166, 177, 181-182, 235, 310, 334
+
+@patch("lilypad.server.services.billing.stripe")
+def test_create_customer_with_organization_billing_update(
+    mock_stripe, billing_service, mock_session
+):
+    """Test create_customer updates organization billing (lines 107-108)."""
+    mock_stripe.api_key = "test_key"
+
+    # Create a proper organization mock
+    from lilypad.server.models.billing import BillingTable
+    mock_org = Mock()
+    mock_org.uuid = uuid.uuid4()
+    mock_org.name = "Test Organization"
+    mock_org.billing = Mock(spec=BillingTable)
+    mock_org.billing.stripe_customer_id = None
+
+    # Mock no existing billing in first query
+    mock_result = Mock()
+    mock_result.first.return_value = None
+    mock_session.exec.return_value = mock_result
+
+    # Mock Stripe customer creation
+    mock_customer = Mock()
+    mock_customer.id = "cus_test123"
+    mock_stripe.Customer.create.return_value = mock_customer
+
+    # Mock create_record method
+    with patch.object(billing_service, "create_record") as mock_create_record:
+        mock_create_record.return_value = Mock(uuid=uuid.uuid4())
+
+        customer_id = billing_service.create_customer(
+            mock_org, "test@example.com"
+        )
+
+        assert customer_id == "cus_test123"
+        # Organization billing should be updated
+        assert mock_org.billing.stripe_customer_id == "cus_test123"
+        mock_session.add.assert_called()
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_delete_customer_and_billing_no_api_key(mock_stripe, billing_service):
+    """Test delete_customer_and_billing when no API key configured (line 126)."""
+    mock_stripe.api_key = None
+
+    with pytest.raises(HTTPException) as exc_info:
+        billing_service.delete_customer_and_billing(uuid.uuid4())
+
+    assert exc_info.value.status_code == 500
+    assert "Stripe API key not configured" in str(exc_info.value.detail)
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_delete_customer_and_billing_invalid_request_error(
+    mock_stripe, billing_service, mock_session
+):
+    """Test delete_customer_and_billing handles InvalidRequestError (lines 142-148)."""
+    mock_stripe.api_key = "test_key"
+    org_uuid = uuid.uuid4()
+
+    # Mock existing billing
+    mock_billing = Mock(spec=BillingTable)
+    mock_billing.stripe_customer_id = "cus_test123"
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_billing
+    mock_session.exec.return_value = mock_result
+
+    # Mock Stripe InvalidRequestError
+    mock_stripe.Customer.delete.side_effect = stripe.InvalidRequestError(
+        "No such customer", param="id"
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        billing_service.delete_customer_and_billing(org_uuid)
+
+    assert exc_info.value.status_code == 404
+    assert "Stripe customer not found" in str(exc_info.value.detail)
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_update_customer_no_api_key(mock_stripe, billing_service):
+    """Test update_customer when no API key configured (line 166)."""
+    mock_stripe.api_key = None
+
+    with pytest.raises(HTTPException) as exc_info:
+        billing_service.update_customer("cus_test123", "New Name")
+
+    assert exc_info.value.status_code == 500
+    assert "Stripe API key not configured" in str(exc_info.value.detail)
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_update_customer_none_result_error(mock_stripe, billing_service):
+    """Test update_customer when customer is None (line 177)."""
+    mock_stripe.api_key = "test_key"
+
+    # Mock Stripe customer modify returning None
+    mock_stripe.Customer.modify.return_value = None
+
+    with pytest.raises(_CustomerNotFound):
+        billing_service.update_customer("cus_test123", "New Name")
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_update_customer_stripe_error(mock_stripe, billing_service):
+    """Test update_customer handles general StripeError (lines 181-182)."""
+    mock_stripe.api_key = "test_key"
+
+    # Mock general Stripe error
+    mock_stripe.Customer.modify.side_effect = stripe.StripeError("Network error")
+
+    with pytest.raises(HTTPException) as exc_info:
+        billing_service.update_customer("cus_test123", "New Name")
+
+    assert exc_info.value.status_code == 500
+    assert "Error updating Stripe customer" in str(exc_info.value.detail)
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_report_span_usage_customer_not_found(mock_stripe, billing_service, mock_session):
+    """Test report_span_usage when organization has no billing customer (line 235)."""
+    mock_stripe.api_key = "test_key"
+    org_uuid = uuid.uuid4()
+
+    # Mock organization without billing
+    mock_org = Mock(spec=OrganizationTable)
+    mock_org.uuid = org_uuid
+    mock_org.billing = None
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_org
+    mock_session.exec.return_value = mock_result
+
+    with pytest.raises(_CustomerNotFound):
+        billing_service.report_span_usage(org_uuid, 5)
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_delete_customer_and_billing_general_stripe_error(
+    mock_stripe, billing_service, mock_session
+):
+    """Test delete_customer_and_billing handles general StripeError (lines 147-148)."""
+    mock_stripe.api_key = "test_key"
+    org_uuid = uuid.uuid4()
+
+    # Mock existing billing
+    mock_billing = Mock(spec=BillingTable)
+    mock_billing.stripe_customer_id = "cus_test123"
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_billing
+    mock_session.exec.return_value = mock_result
+
+    # Mock general Stripe error (not InvalidRequestError)
+    mock_stripe.Customer.delete.side_effect = stripe.StripeError("Network error")
+
+    with pytest.raises(HTTPException) as exc_info:
+        billing_service.delete_customer_and_billing(org_uuid)
+
+    assert exc_info.value.status_code == 500
+    assert "Error deleting Stripe customer" in str(exc_info.value.detail)
+
+
+def test_update_billing_no_billing_found(mock_session):
+    """Test update_billing when no billing record found (line 310)."""
+    subscription = Mock()
+    subscription.id = "sub_test123"
+    subscription.customer = "cus_test123"
+
+    # Mock no billing record found for both find methods
+    mock_result = Mock()
+    mock_result.first.return_value = None
+    mock_session.exec.return_value = mock_result
+
+    data = {"stripe_price_id": "price_test123"}
+    result = BillingService.update_billing(mock_session, subscription, data)
+
+    assert result is None
+
+
+def test_update_from_subscription_dict_attribute(mock_session):
+    """Test update_from_subscription with dict nested objects to trigger _get dict branch (line 327)."""
+    # Create a mock subscription object that has nested dict items
+    subscription = Mock()
+    subscription.id = "sub_test123"
+    subscription.customer = "cus_test123"
+    subscription.status = "active"
+    subscription.current_period_start = 1234567890
+    subscription.current_period_end = 1234567999
+    subscription.cancel_at_period_end = False
+    
+    # The key is to make items.data contain dict objects to trigger _get dict branch
+    subscription.items = {"data": [{"price": {"id": "price_test123"}}]}  # dict instead of Mock
+
+    mock_billing = Mock(spec=BillingTable)
+    mock_billing.stripe_customer_id = None
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_billing
+    mock_session.exec.return_value = mock_result
+
+    result = BillingService.update_from_subscription(mock_session, subscription)
+
+    assert result == mock_billing
+    assert mock_billing.stripe_subscription_id == "sub_test123"
+    assert mock_billing.stripe_customer_id == "cus_test123"
+    assert mock_billing.stripe_price_id == "price_test123"
+
+
+def test_update_from_subscription_cancel_at_period_end(mock_session):
+    """Test update_from_subscription with cancel_at_period_end True (line 359)."""
+    subscription = Mock()
+    subscription.id = "sub_test123"
+    subscription.customer = "cus_test123"
+    subscription.status = "active"
+    subscription.current_period_start = 1234567890
+    subscription.current_period_end = 1234567999
+    subscription.cancel_at_period_end = True  # This should trigger line 359
+    subscription.items = Mock()
+    subscription.items.data = []
+
+    mock_billing = Mock(spec=BillingTable)
+    mock_billing.stripe_customer_id = None
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_billing
+    mock_session.exec.return_value = mock_result
+
+    result = BillingService.update_from_subscription(mock_session, subscription)
+
+    assert result == mock_billing
+    assert mock_billing.cancel_at_period_end is True
+
+
+def test_update_from_subscription_no_billing_found(mock_session):
+    """Test update_from_subscription when no billing record found (line 334)."""
+    subscription = Mock()
+    subscription.id = "sub_test123"
+    subscription.customer = "cus_test123"
+
+    # Mock no billing record found for both find methods
+    mock_result = Mock()
+    mock_result.first.return_value = None
+    mock_session.exec.return_value = mock_result
+
+    result = BillingService.update_from_subscription(mock_session, subscription)
+
+    assert result is None
