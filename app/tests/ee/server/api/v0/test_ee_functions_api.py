@@ -485,7 +485,6 @@ class TestPlaygroundAPI:
         # Import the EE API to ensure it's loaded
         from lilypad.ee.server.api.v0.functions_api import run_playground
 
-
         # Test the function directly instead of via HTTP
         with patch(
             "lilypad.ee.server.api.v0.functions_api.FunctionService"

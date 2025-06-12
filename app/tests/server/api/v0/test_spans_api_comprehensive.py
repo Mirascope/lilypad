@@ -50,7 +50,7 @@ def test_spans_comprehensive(
                     "lilypad.type": "function",
                     "lilypad.function.uuid": str(test_function.uuid),
                     "test_data": f"value_{i}",
-                }
+                },
             },
         )
         session.add(span)

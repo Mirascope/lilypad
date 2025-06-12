@@ -1,5 +1,6 @@
 """Tests for the closure module."""
 
+import contextlib
 from pathlib import Path
 
 import pytest
@@ -623,8 +624,6 @@ def func2(x, y):
 
 def test_extract_types():
     """Test _extract_types functionality."""
-    from typing import Union
-
     from lilypad._utils.closure import _extract_types
 
     # Test basic type
@@ -636,7 +635,7 @@ def test_extract_types():
     assert str in types_found
 
     # Test union type
-    types_found = _extract_types(Union[int, str])
+    types_found = _extract_types(int | str)
     assert int in types_found
     assert str in types_found
 
@@ -724,11 +723,9 @@ def test_dependency_collector_with_property():
     collector = _DependencyCollector()
 
     # Test with property
-    try:
-        collector._collect_imports_and_source_code(TestClass.prop, True)
-    except (OSError, TypeError):
+    with contextlib.suppress(OSError, TypeError):
         # Expected for some types of functions
-        pass
+        collector._collect_imports_and_source_code(TestClass.prop, True)
 
 
 def test_dependency_collector_with_cached_property():
@@ -745,11 +742,9 @@ def test_dependency_collector_with_cached_property():
     collector = _DependencyCollector()
 
     # Test with cached_property
-    try:
-        collector._collect_imports_and_source_code(TestClass.cached_prop, True)
-    except (OSError, TypeError):
+    with contextlib.suppress(OSError, TypeError):
         # Expected for some types of functions
-        pass
+        collector._collect_imports_and_source_code(TestClass.cached_prop, True)
 
 
 def test_run_ruff():
