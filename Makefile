@@ -5,6 +5,9 @@
 # Kafka commands
 .PHONY: setup-kafka setup-kafka-prod test-kafka
 
+# Stripe commands
+.PHONY: dev-stripe-webhook
+
 # Testing
 .PHONY: test test-app test-sdk test-watch test-coverage test-coverage-app test-coverage-sdk
 
@@ -30,6 +33,7 @@ help:
 	@echo "  dev-local-app     - Start backend app locally (requires dev-services)"
 	@echo "  dev-local-client  - Start frontend client locally (requires dev-services)"
 	@echo "  dev-build-backend - Start backend services with watch mode"
+	@echo "  dev-stripe-webhook - Start Stripe webhook listener"
 	@echo "  prod              - Start production environment"
 	@echo "  dev-down          - Stop development environment"
 	@echo "  prod-down         - Stop production environment"
@@ -91,6 +95,11 @@ dev-services:
 dev-local:
 	+$(MAKE) -C app dev-local
 
+dev-stripe-webhook:
+	+$(MAKE) -C app dev-stripe-webhook
+
+prod-down:
+	cd app && docker-compose down
 dev-local-app:
 	+$(MAKE) -C app dev-local-app
 
