@@ -205,10 +205,14 @@ class TestOpenSearchService:
         mock_client.indices.create = Mock()
         mock_opensearch_class.return_value = mock_client
 
-        OpenSearchService()
+        service = OpenSearchService()
+        _ = service.client  # Access the client property to trigger initialization
 
         # Verify OpenSearch was called with correct parameters
+        mock_opensearch_class.assert_called_once()
         call_args = mock_opensearch_class.call_args
+        assert call_args is not None
+        assert "http_auth" in call_args[1]
         assert call_args[1]["http_auth"] is None
 
     @patch("lilypad.server.services.opensearch.get_settings")

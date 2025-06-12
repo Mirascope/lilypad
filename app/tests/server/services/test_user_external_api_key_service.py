@@ -482,6 +482,182 @@ class TestUserExternalAPIKeyService:
 
         assert "SecretManager failed" in str(exc_info.value)
 
+    def test_store_api_key_update_failure(self):
+        """Test handling update failure in store_api_key method."""
+        service, mock_session, mock_user, mock_secret_manager, mock_audit_logger = (
+            self.create_mock_service()
+        )
+
+        # Mock existing API key record
+        existing_key = Mock(spec=ExternalAPIKeyTable)
+        existing_key.secret_id = "old-secret-id"
+        existing_key.service_name = "openai"
+        mock_session.exec.return_value.first.return_value = existing_key
+
+        # Mock secret manager update failure
+        mock_secret_manager.update_secret.return_value = False
+
+        # Mock get_user method
+        mock_user_record = Mock()
+        mock_user_record.uuid = mock_user.uuid
+        mock_user_record.email = mock_user.email
+        service.get_user = Mock(return_value=mock_user_record)
+
+        with pytest.raises(HTTPException) as exc_info:
+            service.store_api_key("openai", "sk-new-key")
+
+        assert exc_info.value.status_code == 500
+        assert "Failed to update external API key for openai" in str(
+            exc_info.value.detail
+        )
+
+        # Verify audit logging was called with failure
+        mock_audit_logger.log_secret_access.assert_called_once()
+        call_args = mock_audit_logger.log_secret_access.call_args
+        assert call_args[1]["success"] is False
+        assert "Failed to update secret in SecretManager" in str(
+            call_args[1]["additional_info"]["error"]
+        )
+
+    def test_update_api_key_success(self):
+        """Test successful API key update using update_api_key method."""
+        service, mock_session, mock_user, mock_secret_manager, mock_audit_logger = (
+            self.create_mock_service()
+        )
+
+        # Mock existing API key record
+        existing_key = Mock(spec=ExternalAPIKeyTable)
+        existing_key.secret_id = "existing-secret-id"
+        existing_key.service_name = "openai"
+        mock_session.exec.return_value.first.return_value = existing_key
+
+        # Mock secret manager update success
+        mock_secret_manager.update_secret.return_value = True
+
+        # Mock get_user method
+        mock_user_record = Mock()
+        mock_user_record.uuid = mock_user.uuid
+        mock_user_record.email = mock_user.email
+        service.get_user = Mock(return_value=mock_user_record)
+
+        result = service.update_api_key("openai", "sk-updated-key")
+
+        # Verify secret manager was called to update
+        mock_secret_manager.update_secret.assert_called_once_with(
+            "existing-secret-id", "sk-updated-key"
+        )
+
+        # Verify the existing key object is returned
+        assert result == existing_key
+
+        # Verify audit logging was called with success
+        mock_audit_logger.log_secret_access.assert_called_once()
+        call_args = mock_audit_logger.log_secret_access.call_args
+        assert call_args[1]["success"] is True
+
+    def test_update_api_key_not_found(self):
+        """Test update_api_key when key doesn't exist."""
+        service, mock_session, mock_user, mock_secret_manager, mock_audit_logger = (
+            self.create_mock_service()
+        )
+
+        # Mock no existing API key record
+        mock_session.exec.return_value.first.return_value = None
+
+        # Mock get_user method
+        mock_user_record = Mock()
+        mock_user_record.uuid = mock_user.uuid
+        mock_user_record.email = mock_user.email
+        service.get_user = Mock(return_value=mock_user_record)
+
+        with pytest.raises(HTTPException) as exc_info:
+            service.update_api_key("openai", "sk-new-key")
+
+        assert exc_info.value.status_code == 404
+        assert "External API key for openai not found" in str(exc_info.value.detail)
+
+        # Verify audit logging was called with failure
+        mock_audit_logger.log_secret_access.assert_called_once()
+        call_args = mock_audit_logger.log_secret_access.call_args
+        assert call_args[1]["success"] is False
+        assert "External API key not found" in str(
+            call_args[1]["additional_info"]["error"]
+        )
+
+    def test_update_api_key_update_failure(self):
+        """Test update_api_key when update fails."""
+        service, mock_session, mock_user, mock_secret_manager, mock_audit_logger = (
+            self.create_mock_service()
+        )
+
+        # Mock existing API key record
+        existing_key = Mock(spec=ExternalAPIKeyTable)
+        existing_key.secret_id = "existing-secret-id"
+        existing_key.service_name = "openai"
+        mock_session.exec.return_value.first.return_value = existing_key
+
+        # Mock secret manager update failure
+        mock_secret_manager.update_secret.return_value = False
+
+        # Mock get_user method
+        mock_user_record = Mock()
+        mock_user_record.uuid = mock_user.uuid
+        mock_user_record.email = mock_user.email
+        service.get_user = Mock(return_value=mock_user_record)
+
+        with pytest.raises(HTTPException) as exc_info:
+            service.update_api_key("openai", "sk-updated-key")
+
+        assert exc_info.value.status_code == 500
+        assert "Failed to update external API key for openai" in str(
+            exc_info.value.detail
+        )
+
+        # Verify audit logging was called with failure
+        mock_audit_logger.log_secret_access.assert_called_once()
+        call_args = mock_audit_logger.log_secret_access.call_args
+        assert call_args[1]["success"] is False
+        assert "Failed to update secret in SecretManager" in str(
+            call_args[1]["additional_info"]["error"]
+        )
+
+    def test_delete_api_key_delete_failure(self):
+        """Test delete_api_key when delete fails."""
+        service, mock_session, mock_user, mock_secret_manager, mock_audit_logger = (
+            self.create_mock_service()
+        )
+
+        # Mock existing API key record
+        existing_key = Mock(spec=ExternalAPIKeyTable)
+        existing_key.secret_id = "existing-secret-id"
+        existing_key.service_name = "openai"
+        mock_session.exec.return_value.first.return_value = existing_key
+
+        # Mock secret manager delete failure
+        mock_secret_manager.delete_secret.return_value = False
+
+        # Mock get_user method
+        mock_user_record = Mock()
+        mock_user_record.uuid = mock_user.uuid
+        mock_user_record.email = mock_user.email
+        service.get_user = Mock(return_value=mock_user_record)
+
+        with pytest.raises(HTTPException) as exc_info:
+            service.delete_api_key("openai")
+
+        assert exc_info.value.status_code == 500
+        assert "Failed to delete external API key for openai from SecretManager" in str(
+            exc_info.value.detail
+        )
+
+        # Verify audit logging was called with failure
+        mock_audit_logger.log_secret_access.assert_called_once()
+        call_args = mock_audit_logger.log_secret_access.call_args
+        assert call_args[1]["success"] is False
+        assert "Failed to delete secret from SecretManager" in str(
+            call_args[1]["additional_info"]["error"]
+        )
+
     def test_service_inheritance(self):
         """Test that service properly inherits from BaseOrganizationService."""
         service, _, _, _, _ = self.create_mock_service()
