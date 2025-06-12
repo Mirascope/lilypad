@@ -102,13 +102,14 @@ async def update_span(
     span_update: SpanUpdate,
     span_service: Annotated[SpanService, Depends(SpanService)],
     current_user: Annotated[UserPublic, Depends(get_current_user)],
-) -> SpanTable:
+) -> SpanMoreDetails:
     """Update span by uuid."""
-    return await span_service.update_span(
+    updated_span = await span_service.update_span(
         span_uuid=span_uuid,
         update_data=span_update,
         user_uuid=current_user.uuid,
     )
+    return SpanMoreDetails.from_span(updated_span)
 
 
 @spans_router.get(

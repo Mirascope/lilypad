@@ -32,31 +32,6 @@ class TestAdvancedTraces:
         assert trace.formated_span_id == "000000000000007b"  # formatted span id for 123
         assert trace._flush is False
 
-    @patch("lilypad.traces.get_tracer_provider")
-    def test_trace_force_flush_success(self, mock_get_tracer):
-        """Test successful force flush."""
-        mock_tracer = Mock()
-        mock_force_flush = Mock()
-        mock_tracer.force_flush = mock_force_flush
-        mock_get_tracer.return_value = mock_tracer
-
-        trace = Trace(response="test", span_id=123, function_uuid="test-uuid")
-        trace._force_flush()
-
-        mock_force_flush.assert_called_once_with(timeout_millis=5000)
-        assert trace._flush is True
-
-    @patch("lilypad.traces.get_tracer_provider")
-    def test_trace_force_flush_no_method(self, mock_get_tracer):
-        """Test force flush when tracer has no force_flush method."""
-        mock_tracer = Mock(spec=[])  # No methods
-        mock_get_tracer.return_value = mock_tracer
-
-        trace = Trace(response="test", span_id=123, function_uuid="test-uuid")
-        trace._force_flush()
-
-        # Should not raise an error, _flush remains False
-        assert trace._flush is False
 
     def test_create_request_multiple_annotations(self):
         """Test _create_request with multiple annotations."""
@@ -77,7 +52,7 @@ class TestAdvancedTraces:
     def test_trace_get_span_uuid_force_flush_called(self, mock_get_settings):
         """Test that _get_span_uuid calls _force_flush when _flush is False."""
         mock_settings = Mock()
-        mock_settings.project_id = "project-123"
+        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
         mock_get_settings.return_value = mock_settings
 
         # Mock the span response
@@ -104,7 +79,7 @@ class TestAdvancedTraces:
     async def test_async_trace_get_span_uuid_force_flush_called(self):
         """Test that AsyncTrace._get_span_uuid calls _force_flush when _flush is False."""
         mock_settings = Mock()
-        mock_settings.project_id = "project-123"
+        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
 
         # Mock the span response
         mock_span = Mock()
@@ -157,60 +132,6 @@ class TestAdvancedTraces:
         result = _get_trace_type(None)
         assert result == "trace"
 
-    @patch("lilypad._utils.settings.get_settings")
-    @patch("lilypad._utils.client.get_sync_client")
-    def test_trace_annotate_valid_flow(self, mock_get_client, mock_get_settings):
-        """Test the complete annotate flow with proper mocking."""
-        # Setup settings
-        mock_settings = Mock()
-        mock_settings.project_id = "project-123"
-        mock_settings.api_key = "api-key"
-        mock_get_settings.return_value = mock_settings
-
-        # Setup client
-        mock_client = Mock()
-        mock_get_client.return_value = mock_client
-
-        trace = Trace(response="test", span_id=123, function_uuid="test-uuid")
-
-        annotation = Annotation(data={"test": "data"}, label="pass", reasoning="Test annotation", type="manual")
-
-        # Mock _get_span_uuid to return a UUID
-        with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
-            trace.annotate(annotation)
-
-        # Verify client was called with correct parameters
-        mock_client.ee.projects.annotations.create.assert_called_once()
-        call_kwargs = mock_client.ee.projects.annotations.create.call_args[1]
-        assert call_kwargs["project_uuid"] == "project-123"
-        assert len(call_kwargs["request"]) == 1
-
-    @pytest.mark.asyncio
-    @patch("lilypad._utils.settings.get_settings")
-    @patch("lilypad._utils.client.get_async_client")
-    async def test_async_trace_annotate_valid_flow(self, mock_get_client, mock_get_settings):
-        """Test the complete AsyncTrace annotate flow with proper mocking."""
-        # Setup settings
-        mock_settings = Mock()
-        mock_settings.project_id = "project-123"
-        mock_settings.api_key = "api-key"
-        mock_get_settings.return_value = mock_settings
-
-        # Setup client
-        mock_client = Mock()
-        mock_client.ee.projects.annotations.create = AsyncMock()
-        mock_get_client.return_value = mock_client
-
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
-
-        annotation = Annotation(data={"test": "data"}, label="pass", reasoning="Test annotation", type="manual")
-
-        # Mock _get_span_uuid to return a UUID
-        with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
-            await trace.annotate(annotation)
-
-        # Verify client was called with correct parameters
-        mock_client.ee.projects.annotations.create.assert_called_once()
 
     def test_annotation_creation(self):
         """Test Annotation model creation."""

@@ -151,8 +151,17 @@ class TestDecoratorEdgeCases:
             result = await sample_async_function(1, 2)
             assert result == 3
 
-    def test_trace_parameter_binding_failure(self):
+    @patch("lilypad.traces.get_sync_client")
+    @patch("lilypad._utils.settings.get_settings")
+    def test_trace_parameter_binding_failure(self, mock_get_settings, mock_get_client):
         """Test trace decorator when parameter binding fails."""
+        # Setup mocks
+        mock_settings = Mock()
+        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+        mock_get_settings.return_value = mock_settings
+        
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
 
         @trace(mode="wrap")
         def sample_function(trace_ctx, x: int, y: int) -> int:
@@ -161,11 +170,20 @@ class TestDecoratorEdgeCases:
         # Call with wrong number of arguments to trigger TypeError in bind
         # This should still work because the decorator handles the TypeError
         result = sample_function(1, 2)  # Missing trace_ctx, but decorator adds it
-        assert result == 3
+        assert result.response == 3
 
     @pytest.mark.asyncio
-    async def test_async_trace_parameter_binding_failure(self):
+    @patch("lilypad.traces.get_async_client")
+    @patch("lilypad._utils.settings.get_settings")
+    async def test_async_trace_parameter_binding_failure(self, mock_get_settings, mock_get_client):
         """Test async trace decorator when parameter binding fails."""
+        # Setup mocks
+        mock_settings = Mock()
+        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+        mock_get_settings.return_value = mock_settings
+        
+        mock_client = Mock()
+        mock_get_client.return_value = mock_client
 
         @trace(mode="wrap")
         async def sample_async_function(trace_ctx, x: int, y: int) -> int:
@@ -175,7 +193,7 @@ class TestDecoratorEdgeCases:
         # Call with wrong number of arguments to trigger TypeError in bind
         # This should still work because the decorator handles the TypeError
         result = await sample_async_function(1, 2)  # Missing trace_ctx, but decorator adds it
-        assert result == 3
+        assert result.response == 3
 
     def test_trace_with_user_provided_trace_ctx(self):
         """Test trace decorator when user provides their own trace_ctx."""
