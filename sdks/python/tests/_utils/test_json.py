@@ -683,3 +683,103 @@ def test_undefined_type():
     assert undefined1 is not undefined2
     assert isinstance(undefined1, UndefinedType)
     assert isinstance(undefined2, UndefinedType)
+
+
+def test_jsonable_encoder_with_custom_encoder_class_hierarchy():
+    """Test jsonable_encoder with custom encoders and class hierarchies."""
+    class BaseType:
+        def __init__(self, value):
+            self.value = value
+    
+    class DerivedType(BaseType):
+        pass
+    
+    # Test custom encoder with class tuple matching
+    custom_encoder = {BaseType: lambda obj: f"encoded_{obj.value}"}
+    
+    obj = DerivedType("test")
+    result = jsonable_encoder(obj, custom_encoder=custom_encoder)
+    assert result == "encoded_test"
+
+
+def test_jsonable_encoder_fallback_to_vars():
+    """Test jsonable_encoder fallback to vars() for objects without __dict__."""
+    class TypeWithoutDict:
+        __slots__ = ('value',)
+        
+        def __init__(self, value):
+            self.value = value
+            
+    class TypeWithoutDictAndNoVars:
+        """A type that will trigger the exception path."""
+        __slots__ = ()
+    
+    # This should trigger the path where we try to get attributes from dir()
+    obj = TypeWithoutDictAndNoVars()
+    
+    # The jsonable_encoder should handle this gracefully
+    result = jsonable_encoder(obj)
+    assert isinstance(result, dict)
+
+
+def test_to_json_serializable_enum():
+    """Test _to_json_serializable with Enum objects."""
+    result = _to_json_serializable(Color.RED)
+    assert result == "red"
+
+
+def test_to_json_serializable_decimal():
+    """Test _to_json_serializable with Decimal objects."""
+    from decimal import Decimal
+    
+    decimal_val = Decimal("123.456")
+    result = _to_json_serializable(decimal_val)
+    assert result == 123.456
+
+
+def test_to_json_serializable_timedelta():
+    """Test _to_json_serializable with timedelta objects."""
+    import datetime
+    
+    delta = datetime.timedelta(hours=2, minutes=30)
+    result = _to_json_serializable(delta)
+    assert result == 9000.0  # 2.5 hours in seconds
+
+
+def test_to_json_serializable_ipv4_ipv6_and_path():
+    """Test _to_json_serializable with IP addresses and Path objects."""
+    from ipaddress import IPv4Address, IPv6Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
+    from pathlib import Path, PurePath
+    from uuid import UUID
+    
+    # Test IPv4Address
+    ipv4 = IPv4Address("192.168.1.1")
+    assert _to_json_serializable(ipv4) == "192.168.1.1"
+    
+    # Test IPv6Address
+    ipv6 = IPv6Address("::1")
+    assert _to_json_serializable(ipv6) == "::1"
+    
+    # Test IPv4Interface
+    ipv4_interface = IPv4Interface("192.168.1.1/24")
+    assert _to_json_serializable(ipv4_interface) == "192.168.1.1/24"
+    
+    # Test IPv4Network
+    ipv4_network = IPv4Network("192.168.1.0/24")
+    assert _to_json_serializable(ipv4_network) == "192.168.1.0/24"
+    
+    # Test IPv6Interface
+    ipv6_interface = IPv6Interface("::1/128")
+    assert _to_json_serializable(ipv6_interface) == "::1/128"
+    
+    # Test IPv6Network
+    ipv6_network = IPv6Network("::1/128")
+    assert _to_json_serializable(ipv6_network) == "::1/128"
+    
+    # Test PurePath
+    path = PurePath("/tmp/test.txt")
+    assert _to_json_serializable(path) == "/tmp/test.txt"
+    
+    # Test UUID
+    uuid_obj = UUID("12345678-1234-5678-9abc-123456789abc")
+    assert _to_json_serializable(uuid_obj) == "12345678-1234-5678-9abc-123456789abc"
