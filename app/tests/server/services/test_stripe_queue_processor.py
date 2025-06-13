@@ -1,6 +1,7 @@
 """Tests for the Stripe Queue Processor service."""
 
 import asyncio
+import contextlib
 import json
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, patch
@@ -1067,25 +1068,46 @@ class TestStripeQueueProcessor:
     @pytest.mark.asyncio
     async def test_stop_with_running_tasks(self, processor):
         """Test stop method cancels running tasks."""
+        import asyncio
+        
         processor._running = True
         
-        # Create mock tasks
-        mock_task1 = AsyncMock()
-        mock_task1.done.return_value = False
-        mock_task1.cancel.return_value = None
+        # Create actual asyncio tasks that we can control
+        async def dummy_task():
+            await asyncio.sleep(10)  # Long running task
         
-        mock_task2 = AsyncMock()
-        mock_task2.done.return_value = True  # Already done
+        # Create real tasks but immediately replace their methods
+        task1 = asyncio.create_task(dummy_task())
+        task2 = asyncio.create_task(dummy_task())
         
-        processor._process_task = mock_task1
-        processor._flush_task = mock_task2
+        # Replace done() and cancel() with mocks to track calls
+        original_done1 = task1.done
+        original_cancel1 = task1.cancel
+        task1.done = Mock(return_value=False)
+        task1.cancel = Mock(side_effect=original_cancel1)  # Still actually cancel
+        
+        original_done2 = task2.done  
+        original_cancel2 = task2.cancel
+        task2.done = Mock(return_value=True)  # Already done
+        task2.cancel = Mock()
+        
+        processor._process_task = task1
+        processor._flush_task = task2
         processor._retry_task = None
         
         await processor.stop()
         
         # Should cancel running tasks
-        mock_task1.cancel.assert_called_once()
-        mock_task2.cancel.assert_not_called()  # Already done
+        task1.cancel.assert_called_once()
+        task2.cancel.assert_not_called()  # Already done
+        
+        # Clean up
+        task1.cancel()
+        task2.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task1
+        with contextlib.suppress(asyncio.CancelledError):
+            await task2
 
     @pytest.mark.asyncio
     async def test_initialize_return_false_on_final_attempt(self, processor):

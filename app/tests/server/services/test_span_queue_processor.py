@@ -1328,6 +1328,9 @@ class TestAdditionalCoverage:
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_stop_with_running_tasks(self, mock_get_settings):
         """Test stop method with running tasks that don't complete immediately."""
+        import asyncio
+        import contextlib
+        
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
@@ -1335,16 +1338,24 @@ class TestAdditionalCoverage:
         processor = SpanQueueProcessor()
         processor._running = True
 
-        # Mock tasks that are not done
-        mock_cleanup_task = AsyncMock()
-        mock_cleanup_task.done.return_value = False
-        mock_cleanup_task.cancel = Mock()
-        processor._cleanup_task = mock_cleanup_task
+        # Create actual asyncio tasks that we can control
+        async def dummy_task():
+            await asyncio.sleep(10)  # Long running task
+        
+        # Create real tasks but replace their methods
+        cleanup_task = asyncio.create_task(dummy_task())
+        process_task = asyncio.create_task(dummy_task())
+        
+        # Replace done() and cancel() with mocks to track calls
+        original_cancel_cleanup = cleanup_task.cancel
+        cleanup_task.done = Mock(return_value=False)
+        cleanup_task.cancel = Mock(side_effect=original_cancel_cleanup)  # Still actually cancel
+        processor._cleanup_task = cleanup_task
 
-        mock_process_task = AsyncMock()
-        mock_process_task.done.return_value = False
-        mock_process_task.cancel = Mock()
-        processor._process_task = mock_process_task
+        original_cancel_process = process_task.cancel
+        process_task.done = Mock(return_value=False)
+        process_task.cancel = Mock(side_effect=original_cancel_process)  # Still actually cancel
+        processor._process_task = process_task
 
         # Mock session with close error
         mock_session = Mock()
@@ -1361,9 +1372,17 @@ class TestAdditionalCoverage:
             await processor.stop()
 
         assert processor._running is False
-        mock_cleanup_task.cancel.assert_called_once()
-        mock_process_task.cancel.assert_called_once()
+        cleanup_task.cancel.assert_called_once()
+        process_task.cancel.assert_called_once()
         mock_logger.error.assert_called()  # For session close error
+        
+        # Clean up tasks
+        cleanup_task.cancel()
+        process_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await cleanup_task
+        with contextlib.suppress(asyncio.CancelledError):
+            await process_task
 
     @pytest.mark.asyncio 
     @patch("lilypad.server.services.span_queue_processor.get_settings")

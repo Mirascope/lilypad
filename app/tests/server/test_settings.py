@@ -6,7 +6,10 @@ from lilypad.server.settings import Settings
 
 def test_remote_client_hostname_with_valid_url():
     """Test remote_client_hostname with valid URL."""
-    with patch.dict("os.environ", {"LILYPAD_CLIENT_URL": "https://example.com:8080/path"}):
+    with patch.dict("os.environ", {
+        "LILYPAD_ENVIRONMENT": "production",
+        "LILYPAD_REMOTE_CLIENT_URL": "https://example.com:8080/path"
+    }):
         settings = Settings()
         assert settings.remote_client_hostname == "example.com"
 

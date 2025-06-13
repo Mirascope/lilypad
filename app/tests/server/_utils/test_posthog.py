@@ -18,6 +18,9 @@ from lilypad.server._utils.posthog import (
 
 def test_get_posthog_client():
     """Test getting PostHog client with settings."""
+    # Clear the cache first
+    get_posthog_client.cache_clear()
+    
     with patch("lilypad.server._utils.posthog.get_settings") as mock_get_settings:
         mock_settings = Mock()
         mock_settings.posthog_api_key = "test-api-key"
