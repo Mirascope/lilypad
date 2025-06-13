@@ -170,20 +170,36 @@ def client(
 
 
 @pytest.fixture
-def test_user(session: Session) -> Generator[UserTable, None, None]:
-    """Create a test user.
+def test_organization(session: Session) -> Generator[OrganizationTable, None, None]:
+    """Create a test organization.
 
     Args:
         session: Database session
 
     Yields:
-        UserTable: Test user
+        OrganizationTable: Test organization
     """
-    user_uuid = uuid4()
     organization = OrganizationTable(
         uuid=ORGANIZATION_UUID, name="Test Organization", license="123456"
     )
     session.add(organization)
+    session.commit()
+    session.refresh(organization)
+    yield organization
+
+
+@pytest.fixture
+def test_user(session: Session, test_organization: OrganizationTable) -> Generator[UserTable, None, None]:
+    """Create a test user.
+
+    Args:
+        session: Database session
+        test_organization: Test organization
+
+    Yields:
+        UserTable: Test user
+    """
+    user_uuid = uuid4()
     user = UserTable(
         uuid=user_uuid,
         email="test@test.com",
@@ -195,7 +211,7 @@ def test_user(session: Session) -> Generator[UserTable, None, None]:
         user_uuid=user_uuid,
         organization_uuid=ORGANIZATION_UUID,
         role=UserRole.ADMIN,
-        organization=organization,
+        organization=test_organization,
     )
     session.add(user_org)
     session.commit()
