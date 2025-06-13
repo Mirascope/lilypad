@@ -1,6 +1,7 @@
 """Tests for the EE functions API playground functionality."""
 
 import base64
+import json
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -294,3 +295,259 @@ def test_decode_bytes_edge_cases():
     arg_types_and_values = {"data": ("bytes", encoded)}
     result = _decode_bytes(arg_types_and_values)
     assert result["data"] == test_data.encode()
+
+    # Test None value for bytes
+    arg_types_and_values = {"data": ("bytes", None)}
+    result = _decode_bytes(arg_types_and_values)
+    assert result["data"] is None
+
+    # Test bytes value (already bytes)
+    byte_value = b"test"
+    arg_types_and_values = {"data": ("bytes", byte_value)}
+    result = _decode_bytes(arg_types_and_values)
+    assert result["data"] == byte_value
+
+    # Test invalid type for bytes arg
+    arg_types_and_values = {"data": ("bytes", 123)}
+    with pytest.raises(ValueError, match="Expected base64 encoded string or None for bytes argument"):
+        _decode_bytes(arg_types_and_values)
+
+    # Test non-bytes argument (should pass through)
+    arg_types_and_values = {"data": ("str", "test_string")}
+    result = _decode_bytes(arg_types_and_values)
+    assert result["data"] == "test_string"
+
+
+def test_validate_api_keys_injection_patterns():
+    """Test API key validation against injection attacks."""
+    # Test command injection characters
+    malicious_keys = {
+        "OPENAI_API_KEY": "key; rm -rf /",
+        "ANTHROPIC_API_KEY": "key | cat /etc/passwd",
+        "GOOGLE_API_KEY": "key & malicious_command",
+        "OPENROUTER_API_KEY": "key`backdoor`",
+    }
+    sanitized = _validate_api_keys(malicious_keys)
+    
+    # All should be emptied due to injection characters
+    assert sanitized["OPENAI_API_KEY"] == ""
+    assert sanitized["ANTHROPIC_API_KEY"] == ""
+    assert sanitized["GOOGLE_API_KEY"] == ""
+    assert sanitized["OPENROUTER_API_KEY"] == ""
+
+    # Test invalid format (too short)
+    short_keys = {"OPENAI_API_KEY": "short"}
+    sanitized = _validate_api_keys(short_keys)
+    assert sanitized["OPENAI_API_KEY"] == ""
+
+    # Test invalid format (too long)
+    long_keys = {"OPENAI_API_KEY": "a" * 300}
+    sanitized = _validate_api_keys(long_keys)
+    assert sanitized["OPENAI_API_KEY"] == ""
+
+    # Test valid key format passes through
+    valid_keys = {"OPENAI_API_KEY": "sk-1234567890abcdef1234567890abcdef"}
+    sanitized = _validate_api_keys(valid_keys)
+    assert sanitized["OPENAI_API_KEY"] == valid_keys["OPENAI_API_KEY"]
+
+
+def test_run_playground_python_not_found():
+    """Test playground when Python executable doesn't exist."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/nonexistent/path"
+        
+        result = _run_playground("print('test')", {})
+        
+        assert "error" in result
+        error = result["error"]
+        assert error["type"] == PlaygroundErrorType.CONFIGURATION
+        assert "not found" in error["reason"]
+
+
+def test_run_playground_timeout():
+    """Test playground timeout handling."""
+    with patch("subprocess.run") as mock_run:
+        from subprocess import TimeoutExpired
+        mock_run.side_effect = TimeoutExpired("python", 60)
+        
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("time.sleep(100)", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.TIMEOUT
+                assert "time limit" in error["reason"]
+
+
+def test_run_playground_file_not_found():
+    """Test playground when executable can't be found."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError("Python not found")
+        
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.CONFIGURATION
+                assert "Failed to execute" in error["reason"]
+
+
+def test_run_playground_unexpected_exception():
+    """Test playground unexpected exception handling."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = RuntimeError("Unexpected error")
+        
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.SUBPROCESS
+                assert "unexpected error" in error["reason"]
+
+
+def test_run_playground_success_with_valid_output():
+    """Test playground successful execution with valid JSON output."""
+    expected_output = {"result": "test response", "span_id": "span123"}
+    json_output = f"__JSON_START__{json.dumps(expected_output)}__JSON_END__"
+    
+    mock_result = Mock()
+    mock_result.returncode = 0
+    mock_result.stdout = json_output
+    mock_result.stderr = ""
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                assert result == expected_output
+
+
+def test_run_playground_success_with_error_output():
+    """Test playground that returns an error structure successfully."""
+    error_output = {
+        "error": {
+            "type": "ValueError",
+            "reason": "Invalid input",
+            "details": "Test error details"
+        }
+    }
+    json_output = f"__JSON_START__{json.dumps(error_output)}__JSON_END__"
+    
+    mock_result = Mock()
+    mock_result.returncode = 0
+    mock_result.stdout = json_output
+    mock_result.stderr = ""
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("raise ValueError('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == "ValueError"
+                assert error["reason"] == "Invalid input"
+
+
+def test_run_playground_invalid_json_output():
+    """Test playground with invalid JSON between markers."""
+    invalid_json = "__JSON_START__invalid json here__JSON_END__"
+    
+    mock_result = Mock()
+    mock_result.returncode = 0
+    mock_result.stdout = invalid_json
+    mock_result.stderr = ""
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.OUTPUT_PARSING
+                assert "invalid JSON" in error["reason"]
+
+
+def test_run_playground_missing_markers():
+    """Test playground with missing output markers."""
+    mock_result = Mock()
+    mock_result.returncode = 0
+    mock_result.stdout = "No markers in this output"
+    mock_result.stderr = ""
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.OUTPUT_MARKER
+                assert "output markers" in error["reason"]
+
+
+def test_run_playground_execution_error():
+    """Test playground with execution error (non-zero return code)."""
+    mock_result = Mock()
+    mock_result.returncode = 1
+    mock_result.stdout = ""
+    mock_result.stderr = "ValueError: Test error message"
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("raise ValueError('test')", {})
+                
+                assert "error" in result
+                error = result["error"]
+                assert error["type"] == PlaygroundErrorType.EXECUTION_ERROR
+                assert "Test error message" in error["reason"]
+
+
+def test_run_playground_error_validation_failure():
+    """Test playground with error structure that fails validation."""
+    invalid_error_output = {
+        "error": {
+            "invalid_field": "bad structure"
+        }
+    }
+    json_output = f"__JSON_START__{json.dumps(invalid_error_output)}__JSON_END__"
+    
+    mock_result = Mock()
+    mock_result.returncode = 0
+    mock_result.stdout = json_output
+    mock_result.stderr = ""
+    
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+            mock_settings.return_value.playground_venv_path = "/usr"
+            
+            with patch("pathlib.Path.exists", return_value=True):
+                result = _run_playground("print('test')", {})
+                
+                # Should return the unvalidated structure
+                assert "error" in result
+                assert result["error"] == invalid_error_output["error"]
