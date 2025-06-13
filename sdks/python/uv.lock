@@ -1398,6 +1398,8 @@ dependencies = [
     { name = "mirascope" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-propagator-b3" },
+    { name = "opentelemetry-propagator-jaeger" },
     { name = "opentelemetry-sdk" },
     { name = "orjson" },
     { name = "pydantic" },
@@ -1489,6 +1491,8 @@ requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.0" },
     { name = "opentelemetry-api", specifier = ">=1.31.0" },
     { name = "opentelemetry-instrumentation", specifier = ">=0.51b0" },
+    { name = "opentelemetry-propagator-b3", specifier = ">=1.31.0" },
+    { name = "opentelemetry-propagator-jaeger", specifier = ">=1.31.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.31.0" },
     { name = "orjson", specifier = ">=2.0.1" },
     { name = "outlines", marker = "extra == 'outlines'", specifier = ">=0.1.11" },
@@ -2084,6 +2088,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c3/fd/5756aea3fdc5651b572d8aef7d94d22a0a36e49c8b12fcb78cb905ba8896/opentelemetry_instrumentation-0.54b1.tar.gz", hash = "sha256:7658bf2ff914b02f246ec14779b66671508125c0e4227361e56b5ebf6cef0aec", size = 28436, upload-time = "2025-05-16T19:03:22.223Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/89/0790abc5d9c4fc74bd3e03cb87afe2c820b1d1a112a723c1163ef32453ee/opentelemetry_instrumentation-0.54b1-py3-none-any.whl", hash = "sha256:a4ae45f4a90c78d7006c51524f57cd5aa1231aef031eae905ee34d5423f5b198", size = 31019, upload-time = "2025-05-16T19:02:15.611Z" },
+]
+
+[[package]]
+name = "opentelemetry-propagator-b3"
+version = "1.34.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/81/f4/a549405cee56030633b6293fcac8be528c3ce301de9bc52ea1bb232f5234/opentelemetry_propagator_b3-1.34.0.tar.gz", hash = "sha256:b21706d0960a4374490beae4e772167d3870f0457eb6bc6cde801bce0764dea8", size = 9614, upload-time = "2025-06-04T13:31:34.559Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/ae/8266ddcd86750668761fe901d770da2ff96b6bce6729c7443908806c15dd/opentelemetry_propagator_b3-1.34.0-py3-none-any.whl", hash = "sha256:4ec466ba63fac59842740b5d9d4adb63e372ffd739e4eab8a857c40460e167de", size = 8941, upload-time = "2025-06-04T13:31:17.849Z" },
+]
+
+[[package]]
+name = "opentelemetry-propagator-jaeger"
+version = "1.34.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/7c/5753b3adc17195e6db19b301934f5fd3fd6e75eb561645673fb2070d2ff4/opentelemetry_propagator_jaeger-1.34.0.tar.gz", hash = "sha256:177400c8dbcc34adbd4c2837ce3dc3dd3741ad061c73ad9e4af570872776ecfc", size = 8661, upload-time = "2025-06-04T13:31:35.152Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/a1/3b56a5d8a9a50f7854736fe094877941aaf0008061d770e497b5a8316f6f/opentelemetry_propagator_jaeger-1.34.0-py3-none-any.whl", hash = "sha256:c903c3a871f649df2b6523072439b2a94c5c1efe7804addc30dcb844d6c465f1", size = 8777, upload-time = "2025-06-04T13:31:18.754Z" },
 ]
 
 [[package]]
