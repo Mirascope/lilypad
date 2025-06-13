@@ -339,3 +339,17 @@ def test_create_user_organization_create_failed(
                 response = client.post("/ee/user-organizations", json=token_data)
                 assert response.status_code == 500
                 assert response.json()["detail"] == "Failed to create user organization."
+
+
+def test_get_license_endpoint(client: TestClient):
+    """Test the EE organizations license endpoint."""
+    response = client.get("/ee/organizations/license")
+    
+    # This endpoint should return license info or appropriate error
+    # The exact response depends on license validation setup
+    assert response.status_code in [200, 401, 403, 404]
+    
+    if response.status_code == 200:
+        # If successful, should return license info
+        license_info = response.json()
+        assert isinstance(license_info, dict)

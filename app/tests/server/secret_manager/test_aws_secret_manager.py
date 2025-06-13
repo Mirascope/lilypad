@@ -1089,3 +1089,30 @@ def test_handle_invalid_request_errors():
         manager._handle_client_error(invalid_param_error, "update")
     
     assert "Invalid request during update" in str(exc_info.value)
+
+
+def test_aws_secret_manager_cleanup_error():
+    """Test AWS secret manager cleanup error handling (lines 137-138)."""
+    from unittest.mock import Mock, patch, PropertyMock
+    from lilypad.server.secret_manager.aws_secret_manager import AWSSecretManager
+    
+    manager = AWSSecretManager()
+    
+    # Mock the cleanup method to force an exception during the try block
+    mock_client = Mock()
+    manager._client = mock_client
+    
+    # Patch the assignment to trigger an exception
+    with patch("lilypad.server.secret_manager.aws_secret_manager.logger") as mock_logger:
+        # Use a side effect to raise an exception when setting _client to None
+        type(manager).__dict__['_client'] = PropertyMock(side_effect=Exception("Test cleanup error"))
+        
+        try:
+            manager._cleanup()
+        except Exception:
+            pass  # Expected
+        
+        # Should log the error when exception occurs
+        mock_logger.error.assert_called_once()
+        call_args = mock_logger.error.call_args
+        assert "Error during cleanup" in call_args[0][0]

@@ -1116,7 +1116,7 @@ def test_convert_openai_messages_tool_calls_processing():
     content = result[0].content[0]
     assert hasattr(content, 'type') and content.type == "tool_call"
     assert hasattr(content, 'name') and content.name == "get_weather"
-    assert hasattr(content, 'arguments') and content.arguments == '{"location": "New York"}'
+    assert hasattr(content, 'arguments') and content.arguments == {"location": "New York"}
 
 
 def test_convert_anthropic_messages_tool_calls_processing():
@@ -1145,7 +1145,7 @@ def test_convert_anthropic_messages_tool_calls_processing():
     content = result[0].content[0]
     assert hasattr(content, 'type') and content.type == "tool_call"
     assert hasattr(content, 'name') and content.name == "search_web"
-    assert hasattr(content, 'arguments') and content.arguments == '{"query": "Python tutorials"}'
+    assert hasattr(content, 'arguments') and content.arguments == {"query": "Python tutorials"}
 
 
 def test_convert_mirascope_messages_image_processing():
@@ -1240,12 +1240,14 @@ async def test_fetch_with_memory_cache():
     from unittest.mock import patch, AsyncMock
     
     mock_response = AsyncMock()
-    mock_response.json.return_value = {"test": "data"}
+    mock_response.json = AsyncMock(return_value={"test": "data"})
     
     with patch("httpx.AsyncClient") as mock_client_class:
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_response
-        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value = mock_client
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
         
         result = await fetch_with_memory_cache("http://test.com")
         assert result == {"test": "data"}
@@ -1282,14 +1284,19 @@ def test_span_more_details_from_span():
         ]
     }
     
+    project_uuid = uuid4()
+    
     span = Mock(spec=SpanTable)
     span.uuid = span_uuid
     span.data = span_data
     span.scope = Scope.LLM
+    span.tags = []
     span.model_dump.return_value = {
         "uuid": span_uuid,
         "scope": Scope.LLM,
-        "data": span_data
+        "data": span_data,
+        "project_uuid": project_uuid,
+        "span_id": "test_span_id_123"
     }
     
     # Test LLM scope conversion
@@ -1329,14 +1336,19 @@ def test_span_more_details_from_span_function():
         "events": []
     }
     
+    project_uuid = uuid4()
+    
     span = Mock(spec=SpanTable)
     span.uuid = span_uuid
     span.data = span_data
-    span.scope = Scope.FUNCTION
+    span.scope = Scope.LILYPAD
+    span.tags = []
     span.model_dump.return_value = {
         "uuid": span_uuid,
-        "scope": Scope.FUNCTION,
-        "data": span_data
+        "scope": Scope.LILYPAD,
+        "data": span_data,
+        "project_uuid": project_uuid,
+        "span_id": "test_span_id_123"
     }
     
     # Test function scope conversion

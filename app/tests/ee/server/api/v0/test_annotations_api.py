@@ -720,3 +720,166 @@ def test_generate_annotation_with_span_dict_output(
     # Should return 404 when span doesn't exist
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
+
+
+def test_create_annotations_email_not_in_lookup_error(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_span: SpanTable,
+):
+    """Test creating annotations with email not found in lookup (line 84)."""
+    annotation_data = {
+        "annotations": [
+            {
+                "span_uuid": str(test_span.uuid),
+                "assignee_email": ["nonexistent@example.com"],  # Email not in organization
+                "title": "Test annotation",
+                "content": "Test content",
+            }
+        ]
+    }
+    
+    response = client.post(
+        f"/ee/projects/{test_project.uuid}/annotations", 
+        json=annotation_data
+    )
+    
+    # Should return 404 when email not found in organization
+    assert response.status_code == 404
+    assert "not found in accessible organizations" in response.json()["detail"]
+
+
+def test_create_annotations_assignee_email_processing(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_span: SpanTable,
+    test_user: UserTable,
+):
+    """Test annotations with assignee_email processing (lines 102-106)."""
+    annotation_data = {
+        "annotations": [
+            {
+                "span_uuid": str(test_span.uuid),
+                "assignee_email": [test_user.email],  # Valid email in organization
+                "title": "Test annotation",
+                "content": "Test content",
+            }
+        ]
+    }
+    
+    response = client.post(
+        f"/ee/projects/{test_project.uuid}/annotations", 
+        json=annotation_data
+    )
+    
+    # Should successfully process assignee_email to assigned_to
+    assert response.status_code == 201
+    created_annotations = response.json()
+    assert len(created_annotations) == 1
+    assert created_annotations[0]["title"] == "Test annotation"
+
+
+def test_annotation_missing_lines_coverage(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_span: SpanTable,
+):
+    """Test various edge cases to hit missing lines 117, 146, 264-294."""
+    
+    # Test line 117 - annotation not found in update/delete operations
+    nonexistent_annotation_uuid = uuid4()
+    
+    response = client.patch(
+        f"/ee/projects/{test_project.uuid}/annotations/{nonexistent_annotation_uuid}",
+        json={"title": "Updated title"}
+    )
+    assert response.status_code == 404
+    
+    response = client.delete(
+        f"/ee/projects/{test_project.uuid}/annotations/{nonexistent_annotation_uuid}"
+    )
+    assert response.status_code == 404
+    
+    # Test line 146 - create annotation to check further processing
+    annotation_data = {
+        "annotations": [
+            {
+                "span_uuid": str(test_span.uuid),
+                "title": "Coverage test annotation",
+                "content": "Test content for missing lines",
+            }
+        ]
+    }
+    
+    response = client.post(
+        f"/ee/projects/{test_project.uuid}/annotations", 
+        json=annotation_data
+    )
+    assert response.status_code == 201
+
+
+def test_annotation_metrics_edge_cases(
+    client: TestClient,
+    test_project: ProjectTable,
+):
+    """Test annotation metrics edge cases (lines 264-294)."""
+    
+    # Test annotation metrics with non-existent function
+    nonexistent_function_uuid = uuid4()
+    
+    response = client.get(
+        f"/ee/projects/{test_project.uuid}/functions/{nonexistent_function_uuid}/annotations/metrics"
+    )
+    
+    # This should still return metrics (possibly empty) rather than error
+    assert response.status_code == 200
+    
+    # Test empty metrics response structure
+    metrics = response.json()
+    assert "total_annotations" in metrics
+    assert "annotations_by_status" in metrics
+    assert "annotations_by_assignee" in metrics
+
+
+def test_annotation_validation_both_assigned_to_and_email():
+    """Test annotation validation error when both assigned_to and assignee_email provided (line 49)."""
+    from lilypad.ee.server.schemas.annotations import AnnotationCreate
+    from uuid import uuid4
+    
+    # This should raise a validation error
+    with pytest.raises(ValueError, match="Provide either 'assigned_to'.*or 'assignee_email'.*not both"):
+        AnnotationCreate(
+            span_uuid=uuid4(),
+            data={"test": "annotation"},
+            assigned_to=[uuid4()],  # Both assigned_to and assignee_email provided
+            assignee_email=["test@example.com"]
+        )
+
+
+def test_annotation_validation_success_cases():
+    """Test annotation validation success cases (line 52)."""
+    from lilypad.ee.server.schemas.annotations import AnnotationCreate
+    from uuid import uuid4
+    
+    # Test with only assigned_to
+    annotation1 = AnnotationCreate(
+        span_uuid=uuid4(),
+        data={"test": "annotation"},
+        assigned_to=[uuid4()]
+    )
+    assert annotation1.span_uuid is not None
+    
+    # Test with only assignee_email  
+    annotation2 = AnnotationCreate(
+        span_uuid=uuid4(),
+        data={"test": "annotation"},
+        assignee_email=["test@example.com"]
+    )
+    assert annotation2.span_uuid is not None
+    
+    # Test with neither (should be valid)
+    annotation3 = AnnotationCreate(
+        span_uuid=uuid4(),
+        data={"test": "annotation"}
+    )
+    assert annotation3.span_uuid is not None
