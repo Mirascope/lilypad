@@ -20,6 +20,112 @@ from lilypad.generated.core.api_error import ApiError
 from lilypad.generated.errors.not_found_error import NotFoundError
 
 
+def test_safe_wrapper_api_error_404():
+    """Test that wrapper handles 404 errors by raising NotFoundError (line 79)."""
+    mock_raw_client = Mock()
+    api_error = ApiError(status_code=404, body="Not found", headers={})
+    mock_raw_client.some_method = Mock(side_effect=api_error)
+    
+    wrapper = _SafeRawClientWrapper(mock_raw_client)
+    
+    with pytest.raises(NotFoundError):
+        wrapper.some_method()
+
+
+def test_safe_wrapper_api_error_non_404():
+    """Test that wrapper re-raises non-404 API errors."""
+    mock_raw_client = Mock()
+    api_error = ApiError(status_code=500, body="Server error", headers={})
+    mock_raw_client.some_method = Mock(side_effect=api_error)
+    
+    wrapper = _SafeRawClientWrapper(mock_raw_client)
+    
+    with pytest.raises(ApiError) as exc_info:
+        wrapper.some_method()
+    assert exc_info.value.status_code == 500
+
+
+@pytest.mark.asyncio
+async def test_safe_async_wrapper_api_error_404():
+    """Test that async wrapper handles 404 errors by raising NotFoundError."""
+    mock_raw_client = Mock()
+    api_error = ApiError(status_code=404, body="Not found", headers={})
+    mock_raw_client.some_method = AsyncMock(side_effect=api_error)
+    
+    wrapper = _SafeAsyncRawClientWrapper(mock_raw_client)
+    
+    with pytest.raises(NotFoundError):
+        await wrapper.some_method()
+
+
+@pytest.mark.asyncio
+async def test_safe_async_wrapper_api_error_non_404():
+    """Test that async wrapper re-raises non-404 API errors."""
+    mock_raw_client = Mock()
+    api_error = ApiError(status_code=500, body="Server error", headers={})
+    mock_raw_client.some_method = AsyncMock(side_effect=api_error)
+    
+    wrapper = _SafeAsyncRawClientWrapper(mock_raw_client)
+    
+    with pytest.raises(ApiError) as exc_info:
+        await wrapper.some_method()
+    assert exc_info.value.status_code == 500
+
+
+def test_lilypad_wrap_clients_without_projects():
+    """Test Lilypad client when projects attribute doesn't exist (line 145)."""
+    # Create a mock client without projects attribute by mocking hasattr
+    with patch("lilypad.generated.client.Lilypad") as mock_base:
+        mock_instance = Mock()
+        mock_base.return_value = mock_instance
+        
+        # Mock hasattr to return False for projects
+        with patch("builtins.hasattr") as mock_hasattr:
+            mock_hasattr.return_value = False
+            
+            client = Lilypad(api_key="test-key")
+            # Should not raise an error even without projects
+
+
+def test_lilypad_wrap_clients_exception_handling():
+    """Test Lilypad client exception handling during wrapping (lines 148-149)."""
+    with patch("lilypad.generated.client.Lilypad") as mock_base:
+        mock_instance = Mock()
+        mock_instance.projects = Mock()
+        
+        # Mock _wrap_raw_clients to raise an exception
+        def side_effect(*args):
+            raise Exception("Test exception")
+        
+        mock_base.return_value = mock_instance
+        
+        with patch("lilypad._utils.client.Lilypad._wrap_raw_clients", side_effect=side_effect):
+            with patch("lilypad._utils.client.logger") as mock_logger:
+                # Should handle the exception gracefully
+                client = Lilypad(api_key="test-key")
+                mock_logger.error.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_async_lilypad_wrap_clients_exception_handling():
+    """Test AsyncLilypad client exception handling during wrapping."""
+    with patch("lilypad.generated.client.AsyncLilypad") as mock_base:
+        mock_instance = Mock()
+        mock_instance.projects = Mock()
+        
+        # Mock _wrap_raw_clients to raise an exception
+        def side_effect(*args):
+            raise Exception("Test exception")
+        
+        mock_base.return_value = mock_instance
+        
+        with patch("lilypad._utils.client.AsyncLilypad._wrap_raw_clients", side_effect=side_effect):
+            with patch("lilypad._utils.client.logger") as mock_logger:
+                # Should handle the exception gracefully
+                client = AsyncLilypad(api_key="test-key")
+                mock_logger.error.assert_called_once()
+
+
 def test_noop_fallback():
     """Test the noop fallback function."""
     result = _noop_fallback(1, 2, 3, a=4, b=5)
