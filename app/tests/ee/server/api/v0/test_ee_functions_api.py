@@ -551,3 +551,608 @@ def test_run_playground_error_validation_failure():
                 # Should return the unvalidated structure
                 assert "error" in result
                 assert result["error"] == invalid_error_output["error"]
+
+
+# Test the actual API endpoint functions that aren't covered
+def test_playground_api_function_not_found():
+    """Test playground API with function that doesn't exist."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        # Mock services
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = None
+        mock_api_key_service = Mock()
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert "Function not found" in str(exc_info.value.detail)
+
+
+def test_playground_api_invalid_function_data():
+    """Test playground API with invalid function data."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        # Mock function with invalid data
+        mock_function = Mock()
+        mock_function.name = "123invalid"  # Invalid name
+        mock_function.prompt_template = "Valid template"
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "validation failed" in str(exc_info.value.detail)
+
+
+def test_playground_api_invalid_template_values():
+    """Test playground API with invalid provider/model values."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {}
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="invalid$model",  # Invalid model name
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "Invalid provider or model" in str(exc_info.value.detail)
+
+
+def test_playground_api_invalid_arg_name():
+    """Test playground API with invalid argument name."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {"valid_arg": "str"}  # Valid function arg_types
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={"123invalid": "str"},  # Invalid argument name in playground params
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "Invalid argument name" in str(exc_info.value.detail)
+
+
+def test_playground_api_invalid_arg_values():
+    """Test playground API with invalid argument values."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {"data": "bytes"}
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={"data": "invalid_base64!"},  # Invalid base64
+            arg_types={"data": "bytes"},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "Invalid argument value encoding" in str(exc_info.value.detail)
+
+
+def test_playground_api_external_key_error():
+    """Test playground API with external API key retrieval error."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {}
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
+        mock_user_external_api_key_service = Mock()
+        mock_user_external_api_key_service.list_api_keys.side_effect = RuntimeError("Key service error")
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 500
+        assert "Failed to retrieve external API keys" in str(exc_info.value.detail)
+
+
+def test_playground_api_missing_provider_key():
+    """Test playground API with missing provider API key."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {}
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
+        mock_user_external_api_key_service = Mock()
+        mock_user_external_api_key_service.list_api_keys.return_value = {}  # No keys
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "Missing API key for provider" in str(exc_info.value.detail)
+
+
+def test_playground_api_success_without_span_id():
+    """Test playground API successful execution but missing span ID."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        with patch("lilypad.ee.server.api.v0.functions_api._run_playground") as mock_run:
+            mock_run.return_value = {"result": "success response"}  # No span_id
+            
+            from lilypad.ee.server.api.v0.functions_api import run_playground
+            from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+            from fastapi import HTTPException
+            
+            mock_function = Mock()
+            mock_function.name = "valid_function"
+            mock_function.prompt_template = "Valid template"
+            mock_function.call_params = {}
+            mock_function.arg_types = {}
+            
+            mock_api_key = Mock()
+            mock_api_key.key_hash = "test_key_hash"
+            
+            mock_function_service = Mock()
+            mock_function_service.find_record_by_uuid.return_value = mock_function
+            mock_api_key_service = Mock()
+            mock_api_key_service.find_keys_by_user_and_project.return_value = [mock_api_key]
+            mock_user_external_api_key_service = Mock()
+            mock_user_external_api_key_service.list_api_keys.return_value = {"openai": "test"}
+            mock_user_external_api_key_service.get_api_key.return_value = "test_key"
+            mock_span_service = Mock()
+            
+            playground_params = PlaygroundParameters(
+                provider=Provider.OPENAI,
+                model="gpt-4",
+                arg_values={},
+                arg_types={},
+                prompt_template="Test template",
+                call_params={}
+            )
+            
+            with pytest.raises(HTTPException) as exc_info:
+                run_playground(
+                    project_uuid=uuid4(),
+                    function_uuid=uuid4(),
+                    playground_parameters=playground_params,
+                    function_service=mock_function_service,
+                    api_key_service=mock_api_key_service,
+                    user_external_api_key_service=mock_user_external_api_key_service,
+                    span_service=mock_span_service
+                )
+            
+            # Should fail due to missing span_id
+            assert "error" in str(exc_info.value.detail)
+
+
+def test_playground_api_invalid_error_structure():
+    """Test playground API with invalid error structure from playground execution."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        with patch("lilypad.ee.server.api.v0.functions_api._run_playground") as mock_run:
+            mock_run.return_value = {
+                "error": {"invalid_field": "bad_structure"}  # Invalid error structure
+            }
+            
+            from lilypad.ee.server.api.v0.functions_api import run_playground
+            from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+            from fastapi import HTTPException
+            
+            mock_function = Mock()
+            mock_function.name = "valid_function"
+            mock_function.prompt_template = "Valid template"
+            mock_function.call_params = {}
+            mock_function.arg_types = {}
+            
+            mock_api_key = Mock()
+            mock_api_key.key_hash = "test_key_hash"
+            
+            mock_function_service = Mock()
+            mock_function_service.find_record_by_uuid.return_value = mock_function
+            mock_api_key_service = Mock()
+            mock_api_key_service.find_keys_by_user_and_project.return_value = [mock_api_key]
+            mock_user_external_api_key_service = Mock()
+            mock_user_external_api_key_service.list_api_keys.return_value = {"openai": "test"}
+            mock_user_external_api_key_service.get_api_key.return_value = "test_key"
+            mock_span_service = Mock()
+            
+            playground_params = PlaygroundParameters(
+                provider=Provider.OPENAI,
+                model="gpt-4",
+                arg_values={},
+                arg_types={},
+                prompt_template="Test template",
+                call_params={}
+            )
+            
+            with pytest.raises(HTTPException) as exc_info:
+                run_playground(
+                    project_uuid=uuid4(),
+                    function_uuid=uuid4(),
+                    playground_parameters=playground_params,
+                    function_service=mock_function_service,
+                    api_key_service=mock_api_key_service,
+                    user_external_api_key_service=mock_user_external_api_key_service,
+                    span_service=mock_span_service
+                )
+            
+            assert exc_info.value.status_code == 500
+            assert "invalid error structure" in str(exc_info.value.detail)
+
+
+def test_playground_api_timeout_error():
+    """Test playground API with timeout error from execution."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        with patch("lilypad.ee.server.api.v0.functions_api._run_playground") as mock_run:
+            from lilypad.server.schemas.functions import PlaygroundErrorType
+            mock_run.return_value = {
+                "error": {
+                    "type": PlaygroundErrorType.TIMEOUT,
+                    "reason": "Execution timed out",
+                    "details": ""
+                }
+            }
+            
+            from lilypad.ee.server.api.v0.functions_api import run_playground
+            from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+            from fastapi import HTTPException
+            
+            mock_function = Mock()
+            mock_function.name = "valid_function"
+            mock_function.prompt_template = "Valid template"
+            mock_function.call_params = {}
+            mock_function.arg_types = {}
+            
+            mock_api_key = Mock()
+            mock_api_key.key_hash = "test_key_hash"
+            
+            mock_function_service = Mock()
+            mock_function_service.find_record_by_uuid.return_value = mock_function
+            mock_api_key_service = Mock()
+            mock_api_key_service.find_keys_by_user_and_project.return_value = [mock_api_key]
+            mock_user_external_api_key_service = Mock()
+            mock_user_external_api_key_service.list_api_keys.return_value = {"openai": "test"}
+            mock_user_external_api_key_service.get_api_key.return_value = "test_key"
+            mock_span_service = Mock()
+            
+            playground_params = PlaygroundParameters(
+                provider=Provider.OPENAI,
+                model="gpt-4",
+                arg_values={},
+                arg_types={},
+                prompt_template="Test template",
+                call_params={}
+            )
+            
+            with pytest.raises(HTTPException) as exc_info:
+                run_playground(
+                    project_uuid=uuid4(),
+                    function_uuid=uuid4(),
+                    playground_parameters=playground_params,
+                    function_service=mock_function_service,
+                    api_key_service=mock_api_key_service,
+                    user_external_api_key_service=mock_user_external_api_key_service,
+                    span_service=mock_span_service
+                )
+            
+            assert exc_info.value.status_code == 408  # REQUEST_TIMEOUT
+
+
+def test_playground_api_configuration_error():
+    """Test playground API with configuration error from execution."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        with patch("lilypad.ee.server.api.v0.functions_api._run_playground") as mock_run:
+            from lilypad.server.schemas.functions import PlaygroundErrorType
+            mock_run.return_value = {
+                "error": {
+                    "type": PlaygroundErrorType.CONFIGURATION,
+                    "reason": "Configuration error",
+                    "details": ""
+                }
+            }
+            
+            from lilypad.ee.server.api.v0.functions_api import run_playground
+            from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+            from fastapi import HTTPException
+            
+            mock_function = Mock()
+            mock_function.name = "valid_function"
+            mock_function.prompt_template = "Valid template"
+            mock_function.call_params = {}
+            mock_function.arg_types = {}
+            
+            mock_api_key = Mock()
+            mock_api_key.key_hash = "test_key_hash"
+            
+            mock_function_service = Mock()
+            mock_function_service.find_record_by_uuid.return_value = mock_function
+            mock_api_key_service = Mock()
+            mock_api_key_service.find_keys_by_user_and_project.return_value = [mock_api_key]
+            mock_user_external_api_key_service = Mock()
+            mock_user_external_api_key_service.list_api_keys.return_value = {"openai": "test"}
+            mock_user_external_api_key_service.get_api_key.return_value = "test_key"
+            mock_span_service = Mock()
+            
+            playground_params = PlaygroundParameters(
+                provider=Provider.OPENAI,
+                model="gpt-4",
+                arg_values={},
+                arg_types={},
+                prompt_template="Test template",
+                call_params={}
+            )
+            
+            with pytest.raises(HTTPException) as exc_info:
+                run_playground(
+                    project_uuid=uuid4(),
+                    function_uuid=uuid4(),
+                    playground_parameters=playground_params,
+                    function_service=mock_function_service,
+                    api_key_service=mock_api_key_service,
+                    user_external_api_key_service=mock_user_external_api_key_service,
+                    span_service=mock_span_service
+                )
+            
+            assert exc_info.value.status_code == 500  # INTERNAL_SERVER_ERROR
+
+
+def test_playground_api_unexpected_exception():
+    """Test playground API with unexpected exception."""
+    with patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings:
+        mock_settings.return_value.playground_venv_path = "/usr"
+        mock_settings.return_value.remote_api_url = "http://test"
+        
+        from lilypad.ee.server.api.v0.functions_api import run_playground
+        from lilypad.server.schemas.functions import PlaygroundParameters, Provider
+        from fastapi import HTTPException
+        
+        mock_function = Mock()
+        mock_function.name = "valid_function"
+        mock_function.prompt_template = "Valid template"
+        mock_function.call_params = {}
+        mock_function.arg_types = {}
+        
+        mock_function_service = Mock()
+        mock_function_service.find_record_by_uuid.return_value = mock_function
+        mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.side_effect = RuntimeError("Unexpected error")
+        mock_user_external_api_key_service = Mock()
+        mock_span_service = Mock()
+        
+        playground_params = PlaygroundParameters(
+            provider=Provider.OPENAI,
+            model="gpt-4",
+            arg_values={},
+            arg_types={},
+            prompt_template="Test template",
+            call_params={}
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            run_playground(
+                project_uuid=uuid4(),
+                function_uuid=uuid4(),
+                playground_parameters=playground_params,
+                function_service=mock_function_service,
+                api_key_service=mock_api_key_service,
+                user_external_api_key_service=mock_user_external_api_key_service,
+                span_service=mock_span_service
+            )
+        
+        assert exc_info.value.status_code == 500
+        assert "unexpected server error" in str(exc_info.value.detail)
