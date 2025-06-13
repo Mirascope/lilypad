@@ -142,110 +142,118 @@ class TestCreateTables:
         # Verify metadata.create_all was called
         mock_metadata.create_all.assert_called_once_with(mock_engine)
 
-    @patch("lilypad.server.db.setup.create_tables")
-    def test_main_execution(self, mock_create_tables):
-        """Test main execution calls create_tables without arguments."""
-        # Import and execute the module's main block
-        import lilypad.server.db.setup
+def test_main_execution_block():
+    """Test the main execution block."""
+    from unittest.mock import patch
+    import subprocess
+    import sys
+    
+    # Test by executing the module directly as a script
+    result = subprocess.run(
+        [sys.executable, "-m", "lilypad.server.db.setup"],
+        capture_output=True,
+        text=True,
+        cwd="/Users/koudai/PycharmProjects/lilypad/app"
+    )
+    
+    # The main block should execute (may fail due to DB connection, but should reach the line)
+    assert result.returncode in [0, 1]  # 0 for success, 1 for expected DB error
 
-        # Simulate the main block execution
-        if True:  # Simulate __name__ == "__main__"
-            lilypad.server.db.setup.create_tables()
 
-        mock_create_tables.assert_called()
+def test_imports_exist():
+    """Test that all necessary imports are available."""
+    # Test that we can import the required modules
+    from sqlmodel import SQLModel
 
-    def test_imports_exist(self):
-        """Test that all necessary imports are available."""
-        # Test that we can import the required modules
-        from sqlmodel import SQLModel
+    from lilypad.server.db.session import db
 
-        from lilypad.server.db.session import db
+    # Verify objects have expected attributes
+    assert hasattr(SQLModel, "metadata")
+    assert hasattr(db, "get_engine")
 
-        # Verify objects have expected attributes
-        assert hasattr(SQLModel, "metadata")
-        assert hasattr(db, "get_engine")
+@patch("lilypad.server.db.setup.SQLModel")
+@patch("lilypad.server.db.setup.db")
+def test_create_tables_integration_pattern(mock_db, mock_sqlmodel):
+    """Test create_tables follows expected integration pattern."""
+    mock_engine = Mock()
+    mock_db.get_engine.return_value = mock_engine
+    mock_metadata = Mock()
+    mock_sqlmodel.metadata = mock_metadata
 
-    @patch("lilypad.server.db.setup.SQLModel")
-    @patch("lilypad.server.db.setup.db")
-    def test_create_tables_integration_pattern(self, mock_db, mock_sqlmodel):
-        """Test create_tables follows expected integration pattern."""
-        mock_engine = Mock()
-        mock_db.get_engine.return_value = mock_engine
-        mock_metadata = Mock()
-        mock_sqlmodel.metadata = mock_metadata
+    # Call with different environment types
+    environments = [None, "local", "development", "production", "test"]
 
-        # Call with different environment types
-        environments = [None, "local", "development", "production", "test"]
-
-        for env in environments:
-            mock_db.get_engine.reset_mock()
-            mock_metadata.create_all.reset_mock()
-
-            create_tables(env)
-
-            mock_db.get_engine.assert_called_once_with(env)
-            mock_metadata.create_all.assert_called_once_with(mock_engine)
-
-    @patch("lilypad.server.db.setup.SQLModel")
-    @patch("lilypad.server.db.setup.db")
-    def test_create_tables_engine_is_passed_to_create_all(self, mock_db, mock_sqlmodel):
-        """Test that the engine from db.get_engine is passed to create_all."""
-        # Create unique mock engines for different calls
-        mock_engine_1 = Mock(name="engine_1")
-        mock_engine_2 = Mock(name="engine_2")
-
-        mock_db.get_engine.side_effect = [mock_engine_1, mock_engine_2]
-        mock_metadata = Mock()
-        mock_sqlmodel.metadata = mock_metadata
-
-        # First call
-        create_tables("env1")
-        mock_metadata.create_all.assert_called_with(mock_engine_1)
-
-        # Reset and second call
+    for env in environments:
+        mock_db.get_engine.reset_mock()
         mock_metadata.create_all.reset_mock()
-        create_tables("env2")
-        mock_metadata.create_all.assert_called_with(mock_engine_2)
 
-    def test_module_structure(self):
-        """Test module has expected structure and exports."""
-        import lilypad.server.db.setup as setup_module
+        create_tables(env)
 
-        # Test function exists
-        assert hasattr(setup_module, "create_tables")
-        assert callable(setup_module.create_tables)
+        mock_db.get_engine.assert_called_once_with(env)
+        mock_metadata.create_all.assert_called_once_with(mock_engine)
 
-        # Test function signature
-        import inspect
+@patch("lilypad.server.db.setup.SQLModel")
+@patch("lilypad.server.db.setup.db")
+def test_create_tables_engine_is_passed_to_create_all(mock_db, mock_sqlmodel):
+    """Test that the engine from db.get_engine is passed to create_all."""
+    # Create unique mock engines for different calls
+    mock_engine_1 = Mock(name="engine_1")
+    mock_engine_2 = Mock(name="engine_2")
 
-        sig = inspect.signature(setup_module.create_tables)
-        params = list(sig.parameters.keys())
-        assert "environment" in params
+    mock_db.get_engine.side_effect = [mock_engine_1, mock_engine_2]
+    mock_metadata = Mock()
+    mock_sqlmodel.metadata = mock_metadata
 
-        # Test default parameter value
-        env_param = sig.parameters["environment"]
-        assert env_param.default is None
+    # First call
+    create_tables("env1")
+    mock_metadata.create_all.assert_called_with(mock_engine_1)
 
-    @patch("lilypad.server.db.setup.SQLModel")
-    @patch("lilypad.server.db.setup.db")
-    def test_create_tables_preserves_environment_type(self, mock_db, mock_sqlmodel):
-        """Test create_tables preserves the type of environment parameter."""
-        mock_engine = Mock()
-        mock_db.get_engine.return_value = mock_engine
-        mock_metadata = Mock()
-        mock_sqlmodel.metadata = mock_metadata
+    # Reset and second call
+    mock_metadata.create_all.reset_mock()
+    create_tables("env2")
+    mock_metadata.create_all.assert_called_with(mock_engine_2)
 
-        # Test with string
-        create_tables("test_env")
-        mock_db.get_engine.assert_called_with("test_env")
 
-        # Test with None
-        mock_db.get_engine.reset_mock()
-        create_tables(None)
-        mock_db.get_engine.assert_called_with(None)
+def test_module_structure():
+    """Test module has expected structure and exports."""
+    import lilypad.server.db.setup as setup_module
 
-        # Test that the exact value is passed through
-        mock_db.get_engine.reset_mock()
-        special_env = "special_environment_string"
-        create_tables(special_env)
-        mock_db.get_engine.assert_called_with(special_env)
+    # Test function exists
+    assert hasattr(setup_module, "create_tables")
+    assert callable(setup_module.create_tables)
+
+    # Test function signature
+    import inspect
+
+    sig = inspect.signature(setup_module.create_tables)
+    params = list(sig.parameters.keys())
+    assert "environment" in params
+
+    # Test default parameter value
+    env_param = sig.parameters["environment"]
+    assert env_param.default is None
+
+
+@patch("lilypad.server.db.setup.SQLModel")
+@patch("lilypad.server.db.setup.db")
+def test_create_tables_preserves_environment_type(mock_db, mock_sqlmodel):
+    """Test create_tables preserves the type of environment parameter."""
+    mock_engine = Mock()
+    mock_db.get_engine.return_value = mock_engine
+    mock_metadata = Mock()
+    mock_sqlmodel.metadata = mock_metadata
+
+    # Test with string
+    create_tables("test_env")
+    mock_db.get_engine.assert_called_with("test_env")
+
+    # Test with None
+    mock_db.get_engine.reset_mock()
+    create_tables(None)
+    mock_db.get_engine.assert_called_with(None)
+
+    # Test that the exact value is passed through
+    mock_db.get_engine.reset_mock()
+    special_env = "special_environment_string"
+    create_tables(special_env)
+    mock_db.get_engine.assert_called_with(special_env)

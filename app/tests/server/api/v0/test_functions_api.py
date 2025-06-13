@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from lilypad.server.models import FunctionTable, ProjectTable
 from lilypad.server.models.environments import EnvironmentTable
+from lilypad.server.models.deployments import DeploymentTable
 
 
 def test_get_function_by_version(
@@ -354,3 +355,192 @@ def test_get_function_by_invalid_hash(
     )
 
     assert response.status_code == 404
+
+
+def test_get_deployed_function_inactive_deployment(
+    client: TestClient, 
+    test_project: ProjectTable, 
+    test_function: FunctionTable,
+    test_environment: EnvironmentTable,
+    session: Session
+):
+    """Test getting deployed function when deployment exists but is inactive."""
+    from lilypad.server._utils.environment import get_current_environment
+    from lilypad.server.api.v0.main import api
+    
+    # Create an inactive deployment
+    deployment = DeploymentTable(
+        project_uuid=test_project.uuid,
+        environment_uuid=test_environment.uuid,
+        function_uuid=test_function.uuid,
+        organization_uuid=test_project.organization_uuid,  # Add required field
+        is_active=False  # Make it inactive
+    )
+    session.add(deployment)
+    session.commit()
+    session.refresh(deployment)
+    
+    # Override the environment dependency
+    api.dependency_overrides[get_current_environment] = lambda: test_environment
+    
+    try:
+        response = client.get(
+            f"/projects/{test_project.uuid}/functions/name/{test_function.name}/environments"
+        )
+        
+        # Should return 400 for inactive deployment
+        assert response.status_code == 400
+        assert "deployed but not active" in response.json()["detail"]
+    finally:
+        # Clean up override
+        api.dependency_overrides.pop(get_current_environment, None)
+
+
+def test_archive_functions_by_name_with_exception(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    monkeypatch
+):
+    """Test archiving functions by name when exception occurs."""
+    from lilypad.server.services import FunctionService
+    
+    # Mock the function service to raise an exception
+    def mock_archive_record_by_name(*args, **kwargs):
+        raise Exception("Test exception")
+    
+    monkeypatch.setattr(FunctionService, "archive_record_by_name", mock_archive_record_by_name)
+    
+    response = client.delete(
+        f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+    )
+    
+    assert response.status_code == 200
+    assert response.json() is False  # Should return False when exception occurs
+
+
+def test_archive_function_with_exception(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    monkeypatch
+):
+    """Test archiving function by UUID when exception occurs."""
+    from lilypad.server.services import FunctionService
+    
+    # Mock the function service to raise an exception
+    def mock_archive_record_by_uuid(*args, **kwargs):
+        raise Exception("Test exception")
+    
+    monkeypatch.setattr(FunctionService, "archive_record_by_uuid", mock_archive_record_by_uuid)
+    
+    response = client.delete(
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+    )
+    
+    assert response.status_code == 200
+    assert response.json() is False  # Should return False when exception occurs
+
+
+def test_get_deployed_function_active_deployment(
+    client: TestClient, 
+    test_project: ProjectTable, 
+    test_function: FunctionTable,
+    test_environment: EnvironmentTable,
+    session: Session
+):
+    """Test getting deployed function when deployment exists and is active."""
+    from lilypad.server._utils.environment import get_current_environment
+    from lilypad.server.api.v0.main import api
+    
+    # Create an active deployment
+    deployment = DeploymentTable(
+        project_uuid=test_project.uuid,
+        environment_uuid=test_environment.uuid,
+        function_uuid=test_function.uuid,
+        organization_uuid=test_project.organization_uuid,
+        is_active=True  # Make it active
+    )
+    session.add(deployment)
+    session.commit()
+    session.refresh(deployment)
+    
+    # Override the environment dependency
+    api.dependency_overrides[get_current_environment] = lambda: test_environment
+    
+    try:
+        response = client.get(
+            f"/projects/{test_project.uuid}/functions/name/{test_function.name}/environments"
+        )
+        
+        # Should return the deployed function
+        assert response.status_code == 200
+        assert response.json()["name"] == test_function.name
+        assert response.json()["uuid"] == str(test_function.uuid)
+    finally:
+        # Clean up override
+        api.dependency_overrides.pop(get_current_environment, None)
+
+
+def test_archive_functions_by_name_with_opensearch_enabled(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    monkeypatch
+):
+    """Test archiving functions by name with OpenSearch enabled (covers success path in exception handler)."""
+    from lilypad.server.services.opensearch import OpenSearchService
+    
+    # Mock OpenSearch service to be enabled
+    class MockOpenSearchService:
+        is_enabled = True
+        
+        def delete_traces_by_function_uuid(self, project_uuid, function_uuid):
+            pass  # Mock successful deletion
+    
+    mock_opensearch = MockOpenSearchService()
+    
+    # Mock the get_opensearch_service dependency
+    def mock_get_opensearch_service():
+        return mock_opensearch
+    
+    monkeypatch.setattr("lilypad.server.services.opensearch.get_opensearch_service", mock_get_opensearch_service)
+    
+    response = client.delete(
+        f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+    )
+    
+    assert response.status_code == 200
+    assert response.json() is True
+
+
+def test_archive_function_with_opensearch_enabled(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    monkeypatch
+):
+    """Test archiving function by UUID with OpenSearch enabled (covers success path in exception handler)."""
+    from lilypad.server.services.opensearch import OpenSearchService
+    
+    # Mock OpenSearch service to be enabled
+    class MockOpenSearchService:
+        is_enabled = True
+        
+        def delete_traces_by_function_uuid(self, project_uuid, function_uuid):
+            pass  # Mock successful deletion
+    
+    mock_opensearch = MockOpenSearchService()
+    
+    # Mock the get_opensearch_service dependency
+    def mock_get_opensearch_service():
+        return mock_opensearch
+    
+    monkeypatch.setattr("lilypad.server.services.opensearch.get_opensearch_service", mock_get_opensearch_service)
+    
+    response = client.delete(
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+    )
+    
+    assert response.status_code == 200
+    assert response.json() is True

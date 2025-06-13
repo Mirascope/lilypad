@@ -640,3 +640,312 @@ class TestEdgeCases:
         # Should return 404 when span doesn't exist
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService")
+    @patch("lilypad.ee.server.api.v0.annotations_api.ProjectService")
+    def test_create_annotations_email_in_lookup(
+        self,
+        mock_project_service_cls,
+        mock_annotation_service_cls,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test creating annotations with email that exists in organization lookup."""
+        # Mock services
+        mock_annotation_service = Mock()
+        mock_annotation_service.check_bulk_duplicates.return_value = []
+
+        mock_annotation = Mock()
+        mock_annotation.span = Mock()
+        mock_annotation_service.create_bulk_records.return_value = [mock_annotation]
+        mock_annotation_service_cls.return_value = mock_annotation_service
+
+        # Mock project with user organizations - need to add email that exists
+        mock_user = Mock()
+        mock_user.email = "found@example.com"
+        mock_user.uuid = uuid4()
+        mock_user_org = Mock()
+        mock_user_org.user = mock_user
+        mock_project = Mock()
+        mock_project.organization.user_organizations = [mock_user_org]
+
+        mock_project_service = Mock()
+        mock_project_service.find_record_by_uuid.return_value = mock_project
+        mock_project_service_cls.return_value = mock_project_service
+
+        # Mock SpanMoreDetails.from_span
+        with patch(
+            "lilypad.ee.server.api.v0.annotations_api.SpanMoreDetails.from_span"
+        ) as mock_span_details:
+            mock_span_details.return_value = {
+                "uuid": str(uuid4()),
+                "project_uuid": str(test_project.uuid),
+                "function_uuid": None,
+                "display_name": "test_span",
+                "provider": "test_provider",
+                "model": "test_model",
+                "scope": "lilypad",
+                "span_id": "test_span_id",
+                "messages": [],
+                "data": {},
+            }
+
+            annotations_create = [
+                {
+                    "span_uuid": str(uuid4()),
+                    "data": {"test": "annotation"},
+                    "assignee_email": ["found@example.com"],
+                }
+            ]
+
+            response = client.post(
+                f"/ee/projects/{test_project.uuid}/annotations",
+                json=annotations_create,
+            )
+
+            # Should succeed since email is found in organization
+            assert response.status_code == 200
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService")
+    @patch("lilypad.ee.server.api.v0.annotations_api.ProjectService")
+    def test_create_annotations_original_input_assignee_uuid(
+        self,
+        mock_project_service_cls,
+        mock_annotation_service_cls,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test creating annotations when original input has assignee_email and processing finds assignee UUID."""
+        # Mock services
+        mock_annotation_service = Mock()
+        mock_annotation_service.check_bulk_duplicates.return_value = []
+
+        mock_annotation = Mock()
+        mock_annotation.span = Mock()
+        mock_annotation_service.create_bulk_records.return_value = [mock_annotation]
+        mock_annotation_service_cls.return_value = mock_annotation_service
+
+        # Mock project with user organizations
+        mock_user = Mock()
+        mock_user.email = "assignee@example.com"
+        mock_user.uuid = uuid4()
+        mock_user_org = Mock()
+        mock_user_org.user = mock_user
+        mock_project = Mock()
+        mock_project.organization.user_organizations = [mock_user_org]
+
+        mock_project_service = Mock()
+        mock_project_service.find_record_by_uuid.return_value = mock_project
+        mock_project_service_cls.return_value = mock_project_service
+
+        # Mock SpanMoreDetails.from_span
+        with patch(
+            "lilypad.ee.server.api.v0.annotations_api.SpanMoreDetails.from_span"
+        ) as mock_span_details:
+            mock_span_details.return_value = {
+                "uuid": str(uuid4()),
+                "project_uuid": str(test_project.uuid),
+                "function_uuid": None,
+                "display_name": "test_span",
+                "provider": "test_provider",
+                "model": "test_model",
+                "scope": "lilypad",
+                "span_id": "test_span_id",
+                "messages": [],
+                "data": {},
+            }
+
+            annotations_create = [
+                {
+                    "span_uuid": str(uuid4()),
+                    "data": {"test": "annotation"},
+                    "assignee_email": ["assignee@example.com"],
+                }
+            ]
+
+            response = client.post(
+                f"/ee/projects/{test_project.uuid}/annotations",
+                json=annotations_create,
+            )
+
+            # Should succeed and process the assignee email to UUID
+            assert response.status_code == 200
+
+    def test_update_annotation_with_mocked_service(
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test updating an annotation with mocked service."""
+        annotation_uuid = uuid4()
+        
+        # Mock the AnnotationService to return a successful update
+        with patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService") as mock_service_cls:
+            mock_service = Mock()
+            mock_annotation = Mock()
+            mock_annotation.span = Mock()
+            mock_service.update_record_by_uuid.return_value = mock_annotation
+            mock_service_cls.return_value = mock_service
+            
+            # Mock SpanMoreDetails.from_span
+            with patch(
+                "lilypad.ee.server.api.v0.annotations_api.SpanMoreDetails.from_span"
+            ) as mock_span_details:
+                mock_span_details.return_value = {
+                    "uuid": str(uuid4()),
+                    "project_uuid": str(test_project.uuid),
+                    "function_uuid": None,
+                    "display_name": "test_span",
+                    "provider": "test_provider",
+                    "model": "test_model",
+                    "scope": "lilypad",
+                    "span_id": "test_span_id",
+                    "messages": [],
+                    "data": {},
+                }
+
+                update_data = {"data": {"updated": "annotation"}}
+
+                response = client.patch(
+                    f"/ee/projects/{test_project.uuid}/annotations/{annotation_uuid}",
+                    json=update_data,
+                )
+
+                # Should succeed with mocked service
+                assert response.status_code == 200
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService")
+    @patch("lilypad.ee.server.api.v0.annotations_api.SpanService")
+    def test_generate_annotation_with_existing_annotation_data(
+        self,
+        mock_span_service_cls,
+        mock_annotation_service_cls,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test generating annotation when annotation already exists with data."""
+        span_uuid = uuid4()
+        
+        # Mock annotation service to return existing annotation with data
+        mock_annotation_service = Mock()
+        mock_annotation = Mock()
+        mock_annotation.data = {"existing": "data"}
+        mock_annotation_service.find_record_by_span_uuid.return_value = mock_annotation
+        mock_annotation_service_cls.return_value = mock_annotation_service
+        
+        mock_span_service_cls.return_value = Mock()
+
+        # Mock the annotate_trace function
+        with patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace") as mock_annotate:
+            mock_chunk = Mock()
+            mock_chunk.model_dump_json.return_value = '{"test": "chunk"}'
+            
+            async def mock_generator():
+                yield mock_chunk
+                
+            mock_annotate.return_value = mock_generator()
+
+            response = client.get(
+                f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            )
+
+            # Should return streaming response
+            assert response.status_code == 200
+            assert "text/event-stream" in response.headers.get("content-type", "")
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService")
+    @patch("lilypad.ee.server.api.v0.annotations_api.SpanService")
+    def test_generate_annotation_with_span_string_output(
+        self,
+        mock_span_service_cls,
+        mock_annotation_service_cls,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test generating annotation when span has string output."""
+        span_uuid = uuid4()
+        
+        # Mock annotation service to return None (no existing annotation)
+        mock_annotation_service = Mock()
+        mock_annotation_service.find_record_by_span_uuid.return_value = None
+        mock_annotation_service_cls.return_value = mock_annotation_service
+        
+        # Mock span service to return span with string output
+        mock_span_service = Mock()
+        mock_span = Mock()
+        mock_span.data = {
+            "attributes": {
+                "lilypad.type": "llm",
+                "lilypad.llm.output": "test string output"
+            }
+        }
+        mock_span_service.find_record_by_uuid.return_value = mock_span
+        mock_span_service_cls.return_value = mock_span_service
+
+        # Mock the annotate_trace function
+        with patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace") as mock_annotate:
+            mock_chunk = Mock()
+            mock_chunk.model_dump_json.return_value = '{"test": "chunk"}'
+            
+            async def mock_generator():
+                yield mock_chunk
+                
+            mock_annotate.return_value = mock_generator()
+
+            response = client.get(
+                f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            )
+
+            # Should return streaming response
+            assert response.status_code == 200
+            assert "text/event-stream" in response.headers.get("content-type", "")
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService")
+    @patch("lilypad.ee.server.api.v0.annotations_api.SpanService")
+    def test_generate_annotation_with_span_dict_output(
+        self,
+        mock_span_service_cls,
+        mock_annotation_service_cls,
+        client: TestClient,
+        test_project: ProjectTable,
+    ):
+        """Test generating annotation when span has dict output."""
+        span_uuid = uuid4()
+        
+        # Mock annotation service to return None (no existing annotation)
+        mock_annotation_service = Mock()
+        mock_annotation_service.find_record_by_span_uuid.return_value = None
+        mock_annotation_service_cls.return_value = mock_annotation_service
+        
+        # Mock span service to return span with dict output
+        mock_span_service = Mock()
+        mock_span = Mock()
+        mock_span.data = {
+            "attributes": {
+                "lilypad.type": "llm",
+                "lilypad.llm.output": {
+                    "key1": "value1",
+                    "key2": "value2"
+                }
+            }
+        }
+        mock_span_service.find_record_by_uuid.return_value = mock_span
+        mock_span_service_cls.return_value = mock_span_service
+
+        # Mock the annotate_trace function
+        with patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace") as mock_annotate:
+            mock_chunk = Mock()
+            mock_chunk.model_dump_json.return_value = '{"test": "chunk"}'
+            
+            async def mock_generator():
+                yield mock_chunk
+                
+            mock_annotate.return_value = mock_generator()
+
+            response = client.get(
+                f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            )
+
+            # Should return streaming response
+            assert response.status_code == 200
+            assert "text/event-stream" in response.headers.get("content-type", "")
