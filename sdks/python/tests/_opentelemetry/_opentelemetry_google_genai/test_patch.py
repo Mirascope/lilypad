@@ -159,7 +159,7 @@ def test_generate_content_with_streaming(mock_tracer, mock_span):
     kwargs = {"contents": [{"role": "user", "parts": ["Hello"]}], "stream": True}
     
     with patch("lilypad._opentelemetry._opentelemetry_google_genai.patch.set_stream") as mock_set_stream:
-        decorator = generate_content(mock_tracer)
+        decorator = generate_content(mock_tracer, stream=True)
         result = decorator(wrapped, instance, (), kwargs)
         
         # Should call set_stream for streaming

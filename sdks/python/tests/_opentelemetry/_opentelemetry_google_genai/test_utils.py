@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
@@ -186,12 +186,11 @@ def test_set_content_event_with_webp_image():
     }
     
     # Mock isinstance to return True for WebPImageFile
-    with pytest.importorskip("PIL.WebPImagePlugin"):
-        import PIL.WebPImagePlugin
-        with Mock.patch("isinstance") as mock_isinstance:
-            mock_isinstance.side_effect = lambda obj, cls: cls == PIL.WebPImagePlugin.WebPImageFile
-            set_content_event(span, content)
-            span.add_event.assert_called_once()
+    PIL_WebPImagePlugin = pytest.importorskip("PIL.WebPImagePlugin")
+    with patch("lilypad._opentelemetry._opentelemetry_google_genai.utils.isinstance") as mock_isinstance:
+        mock_isinstance.side_effect = lambda obj, cls: cls == PIL_WebPImagePlugin.WebPImageFile
+        set_content_event(span, content)
+        span.add_event.assert_called_once()
 
 
 def test_set_content_event_with_tool_calls():

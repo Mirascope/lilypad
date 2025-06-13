@@ -8,7 +8,7 @@ from lilypad.sandbox.runner import SandboxRunner, Result, DependencyError
 from lilypad._utils import Closure
 
 
-class TestSandboxRunner(SandboxRunner):
+class MockSandboxRunner(SandboxRunner):
     """Concrete implementation of SandboxRunner for testing."""
 
     def execute_function(
@@ -44,12 +44,12 @@ def test_dependency_error():
 def test_sandbox_runner_initialization():
     """Test SandboxRunner initialization."""
     # Test without environment
-    runner = TestSandboxRunner()
+    runner = MockSandboxRunner()
     assert runner.environment == {}
 
     # Test with environment
     env = {"PATH": "/usr/bin", "PYTHONPATH": "/usr/lib"}
-    runner = TestSandboxRunner(environment=env)
+    runner = MockSandboxRunner(environment=env)
     assert runner.environment == env
 
 

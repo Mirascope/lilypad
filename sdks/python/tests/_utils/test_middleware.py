@@ -1,6 +1,7 @@
 """Tests for the middleware module in the _utils package."""
 
 import base64
+import json
 from io import BytesIO
 from uuid import UUID, uuid4
 from unittest.mock import MagicMock, patch
@@ -241,9 +242,12 @@ def test_safe_serialize_protobuf_object():
     mock_proto = MockProtobuf()
     result = safe_serialize(mock_proto)
     
-    # Should process protobuf fields
-    assert isinstance(result, dict)
-    assert "test_field" in result
+    # Should return JSON string representation
+    assert isinstance(result, str)
+    # Parse back to verify it contains the field
+    parsed = json.loads(result)
+    assert isinstance(parsed, dict)
+    assert "test_field" in parsed
 
 
 def test_safe_serialize_invalid_protobuf():
@@ -265,9 +269,12 @@ def test_safe_serialize_set():
     test_set = {1, 2, 3}
     result = safe_serialize(test_set)
     
-    # Should convert set to list
-    assert isinstance(result, list)
-    assert len(result) == 3
+    # Should return JSON string representation
+    assert isinstance(result, str)
+    # Parse back to verify it's a valid JSON array
+    parsed = json.loads(result)
+    assert isinstance(parsed, list)
+    assert len(parsed) == 3
 
 
 def test_safe_serialize_tuple():
@@ -275,9 +282,12 @@ def test_safe_serialize_tuple():
     test_tuple = (1, 2, 3)
     result = safe_serialize(test_tuple)
     
-    # Should convert tuple to list
-    assert isinstance(result, list)
-    assert result == [1, 2, 3]
+    # Should return JSON string representation
+    assert isinstance(result, str)
+    # Parse back to verify it's a valid JSON array
+    parsed = json.loads(result)
+    assert isinstance(parsed, list)
+    assert parsed == [1, 2, 3]
 
 
 def test_set_call_response_attributes_type_error():

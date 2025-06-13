@@ -943,7 +943,7 @@ def test_merge_parameters_debug_print():
         sig = "def func(a: int) -> str: pass"
         arg_types = {"a": "float"}
         
-        with patch("builtins.print") as mock_print:
+        with patch("lilypad.cli.commands.sync.print") as mock_print:
             _merge_parameters(sig, arg_types)
             mock_print.assert_called()
             # Check that debug message was printed
@@ -962,7 +962,7 @@ def test_parse_return_type_debug_print():
         sync_module.DEBUG = True
         sig = "def func() -> str: pass"
         
-        with patch("builtins.print") as mock_print:
+        with patch("lilypad.cli.commands.sync.print") as mock_print:
             _parse_return_type(sig)
             mock_print.assert_called()
             # Check that debug message was printed
@@ -981,7 +981,7 @@ def test_parse_return_type_debug_exception():
         sync_module.DEBUG = True
         
         with patch("ast.parse", side_effect=Exception("Parse error")):
-            with patch("builtins.print") as mock_print:
+            with patch("lilypad.cli.commands.sync.print") as mock_print:
                 result = _parse_return_type("invalid")
                 assert result == "Any"
                 # Check that debug error message was printed
@@ -1002,7 +1002,7 @@ def test_generate_protocol_stub_content_debug():
         
         versions = [Mock(uuid="v1", signature="def func() -> str: pass", arg_types={})]
         
-        with patch("builtins.print") as mock_print:
+        with patch("lilypad.cli.commands.sync.print") as mock_print:
             _generate_protocol_stub_content("test_func", versions, False, False)
             mock_print.assert_called()
             # Check that debug message was printed

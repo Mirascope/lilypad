@@ -440,7 +440,12 @@ def test_jsonable_encoder_error_handling():
         def __getattribute__(self, name):
             if name == "__dict__":
                 raise AttributeError("No __dict__")
+            if name == "dir":
+                raise AttributeError("No dir")
             return super().__getattribute__(name)
+        
+        def __dir__(self):
+            raise RuntimeError("Cannot get dir")
 
     obj = ProblematicObject()
 
@@ -567,7 +572,12 @@ def test_any_to_text_error_handling():
                 raise AttributeError(f"No {name}")
             if name == "__repr__":
                 return lambda: "UnserializableObject()"
+            if name in ("__dir__", "dir"):
+                raise AttributeError(f"No {name}")
             raise AttributeError(f"No attribute {name}")
+        
+        def __dir__(self):
+            raise RuntimeError("Cannot get dir")
 
     obj = UnserializableObject()
     result = _any_to_text(obj)
