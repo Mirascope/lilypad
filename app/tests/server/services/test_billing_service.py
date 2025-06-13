@@ -833,3 +833,75 @@ def test_update_from_subscription_no_billing_found(mock_session):
     result = BillingService.update_from_subscription(mock_session, subscription)
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_report_span_usage_with_fallback_kafka_success(billing_service: BillingService):
+    """Test report_span_usage_with_fallback with successful Kafka delivery."""
+    organization_uuid = uuid.uuid4()
+    
+    # Mock Kafka service
+    mock_kafka_service = Mock()
+    mock_kafka_service.send_batch.return_value = True  # Kafka available
+    
+    await billing_service.report_span_usage_with_fallback(
+        organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
+    )
+    
+    # Should call Kafka service
+    mock_kafka_service.send_batch.assert_called_once()
+    # Should not call direct Stripe reporting (falls back only if Kafka fails)
+
+
+@pytest.mark.asyncio
+async def test_report_span_usage_with_fallback_kafka_unavailable(billing_service: BillingService):
+    """Test report_span_usage_with_fallback when Kafka is unavailable, falls back to direct Stripe."""
+    organization_uuid = uuid.uuid4()
+    
+    # Mock Kafka service returning False (unavailable)
+    mock_kafka_service = Mock()
+    mock_kafka_service.send_batch.return_value = False
+    
+    with patch.object(billing_service, "report_span_usage") as mock_report:
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
+        )
+    
+    # Should call Kafka service first
+    mock_kafka_service.send_batch.assert_called_once()
+    # Should fall back to direct Stripe reporting
+    mock_report.assert_called_once_with(organization_uuid, quantity=5)
+
+
+@pytest.mark.asyncio
+async def test_report_span_usage_with_fallback_kafka_exception(billing_service: BillingService):
+    """Test report_span_usage_with_fallback when Kafka raises exception, falls back to direct Stripe."""
+    organization_uuid = uuid.uuid4()
+    
+    # Mock Kafka service raising exception
+    mock_kafka_service = Mock()
+    mock_kafka_service.send_batch.side_effect = Exception("Kafka error")
+    
+    with patch.object(billing_service, "report_span_usage") as mock_report:
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
+        )
+    
+    # Should call Kafka service first
+    mock_kafka_service.send_batch.assert_called_once()
+    # Should fall back to direct Stripe reporting on exception
+    mock_report.assert_called_once_with(organization_uuid, quantity=5)
+
+
+@pytest.mark.asyncio  
+async def test_report_span_usage_with_fallback_no_kafka_service(billing_service: BillingService):
+    """Test report_span_usage_with_fallback when no Kafka service available."""
+    organization_uuid = uuid.uuid4()
+    
+    with patch.object(billing_service, "report_span_usage") as mock_report:
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=None
+        )
+    
+    # Should go directly to Stripe reporting
+    mock_report.assert_called_once_with(organization_uuid, quantity=5)

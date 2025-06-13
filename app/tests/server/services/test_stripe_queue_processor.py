@@ -440,18 +440,22 @@ class TestStripeQueueProcessor:
         mock_record.offset = 123
         
         topic_partition = TopicPartition("test-topic", 0)
-        mock_consumer.getmany.return_value = {
-            topic_partition: [mock_record]
-        }
+        
+        # First call returns records, second call returns empty and stops
+        call_count = 0
+        def getmany_side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return {topic_partition: [mock_record]}
+            else:
+                processor._running = False  # Stop after processing first batch
+                return {}
+        
+        mock_consumer.getmany.side_effect = getmany_side_effect
         
         # Mock process_meter_event to avoid batching logic
         with patch.object(processor, "_process_meter_event") as mock_process:
-            # Set running to False after one iteration
-            def stop_after_first():
-                processor._running = False
-            
-            mock_process.side_effect = stop_after_first
-            
             await processor._process_queue()
             
             mock_process.assert_called_once_with(mock_record.value)

@@ -257,7 +257,10 @@ class TestKafkaSetupService:
 
         service = KafkaSetupService(mock_settings)
 
-        with patch("lilypad.server.services.kafka_setup.logger") as mock_logger:
+        with (
+            patch("lilypad.server.services.kafka_setup.logger") as mock_logger,
+            patch("asyncio.sleep")  # Mock sleep to prevent delays
+        ):
             result = await service.setup_topics()
 
         assert result is False

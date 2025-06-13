@@ -575,10 +575,12 @@ class TestPlaygroundAPI:
         mock_function_service.find_record_by_uuid.return_value = mock_function
         
         mock_api_key_service = Mock()
+        mock_api_key_service.find_keys_by_user_and_project.return_value = []
         
         # Mock external API service with no API keys
         mock_external_api_service = Mock()
         mock_external_api_service.list_api_keys.return_value = {}
+        mock_external_api_service.get_api_key.return_value = None
         
         mock_span_service = Mock()
 
@@ -586,6 +588,9 @@ class TestPlaygroundAPI:
         playground_params.provider = Provider.OPENAI
         playground_params.model = "gpt-4"
         playground_params.arg_values = {"arg1": "test"}
+        playground_params.arg_types = None  # This will fall back to function.arg_types
+        playground_params.call_params = None  # This will fall back to function.call_params
+        playground_params.prompt_template = None  # This will fall back to function.prompt_template
 
         with pytest.raises(HTTPException) as exc_info:
             run_playground(

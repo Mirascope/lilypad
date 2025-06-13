@@ -450,3 +450,21 @@ def test_get_stripe_customer_organization_not_found(org_service: OrganizationSer
     with pytest.raises(HTTPException) as exc_info:
         org_service.get_stripe_customer(mock_billing_service, fake_uuid)
     assert exc_info.value.status_code == 404
+
+
+def test_find_records_by_uuids_empty_list(org_service: OrganizationService):
+    """Test finding records by empty UUIDs list returns empty list."""
+    # Call with empty list
+    result = org_service.find_records_by_uuids([])
+    
+    # Should return empty list
+    assert result == []
+
+
+def test_find_records_by_uuids_empty_set(org_service: OrganizationService):
+    """Test finding records by empty UUIDs set returns empty list."""
+    # Call with empty set  
+    result = org_service.find_records_by_uuids(set())
+    
+    # Should return empty list
+    assert result == []
