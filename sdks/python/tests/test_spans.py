@@ -8,6 +8,7 @@ import pytest
 
 from lilypad.spans import span, Span
 from lilypad._utils import json_dumps
+from lilypad.sessions import session
 
 dummy_spans: list["DummySpan"] = []
 
@@ -280,3 +281,16 @@ def test_finish_method() -> None:
 
     # Still just one end call
     assert s._span.ended is True
+
+
+def test_span_with_session_context() -> None:
+    """Test span creation within a session context (line 49)."""
+    with session("test-session-id") as sess:
+        with span("session test") as s:
+            # The span should have the session_id attribute set
+            pass
+    
+    # Verify the session ID was set on the span
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.attributes.get("lilypad.session_id") == "test-session-id"

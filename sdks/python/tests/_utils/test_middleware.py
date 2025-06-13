@@ -32,6 +32,290 @@ from lilypad._utils.middleware import (
 from lilypad.generated.types.function_public import FunctionPublic
 
 
+def test_pillow_import_fallback():
+    """Test fallback behavior when Pillow is not available."""
+    # This tests the ImportError fallback for PIL imports (lines 36-42)
+    with patch.dict('sys.modules', {'PIL': None, 'PIL.WebPImagePlugin': None}):
+        # Force reimport to trigger the ImportError path
+        import importlib
+        import lilypad._utils.middleware
+        importlib.reload(lilypad._utils.middleware)
+        
+        # The fallback should create a class that raises NotImplementedError
+        from lilypad._utils.middleware import PIL
+        with pytest.raises(NotImplementedError, match="Pillow is not installed"):
+            PIL.WebPImagePlugin.WebPImageFile().save()
+
+
+def test_span_context_holder_property():
+    """Test SpanContextHolder span_context property."""
+    holder = middleware.SpanContextHolder()
+    # Test getter when _span_context is None (line 59)
+    assert holder.span_context is None
+    
+    # Test setter and getter when span_context exists (line 55)
+    mock_span = MagicMock()
+    mock_span_context = MagicMock()
+    mock_span.get_span_context.return_value = mock_span_context
+    
+    holder.set_span_context(mock_span)
+    assert holder.span_context == mock_span_context
+
+
+def test_custom_context_manager_serialization_error():
+    """Test _get_custom_context_manager when serialization fails."""
+    from lilypad._utils.middleware import _get_custom_context_manager
+    
+    mock_function = MagicMock()
+    
+    # Create an object that will cause serialization to fail
+    class UnserializableObject:
+        def __getattr__(self, name):
+            raise TypeError("Cannot serialize")
+    
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": UnserializableObject()}
+    
+    context_manager = _get_custom_context_manager(
+        mock_function, arg_types, arg_values, False
+    )
+    
+    # Mock the function to test the context manager
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+    
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        mock_span = MagicMock()
+        mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+        
+        with context_manager(mock_fn):
+            # Should handle serialization error and use "could not serialize"
+            pass
+        
+        # Verify span was created and attributes set
+        mock_span.set_attributes.assert_called()
+
+
+def test_custom_context_manager_with_span_context_holder():
+    """Test _get_custom_context_manager with span_context_holder."""
+    from lilypad._utils.middleware import _get_custom_context_manager, SpanContextHolder
+    
+    mock_function = MagicMock()
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": "test_value"}
+    span_context_holder = SpanContextHolder()
+    
+    context_manager = _get_custom_context_manager(
+        mock_function, arg_types, arg_values, False, span_context_holder=span_context_holder
+    )
+    
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+    
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        mock_span = MagicMock()
+        mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+        
+        with context_manager(mock_fn):
+            # Should set span context in holder (line 117)
+            pass
+        
+        # Verify span context was set
+        assert span_context_holder.span_context is not None
+
+
+def test_custom_context_manager_async_exit():
+    """Test _get_custom_context_manager async exit behavior."""
+    from lilypad._utils.middleware import _get_custom_context_manager
+    
+    mock_function = MagicMock()
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": "test_value"}
+    
+    context_manager = _get_custom_context_manager(
+        mock_function, arg_types, arg_values, True  # is_async=True
+    )
+    
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+    
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        mock_span = MagicMock()
+        mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+        
+        with context_manager(mock_fn):
+            # Should handle async exit path (line 122)
+            pass
+        
+        # Verify async exit was called
+        mock_span.__aexit__.assert_called_with(None, None, None)
+
+
+def test_custom_context_manager_async_exception_exit():
+    """Test _get_custom_context_manager async exception exit behavior."""
+    from lilypad._utils.middleware import _get_custom_context_manager
+    
+    mock_function = MagicMock()
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": "test_value"}
+    
+    context_manager = _get_custom_context_manager(
+        mock_function, arg_types, arg_values, True  # is_async=True
+    )
+    
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+    
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        mock_span = MagicMock()
+        mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+        
+        try:
+            with context_manager(mock_fn):
+                # Force an exception to test exception exit path (lines 127-128)
+                raise ValueError("Test exception")
+        except ValueError:
+            pass
+        
+        # Verify async exception exit was called
+        # Check that __aexit__ was called with exception info
+        assert mock_span.__aexit__.called
+        call_args = mock_span.__aexit__.call_args[0]
+        assert call_args[0] == Exception
+        assert isinstance(call_args[1], ValueError)
+        assert call_args[2] is None
+
+
+def test_custom_context_manager_sync_exception_exit():
+    """Test _get_custom_context_manager sync exception exit behavior."""
+    from lilypad._utils.middleware import _get_custom_context_manager
+    
+    mock_function = MagicMock()
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": "test_value"}
+    
+    context_manager = _get_custom_context_manager(
+        mock_function, arg_types, arg_values, False  # is_async=False
+    )
+    
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+    
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        mock_span = MagicMock()
+        mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+        
+        try:
+            with context_manager(mock_fn):
+                # Force an exception to test exception exit path (lines 129-130)
+                raise ValueError("Test exception")
+        except ValueError:
+            pass
+        
+        # Verify sync exception exit was called
+        # Check that __exit__ was called with exception info
+        assert mock_span.__exit__.called
+        call_args = mock_span.__exit__.call_args[0]
+        assert call_args[0] == Exception
+        assert isinstance(call_args[1], ValueError)
+        assert call_args[2] is None
+
+
+def test_safe_serialize_protobuf_object():
+    """Test safe_serialize with protobuf-like object (lines 178-186)."""
+    # Create a mock protobuf-like object
+    class MockProtobuf:
+        def SerializeToString(self):
+            return b"mock_proto"
+        
+        @property 
+        def DESCRIPTOR(self):
+            return "mock_descriptor"
+        
+        def ListFields(self):
+            # Mock field descriptor and value
+            class MockDescriptor:
+                name = "test_field"
+            return [(MockDescriptor(), "test_value")]
+    
+    mock_proto = MockProtobuf()
+    result = safe_serialize(mock_proto)
+    
+    # Should process protobuf fields
+    assert isinstance(result, dict)
+    assert "test_field" in result
+
+
+def test_safe_serialize_invalid_protobuf():
+    """Test safe_serialize with invalid protobuf-like object (line 186)."""
+    # Create an object that has SerializeToString but not the required attributes
+    class InvalidProtobuf:
+        def SerializeToString(self):
+            return b"mock_proto"
+    
+    invalid_proto = InvalidProtobuf()
+    result = safe_serialize(invalid_proto)
+    
+    # Should fallback to string representation
+    assert isinstance(result, str)
+
+
+def test_safe_serialize_set():
+    """Test safe_serialize with set (line 212)."""
+    test_set = {1, 2, 3}
+    result = safe_serialize(test_set)
+    
+    # Should convert set to list
+    assert isinstance(result, list)
+    assert len(result) == 3
+
+
+def test_safe_serialize_tuple():
+    """Test safe_serialize with tuple (line 216)."""
+    test_tuple = (1, 2, 3)
+    result = safe_serialize(test_tuple)
+    
+    # Should convert tuple to list
+    assert isinstance(result, list)
+    assert result == [1, 2, 3]
+
+
+def test_set_call_response_attributes_type_error():
+    """Test _set_call_response_attributes when serialization fails (line 230-231)."""
+    mock_response = MagicMock()
+    mock_response.common_messages = []
+    mock_response.common_message_param = {}
+    
+    mock_span = MagicMock()
+    
+    # Mock safe_serialize to raise TypeError
+    with patch("lilypad._utils.middleware.safe_serialize", side_effect=TypeError("Serialization failed")):
+        _set_call_response_attributes(mock_response, mock_span, "test")
+        
+        # Should fallback to string representation
+        mock_span.set_attributes.assert_called_once()
+
+
+def test_handlers_async_methods_with_none_span():
+    """Test async handler methods when span is None."""
+    handlers = _Handlers("test")
+    
+    # All these methods should return early when span is None (lines 292, 298, 306, 313)
+    mock_result = MagicMock()
+    mock_fn = MagicMock()
+    
+    import asyncio
+    
+    async def test_handlers():
+        await handlers.handle_call_response_async(mock_result, mock_fn, None)
+        await handlers.handle_stream_async(mock_result, mock_fn, None)
+        await handlers.handle_response_model_async(mock_result, mock_fn, None)
+        await handlers.handle_structured_stream_async(mock_result, mock_fn, None)
+    
+    # Should not raise any exceptions
+    asyncio.run(test_handlers())
+
+
 def test_encode_gemini_part_with_string():
     """Test encode_gemini_part with a string input."""
     input_part = "some string"

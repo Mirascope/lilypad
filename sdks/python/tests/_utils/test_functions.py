@@ -215,3 +215,35 @@ def test_type_aliases():
 
     assert isinstance(arg_types, dict)
     assert isinstance(arg_values, dict)
+
+
+def test_get_type_str_no_name_attribute():
+    """Test _get_type_str with type that lacks __name__ attribute (line 50)."""
+    # Create a mock type object without __name__ attribute
+    class TypeWithoutName:
+        def __str__(self):
+            return "CustomTypeWithoutName"
+    
+    mock_type = TypeWithoutName()
+    result = _get_type_str(mock_type)
+    assert result == "CustomTypeWithoutName"
+
+
+def test_get_type_str_generic_no_args():
+    """Test _get_type_str with generic type that has no args (line 66)."""
+    from typing import get_origin, get_args
+    from unittest.mock import patch
+    
+    # Mock a scenario where get_origin returns something but get_args returns empty
+    with patch('lilypad._utils.functions.get_origin') as mock_origin, \
+         patch('lilypad._utils.functions.get_args') as mock_args:
+        
+        # Create a mock origin that has __name__
+        class MockOrigin:
+            __name__ = "MockGeneric"
+        
+        mock_origin.return_value = MockOrigin
+        mock_args.return_value = ()  # Empty args tuple
+        
+        result = _get_type_str("dummy_type")
+        assert result == "MockOrigin"

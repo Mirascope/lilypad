@@ -283,227 +283,236 @@ class TestTrace:
             trace.tag("tag1", "tag2")
 
 
-class TestAsyncTrace:
-    """Test class for AsyncTrace methods."""
+# AsyncTrace function-based tests
 
-    @pytest.mark.asyncio
-    @patch("lilypad._utils.settings.get_settings")
-    async def test_get_span_uuid_found(self, mock_get_settings):
-        """Test _get_span_uuid when span is found."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_get_settings.return_value = mock_settings
+@pytest.mark.asyncio
+@patch("lilypad._utils.settings.get_settings")
+async def test_async_trace_get_span_uuid_found(mock_get_settings):
+    """Test AsyncTrace _get_span_uuid when span is found."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_get_settings.return_value = mock_settings
 
-        mock_span = Mock()
-        mock_span.span_id = "000000000000007b"  # This is the formatted span_id for 123
-        mock_span.uuid_ = "span-uuid-123"
+    mock_span = Mock()
+    mock_span.span_id = "000000000000007b"  # This is the formatted span_id for 123
+    mock_span.uuid_ = "span-uuid-123"
 
-        mock_response = Mock()
-        mock_response.items = [mock_span]
+    mock_response = Mock()
+    mock_response.items = [mock_span]
 
-        mock_client = Mock()
-        mock_client.projects.functions.spans.list_paginated = AsyncMock(return_value=mock_response)
+    mock_client = Mock()
+    mock_client.projects.functions.spans.list_paginated = AsyncMock(return_value=mock_response)
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        # Mock _force_flush
-        with patch.object(trace, "_force_flush"):
-            result = await trace._get_span_uuid(mock_client)
+    # Mock _force_flush
+    with patch.object(trace, "_force_flush"):
+        result = await trace._get_span_uuid(mock_client)
 
-        assert result == "span-uuid-123"
+    assert result == "span-uuid-123"
 
-    @pytest.mark.asyncio
-    @patch("lilypad._utils.settings.get_settings")
-    async def test_get_span_uuid_not_found(self, mock_get_settings):
-        """Test _get_span_uuid when span is not found."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_get_settings.return_value = mock_settings
 
-        mock_span = Mock()
-        mock_span.span_id = "different-id"  # Different from what we're looking for
-        mock_span.uuid_ = "different-uuid"
+@pytest.mark.asyncio
+@patch("lilypad._utils.settings.get_settings")
+async def test_async_trace_get_span_uuid_not_found(mock_get_settings):
+    """Test AsyncTrace _get_span_uuid when span is not found."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_get_settings.return_value = mock_settings
 
-        mock_response = Mock()
-        mock_response.items = [mock_span]
+    mock_span = Mock()
+    mock_span.span_id = "different-id"  # Different from what we're looking for
+    mock_span.uuid_ = "different-uuid"
 
-        mock_client = Mock()
-        mock_client.projects.functions.spans.list_paginated = AsyncMock(return_value=mock_response)
+    mock_response = Mock()
+    mock_response.items = [mock_span]
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    mock_client = Mock()
+    mock_client.projects.functions.spans.list_paginated = AsyncMock(return_value=mock_response)
 
-        # Mock _force_flush
-        with patch.object(trace, "_force_flush"):
-            result = await trace._get_span_uuid(mock_client)
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        assert result is None
+    # Mock _force_flush
+    with patch.object(trace, "_force_flush"):
+        result = await trace._get_span_uuid(mock_client)
 
-    @pytest.mark.asyncio
-    @patch("lilypad.traces.get_async_client")
-    @patch("lilypad._utils.settings.get_settings")
-    async def test_annotate_success(self, mock_get_settings, mock_get_client):
-        """Test annotate method with successful annotation."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
-        mock_get_settings.return_value = mock_settings
+    assert result is None
 
-        mock_client = Mock()
-        mock_client.ee.projects.annotations.create = AsyncMock()
-        mock_get_client.return_value = mock_client
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+@pytest.mark.asyncio
+@patch("lilypad.traces.get_async_client")
+@patch("lilypad._utils.settings.get_settings")
+async def test_async_trace_annotate_success(mock_get_settings, mock_get_client):
+    """Test AsyncTrace annotate method with successful annotation."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
+    mock_get_settings.return_value = mock_settings
 
-        annotation = Annotation(data={"key": "value"}, label="pass", reasoning="Test reasoning", type="manual")
+    mock_client = Mock()
+    mock_client.ee.projects.annotations.create = AsyncMock()
+    mock_get_client.return_value = mock_client
 
-        # Mock _get_span_uuid to return a span UUID
-        with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
-            await trace.annotate(annotation)
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        # Verify the client call
-        mock_client.ee.projects.annotations.create.assert_called_once()
+    annotation = Annotation(data={"key": "value"}, label="pass", reasoning="Test reasoning", type="manual")
 
-    @pytest.mark.asyncio
-    async def test_annotate_no_annotations(self):
-        """Test annotate method with no annotations provided."""
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    # Mock _get_span_uuid to return a span UUID
+    with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
+        await trace.annotate(annotation)
 
-        with pytest.raises(ValueError, match="At least one annotation must be provided"):
-            await trace.annotate()
+    # Verify the client call
+    mock_client.ee.projects.annotations.create.assert_called_once()
 
-    @pytest.mark.asyncio
-    async def test_annotate_span_not_found(self):
-        """Test annotate method when span is not found."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
 
-        mock_client = Mock()
+@pytest.mark.asyncio
+async def test_async_trace_annotate_no_annotations():
+    """Test AsyncTrace annotate method with no annotations provided."""
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    with pytest.raises(ValueError, match="At least one annotation must be provided"):
+        await trace.annotate()
 
-        annotation = Annotation(data={"key": "value"}, label="pass", reasoning="Test reasoning", type="manual")
 
-        # Mock dependencies with None span uuid
-        with (
-            patch.object(trace, "_get_span_uuid", return_value=None),
-            patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
-            patch("lilypad._utils.client.get_async_client", return_value=mock_client),
-            pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"),
-        ):
-            await trace.annotate(annotation)
+@pytest.mark.asyncio
+async def test_async_trace_annotate_span_not_found():
+    """Test AsyncTrace annotate method when span is not found."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
 
-    @pytest.mark.asyncio
-    @patch("lilypad.traces.get_async_client")
-    @patch("lilypad._utils.settings.get_settings")
-    async def test_assign_success(self, mock_get_settings, mock_get_client):
-        """Test assign method with successful assignment."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
-        mock_get_settings.return_value = mock_settings
+    mock_client = Mock()
 
-        mock_client = Mock()
-        mock_client.ee.projects.annotations.create = AsyncMock()
-        mock_get_client.return_value = mock_client
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    annotation = Annotation(data={"key": "value"}, label="pass", reasoning="Test reasoning", type="manual")
 
-        # Mock _get_span_uuid to return a span UUID
-        with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
-            await trace.assign("user@example.com", "user2@example.com")
+    # Mock dependencies with None span uuid
+    with (
+        patch.object(trace, "_get_span_uuid", return_value=None),
+        patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
+        patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+        pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"),
+    ):
+        await trace.annotate(annotation)
 
-        # Verify the client call
-        mock_client.ee.projects.annotations.create.assert_called_once()
 
-    @pytest.mark.asyncio
-    async def test_assign_no_emails(self):
-        """Test assign method with no email addresses provided."""
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+@pytest.mark.asyncio
+@patch("lilypad.traces.get_async_client")
+@patch("lilypad._utils.settings.get_settings")
+async def test_async_trace_assign_success(mock_get_settings, mock_get_client):
+    """Test AsyncTrace assign method with successful assignment."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
+    mock_get_settings.return_value = mock_settings
 
-        with pytest.raises(ValueError, match="At least one email address must be provided"):
-            await trace.assign()
+    mock_client = Mock()
+    mock_client.ee.projects.annotations.create = AsyncMock()
+    mock_get_client.return_value = mock_client
 
-    @pytest.mark.asyncio
-    async def test_assign_span_not_found(self):
-        """Test assign method when span is not found."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        mock_client = Mock()
+    # Mock _get_span_uuid to return a span UUID
+    with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
+        await trace.assign("user@example.com", "user2@example.com")
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    # Verify the client call
+    mock_client.ee.projects.annotations.create.assert_called_once()
 
-        # Mock dependencies with None span uuid
-        with (
-            patch.object(trace, "_get_span_uuid", return_value=None),
-            patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
-            patch("lilypad._utils.client.get_async_client", return_value=mock_client),
-            pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"),
-        ):
-            await trace.assign("user@example.com")
 
-    @pytest.mark.asyncio
-    @patch("lilypad.traces.get_async_client")
-    @patch("lilypad._utils.settings.get_settings")
-    async def test_tag_success(self, mock_get_settings, mock_get_client):
-        """Test tag method with successful tagging."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
-        mock_get_settings.return_value = mock_settings
+@pytest.mark.asyncio
+async def test_async_trace_assign_no_emails():
+    """Test AsyncTrace assign method with no email addresses provided."""
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        mock_client = Mock()
-        mock_client.spans.update = AsyncMock()
-        mock_get_client.return_value = mock_client
+    with pytest.raises(ValueError, match="At least one email address must be provided"):
+        await trace.assign()
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        # Mock _get_span_uuid to return a span UUID
-        with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
-            result = await trace.tag("tag1", "tag2", "tag3")
+@pytest.mark.asyncio
+async def test_async_trace_assign_span_not_found():
+    """Test AsyncTrace assign method when span is not found."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
 
-        # Verify the client call
-        mock_client.spans.update.assert_called_once_with(
-            span_uuid="span-uuid-123", tags_by_name=["tag1", "tag2", "tag3"]
-        )
-        assert result is None
+    mock_client = Mock()
 
-    @pytest.mark.asyncio
-    async def test_tag_no_tags(self):
-        """Test tag method with no tags provided."""
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        result = await trace.tag()
+    # Mock dependencies with None span uuid
+    with (
+        patch.object(trace, "_get_span_uuid", return_value=None),
+        patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
+        patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+        pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"),
+    ):
+        await trace.assign("user@example.com")
 
-        assert result is None
-        # Client should not be called
 
-    @pytest.mark.asyncio
-    async def test_tag_span_not_found(self):
-        """Test tag method when span is not found."""
-        # Setup mocks
-        mock_settings = Mock()
-        mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
-        mock_settings.api_key = "test-key"
+@pytest.mark.asyncio
+@patch("lilypad.traces.get_async_client")
+@patch("lilypad._utils.settings.get_settings")
+async def test_async_trace_tag_success(mock_get_settings, mock_get_client):
+    """Test AsyncTrace tag method with successful tagging."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
+    mock_get_settings.return_value = mock_settings
 
-        mock_client = Mock()
+    mock_client = Mock()
+    mock_client.spans.update = AsyncMock()
+    mock_get_client.return_value = mock_client
 
-        trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
 
-        # Mock dependencies with None span uuid
-        with (
-            patch.object(trace, "_get_span_uuid", return_value=None),
-            patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
-            patch("lilypad._utils.client.get_async_client", return_value=mock_client),
-            pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"),
-        ):
-            await trace.tag("tag1", "tag2")
+    # Mock _get_span_uuid to return a span UUID
+    with patch.object(trace, "_get_span_uuid", return_value="span-uuid-123"):
+        result = await trace.tag("tag1", "tag2", "tag3")
+
+    # Verify the client call
+    mock_client.spans.update.assert_called_once_with(
+        span_uuid="span-uuid-123", tags_by_name=["tag1", "tag2", "tag3"]
+    )
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_async_trace_tag_no_tags():
+    """Test AsyncTrace tag method with no tags provided."""
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+
+    result = await trace.tag()
+
+    assert result is None
+    # Client should not be called
+
+
+@pytest.mark.asyncio
+async def test_async_trace_tag_span_not_found():
+    """Test AsyncTrace tag method when span is not found."""
+    # Setup mocks
+    mock_settings = Mock()
+    mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
+    mock_settings.api_key = "test-key"
+
+    mock_client = Mock()
+
+    trace = AsyncTrace(response="test", span_id=123, function_uuid="test-uuid")
+
+    # Mock dependencies with None span uuid
+    with (
+        patch.object(trace, "_get_span_uuid", return_value=None),
+        patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
+        patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+        pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"),
+    ):
+        await trace.tag("tag1", "tag2")
