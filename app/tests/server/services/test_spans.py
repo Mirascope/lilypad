@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
+from pydantic_core._pydantic_core import ValidationError
 from sqlmodel import Session
 
 from lilypad.server.models import (
@@ -888,3 +889,36 @@ def test_find_aggregate_data_by_function_uuid(
     )
     assert len(aggregate_spans) == 3
     assert all(span.function_uuid == function_uuid for span in aggregate_spans)
+
+def test_accepts_tags_by_uuid_only():
+    """Validation should pass when only `tags_by_uuid` is provided."""
+    span = SpanUpdate(tags_by_uuid=[uuid4()])
+    assert span.tags_by_uuid is not None
+    assert span.tags_by_name is None
+
+
+def test_accepts_tags_by_name_only():
+    """Validation should pass when only `tags_by_name` is provided."""
+    span = SpanUpdate(tags_by_name=["http.request", "db.query"])
+    assert span.tags_by_uuid is None
+    assert span.tags_by_name == ["http.request", "db.query"]
+
+
+def test_rejects_both_tag_inputs():
+    """Validation should fail when both `tags_by_uuid` and `tags_by_name` are provided."""
+    with pytest.raises(ValidationError) as excinfo:
+        SpanUpdate(
+            tags_by_uuid=[uuid4()],
+            tags_by_name=["http.request"],
+        )
+
+    assert "Provide either 'tags_by_uuid' or 'tags_by_name', not both." in str(
+        excinfo.value
+    )
+
+
+def test_accepts_neither_tag_input():
+    """Validation should pass when neither field is provided (both default to None)."""
+    span = SpanUpdate()
+    assert span.tags_by_uuid is None
+    assert span.tags_by_name is None
