@@ -172,7 +172,7 @@ def test_get_span_by_uuid_not_found(
     response = client.get(f"/spans/{fake_uuid}")
 
     assert response.status_code == 404
-    assert "Span not found" in response.json()["detail"]
+    assert "Record for spans not found" in response.json()["detail"]
 
 
 def test_get_span_by_span_id(

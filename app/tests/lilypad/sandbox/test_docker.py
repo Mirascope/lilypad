@@ -43,7 +43,7 @@ def test_docker_runner_init_default():
     """Test DockerSandboxRunner initialization with defaults."""
     runner = DockerSandboxRunner()
     assert runner.image == "ghcr.io/astral-sh/uv:python3.10-alpine"
-    assert runner.environment is None
+    assert runner.environment == {}
 
 
 def test_docker_runner_init_custom():
@@ -147,7 +147,7 @@ def test_execute_function_success(mock_docker, docker_runner, mock_closure):
         detach=True,
         security_opt=["no-new-privileges"],
         cap_drop=["ALL"],
-        environment=None,
+        environment={},
     )
 
     # Verify container operations
