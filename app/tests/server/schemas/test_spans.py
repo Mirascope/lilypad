@@ -1033,3 +1033,338 @@ async def test_calculate_openrouter_cost_empty_pricing():
         
         result = await calculate_openrouter_cost(1000, 500, "test/model")
         assert result is None
+
+
+def test_convert_openai_messages_image_url_processing():
+    """Test OpenAI message conversion with complex image URL processing."""
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": json.dumps([
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD",
+                            "detail": "high"
+                        }
+                    }
+                ])
+            },
+        }
+    ]
+    
+    result = convert_openai_messages(messages)
+    assert len(result) == 2  # User + assistant
+    assert result[0].role == "user"
+    # Check that image was processed correctly
+    content = result[0].content[0]
+    assert hasattr(content, 'type') and content.type == "image"
+    assert hasattr(content, 'media_type') and content.media_type == "image/jpeg"
+    assert hasattr(content, 'image') and content.image == "/9j/4AAQSkZJRgABAQEAYABgAAD"
+    assert hasattr(content, 'detail') and content.detail == "high"
+
+
+def test_convert_openai_messages_text_dict_processing():
+    """Test OpenAI message conversion with text dict processing."""
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": json.dumps([
+                    {
+                        "type": "text",
+                        "text": "Hello from dict"
+                    }
+                ])
+            },
+        }
+    ]
+    
+    result = convert_openai_messages(messages)
+    assert len(result) == 2  # User + assistant
+    assert result[0].role == "user"
+    assert result[0].content[0].text == "Hello from dict"
+
+
+def test_convert_openai_messages_tool_calls_processing():
+    """Test OpenAI message conversion with tool calls."""
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {
+                "index": 0,
+                "message": json.dumps({
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": '{"location": "New York"}'
+                            }
+                        }
+                    ]
+                })
+            },
+        }
+    ]
+    
+    result = convert_openai_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "assistant"
+    # Check tool call was processed
+    content = result[0].content[0]
+    assert hasattr(content, 'type') and content.type == "tool_call"
+    assert hasattr(content, 'name') and content.name == "get_weather"
+    assert hasattr(content, 'arguments') and content.arguments == '{"location": "New York"}'
+
+
+def test_convert_anthropic_messages_tool_calls_processing():
+    """Test Anthropic message conversion with tool calls."""
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {
+                "message": json.dumps({
+                    "role": "assistant",
+                    "tool_calls": {
+                        "function": {
+                            "name": "search_web",
+                            "arguments": '{"query": "Python tutorials"}'
+                        }
+                    }
+                })
+            },
+        }
+    ]
+    
+    result = convert_anthropic_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "assistant"
+    # Check tool call was processed
+    content = result[0].content[0]
+    assert hasattr(content, 'type') and content.type == "tool_call"
+    assert hasattr(content, 'name') and content.name == "search_web"
+    assert hasattr(content, 'arguments') and content.arguments == '{"query": "Python tutorials"}'
+
+
+def test_convert_mirascope_messages_image_processing():
+    """Test Mirascope message conversion with image content."""
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "media_type": "image/png",
+                    "image": "base64data",
+                    "detail": "auto"
+                }
+            ]
+        }
+    ]
+    
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "user"
+    content = result[0].content[0]
+    assert hasattr(content, 'type') and content.type == "image"
+    assert hasattr(content, 'media_type') and content.media_type == "image/png"
+    assert hasattr(content, 'image') and content.image == "base64data"
+    assert hasattr(content, 'detail') and content.detail == "auto"
+
+
+def test_convert_mirascope_messages_audio_processing():
+    """Test Mirascope message conversion with audio content."""
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "audio",
+                    "media_type": "audio/wav",
+                    "audio": "base64audio"
+                }
+            ]
+        }
+    ]
+    
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "user"
+    content = result[0].content[0]
+    assert hasattr(content, 'type') and content.type == "audio"
+    assert hasattr(content, 'media_type') and content.media_type == "audio/wav"
+    assert hasattr(content, 'audio') and content.audio == "base64audio"
+
+
+def test_convert_mirascope_messages_text_content_processing():
+    """Test Mirascope message conversion with text dict content."""
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello from text dict"
+                }
+            ]
+        }
+    ]
+    
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "user"
+    assert result[0].content[0].text == "Hello from text dict"
+
+
+def test_convert_mirascope_messages_string_content_processing():
+    """Test Mirascope message conversion with string content in list."""
+    messages = [
+        {
+            "role": "user",
+            "content": ["Hello as string"]
+        }
+    ]
+    
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "user"
+    assert result[0].content[0].text == "Hello as string"
+
+
+@pytest.mark.asyncio
+async def test_fetch_with_memory_cache():
+    """Test the fetch_with_memory_cache function."""
+    from lilypad.server.schemas.span_more_details import fetch_with_memory_cache
+    from unittest.mock import patch, AsyncMock
+    
+    mock_response = AsyncMock()
+    mock_response.json.return_value = {"test": "data"}
+    
+    with patch("httpx.AsyncClient") as mock_client_class:
+        mock_client = AsyncMock()
+        mock_client.get.return_value = mock_response
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+        
+        result = await fetch_with_memory_cache("http://test.com")
+        assert result == {"test": "data"}
+        mock_client.get.assert_called_once_with("http://test.com")
+
+
+def test_span_more_details_from_span():
+    """Test SpanMoreDetails.from_span method."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import SpanTable, Scope
+    from unittest.mock import Mock
+    from uuid import uuid4
+    
+    # Create a mock span for LLM scope
+    span_uuid = uuid4()
+    span_data = {
+        "name": "test_span",
+        "status": "ok",
+        "attributes": {
+            "gen_ai.system": "openai"
+        },
+        "events": [
+            {
+                "name": "gen_ai.user.message",
+                "attributes": {"content": '["Hello"]'}
+            },
+            {
+                "name": "gen_ai.choice", 
+                "attributes": {
+                    "index": 0,
+                    "message": '{"role": "assistant", "content": "Hi there"}'
+                }
+            }
+        ]
+    }
+    
+    span = Mock(spec=SpanTable)
+    span.uuid = span_uuid
+    span.data = span_data
+    span.scope = Scope.LLM
+    span.model_dump.return_value = {
+        "uuid": span_uuid,
+        "scope": Scope.LLM,
+        "data": span_data
+    }
+    
+    # Test LLM scope conversion
+    result = SpanMoreDetails.from_span(span)
+    
+    assert result.uuid == span_uuid
+    assert len(result.messages) == 2
+    assert result.messages[0].role == "user"
+    assert result.messages[1].role == "assistant"
+    assert result.signature is None
+    assert result.code is None
+
+
+def test_span_more_details_from_span_function():
+    """Test SpanMoreDetails.from_span with function scope."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import SpanTable, Scope
+    from unittest.mock import Mock
+    from uuid import uuid4
+    
+    # Create a mock span for function scope
+    span_uuid = uuid4()
+    span_data = {
+        "name": "test_function",
+        "status": "ok", 
+        "attributes": {
+            "lilypad.type": "function",
+            "lilypad.function.signature": "def test_func():",
+            "lilypad.function.code": "return 'hello'",
+            "lilypad.function.arg_values": '{"param": "value"}',
+            "lilypad.function.output": "result",
+            "lilypad.function.response": '{"data": "response"}',
+            "lilypad.function.response_model": '{"model": "test"}',
+            "lilypad.function.messages": '[{"role": "user", "content": "test"}]',
+            "lilypad.function.prompt_template": "template"
+        },
+        "events": []
+    }
+    
+    span = Mock(spec=SpanTable)
+    span.uuid = span_uuid
+    span.data = span_data
+    span.scope = Scope.FUNCTION
+    span.model_dump.return_value = {
+        "uuid": span_uuid,
+        "scope": Scope.FUNCTION,
+        "data": span_data
+    }
+    
+    # Test function scope conversion
+    result = SpanMoreDetails.from_span(span)
+    
+    assert result.uuid == span_uuid
+    assert result.signature == "def test_func():"
+    assert result.code == "return 'hello'"
+    assert result.arg_values == {"param": "value"}
+    assert result.output == "result"
+    assert result.response == {"data": "response"}
+    assert result.response_model == {"model": "test"}
+    assert result.template == "template"
+    assert len(result.messages) == 1
+
+
+def test_span_more_details_from_span_no_uuid():
+    """Test SpanMoreDetails.from_span with missing UUID."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import SpanTable, Scope
+    from unittest.mock import Mock
+    
+    # Create a mock span without UUID
+    span = Mock(spec=SpanTable)
+    span.uuid = None
+    span.data = {"name": "test", "attributes": {}, "events": []}
+    span.scope = Scope.LLM
+    
+    # Should raise ValueError
+    with pytest.raises(ValueError, match="UUID does not exist"):
+        SpanMoreDetails.from_span(span)
