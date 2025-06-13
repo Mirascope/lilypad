@@ -720,3 +720,14 @@ async def test_async_singleton_creation_failure():
         
         with pytest.raises(RuntimeError, match="Failed to create cached async client"):
             _async_singleton("test_key", loop_id, "https://api.com")
+
+
+def test_async_lilypad_init_error_handling():
+    """Test error handling in AsyncLilypad.__init__ - covers lines 221-223."""
+    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+        # Mock super().__init__ to raise an exception
+        mock_super_init.side_effect = Exception("Base initialization failed")
+        
+        # Should catch exception and re-raise as RuntimeError
+        with pytest.raises(RuntimeError, match="Async client initialization failed: Base initialization failed"):
+            AsyncLilypad(api_key="test-key")

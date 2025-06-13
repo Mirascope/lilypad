@@ -3,6 +3,7 @@
 from unittest.mock import Mock, AsyncMock, create_autospec
 
 import pytest
+from httpx import URL
 from opentelemetry.trace import StatusCode
 
 from lilypad._opentelemetry._utils import (
@@ -10,6 +11,7 @@ from lilypad._opentelemetry._utils import (
     StreamWrapper,
     ToolCallBuffer,
     AsyncStreamWrapper,
+    set_server_address_and_port,
 )
 
 
@@ -217,3 +219,213 @@ async def test_async_stream_normal_case(mock_span, mock_async_stream, mock_metad
 
     # Verify normal cleanup
     mock_span.end.assert_called_once()
+
+
+# Additional tests for improved coverage
+
+def test_choice_buffer_tool_call_handling():
+    """Test tool call handling in ChoiceBuffer (lines 63-70)"""
+    buffer = ChoiceBuffer(0)
+    
+    # Mock tool call object
+    mock_tool_call = Mock()
+    mock_tool_call.index = 0
+    mock_tool_call.id = "test-id"
+    mock_tool_call.function.name = "test_function"
+    mock_tool_call.function.arguments = {"arg1": "value1"}
+    
+    # Test appending tool call - this will hit lines 63-70
+    buffer.append_tool_call(mock_tool_call)
+    
+    assert len(buffer.tool_calls_buffers) == 1
+    assert buffer.tool_calls_buffers[0] is not None
+    assert buffer.tool_calls_buffers[0].tool_call_id == "test-id"
+    assert buffer.tool_calls_buffers[0].function_name == "test_function"
+    
+    # Test appending another tool call with higher index
+    mock_tool_call2 = Mock()
+    mock_tool_call2.index = 2
+    mock_tool_call2.id = "test-id-2"
+    mock_tool_call2.function.name = "test_function_2"
+    mock_tool_call2.function.arguments = {"arg2": "value2"}
+    
+    buffer.append_tool_call(mock_tool_call2)
+    
+    # Should have 3 slots (0, 1, 2) with slot 1 being None
+    assert len(buffer.tool_calls_buffers) == 3
+    assert buffer.tool_calls_buffers[0] is not None
+    assert buffer.tool_calls_buffers[1] is None
+    assert buffer.tool_calls_buffers[2] is not None
+
+
+def test_stream_wrapper_with_cleanup_handler(mock_span, mock_stream, mock_metadata, mock_chunk_handler):
+    """Test StreamWrapper with cleanup handler (line 115)"""
+    cleanup_handler = Mock()
+    
+    wrapper = StreamWrapper(
+        mock_span, mock_stream, mock_metadata, mock_chunk_handler, cleanup_handler
+    )
+    
+    # Test cleanup with handler
+    wrapper.setup()
+    wrapper.cleanup()
+    
+    cleanup_handler.assert_called_once_with(mock_span, mock_metadata, wrapper.choice_buffers)
+    mock_span.end.assert_called_once()
+
+
+def test_stream_wrapper_context_manager(mock_span, mock_stream, mock_metadata, mock_chunk_handler):
+    """Test StreamWrapper context manager (lines 126-127)"""
+    wrapper = StreamWrapper(mock_span, mock_stream, mock_metadata, mock_chunk_handler)
+    
+    # Test context manager entry - this hits lines 126-127
+    with wrapper as w:
+        assert w is wrapper
+        assert w._span_started
+
+
+def test_stream_wrapper_context_manager_exception_handling(mock_span, mock_stream, mock_metadata, mock_chunk_handler):
+    """Test StreamWrapper context manager exception handling (lines 130-136)"""
+    wrapper = StreamWrapper(mock_span, mock_stream, mock_metadata, mock_chunk_handler)
+    
+    test_exception = ValueError("Test exception")
+    
+    # Test exception handling in context manager - this hits lines 130-136
+    with pytest.raises(ValueError):
+        with wrapper:
+            raise test_exception
+    
+    # Verify exception was handled properly
+    mock_span.set_status.assert_called_once()
+    status_call = mock_span.set_status.call_args[0][0]
+    assert status_call.status_code == StatusCode.ERROR
+    assert status_call.description == str(test_exception)
+    
+    mock_span.set_attribute.assert_called_once()
+    attr_call = mock_span.set_attribute.call_args
+    assert "error.type" in attr_call[0][0]
+    assert attr_call[0][1] == "ValueError"
+    
+    mock_span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_stream_wrapper_async_close(mock_span, mock_metadata, mock_chunk_handler):
+    """Test StreamWrapper async close method (lines 139-140)"""
+    mock_stream = Mock()
+    mock_stream.close = Mock()
+    
+    wrapper = StreamWrapper(mock_span, mock_stream, mock_metadata, mock_chunk_handler)
+    wrapper.setup()
+    
+    # Test async close - this hits lines 139-140
+    await wrapper.close()
+    
+    mock_stream.close.assert_called_once()
+    mock_span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_async_stream_wrapper_close_method(mock_span, mock_metadata, mock_chunk_handler):
+    """Test AsyncStreamWrapper close method (lines 175-176)"""
+    mock_stream = Mock()
+    mock_stream.aclose = AsyncMock()
+    
+    wrapper = AsyncStreamWrapper(mock_span, mock_stream, mock_metadata, mock_chunk_handler)
+    wrapper.setup()
+    
+    # Test async close - this hits lines 175-176
+    await wrapper.close()
+    
+    mock_stream.aclose.assert_called_once()
+    mock_span.end.assert_called_once()
+
+
+def test_set_server_address_and_port_no_client():
+    """Test set_server_address_and_port with no client (line 211)"""
+    client_instance = Mock()
+    client_instance._client = None
+    attributes = {}
+    
+    # This should return early (line 211)
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert attributes == {}
+
+
+def test_set_server_address_and_port_no_base_url():
+    """Test set_server_address_and_port with no base_url (line 211)"""
+    client_instance = Mock()
+    base_client = Mock()
+    base_client.base_url = None
+    client_instance._client = base_client
+    attributes = {}
+    
+    # This should return early (line 211)
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert attributes == {}
+
+
+def test_set_server_address_and_port_with_httpx_url():
+    """Test set_server_address_and_port with httpx URL (lines 215-216)"""
+    client_instance = Mock()
+    base_client = Mock()
+    base_client.base_url = URL("https://api.example.com:8080/v1")
+    client_instance._client = base_client
+    attributes = {}
+    
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert "server.address" in attributes
+    assert attributes["server.address"] == "api.example.com"
+    assert "server.port" in attributes
+    assert attributes["server.port"] == 8080
+
+
+def test_set_server_address_and_port_with_string_url():
+    """Test set_server_address_and_port with string URL (lines 218-220)"""
+    client_instance = Mock()
+    base_client = Mock()
+    base_client.base_url = "https://api.example.com:9000/v1"
+    client_instance._client = base_client
+    attributes = {}
+    
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert "server.address" in attributes
+    assert attributes["server.address"] == "api.example.com"
+    assert "server.port" in attributes
+    assert attributes["server.port"] == 9000
+
+
+def test_set_server_address_and_port_default_https_port():
+    """Test set_server_address_and_port with default HTTPS port (line 223)"""
+    client_instance = Mock()
+    base_client = Mock()
+    base_client.base_url = URL("https://api.example.com/v1")  # No explicit port, defaults to 443
+    client_instance._client = base_client
+    attributes = {}
+    
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert "server.address" in attributes
+    assert attributes["server.address"] == "api.example.com"
+    # Port 443 should not be added (line 223 condition)
+    assert "server.port" not in attributes
+
+
+def test_set_server_address_and_port_with_none_port():
+    """Test set_server_address_and_port with None port (line 223)"""
+    client_instance = Mock()
+    base_client = Mock()
+    base_client.base_url = "https://api.example.com"  # URL without port
+    client_instance._client = base_client
+    attributes = {}
+    
+    set_server_address_and_port(client_instance, attributes)
+    
+    assert "server.address" in attributes
+    assert attributes["server.address"] == "api.example.com"
+    # No port should be added when port is None
+    assert "server.port" not in attributes
