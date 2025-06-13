@@ -1916,6 +1916,8 @@ def test_func(param1, param2):
     assignments = []
     for global_assignment in global_collector.assignments:
         tree = ast.parse(global_assignment)
+        if not tree.body:  # Handle empty assignment
+            continue
         stmt = tree.body[0]
         if isinstance(stmt, ast.Assign):
             var_name = stmt.targets[0].id
