@@ -37,4 +37,11 @@
       "severity": "warn"
     }
   ],
+  "python-envs.pythonProjects": [
+    {
+      "path": "app",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
 }

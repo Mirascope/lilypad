@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # Kafka settings
     kafka_bootstrap_servers: str | None = None
     kafka_topic_span_ingestion: str = Field(default="span-ingestion")
+    kafka_topic_stripe_ingestion: str = Field(default="stripe-ingestion")
     kafka_consumer_group: str = Field(default="lilypad-span-processor")
     kafka_max_concurrent_traces: int = Field(default=1000)
     kafka_max_spans_per_trace: int = Field(default=500)

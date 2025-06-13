@@ -28,6 +28,7 @@ from lilypad.server.services.kafka_producer import (
 )
 from lilypad.server.services.kafka_setup import KafkaSetupService
 from lilypad.server.services.span_queue_processor import get_span_queue_processor
+from lilypad.server.services.stripe_queue_processor import get_stripe_queue_processor
 
 from .api import v0_api
 from .settings import get_settings
@@ -96,19 +97,39 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             log.error(f"Failed to start span queue processor (non-fatal): {e}")
             # Continue startup even if processor fails
 
+    # Start stripe queue processor if Kafka is configured
+    stripe_processor = None
+    if settings.kafka_bootstrap_servers:
+        log.info("Starting stripe queue processor")
+        try:
+            stripe_processor = get_stripe_queue_processor()
+            await stripe_processor.start()
+            log.info("Stripe queue processor started successfully")
+        except Exception as e:
+            log.error(f"Failed to start stripe queue processor (non-fatal): {e}")
+            # Continue startup even if processor fails
+
     yield
 
     # Cleanup on shutdown
     log.info("Starting graceful shutdown...")
 
-    # First stop the queue processor to prevent new messages
+    # First stop the queue processors to prevent new messages
     if queue_processor:
         log.info("Stopping span queue processor")
         try:
             await queue_processor.stop()
             log.info("Span queue processor stopped successfully")
         except Exception as e:
-            log.error(f"Error stopping queue processor: {e}")
+            log.error(f"Error stopping span queue processor: {e}")
+
+    if stripe_processor:
+        log.info("Stopping stripe queue processor")
+        try:
+            await stripe_processor.stop()
+            log.info("Stripe queue processor stopped successfully")
+        except Exception as e:
+            log.error(f"Error stopping stripe queue processor: {e}")
 
     # Give more time for pending tasks to complete
     log.info("Waiting for pending tasks to complete...")

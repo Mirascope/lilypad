@@ -37,8 +37,10 @@ from ...services import (
     OpenSearchService,
     SpanKafkaService,
     SpanService,
+    StripeKafkaService,
     get_opensearch_service,
     get_span_kafka_service,
+    get_stripe_kafka_service,
 )
 from ...services.billing import BillingService
 from ...services.projects import ProjectService
@@ -220,6 +222,9 @@ async def traces(
     billing_service: Annotated[BillingService, Depends(BillingService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
     kafka_service: Annotated[SpanKafkaService, Depends(get_span_kafka_service)],
+    stripe_kafka_service: Annotated[
+        StripeKafkaService | None, Depends(get_stripe_kafka_service)
+    ],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -267,7 +272,7 @@ async def traces(
         logger.info(
             f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
         )
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="queued",
             span_count=len(traces_json),
             message="Spans queued for processing",
@@ -296,10 +301,16 @@ async def traces(
         project = project_service.find_record_no_organization(project_uuid)
         span_tables = span_service.create_bulk_records(
             span_creates,
-            billing_service if is_lilypad_cloud else None,
             project_uuid,
             project.organization_uuid,
         )
+        try:
+            await billing_service.report_span_usage_with_fallback(
+                project.organization_uuid, len(span_creates), stripe_kafka_service
+            )
+        except Exception as e:
+            # if reporting fails, we don't want to fail the entire span creation
+            logger.error("Error reporting span usage: %s", e)
         if opensearch_service.is_enabled:
             trace_dicts = [span.model_dump() for span in span_tables]
             background_tasks.add_task(
@@ -310,12 +321,13 @@ async def traces(
             )
 
         # Return consistent response format
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="processed",
             span_count=len(span_tables),
             message="Spans processed synchronously",
             trace_ids=trace_ids,
         )
+    return traces_queue_response
 
 
 __all__ = ["traces_router"]
