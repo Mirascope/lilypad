@@ -76,7 +76,6 @@
     "lexical": "^0.18.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.513.0",
-    "next-themes": "^0.4.6",
     "posthog-js": "^1.205.1",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "react": "19.0.0",
@@ -107,8 +106,9 @@
     "@storybook/react-vite": "^8.6.12",
     "@storybook/test": "^8.6.12",
     "@tailwindcss/vite": "^4.1.5",
-    "@tanstack/router-devtools": "^1.57.15",
-    "@tanstack/router-plugin": "^1.57.15",
+    "@tanstack/router-generator": "1.114.3",
+    "@tanstack/router-devtools": "1.114.3",
+    "@tanstack/router-plugin": "1.114.3",
     "@types/diff": "^5.2.2",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.5",
@@ -144,6 +144,9 @@
       "@babel/runtime@<7.26.10": ">=7.26.10",
       "@babel/helpers@<7.26.10": ">=7.26.10"
     }
+  },
+  "overrides": {
+    "nanoid": "3.3.7"
   },
   "eslintConfig": {
     "extends": [
