@@ -703,6 +703,7 @@ class TestSpanQueueProcessor:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
+        processor._session = Mock()  # Set up a mock session
 
         ordered_spans = [
             {
@@ -716,7 +717,9 @@ class TestSpanQueueProcessor:
         ) as mock_logger:
             processor._process_trace_sync("trace-123", ordered_spans)
 
-        mock_logger.warning.assert_called_once()
+        mock_logger.warning.assert_called_once_with(
+            "No project UUID found in trace trace-123, skipping 1 spans"
+        )
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
@@ -1163,6 +1166,7 @@ class TestAdditionalCoverage:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
+        processor._session = Mock()  # Set up a mock session
 
         ordered_spans = [
             {
@@ -1177,28 +1181,22 @@ class TestAdditionalCoverage:
         ) as mock_logger:
             processor._process_trace_sync("trace-123", ordered_spans)
 
-        mock_logger.warning.assert_called()
+        mock_logger.warning.assert_called_with(
+            "No user ID found in trace trace-123, skipping 1 spans"
+        )
 
     @patch("lilypad.server.services.span_queue_processor.get_settings")
-    @patch("lilypad.server.services.span_queue_processor.get_session")
-    def test_process_trace_sync_user_not_found(
-        self, mock_get_session, mock_get_settings
-    ):
+    def test_process_trace_sync_user_not_found(self, mock_get_settings):
         """Test _process_trace_sync when user is not found."""
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
-
-        # Mock session
-        mock_session = Mock()
-        mock_get_session.return_value = [mock_session]
-
-        # Mock user query to return None
-        mock_result = Mock()
-        mock_result.first.return_value = None
-        mock_session.exec.return_value = mock_result
+        
+        # Mock session and _get_cached_user to return None
+        processor._session = Mock()
+        processor._get_cached_user = Mock(return_value=None)
 
         user_id = uuid4()
         ordered_spans = [
@@ -1217,10 +1215,9 @@ class TestAdditionalCoverage:
         mock_logger.debug.assert_called()
 
     @patch("lilypad.server.services.span_queue_processor.get_settings")
-    @patch("lilypad.server.services.span_queue_processor.get_session")
     @patch("lilypad.server.services.span_queue_processor.ProjectService")
     def test_process_trace_sync_project_not_found(
-        self, mock_project_service_class, mock_get_session, mock_get_settings
+        self, mock_project_service_class, mock_get_settings
     ):
         """Test _process_trace_sync when project is not found."""
         mock_settings = Mock()
@@ -1228,17 +1225,12 @@ class TestAdditionalCoverage:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
-
-        # Mock session
-        mock_session = Mock()
-        mock_get_session.return_value = [mock_session]
+        processor._session = Mock()
 
         # Mock user
         mock_user = Mock()
         mock_user.uuid = uuid4()
-        mock_result = Mock()
-        mock_result.first.return_value = mock_user
-        mock_session.exec.return_value = mock_result
+        processor._get_cached_user = Mock(return_value=mock_user)
 
         # Mock project service to return None
         mock_project_service = Mock()

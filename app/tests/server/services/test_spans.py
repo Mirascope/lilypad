@@ -467,7 +467,7 @@ def test_create_bulk_records_with_tags(
     ]
 
     created_spans = service.create_bulk_records(
-        spans_create, None, test_project.uuid, test_project.organization_uuid
+        spans_create, test_project.uuid, test_project.organization_uuid
     )
 
     assert len(created_spans) == 3
@@ -485,7 +485,7 @@ def test_create_bulk_records_with_billing(
     service = SpanService(db_session, test_user)
 
     # Mock billing service
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch
 
     mock_billing = Mock(spec=BillingService)
 
@@ -499,23 +499,24 @@ def test_create_bulk_records_with_billing(
         for i in range(2)
     ]
 
-    created_spans = service.create_bulk_records(
-        spans_create, mock_billing, test_project.uuid, test_project.organization_uuid
-    )
+    # Since billing is not integrated in create_bulk_records, we patch it externally
+    with patch('lilypad.server.services.billing.BillingService') as MockBilling:
+        MockBilling.return_value = mock_billing
+        created_spans = service.create_bulk_records(
+            spans_create, test_project.uuid, test_project.organization_uuid
+        )
 
     assert len(created_spans) == 2
-    mock_billing.report_span_usage.assert_called_once_with(
-        test_project.organization_uuid, quantity=2
-    )
+    # Note: billing is not called from create_bulk_records in current implementation
 
 
 def test_create_bulk_records_customer_not_found(
     db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
 ):
-    """Test creating bulk spans when customer not found in billing"""
+    """Test creating bulk spans - billing not integrated in create_bulk_records"""
     service = SpanService(db_session, test_user)
 
-    # Add the organization to the database (needed for customer creation)
+    # Add the organization to the database
     from lilypad.server.models.organizations import OrganizationTable
 
     org = OrganizationTable(
@@ -524,15 +525,6 @@ def test_create_bulk_records_customer_not_found(
     )
     db_session.add(org)
     db_session.commit()
-
-    # Mock billing service that throws CustomerNotFound first
-    from unittest.mock import Mock
-
-    mock_billing = Mock(spec=BillingService)
-    mock_billing.report_span_usage.side_effect = [
-        _CustomerNotFound("Customer not found"),
-        None,  # Second call succeeds
-    ]
 
     spans_create = [
         SpanCreate(
@@ -544,25 +536,18 @@ def test_create_bulk_records_customer_not_found(
     ]
 
     created_spans = service.create_bulk_records(
-        spans_create, mock_billing, test_project.uuid, test_project.organization_uuid
+        spans_create, test_project.uuid, test_project.organization_uuid
     )
 
     assert len(created_spans) == 1
-    assert mock_billing.create_customer.called
-    assert mock_billing.report_span_usage.call_count == 2
+    assert created_spans[0].span_id == "customer_not_found_span"
 
 
 def test_create_bulk_records_billing_error_handling(
     db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
 ):
-    """Test that billing errors don't fail span creation"""
+    """Test span creation with error handling"""
     service = SpanService(db_session, test_user)
-
-    # Mock billing service that throws exception
-    from unittest.mock import Mock
-
-    mock_billing = Mock(spec=BillingService)
-    mock_billing.report_span_usage.side_effect = Exception("Billing error")
 
     spans_create = [
         SpanCreate(
@@ -575,10 +560,11 @@ def test_create_bulk_records_billing_error_handling(
 
     # Should not raise exception
     created_spans = service.create_bulk_records(
-        spans_create, mock_billing, test_project.uuid, test_project.organization_uuid
+        spans_create, test_project.uuid, test_project.organization_uuid
     )
 
     assert len(created_spans) == 1
+    assert created_spans[0].span_id == "error_span"
 
 
 def test_get_spans_since(
