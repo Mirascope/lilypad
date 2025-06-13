@@ -371,6 +371,21 @@ def test_create_stripe_customer_organization_not_found(
     assert exc_info.value.status_code == 404
 
 
+def test_create_stripe_customer_organization_none_error(
+    org_service: OrganizationService
+):
+    """Test create_stripe_customer with organization not found (line 62)."""
+    mock_billing_service = Mock(spec=BillingService)
+    fake_uuid = uuid4()
+    
+    # Mock find_record_by_uuid to return None instead of raising HTTPException
+    with patch.object(org_service, 'find_record_by_uuid', return_value=None):
+        with pytest.raises(ValueError, match=f"Organization {fake_uuid} not found"):
+            org_service.create_stripe_customer(
+                mock_billing_service, fake_uuid, "notfound@example.com"
+            )
+
+
 def test_get_stripe_customer_success(
     org_service: OrganizationService, db_session: Session
 ):

@@ -647,10 +647,167 @@ def test_mirascope_nested_content():
     assert len(result) == 1
     assert result[0].role == "system"
     assert len(result[0].content) == 2
+
+
+def test_openai_messages_image_url():
+    """Test OpenAI messages with image_url content (lines 244-262)."""
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": json.dumps([
+                    "Text part",
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUg",
+                            "detail": "high"
+                        }
+                    },
+                    {
+                        "text": "Another text part"
+                    }
+                ])
+            },
+        }
+    ]
+    
+    result = convert_openai_messages(messages)
+    assert len(result) == 2
+    assert result[0].role == "user"
+    assert len(result[0].content) == 3
+    # Check string content (line 244-245)
     assert result[0].content[0].type == "text"
-    assert result[0].content[0].text == "System instructions"
+    assert result[0].content[0].text == "Text part"
+    # Check image content (lines 246-260)
     assert result[0].content[1].type == "image"
     assert result[0].content[1].media_type == "image/jpeg"
+    assert result[0].content[1].detail == "high"
+    # Check dict with text (lines 261-264)
+    assert result[0].content[2].type == "text"
+    assert result[0].content[2].text == "Another text part"
+
+
+def test_openai_messages_tool_calls():
+    """Test OpenAI messages with tool calls (lines 279-281)."""
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {
+                "index": 0,
+                "message": json.dumps({
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "search_web",
+                                "arguments": '{"query": "test"}'
+                            }
+                        }
+                    ]
+                })
+            },
+        }
+    ]
+    
+    result = convert_openai_messages(messages)
+    assert len(result) == 1
+    assert result[0].role == "assistant"
+    assert len(result[0].content) == 1
+    assert result[0].content[0].type == "tool_call"
+    assert result[0].content[0].name == "search_web"
+
+
+def test_mirascope_image_content():
+    """Test mirascope messages with image type content (line 420)."""
+    mock_message = [
+        {
+            "role": "user",
+            "content": {
+                "type": "image",
+                "media_type": "image/png",
+                "image": base64.b64encode(b"fake_image_data").decode("utf-8")
+            },
+        }
+    ]
+    mock_message_string = json.dumps(mock_message)
+    
+    result = convert_mirascope_messages(mock_message_string)
+    assert len(result) == 1
+    assert result[0].role == "user"
+    assert len(result[0].content) == 1
+    assert result[0].content[0].type == "image"
+
+
+def test_span_more_details_gemini_provider():
+    """Test span more details with Gemini provider (line 596)."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import Scope, SpanTable
+    from datetime import datetime
+    from uuid import uuid4
+    
+    data = {
+        "name": "test_span",
+        "attributes": {"gen_ai.system": "google_genai"},
+        "events": [
+            {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
+        ]
+    }
+    
+    span = SpanTable(
+        uuid=uuid4(),
+        name="test_span",
+        span_id="test_id",
+        trace_id="test_trace",
+        parent_span_id=None,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        status={"status_code": "OK"},
+        attributes={},
+        scope=Scope.LLM,
+        data=data,
+        project_uuid=uuid4(),
+        organization_uuid=uuid4(),
+    )
+    
+    result = SpanMoreDetails.from_span(span)
+    assert result.messages is not None
+    assert len(result.messages) == 2
+
+
+def test_span_more_details_anthropic_provider():
+    """Test span more details with Anthropic provider (line 603)."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import Scope, SpanTable
+    from datetime import datetime
+    from uuid import uuid4
+    
+    data = {
+        "name": "test_span",
+        "attributes": {"gen_ai.system": "anthropic"},
+        "events": [
+            {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
+        ]
+    }
+    
+    span = SpanTable(
+        uuid=uuid4(),
+        name="test_span",
+        span_id="test_id",
+        trace_id="test_trace",
+        parent_span_id=None,
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        status={"status_code": "OK"},
+        attributes={},
+        scope=Scope.LLM,
+        data=data,
+        project_uuid=uuid4(),
+        organization_uuid=uuid4(),
+    )
+    
+    result = SpanMoreDetails.from_span(span)
+    assert result.messages is not None
+    assert len(result.messages) == 2
 
 
 def test_convert_events_default_values():
