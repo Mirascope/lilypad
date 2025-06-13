@@ -126,6 +126,33 @@ async def test_async_lilypad_wrap_clients_exception_handling():
                 mock_logger.error.assert_called_once()
 
 
+@pytest.mark.asyncio
+async def test_async_lilypad_wrap_clients_success():
+    """Test AsyncLilypad client successful wrapping - covers line 235."""
+    with patch("lilypad._utils.client.logger") as mock_logger:
+        # Create a real client to ensure the success path is tested
+        client = AsyncLilypad(api_key="test-key")
+        
+        # Verify the success debug message was logged (line 235)
+        # Check that the debug call was made with the expected message
+        debug_calls = [call for call in mock_logger.debug.call_args_list 
+                      if "Successfully wrapped all AsyncRawClients" in str(call)]
+        assert len(debug_calls) > 0, "Expected debug message about successful wrapping not found"
+
+
+def test_sync_lilypad_wrap_clients_success():
+    """Test Lilypad client successful wrapping - covers line 146."""
+    with patch("lilypad._utils.client.logger") as mock_logger:
+        # Create a real client to ensure the success path is tested
+        client = Lilypad(api_key="test-key")
+        
+        # Verify the success debug message was logged (line 146)
+        # Check that the debug call was made with the expected message
+        debug_calls = [call for call in mock_logger.debug.call_args_list 
+                      if "Successfully wrapped all RawClients" in str(call)]
+        assert len(debug_calls) > 0, "Expected debug message about successful wrapping not found"
+
+
 def test_noop_fallback():
     """Test the noop fallback function."""
     result = _noop_fallback(1, 2, 3, a=4, b=5)

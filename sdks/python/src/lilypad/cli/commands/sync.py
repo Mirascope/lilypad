@@ -231,8 +231,12 @@ def _get_deployed_version(versions: list[FunctionPublic]) -> FunctionPublic:
     return versions[-1]
 
 
-def _format_return_type(ret_type: str, is_async: bool, wrapped: bool) -> str:
+def _format_return_type(ret_type: str | None, is_async: bool, wrapped: bool) -> str:
     """Format the return type based on whether it's async and if it's wrapped."""
+    # Default to Any if ret_type is None or empty
+    if ret_type is None or ret_type == "":
+        ret_type = "Any"
+    
     if is_async:
         if wrapped:
             return f"Coroutine[Any, Any, AsyncTrace[{ret_type}]]"
