@@ -11,15 +11,17 @@ from uuid import UUID
 from aiokafka import AIOKafkaConsumer
 from aiokafka.errors import KafkaError
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from ..db.session import get_session
+from ..db.session import create_session
+from ..models.spans import SpanTable
 from ..models.users import UserTable
 from ..schemas.spans import SpanCreate
 from ..settings import get_settings
 from .billing import BillingService
 from .projects import ProjectService
 from .spans import SpanService
+from .stripe_kafka_service import StripeKafkaService
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +114,34 @@ class SpanQueueProcessor:
             max_workers=self.settings.kafka_db_thread_pool_size,
             thread_name_prefix="kafka-span-db-worker",
         )
+        # Database session and user cache
+        self._session: Session | None = None
+        self._user_cache: dict[UUID, UserTable] = {}
         logger.info(
             f"Initialized Kafka processor thread pool with {self.settings.kafka_db_thread_pool_size} workers "
             f"for non-blocking DB operations"
         )
 
+    def _get_cached_user(self, user_id: UUID) -> UserTable | None:
+        """Get user from cache or database."""
+        if user_id in self._user_cache:
+            return self._user_cache[user_id]
+
+        if not self._session:
+            logger.error("Database session not initialized")
+            return None
+
+        result = self._session.exec(select(UserTable).where(UserTable.uuid == user_id))
+        user = result.first()
+
+        if user:
+            self._user_cache[user_id] = user
+            logger.debug(f"Cached user {user_id}")
+
+        return user
+
     async def initialize(self) -> bool:
-        """Initialize Kafka consumer with retry logic."""
+        """Initialize Kafka consumer and database session with retry logic."""
         logger.info("[INIT] Starting Kafka consumer initialization")
         logger.info(
             f"[INIT] Bootstrap servers: {self.settings.kafka_bootstrap_servers}"
@@ -130,6 +153,14 @@ class SpanQueueProcessor:
             logger.warning(
                 "Kafka not configured (kafka_bootstrap_servers is None), queue processor disabled"
             )
+            return False
+
+        # Initialize database session
+        try:
+            self._session = create_session()
+            logger.info("[INIT] Database session initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize database session: {e}")
             return False
 
         # Retry logic for Kafka initialization
@@ -244,6 +275,21 @@ class SpanQueueProcessor:
                 logger.info("Kafka consumer stopped successfully")
             except Exception as e:
                 logger.error(f"Error stopping Kafka consumer: {e}")
+
+        # Close database session
+        if self._session:
+            logger.info("Closing database session...")
+            try:
+                self._session.close()
+                logger.info("Database session closed successfully")
+            except Exception as e:
+                logger.error(f"Error closing database session: {e}")
+            finally:
+                self._session = None
+
+        # Clear user cache
+        self._user_cache.clear()
+        logger.info("User cache cleared")
 
         # Shutdown thread pool executor
         logger.info("Shutting down thread pool executor...")
@@ -363,19 +409,19 @@ class SpanQueueProcessor:
 
     def _process_trace_sync(
         self, trace_id: str, ordered_spans: list[dict[str, Any]]
-    ) -> None:
+    ) -> tuple[list[SpanTable], UUID, UUID] | None:
         """Synchronous database operations for processing a trace.
 
         This method runs in a separate thread to avoid blocking the event loop.
-
-        Thread Safety:
-        - Each thread gets its own database session via get_session()
-        - No shared state between threads (trace data is passed as parameter)
-        - PostgreSQL handles concurrent inserts with MVCC
+        Uses the class database session and user cache for efficiency.
         """
         if not ordered_spans:
             logger.warning(f"No spans to process for trace {trace_id}")
-            return
+            return None
+
+        if not self._session:
+            logger.error("Database session not initialized")
+            return None
 
         first_span = ordered_spans[0]
         attributes = first_span.get("attributes", {})
@@ -385,7 +431,7 @@ class SpanQueueProcessor:
             logger.warning(
                 f"No project UUID found in trace {trace_id}, skipping {len(ordered_spans)} spans"
             )
-            return
+            return None
 
         project_uuid = UUID(project_uuid_str)
 
@@ -396,29 +442,29 @@ class SpanQueueProcessor:
             logger.warning(
                 f"No user ID found in trace {trace_id}, skipping {len(ordered_spans)} spans"
             )
-            return
+            return None
         user_id = UUID(user_id)
 
         logger.debug(f"Processing spans for user: {user_id}")
-        # Process with proper session management
-        for session in get_session():
-            result = session.exec(select(UserTable).where(UserTable.uuid == user_id))
-            user = result.first()
-            if not user:
-                logger.debug(f"User {user_id} not found for trace {trace_id}")
-                return
 
-            project_service = ProjectService(session, user)  # pyright: ignore [reportArgumentType]
+        # Get user from cache
+        user = self._get_cached_user(user_id)
+        if not user:
+            logger.debug(f"User {user_id} not found for trace {trace_id}")
+            return None
+
+        try:
+            project_service = ProjectService(self._session, user)  # pyright: ignore [reportArgumentType]
             project = project_service.find_record_no_organization(project_uuid)
             logger.debug(f"Found project: {project} for trace {trace_id}")
             if not project:
                 logger.warning(
                     f"Project {project_uuid} not found, skipping trace {trace_id} with {len(ordered_spans)} spans"
                 )
-                return
+                return None
 
             # Create span service
-            span_service = SpanService(session, user)  # pyright: ignore [reportArgumentType]
+            span_service = SpanService(self._session, user)  # pyright: ignore [reportArgumentType]
 
             # Convert to SpanCreate objects
             span_creates = []
@@ -430,25 +476,24 @@ class SpanQueueProcessor:
                 span_create = SpanQueueProcessor._convert_to_span_create(span_data)
                 span_creates.append(span_create)
 
-            # Determine if we need billing service
-            billing_service = None
-            if self.settings.stripe_api_key:
-                billing_service = BillingService(session, user)  # pyright: ignore [reportArgumentType]
-
             # Create spans in bulk
-            # Note: create_bulk_records should NOT commit, let get_session handle it
-            span_service.create_bulk_records(
+            spans = span_service.create_bulk_records(
                 span_creates,
-                billing_service,
                 project_uuid,
                 project.organization_uuid,
             )
+            # Commit the transaction
+            self._session.commit()
 
-            # Commit is handled by the session context manager in get_session()
             logger.info(
                 f"Successfully saved trace to database - Trace ID: {trace_id}, "
                 f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
             )
+            return spans, project.organization_uuid, user_id
+
+        except Exception as e:
+            self._session.rollback()
+            raise e
 
     async def _process_trace(self, trace_id: str, buffer: TraceBuffer) -> None:
         """Process a complete trace.
@@ -477,10 +522,37 @@ class SpanQueueProcessor:
                 f"Processing trace {trace_id} in thread pool to avoid blocking"
             )
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
+            result = await loop.run_in_executor(
                 self._executor, self._process_trace_sync, trace_id, ordered_spans
             )
             logger.debug(f"Trace {trace_id} processing completed in thread pool")
+
+            if result:
+                spans, org_uuid, user_uuid = result
+                try:
+                    user = self._get_cached_user(user_uuid)
+
+                    if user and self._session:
+                        billing_service = BillingService(self._session, user)  # pyright: ignore [reportArgumentType]
+                        is_stripe_kafka_enabled = (
+                            self.settings.kafka_bootstrap_servers
+                            and self.settings.kafka_topic_stripe_ingestion
+                            and self.settings.stripe_api_key
+                        )
+                        stripe_kafka_service = (
+                            StripeKafkaService(user)  # pyright: ignore [reportArgumentType]
+                            if is_stripe_kafka_enabled
+                            else None
+                        )
+                        await billing_service.report_span_usage_with_fallback(
+                            org_uuid, len(spans), stripe_kafka_service
+                        )
+                        logger.debug(
+                            f"Successfully reported {len(spans)} spans for billing"
+                        )
+                except Exception as e:
+                    # if reporting fails, we don't want to fail the entire span creation
+                    logger.error(f"Error reporting span usage: {e}")
 
         except IntegrityError as e:
             logger.error(

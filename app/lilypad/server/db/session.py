@@ -69,3 +69,12 @@ def get_session() -> Generator[Session, None, None]:
             raise
         else:
             session.commit()
+
+
+def create_session() -> Session:
+    """Create a new SQLModel session that must be manually managed.
+
+    Note: The caller is responsible for committing and closing the session.
+    """
+    engine = db.get_engine()
+    return Session(engine)
