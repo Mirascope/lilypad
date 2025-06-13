@@ -693,3 +693,30 @@ def test_async_client_attribute_error_handling():
         with patch("builtins.hasattr", return_value=False):
             # Should not raise when projects doesn't exist
             client._wrap_raw_clients(None)  # Should handle None gracefully
+
+
+def test_sync_singleton_creation_failure():
+    """Test _sync_singleton handles client creation failure - covers lines 279-281."""
+    with patch("lilypad._utils.client.Lilypad") as mock_lilypad:
+        mock_lilypad.side_effect = Exception("Client creation failed")
+        
+        # Clear cache first
+        _sync_singleton.cache_clear()
+        
+        with pytest.raises(RuntimeError, match="Failed to create cached client"):
+            _sync_singleton("test_key", "https://api.com")
+
+
+@pytest.mark.asyncio
+async def test_async_singleton_creation_failure():
+    """Test _async_singleton handles client creation failure - covers lines 330-332."""
+    with patch("lilypad._utils.client.AsyncLilypad") as mock_async_lilypad:
+        mock_async_lilypad.side_effect = Exception("Async client creation failed")
+        
+        # Clear cache first
+        _async_singleton.cache_clear()
+        
+        loop_id = id(asyncio.get_running_loop())
+        
+        with pytest.raises(RuntimeError, match="Failed to create cached async client"):
+            _async_singleton("test_key", loop_id, "https://api.com")

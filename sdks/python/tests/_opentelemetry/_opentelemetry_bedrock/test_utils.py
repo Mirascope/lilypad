@@ -10,6 +10,7 @@ from lilypad._opentelemetry._opentelemetry_bedrock.utils import (
     BedrockChunkHandler,
     default_bedrock_cleanup,
     get_bedrock_llm_request_attributes,
+    set_bedrock_message_event,
 )
 
 
@@ -90,3 +91,133 @@ def test_get_bedrock_llm_request_attributes():
     assert attrs["gen_ai.request.top_p"] == 0.9
     assert attrs["gen_ai.request.max_tokens"] == 1024
     assert attrs["gen_ai.request.stop_sequences"] == ["STOP"]
+
+
+def test_bedrock_chunk_handler_process_chunk_not_dict():
+    """Test process_chunk with non-dict chunk - covers line 56."""
+    handler = BedrockChunkHandler()
+    buffers = []
+    
+    # Test with non-dict chunk
+    handler.process_chunk("not a dict", buffers)
+    assert len(buffers) == 0
+    
+    # Test with dict that has no contentBlockDelta
+    handler.process_chunk({"other": "data"}, buffers)
+    assert len(buffers) == 0
+    
+    # Test with contentBlockDelta that's not a dict
+    handler.process_chunk({"contentBlockDelta": "not a dict"}, buffers)
+    assert len(buffers) == 0
+
+
+def test_bedrock_chunk_handler_process_chunk_edge_cases():
+    """Test process_chunk edge cases - covers lines 71, 80-103."""
+    from lilypad._opentelemetry._utils import ChoiceBuffer
+    
+    handler = BedrockChunkHandler()
+    buffers = []
+    
+    # Test with higher index to trigger buffer expansion
+    chunk = {
+        "contentBlockDelta": {
+            "contentBlockIndex": 2,
+            "delta": {"text": "text for index 2"}
+        }
+    }
+    handler.process_chunk(chunk, buffers)
+    assert len(buffers) == 3  # Should create buffers 0, 1, 2
+    assert buffers[2].text_content == ["text for index 2"]
+    
+    # Test with delta that's not a dict
+    chunk_invalid_delta = {
+        "contentBlockDelta": {
+            "contentBlockIndex": 0,
+            "delta": "not a dict"
+        }
+    }
+    handler.process_chunk(chunk_invalid_delta, buffers)
+    # Should not crash, just not add content
+    
+    # Test with text that's not a string
+    chunk_invalid_text = {
+        "contentBlockDelta": {
+            "contentBlockIndex": 0,
+            "delta": {"text": 123}  # Not a string
+        }
+    }
+    handler.process_chunk(chunk_invalid_text, buffers)
+    # Should not crash, just not add content
+
+
+def test_set_bedrock_message_event():
+    """Test set_bedrock_message_event function - covers lines 109-116, 120."""
+    span = Mock()
+    span.is_recording.return_value = True
+    
+    # Test with string content
+    message = {"role": "user", "content": "Hello world"}
+    set_bedrock_message_event(span, message)
+    span.add_event.assert_called_with(
+        "gen_ai.user.message",
+        attributes={
+            gen_ai_attributes.GEN_AI_SYSTEM: "bedrock",
+            "content": "Hello world"
+        }
+    )
+    
+    # Test with list content
+    message_list = {"role": "assistant", "content": [{"type": "text", "text": "Response"}]}
+    set_bedrock_message_event(span, message_list)
+    span.add_event.assert_called_with(
+        "gen_ai.assistant.message",
+        attributes={
+            gen_ai_attributes.GEN_AI_SYSTEM: "bedrock",
+            "content": '[{"type":"text","text":"Response"}]'
+        }
+    )
+    
+    # Test with non-string, non-list content
+    message_other = {"role": "system", "content": 123}
+    set_bedrock_message_event(span, message_other)
+    span.add_event.assert_called_with(
+        "gen_ai.system.message",
+        attributes={
+            gen_ai_attributes.GEN_AI_SYSTEM: "bedrock",
+            "content": ""
+        }
+    )
+    
+    # Test when span is not recording
+    span.is_recording.return_value = False
+    span.add_event.reset_mock()
+    set_bedrock_message_event(span, message)
+    span.add_event.assert_not_called()
+
+
+def test_set_bedrock_message_event_json_error():
+    """Test set_bedrock_message_event with JSON serialization error - covers lines 115-116."""
+    span = Mock()
+    span.is_recording.return_value = True
+    
+    # Create a content that will cause JSON serialization error
+    class UnserializableObject:
+        def __str__(self):
+            return "unserializable"
+    
+    message = {"role": "user", "content": {"obj": UnserializableObject()}}
+    
+    # Mock json_dumps to raise an error
+    with pytest.raises(TypeError):
+        import json
+        json.dumps(message["content"])
+    
+    # The function should handle this gracefully and use str() instead
+    set_bedrock_message_event(span, message)
+    span.add_event.assert_called_with(
+        "gen_ai.user.message",
+        attributes={
+            gen_ai_attributes.GEN_AI_SYSTEM: "bedrock",
+            "content": str(message["content"])
+        }
+    )

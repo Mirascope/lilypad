@@ -321,3 +321,25 @@ def test_get_message_event_with_tool_call():
     result = get_message_event(message)
     assert gen_ai_attributes.GEN_AI_SYSTEM in result
     assert "message" in result
+
+
+def test_set_message_event_assistant_no_content_with_tool_calls():
+    """Test set_message_event for assistant with no content but tool calls - covers lines 159-160."""
+    span = Mock()
+    
+    # Create message with no content but tool calls available
+    message = {"role": "assistant"}  # No content field
+    
+    # Mock get_tool_calls to return tool calls
+    with patch('lilypad._opentelemetry._opentelemetry_anthropic.utils.get_tool_calls') as mock_get_tool_calls:
+        mock_get_tool_calls.return_value = [{"id": "call_123", "type": "tool_use", "function": {"name": "test"}}]
+        set_message_event(span, message)
+        
+        # Should call add_event with tool_calls in attributes
+        span.add_event.assert_called_with(
+            "gen_ai.assistant.message",
+            attributes={
+                gen_ai_attributes.GEN_AI_SYSTEM: "anthropic",
+                "tool_calls": '[{"id":"call_123","type":"tool_use","function":{"name":"test"}}]',
+            },
+        )

@@ -783,3 +783,47 @@ def test_to_json_serializable_ipv4_ipv6_and_path():
     # Test UUID
     uuid_obj = UUID("12345678-1234-5678-9abc-123456789abc")
     assert _to_json_serializable(uuid_obj) == "12345678-1234-5678-9abc-123456789abc"
+
+
+def test_jsonable_encoder_registered_encoder_check():
+    """Test jsonable_encoder with registered encoder check - covers line 314."""
+    from lilypad._utils.json import jsonable_encoder
+    from collections.abc import Mapping
+    
+    class CustomMapping(Mapping):
+        """Custom mapping that triggers the registered encoder check."""
+        def __init__(self, data):
+            self._data = data
+            
+        def __getitem__(self, key):
+            return self._data[key]
+            
+        def __iter__(self):
+            return iter(self._data)
+            
+        def __len__(self):
+            return len(self._data)
+    
+    mapping = CustomMapping({"key": "value", "num": 123})
+    result = jsonable_encoder(mapping)
+    assert result == {"key": "value", "num": 123}
+
+
+def test_jsonable_encoder_object_without_dict_fallback():
+    """Test jsonable_encoder fallback to vars() - covers line 334."""
+    class ObjectWithoutDict:
+        """Object that has __dict__ but vars() will work."""
+        def __init__(self):
+            self.name = "test"
+            self.value = 42
+            
+        def __getattribute__(self, name):
+            # Simulate issues with direct dict access while keeping __dict__
+            if name == "__dict__":
+                # Return dict but simulate earlier conversion attempt failed
+                return {"name": "test", "value": 42}
+            return super().__getattribute__(name)
+    
+    obj = ObjectWithoutDict()
+    result = jsonable_encoder(obj)
+    assert result == {"name": "test", "value": 42}
