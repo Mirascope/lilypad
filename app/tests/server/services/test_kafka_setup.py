@@ -560,3 +560,30 @@ class TestKafkaSetupService:
                 "retention.bytes": "1073741824",  # 1GB
             },
         )
+    @pytest.mark.asyncio
+    async def test_setup_topics_admin_client_unset_after_connect(self):
+        """`setup_topics` should log and return False when admin_client is None after the retry loop."""
+        mock_settings = Mock(spec=Settings)
+        mock_settings.kafka_bootstrap_servers = "localhost:9092"
+        mock_settings.kafka_auto_setup_topics = True
+        mock_settings.kafka_topic_span_ingestion = "span-ingestion"
+
+        service = KafkaSetupService(mock_settings)
+
+        async def _start_and_unset() -> None:  # noqa: D401
+            service.admin_client = None  # wipe out the reference created in the loop
+
+        mock_admin_client = AsyncMock()
+        mock_admin_client.start.side_effect = _start_and_unset
+
+        with (
+            patch(
+                "lilypad.server.services.kafka_setup.AIOKafkaAdminClient",
+                return_value=mock_admin_client,
+            ),
+            patch("lilypad.server.services.kafka_setup.logger") as mock_logger,
+        ):
+            result = await service.setup_topics()
+
+        assert result is False
+        mock_logger.error.assert_called_once_with("Admin client is not initialized")
