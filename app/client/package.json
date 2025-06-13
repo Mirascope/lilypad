@@ -144,6 +144,9 @@
       "@babel/helpers@<7.26.10": ">=7.26.10"
     }
   },
+  "overrides": {
+    "nanoid": "3.3.7"
+  },
   "eslintConfig": {
     "extends": [
       "plugin:storybook/recommended"
