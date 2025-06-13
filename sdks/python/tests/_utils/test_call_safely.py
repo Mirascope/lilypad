@@ -3,6 +3,7 @@
 import pytest
 
 from lilypad.exceptions import LilypadException
+from lilypad.generated.core.api_error import ApiError
 from lilypad._utils.call_safely import call_safely
 
 
@@ -57,3 +58,68 @@ async def test_call_safely_async() -> None:
 
     with pytest.raises(ValueError):
         await user_error()
+
+
+def test_call_safely_with_exclude() -> None:
+    """Test call_safely decorator with exclude parameter (line 91)."""
+    
+    def fallback() -> str:
+        return "fallback"
+    
+    # Test with ApiError being excluded
+    @call_safely(fallback, exclude=(ApiError,))
+    def api_error_excluded() -> str:
+        raise ApiError(status_code=404, body="Not found", headers={})
+    
+    # ApiError should be re-raised because it's in exclude list
+    with pytest.raises(ApiError):
+        api_error_excluded()
+    
+    # Test with LilypadException being excluded
+    @call_safely(fallback, exclude=(LilypadException,))
+    def lilypad_error_excluded() -> str:
+        raise LilypadException("This should be re-raised")
+    
+    # LilypadException should be re-raised because it's in exclude list
+    with pytest.raises(LilypadException, match="This should be re-raised"):
+        lilypad_error_excluded()
+    
+    @call_safely(fallback, exclude=(ApiError,))
+    def error_not_excluded() -> str:
+        raise LilypadException("This should trigger fallback")
+    
+    # LilypadException should trigger fallback since it's not excluded
+    assert error_not_excluded() == "fallback"
+
+
+@pytest.mark.asyncio
+async def test_call_safely_async_with_exclude() -> None:
+    """Test call_safely decorator with exclude parameter for async functions (line 69)."""
+    
+    async def fallback() -> str:
+        return "async fallback"
+    
+    # Test with ApiError being excluded
+    @call_safely(fallback, exclude=(ApiError,))
+    async def async_api_error_excluded() -> str:
+        raise ApiError(status_code=500, body="Server error", headers={})
+    
+    # ApiError should be re-raised because it's in exclude list
+    with pytest.raises(ApiError):
+        await async_api_error_excluded()
+    
+    # Test with LilypadException being excluded
+    @call_safely(fallback, exclude=(LilypadException,))
+    async def async_lilypad_error_excluded() -> str:
+        raise LilypadException("This should be re-raised async")
+    
+    # LilypadException should be re-raised because it's in exclude list
+    with pytest.raises(LilypadException, match="This should be re-raised async"):
+        await async_lilypad_error_excluded()
+    
+    @call_safely(fallback, exclude=(ApiError,))
+    async def async_error_not_excluded() -> str:
+        raise LilypadException("This should trigger async fallback")
+    
+    # LilypadException should trigger fallback since it's not excluded
+    assert await async_error_not_excluded() == "async fallback"
