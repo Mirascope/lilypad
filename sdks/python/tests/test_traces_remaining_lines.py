@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 
-from lilypad.traces import trace
+from lilypad.traces import trace, _register_decorated_function
 from lilypad.generated.errors.not_found_error import NotFoundError
 
 
@@ -436,3 +436,27 @@ def test_trace_decorator_with_prompt_template():
     
     # The decorator should handle this attribute gracefully
     assert hasattr(test_function_with_template, '_prompt_template')
+
+
+def test_register_decorated_function_recording_disabled():
+    """Test _register_decorated_function when recording is disabled (line 328)."""
+    with patch("lilypad.traces._RECORDING_ENABLED", False):
+        # When recording is disabled, the function should return early
+        _register_decorated_function("test_decorator", lambda: None, "test_function")
+        # If we get here without error, the early return worked
+
+
+def test_register_decorated_function_inspection_error():
+    """Test _register_decorated_function when inspect fails (lines 343-345)."""
+    def problematic_function():
+        pass
+    
+    # Mock inspect.getfile to raise TypeError
+    with patch("lilypad.traces.inspect.getfile", side_effect=TypeError("Cannot get file")):
+        # Should handle the exception gracefully
+        _register_decorated_function("test_decorator", problematic_function, "test_function")
+    
+    # Mock inspect.getfile to raise OSError  
+    with patch("lilypad.traces.inspect.getfile", side_effect=OSError("File not found")):
+        # Should handle the exception gracefully
+        _register_decorated_function("test_decorator", problematic_function, "test_function")

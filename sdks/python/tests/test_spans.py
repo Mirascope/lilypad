@@ -3,6 +3,7 @@
 from typing import Any
 from contextlib import AbstractContextManager
 from collections.abc import Generator
+from unittest.mock import Mock
 
 import pytest
 
@@ -294,3 +295,44 @@ def test_span_with_session_context() -> None:
     assert len(dummy_spans) == 1
     dummy = dummy_spans[0]
     assert dummy.attributes.get("lilypad.session_id") == "test-session-id"
+
+
+def test_span_opentelemetry_span_with_span():
+    """Test opentelemetry_span property when _span is not None (line 81)."""
+    test_span = Span("test")
+    
+    # Directly set _span to mock object to test the property
+    mock_otel_span = Mock()
+    test_span._span = mock_otel_span
+    
+    # Now opentelemetry_span should return the mock span
+    result = test_span.opentelemetry_span
+    assert result == mock_otel_span
+
+
+def test_span_span_id_with_span():
+    """Test span_id property when _span is not None (line 89)."""
+    test_span = Span("test")
+    
+    # Directly set _span to mock object to test the property
+    mock_otel_span = Mock()
+    mock_otel_span.get_span_context.return_value.span_id = 12345
+    test_span._span = mock_otel_span
+    
+    # Now span_id should return the actual span ID from the mock
+    result = test_span.span_id
+    assert result == 12345
+
+
+@pytest.mark.asyncio
+async def test_async_span_context_manager():
+    """Test async context manager methods directly (lines 81, 89)."""
+    async with span("async context manager test") as s:
+        # This should hit both __aenter__ (line 81) and __aexit__ (line 89)
+        s.info("Testing async context manager")
+        assert s.name == "async context manager test"
+    
+    # Verify the span was created and finished properly
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.ended is True
