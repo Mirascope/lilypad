@@ -475,3 +475,31 @@ def test_basic_deployment_service_operations(
     # Verify it's deleted
     with pytest.raises(HTTPException):
         deployment_service.find_record_by_uuid(deployment.uuid)
+
+
+def test_deployment_service_create_deployment_with_existing(
+    deployment_service: DeploymentService, test_function: FunctionTable, test_environment_uuid
+):
+    """Test creating deployment when existing deployments exist (lines 51-53)."""
+    # Create first deployment using deploy_function to properly activate it
+    first_deployment = deployment_service.deploy_function(
+        function_uuid=test_function.uuid,
+        environment_uuid=test_environment_uuid,
+        notes="First deployment",
+    )
+    assert first_deployment.is_active is True
+    
+    # Create second deployment - should deactivate the first one  
+    second_deployment = deployment_service.deploy_function(
+        function_uuid=test_function.uuid,
+        environment_uuid=test_environment_uuid,
+        notes="Second deployment",
+    )
+    
+    # Second deployment should be active
+    assert second_deployment.is_active is True
+    assert second_deployment.version_num == 2
+    
+    # First deployment should now be inactive (lines 52-53)
+    deployment_service.session.refresh(first_deployment)
+    assert first_deployment.is_active is False

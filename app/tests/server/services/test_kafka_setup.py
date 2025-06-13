@@ -603,3 +603,35 @@ class TestKafkaSetupService:
 
         assert result is False
         mock_logger.error.assert_called_once_with("Admin client is not initialized")
+
+
+def test_topic_config_defaults():
+    """Test TopicConfig default values (line 27)."""
+    from lilypad.server.services.kafka_setup import TopicConfig
+    
+    # Test with configs=None to trigger default assignment (line 27)
+    config = TopicConfig(name="test-topic", num_partitions=1, replication_factor=1, configs=None)
+    
+    assert config.name == "test-topic"
+    assert config.num_partitions == 1
+    assert config.replication_factor == 1
+    assert config.configs == {
+        "retention.ms": "604800000",
+        "retention.bytes": "1073741824",
+    }
+
+
+def test_topic_config_explicit_configs():
+    """Test TopicConfig with explicit configs (no default configs).""" 
+    from lilypad.server.services.kafka_setup import TopicConfig
+    
+    custom_configs = {"cleanup.policy": "compact"}
+    config = TopicConfig(
+        name="test-topic", 
+        num_partitions=1, 
+        replication_factor=1,
+        configs=custom_configs
+    )
+    
+    # Should not use defaults when explicit configs provided
+    assert config.configs == custom_configs

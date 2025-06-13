@@ -1537,3 +1537,168 @@ def test_span_more_details_from_span_no_uuid():
     # Should raise ValueError
     with pytest.raises(ValueError, match="UUID does not exist"):
         SpanMoreDetails.from_span(span)
+
+
+def test_span_more_details_openai_image_processing():
+    """Test OpenAI response with image content (lines 244-264)."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    from lilypad.server.models.spans import SpanTable, Scope
+    from unittest.mock import Mock
+    from uuid import uuid4
+    
+    # Create a proper SpanTable mock
+    span = Mock(spec=SpanTable)
+    span.uuid = uuid4()
+    span.scope = Scope.LLM
+    span.data = {
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        "Text message",
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ==",
+                                "detail": "high"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "Another text part"
+                        }
+                    ]
+                }
+            ]
+        },
+        "output": {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Assistant response"
+                    }
+                }
+            ]
+        },
+        "attributes": {
+            "lilypad.provider": "openai"
+        }
+    }
+    
+    details = SpanMoreDetails.from_span(span)
+    
+    # Should process image correctly
+    assert details.messages is not None
+    user_message = details.messages[0]
+    assert len(user_message.content) == 3
+    
+    # First part should be text
+    assert user_message.content[0].type == "text"
+    assert user_message.content[0].text == "Text message"
+    
+    # Second part should be image
+    assert user_message.content[1].type == "image"
+    assert user_message.content[1].media_type == "image/jpeg"
+    assert user_message.content[1].detail == "high"
+    
+    # Third part should be text
+    assert user_message.content[2].type == "text"
+    assert user_message.content[2].text == "Another text part"
+
+
+def test_span_more_details_openai_malformed_json():
+    """Test OpenAI response with malformed JSON content (lines 265-266)."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    
+    span_data = {
+        "data": {
+            "input": {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "invalid json: {broken"  # Malformed JSON
+                    }
+                ]
+            },
+            "output": {
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": "Assistant response"
+                        }
+                    }
+                ]
+            }
+        },
+        "attributes": {
+            "lilypad.provider": "openai"
+        }
+    }
+    
+    details = SpanMoreDetails.from_span(span_data)
+    
+    # Should fall back to text content when JSON parsing fails
+    assert details.messages is not None
+    user_message = details.messages[0]
+    assert len(user_message.content) == 1
+    assert user_message.content[0].type == "text"
+    assert user_message.content[0].text == "invalid json: {broken"
+
+
+def test_span_more_details_openai_tool_calls():
+    """Test OpenAI response with tool calls (lines 279-284)."""
+    from lilypad.server.schemas.span_more_details import SpanMoreDetails
+    
+    span_data = {
+        "data": {
+            "input": {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Call a function"
+                    }
+                ]
+            },
+            "output": {
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "tool_calls": [
+                                {
+                                    "function": {
+                                        "name": "test_function",
+                                        "arguments": '{"param": "value"}'
+                                    },
+                                    "id": "call_123",
+                                    "type": "function"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "attributes": {
+            "lilypad.provider": "openai"
+        }
+    }
+    
+    details = SpanMoreDetails.from_span(span_data)
+    
+    # Should process tool calls correctly
+    assert details.messages is not None
+    assert len(details.messages) == 2
+    
+    assistant_message = details.messages[1]
+    assert assistant_message.role == "assistant"
+    assert len(assistant_message.content) == 1
+    
+    tool_call = assistant_message.content[0]
+    assert tool_call.type == "tool_call"
+    assert tool_call.name == "test_function"
+    assert tool_call.arguments == '{"param": "value"}'
+    assert tool_call.id == "call_123"

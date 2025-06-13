@@ -1093,24 +1093,23 @@ def test_handle_invalid_request_errors():
 
 def test_aws_secret_manager_cleanup_error():
     """Test AWS secret manager cleanup error handling (lines 137-138)."""
-    from unittest.mock import Mock, patch, PropertyMock
+    from unittest.mock import Mock, patch
     from lilypad.server.secret_manager.aws_secret_manager import AWSSecretManager
     
     manager = AWSSecretManager()
+    manager._client = Mock()
     
-    # Mock the cleanup method to force an exception during the try block
-    mock_client = Mock()
-    manager._client = mock_client
-    
-    # Patch the assignment to trigger an exception
     with patch("lilypad.server.secret_manager.aws_secret_manager.logger") as mock_logger:
-        # Use a side effect to raise an exception when setting _client to None
-        type(manager).__dict__['_client'] = PropertyMock(side_effect=Exception("Test cleanup error"))
+        # Override __setattr__ to raise exception when setting _client to None
+        original_setattr = type(manager).__setattr__
         
-        try:
+        def mock_setattr(self, name, value):
+            if name == '_client' and value is None:
+                raise Exception("Test cleanup error")
+            original_setattr(self, name, value)
+        
+        with patch.object(type(manager), '__setattr__', mock_setattr):
             manager._cleanup()
-        except Exception:
-            pass  # Expected
         
         # Should log the error when exception occurs
         mock_logger.error.assert_called_once()

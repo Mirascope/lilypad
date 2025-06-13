@@ -728,16 +728,14 @@ def test_create_annotations_email_not_in_lookup_error(
     test_span: SpanTable,
 ):
     """Test creating annotations with email not found in lookup (line 84)."""
-    annotation_data = {
-        "annotations": [
-            {
-                "span_uuid": str(test_span.uuid),
-                "assignee_email": ["nonexistent@example.com"],  # Email not in organization
-                "title": "Test annotation",
-                "content": "Test content",
-            }
-        ]
-    }
+    annotation_data = [
+        {
+            "span_uuid": str(test_span.uuid),
+            "assignee_email": ["nonexistent@example.com"],  # Email not in organization
+            "title": "Test annotation",
+            "content": "Test content",
+        }
+    ]
     
     response = client.post(
         f"/ee/projects/{test_project.uuid}/annotations", 
@@ -756,16 +754,13 @@ def test_create_annotations_assignee_email_processing(
     test_user: UserTable,
 ):
     """Test annotations with assignee_email processing (lines 102-106)."""
-    annotation_data = {
-        "annotations": [
-            {
-                "span_uuid": str(test_span.uuid),
-                "assignee_email": [test_user.email],  # Valid email in organization
-                "title": "Test annotation",
-                "content": "Test content",
-            }
-        ]
-    }
+    annotation_data = [
+        {
+            "span_uuid": str(test_span.uuid),
+            "assignee_email": [test_user.email],  # Valid email in organization
+            "data": {"title": "Test annotation", "content": "Test content"},
+        }
+    ]
     
     response = client.post(
         f"/ee/projects/{test_project.uuid}/annotations", 
@@ -773,10 +768,10 @@ def test_create_annotations_assignee_email_processing(
     )
     
     # Should successfully process assignee_email to assigned_to
-    assert response.status_code == 201
+    assert response.status_code == 200
     created_annotations = response.json()
     assert len(created_annotations) == 1
-    assert created_annotations[0]["title"] == "Test annotation"
+    assert created_annotations[0]["data"]["title"] == "Test annotation"
 
 
 def test_annotation_missing_lines_coverage(
@@ -801,21 +796,18 @@ def test_annotation_missing_lines_coverage(
     assert response.status_code == 404
     
     # Test line 146 - create annotation to check further processing
-    annotation_data = {
-        "annotations": [
-            {
-                "span_uuid": str(test_span.uuid),
-                "title": "Coverage test annotation",
-                "content": "Test content for missing lines",
-            }
-        ]
-    }
+    annotation_data = [
+        {
+            "span_uuid": str(test_span.uuid),
+            "data": {"title": "Coverage test annotation", "content": "Test content for missing lines"},
+        }
+    ]
     
     response = client.post(
         f"/ee/projects/{test_project.uuid}/annotations", 
         json=annotation_data
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
 
 
 def test_annotation_metrics_edge_cases(
@@ -836,9 +828,137 @@ def test_annotation_metrics_edge_cases(
     
     # Test empty metrics response structure
     metrics = response.json()
-    assert "total_annotations" in metrics
-    assert "annotations_by_status" in metrics
-    assert "annotations_by_assignee" in metrics
+    assert "total_count" in metrics
+    assert "success_count" in metrics
+    assert "function_uuid" in metrics
+
+
+def test_create_annotations_duplicate_check(client: TestClient, test_project):
+    """Test duplicate annotation handling (line 117).""" 
+    # Create duplicate annotation requests
+    annotation_data = [
+        {
+            "span_uuid": str(uuid4()),
+            "data": {"test": "annotation1"},
+        },
+        {
+            "span_uuid": str(uuid4()),
+            "data": {"test": "annotation2"},
+        }
+    ]
+    
+    with patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService") as mock_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.ProjectService"):
+        
+        # Mock the service to return duplicates
+        mock_annotation_service = Mock()
+        mock_annotation_service.check_bulk_duplicates.return_value = [uuid4(), uuid4()]
+        mock_service.return_value = mock_annotation_service
+        
+        response = client.post(
+            f"/ee/projects/{test_project.uuid}/annotations",
+            json=annotation_data
+        )
+        
+        # Should return 400 when duplicates found
+        assert response.status_code == 400
+        assert "Duplicates found for spans" in response.json()["detail"]
+
+
+def test_generate_annotation_with_string_output(client: TestClient, test_project):
+    """Test annotation generation with string output (lines 264-284)."""
+    test_span_uuid = uuid4()
+    
+    with patch("lilypad.ee.server.api.v0.annotations_api.SpanService") as mock_span_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService") as mock_annotation_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace"):
+        
+        # Mock span with string output
+        mock_span = Mock()
+        mock_span.data = {
+            "attributes": {
+                "lilypad.type": "llm",
+                "lilypad.llm.output": "Test string output"
+            }
+        }
+        
+        mock_service = Mock()
+        mock_service.find_record_by_uuid.return_value = mock_span
+        mock_span_service.return_value = mock_service
+        
+        # Mock annotation service
+        mock_annotation_service.return_value.find_by_span_uuid.return_value = None
+        
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{test_span_uuid}/generate-annotation"
+        )
+        
+        # Should return 200 and process string output
+        assert response.status_code == 200
+
+
+def test_generate_annotation_with_dict_output(client: TestClient, test_project):
+    """Test annotation generation with dict output (lines 277-284)."""
+    test_span_uuid = uuid4()
+    
+    with patch("lilypad.ee.server.api.v0.annotations_api.SpanService") as mock_span_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService") as mock_annotation_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace"):
+        
+        # Mock span with dict output
+        mock_span = Mock()
+        mock_span.data = {
+            "attributes": {
+                "lilypad.type": "llm", 
+                "lilypad.llm.output": {
+                    "key1": "value1",
+                    "key2": "value2"
+                }
+            }
+        }
+        
+        mock_service = Mock()
+        mock_service.find_record_by_uuid.return_value = mock_span
+        mock_span_service.return_value = mock_service
+        
+        # Mock annotation service
+        mock_annotation_service.return_value.find_by_span_uuid.return_value = None
+        
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{test_span_uuid}/generate-annotation"
+        )
+        
+        # Should return 200 and process dict output
+        assert response.status_code == 200
+
+
+def test_generate_annotation_with_existing_annotation(client: TestClient, test_project):
+    """Test annotation generation with existing annotation data (lines 286-287)."""
+    test_span_uuid = uuid4()
+    
+    with patch("lilypad.ee.server.api.v0.annotations_api.SpanService") as mock_span_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.AnnotationService") as mock_annotation_service, \
+         patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace"):
+        
+        # Mock span
+        mock_span = Mock()
+        mock_span.data = {"attributes": {"lilypad.type": "llm"}}
+        
+        mock_service = Mock()
+        mock_service.find_record_by_uuid.return_value = mock_span
+        mock_span_service.return_value = mock_service
+        
+        # Mock existing annotation
+        existing_annotation = Mock()
+        existing_annotation.data = {"existing": "annotation", "key": "value"}
+        mock_annotation_service.return_value.find_by_span_uuid.return_value = existing_annotation
+        
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{test_span_uuid}/generate-annotation"
+        )
+        
+        # Should return 200 and use existing annotation data
+        assert response.status_code == 200
 
 
 def test_annotation_validation_both_assigned_to_and_email():

@@ -353,3 +353,32 @@ def test_get_license_endpoint(client: TestClient):
         # If successful, should return license info
         license_info = response.json()
         assert isinstance(license_info, dict)
+
+
+def test_user_organization_service_not_found():
+    """Test UserOrganizationService when user organization not found (line 31)."""
+    from lilypad.ee.server.services.user_organizations import UserOrganizationService
+    from lilypad.server.models.users import UserTable
+    from sqlmodel import Session
+    from unittest.mock import Mock
+    from uuid import uuid4
+    import pytest
+    from fastapi import HTTPException
+    
+    # Create mock session and user
+    mock_session = Mock(spec=Session)
+    mock_user = Mock(spec=UserTable)
+    mock_user.uuid = uuid4()
+    mock_user.active_organization_uuid = uuid4()
+    
+    # Mock session.exec to return None (no user organization found)
+    mock_session.exec.return_value.first.return_value = None
+    
+    service = UserOrganizationService(session=mock_session, user=mock_user)
+    
+    # Should raise HTTPException when user organization not found
+    with pytest.raises(HTTPException) as exc_info:
+        service.get_active_user_organization()
+    
+    assert exc_info.value.status_code == 404
+    assert "Record for user_organizations not found" in str(exc_info.value.detail)

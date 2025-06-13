@@ -27,7 +27,7 @@ class TestTraceBuffer:
         assert isinstance(buffer.created_at, float)
 
     def test_process_spans_missing_span(self):
-        """Test process_spans when span is missing (line 73)."""
+        """Test process_span when span is missing (line 73)."""
         buffer = TraceBuffer("trace-123")
         
         # Add span data with parent reference to non-existent span
@@ -39,18 +39,24 @@ class TestTraceBuffer:
             }
         }
         
-        # Create a mock process function that tracks calls
-        processed_spans = []
-        
-        def mock_process_function(span_data):
-            processed_spans.append(span_data["span_id"])
-        
-        # Test the nested process_span function behavior
+        # Test get_dependency_order which internally calls process_span
         # This covers line 73: if not span_data: return
-        buffer.process_spans(mock_process_function)
+        ordered_spans = buffer.get_dependency_order()
         
-        # Should process the existing span
-        assert "span-1" in processed_spans
+        # Should still process span-1 even though parent doesn't exist
+        assert len(ordered_spans) == 1
+        assert ordered_spans[0]["span_id"] == "span-1"
+        
+        # Test the case where we try to process a span that doesn't exist
+        # by adding a parent reference that's not in the spans dict
+        buffer.spans["span-2"] = {
+            "span_id": "span-2", 
+            "parent_span_id": "missing-span",
+            "data": "test2"
+        }
+        
+        ordered_spans = buffer.get_dependency_order()
+        assert len(ordered_spans) == 2
 
     def test_add_span(self):
         """Test adding spans to buffer."""
@@ -368,23 +374,51 @@ class TestSpanQueueProcessor:
         mock_session = Mock()
         processor._session = mock_session
         
-        # Mock dependencies
-        with patch.multiple(
-            processor,
-            _get_cached_user=Mock(return_value=Mock(uuid=uuid4())),
-            _get_or_create_project=Mock(return_value=Mock(uuid=uuid4(), organization_uuid=uuid4())),
-            _convert_span_data_to_create=Mock(return_value=Mock()),
-            _save_span=Mock(return_value=Mock()),
-        ):
-            trace_id = "test-trace"
-            ordered_spans = [{"span_id": "span-1", "data": "test"}]
+        # Test the _process_trace_sync method directly which contains lines 486-492
+        trace_id = "test-trace"
+        test_project_uuid = uuid4()
+        test_user_id = uuid4()
+        ordered_spans = [{
+            "span_id": "span-1", 
+            "user_id": str(test_user_id), 
+            "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
+            "data": {"test": "data"}
+        }]
+        
+        # Mock all external dependencies
+        with patch.object(processor, "_get_cached_user") as mock_get_user, \
+             patch("lilypad.server.services.span_queue_processor.ProjectService") as mock_project_service, \
+             patch("lilypad.server.services.span_queue_processor.SpanService") as mock_span_service, \
+             patch("lilypad.server.services.span_queue_processor.create_session") as mock_create_session:
             
-            with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
-                result = await processor._save_trace_to_db(trace_id, ordered_spans)
+            # Set up session context manager
+            mock_create_session.return_value.__enter__.return_value = mock_session
             
-            # Verify commit was called
+            # Set up user and project mocks
+            mock_user = Mock()
+            mock_user.uuid = test_user_id
+            mock_get_user.return_value = mock_user
+            
+            mock_project = Mock()
+            mock_project.uuid = test_project_uuid
+            mock_project.organization_uuid = uuid4()
+            
+            mock_project_service_instance = Mock()
+            mock_project_service_instance.find_record_by_uuid.return_value = mock_project
+            mock_project_service.return_value = mock_project_service_instance
+            
+            # Set up span service
+            mock_span_service_instance = Mock()
+            mock_spans = [Mock()]
+            mock_span_service_instance.create_bulk_records.return_value = mock_spans
+            mock_span_service.return_value = mock_span_service_instance
+            
+            # Call the sync method that contains the commit logic
+            result = processor._process_trace_sync(trace_id, ordered_spans)
+            
+            # Verify commit was called (line 486)
             mock_session.commit.assert_called_once()
-            mock_logger.info.assert_called()
+            assert result is not None
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings") 
@@ -393,6 +427,8 @@ class TestSpanQueueProcessor:
         mock_settings = Mock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
+        mock_settings.kafka_topic_stripe_ingestion = "stripe-topic"
+        mock_settings.stripe_api_key = "sk_test_123"
         mock_get_settings.return_value = mock_settings
         
         processor = SpanQueueProcessor()
@@ -402,22 +438,43 @@ class TestSpanQueueProcessor:
         mock_org_uuid = uuid4()
         mock_user_id = uuid4()
         
-        with patch.object(processor, '_save_trace_to_db', return_value=(mock_spans, mock_org_uuid, mock_user_id)):
-            with patch("lilypad.server.services.span_queue_processor.get_stripe_kafka_service") as mock_get_stripe:
-                mock_stripe_service = AsyncMock()
-                mock_get_stripe.return_value = mock_stripe_service
+        # Create a trace buffer with proper span data
+        buffer = TraceBuffer("test-trace")
+        test_project_uuid = uuid4()
+        buffer.add_span({
+            "span_id": "test-span", 
+            "user_id": str(mock_user_id), 
+            "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
+            "data": {"test": "data"}
+        })
+        
+        # Mock the _process_trace_sync to return successful result
+        mock_result = (mock_spans, mock_org_uuid, mock_user_id)
+        
+        # Mock executor and external dependencies
+        with patch.object(processor, '_process_trace_sync', return_value=mock_result) as mock_sync, \
+             patch.object(processor, '_get_cached_user') as mock_get_user, \
+             patch("lilypad.server.services.span_queue_processor.BillingService") as mock_billing_service, \
+             patch("lilypad.server.services.span_queue_processor.StripeKafkaService") as mock_stripe_service:
                 
-                trace_id = "test-trace"
-                buffer = Mock()
-                
-                with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
-                    await processor._process_trace(trace_id, buffer)
-                
-                # Verify billing was reported
-                mock_stripe_service.report_span_usage.assert_called_once()
-                mock_logger.debug.assert_any_call(
-                    f"Successfully reported {len(mock_spans)} spans for billing"
-                )
+            # Set up user mock
+            mock_user = Mock()
+            mock_user.uuid = mock_user_id
+            mock_get_user.return_value = mock_user
+            processor._session = Mock()  # Ensure session exists
+            processor.settings = mock_settings  # Set settings for stripe kafka checks
+            
+            # Set up billing service
+            mock_billing_instance = Mock()
+            mock_billing_service.return_value = mock_billing_instance
+            
+            with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+                await processor._process_trace("test-trace", buffer)
+            
+            # Verify billing service was called (lines 547-549)
+            mock_billing_instance.report_span_usage_with_fallback.assert_called_once_with(
+                mock_org_uuid, len(mock_spans), mock_stripe_service.return_value
+            )
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
