@@ -908,3 +908,225 @@ def test_accepts_neither_tag_input():
     span = SpanUpdate()
     assert span.tags_by_uuid is None
     assert span.tags_by_name is None
+
+
+def test_find_root_parent_span_no_result(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test find_root_parent_span when query returns no result."""
+    service = SpanService(db_session, test_user)
+    
+    # Test with non-existent span_id
+    result = service.find_root_parent_span("nonexistent_span")
+    assert result is None
+
+
+def test_get_aggregated_metrics_week_timeframe(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test getting aggregated metrics grouped by week."""
+    service = SpanService(db_session, test_user)
+    function_uuid = uuid4()
+
+    # Create spans for testing week aggregation
+    now = datetime.now(timezone.utc)
+    spans = [
+        SpanTable(
+            organization_uuid=test_project.organization_uuid,
+            span_id=f"span_{i}",
+            project_uuid=test_project.uuid,
+            function_uuid=function_uuid,
+            scope=Scope.LILYPAD,
+            parent_span_id=None,
+            cost=10.0,
+            input_tokens=100,
+            output_tokens=50,
+            duration_ms=1000,
+            created_at=now,
+            data={"attributes": {}},
+        )
+        for i in range(2)
+    ]
+
+    db_session.add_all(spans)
+    db_session.commit()
+
+    # Test WEEK aggregation
+    metrics = service.get_aggregated_metrics(
+        test_project.uuid, function_uuid, TimeFrame.WEEK
+    )
+    assert len(metrics) >= 1
+
+
+def test_get_aggregated_metrics_month_timeframe(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test getting aggregated metrics grouped by month."""
+    service = SpanService(db_session, test_user)
+    function_uuid = uuid4()
+
+    # Create spans for testing month aggregation
+    now = datetime.now(timezone.utc)
+    spans = [
+        SpanTable(
+            organization_uuid=test_project.organization_uuid,
+            span_id=f"span_{i}",
+            project_uuid=test_project.uuid,
+            function_uuid=function_uuid,
+            scope=Scope.LILYPAD,
+            parent_span_id=None,
+            cost=10.0,
+            input_tokens=100,
+            output_tokens=50,
+            duration_ms=1000,
+            created_at=now,
+            data={"attributes": {}},
+        )
+        for i in range(2)
+    ]
+
+    db_session.add_all(spans)
+    db_session.commit()
+
+    # Test MONTH aggregation
+    metrics = service.get_aggregated_metrics(
+        test_project.uuid, function_uuid, TimeFrame.MONTH
+    )
+    assert len(metrics) >= 1
+
+
+def test_count_by_current_month_december_edge_case(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test count_by_current_month handles December edge case."""
+    service = SpanService(db_session, test_user)
+    
+    # Mock datetime.now to return December
+    from unittest.mock import patch
+    from datetime import datetime
+    
+    december_date = datetime(2023, 12, 15)  # December 15, 2023
+    
+    with patch('lilypad.server.services.spans.datetime') as mock_datetime:
+        mock_datetime.now.return_value = december_date
+        
+        # Create span for December
+        span = SpanTable(
+            organization_uuid=test_project.organization_uuid,
+            span_id="december_span",
+            project_uuid=test_project.uuid,
+            function_uuid=uuid4(),
+            scope=Scope.LILYPAD,
+            created_at=december_date,
+            data={"attributes": {}},
+        )
+        db_session.add(span)
+        db_session.commit()
+        
+        # This should handle December -> January transition
+        count = service.count_by_current_month()
+        assert count >= 0  # Should not crash
+
+
+def test_create_bulk_records_with_invalid_tags(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test creating bulk spans with invalid tag types."""
+    service = SpanService(db_session, test_user)
+
+    # Create spans with non-string tags (should be ignored)
+    spans_create = [
+        SpanCreate(
+            span_id="invalid_tags_span",
+            function_uuid=uuid4(),
+            scope=Scope.LILYPAD,
+            data={"attributes": {"lilypad.trace.tags": ["valid_tag", 123, None, "another_valid"]}},
+        )
+    ]
+
+    created_spans = service.create_bulk_records(
+        spans_create, test_project.uuid, test_project.organization_uuid
+    )
+
+    assert len(created_spans) == 1
+    
+    # Check that only string tags were processed
+    links = db_session.query(SpanTagLink).filter_by(span_uuid=created_spans[0].uuid).all()
+    assert len(links) == 2  # Only "valid_tag" and "another_valid"
+
+
+@pytest.mark.asyncio
+async def test_update_span_no_tag_changes(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test updating span when no tag fields are provided."""
+    service = SpanService(db_session, test_user)
+
+    # Create span
+    span = SpanTable(
+        organization_uuid=test_project.organization_uuid,
+        span_id="no_tags_span",
+        project_uuid=test_project.uuid,
+        function_uuid=uuid4(),
+        scope=Scope.LILYPAD,
+        data={"attributes": {}},
+    )
+    db_session.add(span)
+    db_session.commit()
+
+    # Update without tags (both tags_by_name and tags_by_uuid are None)
+    update_data = SpanUpdate()  # No tag fields provided
+    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)
+
+    assert updated_span.uuid == span.uuid
+    
+    # No tags should be linked since no tag updates were provided
+    links = db_session.query(SpanTagLink).filter_by(span_uuid=span.uuid).all()
+    assert len(links) == 0
+
+
+def test_sync_span_tags_remove_existing_tags(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test _sync_span_tags when removing existing tags."""
+    service = SpanService(db_session, test_user)
+
+    # Create span with existing tags
+    span = SpanTable(
+        organization_uuid=test_project.organization_uuid,
+        span_id="remove_tags_span",
+        project_uuid=test_project.uuid,
+        function_uuid=uuid4(),
+        scope=Scope.LILYPAD,
+        data={"attributes": {}},
+    )
+    db_session.add(span)
+    db_session.commit()
+
+    # Create existing tag link
+    tag = TagTable(
+        organization_uuid=test_project.organization_uuid,
+        project_uuid=test_project.uuid,
+        name="existing_tag",
+        created_by=test_user.uuid,
+    )
+    db_session.add(tag)
+    db_session.commit()
+
+    existing_link = SpanTagLink(
+        span_uuid=span.uuid,
+        tag_uuid=tag.uuid,
+        created_by=test_user.uuid,
+    )
+    db_session.add(existing_link)
+    db_session.commit()
+
+    # Update to remove all tags (empty list)
+    update_data = SpanUpdate(tags_by_uuid=[])
+    result = service._sync_span_tags(span, update_data, test_user.uuid)
+
+    assert result is True  # Tags were modified
+    
+    # Verify tag was removed
+    links = db_session.query(SpanTagLink).filter_by(span_uuid=span.uuid).all()
+    assert len(links) == 0

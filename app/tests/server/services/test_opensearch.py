@@ -1050,3 +1050,153 @@ class TestGetOpenSearchService:
 
         assert result is False
         mock_logger.error.assert_called()
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    @patch("lilypad.server.services.opensearch.logger")
+    def test_search_traces_with_full_query(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
+        """Test search_traces with all query parameters."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_client.indices.exists.return_value = True
+        mock_client.search.return_value = {
+            "hits": {
+                "hits": [
+                    {"_source": {"span_id": "span-1"}},
+                    {"_source": {"span_id": "span-2"}},
+                ]
+            }
+        }
+        mock_opensearch_class.return_value = mock_client
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        
+        # Test with all query parameters
+        search_query = SearchQuery(
+            query_string="test query",
+            time_range_start=1234567890,
+            time_range_end=1234567999,
+            scope=Scope.LLM,
+            type="generation",
+            limit=50
+        )
+
+        result = service.search_traces(project_uuid, search_query)
+
+        assert len(result) == 2
+        mock_client.search.assert_called_once()
+        
+        # Verify query structure was built correctly
+        call_args = mock_client.search.call_args
+        search_body = call_args[1]["body"]
+        assert "query" in search_body
+        assert "bool" in search_body["query"]
+        assert "must" in search_body["query"]["bool"]
+        assert len(search_body["query"]["bool"]["must"]) == 4  # query_string, time_range, scope, type
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    @patch("lilypad.server.services.opensearch.logger")
+    def test_search_traces_with_time_range_start_only(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
+        """Test search_traces with only time_range_start."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_client.indices.exists.return_value = True
+        mock_client.search.return_value = {"hits": {"hits": []}}
+        mock_opensearch_class.return_value = mock_client
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        
+        search_query = SearchQuery(time_range_start=1234567890)
+        result = service.search_traces(project_uuid, search_query)
+
+        assert result == []
+        mock_client.search.assert_called_once()
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    @patch("lilypad.server.services.opensearch.logger")
+    def test_search_traces_with_time_range_end_only(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
+        """Test search_traces with only time_range_end."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_client.indices.exists.return_value = True
+        mock_client.search.return_value = {"hits": {"hits": []}}
+        mock_opensearch_class.return_value = mock_client
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        
+        search_query = SearchQuery(time_range_end=1234567999)
+        result = service.search_traces(project_uuid, search_query)
+
+        assert result == []
+        mock_client.search.assert_called_once()
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    @patch("lilypad.server.services.opensearch.logger")
+    def test_search_traces_with_empty_query(
+        self, mock_logger, mock_opensearch_class, mock_get_settings
+    ):
+        """Test search_traces with empty query (match_all)."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_client.indices.exists.return_value = True
+        mock_client.search.return_value = {"hits": {"hits": []}}
+        mock_opensearch_class.return_value = mock_client
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        
+        # Empty query should result in match_all
+        search_query = SearchQuery()
+        result = service.search_traces(project_uuid, search_query)
+
+        assert result == []
+        mock_client.search.assert_called_once()
+        
+        # Verify match_all query was used
+        call_args = mock_client.search.call_args
+        search_body = call_args[1]["body"]
+        assert search_body["query"] == {"match_all": {}}
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    def test_delete_trace_by_uuid_no_client(self, mock_get_settings):
+        """Test delete_trace_by_uuid when client is not available."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = None  # Disable service
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        service = OpenSearchService()
+        
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            result = service.delete_trace_by_uuid(uuid4(), uuid4())
+
+        assert result is False
+        mock_logger.warning.assert_called_with("OpenSearch client not available")

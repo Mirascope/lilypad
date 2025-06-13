@@ -1,7 +1,7 @@
 """Tests for the billing service."""
 
 import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import stripe
@@ -840,16 +840,21 @@ async def test_report_span_usage_with_fallback_kafka_success(billing_service: Bi
     """Test report_span_usage_with_fallback with successful Kafka delivery."""
     organization_uuid = uuid.uuid4()
     
-    # Mock Kafka service
+    # Mock Kafka service with async method
     mock_kafka_service = Mock()
-    mock_kafka_service.send_batch.return_value = True  # Kafka available
+    mock_kafka_service.send_batch = AsyncMock(return_value=True)  # Kafka available
     
-    await billing_service.report_span_usage_with_fallback(
-        organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
-    )
+    with patch("lilypad.server.services.billing.logger") as mock_logger:
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
+        )
     
     # Should call Kafka service
     mock_kafka_service.send_batch.assert_called_once()
+    # Should log successful queuing
+    mock_logger.info.assert_called_with(
+        f"Successfully queued span usage to Kafka - Org: {organization_uuid}, Quantity: 5"
+    )
     # Should not call direct Stripe reporting (falls back only if Kafka fails)
 
 
@@ -860,15 +865,22 @@ async def test_report_span_usage_with_fallback_kafka_unavailable(billing_service
     
     # Mock Kafka service returning False (unavailable)
     mock_kafka_service = Mock()
-    mock_kafka_service.send_batch.return_value = False
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
     
-    with patch.object(billing_service, "report_span_usage") as mock_report:
+    with (
+        patch.object(billing_service, "report_span_usage") as mock_report,
+        patch("lilypad.server.services.billing.logger") as mock_logger
+    ):
         await billing_service.report_span_usage_with_fallback(
             organization_uuid, quantity=5, stripe_kafka_service=mock_kafka_service
         )
     
     # Should call Kafka service first
     mock_kafka_service.send_batch.assert_called_once()
+    # Should log warning about Kafka not available
+    mock_logger.warning.assert_called_with(
+        "Kafka not available for span usage, falling back to direct Stripe reporting"
+    )
     # Should fall back to direct Stripe reporting
     mock_report.assert_called_once_with(organization_uuid, quantity=5)
 
@@ -905,3 +917,55 @@ async def test_report_span_usage_with_fallback_no_kafka_service(billing_service:
     
     # Should go directly to Stripe reporting
     mock_report.assert_called_once_with(organization_uuid, quantity=5)
+
+
+@pytest.mark.asyncio
+async def test_report_span_usage_with_fallback_customer_not_found_create_success(billing_service: BillingService):
+    """Test report_span_usage_with_fallback handles _CustomerNotFound and creates customer successfully."""
+    organization_uuid = uuid.uuid4()
+    
+    # Mock organization
+    mock_org = Mock(spec=OrganizationTable)
+    mock_org.uuid = organization_uuid
+    mock_org.name = "Test Organization"
+    
+    mock_result = Mock()
+    mock_result.first.return_value = mock_org
+    
+    with (
+        patch.object(billing_service, "report_span_usage", side_effect=[_CustomerNotFound(), None]) as mock_report,
+        patch.object(billing_service, "create_customer") as mock_create,
+        patch.object(billing_service.session, "exec", return_value=mock_result),
+        patch("lilypad.server.services.billing.logger") as mock_logger
+    ):
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=None
+        )
+    
+    # Should call report_span_usage twice (first fails, second succeeds)
+    assert mock_report.call_count == 2
+    mock_create.assert_called_once_with(mock_org, billing_service.user.email)
+    mock_logger.info.assert_called_with(f"Creating customer for organization {organization_uuid}")
+
+
+@pytest.mark.asyncio
+async def test_report_span_usage_with_fallback_customer_not_found_org_not_found(billing_service: BillingService):
+    """Test report_span_usage_with_fallback handles _CustomerNotFound when organization not found."""
+    organization_uuid = uuid.uuid4()
+    
+    # Mock no organization found
+    mock_result = Mock()
+    mock_result.first.return_value = None
+    
+    with (
+        patch.object(billing_service, "report_span_usage", side_effect=_CustomerNotFound()) as mock_report,
+        patch.object(billing_service.session, "exec", return_value=mock_result),
+        patch("lilypad.server.services.billing.logger") as mock_logger
+    ):
+        await billing_service.report_span_usage_with_fallback(
+            organization_uuid, quantity=5, stripe_kafka_service=None
+        )
+    
+    # Should call report_span_usage once and log error
+    mock_report.assert_called_once_with(organization_uuid, quantity=5)
+    mock_logger.error.assert_called_with(f"Organization {organization_uuid} not found")
