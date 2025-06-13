@@ -1,9 +1,8 @@
 """Tests for edge cases in trace decorator to improve coverage."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
+from unittest.mock import Mock, patch, AsyncMock
 import asyncio
-from typing import Any
 
 from lilypad.traces import (
     trace,
@@ -159,7 +158,7 @@ class TestDecoratorEdgeCases:
         mock_settings = Mock()
         mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
         mock_get_settings.return_value = mock_settings
-        
+
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 
@@ -181,7 +180,7 @@ class TestDecoratorEdgeCases:
         mock_settings = Mock()
         mock_settings.project_id = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"
         mock_get_settings.return_value = mock_settings
-        
+
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 

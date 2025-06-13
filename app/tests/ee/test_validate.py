@@ -430,14 +430,15 @@ class TestVerifyLicense:
         """Test verifying license with invalid signature."""
         validator, private_key = self._create_test_validator()
         # Clear any cached license data
-        validator._cached_license_info = None
-        validator._cache_time = None
+        validator._license_cache = None
+        validator._cache_timestamp = None
 
         license_key, _ = self._create_valid_license_key(private_key)
 
-        # Corrupt the signature
+        # Corrupt the signature by modifying it significantly
         data_part, sig_part = license_key.split(".")
-        corrupted_license = f"{data_part}.{sig_part[:-1]}X"
+        # Create a completely invalid signature instead of just changing one character
+        corrupted_license = f"{data_part}.invalid_signature_that_should_never_verify"
 
         with pytest.raises(LicenseError):
             validator.verify_license(corrupted_license)

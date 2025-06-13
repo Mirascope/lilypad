@@ -168,9 +168,9 @@ class TestTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_sync_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"):
-                trace.annotate(annotation)
+            trace.annotate(annotation)
 
     @patch("lilypad.traces.get_sync_client")
     @patch("lilypad._utils.settings.get_settings")
@@ -224,9 +224,9 @@ class TestTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_sync_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"):
-                trace.assign("user@example.com")
+            trace.assign("user@example.com")
 
     @patch("lilypad.traces.get_sync_client")
     @patch("lilypad._utils.settings.get_settings")
@@ -278,9 +278,9 @@ class TestTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_sync_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"):
-                trace.tag("tag1", "tag2")
+            trace.tag("tag1", "tag2")
 
 
 class TestAsyncTrace:
@@ -393,9 +393,9 @@ class TestAsyncTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found for function test-uuid"):
-                await trace.annotate(annotation)
+            await trace.annotate(annotation)
 
     @pytest.mark.asyncio
     @patch("lilypad.traces.get_async_client")
@@ -446,9 +446,9 @@ class TestAsyncTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-uuid"):
-                await trace.assign("user@example.com")
+            await trace.assign("user@example.com")
 
     @pytest.mark.asyncio
     @patch("lilypad.traces.get_async_client")
@@ -504,6 +504,6 @@ class TestAsyncTrace:
             patch.object(trace, "_get_span_uuid", return_value=None),
             patch("lilypad._utils.settings.get_settings", return_value=mock_settings),
             patch("lilypad._utils.client.get_async_client", return_value=mock_client),
+            pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"),
         ):
-            with pytest.raises(SpanNotFoundError, match="Cannot tag: span not found for function test-uuid"):
-                await trace.tag("tag1", "tag2")
+            await trace.tag("tag1", "tag2")

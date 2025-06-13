@@ -32,7 +32,6 @@ class TestAdvancedTraces:
         assert trace.formated_span_id == "000000000000007b"  # formatted span id for 123
         assert trace._flush is False
 
-
     def test_create_request_multiple_annotations(self):
         """Test _create_request with multiple annotations."""
         trace = Trace(response="test", span_id=123, function_uuid="test-uuid")
@@ -131,7 +130,6 @@ class TestAdvancedTraces:
         """Test _get_trace_type with None."""
         result = _get_trace_type(None)
         assert result == "trace"
-
 
     def test_annotation_creation(self):
         """Test Annotation model creation."""

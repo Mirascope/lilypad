@@ -330,3 +330,346 @@ def test_to_text():
     obj = CustomType("test")
     result = to_text(obj, custom_serializers=custom_serializers)
     assert result == "custom_test"
+
+
+# Additional tests for missing coverage
+
+
+def test_jsonable_encoder_include_exclude_edge_cases():
+    """Test jsonable_encoder with edge cases for include/exclude."""
+    data = {"a": 1, "b": 2, "c": 3}
+
+    # Test with list include/exclude instead of set
+    result = jsonable_encoder(data, include=["a", "b"])
+    assert result == {"a": 1, "b": 2}
+
+    result = jsonable_encoder(data, exclude=["c"])
+    assert result == {"a": 1, "b": 2}
+
+    # Test with dict include/exclude
+    result = jsonable_encoder(data, include={"a": True, "b": True})
+    assert result == {"a": 1, "b": 2}
+
+
+def test_jsonable_encoder_custom_encoder_inheritance():
+    """Test custom encoder with inheritance."""
+
+    class BaseType:
+        def __init__(self, value):
+            self.value = value
+
+    class DerivedType(BaseType):
+        pass
+
+    # Custom encoder for base type should work for derived type
+    custom_encoder = {BaseType: lambda obj: f"base_{obj.value}"}
+
+    derived_obj = DerivedType("test")
+    result = jsonable_encoder(derived_obj, custom_encoder=custom_encoder)
+    assert result == "base_test"
+
+
+def test_jsonable_encoder_pydantic_root_model():
+    """Test jsonable_encoder with Pydantic root models."""
+    from unittest.mock import patch
+
+    # Simulate a root model response
+    class RootModel(BaseModel):
+        value: str
+
+    model = RootModel(value="test")
+    # Manually add __root__ to simulate old Pydantic behavior
+    model_dict = model.model_dump()
+    model_dict["__root__"] = "root_value"
+
+    # Use patch to mock the method without causing deletion issues
+    with patch.object(type(model), "model_dump", return_value=model_dict):
+        result = jsonable_encoder(model)
+        # Should process the __root__ value recursively
+        assert result == "root_value"
+
+
+def test_jsonable_encoder_complex_object_fallback():
+    """Test jsonable_encoder fallback for complex objects."""
+
+    class ComplexObject:
+        def __init__(self):
+            self.name = "test"
+            self.value = 42
+
+    obj = ComplexObject()
+    result = jsonable_encoder(obj)
+    assert result == {"name": "test", "value": 42}
+
+
+def test_jsonable_encoder_mapping_fallback():
+    """Test jsonable_encoder with Mapping objects."""
+    from collections import UserDict
+
+    class CustomMapping(UserDict):
+        def __init__(self):
+            super().__init__({"key": "value", "num": 123})
+
+    mapping = CustomMapping()
+    result = jsonable_encoder(mapping)
+    assert result == {"key": "value", "num": 123}
+
+
+def test_jsonable_encoder_iterable_fallback():
+    """Test jsonable_encoder with custom iterable objects."""
+
+    class CustomIterable:
+        def __init__(self, data):
+            self._data = data
+
+        def __iter__(self):
+            return iter(self._data.items())
+
+    iterable = CustomIterable({"a": 1, "b": 2})
+    result = jsonable_encoder(iterable)
+    assert result == {"a": 1, "b": 2}
+
+
+def test_jsonable_encoder_error_handling():
+    """Test jsonable_encoder error handling."""
+
+    class ProblematicObject:
+        def __iter__(self):
+            raise ValueError("Cannot iterate")
+
+        def __getattribute__(self, name):
+            if name == "__dict__":
+                raise AttributeError("No __dict__")
+            return super().__getattribute__(name)
+
+    obj = ProblematicObject()
+
+    # Should raise ValueError with list of errors
+    import pytest
+
+    with pytest.raises(ValueError):
+        jsonable_encoder(obj)
+
+
+def test_jsonable_encoder_type_object():
+    """Test jsonable_encoder with type objects."""
+
+    class TestClass:
+        class_var = "test_value"
+
+    result = jsonable_encoder(TestClass)
+    # Should use vars() for type objects
+    assert isinstance(result, dict)
+    # Class objects have __dict__ so vars() should work
+    expected_attrs = vars(TestClass)
+    # Verify some attributes are present
+    assert "class_var" in result
+    assert result["class_var"] == "test_value"
+
+
+def test_decimal_encoder_edge_cases():
+    """Test decimal_encoder with edge cases."""
+    # Test with very large exponent
+    assert decimal_encoder(Decimal("1E+10")) == 10000000000
+
+    # Test with negative exponent
+    assert decimal_encoder(Decimal("1E-10")) == 1e-10
+
+    # Test with zero exponent
+    assert decimal_encoder(Decimal("1E+0")) == 1
+
+
+def test_to_json_serializable_custom_serializers():
+    """Test _to_json_serializable with custom serializers."""
+
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
+    # Test with working custom serializer
+    custom_serializers = {CustomType: lambda obj: f"custom_{obj.value}"}
+    obj = CustomType("test")
+    result = _to_json_serializable(obj, custom_serializers=custom_serializers)
+    assert result == "custom_test"
+
+    # Test with failing custom serializer
+    failing_serializers = {CustomType: lambda obj: 1 / 0}  # Division by zero
+    result = _to_json_serializable(obj, custom_serializers=failing_serializers)
+    # Should fall back to default behavior
+    assert result == obj  # Should return the object as-is when no encoder found
+
+
+def test_to_json_serializable_global_serializers():
+    """Test _to_json_serializable with global serializer registry."""
+
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
+    # Test with working global serializer
+    import unittest.mock
+
+    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
+        mock_get_serializer.return_value = lambda obj: f"global_{obj.value}"
+        obj = CustomType("test")
+        result = _to_json_serializable(obj)
+        assert result == "global_test"
+
+    # Test with failing global serializer
+    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
+        mock_get_serializer.return_value = lambda obj: 1 / 0  # Division by zero
+        obj = CustomType("test")
+        result = _to_json_serializable(obj)
+        # Should fall back to default behavior
+        assert result == obj
+
+
+def test_to_json_serializable_dataclass_fields():
+    """Test _to_json_serializable with dataclass field access."""
+
+    @dataclasses.dataclass
+    class DataClassWithNone:
+        name: str
+        value: int | None = None
+
+    dc = DataClassWithNone(name="test", value=None)
+    result = _to_json_serializable(dc)
+    assert result == {"name": "test", "value": None}
+
+
+def test_to_json_serializable_sequences():
+    """Test _to_json_serializable with various sequence types."""
+
+    # Test generator
+    def test_generator():
+        yield 1
+        yield 2
+        yield 3
+
+    result = _to_json_serializable(test_generator())
+    assert result == [1, 2, 3]
+
+    # Test frozenset
+    result = _to_json_serializable(frozenset([3, 1, 2]))
+    assert sorted(result) == [1, 2, 3]
+
+
+def test_any_to_text_error_handling():
+    """Test _any_to_text error handling."""
+    from lilypad._utils.json import _any_to_text
+
+    class UnserializableObject:
+        def __repr__(self):
+            return "UnserializableObject()"
+
+        def __getattribute__(self, name):
+            if name in ("__dict__", "__slots__", "__class__"):
+                raise AttributeError(f"No {name}")
+            if name == "__repr__":
+                return lambda: "UnserializableObject()"
+            raise AttributeError(f"No attribute {name}")
+
+    obj = UnserializableObject()
+    result = _any_to_text(obj)
+    # Should fall back to repr() when everything else fails
+    assert result == "UnserializableObject()"
+
+
+def test_any_to_text_primitive_passthrough():
+    """Test _any_to_text with JSON-safe primitives."""
+    from lilypad._utils.json import _any_to_text
+
+    # Test primitives that should be returned as-is
+    assert _any_to_text("hello") == "hello"
+    assert _any_to_text(42) == 42
+    assert _any_to_text(3.14) == 3.14
+    assert _any_to_text(True) is True
+    assert _any_to_text(False) is False
+    assert _any_to_text(None) is None
+
+
+def test_jsonable_encoder_generator_handling():
+    """Test jsonable_encoder with generators."""
+
+    def test_generator():
+        yield 1
+        yield 2
+        yield 3
+
+    result = jsonable_encoder(test_generator())
+    assert result == [1, 2, 3]
+
+
+def test_jsonable_encoder_nested_sequences():
+    """Test jsonable_encoder with nested sequences."""
+    nested_data = [{"a": 1}, {"b": [2, 3]}, {4, 5, 6}]
+    result = jsonable_encoder(nested_data)
+
+    # Set should be converted to list
+    assert result[0] == {"a": 1}
+    assert result[1] == {"b": [2, 3]}
+    assert sorted(result[2]) == [4, 5, 6]  # Set order is not guaranteed
+
+
+def test_to_json_serializable_circular_reference_multiple_objects():
+    """Test _to_json_serializable with multiple circular references."""
+    obj1 = {"name": "obj1"}
+    obj2 = {"name": "obj2"}
+    obj1["ref"] = obj2
+    obj2["ref"] = obj1
+
+    result = _to_json_serializable(obj1)
+    assert result["name"] == "obj1"
+    assert result["ref"]["name"] == "obj2"
+    assert result["ref"]["ref"] == "<CircularRef dict>"
+
+
+def test_generate_encoders_by_class_tuples():
+    """Test generate_encoders_by_class_tuples function."""
+    from lilypad._utils.json import generate_encoders_by_class_tuples
+
+    # Use a single encoder function reference for multiple types
+    def multiplier_encoder(x):
+        return x * 2
+
+    type_encoder_map = {
+        str: lambda x: x.upper(),
+        int: multiplier_encoder,
+        float: multiplier_encoder,  # Same encoder as int
+    }
+
+    result = generate_encoders_by_class_tuples(type_encoder_map)
+
+    # Should group types by encoder function
+    assert len(result) == 2  # Two unique encoders
+
+    # Find the encoder that handles int/float
+    for encoder, types in result.items():
+        if encoder is multiplier_encoder:
+            assert int in types
+            assert float in types
+            break
+    else:
+        assert False, "multiplier_encoder not found in result"
+
+
+def test_map_standard_types():
+    """Test MAP_STANDARD_TYPES constant."""
+    from lilypad._utils.json import MAP_STANDARD_TYPES
+
+    assert MAP_STANDARD_TYPES["List"] == "list"
+    assert MAP_STANDARD_TYPES["Dict"] == "dict"
+    assert MAP_STANDARD_TYPES["Set"] == "set"
+    assert MAP_STANDARD_TYPES["Tuple"] == "tuple"
+    assert MAP_STANDARD_TYPES["NoneType"] == "None"
+
+
+def test_undefined_type():
+    """Test UndefinedType class."""
+    undefined1 = UndefinedType()
+    undefined2 = UndefinedType()
+
+    # Should be different instances
+    assert undefined1 is not undefined2
+    assert isinstance(undefined1, UndefinedType)
+    assert isinstance(undefined2, UndefinedType)

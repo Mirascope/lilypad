@@ -145,9 +145,9 @@ async def search_traces(
         if hit["_source"].get("function_uuid")
     }
 
-    functions = function_service.find_records_by_uuids(
-        project_uuid=project_uuid, uuids=function_uuids
-    )
+    functions = function_service.find_records_by_uuids(uuids=function_uuids)
+    # Filter by project_uuid since BaseOrganizationService doesn't filter by additional params
+    functions = [f for f in functions if f.project_uuid == project_uuid]
     functions_by_id = {str(func.uuid): func for func in functions if func.uuid}
 
     # Build spans from search results

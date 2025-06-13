@@ -198,18 +198,18 @@ class TestOutlinesInstrumentor:
         # Clear patched targets
         _patched_targets.clear()
 
-        with patch("lilypad._opentelemetry._opentelemetry_outlines.model_generate") as mock_model_generate:
-            with patch(
-                "lilypad._opentelemetry._opentelemetry_outlines.model_generate_stream"
-            ) as mock_model_generate_stream:
-                mock_generate_wrapper = Mock()
-                mock_stream_wrapper = Mock()
-                mock_model_generate.return_value = mock_generate_wrapper
-                mock_model_generate_stream.return_value = mock_stream_wrapper
+        with (
+            patch("lilypad._opentelemetry._opentelemetry_outlines.model_generate") as mock_model_generate,
+            patch("lilypad._opentelemetry._opentelemetry_outlines.model_generate_stream") as mock_model_generate_stream,
+        ):
+            mock_generate_wrapper = Mock()
+            mock_stream_wrapper = Mock()
+            mock_model_generate.return_value = mock_generate_wrapper
+            mock_model_generate_stream.return_value = mock_stream_wrapper
 
-                instrumentor = OutlinesInstrumentor()
-                instrumentor._instrument()
+            instrumentor = OutlinesInstrumentor()
+            instrumentor._instrument()
 
-                # Verify patch functions were called with tracer
-                assert mock_model_generate.call_count > 1
-                assert mock_model_generate_stream.call_count > 1
+            # Verify patch functions were called with tracer
+            assert mock_model_generate.call_count > 1
+            assert mock_model_generate_stream.call_count > 1
