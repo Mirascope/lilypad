@@ -129,11 +129,15 @@ def get_tool_calls(message: dict | BaseModel) -> list[dict[str, Any]] | None:
 def set_message_event(span: Span, message: dict) -> None:
     attributes = {gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.AZ_AI_INFERENCE.value}
     role = message.get("role", "")
+    
+    # Handle content
     if content := message.get("content"):
         if not isinstance(content, str):
             content = json_dumps(content)
         attributes["content"] = content
-    elif role == "assistant" and (tool_calls := get_tool_calls(message)):
+    
+    # Handle role-specific attributes
+    if role == "assistant" and (tool_calls := get_tool_calls(message)):
         attributes["tool_calls"] = json_dumps(tool_calls)
     elif role == "tool" and (tool_call_id := message.get("tool_call_id")):
         attributes["id"] = tool_call_id

@@ -3,11 +3,13 @@
 from typing import Any
 from contextlib import AbstractContextManager
 from collections.abc import Generator
+from unittest.mock import Mock
 
 import pytest
 
-from lilypad.spans import span
+from lilypad.spans import span, Span
 from lilypad._utils import json_dumps
+from lilypad.sessions import session
 
 dummy_spans: list["DummySpan"] = []
 
@@ -104,6 +106,13 @@ def reset_dummy_spans() -> Generator[None, None, None]:
 def patch_get_tracer(monkeypatch) -> None:
     """Patch get_tracer to return a DummyTracer instance."""
     monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
+    # Also patch get_tracer_provider to return a real TracerProvider instance
+    from opentelemetry.sdk.trace import TracerProvider
+
+    class MockTracerProvider(TracerProvider):
+        pass
+
+    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider())
 
 
 def test_basic_sync_span() -> None:
@@ -196,3 +205,134 @@ def test_dummy_span_record_exception_directly() -> None:
     assert attrs["exception.type"] == str(dummy_exception)
     assert attrs["exception.message"] == str(dummy_exception)
     assert attrs["exception.stacktrace"] == str(dummy_exception)
+
+
+def test_unconfigured_lilypad(monkeypatch) -> None:
+    """Test span behavior when Lilypad is not configured."""
+    # Reset the warning flag to ensure the warning is logged
+    Span._warned_not_configured = False
+
+    # Patch get_tracer_provider to return something that's not a TracerProvider
+    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: object())
+
+    # Create a span and verify it's a no-op
+    with span("unconfigured test") as s:
+        s.info("this should be ignored")
+        s.metadata(test="value")
+
+        # Test span_id and opentelemetry_span properties with _noop=True
+        assert s.span_id == 0
+        assert s.opentelemetry_span is None
+
+    # The span should be a no-op, so no dummy spans should be created
+    assert len(dummy_spans) == 0
+
+
+def test_metadata_with_none_span() -> None:
+    """Test metadata method when _span is None."""
+    s = Span("test")
+    # Don't enter the context manager, so _span remains None
+    s.metadata(test="value")
+    # No assertion needed, just verifying it doesn't raise an exception
+
+
+def test_metadata_serialization_exception(monkeypatch) -> None:
+    """Test exception handling in metadata serialization."""
+
+    # Create a class that raises an exception when json_dumps is called
+    class UnserializableObject:
+        def __repr__(self) -> str:
+            return "UnserializableObject()"
+
+    # Patch json_dumps to raise an exception
+    def mock_json_dumps(obj):
+        if isinstance(obj, UnserializableObject):
+            raise TypeError("Cannot serialize UnserializableObject")
+        return json_dumps(obj)
+
+    monkeypatch.setattr("lilypad.spans.json_dumps", mock_json_dumps)
+
+    # Create a span and add metadata with the unserializable object
+    with span("metadata exception test") as s:
+        s.metadata(unserializable=UnserializableObject())
+
+    # Verify the metadata was added as a string representation
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.attributes.get("unserializable") == "UnserializableObject()"
+
+
+def test_finish_method() -> None:
+    """Test the finish method directly."""
+    # Create a span without using the context manager
+    s = Span("finish test")
+    s._span = DummySpan("finish test")
+    s._token = "mock_token"
+    s._finished = False
+
+    # Call finish
+    s.finish()
+
+    # Verify the span was ended
+    assert s._span.ended is True
+    assert s._finished is True
+
+    # Call finish again (should be a no-op)
+    s.finish()
+
+    # Still just one end call
+    assert s._span.ended is True
+
+
+def test_span_with_session_context() -> None:
+    """Test span creation within a session context (line 49)."""
+    with session("test-session-id") as sess:
+        with span("session test") as s:
+            # The span should have the session_id attribute set
+            pass
+    
+    # Verify the session ID was set on the span
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.attributes.get("lilypad.session_id") == "test-session-id"
+
+
+def test_span_opentelemetry_span_with_span():
+    """Test opentelemetry_span property when _span is not None (line 81)."""
+    test_span = Span("test")
+    
+    # Directly set _span to mock object to test the property
+    mock_otel_span = Mock()
+    test_span._span = mock_otel_span
+    
+    # Now opentelemetry_span should return the mock span
+    result = test_span.opentelemetry_span
+    assert result == mock_otel_span
+
+
+def test_span_span_id_with_span():
+    """Test span_id property when _span is not None (line 89)."""
+    test_span = Span("test")
+    
+    # Directly set _span to mock object to test the property
+    mock_otel_span = Mock()
+    mock_otel_span.get_span_context.return_value.span_id = 12345
+    test_span._span = mock_otel_span
+    
+    # Now span_id should return the actual span ID from the mock
+    result = test_span.span_id
+    assert result == 12345
+
+
+@pytest.mark.asyncio
+async def test_async_span_context_manager():
+    """Test async context manager methods directly (lines 81, 89)."""
+    async with span("async context manager test") as s:
+        # This should hit both __aenter__ (line 81) and __aexit__ (line 89)
+        s.info("Testing async context manager")
+        assert s.name == "async context manager test"
+    
+    # Verify the span was created and finished properly
+    assert len(dummy_spans) == 1
+    dummy = dummy_spans[0]
+    assert dummy.ended is True
