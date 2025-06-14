@@ -35,8 +35,13 @@ import {
   NotebookPen,
   SmileIcon,
 } from "lucide-react";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+// Constants for better maintainability
+const ROW_HEIGHT = 45; // Must match virtualizerOptions.estimateSize
+const EXPANSION_ANIMATION_DELAY_MS = 200; // Wait for expand animation to complete
+const PREFETCH_STALE_TIME_MS = 60000; // 1 minute cache for prefetched data
 
 const tagFilter = (row: Row<SpanPublic>, columnId: string, filterValue: string): boolean => {
   const tags: TagPublic[] = row.getValue(columnId);
@@ -120,21 +125,78 @@ export const TracesTable = ({
     rows.find((r) => r.uuid === uuid) ??
     rows.flatMap((r) => r.child_spans ?? []).find((r) => r.uuid === uuid);
   const selectRow = findRow(data, traceUuid);
-  const isSubRow = selectRow?.parent_span_id;
+
+  // Scroll to highlighted row only on initial load or when traceUuid changes
+  const [hasScrolledToRow, setHasScrolledToRow] = useState(false);
+
+  useEffect(() => {
+    if (traceUuid && virtualizerRef.current && data.length > 0 && !hasScrolledToRow) {
+      // Find the index of the row to scroll to
+      const findRowIndex = (rows: SpanPublic[], uuid: string): number => {
+        let currentIndex = 0;
+
+        for (const row of rows) {
+          if (row.uuid === uuid) {
+            return currentIndex;
+          }
+          currentIndex++;
+
+          // Check child spans if parent is expanded
+          const childSpans = row.child_spans || [];
+          if (childSpans.length > 0) {
+            for (const childSpan of childSpans) {
+              if (childSpan.uuid === uuid) {
+                return currentIndex;
+              }
+              currentIndex++;
+            }
+          }
+        }
+        return -1;
+      };
+
+      const rowIndex = findRowIndex(data, traceUuid);
+      if (rowIndex !== -1) {
+        // Delay to ensure the table is rendered and expanded
+        setTimeout(() => {
+          const scrollContainer = virtualizerRef.current;
+          if (scrollContainer) {
+            // Calculate the position to scroll to
+            const targetPosition = rowIndex * ROW_HEIGHT;
+            const containerHeight = scrollContainer.clientHeight;
+            const scrollTo = Math.max(0, targetPosition - containerHeight / 2 + ROW_HEIGHT / 2);
+
+            scrollContainer.scrollTo({
+              top: scrollTo,
+              behavior: "smooth",
+            });
+
+            // Mark that we've scrolled to prevent future auto-scrolls
+            setHasScrolledToRow(true);
+          }
+        }, EXPANSION_ANIMATION_DELAY_MS);
+      }
+    }
+  }, [traceUuid, data, hasScrolledToRow]);
+
+  // Reset scroll flag when traceUuid changes
+  useEffect(() => {
+    setHasScrolledToRow(false);
+  }, [traceUuid]);
 
   const prefetch = (row: SpanPublic) => {
     queryClient
       .prefetchQuery({
         queryKey: ["spans", row.uuid],
         queryFn: () => fetchSpan(row.uuid),
-        staleTime: 60000,
+        staleTime: PREFETCH_STALE_TIME_MS,
       })
       .catch(() => toast.error("Failed to prefetch"));
     queryClient
       .prefetchQuery({
         queryKey: ["spans", row.uuid, "comments"],
         queryFn: () => fetchCommentsBySpan(row.uuid),
-        staleTime: 60000,
+        staleTime: PREFETCH_STALE_TIME_MS,
       })
       .catch(() => toast.error("Failed to prefetch"));
   };
@@ -476,11 +538,33 @@ export const TracesTable = ({
         virtualizerRef={virtualizerRef}
         virtualizerOptions={{
           count: data.length,
-          estimateSize: () => 45,
+          estimateSize: () => ROW_HEIGHT,
           overscan: 20,
         }}
         onRowHover={prefetch}
-        customExpanded={isSubRow ? { [isSubRow]: true } : undefined}
+        customExpanded={(() => {
+          // If we're selecting a child row, expand all parent rows in the hierarchy
+          if (selectRow?.parent_span_id) {
+            const expandedRows: Record<string, boolean> = {};
+
+            // Helper to find all parent span IDs in the hierarchy
+            const findAllParents = (span: SpanPublic | undefined): void => {
+              if (!span?.parent_span_id) return;
+
+              // Find the parent row
+              const parentRow = data.find((r) => r.span_id === span.parent_span_id);
+              if (parentRow) {
+                expandedRows[parentRow.span_id] = true;
+                // Recursively find grandparents
+                findAllParents(parentRow);
+              }
+            };
+
+            findAllParents(selectRow);
+            return Object.keys(expandedRows).length > 0 ? expandedRows : undefined;
+          }
+          return undefined;
+        })()}
         customGetRowId={(row) => row.span_id}
         filterColumn={filterColumn}
         getRowCanExpand={getRowCanExpand}

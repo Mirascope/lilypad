@@ -587,6 +587,17 @@ export interface Event {
 }
 
 /**
+ * EventSummaryResponse
+ * Response model for event summaries.
+ */
+export interface EventSummaryResponse {
+  /** Current Meter */
+  current_meter: number;
+  /** Monthly Total */
+  monthly_total: number;
+}
+
+/**
  * ExternalAPIKeyCreate
  * Request model for creating a secret.
  */
@@ -1027,6 +1038,22 @@ export interface ProjectPublic {
   created_at: string;
 }
 
+/**
+ * RecentSpansResponse
+ * Response model for recent spans polling endpoint.
+ */
+export interface RecentSpansResponse {
+  /** Spans */
+  spans: SpanPublic[];
+  /**
+   * Timestamp
+   * @format date-time
+   */
+  timestamp: string;
+  /** Project Uuid */
+  project_uuid: string;
+}
+
 /** SettingsPublic */
 export interface SettingsPublic {
   /** Remote Client Url */
@@ -1248,6 +1275,21 @@ export interface TraceContextModel {
    * The unique identifier for the current span within the trace.
    */
   span_uuid?: string | null;
+}
+
+/**
+ * TracesQueueResponse
+ * Response model for queued traces.
+ */
+export interface TracesQueueResponse {
+  /** Trace Status */
+  trace_status: "queued" | "processed";
+  /** Span Count */
+  span_count: number;
+  /** Message */
+  message: string;
+  /** Trace Ids */
+  trace_ids: string[];
 }
 
 /**

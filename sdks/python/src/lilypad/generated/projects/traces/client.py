@@ -6,6 +6,7 @@ from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ...core.request_options import RequestOptions
 from ...types.paginated_span_public import PaginatedSpanPublic
 from ...types.span_public import SpanPublic
+from ...types.traces_queue_response import TracesQueueResponse
 from .raw_client import AsyncRawTracesClient, RawTracesClient
 from .types.order import Order
 
@@ -112,9 +113,9 @@ class TracesClient:
 
     def create(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[SpanPublic]:
+    ) -> TracesQueueResponse:
         """
-        Create span traces.
+        Create span traces using queue-based processing.
 
         Parameters
         ----------
@@ -125,7 +126,7 @@ class TracesClient:
 
         Returns
         -------
-        typing.List[SpanPublic]
+        TracesQueueResponse
             Successful Response
 
         Examples
@@ -263,9 +264,9 @@ class AsyncTracesClient:
 
     async def create(
         self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> typing.List[SpanPublic]:
+    ) -> TracesQueueResponse:
         """
-        Create span traces.
+        Create span traces using queue-based processing.
 
         Parameters
         ----------
@@ -276,7 +277,7 @@ class AsyncTracesClient:
 
         Returns
         -------
-        typing.List[SpanPublic]
+        TracesQueueResponse
             Successful Response
 
         Examples

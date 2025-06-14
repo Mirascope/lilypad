@@ -34,6 +34,7 @@ services:
       - LILYPAD_KAFKA_MAX_CONCURRENT_TRACES=1000
       - LILYPAD_KAFKA_MAX_SPANS_PER_TRACE=500
       - LILYPAD_KAFKA_BUFFER_TTL_SECONDS=300
+      - LILYPAD_KAFKA_AUTO_SETUP_TOPICS=true
       # Secret Manager Configuration
       # Option 1: Use Supabase Vault (default)
       - LILYPAD_SECRET_MANAGER_TYPE=SUPABASE_VAULT

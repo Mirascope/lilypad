@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.exc import IntegrityError
 
 from ee import LicenseValidator
 from ee.validate import LicenseError
@@ -46,7 +47,13 @@ async def create_organization(
     is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
 ) -> OrganizationTable:
     """Create an organization."""
-    organization = organization_service.create_record(organization_create)
+    try:
+        organization = organization_service.create_record(organization_create)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Name already exists",
+        )
     if is_lilypad_cloud and billing_service and user.email:
         billing_service.create_customer(organization, user.email)
     user_service.update_user_active_organization_uuid(organization.uuid)

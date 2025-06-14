@@ -10,14 +10,12 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
-from sqlmodel import and_, delete, func, select, text
+from sqlmodel import and_, asc, delete, func, select, text
 
 from ..models.functions import FunctionTable
-from ..models.organizations import OrganizationTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from .base_organization import BaseOrganizationService
-from .billing import BillingService, _CustomerNotFound
 from .tags import TagService
 
 logger = logging.getLogger(__name__)
@@ -312,7 +310,6 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     def create_bulk_records(
         self,
         spans_create: Sequence[SpanCreate],
-        billing_service: BillingService | None,
         project_uuid: UUID,
         organization_uuid: UUID,
     ) -> list[SpanTable]:
@@ -362,41 +359,37 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             self.session.add_all(final_links_to_add)
             self.session.flush()
 
-        if billing_service:
-            try:
-                self._report_span_usage_with_retry(
-                    billing_service, organization_uuid, len(spans_to_add)
-                )
-            except Exception as e:
-                # if reporting fails, we don't want to fail the entire span creation
-                logger.error("Error reporting span usage: %s", e)
-
         return spans_to_add
 
-    def _report_span_usage_with_retry(
-        self, billing_service: BillingService, organization_uuid: UUID, quantity: int
-    ) -> None:
-        """Report span usage to Stripe with retry logic."""
-        try:
-            billing_service.report_span_usage(organization_uuid, quantity=quantity)
-        except _CustomerNotFound:
-            # We don't expect this to happen, but if it does, we need to create a customer
-            logger.info(f"Creating customer for organization {organization_uuid}")
-            organization = self.session.exec(
-                select(OrganizationTable).where(
-                    OrganizationTable.uuid == organization_uuid
-                )
-            ).first()
+    def get_spans_since(
+        self, project_uuid: UUID, since: datetime
+    ) -> Sequence[SpanTable]:
+        """Get spans created since the given timestamp.
 
-            if not organization:
-                logger.error(f"Organization {organization_uuid} not found")
-                return
+        Args:
+            project_uuid: The project UUID
+            since: Get spans created after this timestamp
 
-            email = self.user.email
+        Returns:
+            List of spans created since the timestamp
+        """
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.project_uuid == project_uuid,
+                self.table.created_at > since,
+                self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
+            )
+            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
+            .options(
+                selectinload(
+                    self.table.child_spans,  # pyright: ignore [reportArgumentType]
+                    recursion_depth=-1,
+                )  # Load all children
+            )
+        )
 
-            billing_service.create_customer(organization, email)
-
-            billing_service.report_span_usage(organization_uuid, quantity=quantity)
+        return self.session.exec(stmt).all()
 
     def delete_records_by_function_uuid(
         self, project_uuid: UUID, function_uuid: UUID
@@ -482,6 +475,24 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         )
         return self.session.exec(stmt).one()
+
+    def find_spans_by_trace_id(
+        self, project_uuid: UUID, trace_id: str
+    ) -> Sequence[SpanTable]:
+        """Find all spans for a given trace_id."""
+        # Use PostgreSQL JSON operator
+        stmt = (
+            select(self.table)
+            .where(
+                self.table.organization_uuid == self.user.active_organization_uuid,
+                self.table.project_uuid == project_uuid,
+                # PostgreSQL JSONB operator
+                text("data->>'trace_id' = :trace_id"),
+            )
+            .params(trace_id=trace_id)
+            .order_by(asc(self.table.created_at))
+        )
+        return self.session.exec(stmt).all()
 
     def find_records_by_function_uuid_paged(
         self,

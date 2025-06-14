@@ -6,10 +6,13 @@ from json.decoder import JSONDecodeError
 from .core.api_error import ApiError
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from .core.http_response import AsyncHttpResponse, HttpResponse
+from .core.jsonable_encoder import jsonable_encoder
 from .core.request_options import RequestOptions
 from .core.unchecked_base_model import construct_type
 from .errors.unprocessable_entity_error import UnprocessableEntityError
+from .types.event_summary_response import EventSummaryResponse
 from .types.http_validation_error import HttpValidationError
+from .types.span_public import SpanPublic
 from .types.tier import Tier
 
 # this is used as the default value for optional parameters
@@ -108,6 +111,91 @@ class RawLilypad:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[EventSummaryResponse]:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[EventSummaryResponse]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "stripe/event-summaries",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    EventSummaryResponse,
+                    construct_type(
+                        type_=EventSummaryResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[typing.List[SpanPublic]]:
+        """
+        Get all spans for a given trace ID.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        trace_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[typing.List[SpanPublic]]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/traces/by-trace-id/{jsonable_encoder(trace_id)}",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    typing.List[SpanPublic],
+                    construct_type(
+                        type_=typing.List[SpanPublic],  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
 
 class AsyncRawLilypad:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -181,6 +269,91 @@ class AsyncRawLilypad:
                     str,
                     construct_type(
                         type_=str,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_event_summaries_stripe_event_summaries_get(
+        self, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[EventSummaryResponse]:
+        """
+        Parameters
+        ----------
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[EventSummaryResponse]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "stripe/event-summaries",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    EventSummaryResponse,
+                    construct_type(
+                        type_=EventSummaryResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
+        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[typing.List[SpanPublic]]:
+        """
+        Get all spans for a given trace ID.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        trace_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[typing.List[SpanPublic]]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/traces/by-trace-id/{jsonable_encoder(trace_id)}",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    typing.List[SpanPublic],
+                    construct_type(
+                        type_=typing.List[SpanPublic],  # type: ignore
                         object_=_response.json(),
                     ),
                 )

@@ -1043,6 +1043,32 @@
         ]
       }
     },
+    "/stripe/event-summaries": {
+      "get": {
+        "summary": "Get Event Summaries",
+        "operationId": "get_event_summaries_stripe_event_summaries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/webhooks/stripe": {
       "post": {
         "summary": "Stripe Webhook",
@@ -2426,6 +2452,74 @@
         }
       }
     },
+    "/projects/{project_uuid}/spans/recent": {
+      "get": {
+        "summary": "Get Recent Spans",
+        "description": "Get spans created recently for real-time polling.\n\nIf no 'since' parameter is provided, returns spans from the last 30 seconds.",
+        "operationId": "get_recent_spans_projects__project_uuid__spans_recent_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Get spans created since this timestamp",
+              "title": "Since"
+            },
+            "description": "Get spans created since this timestamp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentSpansResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/projects/{project_uuid}/spans/{span_id}": {
       "get": {
         "summary": "Get Span By Span Id",
@@ -2916,6 +3010,68 @@
         }
       }
     },
+    "/projects/{project_uuid}/traces/by-trace-id/{trace_id}": {
+      "get": {
+        "summary": "Get Spans By Trace Id",
+        "description": "Get all spans for a given trace ID.",
+        "operationId": "get_spans_by_trace_id_projects__project_uuid__traces_by_trace_id__trace_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpanPublic"
+                  },
+                  "title": "Response Get Spans By Trace Id Projects  Project Uuid  Traces By Trace Id  Trace Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/projects/{project_uuid}/traces": {
       "get": {
         "summary": "Get Traces By Project Uuid",
@@ -3007,7 +3163,7 @@
       },
       "post": {
         "summary": "Traces",
-        "description": "Create span traces.",
+        "description": "Create span traces using queue-based processing.",
         "operationId": "traces_projects__project_uuid__traces_post",
         "security": [
           {
@@ -3035,11 +3191,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SpanPublic"
-                  },
-                  "title": "Response Traces Projects  Project Uuid  Traces Post"
+                  "$ref": "#/components/schemas/TracesQueueResponse"
                 }
               }
             }
@@ -5826,6 +5978,39 @@
         "title": "Event",
         "description": "Event model."
       },
+      "EventSummaryResponse": {
+        "properties": {
+          "current_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Current Meter"
+          },
+          "monthly_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Monthly Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_meter",
+          "monthly_total"
+        ],
+        "title": "EventSummaryResponse",
+        "description": "Response model for event summaries."
+      },
       "ExternalAPIKeyCreate": {
         "properties": {
           "service_name": {
@@ -6743,6 +6928,34 @@
         "title": "Provider",
         "description": "Provider name enum"
       },
+      "RecentSpansResponse": {
+        "properties": {
+          "spans": {
+            "items": {
+              "$ref": "#/components/schemas/SpanPublic"
+            },
+            "type": "array",
+            "title": "Spans"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "project_uuid": {
+            "type": "string",
+            "title": "Project Uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "spans",
+          "timestamp",
+          "project_uuid"
+        ],
+        "title": "RecentSpansResponse",
+        "description": "Response model for recent spans polling endpoint."
+      },
       "Scope": {
         "type": "string",
         "enum": [
@@ -7460,6 +7673,42 @@
         "type": "object",
         "title": "TraceContextModel",
         "description": "Represents the tracing context information provided by Lilypad."
+      },
+      "TracesQueueResponse": {
+        "properties": {
+          "trace_status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processed"
+            ],
+            "title": "Trace Status"
+          },
+          "span_count": {
+            "type": "integer",
+            "title": "Span Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trace Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_status",
+          "span_count",
+          "message",
+          "trace_ids"
+        ],
+        "title": "TracesQueueResponse",
+        "description": "Response model for queued traces."
       },
       "UserConsentCreate": {
         "properties": {

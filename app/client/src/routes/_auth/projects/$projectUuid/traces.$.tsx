@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 import CardSkeleton from "@/src/components/CardSkeleton";
@@ -19,8 +19,9 @@ import { TableProvider, useTable } from "@/src/hooks/use-table";
 import { SpanMoreDetails, SpanPublic } from "@/src/types/types";
 import { projectQueryOptions } from "@/src/utils/projects";
 import { formatRelativeTime } from "@/src/utils/strings";
+import { spansByTraceIdQueryOptions } from "@/src/utils/traces";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { GitCompare, RefreshCcw, Users } from "lucide-react";
+import { GitCompare, RefreshCcw, Users, Pause, Play } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -65,14 +66,15 @@ const TraceContainer = () => {
 };
 
 const Trace = () => {
-  const { projectUuid, _splat: traceUuid } = useParams({ from: Route.id });
+  const { projectUuid, _splat: urlParam } = useParams({ from: Route.id });
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));
-  const { selectedRows, detailRow, setDetailRow } = useTable<SpanPublic>();
+  const { selectedRows, detailRow, setDetailRow, setSelectedRows } = useTable<SpanPublic>();
   const [isComparing, setIsComparing] = useState(false);
   const features = useFeatureAccess();
   const [pageSize] = useState(INIT_LIMIT);
   const [searchData, setSearchData] = useState<SpanPublic[] | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [isPolling, setIsPolling] = useState(false);
   const navigate = useNavigate();
   const {
     fetchNextPage,
@@ -82,19 +84,84 @@ const Trace = () => {
     isLoading,
     dataUpdatedAt,
     refetch,
-  } = useInfiniteTraces(projectUuid, pageSize, order);
+  } = useInfiniteTraces(projectUuid, pageSize, order, isPolling);
+
+  // Check if urlParam looks like a trace ID (not a UUID)
+  const isTraceId = urlParam && !urlParam.includes('-');
+  
+  // Query to get spans by trace ID if needed
+  const { data: spansByTraceId } = useQuery({
+    ...spansByTraceIdQueryOptions(projectUuid, urlParam || ''),
+    enabled: !!isTraceId && !!urlParam,
+  });
+
   useEffect(() => {
-    if (traceUuid) {
-      const trace = defaultData.find((row) => row.uuid === traceUuid);
-      if (trace) {
-        setDetailRow(trace);
-      } else {
-        setDetailRow(null);
+    if (urlParam) {
+      if (isTraceId && spansByTraceId && spansByTraceId.length > 0) {
+        // Find the root span (parent_span_id is null)
+        const rootSpan = spansByTraceId.find(span => !span.parent_span_id) || spansByTraceId[0];
+        // Navigate to the span's UUID
+        navigate({
+          to: Route.fullPath,
+          replace: true,
+          params: { projectUuid, _splat: rootSpan.uuid },
+        }).catch(() => {
+          toast.error("Failed to navigate to trace");
+        });
+      } else if (!isTraceId && defaultData.length > 0) {
+        // It's a UUID, handle normally
+        // Helper function to find a span in nested structure
+        const findSpanInData = (data: SpanPublic[], uuid: string): SpanPublic | undefined => {
+          for (const span of data) {
+            if (span.uuid === uuid) {
+              return span;
+            }
+            if (span.child_spans && span.child_spans.length > 0) {
+              const found = findSpanInData(span.child_spans, uuid);
+              if (found) return found;
+            }
+          }
+          return undefined;
+        };
+        
+        const trace = findSpanInData(defaultData, urlParam);
+        if (trace) {
+          setDetailRow(trace);
+          // If it's a child span, we might need to wait for the parent to expand
+          if (trace.parent_span_id) {
+            // Force a re-render after parent expansion
+            setTimeout(() => {
+              setDetailRow(trace);
+            }, 300);
+          }
+        } else {
+          // If not found in current data, it might be on a different page
+          // We could fetch more data here if needed
+          setDetailRow(null);
+        }
       }
     } else {
       setDetailRow(null);
     }
-  }, [defaultData]);
+  }, [urlParam, defaultData, spansByTraceId, isTraceId, navigate, projectUuid, setDetailRow]);
+
+  // Toggle polling
+  const togglePolling = () => {
+    if (isPolling) {
+      setIsPolling(false);
+      toast.success("Real-time updates paused");
+    } else {
+      // Clear selections when starting auto-updates to ensure smooth scrolling
+      if (selectedRows.length > 0) {
+        toast.info("Clearing selections for optimal real-time updates", {
+          description: "This prevents conflicts with auto-scrolling"
+        });
+        setSelectedRows([]);
+      }
+      setIsPolling(true);
+      toast.success("Real-time updates started");
+    }
+  };
 
   const handleReachEnd = async () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -176,6 +243,20 @@ const Trace = () => {
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
+          <Button
+            variant={isPolling ? "secondary" : "outline"}
+            size="icon"
+            onClick={togglePolling}
+            className="group relative size-8 overflow-hidden transition-all"
+            title={isPolling ? "Pause real-time updates" : "Start real-time updates"}
+          >
+            {isPolling ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          {isPolling && !isLoading && (
+            <span className="text-xs text-muted-foreground animate-pulse">
+              Live updating...
+            </span>
+          )}
         </Typography>
       </div>
       <div className="flex-1 overflow-auto">
@@ -191,7 +272,7 @@ const Trace = () => {
             <TracesTable
               className="min-h-0 flex-1 overflow-hidden"
               data={searchData ?? defaultData}
-              traceUuid={traceUuid}
+              traceUuid={urlParam}
               isSearch={Boolean(searchData)}
               fetchNextPage={handleReachEnd}
               isFetchingNextPage={isFetchingNextPage}
