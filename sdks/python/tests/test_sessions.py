@@ -2,6 +2,7 @@ import re
 from unittest.mock import MagicMock, patch
 
 import pytest
+from opentelemetry.sdk.trace import TracerProvider
 
 from lilypad.spans import span
 from lilypad.sessions import SESSION_CONTEXT, Session, session
@@ -40,7 +41,17 @@ def test_run_context_set_and_reset(args, expect_none):
 
 def test_span_writes_run_id():
     tracer = DummyTracer()
-    with patch("lilypad.spans.get_tracer", lambda *_: tracer), session(id="my-session-id"), span("test-span"):
+
+    # Create a mock that properly inherits from TracerProvider
+    class MockTracerProvider(TracerProvider):
+        pass
+
+    with (
+        patch("lilypad.spans.get_tracer", lambda *_: tracer),
+        patch("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
+        session(id="my-session-id"),
+        span("test-span"),
+    ):
         pass  # span exits
 
     created = tracer.last_span
@@ -49,7 +60,17 @@ def test_span_writes_run_id():
 
 def test_span_no_run_id_when_none():
     tracer = DummyTracer()
-    with patch("lilypad.spans.get_tracer", lambda *_: tracer), session(id=None), span("test-span"):
+
+    # Create a mock that properly inherits from TracerProvider
+    class MockTracerProvider(TracerProvider):
+        pass
+
+    with (
+        patch("lilypad.spans.get_tracer", lambda *_: tracer),
+        patch("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
+        session(id=None),
+        span("test-span"),
+    ):
         pass  # span exits
 
     assert not any(

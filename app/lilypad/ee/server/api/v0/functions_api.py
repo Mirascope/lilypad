@@ -32,7 +32,7 @@ try:
     import resource
 
     CAN_LIMIT_RESOURCES = True
-except ImportError:
+except ImportError:  # pragma: no cover
     # For Windows
     class _Resource:
         """Dummy class for Windows."""

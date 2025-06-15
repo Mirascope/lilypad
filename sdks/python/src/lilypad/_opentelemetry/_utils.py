@@ -73,11 +73,11 @@ class ChoiceBuffer:
 class ChunkHandler(Protocol[ChunkType]):
     def extract_metadata(self, chunk: ChunkType, metadata: Any) -> None:
         """Extract metadata from chunk and update StreamMetadata"""
-        pass
+        pass  # pragma: no cover
 
     def process_chunk(self, chunk: ChunkType, buffers: list[ChoiceBuffer]) -> None:
         """Process chunk and update choice buffers"""
-        pass
+        pass  # pragma: no cover
 
 
 class BaseStreamWrapper(ABC, Generic[T]):

@@ -362,7 +362,7 @@ def convert_anthropic_messages(
                         _ToolCall(
                             type="tool_call",
                             name=function.get("name", ""),
-                            arguments=function.get("arguments", {}),
+                            arguments=json.loads(function.get("arguments", "{}")),
                         )
                     )
     structured_messages.append(assistant_message)
@@ -496,7 +496,7 @@ async def fetch_with_memory_cache(url: str) -> dict:
     """Fetch data from a URL and cache it in memory for 24 hours."""
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
-        return response.json()
+        return await response.json()
 
 
 async def calculate_openrouter_cost(
