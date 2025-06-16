@@ -25,6 +25,7 @@ eggs/
 .eggs/
 lib/
 !client/src/lib/
+!client/mirascope-ui/lib/
 lib64/
 parts/
 sdist/
