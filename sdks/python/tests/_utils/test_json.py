@@ -827,3 +827,21 @@ def test_jsonable_encoder_object_without_dict_fallback():
     obj = ObjectWithoutDict()
     result = jsonable_encoder(obj)
     assert result == {"name": "test", "value": 42}
+
+
+def test_jsonable_encoder_custom_encoder_mismatch():
+    """Test jsonable_encoder with custom encoder that doesn't match type - covers line 314."""
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+            self.name = "custom"
+    
+    # Test with encoder for wrong type (str instead of CustomType)
+    result = jsonable_encoder(
+        CustomType("test"),
+        custom_encoder={str: lambda x: "wrong_type"}  # Wrong type mapping
+    )
+    # Should fall through to default handling since str doesn't match CustomType
+    assert isinstance(result, dict)
+    assert result.get('value') == 'test'
+    assert result.get('name') == 'custom'

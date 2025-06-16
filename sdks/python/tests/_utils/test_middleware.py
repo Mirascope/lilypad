@@ -1009,3 +1009,34 @@ def test_create_mirascope_middleware_with_function_none():
         )
 
         assert middleware_decorator == mock_factory_return
+
+
+def test_encode_gemini_part_with_real_webp():
+    """Test encode_gemini_part with actual WebP image - covers lines 148-151."""
+    from src.lilypad._utils import encode_gemini_part
+    
+    try:
+        import PIL.Image
+        from io import BytesIO
+        
+        # Create a simple image
+        img = PIL.Image.new('RGB', (10, 10), color='red')
+        
+        # Save as WebP in memory
+        webp_bytes = BytesIO()
+        img.save(webp_bytes, format='WEBP')
+        webp_bytes.seek(0)
+        
+        # Load as WebP
+        webp_image = PIL.Image.open(webp_bytes)
+        
+        # Encode it
+        result = encode_gemini_part(webp_image)
+        
+        assert isinstance(result, dict)
+        assert result['mime_type'] == 'image/webp'
+        assert 'data' in result
+        assert isinstance(result['data'], str)  # base64 encoded
+        
+    except ImportError:
+        pytest.skip("Pillow not installed")

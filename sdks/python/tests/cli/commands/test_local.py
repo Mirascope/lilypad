@@ -222,3 +222,47 @@ def test_signal_handler():
         signal_handler(signal.SIGINT, None)
 
     assert exc_info.value.code == 0
+
+
+def test_terminate_process_already_stopped():
+    """Test _terminate_process when process is already stopped - covers lines 83-86."""
+    from src.lilypad.cli.commands.local import _terminate_process
+    
+    # Test with process that has already terminated
+    mock_process = Mock()
+    mock_process.poll.return_value = 0  # Process already terminated
+    
+    _terminate_process(mock_process)
+    
+    # Should not call terminate since process is already stopped
+    mock_process.terminate.assert_not_called()
+    mock_process.wait.assert_not_called()
+
+
+def test_local_command_signal_handler_setup():
+    """Test that signal handler is properly set up in local_command - covers lines 128-130."""
+    from src.lilypad.cli.commands.local import local_command
+    
+    with patch("src.lilypad.cli.commands.local._start_lilypad") as mock_start:
+        with patch("src.lilypad.cli.commands.local._wait_for_server") as mock_wait:
+            with patch("src.lilypad.cli.commands.local.get_sync_client") as mock_client:
+                with patch("src.lilypad.cli.commands.local.get_settings") as mock_settings:
+                    with patch("os.path.exists", return_value=True):
+                        with patch("builtins.open", mock_open(read_data='{"project_uuid": "test"}')):
+                            with patch("json.dump"):
+                                with patch("signal.signal") as mock_signal:
+                                    # Setup mocks
+                                    mock_settings.return_value = Mock(port=8000)
+                                    mock_process = Mock()
+                                    mock_process.wait.side_effect = KeyboardInterrupt()
+                                    mock_start.return_value = mock_process
+                                    mock_wait.return_value = True
+                                    
+                                    try:
+                                        local_command(port=None)
+                                    except KeyboardInterrupt:
+                                        pass
+                                    
+                                    # Verify signal handler was set up
+                                    import signal as sig
+                                    mock_signal.assert_any_call(sig.SIGINT, sig.SIG_IGN)

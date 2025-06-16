@@ -870,3 +870,49 @@ class TestIntegrationScenarios:
         mock_find_files.assert_called_once()
         # Note: The actual sync_command doesn't make API calls or write files
         # It just discovers functions and prints information
+
+
+def test_module_path_from_file_without_base_dir():
+    """Test _module_path_from_file without base_dir - covers lines 83-86."""
+    # Test with absolute path and no base_dir
+    result = _module_path_from_file("/absolute/path/to/module.py", None)
+    assert result == ".absolute.path.to.module"
+    
+    # Test with relative path and no base_dir
+    result = _module_path_from_file("relative/path/module.py", None)
+    assert result == "relative.path.module"
+    
+    # Test with simple filename and no base_dir
+    result = _module_path_from_file("module.py", None)
+    assert result == "module"
+
+
+def test_normalize_signature_with_complex_decorators():
+    """Test _normalize_signature with complex decorators and function - covers line 117."""
+    # Test with decorators and actual function definition
+    signature = """@decorator
+@another_decorator
+def test_func(
+    arg1: str,
+    arg2: int = 5
+) -> bool:
+    pass"""
+    
+    result = _normalize_signature(signature)
+    # Should contain normalized function definition without decorators
+    assert "def test_func" in result
+    assert "arg1: str" in result
+    assert "arg2: int = 5" in result
+    assert "@decorator" not in result
+    assert "@another_decorator" not in result
+    
+    # Test with only decorators (no function) - covers lines 128-130
+    signature = """@decorator
+@another_decorator
+# Just decorators and comments, no function"""
+    
+    result = _normalize_signature(signature)
+    # Should not contain decorators, and should be empty or minimal
+    assert "@decorator" not in result
+    assert "@another_decorator" not in result
+    assert "def" not in result
