@@ -371,8 +371,8 @@ def test_get_deployed_function_inactive_deployment(
     # Create an inactive deployment
     deployment = DeploymentTable(
         project_uuid=test_project.uuid,
-        environment_uuid=test_environment.uuid,
-        function_uuid=test_function.uuid,
+        environment_uuid=test_environment.uuid,  # type: ignore
+        function_uuid=test_function.uuid,  # type: ignore
         organization_uuid=test_project.organization_uuid,  # Add required field
         is_active=False,  # Make it inactive
     )
@@ -460,8 +460,8 @@ def test_get_deployed_function_active_deployment(
     # Create an active deployment
     deployment = DeploymentTable(
         project_uuid=test_project.uuid,
-        environment_uuid=test_environment.uuid,
-        function_uuid=test_function.uuid,
+        environment_uuid=test_environment.uuid,  # type: ignore
+        function_uuid=test_function.uuid,  # type: ignore
         organization_uuid=test_project.organization_uuid,
         is_active=True,  # Make it active
     )

@@ -731,7 +731,7 @@ def test_dependency_collector_with_property():
     # Test with property
     with contextlib.suppress(OSError, TypeError):
         # Expected for some types of functions that may not have source
-        collector._collect_imports_and_source_code(TestClass.prop, True)
+        collector._collect_imports_and_source_code(TestClass.prop, True)  # type: ignore[arg-type]
 
 
 def test_dependency_collector_with_cached_property():
@@ -748,7 +748,7 @@ def test_dependency_collector_with_cached_property():
     # Test with cached_property
     with contextlib.suppress(OSError, TypeError):
         # Expected for some types of functions that may not have source
-        collector._collect_imports_and_source_code(TestClass.cached_prop, True)
+        collector._collect_imports_and_source_code(TestClass.cached_prop, True)  # type: ignore[arg-type]
 
 
 def test_run_ruff():
@@ -786,11 +786,9 @@ import another_fake_module
     )
 
     # Should handle import errors gracefully and add to user_defined_imports
-    try:
-        collector.visit(tree)
-    except ModuleNotFoundError:
+    with contextlib.suppress(ModuleNotFoundError):
         # This is expected for non-existent modules
-        pass
+        collector.visit(tree)
 
     # Should handle import errors gracefully
     assert len(collector.user_defined_imports) >= 0
@@ -888,11 +886,9 @@ import definitely_non_existent_module_xyz123
     )
 
     # This should handle import errors gracefully
-    try:
-        collector.visit(tree)
-    except ImportError:
+    with contextlib.suppress(ImportError):
         # ImportError is expected for non-existent modules
-        pass
+        collector.visit(tree)
 
     # Should handle import errors and add to user_defined_imports
     assert len(collector.user_defined_imports) >= 0
@@ -960,7 +956,7 @@ def decorated_function():
     return 42
 """
     tree = ast.parse(code.strip())
-    collector = _DefinitionCollector(MockModule(), ["mock_decorator"], set())
+    collector = _DefinitionCollector(MockModule(), ["mock_decorator"], set())  # type: ignore[arg-type]
     collector.visit(tree)
 
     # Should add decorator to definitions_to_include
@@ -987,7 +983,7 @@ def decorated_function():
     return 42
 """
     tree = ast.parse(code.strip())
-    collector = _DefinitionCollector(MockModule(), ["sub_module.decorator_func"], set())
+    collector = _DefinitionCollector(MockModule(), ["sub_module.decorator_func"], set())  # type: ignore[arg-type]
     collector.visit(tree)
 
     # Should handle attribute decorators
@@ -1012,7 +1008,7 @@ class TestClass:
     attr: int = 42
 """
     tree = ast.parse(code.strip())
-    collector = _DefinitionCollector(MockModule(), [], set())
+    collector = _DefinitionCollector(MockModule(), [], set())  # type: ignore[arg-type]
     collector.visit(tree)
 
     # Should add class to definitions_to_analyze
@@ -1037,7 +1033,7 @@ def nested_func():
     return 42
 """
     tree = ast.parse(code.strip())
-    collector = _DefinitionCollector(MockModule(), [], set())
+    collector = _DefinitionCollector(MockModule(), [], set())  # type: ignore[arg-type]
     collector.visit(tree)
 
     # Should add nested function to definitions_to_analyze
@@ -1051,7 +1047,7 @@ def test_extract_types_with_union():
     from lilypad._utils.closure import _extract_types
 
     # Test Union type
-    types_found = _extract_types(Union[int, str])
+    types_found = _extract_types(Union[int, str])  # noqa: UP007
     assert int in types_found
     assert str in types_found
 
@@ -1068,7 +1064,7 @@ def test_extract_types_with_complex_generics():
     assert int in types_found
 
     # Test Optional
-    types_found = _extract_types(Optional[str])
+    types_found = _extract_types(Optional[str])  # noqa: UP007
     assert str in types_found
 
 
@@ -1286,7 +1282,7 @@ def test_definition_collector_nested_scenarios():
         def method(self):
             return 42
 
-    mock_module.TestClass = MockClass
+    mock_module.TestClass = MockClass  # type: ignore[attr-defined]
 
     code = """
 class TestClass:
@@ -1359,7 +1355,7 @@ def test_dependency_collector_property_with_none_fget():
 
     # This should trigger the "if definition.fget is None: return" path (line 607)
     with contextlib.suppress(OSError, TypeError):
-        collector._collect_imports_and_source_code(TestClass.prop, True)
+        collector._collect_imports_and_source_code(TestClass.prop, True)  # type: ignore[arg-type]
 
 
 def test_dependency_collector_wrapped_function():
@@ -1381,7 +1377,7 @@ def test_dependency_collector_wrapped_function():
 
     # This should trigger the hasattr(definition, "func") and __name__ is None path (line 616)
     with contextlib.suppress(OSError, TypeError, AttributeError):
-        collector._collect_imports_and_source_code(wrapper, True)
+        collector._collect_imports_and_source_code(wrapper, True)  # type: ignore[arg-type]
 
 
 def test_dependency_collector_assignments_filtering():
@@ -1491,7 +1487,7 @@ def test_definition_collector_class_annotations_coverage():
         __module__ = "test_module"  # Same module as the definition
 
     mock_module = types.ModuleType("test_module")
-    mock_module.TestClass = MockClass
+    mock_module.TestClass = MockClass  # type: ignore[attr-defined]
 
     code = """
 class TestClass:
@@ -1517,7 +1513,7 @@ def test_definition_collector_name_node_handling():
         return 42
 
     mock_module = types.ModuleType("test_module")
-    mock_module.test_func = mock_func
+    mock_module.test_func = mock_func  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(mock_module, ["test_func"], set())
 
@@ -1542,7 +1538,7 @@ def test_definition_collector_attribute_node_handling():
         return 42
 
     mock_module = types.ModuleType("test_module")
-    mock_module.test_func = mock_func
+    mock_module.test_func = mock_func  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(mock_module, ["test_func.attr"], set())
 
@@ -1567,7 +1563,7 @@ def test_definition_collector_call_keyword_handling():
         return 42
 
     mock_module = types.ModuleType("test_module")
-    mock_module.test_func = mock_func
+    mock_module.test_func = mock_func  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(mock_module, ["test_func"], set())
 
@@ -1651,7 +1647,8 @@ def test_dependency_collector_global_assignment_filtering():
 
     # Mock the collection process to test assignment filtering
     # This is complex internal logic, so we'll test indirectly
-    try:
+    with contextlib.suppress(OSError, TypeError):
+        # Expected for some functions that don't have accessible source
         collector._collect_imports_and_source_code(complex_function, True)
 
         # The logic in lines 576-599 filters assignments based on:
@@ -1659,10 +1656,6 @@ def test_dependency_collector_global_assignment_filtering():
         # - Used names
         # - Local assignments
         # This should be exercised by collecting a complex function
-
-    except (OSError, TypeError):
-        # Expected for some functions that don't have accessible source
-        pass
 
     # Should handle the complex filtering logic
     assert len(collector.assignments) >= 0
@@ -1866,7 +1859,7 @@ def test_definition_collector_attribute_path_coverage():
 
     # Create mock module structure
     mock_module = types.ModuleType("test_module")
-    mock_module.test_func = test_func
+    mock_module.test_func = test_func  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(mock_module, ["test_func.method"], set())
 
@@ -1930,9 +1923,9 @@ def test_func(param1, param2):
             continue
         stmt = tree.body[0]
         if isinstance(stmt, ast.Assign):
-            var_name = stmt.targets[0].id
+            var_name = stmt.targets[0].id  # type: ignore[attr-defined]
         else:  # ast.AnnAssign
-            var_name = stmt.target.id
+            var_name = stmt.target.id  # type: ignore[attr-defined]
 
         # Test the filtering conditions from lines 584-588
         if var_name in parameter_names:
@@ -1954,12 +1947,10 @@ def test_dependency_collector_include_source_false_path():
     collector = _DependencyCollector()
 
     # Test with include_source=False - should not trigger line 663
-    try:
+    with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(
             test_function, False
         )  # include_source=False
-    except (OSError, TypeError):
-        pass
 
     # When include_source=False, line 663 should not be executed
     # This tests the conditional path
@@ -1981,7 +1972,7 @@ def test_dependency_collector_definitions_to_include_path():
 
     # Mock the definition collector behavior
     mock_module = types.ModuleType("test_module")
-    mock_module.helper_func = helper_func
+    mock_module.helper_func = helper_func  # type: ignore
 
     # This should trigger the recursive call on line 674
     with contextlib.suppress(OSError, TypeError):
@@ -2042,7 +2033,7 @@ def func():
     assert found_list_case or found_single_case
 
 
-def test_import_collector_user_defined_imports():
+def test_import_collector_user_defined_imports_line_222():
     """Test ImportCollector user_defined_imports detection (line 222)."""
     import ast
 
@@ -2059,7 +2050,7 @@ import sys  # This is stdlib
     # Mock site_packages without these modules to force user_defined_imports path
     site_packages = ["/fake/site-packages/that/doesnt/contain/stdlib"]
 
-    collector = _ImportCollector(used_names, site_packages)
+    collector = _ImportCollector(used_names, site_packages)  # type: ignore
     collector.visit(tree)
 
     # The key is that line 222 gets executed when imports are not third-party
@@ -2097,7 +2088,7 @@ def test_dependency_include_append():
         __name__ = "TestClass"
 
     # Add the class to the module
-    module.TestClass = NamedClass
+    module.TestClass = NamedClass  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(module, ["TestClass"], set())
 
@@ -2122,17 +2113,18 @@ def test_global_assignment_processing():
         return global_var + 10
 
     try:
-        closure = Closure(test_func)
+        closure = Closure(test_func)  # type: ignore
 
         # The closure should handle global assignments
         # This covers the complex assignment processing logic
-        assert isinstance(closure.assignments, list)
+        assert isinstance(closure.assignments, list)  # type: ignore
 
         # If we have assignments, they were processed through lines 576-599
-        if closure.assignments:
+        if closure.assignments:  # type: ignore
             # Verify assignment processing worked
             assert all(
-                isinstance(assignment, str) for assignment in closure.assignments
+                isinstance(assignment, str)
+                for assignment in closure.assignments  # type: ignore
             )
 
     except Exception:
@@ -2183,13 +2175,13 @@ def test_source_replacement_and_collection():
         return "hello world"
 
     try:
-        closure = Closure(test_function)
+        closure = Closure(test_function)  # type: ignore
 
         # Test that source code was collected (line 674)
-        assert isinstance(closure.source_code, list)
+        assert isinstance(closure.source_code, list)  # type: ignore
 
         # Test that user defined imports replacement happens (line 663)
-        assert isinstance(closure.user_defined_imports, set)
+        assert isinstance(closure.user_defined_imports, set)  # type: ignore
 
         # Line 716 is in dependency collection logic for package extras
         # It gets executed when processing package dependencies
@@ -2249,7 +2241,7 @@ def test_definition_collector_append_line_417():
 
     # Create module
     module = types.ModuleType("test")
-    module.test_func = test_func
+    module.test_func = test_func  # type: ignore[attr-defined]
 
     collector = _DefinitionCollector(module, ["test_func"], set())
 
@@ -2320,15 +2312,14 @@ def test_dependency_collector_recursive_line_674():
 
     # Mock module with decorator
     mock_module = sys.modules[__name__]
-    mock_module.decorator_func = decorator_func
+    mock_module.decorator_func = decorator_func  # type: ignore
 
     collector = _DependencyCollector()
 
     # This should trigger line 674 recursive call through decorated functions
-    try:
+    with contextlib.suppress(OSError, TypeError, AttributeError):
         collector._collect_imports_and_source_code(decorated_function, True)
-    except (OSError, TypeError, AttributeError):
-        pass  # Expected for test coverage
+        # Expected for test coverage
 
 
 def test_dependency_collector_package_extras_line_716():
@@ -2392,7 +2383,7 @@ def test_missing_lines_comprehensive():
         pass
 
     module = types.ModuleType("test")
-    module.func = func
+    module.func = func  # type: ignore
     def_collector = _DefinitionCollector(module, ["func"], set())
     def_collector._process_name_or_attribute(ast.Name(id="func"))
 
@@ -2414,7 +2405,7 @@ def test_missing_lines_comprehensive():
         dep_collector.source_code[i] = source
 
     # Line 674: Recursive collection
-    dep_collector.definitions_to_include = [func]
+    dep_collector.definitions_to_include = [func]  # type: ignore
     with contextlib.suppress(Exception):
         dep_collector._collect_imports_and_source_code(test_func, True)
 
@@ -2423,7 +2414,7 @@ def test_missing_lines_comprehensive():
         req = Requirement("package[extra]")
         if req.extras:
             list(req.extras)
-    except:
+    except Exception:
         pass
 
     # Lines 776-778: AST mapping
@@ -2478,8 +2469,8 @@ def test_function_with_globals():
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(temp_name, temp_file)
-        temp_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(temp_module)
+        temp_module = importlib.util.module_from_spec(spec)  # type: ignore
+        spec.loader.exec_module(temp_module)  # type: ignore
 
         # Create closure from the function - this should trigger many missing lines
         test_func = temp_module.test_function_with_globals
@@ -2493,11 +2484,11 @@ def test_function_with_globals():
         # - Line 716: Package extras for typing
         # - Lines 776-778: AST mapping
 
-        closure = Closure(test_func)
+        closure = Closure(test_func)  # type: ignore
 
         # Verify the closure was created (this exercises the code paths)
         assert closure.name == "test_function_with_globals"
-        assert closure.source_code is not None
+        assert closure.source_code is not None  # type: ignore
         assert closure.dependencies is not None
 
     except Exception:
@@ -2527,7 +2518,7 @@ def test_function_with_globals():
         try:
             annotated_type = Annotated[str, "metadata"]
             _extract_types(annotated_type)
-        except:
+        except Exception:
             pass
 
         # Line 417: Definition with __name__
@@ -2535,7 +2526,7 @@ def test_function_with_globals():
             return 42
 
         module = types.ModuleType("test")
-        module.dummy_func = dummy_func
+        module.dummy_func = dummy_func  # type: ignore
         def_collector = _DefinitionCollector(module, ["dummy_func"], set())
 
         # Trigger the specific condition that leads to line 417
@@ -2546,9 +2537,9 @@ def test_function_with_globals():
         # Clean up
         try:
             os.unlink(temp_file)
-            if temp_dir in sys.path:
-                sys.path.remove(temp_dir)
-        except:
+            if temp_dir in sys.path:  # type: ignore
+                sys.path.remove(temp_dir)  # type: ignore
+        except Exception:
             pass
 
 
@@ -2623,7 +2614,7 @@ def test_line_417_definition_append():
 
     # Create module and add function
     module = types.ModuleType("test_module")
-    module.test_function = test_function
+    module.test_function = test_function  # type: ignore
 
     # Create collector
     collector = _DefinitionCollector(module, ["test_function"], set())
@@ -2655,7 +2646,7 @@ def test_lines_576_599_assignment_processing():
     used_names = {"GLOBAL_VAR"}
 
     # Create global assignment collector
-    global_collector = _GlobalAssignmentCollector(used_names, module_source)
+    global_collector = _GlobalAssignmentCollector(used_names, module_source)  # type: ignore
     global_collector.visit(module_tree)
 
     # Verify we have assignments
@@ -2676,9 +2667,9 @@ def test_lines_576_599_assignment_processing():
         stmt = tree.body[0]  # Line 577
 
         if isinstance(stmt, ast.Assign):  # Line 578
-            var_name = stmt.targets[0].id  # Line 579
+            var_name = stmt.targets[0].id  # Line 579  # type: ignore
         else:  # Line 580
-            var_name = stmt.target.id  # Line 581
+            var_name = stmt.target.id  # Line 581  # type: ignore
 
         # Skip parameter check (lines 584-585)
         if var_name in parameter_names:
@@ -2737,7 +2728,7 @@ def test_line_674_recursive_collection():
 
     # Create module
     module = types.ModuleType("test_module")
-    module.helper_function = helper_function
+    module.helper_function = helper_function  # type: ignore
 
     # Create definition collector with the function
     def_collector = _DefinitionCollector(module, ["helper_function"], set())
@@ -2748,10 +2739,8 @@ def test_line_674_recursive_collection():
 
     # Manually execute line 674: recursive collection
     for definition in def_collector.definitions_to_include:
-        try:
+        with contextlib.suppress(OSError, TypeError):
             dep_collector._collect_imports_and_source_code(definition, True)  # Line 674
-        except (OSError, TypeError):
-            pass  # Expected for functions without accessible source
 
     # Verify recursive collection was attempted
     assert helper_function.__qualname__ in dep_collector.visited_functions

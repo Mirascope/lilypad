@@ -1,5 +1,6 @@
 """Unit tests for Supabase Vault Manager implementation."""
 
+import contextlib
 from unittest.mock import Mock
 
 import pytest
@@ -290,7 +291,8 @@ def test_transaction_context_manager_success(vault_manager, mock_session):
 
 def test_transaction_context_manager_exception(vault_manager, mock_session):
     """Test transaction context manager with exception."""
-    with pytest.raises(ValueError, match="Test error"):
+    # Need to keep nested to test proper flow
+    with pytest.raises(ValueError, match="Test error"):  # noqa: SIM117
         with vault_manager._transaction() as session:
             assert session is mock_session
             raise ValueError("Test error")
@@ -305,7 +307,8 @@ def test_transaction_context_manager_nested_exception(vault_manager, mock_sessio
     # Make rollback also raise an exception
     mock_session.rollback.side_effect = Exception("Rollback failed")
 
-    with pytest.raises(Exception, match="Rollback failed"):
+    # Need to keep nested to test rollback exception behavior
+    with pytest.raises(Exception, match="Rollback failed"):  # noqa: SIM117
         with vault_manager._transaction():
             raise ValueError("Test error")
 
@@ -336,12 +339,10 @@ def test_all_methods_use_transaction_context(vault_manager, mock_session):
 
         # Call method
         method = getattr(vault_manager, method_name)
-        try:
+        with contextlib.suppress(Exception):
             method(*args, **kwargs)
-        except Exception:
             # Some methods might fail due to incomplete mocking, but that's ok
             # We just want to verify transaction usage
-            pass
 
         # Verify commit or rollback was called (depending on whether exception occurred)
         assert mock_session.commit.called or mock_session.rollback.called

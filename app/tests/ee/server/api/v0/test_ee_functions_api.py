@@ -34,7 +34,7 @@ def get_test_current_user(test_user) -> UserPublic:
         uuid=test_user.uuid,
         email=test_user.email,
         first_name=test_user.first_name,
-        organization_uuid=test_user.active_organization_uuid,
+        organization_uuid=test_user.active_organization_uuid,  # type: ignore[call-arg]
     )
 
 
@@ -213,14 +213,14 @@ class TestUtilityFunctions:
         test_data = "Hello, World!"
         encoded = base64.b64encode(test_data.encode()).decode()
         arg_types_and_values = {"data": ("bytes", encoded)}
-        result = _decode_bytes(arg_types_and_values)
+        result = _decode_bytes(arg_types_and_values)  # type: ignore  # type: ignore[arg-type]
         assert result["data"] == test_data.encode()
 
     def test_decode_bytes_invalid(self):
         """Test invalid byte decoding."""
         arg_types_and_values = {"data": ("bytes", "invalid_base64!")}
         with pytest.raises(ValueError):
-            _decode_bytes(arg_types_and_values)
+            _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
 
     def test_validate_api_keys_valid(self):
         """Test valid API key validation."""
@@ -282,25 +282,25 @@ def test_decode_bytes_edge_cases():
     """Test byte decoding edge cases."""
     # Empty base64 string
     arg_types_and_values = {"data": ("bytes", "")}
-    result = _decode_bytes(arg_types_and_values)
+    result = _decode_bytes(arg_types_and_values)  # type: ignore
     assert result["data"] == b""
 
     # Valid base64 with padding
     test_data = "test"
     encoded = base64.b64encode(test_data.encode()).decode()
     arg_types_and_values = {"data": ("bytes", encoded)}
-    result = _decode_bytes(arg_types_and_values)
+    result = _decode_bytes(arg_types_and_values)  # type: ignore
     assert result["data"] == test_data.encode()
 
     # Test None value for bytes
     arg_types_and_values = {"data": ("bytes", None)}
-    result = _decode_bytes(arg_types_and_values)
+    result = _decode_bytes(arg_types_and_values)  # type: ignore
     assert result["data"] is None
 
     # Test bytes value (already bytes)
     byte_value = b"test"
     arg_types_and_values = {"data": ("bytes", byte_value)}
-    result = _decode_bytes(arg_types_and_values)
+    result = _decode_bytes(arg_types_and_values)  # type: ignore
     assert result["data"] == byte_value
 
     # Test invalid type for bytes arg
@@ -308,11 +308,11 @@ def test_decode_bytes_edge_cases():
     with pytest.raises(
         ValueError, match="Expected base64 encoded string or None for bytes argument"
     ):
-        _decode_bytes(arg_types_and_values)
+        _decode_bytes(arg_types_and_values)  # type: ignore
 
     # Test non-bytes argument (should pass through)
     arg_types_and_values = {"data": ("str", "test_string")}
-    result = _decode_bytes(arg_types_and_values)
+    result = _decode_bytes(arg_types_and_values)  # type: ignore
     assert result["data"] == "test_string"
 
 
@@ -431,16 +431,16 @@ def test_run_playground_success_with_valid_output():
     mock_result.stdout = json_output
     mock_result.stderr = ""
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("print('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("print('test')", {})
 
-                assert result == expected_output
+            assert result == expected_output
 
 
 def test_run_playground_success_with_error_output():
@@ -459,19 +459,19 @@ def test_run_playground_success_with_error_output():
     mock_result.stdout = json_output
     mock_result.stderr = ""
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("raise ValueError('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("raise ValueError('test')", {})
 
-                assert "error" in result
-                error = result["error"]
-                assert error["type"] == "ValueError"
-                assert error["reason"] == "Invalid input"
+            assert "error" in result
+            error = result["error"]
+            assert error["type"] == "ValueError"
+            assert error["reason"] == "Invalid input"
 
 
 def test_run_playground_invalid_json_output():
@@ -483,19 +483,19 @@ def test_run_playground_invalid_json_output():
     mock_result.stdout = invalid_json
     mock_result.stderr = ""
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("print('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("print('test')", {})
 
-                assert "error" in result
-                error = result["error"]
-                assert error["type"] == PlaygroundErrorType.OUTPUT_PARSING
-                assert "invalid JSON" in error["reason"]
+            assert "error" in result
+            error = result["error"]
+            assert error["type"] == PlaygroundErrorType.OUTPUT_PARSING
+            assert "invalid JSON" in error["reason"]
 
 
 def test_run_playground_missing_markers():
@@ -505,19 +505,19 @@ def test_run_playground_missing_markers():
     mock_result.stdout = "No markers in this output"
     mock_result.stderr = ""
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("print('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("print('test')", {})
 
-                assert "error" in result
-                error = result["error"]
-                assert error["type"] == PlaygroundErrorType.OUTPUT_MARKER
-                assert "output markers" in error["reason"]
+            assert "error" in result
+            error = result["error"]
+            assert error["type"] == PlaygroundErrorType.OUTPUT_MARKER
+            assert "output markers" in error["reason"]
 
 
 def test_run_playground_execution_error():
@@ -527,19 +527,19 @@ def test_run_playground_execution_error():
     mock_result.stdout = ""
     mock_result.stderr = "ValueError: Test error message"
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("raise ValueError('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("raise ValueError('test')", {})
 
-                assert "error" in result
-                error = result["error"]
-                assert error["type"] == PlaygroundErrorType.EXECUTION_ERROR
-                assert "Test error message" in error["reason"]
+            assert "error" in result
+            error = result["error"]
+            assert error["type"] == PlaygroundErrorType.EXECUTION_ERROR
+            assert "Test error message" in error["reason"]
 
 
 def test_run_playground_error_validation_failure():
@@ -552,18 +552,18 @@ def test_run_playground_error_validation_failure():
     mock_result.stdout = json_output
     mock_result.stderr = ""
 
-    with patch("subprocess.run", return_value=mock_result):
-        with patch(
-            "lilypad.ee.server.api.v0.functions_api.get_settings"
-        ) as mock_settings:
-            mock_settings.return_value.playground_venv_path = "/usr"
+    with (
+        patch("subprocess.run", return_value=mock_result),
+        patch("lilypad.ee.server.api.v0.functions_api.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value.playground_venv_path = "/usr"
 
-            with patch("pathlib.Path.exists", return_value=True):
-                result = _run_playground("print('test')", {})
+        with patch("pathlib.Path.exists", return_value=True):
+            result = _run_playground("print('test')", {})
 
-                # Should return the unvalidated structure
-                assert "error" in result
-                assert result["error"] == invalid_error_output["error"]
+            # Should return the unvalidated structure
+            assert "error" in result
+            assert result["error"] == invalid_error_output["error"]
 
 
 # Test the actual API endpoint functions that aren't covered

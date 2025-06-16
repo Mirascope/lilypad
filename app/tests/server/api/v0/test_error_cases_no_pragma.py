@@ -94,18 +94,18 @@ class TestOpenSearchIntegration:
             # Mock the project service to return the test project
             from lilypad.server.services.projects import ProjectService
 
-            with patch.object(
-                ProjectService, "find_record_no_organization", return_value=test_project
-            ):
+            with (
+                patch.object(
+                    ProjectService, "find_record_no_organization", return_value=test_project
+                ),
                 # Mock the background task to simulate OpenSearch being enabled
-                with (
-                    patch(
-                        "lilypad.server.api.v0.traces_api.index_traces_in_opensearch"
-                    ),
-                    patch(
-                        "lilypad.server.api.v0.traces_api.get_opensearch_service"
-                    ) as mock_get_service,
-                ):
+                patch(
+                    "lilypad.server.api.v0.traces_api.index_traces_in_opensearch"
+                ),
+                patch(
+                    "lilypad.server.api.v0.traces_api.get_opensearch_service"
+                ) as mock_get_service,
+            ):
                     mock_service = Mock()
                     mock_service.is_enabled = True
                     mock_get_service.return_value = mock_service

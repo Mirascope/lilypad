@@ -207,11 +207,11 @@ def test_execute_function_container_execution_error(
     stderr = b"ModuleNotFoundError: No module named 'requests'"
     mock_container.exec_run.return_value = (1, (stdout, stderr))
 
-    with patch.object(docker_runner, "generate_script", return_value="mock_script"):
-        with pytest.raises(
-            RuntimeError, match="Error running code in Docker container"
-        ):
-            docker_runner.execute_function(mock_closure)
+    with (
+        patch.object(docker_runner, "generate_script", return_value="mock_script"),
+        pytest.raises(RuntimeError, match="Error running code in Docker container"),
+    ):
+        docker_runner.execute_function(mock_closure)
 
     # Verify container was stopped even on error
     mock_container.stop.assert_called_once()
@@ -231,9 +231,11 @@ def test_execute_function_json_parse_error(mock_docker, docker_runner, mock_clos
     stderr = b""
     mock_container.exec_run.return_value = (0, (stdout, stderr))
 
-    with patch.object(docker_runner, "generate_script", return_value="mock_script"):
-        with pytest.raises(json.JSONDecodeError):
-            docker_runner.execute_function(mock_closure)
+    with (
+        patch.object(docker_runner, "generate_script", return_value="mock_script"),
+        pytest.raises(json.JSONDecodeError),
+    ):
+        docker_runner.execute_function(mock_closure)
 
 
 @patch("lilypad.sandbox.docker.docker")
@@ -246,9 +248,11 @@ def test_execute_function_container_creation_error(
     mock_docker.from_env.return_value = mock_client
     mock_client.containers.run.side_effect = Exception("Failed to create container")
 
-    with patch.object(docker_runner, "generate_script", return_value="mock_script"):
-        with pytest.raises(Exception, match="Failed to create container"):
-            docker_runner.execute_function(mock_closure)
+    with (
+        patch.object(docker_runner, "generate_script", return_value="mock_script"),
+        pytest.raises(Exception, match="Failed to create container"),
+    ):
+        docker_runner.execute_function(mock_closure)
 
 
 @patch("lilypad.sandbox.docker.docker")
@@ -286,11 +290,11 @@ def test_execute_function_no_container_cleanup(
     mock_docker.from_env.return_value = mock_client
     mock_client.containers.run.return_value = None  # Simulate no container created
 
-    with patch.object(docker_runner, "generate_script", return_value="mock_script"):
-        with pytest.raises(
-            AttributeError
-        ):  # Will fail when trying to call methods on None
-            docker_runner.execute_function(mock_closure)
+    with (
+        patch.object(docker_runner, "generate_script", return_value="mock_script"),
+        pytest.raises(AttributeError),  # Will fail when trying to call methods on None
+    ):
+        docker_runner.execute_function(mock_closure)
 
 
 @patch("lilypad.sandbox.docker.docker")
@@ -305,9 +309,11 @@ def test_execute_function_put_archive_error(mock_docker, docker_runner, mock_clo
     # Mock put_archive to raise error
     mock_container.put_archive.side_effect = Exception("Failed to copy files")
 
-    with patch.object(docker_runner, "generate_script", return_value="mock_script"):
-        with pytest.raises(Exception, match="Failed to copy files"):
-            docker_runner.execute_function(mock_closure)
+    with (
+        patch.object(docker_runner, "generate_script", return_value="mock_script"),
+        pytest.raises(Exception, match="Failed to copy files"),
+    ):
+        docker_runner.execute_function(mock_closure)
 
     # Verify container was still stopped
     mock_container.stop.assert_called_once()

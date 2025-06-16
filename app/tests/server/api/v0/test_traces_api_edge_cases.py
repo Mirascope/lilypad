@@ -38,17 +38,19 @@ def test_traces_post_missing_attributes(client: TestClient, test_project: Projec
     try:
         api.dependency_overrides[validate_api_key_project_strict] = lambda: True
 
-        with patch(
-            "lilypad.server.services.projects.ProjectService.find_record_no_organization",
-            return_value=test_project,
-        ):
-            with patch(
+        with (
+            patch(
+                "lilypad.server.services.projects.ProjectService.find_record_no_organization",
+                return_value=test_project,
+            ),
+            patch(
                 "lilypad.server.services.spans.SpanService.count_by_current_month",
                 return_value=0,
-            ):
-                with patch(
-                    "lilypad.server.api.v0.traces_api.get_span_kafka_service"
-                ) as mock_kafka:
+            ),
+            patch(
+                "lilypad.server.api.v0.traces_api.get_span_kafka_service"
+            ) as mock_kafka,
+        ):
                     mock_kafka_service = Mock()
                     mock_kafka_service.send_batch = AsyncMock(return_value=True)
                     mock_kafka.return_value = mock_kafka_service
@@ -86,17 +88,19 @@ def test_traces_with_parent_child_relationship(
     try:
         api.dependency_overrides[validate_api_key_project_strict] = lambda: True
 
-        with patch(
-            "lilypad.server.services.projects.ProjectService.find_record_no_organization",
-            return_value=test_project,
-        ):
-            with patch(
+        with (
+            patch(
+                "lilypad.server.services.projects.ProjectService.find_record_no_organization",
+                return_value=test_project,
+            ),
+            patch(
                 "lilypad.server.services.spans.SpanService.count_by_current_month",
                 return_value=0,
-            ):
-                with patch(
-                    "lilypad.server.api.v0.traces_api.get_span_kafka_service"
-                ) as mock_kafka:
+            ),
+            patch(
+                "lilypad.server.api.v0.traces_api.get_span_kafka_service"
+            ) as mock_kafka,
+        ):
                     # Force synchronous processing
                     mock_kafka_service = Mock()
                     mock_kafka_service.send_batch = AsyncMock(return_value=False)
@@ -150,17 +154,19 @@ def test_billing_service_exception_handling(
     try:
         api.dependency_overrides[validate_api_key_project_strict] = lambda: True
 
-        with patch(
-            "lilypad.server.services.projects.ProjectService.find_record_no_organization",
-            return_value=test_project,
-        ):
-            with patch(
+        with (
+            patch(
+                "lilypad.server.services.projects.ProjectService.find_record_no_organization",
+                return_value=test_project,
+            ),
+            patch(
                 "lilypad.server.services.spans.SpanService.count_by_current_month",
                 return_value=0,
-            ):
-                with patch(
-                    "lilypad.server.api.v0.traces_api.get_span_kafka_service"
-                ) as mock_kafka:
+            ),
+            patch(
+                "lilypad.server.api.v0.traces_api.get_span_kafka_service"
+            ) as mock_kafka,
+        ):
                     # Force synchronous processing
                     mock_kafka_service = Mock()
                     mock_kafka_service.send_batch = AsyncMock(return_value=False)
@@ -251,8 +257,8 @@ def test_traces_opensearch_indexing(client: TestClient, test_project: ProjectTab
             match_api_key=match_api_key,
             license=license,
             is_lilypad_cloud=is_lilypad_cloud,
-            project_uuid=project_uuid,
-            request=request,
+            project_uuid=project_uuid,  # type: ignore
+            request=request,  # type: ignore
             span_service=mock_span_service,
             opensearch_service=mock_opensearch_service,
             background_tasks=mock_background_tasks,
@@ -284,11 +290,11 @@ def test_get_trace_by_span_uuid_returns_span(
         span = SpanTable(
             uuid=uuid4(),
             span_id="test_span",
-            trace_id="test_trace",
+            trace_id="test_trace",  # type: ignore
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
-            start_time=1000,
-            end_time=2000,
+            start_time=1000,  # type: ignore
+            end_time=2000,  # type: ignore
             parent_span_id=None,
             type="function",
             function_uuid=None,
@@ -321,11 +327,11 @@ def test_get_spans_by_trace_id_returns_spans(
         span1 = SpanTable(
             uuid=uuid4(),
             span_id="span1",
-            trace_id="test_trace",
+            trace_id="test_trace",  # type: ignore
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
-            start_time=1000,
-            end_time=2000,
+            start_time=1000,  # type: ignore
+            end_time=2000,  # type: ignore
             parent_span_id=None,
             type="function",
             function_uuid=None,

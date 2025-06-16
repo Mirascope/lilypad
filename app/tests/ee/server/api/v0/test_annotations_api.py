@@ -19,7 +19,7 @@ def test_span(session: Session, test_project: ProjectTable) -> SpanTable:
         span_id="test_span_id",
         project_uuid=test_project.uuid,
         organization_uuid=test_project.organization_uuid,
-        scope="lilypad",  # Required field
+        scope="lilypad",  # type: ignore[arg-type]  # Required field
         data={
             "name": "test_span",  # Required field for SpanMoreDetails
             "attributes": {"lilypad.type": "llm", "lilypad.llm.output": "test output"},
@@ -43,7 +43,7 @@ def test_annotation(
         span_uuid=test_span.uuid,
         project_uuid=test_project.uuid,
         organization_uuid=test_project.organization_uuid,
-        assigned_to=[test_user.uuid],
+        assigned_to=[test_user.uuid],  # type: ignore[arg-type]
         data={
             "output": {
                 "idealOutput": "test",

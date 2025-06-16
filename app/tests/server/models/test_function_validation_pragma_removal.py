@@ -167,7 +167,7 @@ class TestFunctionValidationErrors:
         long_name = "x" * 513  # Over 512 characters
 
         with pytest.raises(ValueError) as exc_info:
-            validator(long_name)
+            validator(long_name, None)  # type: ignore
 
         assert "Name must be less than 512 characters." in str(exc_info.value)
 

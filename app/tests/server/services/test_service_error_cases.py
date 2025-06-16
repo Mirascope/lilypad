@@ -49,7 +49,7 @@ class TestSpanServiceErrors:
         mock_session.commit = Mock()
 
         span_creates = [
-            SpanCreate(span_id="test_span", scope="lilypad", type="function", data={})
+            SpanCreate(span_id="test_span", scope="lilypad", type="function", data={})  # type: ignore
         ]
 
         project_uuid = uuid4()
@@ -84,7 +84,7 @@ class TestSpanServiceErrors:
         project_uuid = uuid4()
 
         with pytest.raises(Exception, match="Query timeout"):
-            span_service.get_aggregated_metrics(project_uuid, "day")
+            span_service.get_aggregated_metrics(project_uuid, "day")  # type: ignore
 
     def test_count_by_current_month_calculation_error(
         self, span_service: SpanService, mock_session

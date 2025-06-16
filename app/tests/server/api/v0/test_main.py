@@ -1,3 +1,5 @@
+"""Tests for the main API module."""
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,10 +18,10 @@ class _DummySettings:  # noqa: D401 (simple stub object)
 
 
 @pytest.fixture(name="client")
-def fixture_client() -> TestClient:
+def fixture_client() -> TestClient:  # type: ignore[misc]
     """Create a TestClient with the settings dependency overridden."""
     api.dependency_overrides[get_settings] = lambda: _DummySettings()  # type: ignore[arg-type]
-    yield TestClient(api)
+    yield TestClient(api)  # type: ignore[misc]
     api.dependency_overrides.clear()
 
 

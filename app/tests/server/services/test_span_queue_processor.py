@@ -302,11 +302,11 @@ class TestSpanQueueProcessor:
         # Mock session and database query
         mock_session = Mock()
         mock_result = Mock()
-        mock_user = UserTable(
+        mock_user = UserTable(  # type: ignore
             uuid=uuid4(),
-            name="test",
+            first_name="test",
             email="test@example.com",
-            organization_uuid=uuid4(),
+            active_organization_uuid=uuid4(),
         )
 
         mock_result.first.return_value = mock_user
@@ -336,12 +336,14 @@ class TestSpanQueueProcessor:
         processor = SpanQueueProcessor()
 
         # Mock an exception during setup
-        with patch(
-            "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
-            side_effect=Exception("Setup failed"),
+        with (
+            patch(
+                "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
+                side_effect=Exception("Setup failed"),
+            ),
+            patch("lilypad.server.services.span_queue_processor.logger"),
         ):
-            with patch("lilypad.server.services.span_queue_processor.logger"):
-                result = await processor.initialize()
+            result = await processor.initialize()
 
         assert result is False
 
@@ -362,7 +364,7 @@ class TestSpanQueueProcessor:
         mock_consumer.getmany.return_value = {
             "test-topic": [Mock(topic="test-topic", partition=0, offset=0)]
         }
-        processor._consumer = mock_consumer
+        processor._consumer = mock_consumer  # type: ignore
 
         # This should break early due to _running = False
         with patch(
@@ -1367,7 +1369,7 @@ class TestAdditionalCoverage:
             mock_loop = Mock()
             mock_get_loop.return_value = mock_loop
             mock_loop.run_in_executor = AsyncMock(
-                side_effect=IntegrityError("stmt", "params", "orig")
+                side_effect=IntegrityError("stmt", "params", "orig")  # type: ignore
             )
 
             await processor._process_trace("trace-123", buffer)

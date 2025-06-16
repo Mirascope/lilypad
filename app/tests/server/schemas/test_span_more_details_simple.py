@@ -1,5 +1,6 @@
 """Targeted tests for span_more_details.py to maximize coverage efficiently."""
 
+import contextlib
 import json
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
@@ -239,11 +240,8 @@ async def test_fetch_with_memory_cache():
         mock_instance.get.return_value = mock_response
         mock_client.return_value.__aenter__.return_value = mock_instance
 
-        try:
+        with contextlib.suppress(json.JSONDecodeError):
             result = await fetch_with_memory_cache("http://example.com/json_error")
-        except json.JSONDecodeError:
-            # Expected - the function doesn't catch this error
-            pass
 
 
 @pytest.mark.asyncio
@@ -280,11 +278,8 @@ async def test_calculate_openrouter_cost():
         new_callable=AsyncMock,
     ) as mock_fetch:
         mock_fetch.return_value = {}
-        try:
+        with contextlib.suppress(KeyError):
             cost = await calculate_openrouter_cost(1000, 500, "test-model")
-        except KeyError:
-            # Expected when API response doesn't have "data" key
-            pass
 
 
 def test_parse_nested_json():

@@ -5,7 +5,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from pydantic_core._pydantic_core import ValidationError
+from pydantic_core._pydantic_core import ValidationError  # type: ignore
 from sqlmodel import Session
 
 from lilypad.server.models import (
@@ -95,7 +95,7 @@ def test_count_no_parent_spans(
     db_session.add_all(root_spans + child_spans)
     db_session.commit()
 
-    count = service.count_no_parent_spans(test_project.uuid)
+    count = service.count_no_parent_spans(test_project.uuid)  # type: ignore
     assert count == 3
 
 
@@ -123,19 +123,19 @@ def test_find_all_no_parent_spans(
     db_session.commit()
 
     # Test default (desc order)
-    found_spans = service.find_all_no_parent_spans(test_project.uuid)
+    found_spans = service.find_all_no_parent_spans(test_project.uuid)  # type: ignore
     assert len(found_spans) == 5
 
     # Test with limit
-    limited_spans = service.find_all_no_parent_spans(test_project.uuid, limit=3)
+    limited_spans = service.find_all_no_parent_spans(test_project.uuid, limit=3)  # type: ignore
     assert len(limited_spans) == 3
 
     # Test with offset
-    offset_spans = service.find_all_no_parent_spans(test_project.uuid, offset=2)
+    offset_spans = service.find_all_no_parent_spans(test_project.uuid, offset=2)  # type: ignore
     assert len(offset_spans) == 3
 
     # Test asc order
-    asc_spans = service.find_all_no_parent_spans(test_project.uuid, order="asc")
+    asc_spans = service.find_all_no_parent_spans(test_project.uuid, order="asc")  # type: ignore
     assert len(asc_spans) == 5
 
 
@@ -221,12 +221,12 @@ def test_get_record_by_span_id(
     db_session.add(span)
     db_session.commit()
 
-    found_span = service.get_record_by_span_id(test_project.uuid, "test_span")
+    found_span = service.get_record_by_span_id(test_project.uuid, "test_span")  # type: ignore
     assert found_span is not None
     assert found_span.span_id == "test_span"
 
     # Non-existent span
-    not_found = service.get_record_by_span_id(test_project.uuid, "nonexistent")
+    not_found = service.get_record_by_span_id(test_project.uuid, "nonexistent")  # type: ignore
     assert not_found is None
 
 
@@ -259,7 +259,9 @@ def test_get_aggregated_metrics_lifetime(
     db_session.commit()
 
     metrics = service.get_aggregated_metrics(
-        test_project.uuid, function_uuid, TimeFrame.LIFETIME
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        TimeFrame.LIFETIME,  # type: ignore
     )
 
     assert len(metrics) == 1
@@ -319,7 +321,9 @@ def test_get_aggregated_metrics_by_timeframe(
 
     # Test DAY aggregation
     metrics = service.get_aggregated_metrics(
-        test_project.uuid, function_uuid, TimeFrame.DAY
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        TimeFrame.DAY,  # type: ignore
     )
     assert len(metrics) == 2
 
@@ -360,7 +364,7 @@ def test_get_aggregated_metrics_all_functions(
     db_session.commit()
 
     # Test aggregation across all functions
-    metrics = service.get_aggregated_metrics(test_project.uuid)
+    metrics = service.get_aggregated_metrics(test_project.uuid)  # type: ignore
     assert len(metrics) == 2
 
 
@@ -378,8 +382,8 @@ def test_delete_records_by_function_name(
         signature="def test_function(): pass",
         code="def test_function(): pass",
         hash="abcd1234",
-        scope=Scope.LILYPAD,
-        data={"attributes": {}},
+        scope=Scope.LILYPAD,  # type: ignore
+        data={"attributes": {}},  # type: ignore
     )
     db_session.add(function)
     db_session.commit()
@@ -401,12 +405,13 @@ def test_delete_records_by_function_name(
     db_session.commit()
 
     # Delete spans
-    result = service.delete_records_by_function_name(test_project.uuid, "test_function")
+    result = service.delete_records_by_function_name(test_project.uuid, "test_function")  # type: ignore
     assert result is True
 
     # Verify deletion
     remaining_spans = service.find_records_by_function_uuid(
-        test_project.uuid, function.uuid
+        test_project.uuid,  # type: ignore
+        function.uuid,  # type: ignore
     )
     assert len(remaining_spans) == 0
 
@@ -468,7 +473,9 @@ def test_create_bulk_records_with_tags(
     ]
 
     created_spans = service.create_bulk_records(
-        spans_create, test_project.uuid, test_project.organization_uuid
+        spans_create,
+        test_project.uuid,  # type: ignore
+        test_project.organization_uuid,  # type: ignore
     )
 
     assert len(created_spans) == 3
@@ -504,7 +511,7 @@ def test_create_bulk_records_with_billing(
     with patch("lilypad.server.services.billing.BillingService") as MockBilling:
         MockBilling.return_value = mock_billing
         created_spans = service.create_bulk_records(
-            spans_create, test_project.uuid, test_project.organization_uuid
+            spans_create, test_project.uuid, test_project.organization_uuid  # type: ignore
         )
 
     assert len(created_spans) == 2
@@ -537,7 +544,9 @@ def test_create_bulk_records_customer_not_found(
     ]
 
     created_spans = service.create_bulk_records(
-        spans_create, test_project.uuid, test_project.organization_uuid
+        spans_create,
+        test_project.uuid,  # type: ignore
+        test_project.organization_uuid,  # type: ignore
     )
 
     assert len(created_spans) == 1
@@ -561,7 +570,9 @@ def test_create_bulk_records_billing_error_handling(
 
     # Should not raise exception
     created_spans = service.create_bulk_records(
-        spans_create, test_project.uuid, test_project.organization_uuid
+        spans_create,
+        test_project.uuid,  # type: ignore
+        test_project.organization_uuid,  # type: ignore
     )
 
     assert len(created_spans) == 1
@@ -605,7 +616,7 @@ def test_get_spans_since(
 
     # Get spans since yesterday + 1 hour
     since = yesterday + timedelta(hours=1)
-    recent_spans = service.get_spans_since(test_project.uuid, since)
+    recent_spans = service.get_spans_since(test_project.uuid, since)  # type: ignore
 
     assert len(recent_spans) == 1
     assert recent_spans[0].span_id == "new_span"
@@ -633,11 +644,11 @@ def test_delete_records_by_function_uuid(
     db_session.add_all(spans)
     db_session.commit()
 
-    result = service.delete_records_by_function_uuid(test_project.uuid, function_uuid)
+    result = service.delete_records_by_function_uuid(test_project.uuid, function_uuid)  # type: ignore
     assert result is True
 
     # Verify deletion
-    remaining = service.find_records_by_function_uuid(test_project.uuid, function_uuid)
+    remaining = service.find_records_by_function_uuid(test_project.uuid, function_uuid)  # type: ignore
     assert len(remaining) == 0
 
 
@@ -662,7 +673,7 @@ async def test_update_span_with_tags(
 
     # Update with tags by name
     update_data = SpanUpdate(tags_by_name=["new_tag1", "new_tag2"])
-    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)
+    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)  # type: ignore  # type: ignore
 
     assert updated_span.uuid == span.uuid
 
@@ -683,13 +694,13 @@ async def test_update_span_with_tag_uuids(
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
         name="existing_tag1",
-        created_by=test_user.uuid,
+        created_by=test_user.uuid,  # type: ignore
     )
     tag2 = TagTable(
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
         name="existing_tag2",
-        created_by=test_user.uuid,
+        created_by=test_user.uuid,  # type: ignore
     )
     db_session.add_all([tag1, tag2])
     db_session.commit()
@@ -707,8 +718,8 @@ async def test_update_span_with_tag_uuids(
     db_session.commit()
 
     # Update with tag UUIDs
-    update_data = SpanUpdate(tags_by_uuid=[tag1.uuid, tag2.uuid])
-    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)
+    update_data = SpanUpdate(tags_by_uuid=[tag1.uuid, tag2.uuid])  # type: ignore
+    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)  # type: ignore
 
     assert updated_span.uuid == span.uuid
 
@@ -755,7 +766,7 @@ def test_count_records_by_function_uuid(
     db_session.add_all(root_spans + child_spans)
     db_session.commit()
 
-    count = service.count_records_by_function_uuid(test_project.uuid, function_uuid)
+    count = service.count_records_by_function_uuid(test_project.uuid, function_uuid)  # type: ignore
     assert count == 3  # Only root spans
 
 
@@ -791,7 +802,7 @@ def test_find_spans_by_trace_id(
     db_session.add_all(spans + [other_span])
     db_session.commit()
 
-    found_spans = service.find_spans_by_trace_id(test_project.uuid, trace_id)
+    found_spans = service.find_spans_by_trace_id(test_project.uuid, trace_id)  # type: ignore
     assert len(found_spans) == 3
 
     # Verify all spans have the correct trace_id
@@ -825,23 +836,35 @@ def test_find_records_by_function_uuid_paged(
 
     # Test pagination
     page1 = service.find_records_by_function_uuid_paged(
-        test_project.uuid, function_uuid, limit=5, offset=0
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        limit=5,
+        offset=0,  # type: ignore
     )
     assert len(page1) == 5
 
     page2 = service.find_records_by_function_uuid_paged(
-        test_project.uuid, function_uuid, limit=5, offset=5
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        limit=5,
+        offset=5,  # type: ignore
     )
     assert len(page2) == 5
 
     # Test ordering
     asc_spans = service.find_records_by_function_uuid_paged(
-        test_project.uuid, function_uuid, limit=10, order="asc"
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        limit=10,
+        order="asc",  # type: ignore
     )
     assert len(asc_spans) == 10
 
     desc_spans = service.find_records_by_function_uuid_paged(
-        test_project.uuid, function_uuid, limit=10, order="desc"
+        test_project.uuid,  # type: ignore
+        function_uuid,
+        limit=10,
+        order="desc",  # type: ignore
     )
     assert len(desc_spans) == 10
 
@@ -872,7 +895,8 @@ def test_find_aggregate_data_by_function_uuid(
     db_session.commit()
 
     aggregate_spans = service.find_aggregate_data_by_function_uuid(
-        test_project.uuid, function_uuid
+        test_project.uuid,  # type: ignore
+        function_uuid,  # type: ignore
     )
     assert len(aggregate_spans) == 3
     assert all(span.function_uuid == function_uuid for span in aggregate_spans)
@@ -969,7 +993,9 @@ def test_get_aggregated_metrics_week_timeframe(
     with patch.object(service.session, "exec", return_value=mock_result):
         # Test WEEK aggregation
         metrics = service.get_aggregated_metrics(
-            test_project.uuid, function_uuid, TimeFrame.WEEK
+            test_project.uuid,  # type: ignore
+            function_uuid,
+            TimeFrame.WEEK,  # type: ignore
         )
         assert len(metrics) >= 1
         assert metrics[0].total_cost == 20.0
@@ -1022,7 +1048,9 @@ def test_get_aggregated_metrics_month_timeframe(
     with patch.object(service.session, "exec", return_value=mock_result):
         # Test MONTH aggregation
         metrics = service.get_aggregated_metrics(
-            test_project.uuid, function_uuid, TimeFrame.MONTH
+            test_project.uuid,  # type: ignore
+            function_uuid,
+            TimeFrame.MONTH,  # type: ignore
         )
         assert len(metrics) >= 1
         assert metrics[0].total_cost == 20.0
@@ -1083,7 +1111,9 @@ def test_create_bulk_records_with_invalid_tags(
     ]
 
     created_spans = service.create_bulk_records(
-        spans_create, test_project.uuid, test_project.organization_uuid
+        spans_create,
+        test_project.uuid,  # type: ignore
+        test_project.organization_uuid,  # type: ignore
     )
 
     assert len(created_spans) == 1
@@ -1116,7 +1146,7 @@ async def test_update_span_no_tag_changes(
 
     # Update without tags (both tags_by_name and tags_by_uuid are None)
     update_data = SpanUpdate()  # No tag fields provided
-    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)
+    updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)  # type: ignore
 
     assert updated_span.uuid == span.uuid
 
@@ -1148,7 +1178,7 @@ def test_sync_span_tags_remove_existing_tags(
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
         name="existing_tag",
-        created_by=test_user.uuid,
+        created_by=test_user.uuid,  # type: ignore
     )
     db_session.add(tag)
     db_session.commit()
@@ -1156,7 +1186,7 @@ def test_sync_span_tags_remove_existing_tags(
     existing_link = SpanTagLink(
         span_uuid=span.uuid,
         tag_uuid=tag.uuid,
-        created_by=test_user.uuid,
+        created_by=test_user.uuid,  # type: ignore
     )
     db_session.add(existing_link)
     db_session.commit()

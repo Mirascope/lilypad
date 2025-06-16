@@ -174,7 +174,7 @@ class TestPlaygroundParameters:
 
         with pytest.raises(ValidationError):
             PlaygroundParameters(
-                arg_values=large_dict,
+                arg_values=large_dict,  # type: ignore
                 arg_types=None,
                 provider=Provider.OPENAI,
                 model="gpt-4",
@@ -227,7 +227,7 @@ class TestPlaygroundModels:
         assert context.span_uuid == "span-123"
 
         # Test with None
-        context_none = TraceContextModel()
+        context_none = TraceContextModel()  # type: ignore
         assert context_none.span_uuid is None
 
     def test_playground_success_response(self):
@@ -238,11 +238,11 @@ class TestPlaygroundModels:
         )
 
         assert response.result == {"message": "success", "value": 42}
-        assert response.trace_context.span_uuid == "span-456"
+        assert response.trace_context.span_uuid == "span-456"  # type: ignore
 
     def test_playground_success_response_without_trace(self):
         """Test PlaygroundSuccessResponse without trace context."""
-        response = PlaygroundSuccessResponse(result="simple result")
+        response = PlaygroundSuccessResponse(result="simple result")  # type: ignore
 
         assert response.result == "simple result"
         assert response.trace_context is None

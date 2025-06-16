@@ -25,8 +25,8 @@ def test_user_organization(
     if not user_org:
         # Create if somehow missing
         user_org = UserOrganizationTable(
-            user_uuid=test_user.uuid,
-            organization_uuid=test_user.active_organization_uuid,
+            user_uuid=test_user.uuid,  # type: ignore[arg-type]
+            organization_uuid=test_user.active_organization_uuid,  # type: ignore[arg-type]
             role=UserRole.ADMIN,
         )
         session.add(user_org)
@@ -42,8 +42,8 @@ def test_organization_invite(
     """Create a test organization invite."""
     invite = OrganizationInviteTable(
         email="invited@example.com",
-        invited_by=test_user.uuid,
-        organization_uuid=test_user.active_organization_uuid,
+        invited_by=test_user.uuid,  # type: ignore[arg-type]
+        organization_uuid=test_user.active_organization_uuid,  # type: ignore[arg-type]
         token="test-invite-token",
         resend_email_id="email-123",
     )
@@ -74,8 +74,8 @@ def second_user_organization(
 ) -> UserOrganizationTable:
     """Create a user organization for the second user."""
     user_org = UserOrganizationTable(
-        user_uuid=second_user.uuid,
-        organization_uuid=second_user.active_organization_uuid,
+        user_uuid=second_user.uuid,  # type: ignore[arg-type]
+        organization_uuid=second_user.active_organization_uuid,  # type: ignore[arg-type]
         role=UserRole.MEMBER,
     )
     session.add(user_org)

@@ -303,7 +303,7 @@ def test_create_stripe_customer_existing_billing_no_customer(
     """Test creating Stripe customer for organization with billing but no customer."""
     # Create organization with billing but no customer ID
     org = OrganizationTable(name="Existing Billing Org")
-    billing = BillingTable(organization_uuid=org.uuid)
+    billing = BillingTable(organization_uuid=org.uuid)  # type: ignore
     db_session.add(org)
     db_session.add(billing)
     db_session.commit()
@@ -332,7 +332,7 @@ def test_create_stripe_customer_already_has_customer(
     # Create organization with existing customer
     org = OrganizationTable(name="Has Customer Org")
     billing = BillingTable(
-        organization_uuid=org.uuid, stripe_customer_id="cust_existing789"
+        organization_uuid=org.uuid, stripe_customer_id="cust_existing789"  # type: ignore
     )
     db_session.add(org)
     db_session.add(billing)
@@ -363,7 +363,7 @@ def test_create_stripe_customer_organization_not_found(
     fake_uuid = uuid4()
 
     # find_record_by_uuid raises HTTPException for non-existent records
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:  # noqa: B017
         org_service.create_stripe_customer(
             mock_billing_service, fake_uuid, "notfound@example.com"
         )
@@ -378,11 +378,13 @@ def test_create_stripe_customer_organization_none_error(
     fake_uuid = uuid4()
 
     # Mock find_record_by_uuid to return None instead of raising HTTPException
-    with patch.object(org_service, "find_record_by_uuid", return_value=None):
-        with pytest.raises(ValueError, match=f"Organization {fake_uuid} not found"):
-            org_service.create_stripe_customer(
-                mock_billing_service, fake_uuid, "notfound@example.com"
-            )
+    with (
+        patch.object(org_service, "find_record_by_uuid", return_value=None),
+        pytest.raises(ValueError, match=f"Organization {fake_uuid} not found"),
+    ):
+        org_service.create_stripe_customer(
+            mock_billing_service, fake_uuid, "notfound@example.com"
+        )
 
 
 def test_get_stripe_customer_success(
@@ -391,7 +393,7 @@ def test_get_stripe_customer_success(
     """Test getting Stripe customer for organization."""
     # Create organization with customer
     org = OrganizationTable(name="Get Customer Org")
-    billing = BillingTable(organization_uuid=org.uuid, stripe_customer_id="cust_get123")
+    billing = BillingTable(organization_uuid=org.uuid, stripe_customer_id="cust_get123")  # type: ignore
     db_session.add(org)
     db_session.add(billing)
     db_session.commit()
@@ -435,7 +437,7 @@ def test_get_stripe_customer_no_customer_id(
     """Test getting Stripe customer for organization with billing but no customer ID."""
     # Create organization with billing but no customer ID
     org = OrganizationTable(name="No Customer ID Org")
-    billing = BillingTable(organization_uuid=org.uuid, stripe_customer_id=None)
+    billing = BillingTable(organization_uuid=org.uuid, stripe_customer_id=None)  # type: ignore
     db_session.add(org)
     db_session.add(billing)
     db_session.commit()
@@ -466,7 +468,7 @@ def test_get_stripe_customer_organization_not_found(org_service: OrganizationSer
 def test_find_records_by_uuids_empty_list(org_service: OrganizationService):
     """Test finding records by empty UUIDs list returns empty list."""
     # Call with empty list
-    result = org_service.find_records_by_uuids([])
+    result = org_service.find_records_by_uuids([])  # type: ignore
 
     # Should return empty list
     assert result == []

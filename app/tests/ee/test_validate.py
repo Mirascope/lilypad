@@ -527,7 +527,7 @@ class TestGenerateLicense:
         with patch("builtins.open", mock_open(read_data=private_key_pem.decode())):
             license_key = generate_license(
                 private_key_path="/fake/path/private.pem",
-                password=None,
+                password=None,  # type: ignore[arg-type]
                 customer="Test Customer",
                 license_id="test-license-123",
                 expires_at=expires_at,
@@ -545,7 +545,7 @@ class TestGenerateLicense:
         """Test generating license with invalid private key file."""
         with (
             patch("builtins.open", mock_open(read_data="invalid key data")),
-            pytest.raises(Exception),  # Could be various crypto exceptions
+            pytest.raises((ValueError, TypeError, AttributeError)),  # Could be various crypto exceptions
         ):
             generate_license(
                 private_key_path="/fake/path/private.pem",
@@ -575,7 +575,7 @@ class TestGenerateLicense:
         ):
             generate_license(
                 private_key_path="/fake/path/private.pem",
-                password=None,
+                password=None,  # type: ignore
                 customer="Test Customer",
                 license_id="test-license-123",
                 expires_at=datetime.now(timezone.utc) + timedelta(days=30),

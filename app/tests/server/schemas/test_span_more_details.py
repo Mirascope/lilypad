@@ -49,7 +49,7 @@ class TestTextPart:
 
         # Should fail with wrong type
         with pytest.raises(ValidationError):
-            _TextPart(type="image", text="hello")
+            _TextPart(type="image", text="hello")  # type: ignore
 
 
 class TestImagePart:
@@ -75,7 +75,7 @@ class TestImagePart:
     def test_image_part_validation(self):
         """Test image part validation."""
         with pytest.raises(ValidationError):
-            _ImagePart(type="text", media_type="image/jpeg", image="data", detail=None)
+            _ImagePart(type="text", media_type="image/jpeg", image="data", detail=None)  # type: ignore
 
 
 class TestAudioPart:
@@ -93,7 +93,7 @@ class TestAudioPart:
     def test_audio_part_validation(self):
         """Test audio part validation."""
         with pytest.raises(ValidationError):
-            _AudioPart(type="video", media_type="audio/mp3", audio="data")
+            _AudioPart(type="video", media_type="audio/mp3", audio="data")  # type: ignore[arg-type]
 
 
 class TestToolCall:
@@ -118,7 +118,7 @@ class TestToolCall:
     def test_tool_call_validation(self):
         """Test tool call validation."""
         with pytest.raises(ValidationError):
-            _ToolCall(type="text", name="func", arguments={})
+            _ToolCall(type="text", name="func", arguments={})  # type: ignore[arg-type]
 
 
 class TestMessageParam:
@@ -201,7 +201,7 @@ class TestConvertGeminiMessages:
         result = convert_gemini_messages(messages)
         assert len(result) == 2  # System message + assistant message
         assert result[0].role == "system"
-        assert result[0].content[0].text == "You are a helpful assistant"
+        assert result[0].content[0].text == "You are a helpful assistant"  # type: ignore[attr-defined]
         assert result[1].role == "assistant"
 
     def test_convert_gemini_image_message(self):
@@ -326,7 +326,7 @@ class TestConvertOpenAIMessages:
         assert result[0].role == "user"
         assert len(result[0].content) == 1
         assert result[0].content[0].type == "text"
-        assert result[0].content[0].text == "Hello there"
+        assert result[0].content[0].text == "Hello there"  # type: ignore[attr-defined]
         assert result[1].role == "assistant"
 
     def test_convert_openai_structured_content(self):
@@ -581,7 +581,7 @@ class TestFetchWithMemoryCache:
     async def test_fetch_with_memory_cache_error(self):
         """Test fetch with memory cache error handling."""
         # Clear cache to avoid coroutine reuse
-        fetch_with_memory_cache.cache_clear()
+        fetch_with_memory_cache.cache_clear()  # type: ignore[attr-defined]
 
         with patch("httpx.AsyncClient") as mock_client:
             mock_instance = AsyncMock()
@@ -602,7 +602,7 @@ class TestFetchWithMemoryCache:
     async def test_fetch_with_memory_cache_invalid_json(self):
         """Test fetch with memory cache invalid JSON."""
         # Clear cache to avoid coroutine reuse
-        fetch_with_memory_cache.cache_clear()
+        fetch_with_memory_cache.cache_clear()  # type: ignore[attr-defined]
 
         with patch("httpx.AsyncClient") as mock_client:
             mock_response = AsyncMock()
@@ -767,7 +767,7 @@ class TestSpanMoreDetails:
         )
         assert len(details.messages) == 1
         assert details.data["status"] == "success"
-        assert len(details.events) == 1
+        assert len(details.events) == 1  # type: ignore
 
 
 class TestConvertAzureMessages:
@@ -784,7 +784,7 @@ class TestConvertAzureMessages:
         result = convert_azure_messages(messages)
         assert len(result) == 2  # User message + assistant message
         assert result[0].role == "user"
-        assert result[0].content[0].text == "Hello Azure"
+        assert result[0].content[0].text == "Hello Azure"  # type: ignore[attr-defined]
         assert result[1].role == "assistant"
 
     def test_convert_azure_messages_empty(self):
@@ -803,7 +803,7 @@ class TestConvertMirascopeMessages:
         result = convert_mirascope_messages(messages)
         assert len(result) == 1
         assert result[0].role == "user"
-        assert result[0].content[0].text == "Hello Mirascope"
+        assert result[0].content[0].text == "Hello Mirascope"  # type: ignore[attr-defined]
 
     def test_convert_mirascope_messages_with_tool_calls(self):
         """Test converting Mirascope messages with tool calls."""

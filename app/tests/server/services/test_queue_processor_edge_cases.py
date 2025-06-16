@@ -1,6 +1,7 @@
 """Edge case tests for queue processors."""
 
 import asyncio
+import contextlib
 from unittest.mock import patch
 
 
@@ -22,11 +23,11 @@ def test_span_queue_processor_edge_cases():
     async def mock_init_error():
         raise Exception("Init error")
 
-    with patch.object(processor, "initialize", side_effect=mock_init_error):
-        try:
-            asyncio.run(processor.start())
-        except Exception:
-            pass  # Expected
+    with (
+        patch.object(processor, "initialize", side_effect=mock_init_error),
+        contextlib.suppress(Exception),
+    ):
+        asyncio.run(processor.start())
 
 
 def test_stripe_queue_processor_line_166():
@@ -37,10 +38,8 @@ def test_stripe_queue_processor_line_166():
 
     async def test():
         # Just call process_message with invalid data to hit error paths
-        try:
+        with contextlib.suppress(Exception):
             await processor.process_message(None)  # This might hit line 166
-        except Exception:
-            pass  # We just want to hit the line, not necessarily succeed
 
     asyncio.run(test())
 
@@ -59,11 +58,11 @@ def test_stripe_queue_processor_errors():
     async def mock_init_error():
         raise Exception("Init error")
 
-    with patch.object(processor, "initialize", side_effect=mock_init_error):
-        try:
-            asyncio.run(processor.start())
-        except Exception:
-            pass  # Expected
+    with (
+        patch.object(processor, "initialize", side_effect=mock_init_error),
+        contextlib.suppress(Exception),
+    ):
+        asyncio.run(processor.start())
 
     # Test stop when not initialized
     asyncio.run(processor.stop())

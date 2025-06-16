@@ -39,7 +39,7 @@ def test_function(db_session: Session, test_user: UserPublic) -> FunctionTable:
         code="def test_function(): return 'world'",
         hash="test_hash_123",
         project_uuid=uuid4(),
-        organization_uuid=test_user.active_organization_uuid,
+        organization_uuid=test_user.active_organization_uuid,  # type: ignore[arg-type]
         version_num=1,
     )
     db_session.add(function)
@@ -87,8 +87,8 @@ def test_get_active_deployment_only_inactive_exists(
     # Create inactive deployment
     deployment = DeploymentTable(
         environment_uuid=test_environment_uuid,
-        function_uuid=test_function.uuid,
-        organization_uuid=deployment_service.user.active_organization_uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
+        organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
         is_active=False,
         version_num=1,
     )
@@ -111,7 +111,7 @@ def test_get_active_deployment_success(
     # Create active deployment using the service to ensure proper organization handling
     deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
-        function_uuid=test_function.uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
         is_active=True,
         version_num=1,
     )
@@ -147,7 +147,7 @@ def test_get_function_for_environment_function_not_found(
         is_active=True,
         version_num=1,
     )
-    deployment = deployment_service.create_record(deployment_create)
+    deployment_service.create_record(deployment_create)
 
     with pytest.raises(HTTPException) as exc_info:
         deployment_service.get_function_for_environment(test_environment_uuid)
@@ -166,11 +166,11 @@ def test_get_function_for_environment_success(
     # Create active deployment using the service
     deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
-        function_uuid=test_function.uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
         is_active=True,
         version_num=1,
     )
-    deployment = deployment_service.create_record(deployment_create)
+    deployment_service.create_record(deployment_create)
 
     # Get function for environment
     function = deployment_service.get_function_for_environment(test_environment_uuid)
@@ -204,24 +204,24 @@ def test_get_deployment_history(
     deployments = [
         DeploymentTable(
             environment_uuid=env_uuid_1,
-            function_uuid=test_function.uuid,
-            organization_uuid=deployment_service.user.active_organization_uuid,
+            function_uuid=test_function.uuid,  # type: ignore[arg-type]
+            organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
             is_active=False,
             version_num=1,
             notes="Deployment 1",
         ),
         DeploymentTable(
             environment_uuid=env_uuid_2,
-            function_uuid=test_function.uuid,
-            organization_uuid=deployment_service.user.active_organization_uuid,
+            function_uuid=test_function.uuid,  # type: ignore[arg-type]
+            organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
             is_active=False,
             version_num=2,
             notes="Deployment 2",
         ),
         DeploymentTable(
             environment_uuid=env_uuid_3,
-            function_uuid=test_function.uuid,
-            organization_uuid=deployment_service.user.active_organization_uuid,
+            function_uuid=test_function.uuid,  # type: ignore[arg-type]
+            organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
             is_active=True,
             version_num=3,
             notes="Deployment 3",
@@ -283,9 +283,9 @@ def test_get_specific_deployment_success(
     # Create deployment
     deployment = DeploymentTable(
         environment_uuid=test_environment_uuid,
-        function_uuid=test_function.uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
         project_uuid=project_uuid,
-        organization_uuid=deployment_service.user.active_organization_uuid,
+        organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
         is_active=True,
         version_num=1,
     )
@@ -320,7 +320,7 @@ def test_get_specific_deployment_multiple_versions(
             code=f"def versioned_function(): return {i}",
             hash=f"version_hash_{i}",
             project_uuid=project_uuid,
-            organization_uuid=deployment_service.user.active_organization_uuid,
+            organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
             version_num=i + 1,
         )
         db_session.add(function)
@@ -336,7 +336,7 @@ def test_get_specific_deployment_multiple_versions(
             environment_uuid=env_uuids[i],
             function_uuid=function.uuid,
             project_uuid=project_uuid,
-            organization_uuid=deployment_service.user.active_organization_uuid,
+            organization_uuid=deployment_service.user.active_organization_uuid,  # type: ignore[arg-type]
             is_active=False,
             version_num=i + 1,
         )
@@ -384,11 +384,11 @@ def test_deploy_function_max_retries_exceeded(
     """Test that HTTPException is raised when max retries exceeded."""
     with patch.object(deployment_service, "create_record") as mock_create:
         # All calls raise IntegrityError
-        mock_create.side_effect = IntegrityError("statement", "params", "orig")
+        mock_create.side_effect = IntegrityError("statement", "params", Exception("orig"))  # type: ignore[arg-type]
 
         with pytest.raises(HTTPException) as exc_info:
             deployment_service.deploy_function(
-                environment_uuid=test_environment_uuid, function_uuid=test_function.uuid
+                environment_uuid=test_environment_uuid, function_uuid=test_function.uuid  # type: ignore[arg-type]
             )
 
         assert exc_info.value.status_code == 409
@@ -411,8 +411,8 @@ def test_deploy_function_integrity_error_retry(
         # First two calls raise IntegrityError, third succeeds
         mock_deployment = Mock()
         mock_create.side_effect = [
-            IntegrityError("statement", "params", "orig"),
-            IntegrityError("statement", "params", "orig"),
+            IntegrityError("statement", "params", Exception("orig")),  # type: ignore[arg-type]
+            IntegrityError("statement", "params", Exception("orig")),  # type: ignore[arg-type]
             mock_deployment,
         ]
 
@@ -428,7 +428,7 @@ def test_deploy_function_integrity_error_retry(
 
                 result = deployment_service.deploy_function(
                     environment_uuid=test_environment_uuid,
-                    function_uuid=test_function.uuid,
+                    function_uuid=test_function.uuid,  # type: ignore[arg-type]
                 )
 
                 assert result is mock_deployment
@@ -446,7 +446,7 @@ def test_basic_deployment_service_operations(
     # Create a deployment record directly (bypassing the complex deploy_function logic)
     deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
-        function_uuid=test_function.uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
         is_active=True,
         version_num=1,
         notes="Test deployment",
@@ -461,22 +461,22 @@ def test_basic_deployment_service_operations(
     assert deployment.notes == "Test deployment"
 
     # Test find by UUID
-    found_deployment = deployment_service.find_record_by_uuid(deployment.uuid)
+    found_deployment = deployment_service.find_record_by_uuid(deployment.uuid)  # type: ignore[arg-type]
     assert found_deployment.uuid == deployment.uuid
 
     # Test update
     updated_deployment = deployment_service.update_record_by_uuid(
-        deployment.uuid, {"notes": "Updated deployment"}
+        deployment.uuid, {"notes": "Updated deployment"}  # type: ignore[arg-type]
     )
     assert updated_deployment.notes == "Updated deployment"
 
     # Test delete
-    success = deployment_service.delete_record_by_uuid(deployment.uuid)
+    success = deployment_service.delete_record_by_uuid(deployment.uuid)  # type: ignore[arg-type]
     assert success is True
 
     # Verify it's deleted
     with pytest.raises(HTTPException):
-        deployment_service.find_record_by_uuid(deployment.uuid)
+        deployment_service.find_record_by_uuid(deployment.uuid)  # type: ignore[arg-type]
 
 
 def test_deployment_service_create_deployment_with_existing(
@@ -487,7 +487,7 @@ def test_deployment_service_create_deployment_with_existing(
     """Test creating deployment when existing deployments exist (lines 51-53)."""
     # Create first deployment using deploy_function to properly activate it
     first_deployment = deployment_service.deploy_function(
-        function_uuid=test_function.uuid,
+        function_uuid=test_function.uuid,  # type: ignore[arg-type]
         environment_uuid=test_environment_uuid,
         notes="First deployment",
     )
@@ -496,7 +496,7 @@ def test_deployment_service_create_deployment_with_existing(
     # Try to create second deployment - should handle conflict gracefully
     with pytest.raises(HTTPException) as exc_info:
         deployment_service.deploy_function(
-            function_uuid=test_function.uuid,
+            function_uuid=test_function.uuid,  # type: ignore[arg-type]
             environment_uuid=test_environment_uuid,
             notes="Second deployment",
         )

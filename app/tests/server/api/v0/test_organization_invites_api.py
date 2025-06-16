@@ -39,8 +39,8 @@ def test_organization_invite(
     """Create a test organization invite."""
     invite = OrganizationInviteTable(
         email="test@example.com",
-        invited_by=test_user.uuid,
-        organization_uuid=test_user.active_organization_uuid,
+        invited_by=test_user.uuid,  # type: ignore
+        organization_uuid=test_user.active_organization_uuid,  # type: ignore
         token="test-invite-token",
         resend_email_id="email-123",
     )

@@ -37,9 +37,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Invalid argument name"):
             FunctionCreate(
                 name="test_func",
+                signature=f"def test_func({long_name}: str) -> str",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={long_name: "str"},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_107_type_name_too_long_in_validation(self):
@@ -50,9 +51,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Invalid type name"):
             FunctionCreate(
                 name="test_func",
+                signature=f"def test_func(param: {long_type}) -> str",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={"param": long_type},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_112_invalid_python_identifier(self):
@@ -60,9 +62,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Name must be a valid Python identifier"):
             FunctionCreate(
                 name="test_func",
+                signature="def test_func(123invalid: str) -> str",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={"123invalid": "str"},  # Starts with number
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_115_python_keyword_as_arg_name(self):
@@ -70,9 +73,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Name must not be a Python keyword"):
             FunctionCreate(
                 name="test_func",
+                signature="def test_func(): pass",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={"class": "str"},  # 'class' is a Python keyword
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_118_type_name_too_long_second_check(self):
@@ -83,9 +87,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Invalid type name"):
             FunctionCreate(
                 name="test_func",
+                signature=f"def test_func(param: {very_long_type}) -> str",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={"param": very_long_type},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_126_function_name_too_long(self):
@@ -93,7 +98,7 @@ class TestFunctionsModelCoverage:
         long_name = "f" * 513  # Over 512 characters
 
         # Pydantic will catch this before our validator runs, so we expect ValidationError
-        with pytest.raises(Exception):  # Accept any exception for string too long
+        with pytest.raises((ValueError, TypeError)):  # Accept any exception for string too long
             FunctionCreate(
                 name=long_name,
                 signature="def test(): pass",
@@ -107,9 +112,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Name must be a valid Python identifier"):
             FunctionCreate(
                 name="123invalid",  # Starts with number
+                signature="def test_func(): pass",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_131_function_name_python_keyword(self):
@@ -117,9 +123,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Name must not be a Python keyword"):
             FunctionCreate(
                 name="def",  # 'def' is a Python keyword
+                signature="def test_func(): pass",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_line_134_function_name_regex_validation(self):
@@ -128,9 +135,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError, match="Name must be a valid Python identifier"):
             FunctionCreate(
                 name="func-with-dash",  # Dash not allowed
+                signature="def test_func(): pass",
+                code="def test_func(): pass",
+                hash="test_hash",
                 arg_types={},
-                return_type="str",
-                source="def test_func(): pass",
             )
 
     def test_lines_150_151_parse_function_failure(self):
@@ -174,9 +182,10 @@ class TestFunctionsModelCoverage:
         with pytest.raises(ValueError):
             FunctionCreate(
                 name="test_func",
+                signature="def test_func(param1: str, param2: int) -> str",
+                code="def test_func(param1: str): pass",  # Only one param in code
+                hash="test_hash",
                 arg_types={"param1": "str", "param2": "int"},  # Two params
-                return_type="str",
-                source="def test_func(param1: str): pass",  # Only one param in source
             )
 
     def test_edge_case_empty_arg_types(self):
@@ -204,9 +213,10 @@ class TestFunctionsModelCoverage:
             try:
                 func = FunctionCreate(
                     name="test_func",
+                    signature=f"def test_func(param: {complex_type}): pass",
+                    code=f"def test_func(param: {complex_type}): pass",
+                    hash="test_hash",
                     arg_types={"param": complex_type},
-                    return_type="str",
-                    source=f"def test_func(param: {complex_type}): pass",
                 )
                 # Should either succeed or fail gracefully
                 assert func.name == "test_func"

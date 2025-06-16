@@ -1,6 +1,7 @@
 """Miscellaneous edge case tests for remaining coverage."""
 
 import asyncio
+import contextlib
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -23,10 +24,8 @@ def test_database_session_error_handling():
         next(gen)
 
         # Trigger cleanup with error
-        try:
-            gen.throw(Exception("Test error"))
-        except Exception:
-            pass  # Expected - this should trigger rollback error handling
+        with contextlib.suppress(Exception):
+            gen.throw(Exception("Test error"))  # Expected - this should trigger rollback error handling
 
 
 def test_secret_manager_metrics_errors():
@@ -38,17 +37,17 @@ def test_secret_manager_metrics_errors():
     # Test measure_operation with error
     with patch("time.time", side_effect=Exception("Time error")):
         try:
-            with collector.measure_operation("test_op"):
+            with collector.measure_operation("test_op"):  # type: ignore
                 pass
         except Exception:
             pass  # Expected
 
     # Test get_summary with error
-    with patch.object(collector, "metrics", side_effect=Exception("Metrics error")):
-        try:
-            collector.get_summary()
-        except Exception:
-            pass  # Expected
+    with (
+        patch.object(collector, "metrics", side_effect=Exception("Metrics error")),
+        contextlib.suppress(Exception),
+    ):
+        collector.get_summary()  # Expected
 
     # Test log_summary
     collector.log_summary()
@@ -64,11 +63,8 @@ def test_span_more_details_edge_cases():
     mock_span.id = "test_id"
 
     # Test error handling in span processing
-    try:
-        SpanMoreDetails.from_span(mock_span)
-    except Exception:
-        # Expected for malformed data
-        pass
+    with contextlib.suppress(Exception):
+        SpanMoreDetails.from_span(mock_span)  # Expected for malformed data
 
 
 def test_google_auth_error_paths():
@@ -156,7 +152,9 @@ def test_google_auth_error_paths():
 def test_ee_license_edge_cases():
     """Cover require_license.py edge cases."""
     try:
-        from lilypad.ee.server.require_license import check_license_validity
+        from lilypad.ee.server.require_license import (
+            check_license_validity,  # type: ignore
+        )
 
         # Test various license validation edge cases
         invalid_licenses = [
@@ -166,10 +164,8 @@ def test_ee_license_edge_cases():
         ]
 
         for license_info in invalid_licenses:
-            try:
-                check_license_validity(license_info, required_tier="ENTERPRISE")
-            except Exception:
-                pass  # Expected for invalid licenses
+            with contextlib.suppress(Exception):
+                check_license_validity(license_info, required_tier="ENTERPRISE")  # Expected for invalid licenses
     except ImportError:
         # EE module not available, skip this test
         pass

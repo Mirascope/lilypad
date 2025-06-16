@@ -430,7 +430,7 @@ class TestDockerSandboxRunner:
         assert docker is not None
         # Setup mocks
         mock_client = Mock()
-        mock_client.containers.run.side_effect = docker.errors.DockerException(
+        mock_client.containers.run.side_effect = docker.errors.DockerException(  # type: ignore
             "Docker error"
         )  # type: ignore[union-attr]
         mock_docker_from_env.return_value = mock_client
@@ -440,7 +440,7 @@ class TestDockerSandboxRunner:
 
         with (
             patch.object(runner, "generate_script", return_value="test script"),
-            pytest.raises(docker.errors.DockerException),
+            pytest.raises(docker.errors.DockerException),  # type: ignore
         ):  # type: ignore[union-attr]
             runner.execute_function(closure, "arg1")
 

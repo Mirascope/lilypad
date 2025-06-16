@@ -87,6 +87,7 @@ def get_test_current_user(test_user: UserPublic):
 
 # ===== Stripe Mock Fixtures =====
 
+
 @pytest.fixture
 def mock_stripe_customer():
     """Mock Stripe customer data."""
@@ -134,15 +135,16 @@ def mock_stripe_invoice():
 @pytest.fixture
 def mock_stripe_service():
     """Mock Stripe service with common methods."""
-    with patch("stripe.Customer") as mock_customer, \
-         patch("stripe.Subscription") as mock_subscription, \
-         patch("stripe.Invoice") as mock_invoice:
-        
+    with (
+        patch("stripe.Customer") as mock_customer,
+        patch("stripe.Subscription") as mock_subscription,
+        patch("stripe.Invoice") as mock_invoice,
+    ):
         mock_customer.create = Mock(return_value={"id": "cus_test123"})
         mock_customer.retrieve = Mock(return_value={"id": "cus_test123"})
         mock_subscription.create = Mock(return_value={"id": "sub_test123"})
         mock_invoice.list = Mock(return_value={"data": []})
-        
+
         yield {
             "customer": mock_customer,
             "subscription": mock_subscription,
@@ -151,6 +153,7 @@ def mock_stripe_service():
 
 
 # ===== Kafka Mock Fixtures =====
+
 
 @pytest.fixture
 def mock_kafka_producer():
@@ -173,22 +176,21 @@ def mock_kafka_consumer():
 
 # ===== OpenSearch Mock Fixtures =====
 
+
 @pytest.fixture
 def mock_opensearch_client():
     """Mock OpenSearch client."""
     client = AsyncMock()
     client.index = AsyncMock(return_value={"_id": "test_id"})
-    client.search = AsyncMock(return_value={
-        "hits": {
-            "total": {"value": 0},
-            "hits": []
-        }
-    })
+    client.search = AsyncMock(
+        return_value={"hits": {"total": {"value": 0}, "hits": []}}
+    )
     client.delete = AsyncMock(return_value={"result": "deleted"})
     return client
 
 
 # ===== Common Test Data Fixtures =====
+
 
 @pytest.fixture
 def sample_span_data():
@@ -233,6 +235,7 @@ def sample_comment_data():
 
 # ===== Auth Mock Fixtures =====
 
+
 @pytest.fixture
 def mock_oauth_provider():
     """Mock OAuth provider responses."""
@@ -247,7 +250,7 @@ def mock_oauth_provider():
             "token": {
                 "access_token": "google_access_token",
                 "token_type": "Bearer",
-            }
+            },
         },
         "github": {
             "user": {
@@ -259,8 +262,8 @@ def mock_oauth_provider():
             "token": {
                 "access_token": "github_access_token",
                 "token_type": "bearer",
-            }
-        }
+            },
+        },
     }
 
 
@@ -272,37 +275,35 @@ def auth_headers(test_user: UserPublic):
 
 # ===== Response Mock Fixtures =====
 
+
 @pytest.fixture
 def success_response():
     """Generic success response."""
+
     def _response(data: Any = None):
-        return {
-            "success": True,
-            "data": data or {},
-            "message": "Operation successful"
-        }
+        return {"success": True, "data": data or {}, "message": "Operation successful"}
+
     return _response
 
 
 @pytest.fixture
 def error_response():
     """Generic error response."""
+
     def _response(message: str = "Error occurred", code: int = 400):
-        return {
-            "success": False,
-            "error": message,
-            "code": code
-        }
+        return {"success": False, "error": message, "code": code}
+
     return _response
 
 
 # ===== Database Record Fixtures =====
 
+
 @pytest.fixture
 def create_test_records(db_session: Session):
     """Factory fixture for creating test records."""
     created_records = []
-    
+
     def _create_record(table_class, **kwargs):
         record = table_class(**kwargs)
         db_session.add(record)
@@ -310,9 +311,9 @@ def create_test_records(db_session: Session):
         db_session.refresh(record)
         created_records.append(record)
         return record
-    
+
     yield _create_record
-    
+
     # Cleanup
     for record in reversed(created_records):
         db_session.delete(record)
@@ -320,6 +321,7 @@ def create_test_records(db_session: Session):
 
 
 # ===== Async Mock Fixtures =====
+
 
 @pytest.fixture
 def async_mock():
