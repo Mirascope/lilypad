@@ -250,8 +250,11 @@ def test_unconfigured_lilypad(monkeypatch) -> None:
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
         warning_message = mock_logger.warning.call_args[0][0]
+        warning_args = mock_logger.warning.call_args[0]
         assert "Lilypad has not been configured" in warning_message
-        assert "unconfigured test" in warning_message
+        # The span name is passed as a parameter, not in the message
+        assert len(warning_args) > 1
+        assert warning_args[1] == "unconfigured test"
     
     # The span should be a no-op, so no dummy spans should be created
     assert len(dummy_spans) == 0

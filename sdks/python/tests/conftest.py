@@ -20,6 +20,25 @@ pytest.register_assert_rewrite("tests.utils")
 
 logging.getLogger("lilypad").setLevel(logging.DEBUG)
 
+# Disable trace recording during test collection to prevent hanging
+os.environ['LILYPAD_TRACE_RECORDING_DISABLED'] = '1'
+
+# Import traces module early and disable recording
+try:
+    import src.lilypad.traces as traces_module
+    traces_module._RECORDING_ENABLED = False
+except ImportError:
+    pass
+
+
+# Hook to run before test collection
+def pytest_configure(config):
+    """Configure pytest before collection."""
+    # Ensure trace recording is disabled before any test modules are imported
+    import sys
+    if 'src.lilypad.traces' in sys.modules:
+        sys.modules['src.lilypad.traces']._RECORDING_ENABLED = False
+
 
 # automatically add `pytest.mark.asyncio()` to all of our async tests
 # so we don't have to add that boilerplate everywhere

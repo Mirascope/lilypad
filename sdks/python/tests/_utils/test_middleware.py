@@ -1013,11 +1013,18 @@ def test_create_mirascope_middleware_with_function_none():
 
 def test_encode_gemini_part_with_real_webp():
     """Test encode_gemini_part with actual WebP image - covers lines 148-151."""
-    from src.lilypad._utils import encode_gemini_part
-    
     try:
         import PIL.Image
+        import PIL.WebPImagePlugin
         from io import BytesIO
+        
+        # Need to reload the middleware module to ensure it uses the current PIL
+        import importlib
+        import src.lilypad._utils.middleware
+        importlib.reload(src.lilypad._utils.middleware)
+        
+        # Now import after reload
+        from src.lilypad._utils.middleware import encode_gemini_part
         
         # Create a simple image
         img = PIL.Image.new('RGB', (10, 10), color='red')
@@ -1030,13 +1037,22 @@ def test_encode_gemini_part_with_real_webp():
         # Load as WebP
         webp_image = PIL.Image.open(webp_bytes)
         
+        # Verify it's the right type
+        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), \
+            f"Expected WebPImageFile, got {type(webp_image)}"
+        
         # Encode it
         result = encode_gemini_part(webp_image)
         
-        assert isinstance(result, dict)
+        # Check result
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         assert result['mime_type'] == 'image/webp'
         assert 'data' in result
         assert isinstance(result['data'], str)  # base64 encoded
+        
+        # Verify the base64 data is valid
+        decoded = base64.b64decode(result['data'])
+        assert len(decoded) > 0
         
     except ImportError:
         pytest.skip("Pillow not installed")

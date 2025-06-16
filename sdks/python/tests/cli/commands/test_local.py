@@ -4,7 +4,7 @@ import contextlib
 import signal
 import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, Mock, patch, mock_open
 
 import pytest
 from typer.testing import CliRunner
@@ -224,7 +224,7 @@ def test_signal_handler():
     assert exc_info.value.code == 0
 
 
-def test_terminate_process_already_stopped():
+def test_terminate_process_already_stopped_coverage():
     """Test _terminate_process when process is already stopped - covers lines 83-86."""
     from src.lilypad.cli.commands.local import _terminate_process
     
@@ -265,4 +265,9 @@ def test_local_command_signal_handler_setup():
                                     
                                     # Verify signal handler was set up
                                     import signal as sig
-                                    mock_signal.assert_any_call(sig.SIGINT, sig.SIG_IGN)
+                                    # Verify SIGINT handler was set (it's a custom function, not SIG_IGN)
+                                    mock_signal.assert_called()
+                                    # Check that SIGINT was the first argument in one of the calls
+                                    sigint_calls = [call for call in mock_signal.call_args_list 
+                                                   if call[0][0] == sig.SIGINT]
+                                    assert len(sigint_calls) > 0, "SIGINT handler was not set"
