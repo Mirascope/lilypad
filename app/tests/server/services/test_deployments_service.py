@@ -16,9 +16,18 @@ from lilypad.server.services.deployments import DeploymentService
 
 
 @pytest.fixture
-def deployment_service(db_session: Session, test_user: UserPublic) -> DeploymentService:
+def deployment_service(db_session: Session, test_user) -> DeploymentService:
     """Create a DeploymentService instance."""
-    return DeploymentService(session=db_session, user=test_user)
+    # Convert UserTable to UserPublic schema for the service
+    user_public = UserPublic(
+        uuid=test_user.uuid,
+        email=test_user.email,
+        first_name=test_user.first_name,
+        last_name=test_user.last_name,
+        active_organization_uuid=test_user.active_organization_uuid,
+    )
+    service = DeploymentService(session=db_session, user=user_public)
+    return service
 
 
 @pytest.fixture
@@ -99,17 +108,14 @@ def test_get_active_deployment_success(
     test_environment_uuid,
 ):
     """Test getting active deployment successfully."""
-    # Create active deployment
-    deployment = DeploymentTable(
+    # Create active deployment using the service to ensure proper organization handling
+    deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
         function_uuid=test_function.uuid,
-        organization_uuid=deployment_service.user.active_organization_uuid,
         is_active=True,
         version_num=1,
     )
-    db_session.add(deployment)
-    db_session.commit()
-    db_session.refresh(deployment)  # Ensure deployment is refreshed
+    deployment = deployment_service.create_record(deployment_create)
 
     # Get active deployment
     active_deployment = deployment_service.get_active_deployment(test_environment_uuid)
@@ -133,17 +139,15 @@ def test_get_function_for_environment_function_not_found(
     deployment_service: DeploymentService, db_session: Session, test_environment_uuid
 ):
     """Test getting function when deployment exists but function doesn't."""
-    # Create deployment with non-existent function
+    # Create deployment with non-existent function using the service
     fake_function_uuid = uuid4()
-    deployment = DeploymentTable(
+    deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
         function_uuid=fake_function_uuid,
-        organization_uuid=deployment_service.user.active_organization_uuid,
         is_active=True,
         version_num=1,
     )
-    db_session.add(deployment)
-    db_session.commit()
+    deployment = deployment_service.create_record(deployment_create)
 
     with pytest.raises(HTTPException) as exc_info:
         deployment_service.get_function_for_environment(test_environment_uuid)
@@ -159,16 +163,14 @@ def test_get_function_for_environment_success(
     test_environment_uuid,
 ):
     """Test getting function for environment successfully."""
-    # Create active deployment
-    deployment = DeploymentTable(
+    # Create active deployment using the service
+    deployment_create = DeploymentCreate(
         environment_uuid=test_environment_uuid,
         function_uuid=test_function.uuid,
-        organization_uuid=deployment_service.user.active_organization_uuid,
         is_active=True,
         version_num=1,
     )
-    db_session.add(deployment)
-    db_session.commit()
+    deployment = deployment_service.create_record(deployment_create)
 
     # Get function for environment
     function = deployment_service.get_function_for_environment(test_environment_uuid)
@@ -194,11 +196,11 @@ def test_get_deployment_history(
     """Test getting deployment history."""
     # Create three separate deployments with different environment UUIDs
     # due to SQLite unique constraint limitations, then query one of them
-    
+
     env_uuid_1 = test_environment_uuid
-    env_uuid_2 = uuid4() 
+    env_uuid_2 = uuid4()
     env_uuid_3 = uuid4()
-    
+
     deployments = [
         DeploymentTable(
             environment_uuid=env_uuid_1,
@@ -225,11 +227,11 @@ def test_get_deployment_history(
             notes="Deployment 3",
         ),
     ]
-    
+
     for deployment in deployments:
         db_session.add(deployment)
     db_session.commit()
-    
+
     # For this test, we'll just verify that we can get the history for one environment
     # The important thing is testing the service method, not necessarily same environment
 
@@ -309,7 +311,7 @@ def test_get_specific_deployment_multiple_versions(
 
     # Create multiple functions with same name but different versions
     functions = []
-    
+
     # First, create and commit all functions
     for i in range(3):
         function = FunctionTable(
@@ -323,9 +325,9 @@ def test_get_specific_deployment_multiple_versions(
         )
         db_session.add(function)
         functions.append(function)
-    
+
     db_session.commit()
-    
+
     # Create deployments with different environment UUIDs to avoid constraint issues
     env_uuids = [test_environment_uuid, uuid4(), uuid4()]
     deployments = []
@@ -340,7 +342,7 @@ def test_get_specific_deployment_multiple_versions(
         )
         db_session.add(deployment)
         deployments.append(deployment)
-    
+
     db_session.commit()
 
     # Test that each environment returns its specific deployment
@@ -478,7 +480,9 @@ def test_basic_deployment_service_operations(
 
 
 def test_deployment_service_create_deployment_with_existing(
-    deployment_service: DeploymentService, test_function: FunctionTable, test_environment_uuid
+    deployment_service: DeploymentService,
+    test_function: FunctionTable,
+    test_environment_uuid,
 ):
     """Test creating deployment when existing deployments exist (lines 51-53)."""
     # Create first deployment using deploy_function to properly activate it
@@ -488,7 +492,7 @@ def test_deployment_service_create_deployment_with_existing(
         notes="First deployment",
     )
     assert first_deployment.is_active is True
-    
+
     # Try to create second deployment - should handle conflict gracefully
     with pytest.raises(HTTPException) as exc_info:
         deployment_service.deploy_function(
@@ -496,10 +500,10 @@ def test_deployment_service_create_deployment_with_existing(
             environment_uuid=test_environment_uuid,
             notes="Second deployment",
         )
-    
+
     # Should get 409 conflict error
     assert exc_info.value.status_code == 409
     assert "Conflict occurred while deploying function" in str(exc_info.value.detail)
-    
+
     # Test completed successfully - the 409 error confirms the constraint is working
     # Testing the deployment conflict scenario (covers lines 51-53)

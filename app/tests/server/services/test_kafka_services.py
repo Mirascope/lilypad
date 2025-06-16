@@ -470,7 +470,7 @@ async def test_base_kafka_send_batch_no_producer():
 @pytest.mark.asyncio
 async def test_base_kafka_send_batch_message_preparation_error():
     """Test error during message preparation in batch send."""
-    service = ConcreteKafkaService()
+    ConcreteKafkaService()
 
     # Create a service that throws exception in transform_message
     class ErrorKafkaService(BaseKafkaService):
@@ -579,24 +579,23 @@ async def test_base_kafka_send_batch_partial_failure():
     success_future.set_result(None)
     failed_future = asyncio.Future()
     failed_future.set_exception(KafkaError("Send failed"))
-    
+
     mock_producer.send = Mock(side_effect=[success_future, failed_future])
     mock_producer.flush = AsyncMock()
 
     with patch("lilypad.server.services.kafka_base.get_kafka_producer") as mock:
         mock.return_value = mock_producer
 
-        result = await service.send_batch([
-            {"id": "test-1", "data": "value1"},
-            {"id": "test-2", "data": "value2"}
-        ])
+        result = await service.send_batch(
+            [{"id": "test-1", "data": "value1"}, {"id": "test-2", "data": "value2"}]
+        )
         assert result is False  # Should fail due to partial failure
 
 
 def test_serialize_value():
     """Test _serialize_value function."""
     from lilypad.server.services.kafka_producer import _serialize_value
-    
+
     data = {"test": "value", "number": 42}
     result = _serialize_value(data)
     assert isinstance(result, bytes)
@@ -606,11 +605,11 @@ def test_serialize_value():
 def test_serialize_key():
     """Test _serialize_key function."""
     from lilypad.server.services.kafka_producer import _serialize_key
-    
+
     # Test with string key
     result = _serialize_key("test-key")
     assert result == b"test-key"
-    
+
     # Test with None key
     result = _serialize_key(None)
     assert result is None
@@ -620,16 +619,16 @@ def test_serialize_key():
 async def test_get_kafka_producer_closing_flag():
     """Test get_kafka_producer when closing flag is set."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     # Set closing flag
     producer_module._is_closing = True
-    
+
     with patch("lilypad.server.services.kafka_producer.logger") as mock_logger:
         result = await get_kafka_producer()
-    
+
     assert result is None
     mock_logger.warning.assert_called_once()
-    
+
     # Reset flag
     producer_module._is_closing = False
 
@@ -638,30 +637,35 @@ async def test_get_kafka_producer_closing_flag():
 async def test_get_kafka_producer_double_check_pattern():
     """Test get_kafka_producer double-check pattern."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     # Reset singleton state
     producer_module._producer_instance = None
     producer_module._producer_lock = None
-    
+
     mock_producer = AsyncMock()
-    
+
     with (
-        patch("lilypad.server.services.kafka_producer.get_settings") as mock_get_settings,
-        patch("lilypad.server.services.kafka_producer.AIOKafkaProducer", return_value=mock_producer)
+        patch(
+            "lilypad.server.services.kafka_producer.get_settings"
+        ) as mock_get_settings,
+        patch(
+            "lilypad.server.services.kafka_producer.AIOKafkaProducer",
+            return_value=mock_producer,
+        ),
     ):
         mock_settings = MagicMock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_get_settings.return_value = mock_settings
-        
+
         # First call should create producer
         producer1 = await get_kafka_producer()
-        
+
         # Set the instance manually to test double-check
         producer_module._producer_instance = mock_producer
-        
+
         # Second call should return existing instance (hitting line 60)
         producer2 = await get_kafka_producer()
-        
+
         assert producer1 == producer2
         assert producer1 == mock_producer
 
@@ -670,27 +674,32 @@ async def test_get_kafka_producer_double_check_pattern():
 async def test_get_kafka_producer_cleanup_error():
     """Test get_kafka_producer handles cleanup errors."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     # Reset singleton state
     producer_module._producer_instance = None
     producer_module._producer_lock = None
-    
+
     mock_producer = AsyncMock()
     mock_producer.start.side_effect = Exception("Start failed")
     mock_producer.stop.side_effect = Exception("Stop failed")
-    
+
     with (
-        patch("lilypad.server.services.kafka_producer.get_settings") as mock_get_settings,
-        patch("lilypad.server.services.kafka_producer.AIOKafkaProducer", return_value=mock_producer),
+        patch(
+            "lilypad.server.services.kafka_producer.get_settings"
+        ) as mock_get_settings,
+        patch(
+            "lilypad.server.services.kafka_producer.AIOKafkaProducer",
+            return_value=mock_producer,
+        ),
         patch("lilypad.server.services.kafka_producer.logger") as mock_logger,
-        patch("asyncio.sleep", new_callable=AsyncMock)
+        patch("asyncio.sleep", new_callable=AsyncMock),
     ):
         mock_settings = MagicMock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_get_settings.return_value = mock_settings
-        
+
         result = await get_kafka_producer()
-        
+
         assert result is None
         # Should log cleanup error
         mock_logger.error.assert_called()
@@ -700,23 +709,28 @@ async def test_get_kafka_producer_cleanup_error():
 async def test_get_kafka_producer_fallback_return():
     """Test get_kafka_producer fallback return paths."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     # Reset singleton state
     producer_module._producer_instance = None
     producer_module._producer_lock = None
-    
+
     with (
-        patch("lilypad.server.services.kafka_producer.get_settings") as mock_get_settings,
-        patch("lilypad.server.services.kafka_producer.AIOKafkaProducer", side_effect=Exception("Always fails")),
+        patch(
+            "lilypad.server.services.kafka_producer.get_settings"
+        ) as mock_get_settings,
+        patch(
+            "lilypad.server.services.kafka_producer.AIOKafkaProducer",
+            side_effect=Exception("Always fails"),
+        ),
         patch("asyncio.sleep", new_callable=AsyncMock),
-        patch("lilypad.server.services.kafka_producer.logger")
+        patch("lilypad.server.services.kafka_producer.logger"),
     ):
         mock_settings = MagicMock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_get_settings.return_value = mock_settings
-        
+
         result = await get_kafka_producer()
-        
+
         # Should hit the fallback return None at line 145
         assert result is None
 
@@ -725,21 +739,21 @@ async def test_get_kafka_producer_fallback_return():
 async def test_close_kafka_producer_timeout_flush():
     """Test close_kafka_producer handles flush timeout."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     mock_producer = AsyncMock()
     mock_producer.flush.side_effect = asyncio.TimeoutError()
-    
+
     # Set up producer instance
     producer_module._producer_instance = mock_producer
     producer_module._producer_lock = asyncio.Lock()
-    
+
     with (
         patch("asyncio.wait_for", side_effect=asyncio.TimeoutError()),
         patch("lilypad.server.services.kafka_producer.logger") as mock_logger,
-        patch("asyncio.sleep", new_callable=AsyncMock)
+        patch("asyncio.sleep", new_callable=AsyncMock),
     ):
         await close_kafka_producer()
-    
+
     # Should log timeout warning
     mock_logger.warning.assert_called_with("Timeout while flushing Kafka producer (5s)")
 
@@ -748,16 +762,16 @@ async def test_close_kafka_producer_timeout_flush():
 async def test_close_kafka_producer_no_lock():
     """Test close_kafka_producer when no lock exists."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     mock_producer = AsyncMock()
-    
+
     # Set up producer instance without lock
     producer_module._producer_instance = mock_producer
     producer_module._producer_lock = None
-    
+
     with patch("asyncio.sleep", new_callable=AsyncMock):
         await close_kafka_producer()
-    
+
     # Should still close the producer (hitting lines 166-167)
     mock_producer.stop.assert_called_once()
 
@@ -766,19 +780,21 @@ async def test_close_kafka_producer_no_lock():
 async def test_close_kafka_producer_error():
     """Test close_kafka_producer handles errors during closure."""
     import lilypad.server.services.kafka_producer as producer_module
-    
+
     mock_producer = AsyncMock()
     mock_producer.stop.side_effect = Exception("Stop failed")
-    
+
     # Set up producer instance
     producer_module._producer_instance = mock_producer
     producer_module._producer_lock = asyncio.Lock()
-    
+
     with (
         patch("lilypad.server.services.kafka_producer.logger") as mock_logger,
-        patch("asyncio.sleep", new_callable=AsyncMock)
+        patch("asyncio.sleep", new_callable=AsyncMock),
     ):
         await close_kafka_producer()
-    
+
     # Should log error
-    mock_logger.error.assert_called_with("Error closing Kafka producer", extra={"error": "Stop failed"})
+    mock_logger.error.assert_called_with(
+        "Error closing Kafka producer", extra={"error": "Stop failed"}
+    )

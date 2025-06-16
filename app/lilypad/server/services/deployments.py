@@ -36,7 +36,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                     transaction_context = self.session.begin_nested()
                 else:
                     transaction_context = self.session.begin()
-                
+
                 with transaction_context:
                     # Deactivate any existing active deployments for this environment
                     existing_deployments = self.session.exec(
@@ -44,7 +44,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                             self.table.organization_uuid
                             == self.user.active_organization_uuid,
                             self.table.environment_uuid == environment_uuid,
-                            self.table.is_active == True,  # Use explicit equality check
+                            self.table.is_active == True,  # Use == for SQLAlchemy boolean comparison  # Use explicit equality check
                         )
                     ).all()
 
@@ -92,7 +92,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
-                self.table.is_active == True,
+                self.table.is_active == True,  # Use == for SQLAlchemy boolean comparison
             )
         ).first()
 

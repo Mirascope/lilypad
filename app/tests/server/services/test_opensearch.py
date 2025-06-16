@@ -1077,7 +1077,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        
+
         # Test with all query parameters
         search_query = SearchQuery(
             query_string="test query",
@@ -1085,21 +1085,23 @@ class TestGetOpenSearchService:
             time_range_end=1234567999,
             scope=Scope.LLM,
             type="generation",
-            limit=50
+            limit=50,
         )
 
         result = service.search_traces(project_uuid, search_query)
 
         assert len(result) == 2
         mock_client.search.assert_called_once()
-        
+
         # Verify query structure was built correctly
         call_args = mock_client.search.call_args
         search_body = call_args[1]["body"]
         assert "query" in search_body
         assert "bool" in search_body["query"]
         assert "must" in search_body["query"]["bool"]
-        assert len(search_body["query"]["bool"]["must"]) == 4  # query_string, time_range, scope, type
+        assert (
+            len(search_body["query"]["bool"]["must"]) == 4
+        )  # query_string, time_range, scope, type
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
@@ -1120,7 +1122,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        
+
         search_query = SearchQuery(time_range_start=1234567890)
         result = service.search_traces(project_uuid, search_query)
 
@@ -1146,7 +1148,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        
+
         search_query = SearchQuery(time_range_end=1234567999)
         result = service.search_traces(project_uuid, search_query)
 
@@ -1172,14 +1174,14 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        
+
         # Empty query should result in match_all
         search_query = SearchQuery()
         result = service.search_traces(project_uuid, search_query)
 
         assert result == []
         mock_client.search.assert_called_once()
-        
+
         # Verify match_all query was used
         call_args = mock_client.search.call_args
         search_body = call_args[1]["body"]
@@ -1194,7 +1196,7 @@ class TestGetOpenSearchService:
         mock_get_settings.return_value = mock_settings
 
         service = OpenSearchService()
-        
+
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
             result = service.delete_trace_by_uuid(uuid4(), uuid4())
 

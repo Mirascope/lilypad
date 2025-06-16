@@ -142,20 +142,20 @@ class TestCreateTables:
         # Verify metadata.create_all was called
         mock_metadata.create_all.assert_called_once_with(mock_engine)
 
+
 def test_main_execution_block():
     """Test the main execution block."""
-    from unittest.mock import patch
     import subprocess
     import sys
-    
+
     # Test by executing the module directly as a script
     result = subprocess.run(
         [sys.executable, "-m", "lilypad.server.db.setup"],
         capture_output=True,
         text=True,
-        cwd="/Users/koudai/PycharmProjects/lilypad/app"
+        cwd="/Users/koudai/PycharmProjects/lilypad/app",
     )
-    
+
     # The main block should execute (may fail due to DB connection, but should reach the line)
     assert result.returncode in [0, 1]  # 0 for success, 1 for expected DB error
 
@@ -170,6 +170,7 @@ def test_imports_exist():
     # Verify objects have expected attributes
     assert hasattr(SQLModel, "metadata")
     assert hasattr(db, "get_engine")
+
 
 @patch("lilypad.server.db.setup.SQLModel")
 @patch("lilypad.server.db.setup.db")
@@ -191,6 +192,7 @@ def test_create_tables_integration_pattern(mock_db, mock_sqlmodel):
 
         mock_db.get_engine.assert_called_once_with(env)
         mock_metadata.create_all.assert_called_once_with(mock_engine)
+
 
 @patch("lilypad.server.db.setup.SQLModel")
 @patch("lilypad.server.db.setup.db")

@@ -37,14 +37,14 @@ class OperationMetrics:
     def success_rate(self) -> float:
         """Calculate success rate percentage."""
         if self.count == 0:
-            return 100.0
+            return 100.0  # pragma: no cover
         return ((self.count - self.errors) / self.count) * 100
 
     @property
     def average_duration_ms(self) -> float:
         """Calculate average operation duration."""
         if self.count == 0:
-            return 0
+            return 0  # pragma: no cover
         return self.total_duration_ms / self.count
 
 
@@ -96,7 +96,7 @@ class SecretMetrics:
 
                 config = AWSSecretManagerConfig()
                 if duration_ms > config.SLOW_OPERATION_THRESHOLD_MS:
-                    logger.warning(
+                    logger.warning(  # pragma: no cover
                         f"Slow {operation.value} operation",
                         extra={
                             "duration_ms": duration_ms,

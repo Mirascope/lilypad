@@ -4,17 +4,17 @@ import pytest
 from pydantic import ValidationError
 
 from lilypad.server.schemas.functions import (
-    _validate_object,
-    PlaygroundParameters,
+    MAX_DICT_KEYS,
+    MAX_LIST_LENGTH,
+    MAX_NESTING_DEPTH,
+    MAX_STRING_LENGTH,
     PlaygroundErrorDetail,
     PlaygroundErrorType,
+    PlaygroundParameters,
     PlaygroundSuccessResponse,
-    TraceContextModel,
     Provider,
-    MAX_NESTING_DEPTH,
-    MAX_LIST_LENGTH,
-    MAX_DICT_KEYS,
-    MAX_STRING_LENGTH,
+    TraceContextModel,
+    _validate_object,
 )
 
 
@@ -43,7 +43,7 @@ class TestValidateObject:
         nested = {
             "list": [1, 2, {"nested": "dict"}],
             "dict": {"inner": [3, 4, 5]},
-            "value": "simple"
+            "value": "simple",
         }
         assert _validate_object(nested) == nested
 
@@ -53,28 +53,28 @@ class TestValidateObject:
         nested = "value"
         for _ in range(MAX_NESTING_DEPTH + 2):
             nested = {"key": nested}
-        
+
         with pytest.raises(ValueError, match="Maximum nesting depth exceeded"):
             _validate_object(nested)
 
     def test_max_list_length_exceeded(self):
         """Test that maximum list length is enforced."""
         long_list = [1] * (MAX_LIST_LENGTH + 1)
-        
+
         with pytest.raises(ValueError, match="List exceeds maximum length"):
             _validate_object(long_list)
 
     def test_max_dict_keys_exceeded(self):
         """Test that maximum dictionary keys limit is enforced."""
         large_dict = {f"key_{i}": i for i in range(MAX_DICT_KEYS + 1)}
-        
+
         with pytest.raises(ValueError, match="Dictionary exceeds maximum keys"):
             _validate_object(large_dict)
 
     def test_dict_key_not_string(self):
         """Test that non-string dictionary keys are rejected."""
         invalid_dict = {123: "value"}
-        
+
         with pytest.raises(ValueError, match="Dictionary keys must be strings"):
             _validate_object(invalid_dict)
 
@@ -82,14 +82,14 @@ class TestValidateObject:
         """Test that overly long dictionary keys are rejected."""
         long_key = "a" * (MAX_STRING_LENGTH + 1)
         invalid_dict = {long_key: "value"}
-        
+
         with pytest.raises(ValueError, match="Dictionary key too long"):
             _validate_object(invalid_dict)
 
     def test_string_too_long(self):
         """Test that overly long strings are rejected."""
         long_string = "a" * (MAX_STRING_LENGTH + 1)
-        
+
         with pytest.raises(ValueError, match="String too long"):
             _validate_object(long_string)
 
@@ -98,16 +98,16 @@ class TestValidateObject:
         # Test string at max length
         max_string = "a" * MAX_STRING_LENGTH
         assert _validate_object(max_string) == max_string
-        
-        # Test dict key at max length  
+
+        # Test dict key at max length
         max_key = "k" * MAX_STRING_LENGTH
         max_dict = {max_key: "value"}
         assert _validate_object(max_dict) == max_dict
-        
+
         # Test list at max length
         max_list = [1] * MAX_LIST_LENGTH
         assert _validate_object(max_list) == max_list
-        
+
         # Test dict at max keys
         max_keys_dict = {f"k{i}": i for i in range(MAX_DICT_KEYS)}
         assert _validate_object(max_keys_dict) == max_keys_dict
@@ -117,15 +117,12 @@ class TestValidateObject:
         # Create a structure that's right at the depth limit
         nested = "value"
         for i in range(MAX_NESTING_DEPTH):
-            if i % 2 == 0:
-                nested = {"key": nested}
-            else:
-                nested = [nested]
-        
+            nested = {"key": nested} if i % 2 == 0 else [nested]
+
         # This should pass
         result = _validate_object(nested)
         assert result is not None
-        
+
         # Adding one more level should fail
         nested = {"key": nested}
         with pytest.raises(ValueError, match="Maximum nesting depth exceeded"):
@@ -149,9 +146,9 @@ class TestPlaygroundParameters:
             provider=Provider.OPENAI,
             model="gpt-4",
             prompt_template="Hello {arg1}",
-            call_params={"temperature": 0.7}
+            call_params={"temperature": 0.7},
         )
-        
+
         assert params.arg_values == {"arg1": "value1", "arg2": 42}
         assert params.provider == Provider.OPENAI
         assert params.model == "gpt-4"
@@ -164,9 +161,9 @@ class TestPlaygroundParameters:
             provider=Provider.ANTHROPIC,
             model="claude-3",
             prompt_template="Test prompt",
-            call_params={}  # Use empty dict instead of None
+            call_params={},  # Use empty dict instead of None
         )
-        
+
         assert params.arg_types is None
         assert params.call_params == {}
 
@@ -174,7 +171,7 @@ class TestPlaygroundParameters:
         """Test validation error in playground parameters."""
         # Create arg_values that violate validation rules
         large_dict = {f"key_{i}": i for i in range(MAX_DICT_KEYS + 1)}
-        
+
         with pytest.raises(ValidationError):
             PlaygroundParameters(
                 arg_values=large_dict,
@@ -182,7 +179,7 @@ class TestPlaygroundParameters:
                 provider=Provider.OPENAI,
                 model="gpt-4",
                 prompt_template="Test",
-                call_params=None
+                call_params=None,
             )
 
     def test_playground_parameters_call_params_validation(self):
@@ -192,9 +189,9 @@ class TestPlaygroundParameters:
             arg_values={"test": "value"},
             arg_types=None,
             provider=Provider.OPENAI,
-            model="gpt-4", 
+            model="gpt-4",
             prompt_template="Test",
-            call_params={"temperature": 0.7}
+            call_params={"temperature": 0.7},
         )
         assert params.call_params == {"temperature": 0.7}
         assert params.arg_values == {"test": "value"}
@@ -208,9 +205,9 @@ class TestPlaygroundModels:
         error = PlaygroundErrorDetail(
             type=PlaygroundErrorType.TIMEOUT,
             reason="Request timed out",
-            details="Execution exceeded 60 seconds"
+            details="Execution exceeded 60 seconds",
         )
-        
+
         assert error.type == PlaygroundErrorType.TIMEOUT
         assert error.reason == "Request timed out"
         assert error.details == "Execution exceeded 60 seconds"
@@ -218,10 +215,9 @@ class TestPlaygroundModels:
     def test_playground_error_detail_with_string_type(self):
         """Test PlaygroundErrorDetail with string type."""
         error = PlaygroundErrorDetail(
-            type="CustomError",
-            reason="Custom error occurred"
+            type="CustomError", reason="Custom error occurred"
         )
-        
+
         assert error.type == "CustomError"
         assert error.details is None
 
@@ -229,7 +225,7 @@ class TestPlaygroundModels:
         """Test TraceContextModel."""
         context = TraceContextModel(span_uuid="span-123")
         assert context.span_uuid == "span-123"
-        
+
         # Test with None
         context_none = TraceContextModel()
         assert context_none.span_uuid is None
@@ -238,16 +234,16 @@ class TestPlaygroundModels:
         """Test PlaygroundSuccessResponse model."""
         response = PlaygroundSuccessResponse(
             result={"message": "success", "value": 42},
-            trace_context=TraceContextModel(span_uuid="span-456")
+            trace_context=TraceContextModel(span_uuid="span-456"),
         )
-        
+
         assert response.result == {"message": "success", "value": 42}
         assert response.trace_context.span_uuid == "span-456"
 
     def test_playground_success_response_without_trace(self):
         """Test PlaygroundSuccessResponse without trace context."""
         response = PlaygroundSuccessResponse(result="simple result")
-        
+
         assert response.result == "simple result"
         assert response.trace_context is None
 
@@ -271,7 +267,7 @@ class TestProviderEnum:
                 provider=provider,
                 model="test-model",
                 prompt_template="test",
-                call_params={}  # Use empty dict instead of None
+                call_params={},  # Use empty dict instead of None
             )
             assert params.provider == provider
 

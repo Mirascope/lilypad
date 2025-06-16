@@ -1,6 +1,5 @@
 """Comprehensive tests for the organization invites API endpoints."""
 
-import secrets
 from unittest.mock import Mock, patch
 from uuid import UUID
 
@@ -11,7 +10,6 @@ from sqlmodel import Session
 
 from lilypad.server.models import OrganizationInviteTable, UserTable
 from lilypad.server.schemas.organization_invites import OrganizationInviteCreate
-from lilypad.server.services import OrganizationInviteService, OrganizationService
 
 
 @pytest.fixture
@@ -85,18 +83,20 @@ def test_get_organization_invite_by_token_not_found(client: TestClient):
     assert response.json()["detail"] == "Organization invite not found."
 
 
-def test_create_organization_invite_no_active_organization(client: TestClient, session: Session, test_user: UserTable):
+def test_create_organization_invite_no_active_organization(
+    client: TestClient, session: Session, test_user: UserTable
+):
     """Test creating organization invite when user has no active organization."""
     # Clear active organization
     test_user.active_organization_uuid = None
     session.add(test_user)
     session.commit()
-    
+
     invite_data = {
         "email": "newuser@example.com",
         "invited_by": str(test_user.uuid),
     }
-    
+
     response = client.post("/organizations-invites", json=invite_data)
     assert response.status_code == 400
     assert response.json()["detail"] == "User does not have an active organization."
@@ -113,23 +113,23 @@ def test_create_organization_invite_with_resend(
     mock_settings.resend_api_key = "test-api-key"
     mock_settings.client_url = "https://app.lilypad.so"
     mock_get_settings.return_value = mock_settings
-    
+
     # Mock resend response
     mock_resend_send.return_value = {"id": "email-123"}
-    
+
     invite_data = {
         "email": "newuser@example.com",
         "invited_by": str(test_user.uuid),
     }
-    
+
     response = client.post("/organizations-invites", json=invite_data)
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["email"] == "newuser@example.com"
     assert data["resend_email_id"] == "email-123"
     assert "invite_link" in data
-    
+
     # Verify resend.Emails.send was called
     mock_resend_send.assert_called_once()
     call_args = mock_resend_send.call_args[0][0]
@@ -148,15 +148,15 @@ def test_create_organization_invite_without_resend(
     mock_settings.resend_api_key = None
     mock_settings.client_url = "https://app.lilypad.so"
     mock_get_settings.return_value = mock_settings
-    
+
     invite_data = {
         "email": "newuser@example.com",
         "invited_by": str(test_user.uuid),
     }
-    
+
     response = client.post("/organizations-invites", json=invite_data)
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["email"] == "newuser@example.com"
     assert data["resend_email_id"] == "n/a"
@@ -173,20 +173,20 @@ def test_create_organization_invite_resend_error(
     mock_settings.resend_api_key = "test-api-key"
     mock_settings.client_url = "https://app.lilypad.so"
     mock_get_settings.return_value = mock_settings
-    
+
     # Mock resend error
     mock_resend_send.side_effect = resend.exceptions.ResendError(
-        error_type="invalid_request", 
-        message="Email failed", 
+        error_type="invalid_request",
+        message="Email failed",
         suggested_action="Check your request",
-        code=400
+        code=400,
     )
-    
+
     invite_data = {
         "email": "newuser@example.com",
         "invited_by": str(test_user.uuid),
     }
-    
+
     response = client.post("/organizations-invites", json=invite_data)
     assert response.status_code == 500
     assert response.json()["detail"] == "Failed to send email."
@@ -194,7 +194,10 @@ def test_create_organization_invite_resend_error(
 
 @patch("lilypad.server.api.v0.organization_invites_api.get_settings")
 def test_create_organization_invite_replaces_existing(
-    mock_get_settings, client: TestClient, test_organization_invite: OrganizationInviteTable, session: Session
+    mock_get_settings,
+    client: TestClient,
+    test_organization_invite: OrganizationInviteTable,
+    session: Session,
 ):
     """Test creating organization invite replaces existing invite for same email."""
     # Mock settings
@@ -202,72 +205,80 @@ def test_create_organization_invite_replaces_existing(
     mock_settings.resend_api_key = None
     mock_settings.client_url = "https://app.lilypad.so"
     mock_get_settings.return_value = mock_settings
-    
+
     # Use same email as existing invite
     invite_data = {
         "email": test_organization_invite.email,
         "invited_by": str(test_organization_invite.invited_by),
     }
-    
+
     # Get original invite UUID
     original_uuid = test_organization_invite.uuid
-    
+
     response = client.post("/organizations-invites", json=invite_data)
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["email"] == test_organization_invite.email
     assert data["uuid"] != str(original_uuid)  # New UUID means new invite created
-    
+
     # Verify old invite was deleted
     old_invite = session.get(OrganizationInviteTable, original_uuid)
     assert old_invite is None
 
 
-def test_remove_organization_invite(client: TestClient, test_organization_invite: OrganizationInviteTable):
+def test_remove_organization_invite(
+    client: TestClient, test_organization_invite: OrganizationInviteTable
+):
     """Test removing an organization invite."""
     invite_uuid = test_organization_invite.uuid
-    
+
     response = client.delete(f"/organizations-invites/{invite_uuid}")
     assert response.status_code == 200
     assert response.json() is True
-    
+
     # Verify invite was deleted by trying to get it again
-    get_response = client.get(f"/organizations-invites/{test_organization_invite.token}")
+    get_response = client.get(
+        f"/organizations-invites/{test_organization_invite.token}"
+    )
     assert get_response.status_code == 404
 
 
 def test_remove_organization_invite_not_found(client: TestClient):
     """Test removing non-existent organization invite."""
     fake_uuid = "550e8400-e29b-41d4-a716-446655440000"
-    
+
     response = client.delete(f"/organizations-invites/{fake_uuid}")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
 
 
 @patch("secrets.token_urlsafe")
-def test_create_organization_invite_token_generation(mock_token_urlsafe, client: TestClient, test_user: UserTable):
+def test_create_organization_invite_token_generation(
+    mock_token_urlsafe, client: TestClient, test_user: UserTable
+):
     """Test that organization invite generates proper token."""
     mock_token_urlsafe.return_value = "generated-secure-token"
-    
-    with patch("lilypad.server.api.v0.organization_invites_api.get_settings") as mock_get_settings:
+
+    with patch(
+        "lilypad.server.api.v0.organization_invites_api.get_settings"
+    ) as mock_get_settings:
         mock_settings = Mock()
         mock_settings.resend_api_key = None
         mock_settings.client_url = "https://app.lilypad.so"
         mock_get_settings.return_value = mock_settings
-        
+
         invite_data = {
             "email": "newuser@example.com",
             "invited_by": str(test_user.uuid),
         }
-        
+
         response = client.post("/organizations-invites", json=invite_data)
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["email"] == "newuser@example.com"
         # Note: token field is not exposed in public API for security reasons
-        
+
         # Verify token was generated with correct length
         mock_token_urlsafe.assert_called_once_with(32)

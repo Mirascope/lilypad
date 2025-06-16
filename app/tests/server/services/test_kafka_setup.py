@@ -16,11 +16,11 @@ def create_mock_settings(**overrides):
     mock_settings.kafka_topic_stripe_ingestion = "stripe-ingestion"
     mock_settings.kafka_bootstrap_servers = "localhost:9092"
     mock_settings.kafka_auto_setup_topics = True
-    
+
     # Apply any overrides
     for key, value in overrides.items():
         setattr(mock_settings, key, value)
-    
+
     return mock_settings
 
 
@@ -79,8 +79,14 @@ class TestKafkaSetupService:
         mock_admin_client.create_topics = AsyncMock()
         mock_admin_client.describe_topics = AsyncMock(
             return_value=[
-                {"topic": "span-ingestion", "partitions": [{"id": i} for i in range(6)]},
-                {"topic": "stripe-ingestion", "partitions": [{"id": i} for i in range(6)]}
+                {
+                    "topic": "span-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
+                {
+                    "topic": "stripe-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
             ]
         )
 
@@ -92,7 +98,9 @@ class TestKafkaSetupService:
         assert result is True
         mock_admin_client.start.assert_called_once()
         assert mock_admin_client.create_topics.call_count == 2  # Two topics created
-        mock_admin_client.describe_topics.assert_called_once_with(["span-ingestion", "stripe-ingestion"])
+        mock_admin_client.describe_topics.assert_called_once_with(
+            ["span-ingestion", "stripe-ingestion"]
+        )
         mock_admin_client.close.assert_called_once()
 
         # Check topic creation log
@@ -117,8 +125,14 @@ class TestKafkaSetupService:
         )
         mock_admin_client.describe_topics = AsyncMock(
             return_value=[
-                {"topic": "span-ingestion", "partitions": [{"id": i} for i in range(6)]},
-                {"topic": "stripe-ingestion", "partitions": [{"id": i} for i in range(6)]}
+                {
+                    "topic": "span-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
+                {
+                    "topic": "stripe-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
             ]
         )
 
@@ -149,8 +163,14 @@ class TestKafkaSetupService:
         )
         mock_admin_client.describe_topics = AsyncMock(
             return_value=[
-                {"topic": "span-ingestion", "partitions": [{"id": i} for i in range(6)]},
-                {"topic": "stripe-ingestion", "partitions": [{"id": i} for i in range(6)]}
+                {
+                    "topic": "span-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
+                {
+                    "topic": "stripe-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
             ]
         )
 
@@ -202,8 +222,14 @@ class TestKafkaSetupService:
         mock_admin_client.create_topics = AsyncMock()
         mock_admin_client.describe_topics = AsyncMock(
             return_value=[
-                {"topic": "span-ingestion", "partitions": [{"id": i} for i in range(6)]},
-                {"topic": "stripe-ingestion", "partitions": [{"id": i} for i in range(6)]}
+                {
+                    "topic": "span-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
+                {
+                    "topic": "stripe-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
             ]
         )
 
@@ -259,7 +285,7 @@ class TestKafkaSetupService:
 
         with (
             patch("lilypad.server.services.kafka_setup.logger") as mock_logger,
-            patch("asyncio.sleep")  # Mock sleep to prevent delays
+            patch("asyncio.sleep"),  # Mock sleep to prevent delays
         ):
             result = await service.setup_topics()
 
@@ -311,7 +337,7 @@ class TestKafkaSetupService:
         mock_topic_metadata = Mock()
         mock_topic_metadata.topic = "span-ingestion"
         mock_topic_metadata.partitions = [Mock() for _ in range(6)]
-        
+
         mock_stripe_topic_metadata = Mock()
         mock_stripe_topic_metadata.topic = "stripe-ingestion"
         mock_stripe_topic_metadata.partitions = [Mock() for _ in range(6)]
@@ -387,7 +413,7 @@ class TestKafkaSetupService:
                 {
                     "topic": "another-wrong-name",
                     "partitions": [{"id": i} for i in range(6)],
-                }
+                },
             ]
         )
 
@@ -397,7 +423,7 @@ class TestKafkaSetupService:
             result = await service.setup_topics()
 
         assert result is True
-        # The wrong topic names are logged as "Unexpected topic", then 
+        # The wrong topic names are logged as "Unexpected topic", then
         # the expected topics are logged as "not found in metadata"
         mock_logger.warning.assert_any_call(
             "⚠ Unexpected topic 'wrong-topic-name' in metadata"
@@ -514,8 +540,14 @@ class TestKafkaSetupService:
         mock_admin_client.create_topics = AsyncMock()
         mock_admin_client.describe_topics = AsyncMock(
             return_value=[
-                {"topic": "span-ingestion", "partitions": [{"id": i} for i in range(6)]},
-                {"topic": "stripe-ingestion", "partitions": [{"id": i} for i in range(6)]}
+                {
+                    "topic": "span-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
+                {
+                    "topic": "stripe-ingestion",
+                    "partitions": [{"id": i} for i in range(6)],
+                },
             ]
         )
         mock_admin_client.close.side_effect = Exception("Close failed")
@@ -549,7 +581,7 @@ class TestKafkaSetupService:
                     {
                         "topic": "stripe-ingestion",
                         "partitions": [{"id": i} for i in range(6)],
-                    }
+                    },
                 ]
             )
 
@@ -579,6 +611,7 @@ class TestKafkaSetupService:
                 "retention.bytes": "1073741824",  # 1GB
             },
         )
+
     @pytest.mark.asyncio
     async def test_setup_topics_admin_client_unset_after_connect(self):
         """`setup_topics` should log and return False when admin_client is None after the retry loop."""
@@ -608,10 +641,12 @@ class TestKafkaSetupService:
 def test_topic_config_defaults():
     """Test TopicConfig default values (line 27)."""
     from lilypad.server.services.kafka_setup import TopicConfig
-    
+
     # Test with configs=None to trigger default assignment (line 27)
-    config = TopicConfig(name="test-topic", num_partitions=1, replication_factor=1, configs=None)
-    
+    config = TopicConfig(
+        name="test-topic", num_partitions=1, replication_factor=1, configs=None
+    )
+
     assert config.name == "test-topic"
     assert config.num_partitions == 1
     assert config.replication_factor == 1
@@ -622,16 +657,16 @@ def test_topic_config_defaults():
 
 
 def test_topic_config_explicit_configs():
-    """Test TopicConfig with explicit configs (no default configs).""" 
+    """Test TopicConfig with explicit configs (no default configs)."""
     from lilypad.server.services.kafka_setup import TopicConfig
-    
+
     custom_configs = {"cleanup.policy": "compact"}
     config = TopicConfig(
-        name="test-topic", 
-        num_partitions=1, 
+        name="test-topic",
+        num_partitions=1,
         replication_factor=1,
-        configs=custom_configs
+        configs=custom_configs,
     )
-    
+
     # Should not use defaults when explicit configs provided
     assert config.configs == custom_configs

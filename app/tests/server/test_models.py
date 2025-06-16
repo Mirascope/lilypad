@@ -56,18 +56,19 @@ def test_base_sql_model() -> None:
 
 def test_json_type_decorator_dialect_impl() -> None:
     """Test JSONTypeDecorator.load_dialect_impl method (line 28)."""
-    from lilypad.server.models.base_sql_model import JSONTypeDecorator
     from sqlalchemy.dialects import postgresql, sqlite
     from sqlalchemy.dialects.postgresql import JSONB
     from sqlalchemy.sql import sqltypes
-    
+
+    from lilypad.server.models.base_sql_model import JSONTypeDecorator
+
     decorator = JSONTypeDecorator()
-    
+
     # Test PostgreSQL dialect (line 28)
     pg_dialect = postgresql.dialect()
     result = decorator.load_dialect_impl(pg_dialect)
     assert isinstance(result, JSONB)
-    
+
     # Test non-PostgreSQL dialect (line 29)
     sqlite_dialect = sqlite.dialect()
     result = decorator.load_dialect_impl(sqlite_dialect)

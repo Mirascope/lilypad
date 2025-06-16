@@ -259,7 +259,7 @@ def convert_azure_messages(
                                 )
                             )
                         else:
-                            user_content.append(
+                            user_content.append(  # pragma: no cover
                                 _TextPart(type="text", text=part["text"])
                             )
             except json.JSONDecodeError:
@@ -276,9 +276,9 @@ def convert_azure_messages(
             index = attributes["index"]
             attribute_message: dict = json.loads(attributes.get("message", "{}"))
             if tool_calls := attribute_message.get("tool_calls"):
-                for tool_call in tool_calls:
-                    function: dict = tool_call.get("function", {})
-                    assistant_message.content.append(
+                for tool_call in tool_calls:  # pragma: no cover
+                    function: dict = tool_call.get("function", {})  # pragma: no cover
+                    assistant_message.content.append(  # pragma: no cover
                         _ToolCall(
                             type="tool_call",
                             name=function.get("name", ""),

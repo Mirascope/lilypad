@@ -1,10 +1,11 @@
 """Tests for base service."""
 
+from uuid import uuid4
+
 import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
-from uuid import uuid4
 
 from lilypad.server.models.users import UserTable
 from lilypad.server.services.base import BaseService
@@ -37,149 +38,105 @@ def test_user_table(db_session: Session, test_user) -> UserTable:
     return user_table
 
 
-def test_find_record(db_session: Session, test_user, test_user_table):
-    """Test find_record method."""
-    service = TestableBaseService(session=db_session, user=test_user)
-    
-    # Find existing record
-    found_user = service.find_record(email=test_user_table.email)
-    assert found_user is not None
-    assert found_user.email == test_user_table.email
-    
-    # Find non-existent record
-    not_found = service.find_record(email="nonexistent@example.com")
-    assert not_found is None
+@pytest.fixture
+def base_service(db_session: Session, test_user) -> TestableBaseService:
+    """Create a testable base service instance."""
+    return TestableBaseService(session=db_session, user=test_user)
 
 
-def test_find_record_by_uuid(db_session: Session, test_user, test_user_table):
+# ===== Parameterized Tests for find_record =====
+
+@pytest.mark.parametrize("email,should_exist", [
+    ("existing@example.com", True),
+    ("nonexistent@example.com", False),
+])
+def test_find_record(base_service, test_user_table, email, should_exist):
+    """Test find_record method with various inputs."""
+    # Update test_user_table email for the test
+    if should_exist:
+        test_user_table.email = email
+        base_service.session.add(test_user_table)
+        base_service.session.commit()
+    
+    found_user = base_service.find_record(email=email)
+    
+    if should_exist:
+        assert found_user is not None
+        assert found_user.email == email
+    else:
+        assert found_user is None
+
+
+# ===== Parameterized Tests for find_record_by_uuid =====
+
+@pytest.mark.parametrize("use_existing,expected_status", [
+    (True, 200),   # Existing record
+    (False, 404),  # Non-existent record
+])
+def test_find_record_by_uuid(base_service, test_user_table, use_existing, expected_status):
     """Test find_record_by_uuid method."""
-    service = TestableBaseService(session=db_session, user=test_user)
+    uuid_to_find = test_user_table.uuid if use_existing else uuid4()
     
-    # Find existing record
-    found_user = service.find_record_by_uuid(test_user_table.uuid)
-    assert found_user.uuid == test_user_table.uuid
-    assert found_user.email == test_user_table.email
-    
-    # Find non-existent record
-    with pytest.raises(HTTPException) as exc_info:
-        service.find_record_by_uuid(uuid4())
-    assert exc_info.value.status_code == 404
-    assert "not found" in exc_info.value.detail
+    if expected_status == 200:
+        found_user = base_service.find_record_by_uuid(uuid_to_find)
+        assert found_user.uuid == test_user_table.uuid
+        assert found_user.email == test_user_table.email
+    else:
+        with pytest.raises(HTTPException) as exc_info:
+            base_service.find_record_by_uuid(uuid_to_find)
+        assert exc_info.value.status_code == 404
+        assert "not found" in exc_info.value.detail
 
 
-def test_find_records_by_uuids(db_session: Session, test_user, test_user_table):
-    """Test find_records_by_uuids method."""
-    service = TestableBaseService(session=db_session, user=test_user)
+# ===== Parameterized Tests for find_records_by_uuids =====
+
+@pytest.mark.parametrize("num_users,filter_email,expected_count", [
+    (2, None, 2),      # Find all created users
+    (2, "user1@example.com", 1),  # Filter by email
+    (0, None, 0),      # Empty set
+])
+def test_find_records_by_uuids(base_service, test_user_table, num_users, filter_email, expected_count):
+    """Test find_records_by_uuids method with various scenarios."""
+    uuids = set()
     
-    # Create another user
-    user2 = UserTable(
-        email="user2@example.com",
-        first_name="User2",
-        active_organization_uuid=test_user.active_organization_uuid,
-    )
-    db_session.add(user2)
-    db_session.commit()
-    db_session.refresh(user2)
+    if num_users > 0:
+        # Use existing test_user_table
+        test_user_table.email = "user1@example.com"
+        base_service.session.add(test_user_table)
+        base_service.session.commit()
+        uuids.add(test_user_table.uuid)
+        
+        # Create additional users if needed
+        for i in range(1, num_users):
+            user = UserTable(
+                email=f"user{i+1}@example.com",
+                first_name=f"User{i+1}",
+                active_organization_uuid=test_user_table.active_organization_uuid,
+            )
+            base_service.session.add(user)
+            base_service.session.commit()
+            base_service.session.refresh(user)
+            uuids.add(user.uuid)
     
-    # Find multiple records
-    uuids = {test_user_table.uuid, user2.uuid}
-    found_users = service.find_records_by_uuids(uuids)
-    assert len(found_users) == 2
-    found_uuids = {user.uuid for user in found_users}
-    assert found_uuids == uuids
+    # Find records
+    kwargs = {"email": filter_email} if filter_email else {}
+    found_users = base_service.find_records_by_uuids(uuids, **kwargs)
     
-    # Test with empty set
-    empty_result = service.find_records_by_uuids(set())
-    assert len(empty_result) == 0
-    
-    # Test with additional filters
-    filtered_users = service.find_records_by_uuids(
-        uuids, email=test_user_table.email
-    )
-    assert len(filtered_users) == 1
-    assert filtered_users[0].uuid == test_user_table.uuid
+    assert len(found_users) == expected_count
+    if expected_count > 0:
+        found_emails = {user.email for user in found_users}
+        if filter_email:
+            assert found_emails == {filter_email}
 
 
-def test_find_all_records(db_session: Session, test_user, test_user_table):
-    """Test find_all_records method."""
-    service = TestableBaseService(session=db_session, user=test_user)
-    
-    # Find all records
-    all_users = service.find_all_records()
-    assert len(all_users) >= 1
-    assert test_user_table.uuid in {user.uuid for user in all_users}
-    
-    # Find with filters
-    filtered_users = service.find_all_records(email=test_user_table.email)
-    assert len(filtered_users) == 1
-    assert filtered_users[0].uuid == test_user_table.uuid
+# ===== CRUD Operations Tests =====
 
-
-def test_delete_record_by_uuid(db_session: Session, test_user):
-    """Test delete_record_by_uuid method."""
-    service = TestableBaseService(session=db_session, user=test_user)
-    
-    # Create a test user to delete
-    user_to_delete = UserTable(
-        email="delete_me@example.com",
-        first_name="DeleteMe",
-        active_organization_uuid=test_user.active_organization_uuid,
-    )
-    db_session.add(user_to_delete)
-    db_session.commit()
-    db_session.refresh(user_to_delete)
-    
-    # Delete the user
-    result = service.delete_record_by_uuid(user_to_delete.uuid)
-    assert result is True
-    
-    # Verify deletion
-    with pytest.raises(HTTPException):
-        service.find_record_by_uuid(user_to_delete.uuid)
-    
-    # Try to delete non-existent record
-    with pytest.raises(HTTPException):
-        service.delete_record_by_uuid(uuid4())
-
-
-def test_delete_record_exception_handling(db_session: Session, test_user, monkeypatch):
-    """Test delete_record_by_uuid exception handling."""
-    service = TestableBaseService(session=db_session, user=test_user)
-    
-    # Create a test user
-    user_to_delete = UserTable(
-        email="delete_exception@example.com",
-        first_name="DeleteException",
-        active_organization_uuid=test_user.active_organization_uuid,
-    )
-    db_session.add(user_to_delete)
-    db_session.commit()
-    db_session.refresh(user_to_delete)
-    
-    # Mock session.delete to raise an exception
-    def mock_delete(record):
-        raise Exception("Delete failed")
-    
-    monkeypatch.setattr(db_session, "delete", mock_delete)
-    
-    # Delete should return False when exception occurs
-    result = service.delete_record_by_uuid(user_to_delete.uuid)
-    assert result is False
-
-
-def test_create_record(db_session: Session, test_user):
+def test_create_record(base_service, test_user):
     """Test create_record method."""
-    service = TestableBaseService(session=db_session, user=test_user)
+    create_data = MockCreateModel(email="new_user@example.com", first_name="NewUser")
     
-    # Create new record
-    create_data = MockCreateModel(
-        email="new_user@example.com",
-        first_name="NewUser"
-    )
-    
-    new_user = service.create_record(
-        create_data,
-        active_organization_uuid=test_user.active_organization_uuid
+    new_user = base_service.create_record(
+        create_data, active_organization_uuid=test_user.active_organization_uuid
     )
     
     assert new_user.email == "new_user@example.com"
@@ -188,22 +145,67 @@ def test_create_record(db_session: Session, test_user):
     assert new_user.active_organization_uuid == test_user.active_organization_uuid
 
 
-def test_update_record_by_uuid(db_session: Session, test_user, test_user_table):
-    """Test update_record_by_uuid method."""
-    service = TestableBaseService(session=db_session, user=test_user)
-    
-    # Update existing record
-    update_data = {"first_name": "UpdatedName"}
-    updated_user = service.update_record_by_uuid(test_user_table.uuid, update_data)
+@pytest.mark.parametrize("update_data,field_to_check,expected_value", [
+    ({"first_name": "UpdatedName"}, "first_name", "UpdatedName"),
+    ({"email": "updated@example.com"}, "email", "updated@example.com"),
+])
+def test_update_record_by_uuid(base_service, test_user_table, update_data, field_to_check, expected_value):
+    """Test update_record_by_uuid method with various updates."""
+    updated_user = base_service.update_record_by_uuid(test_user_table.uuid, update_data)
     
     assert updated_user.uuid == test_user_table.uuid
-    assert updated_user.first_name == "UpdatedName"
-    assert updated_user.email == test_user_table.email  # Should remain unchanged
+    assert getattr(updated_user, field_to_check) == expected_value
     
-    # Try to update non-existent record
-    with pytest.raises(HTTPException):
-        service.update_record_by_uuid(uuid4(), {"first_name": "Whatever"})
+    # Check that other fields remain unchanged
+    if field_to_check != "email":
+        assert updated_user.email == test_user_table.email
+    if field_to_check != "first_name":
+        assert updated_user.first_name == test_user_table.first_name
 
+
+def test_update_record_by_uuid_not_found(base_service):
+    """Test update_record_by_uuid with non-existent record."""
+    with pytest.raises(HTTPException):
+        base_service.update_record_by_uuid(uuid4(), {"first_name": "Whatever"})
+
+
+# ===== Delete Operations Tests =====
+
+@pytest.mark.parametrize("should_succeed", [True, False])
+def test_delete_record_by_uuid(base_service, should_succeed, monkeypatch):
+    """Test delete_record_by_uuid with success and failure scenarios."""
+    # Create a test user to delete
+    user_to_delete = UserTable(
+        email="delete_me@example.com",
+        first_name="DeleteMe",
+        active_organization_uuid=uuid4(),
+    )
+    base_service.session.add(user_to_delete)
+    base_service.session.commit()
+    base_service.session.refresh(user_to_delete)
+    
+    if not should_succeed:
+        # Mock session.delete to raise an exception
+        def mock_delete(record):
+            raise Exception("Delete failed")
+        monkeypatch.setattr(base_service.session, "delete", mock_delete)
+    
+    result = base_service.delete_record_by_uuid(user_to_delete.uuid)
+    assert result == should_succeed
+    
+    if should_succeed:
+        # Verify deletion
+        with pytest.raises(HTTPException):
+            base_service.find_record_by_uuid(user_to_delete.uuid)
+
+
+def test_delete_record_by_uuid_not_found(base_service):
+    """Test delete_record_by_uuid with non-existent record."""
+    with pytest.raises(HTTPException):
+        base_service.delete_record_by_uuid(uuid4())
+
+
+# ===== Service Initialization Tests =====
 
 def test_base_service_init(db_session: Session, test_user):
     """Test BaseService initialization."""
@@ -213,3 +215,27 @@ def test_base_service_init(db_session: Session, test_user):
     assert service.user == test_user
     assert service.table == UserTable
     assert service.create_model == MockCreateModel
+
+
+# ===== Filtering Tests =====
+
+@pytest.mark.parametrize("filter_field,filter_value,expected_count", [
+    ("email", "test@example.com", 1),
+    ("first_name", "TestUser", 1),
+    ("email", "nonexistent@example.com", 0),
+])
+def test_find_all_records_with_filters(base_service, test_user_table, filter_field, filter_value, expected_count):
+    """Test find_all_records with various filters."""
+    # Set up test data
+    test_user_table.email = "test@example.com"
+    test_user_table.first_name = "TestUser"
+    base_service.session.add(test_user_table)
+    base_service.session.commit()
+    
+    # Find with filters
+    kwargs = {filter_field: filter_value}
+    filtered_users = base_service.find_all_records(**kwargs)
+    
+    assert len(filtered_users) == expected_count
+    if expected_count > 0:
+        assert getattr(filtered_users[0], filter_field) == filter_value

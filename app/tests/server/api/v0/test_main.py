@@ -1,5 +1,5 @@
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from lilypad.server.api.v0.main import api, get_settings
 
@@ -42,6 +42,7 @@ def test_settings_endpoint_returns_expected_payload(client: TestClient) -> None:
 
 def test_settings_endpoint_respects_dependency_override(client: TestClient) -> None:
     """Changing the override should change the response immediately."""
+
     class AltSettings(_DummySettings):
         experimental = True  # flip the flag
 

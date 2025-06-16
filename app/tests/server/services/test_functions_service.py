@@ -3,11 +3,9 @@
 import pytest
 from fastapi import HTTPException
 from sqlmodel import Session
-from uuid import uuid4
 
 from lilypad.server.models.functions import FunctionTable
 from lilypad.server.models.projects import ProjectTable
-from lilypad.server.schemas.functions import FunctionCreate
 from lilypad.server.services.functions import FunctionService
 
 
@@ -39,28 +37,31 @@ def test_find_functions_by_version_not_found(
 ):
     """Test find_functions_by_version when function is not found."""
     function_service = FunctionService(session=db_session, user=test_user)
-    
+
     # Try to find a function that doesn't exist
     with pytest.raises(HTTPException) as exc_info:
         function_service.find_functions_by_version(
             test_project.uuid, "nonexistent_function", 1
         )
-    
+
     assert exc_info.value.status_code == 404
     assert "not found" in exc_info.value.detail
 
 
 def test_find_functions_by_signature(
-    db_session: Session, test_user, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_user,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
 ):
     """Test find_functions_by_signature method."""
     function_service = FunctionService(session=db_session, user=test_user)
-    
+
     # Find functions by signature
     functions = function_service.find_functions_by_signature(
         test_project.uuid, test_function.signature
     )
-    
+
     assert len(functions) == 1
     assert functions[0].uuid == test_function.uuid
     assert functions[0].signature == test_function.signature
@@ -71,21 +72,24 @@ def test_find_functions_by_signature_empty(
 ):
     """Test find_functions_by_signature when no functions match."""
     function_service = FunctionService(session=db_session, user=test_user)
-    
+
     # Try to find functions with a signature that doesn't exist
     functions = function_service.find_functions_by_signature(
         test_project.uuid, "nonexistent_signature"
     )
-    
+
     assert len(functions) == 0
 
 
 def test_get_functions_by_name_desc_created_at(
-    db_session: Session, test_user, test_project: ProjectTable, test_function: FunctionTable
+    db_session: Session,
+    test_user,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
 ):
     """Test get_functions_by_name_desc_created_at method."""
     function_service = FunctionService(session=db_session, user=test_user)
-    
+
     # Create another function with the same name but later version
     function2 = FunctionTable(
         project_uuid=test_project.uuid,
@@ -104,12 +108,12 @@ def test_get_functions_by_name_desc_created_at(
     db_session.add(function2)
     db_session.commit()
     db_session.refresh(function2)
-    
+
     # Get functions by name ordered by created_at descending
     functions = function_service.get_functions_by_name_desc_created_at(
         test_project.uuid, test_function.name
     )
-    
+
     assert len(functions) == 2
     # Should be ordered by created_at descending, then version_num ascending
     # Since function2 was created later, it should come first
@@ -122,10 +126,10 @@ def test_get_functions_by_name_desc_created_at_empty(
 ):
     """Test get_functions_by_name_desc_created_at when no functions match."""
     function_service = FunctionService(session=db_session, user=test_user)
-    
+
     # Try to find functions with a name that doesn't exist
     functions = function_service.get_functions_by_name_desc_created_at(
         test_project.uuid, "nonexistent_function"
     )
-    
+
     assert len(functions) == 0

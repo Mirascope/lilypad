@@ -393,7 +393,9 @@ def test_project_settings(project_service: ProjectService, db_session: Session):
     assert updated.settings["new_setting"] == "value"  # type: ignore[attr-defined]
 
 
-def test_find_record_no_organization(project_service: ProjectService, db_session: Session):
+def test_find_record_no_organization(
+    project_service: ProjectService, db_session: Session
+):
     """Test finding project by UUID without organization filter."""
     # Create a project in user's organization
     user_project = ProjectTable(
@@ -402,26 +404,26 @@ def test_find_record_no_organization(project_service: ProjectService, db_session
     )
     db_session.add(user_project)
     db_session.commit()
-    
+
     # Test find_record_no_organization - this method allows passing custom filters
     # while still calling the BaseOrganizationService version which will add organization filter
     assert user_project.uuid is not None
-    
+
     # Should find user's project when in same organization
     found_user_project = project_service.find_record_no_organization(user_project.uuid)
     assert found_user_project.uuid == user_project.uuid
     assert found_user_project.name == "User Project"
-    
+
     # Test with additional filters
     found_with_filter = project_service.find_record_no_organization(
-        user_project.uuid, 
-        name="User Project"
+        user_project.uuid, name="User Project"
     )
     assert found_with_filter.uuid == user_project.uuid
-    
+
     # Should still enforce organization boundaries (despite the misleading name)
     # Test with non-existent UUID should raise 404
     from fastapi import HTTPException
+
     fake_uuid = UUID("00000000-0000-0000-0000-000000000000")
     with pytest.raises(HTTPException) as exc_info:
         project_service.find_record_no_organization(fake_uuid)

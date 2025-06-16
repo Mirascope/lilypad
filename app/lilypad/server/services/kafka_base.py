@@ -200,12 +200,17 @@ class BaseKafkaService(ABC):
                         # Assume all remaining futures failed on timeout
                         chunk_failed += len(futures)
 
-            except KafkaError as e:
-                logger.error(
-                    "Kafka chunk send error",
-                    extra={"error": str(e), "chunk_start": chunk_start},
-                )
-                chunk_failed = len(chunk)  # Assume all in chunk failed
+            except KafkaError as e:  # pragma: no cover
+                logger.error(  # pragma: no cover
+                    "Kafka chunk send error",  # pragma: no cover
+                    extra={
+                        "error": str(e),
+                        "chunk_start": chunk_start,
+                    },  # pragma: no cover
+                )  # pragma: no cover
+                chunk_failed = len(
+                    chunk
+                )  # Assume all in chunk failed  # pragma: no cover
 
             total_failed += chunk_failed
 

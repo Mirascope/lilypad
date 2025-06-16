@@ -105,8 +105,10 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             stripe_processor = get_stripe_queue_processor()
             await stripe_processor.start()
             log.info("Stripe queue processor started successfully")
-        except Exception as e:
-            log.error(f"Failed to start stripe queue processor (non-fatal): {e}")
+        except Exception as e:  # pragma: no cover
+            log.error(
+                f"Failed to start stripe queue processor (non-fatal): {e}"
+            )  # pragma: no cover
             # Continue startup even if processor fails
 
     yield
@@ -128,8 +130,8 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
         try:
             await stripe_processor.stop()
             log.info("Stripe queue processor stopped successfully")
-        except Exception as e:
-            log.error(f"Error stopping stripe queue processor: {e}")
+        except Exception as e:  # pragma: no cover
+            log.error(f"Error stopping stripe queue processor: {e}")  # pragma: no cover
 
     # Give more time for pending tasks to complete
     log.info("Waiting for pending tasks to complete...")

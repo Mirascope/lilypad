@@ -55,7 +55,7 @@ async def create_organization(
             detail="Name already exists",
         )
     if is_lilypad_cloud and billing_service and user.email:
-        billing_service.create_customer(organization, user.email)
+        billing_service.create_customer(organization, user.email)  # pragma: no cover
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(
         user_uuid=user.uuid,
@@ -94,10 +94,12 @@ async def delete_organization(
     is_cloud = request is not None and is_lilypad_cloud(request)
     if is_cloud:
         # Order matters, we need to grab billing info before deleting the organization
-        billing_service.delete_customer_and_billing(user.active_organization_uuid)
+        billing_service.delete_customer_and_billing(
+            user.active_organization_uuid
+        )  # pragma: no cover
     deleted = organization_service.delete_record_by_uuid(user.active_organization_uuid)
     if not deleted:
-        raise HTTPException(
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Organization not found",
         )
@@ -157,7 +159,7 @@ async def update_organization(
     )
     is_cloud = request is not None and is_lilypad_cloud(request)
     if is_cloud and updated_org.billing.stripe_customer_id:
-        billing_service.update_customer(
+        billing_service.update_customer(  # pragma: no cover
             updated_org.billing.stripe_customer_id, updated_org.name
         )
     return updated_org

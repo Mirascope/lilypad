@@ -113,11 +113,11 @@ def test_get_manager_with_invalid_settings_type():
 def test_get_manager_with_unsupported_enum_type():
     """Test getting manager with unsupported SecretManagerType enum value."""
     from unittest.mock import Mock
-    
+
     # Create a mock enum value that's not in the if/elif chain
     mock_unsupported_type = Mock()
     mock_unsupported_type.__str__ = Mock(return_value="UNSUPPORTED_TYPE")
-    
+
     with pytest.raises(ValueError, match="Unsupported secret manager type"):
         get_secret_manager(manager_type=mock_unsupported_type)
 

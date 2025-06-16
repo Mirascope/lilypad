@@ -252,7 +252,9 @@ class TestLifespan:
             async with lifespan(app_mock):
                 pass
 
-        mock_log.error.assert_any_call("Error stopping span queue processor: Stop failed")
+        mock_log.error.assert_any_call(
+            "Error stopping span queue processor: Stop failed"
+        )
         mock_log.error.assert_any_call("Error closing Kafka producer: Close failed")
 
     @pytest.mark.asyncio

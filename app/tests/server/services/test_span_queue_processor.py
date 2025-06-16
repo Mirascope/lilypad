@@ -29,32 +29,32 @@ class TestTraceBuffer:
     def test_process_spans_missing_span(self):
         """Test process_span when span is missing (line 73)."""
         buffer = TraceBuffer("trace-123")
-        
+
         # Add span data with parent reference to non-existent span
         buffer.spans = {
             "span-1": {
-                "span_id": "span-1", 
+                "span_id": "span-1",
                 "parent_span_id": "nonexistent-parent",
-                "data": "test"
+                "data": "test",
             }
         }
-        
+
         # Test get_dependency_order which internally calls process_span
         # This covers line 73: if not span_data: return
         ordered_spans = buffer.get_dependency_order()
-        
+
         # Should still process span-1 even though parent doesn't exist
         assert len(ordered_spans) == 1
         assert ordered_spans[0]["span_id"] == "span-1"
-        
+
         # Test the case where we try to process a span that doesn't exist
         # by adding a parent reference that's not in the spans dict
         buffer.spans["span-2"] = {
-            "span_id": "span-2", 
+            "span_id": "span-2",
             "parent_span_id": "missing-span",
-            "data": "test2"
+            "data": "test2",
         }
-        
+
         ordered_spans = buffer.get_dependency_order()
         assert len(ordered_spans) == 2
 
@@ -253,16 +253,18 @@ class TestSpanQueueProcessor:
     async def test_get_cached_user_missing_session(self, mock_get_settings):
         """Test _get_cached_user when session is None (lines 130-132)."""
         mock_settings = Mock()
-        mock_settings.kafka_bootstrap_servers = "localhost:9092" 
+        mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
         processor._session = None
-        
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             result = processor._get_cached_user(uuid4())
-        
+
         assert result is None
         mock_logger.error.assert_called_once_with("Database session not initialized")
 
@@ -274,43 +276,50 @@ class TestSpanQueueProcessor:
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
         user_id = uuid4()
         mock_user = Mock()
         processor._user_cache[user_id] = mock_user
-        
+
         result = processor._get_cached_user(user_id)
-        
+
         assert result == mock_user
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_get_cached_user_database_lookup_and_cache(self, mock_get_settings):
         """Test _get_cached_user database lookup and caching (lines 134-141)."""
         from lilypad.server.models.users import UserTable
-        
+
         mock_settings = Mock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
-        
+
         # Mock session and database query
         mock_session = Mock()
         mock_result = Mock()
-        mock_user = UserTable(uuid=uuid4(), name="test", email="test@example.com", organization_uuid=uuid4())
-        
+        mock_user = UserTable(
+            uuid=uuid4(),
+            name="test",
+            email="test@example.com",
+            organization_uuid=uuid4(),
+        )
+
         mock_result.first.return_value = mock_user
         mock_session.exec.return_value = mock_result
         processor._session = mock_session
-        
+
         user_id = uuid4()
-        
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             result = processor._get_cached_user(user_id)
-        
+
         assert result == mock_user
         assert processor._user_cache[user_id] == mock_user
         mock_logger.debug.assert_called_once_with(f"Cached user {user_id}")
@@ -323,14 +332,17 @@ class TestSpanQueueProcessor:
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
-        
+
         # Mock an exception during setup
-        with patch("lilypad.server.services.span_queue_processor.AIOKafkaConsumer", side_effect=Exception("Setup failed")):
+        with patch(
+            "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
+            side_effect=Exception("Setup failed"),
+        ):
             with patch("lilypad.server.services.span_queue_processor.logger"):
                 result = await processor.initialize()
-        
+
         assert result is False
 
     @pytest.mark.asyncio
@@ -341,21 +353,23 @@ class TestSpanQueueProcessor:
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
         processor._running = False  # Set to stopped state
-        
+
         # Mock the consumer
         mock_consumer = AsyncMock()
         mock_consumer.getmany.return_value = {
             "test-topic": [Mock(topic="test-topic", partition=0, offset=0)]
         }
         processor._consumer = mock_consumer
-        
+
         # This should break early due to _running = False
-        with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
             await processor._process_queue()
-        
+
         # The loop should have broken, so process_message shouldn't be called
         assert mock_logger.debug.call_count >= 0  # May have some debug calls
 
@@ -367,61 +381,72 @@ class TestSpanQueueProcessor:
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
-        
+
         # Mock session
         mock_session = Mock()
         processor._session = mock_session
-        
+
         # Test the _process_trace_sync method directly which contains lines 486-492
         trace_id = "test-trace"
         test_project_uuid = uuid4()
         test_user_id = uuid4()
-        ordered_spans = [{
-            "span_id": "span-1", 
-            "user_id": str(test_user_id), 
-            "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
-            "data": {"test": "data"}
-        }]
-        
+        ordered_spans = [
+            {
+                "span_id": "span-1",
+                "user_id": str(test_user_id),
+                "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
+                "data": {"test": "data"},
+            }
+        ]
+
         # Mock all external dependencies
-        with patch.object(processor, "_get_cached_user") as mock_get_user, \
-             patch("lilypad.server.services.span_queue_processor.ProjectService") as mock_project_service, \
-             patch("lilypad.server.services.span_queue_processor.SpanService") as mock_span_service, \
-             patch("lilypad.server.services.span_queue_processor.create_session") as mock_create_session:
-            
+        with (
+            patch.object(processor, "_get_cached_user") as mock_get_user,
+            patch(
+                "lilypad.server.services.span_queue_processor.ProjectService"
+            ) as mock_project_service,
+            patch(
+                "lilypad.server.services.span_queue_processor.SpanService"
+            ) as mock_span_service,
+            patch(
+                "lilypad.server.services.span_queue_processor.create_session"
+            ) as mock_create_session,
+        ):
             # Set up session context manager
             mock_create_session.return_value.__enter__.return_value = mock_session
-            
+
             # Set up user and project mocks
             mock_user = Mock()
             mock_user.uuid = test_user_id
             mock_get_user.return_value = mock_user
-            
+
             mock_project = Mock()
             mock_project.uuid = test_project_uuid
             mock_project.organization_uuid = uuid4()
-            
+
             mock_project_service_instance = Mock()
-            mock_project_service_instance.find_record_by_uuid.return_value = mock_project
+            mock_project_service_instance.find_record_by_uuid.return_value = (
+                mock_project
+            )
             mock_project_service.return_value = mock_project_service_instance
-            
+
             # Set up span service
             mock_span_service_instance = Mock()
             mock_spans = [Mock()]
             mock_span_service_instance.create_bulk_records.return_value = mock_spans
             mock_span_service.return_value = mock_span_service_instance
-            
+
             # Call the sync method that contains the commit logic
             result = processor._process_trace_sync(trace_id, ordered_spans)
-            
+
             # Verify commit was called (line 486)
             mock_session.commit.assert_called_once()
             assert result is not None
 
     @pytest.mark.asyncio
-    @patch("lilypad.server.services.span_queue_processor.get_settings") 
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_process_trace_billing_success(self, mock_get_settings):
         """Test successful billing reporting (lines 550-552)."""
         mock_settings = Mock()
@@ -430,47 +455,54 @@ class TestSpanQueueProcessor:
         mock_settings.kafka_topic_stripe_ingestion = "stripe-topic"
         mock_settings.stripe_api_key = "sk_test_123"
         mock_get_settings.return_value = mock_settings
-        
+
         processor = SpanQueueProcessor()
-        
+
         # Mock the save_trace_to_db to return successful result
         mock_spans = [Mock()]
         mock_org_uuid = uuid4()
         mock_user_id = uuid4()
-        
+
         # Create a trace buffer with proper span data
         buffer = TraceBuffer("test-trace")
         test_project_uuid = uuid4()
-        buffer.add_span({
-            "span_id": "test-span", 
-            "user_id": str(mock_user_id), 
-            "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
-            "data": {"test": "data"}
-        })
-        
+        buffer.add_span(
+            {
+                "span_id": "test-span",
+                "user_id": str(mock_user_id),
+                "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
+                "data": {"test": "data"},
+            }
+        )
+
         # Mock the _process_trace_sync to return successful result
         mock_result = (mock_spans, mock_org_uuid, mock_user_id)
-        
+
         # Mock executor and external dependencies
-        with patch.object(processor, '_process_trace_sync', return_value=mock_result) as mock_sync, \
-             patch.object(processor, '_get_cached_user') as mock_get_user, \
-             patch("lilypad.server.services.span_queue_processor.BillingService") as mock_billing_service, \
-             patch("lilypad.server.services.span_queue_processor.StripeKafkaService") as mock_stripe_service:
-                
+        with (
+            patch.object(processor, "_process_trace_sync", return_value=mock_result),
+            patch.object(processor, "_get_cached_user") as mock_get_user,
+            patch(
+                "lilypad.server.services.span_queue_processor.BillingService"
+            ) as mock_billing_service,
+            patch(
+                "lilypad.server.services.span_queue_processor.StripeKafkaService"
+            ) as mock_stripe_service,
+        ):
             # Set up user mock
             mock_user = Mock()
             mock_user.uuid = mock_user_id
             mock_get_user.return_value = mock_user
             processor._session = Mock()  # Ensure session exists
             processor.settings = mock_settings  # Set settings for stripe kafka checks
-            
+
             # Set up billing service
             mock_billing_instance = Mock()
             mock_billing_service.return_value = mock_billing_instance
-            
-            with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+
+            with patch("lilypad.server.services.span_queue_processor.logger"):
                 await processor._process_trace("test-trace", buffer)
-            
+
             # Verify billing service was called (lines 547-549)
             mock_billing_instance.report_span_usage_with_fallback.assert_called_once_with(
                 mock_org_uuid, len(mock_spans), mock_stripe_service.return_value
@@ -1453,7 +1485,7 @@ class TestAdditionalCoverage:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
-        
+
         # Mock session and _get_cached_user to return None
         processor._session = Mock()
         processor._get_cached_user = Mock(return_value=None)
@@ -1570,9 +1602,7 @@ class TestAdditionalCoverage:
         processor = SpanQueueProcessor()
 
         with (
-            patch(
-                "lilypad.server.services.span_queue_processor.create_session"
-            ),
+            patch("lilypad.server.services.span_queue_processor.create_session"),
             patch(
                 "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
                 side_effect=Exception("Repeated failure"),
@@ -1590,7 +1620,7 @@ class TestAdditionalCoverage:
         """Test stop method with running tasks that don't complete immediately."""
         import asyncio
         import contextlib
-        
+
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
@@ -1601,20 +1631,24 @@ class TestAdditionalCoverage:
         # Create actual asyncio tasks that we can control
         async def dummy_task():
             await asyncio.sleep(10)  # Long running task
-        
+
         # Create real tasks but replace their methods
         cleanup_task = asyncio.create_task(dummy_task())
         process_task = asyncio.create_task(dummy_task())
-        
+
         # Replace done() and cancel() with mocks to track calls
         original_cancel_cleanup = cleanup_task.cancel
         cleanup_task.done = Mock(return_value=False)
-        cleanup_task.cancel = Mock(side_effect=original_cancel_cleanup)  # Still actually cancel
+        cleanup_task.cancel = Mock(
+            side_effect=original_cancel_cleanup
+        )  # Still actually cancel
         processor._cleanup_task = cleanup_task
 
         original_cancel_process = process_task.cancel
         process_task.done = Mock(return_value=False)
-        process_task.cancel = Mock(side_effect=original_cancel_process)  # Still actually cancel
+        process_task.cancel = Mock(
+            side_effect=original_cancel_process
+        )  # Still actually cancel
         processor._process_task = process_task
 
         # Mock session with close error
@@ -1635,7 +1669,7 @@ class TestAdditionalCoverage:
         cleanup_task.cancel.assert_called_once()
         process_task.cancel.assert_called_once()
         mock_logger.error.assert_called()  # For session close error
-        
+
         # Clean up tasks
         cleanup_task.cancel()
         process_task.cancel()
@@ -1644,7 +1678,7 @@ class TestAdditionalCoverage:
         with contextlib.suppress(asyncio.CancelledError):
             await process_task
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_process_queue_running_break(self, mock_get_settings):
         """Test _process_queue breaks when _running becomes False."""
@@ -1662,7 +1696,7 @@ class TestAdditionalCoverage:
         mock_record.partition = 0
         mock_record.offset = 123
 
-        # Return records 
+        # Return records
         mock_consumer.getmany.return_value = {"topic-partition": [mock_record]}
         processor.consumer = mock_consumer
 
@@ -1762,7 +1796,7 @@ class TestAdditionalCoverage:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
-        
+
         # Mock session
         mock_session = Mock()
         processor._session = mock_session
@@ -1811,7 +1845,7 @@ class TestAdditionalCoverage:
         mock_get_settings.return_value = mock_settings
 
         processor = SpanQueueProcessor()
-        
+
         # Mock session and user cache
         processor._session = Mock()
         mock_user = Mock()
@@ -1828,14 +1862,16 @@ class TestAdditionalCoverage:
 
         with (
             patch("asyncio.get_event_loop") as mock_get_loop,
-            patch("lilypad.server.services.span_queue_processor.BillingService") as mock_billing_class,
+            patch(
+                "lilypad.server.services.span_queue_processor.BillingService"
+            ) as mock_billing_class,
             patch("lilypad.server.services.span_queue_processor.StripeKafkaService"),
             patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
         ):
             mock_loop = Mock()
             mock_get_loop.return_value = mock_loop
             mock_loop.run_in_executor = AsyncMock(return_value=mock_result)
-            
+
             # Mock billing service to raise error
             mock_billing_service = Mock()
             mock_billing_service.report_span_usage_with_fallback = AsyncMock(
@@ -1846,4 +1882,6 @@ class TestAdditionalCoverage:
             await processor._process_trace("trace-123", buffer)
 
         # Should log billing error but not fail the entire operation
-        mock_logger.error.assert_called_with("Error reporting span usage: Billing error")
+        mock_logger.error.assert_called_with(
+            "Error reporting span usage: Billing error"
+        )

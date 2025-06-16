@@ -20,7 +20,7 @@ from lilypad.server.schemas.projects import ProjectPublic
 from lilypad.server.schemas.spans import SpanCreate, SpanUpdate
 from lilypad.server.schemas.users import UserPublic
 from lilypad.server.services import SpanService
-from lilypad.server.services.billing import BillingService, _CustomerNotFound
+from lilypad.server.services.billing import BillingService
 from lilypad.server.services.spans import TimeFrame
 
 
@@ -501,7 +501,7 @@ def test_create_bulk_records_with_billing(
     ]
 
     # Since billing is not integrated in create_bulk_records, we patch it externally
-    with patch('lilypad.server.services.billing.BillingService') as MockBilling:
+    with patch("lilypad.server.services.billing.BillingService") as MockBilling:
         MockBilling.return_value = mock_billing
         created_spans = service.create_bulk_records(
             spans_create, test_project.uuid, test_project.organization_uuid
@@ -877,6 +877,7 @@ def test_find_aggregate_data_by_function_uuid(
     assert len(aggregate_spans) == 3
     assert all(span.function_uuid == function_uuid for span in aggregate_spans)
 
+
 def test_accepts_tags_by_uuid_only():
     """Validation should pass when only `tags_by_uuid` is provided."""
     span = SpanUpdate(tags_by_uuid=[uuid4()])
@@ -916,7 +917,7 @@ def test_find_root_parent_span_no_result(
 ):
     """Test find_root_parent_span when query returns no result."""
     service = SpanService(db_session, test_user)
-    
+
     # Test with non-existent span_id
     result = service.find_root_parent_span("nonexistent_span")
     assert result is None
@@ -954,7 +955,7 @@ def test_get_aggregated_metrics_week_timeframe(
 
     # Mock the session.exec method to return expected aggregated results for SQLite compatibility
     from unittest.mock import Mock
-    
+
     mock_result = Mock()
     mock_row = Mock()
     mock_row.total_cost = 20.0
@@ -964,8 +965,8 @@ def test_get_aggregated_metrics_week_timeframe(
     mock_row.span_count = 2
     mock_row.period_start = now
     mock_result.all.return_value = [mock_row]
-    
-    with patch.object(service.session, 'exec', return_value=mock_result):
+
+    with patch.object(service.session, "exec", return_value=mock_result):
         # Test WEEK aggregation
         metrics = service.get_aggregated_metrics(
             test_project.uuid, function_uuid, TimeFrame.WEEK
@@ -1007,7 +1008,7 @@ def test_get_aggregated_metrics_month_timeframe(
 
     # Mock the session.exec method to return expected aggregated results for SQLite compatibility
     from unittest.mock import Mock
-    
+
     mock_result = Mock()
     mock_row = Mock()
     mock_row.total_cost = 20.0
@@ -1017,8 +1018,8 @@ def test_get_aggregated_metrics_month_timeframe(
     mock_row.span_count = 2
     mock_row.period_start = now
     mock_result.all.return_value = [mock_row]
-    
-    with patch.object(service.session, 'exec', return_value=mock_result):
+
+    with patch.object(service.session, "exec", return_value=mock_result):
         # Test MONTH aggregation
         metrics = service.get_aggregated_metrics(
             test_project.uuid, function_uuid, TimeFrame.MONTH
@@ -1033,16 +1034,16 @@ def test_count_by_current_month_december_edge_case(
 ):
     """Test count_by_current_month handles December edge case."""
     service = SpanService(db_session, test_user)
-    
+
     # Mock datetime.now to return December
-    from unittest.mock import patch
     from datetime import datetime
-    
+    from unittest.mock import patch
+
     december_date = datetime(2023, 12, 15, tzinfo=timezone.utc)  # December 15, 2023
-    
-    with patch('lilypad.server.services.spans.datetime') as mock_datetime:
+
+    with patch("lilypad.server.services.spans.datetime") as mock_datetime:
         mock_datetime.now.return_value = december_date
-        
+
         # Create span for December
         span = SpanTable(
             organization_uuid=test_project.organization_uuid,
@@ -1055,7 +1056,7 @@ def test_count_by_current_month_december_edge_case(
         )
         db_session.add(span)
         db_session.commit()
-        
+
         # This should handle December -> January transition
         count = service.count_by_current_month()
         assert count >= 0  # Should not crash
@@ -1073,7 +1074,11 @@ def test_create_bulk_records_with_invalid_tags(
             span_id="invalid_tags_span",
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
-            data={"attributes": {"lilypad.trace.tags": ["valid_tag", 123, None, "another_valid"]}},
+            data={
+                "attributes": {
+                    "lilypad.trace.tags": ["valid_tag", 123, None, "another_valid"]
+                }
+            },
         )
     ]
 
@@ -1082,9 +1087,11 @@ def test_create_bulk_records_with_invalid_tags(
     )
 
     assert len(created_spans) == 1
-    
+
     # Check that only string tags were processed
-    links = db_session.query(SpanTagLink).filter_by(span_uuid=created_spans[0].uuid).all()
+    links = (
+        db_session.query(SpanTagLink).filter_by(span_uuid=created_spans[0].uuid).all()
+    )
     assert len(links) == 2  # Only "valid_tag" and "another_valid"
 
 
@@ -1112,7 +1119,7 @@ async def test_update_span_no_tag_changes(
     updated_span = await service.update_span(span.uuid, update_data, test_user.uuid)
 
     assert updated_span.uuid == span.uuid
-    
+
     # No tags should be linked since no tag updates were provided
     links = db_session.query(SpanTagLink).filter_by(span_uuid=span.uuid).all()
     assert len(links) == 0
@@ -1159,7 +1166,7 @@ def test_sync_span_tags_remove_existing_tags(
     result = service._sync_span_tags(span, update_data, test_user.uuid)
 
     assert result is True  # Tags were modified
-    
+
     # Verify tag was removed
     links = db_session.query(SpanTagLink).filter_by(span_uuid=span.uuid).all()
     assert len(links) == 0

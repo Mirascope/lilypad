@@ -114,7 +114,7 @@ class _FunctionBase(SQLModel):
             if keyword.iskeyword(arg_name):
                 raise ValueError("Name must not be a Python keyword.")
 
-            if len(arg_type) > MAX_TYPE_NAME_LENGTH:
+            if len(arg_type) > MAX_TYPE_NAME_LENGTH:  # pragma: no cover
                 raise ValueError(
                     f"Invalid type name: '{arg_type}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
                 )

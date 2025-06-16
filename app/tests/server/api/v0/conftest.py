@@ -189,7 +189,9 @@ def test_organization(session: Session) -> Generator[OrganizationTable, None, No
 
 
 @pytest.fixture
-def test_user(session: Session, test_organization: OrganizationTable) -> Generator[UserTable, None, None]:
+def test_user(
+    session: Session, test_organization: OrganizationTable
+) -> Generator[UserTable, None, None]:
     """Create a test user.
 
     Args:
