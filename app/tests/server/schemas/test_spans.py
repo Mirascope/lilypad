@@ -34,9 +34,9 @@ def test_convert_openai_messages():
     result = convert_openai_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello, how are you?"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Hello, how are you?"  # type: ignore[attr-defined]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "I am doing well, thank you!"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[1].content[0].text == "I am doing well, thank you!"  # type: ignore[attr-defined]
 
 
 def test_convert_gemini_messages():
@@ -55,9 +55,9 @@ def test_convert_gemini_messages():
     result = convert_gemini_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Test message"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Test message"  # type: ignore[attr-defined]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "Response"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[1].content[0].text == "Response"  # type: ignore[attr-defined]
 
 
 def test_convert_anthropic_messages():
@@ -76,9 +76,9 @@ def test_convert_anthropic_messages():
     result = convert_anthropic_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "User input"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "User input"  # type: ignore[attr-defined]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "Assistant response"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[1].content[0].text == "Assistant response"  # type: ignore[attr-defined]
 
 
 def test_convert_azure_messages():
@@ -102,9 +102,9 @@ def test_convert_azure_messages():
     result = convert_azure_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello, how are you?"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Hello, how are you?"  # type: ignore[attr-defined]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "I am doing well, thank you!"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[1].content[0].text == "I am doing well, thank you!"  # type: ignore[attr-defined]
 
 
 def test_invalid_message_content():
@@ -121,13 +121,13 @@ def test_invalid_message_content():
     ]
 
     result = convert_openai_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Invalid JSON"  # type: ignore[attr-defined]
 
     result = convert_anthropic_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Invalid JSON"  # type: ignore[attr-defined]
 
     result = convert_gemini_messages(messages)
-    assert result[0].content[0].text == "Invalid JSON"  # pyright: ignore [reportAttributeAccessIssue]
+    assert result[0].content[0].text == "Invalid JSON"  # type: ignore[attr-defined]
 
 
 def test_convert_events():
@@ -569,7 +569,7 @@ def test_convert_anthropic_choice_with_index():
     result = convert_anthropic_messages(messages)
     assert len(result) == 1
     assert result[0].role == "assistant"
-    assert result[0].content[0].text == "Anthropic response"
+    assert result[0].content[0].text == "Anthropic response"  # type: ignore[attr-defined]
 
 
 def test_convert_anthropic_choice_no_index():
@@ -744,16 +744,18 @@ def test_span_more_details_gemini_provider():
 
     span = SpanTable(
         uuid=uuid4(),
-        name="test_span",
         span_id="test_id",
-        trace_id="test_trace",
         parent_span_id=None,
-        start_time=datetime.now(),
-        end_time=datetime.now(),
-        status={"status_code": "OK"},
-        attributes={},
         scope=Scope.LLM,
-        data=data,
+        data={
+            **data,
+            "name": "test_span",
+            "trace_id": "test_trace",
+            "start_time": datetime.now().isoformat(),
+            "end_time": datetime.now().isoformat(),
+            "status": {"status_code": "OK"},
+            "attributes": {},
+        },
         project_uuid=uuid4(),
         organization_uuid=uuid4(),
     )
@@ -781,16 +783,18 @@ def test_span_more_details_anthropic_provider():
 
     span = SpanTable(
         uuid=uuid4(),
-        name="test_span",
         span_id="test_id",
-        trace_id="test_trace",
         parent_span_id=None,
-        start_time=datetime.now(),
-        end_time=datetime.now(),
-        status={"status_code": "OK"},
-        attributes={},
         scope=Scope.LLM,
-        data=data,
+        data={
+            **data,
+            "name": "test_span",
+            "trace_id": "test_trace",
+            "start_time": datetime.now().isoformat(),
+            "end_time": datetime.now().isoformat(),
+            "status": {"status_code": "OK"},
+            "attributes": {},
+        },
         project_uuid=uuid4(),
         organization_uuid=uuid4(),
     )
@@ -930,7 +934,7 @@ def test_anthropic_choice_content_expansion():
     assert len(result) == 1
     assert result[0].role == "assistant"
     assert len(result[0].content) == 1
-    assert result[0].content[0].text == "Anthropic assistant response"
+    assert result[0].content[0].text == "Anthropic assistant response"  # type: ignore[attr-defined]
 
 
 def test_gemini_choice_content_processing():
@@ -946,7 +950,7 @@ def test_gemini_choice_content_processing():
     assert len(result) == 1
     assert result[0].role == "assistant"
     assert len(result[0].content) == 1
-    assert result[0].content[0].text == "Part 1Part 2"
+    assert result[0].content[0].text == "Part 1Part 2"  # type: ignore[attr-defined]
 
 
 def test_azure_message_conversion():
@@ -970,9 +974,9 @@ def test_azure_message_conversion():
     result = convert_azure_messages(messages)
     assert len(result) == 2
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Azure user message"
+    assert result[0].content[0].text == "Azure user message"  # type: ignore[attr-defined]
     assert result[1].role == "assistant"
-    assert result[1].content[0].text == "Azure response"
+    assert result[1].content[0].text == "Azure response"  # type: ignore[attr-defined]
 
 
 # Removed - Azure choice without index attribute causes KeyError
@@ -1225,7 +1229,7 @@ def test_convert_openai_messages_text_dict_processing():
     result = convert_openai_messages(messages)
     assert len(result) == 2  # User + assistant
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello from dict"
+    assert result[0].content[0].text == "Hello from dict"  # type: ignore[attr-defined]
 
 
 def test_convert_openai_messages_tool_calls_processing():
@@ -1352,7 +1356,7 @@ def test_convert_mirascope_messages_text_content_processing():
     result = convert_mirascope_messages(messages)
     assert len(result) == 1
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello from text dict"
+    assert result[0].content[0].text == "Hello from text dict"  # type: ignore[attr-defined]
 
 
 def test_convert_mirascope_messages_string_content_processing():
@@ -1362,7 +1366,7 @@ def test_convert_mirascope_messages_string_content_processing():
     result = convert_mirascope_messages(messages)
     assert len(result) == 1
     assert result[0].role == "user"
-    assert result[0].content[0].text == "Hello as string"
+    assert result[0].content[0].text == "Hello as string"  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio

@@ -469,7 +469,7 @@ def test_basic_deployment_service_operations(
 
     # Test update
     updated_deployment = deployment_service.update_record_by_uuid(
-        deployment.uuid,
+        deployment.uuid,  # type: ignore[arg-type]
         {"notes": "Updated deployment"},  # type: ignore[arg-type]
     )
     assert updated_deployment.notes == "Updated deployment"

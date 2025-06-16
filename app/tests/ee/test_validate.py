@@ -577,7 +577,7 @@ class TestGenerateLicense:
         ):
             generate_license(
                 private_key_path="/fake/path/private.pem",
-                password=None,  # type: ignore
+                password=None,  # type: ignore[arg-type]
                 customer="Test Customer",
                 license_id="test-license-123",
                 expires_at=datetime.now(timezone.utc) + timedelta(days=30),

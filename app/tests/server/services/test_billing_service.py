@@ -182,12 +182,12 @@ def test_create_customer(
 @pytest.mark.parametrize(
     "error_type,error_message",
     [
-        (stripe.error.CardError, "Card declined"),
-        (stripe.error.InvalidRequestError, "Invalid request"),
-        (stripe.error.AuthenticationError, "Authentication failed"),
-        (stripe.error.PermissionError, "Permission denied"),
-        (stripe.error.RateLimitError, "Rate limit exceeded"),
-        (stripe.error.StripeError, "Generic Stripe error"),
+        (stripe.error.CardError, "Card declined"),  # type: ignore[attr-defined]
+        (stripe.error.InvalidRequestError, "Invalid request"),  # type: ignore[attr-defined]
+        (stripe.error.AuthenticationError, "Authentication failed"),  # type: ignore[attr-defined]
+        (stripe.error.PermissionError, "Permission denied"),  # type: ignore[attr-defined]
+        (stripe.error.RateLimitError, "Rate limit exceeded"),  # type: ignore[attr-defined]
+        (stripe.error.StripeError, "Generic Stripe error"),  # type: ignore[attr-defined]
     ],
 )
 @patch("lilypad.server.services.billing.stripe")
@@ -201,14 +201,14 @@ def test_stripe_error_handling(
     mock_stripe.api_key = "test_key"
 
     # Create error with proper structure
-    if error_type == stripe.error.CardError:
+    if error_type == stripe.error.CardError:  # type: ignore[attr-defined]
         error = error_type(
             message=error_message,
             param=None,
             code="card_declined",
             json_body={"error": {"message": error_message}},
         )
-    elif error_type == stripe.error.InvalidRequestError:
+    elif error_type == stripe.error.InvalidRequestError:  # type: ignore[attr-defined]
         error = error_type(message=error_message, param=None)
     else:
         error = error_type(error_message)
@@ -336,7 +336,7 @@ def test_delete_customer_stripe_error(
     db_session.exec = Mock(return_value=mock_result)
 
     # Mock Stripe error
-    mock_stripe.Customer.delete.side_effect = stripe.error.InvalidRequestError(
+    mock_stripe.Customer.delete.side_effect = stripe.error.InvalidRequestError(  # type: ignore[attr-defined]
         "Customer not found", param=None
     )
 
@@ -391,7 +391,7 @@ def test_update_customer_not_found(
     mock_stripe.api_key = "test_key"
 
     # Mock Stripe error
-    mock_stripe.Customer.modify.side_effect = stripe.error.InvalidRequestError(
+    mock_stripe.Customer.modify.side_effect = stripe.error.InvalidRequestError(  # type: ignore[attr-defined]
         "No such customer", param=None
     )
 
@@ -426,7 +426,7 @@ def test_get_customer_not_found(
     mock_stripe.api_key = "test_key"
 
     # Mock Stripe error
-    mock_stripe.Customer.retrieve.side_effect = stripe.error.InvalidRequestError(
+    mock_stripe.Customer.retrieve.side_effect = stripe.error.InvalidRequestError(  # type: ignore[attr-defined]
         "No such customer", param=None
     )
 
@@ -444,7 +444,7 @@ def test_get_customer_stripe_error(
     mock_stripe.api_key = "test_key"
 
     # Mock Stripe error
-    mock_stripe.Customer.retrieve.side_effect = stripe.error.StripeError("API error")
+    mock_stripe.Customer.retrieve.side_effect = stripe.error.StripeError("API error")  # type: ignore[attr-defined]
 
     with pytest.raises(HTTPException) as exc_info:
         billing_service.get_customer("cus_test123")
@@ -781,7 +781,7 @@ def test_delete_customer_generic_stripe_error(
     db_session.exec = Mock(return_value=mock_result)
 
     # Mock Stripe error (not InvalidRequestError)
-    mock_stripe.Customer.delete.side_effect = stripe.error.StripeError("Generic error")
+    mock_stripe.Customer.delete.side_effect = stripe.error.StripeError("Generic error")  # type: ignore[attr-defined]
 
     with pytest.raises(HTTPException) as exc_info:
         billing_service.delete_customer_and_billing(
@@ -801,7 +801,7 @@ def test_update_customer_generic_stripe_error(
     mock_stripe.api_key = "test_key"
 
     # Mock Stripe error
-    mock_stripe.Customer.modify.side_effect = stripe.error.StripeError("Generic error")
+    mock_stripe.Customer.modify.side_effect = stripe.error.StripeError("Generic error")  # type: ignore[attr-defined]
 
     with pytest.raises(HTTPException) as exc_info:
         billing_service.update_customer("cus_test123", "New Name")
@@ -925,12 +925,12 @@ def test_report_span_usage_stripe_error(
         mock_settings.stripe_cloud_meter_event_name = "span_usage"
 
         # Mock Stripe error
-        mock_stripe.billing.MeterEvent.create.side_effect = stripe.error.StripeError(
+        mock_stripe.billing.MeterEvent.create.side_effect = stripe.error.StripeError(  # type: ignore[attr-defined]
             "API error"
         )
 
         # The method doesn't catch StripeError, so it should propagate
-        with pytest.raises(stripe.error.StripeError):
+        with pytest.raises(stripe.error.StripeError):  # type: ignore[attr-defined]
             billing_service.report_span_usage(sample_organization.uuid)
 
 

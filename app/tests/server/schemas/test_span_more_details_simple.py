@@ -67,7 +67,7 @@ def test_tool_call():
 def test_message_param():
     """Test MessageParam model."""
     content = [_TextPart(type="text", text="Hello")]
-    msg = MessageParam(role="user", content=content)
+    msg = MessageParam(role="user", content=content)  # type: ignore[arg-type]
     assert msg.role == "user"
     assert len(msg.content) == 1
 
@@ -317,7 +317,7 @@ def test_span_more_details_basic():
         display_name="test",
         provider="openai",
         model="gpt-4",
-        scope="llm",
+        scope="llm",  # type: ignore[arg-type]
         messages=[],
         data={},
         events=[],

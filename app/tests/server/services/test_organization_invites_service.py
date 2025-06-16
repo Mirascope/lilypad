@@ -234,7 +234,7 @@ def test_find_record_by_uuid_works(
 ):
     """Test that inherited find_record_by_uuid method works."""
     found_invite = organization_invite_service.find_record_by_uuid(
-        test_organization_invite.uuid
+        test_organization_invite.uuid  # type: ignore[arg-type]
     )
 
     assert found_invite.uuid == test_organization_invite.uuid

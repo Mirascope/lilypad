@@ -39,7 +39,7 @@ def test_stripe_queue_processor_line_166():
     async def test():
         # Just call process_message with invalid data to hit error paths
         with contextlib.suppress(Exception):
-            await processor.process_message(None)  # This might hit line 166
+            await processor.process_message(None)  # type: ignore[attr-defined]  # This might hit line 166
 
     asyncio.run(test())
 

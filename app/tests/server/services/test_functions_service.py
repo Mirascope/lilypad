@@ -41,7 +41,7 @@ def test_find_functions_by_version_not_found(
     # Try to find a function that doesn't exist
     with pytest.raises(HTTPException) as exc_info:
         function_service.find_functions_by_version(
-            test_project.uuid,
+            test_project.uuid,  # type: ignore[arg-type]
             "nonexistent_function",
             1,  # type: ignore
         )
@@ -61,7 +61,7 @@ def test_find_functions_by_signature(
 
     # Find functions by signature
     functions = function_service.find_functions_by_signature(
-        test_project.uuid,
+        test_project.uuid,  # type: ignore[arg-type]
         test_function.signature,  # type: ignore
     )
 
@@ -78,7 +78,7 @@ def test_find_functions_by_signature_empty(
 
     # Try to find functions with a signature that doesn't exist
     functions = function_service.find_functions_by_signature(
-        test_project.uuid,
+        test_project.uuid,  # type: ignore[arg-type]
         "nonexistent_signature",  # type: ignore
     )
 
@@ -115,7 +115,7 @@ def test_get_functions_by_name_desc_created_at(
 
     # Get functions by name ordered by created_at descending
     functions = function_service.get_functions_by_name_desc_created_at(
-        test_project.uuid,
+        test_project.uuid,  # type: ignore[arg-type]
         test_function.name,  # type: ignore
     )
 
@@ -134,7 +134,7 @@ def test_get_functions_by_name_desc_created_at_empty(
 
     # Try to find functions with a name that doesn't exist
     functions = function_service.get_functions_by_name_desc_created_at(
-        test_project.uuid,
+        test_project.uuid,  # type: ignore[arg-type]
         "nonexistent_function",  # type: ignore
     )
 

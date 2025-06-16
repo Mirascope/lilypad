@@ -213,14 +213,14 @@ class TestUtilityFunctions:
         test_data = "Hello, World!"
         encoded = base64.b64encode(test_data.encode()).decode()
         arg_types_and_values = {"data": ("bytes", encoded)}
-        result = _decode_bytes(arg_types_and_values)  # type: ignore  # type: ignore[arg-type]
+        result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type][arg-type]
         assert result["data"] == test_data.encode()
 
     def test_decode_bytes_invalid(self):
         """Test invalid byte decoding."""
         arg_types_and_values = {"data": ("bytes", "invalid_base64!")}
         with pytest.raises(ValueError):
-            _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
+            _decode_bytes(arg_types_and_values)  # type: ignore[arg-type][arg-type]
 
     def test_validate_api_keys_valid(self):
         """Test valid API key validation."""
@@ -282,25 +282,25 @@ def test_decode_bytes_edge_cases():
     """Test byte decoding edge cases."""
     # Empty base64 string
     arg_types_and_values = {"data": ("bytes", "")}
-    result = _decode_bytes(arg_types_and_values)  # type: ignore
+    result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
     assert result["data"] == b""
 
     # Valid base64 with padding
     test_data = "test"
     encoded = base64.b64encode(test_data.encode()).decode()
     arg_types_and_values = {"data": ("bytes", encoded)}
-    result = _decode_bytes(arg_types_and_values)  # type: ignore
+    result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
     assert result["data"] == test_data.encode()
 
     # Test None value for bytes
     arg_types_and_values = {"data": ("bytes", None)}
-    result = _decode_bytes(arg_types_and_values)  # type: ignore
+    result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
     assert result["data"] is None
 
     # Test bytes value (already bytes)
     byte_value = b"test"
     arg_types_and_values = {"data": ("bytes", byte_value)}
-    result = _decode_bytes(arg_types_and_values)  # type: ignore
+    result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
     assert result["data"] == byte_value
 
     # Test invalid type for bytes arg
@@ -308,11 +308,11 @@ def test_decode_bytes_edge_cases():
     with pytest.raises(
         ValueError, match="Expected base64 encoded string or None for bytes argument"
     ):
-        _decode_bytes(arg_types_and_values)  # type: ignore
+        _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
 
     # Test non-bytes argument (should pass through)
     arg_types_and_values = {"data": ("str", "test_string")}
-    result = _decode_bytes(arg_types_and_values)  # type: ignore
+    result = _decode_bytes(arg_types_and_values)  # type: ignore[arg-type]
     assert result["data"] == "test_string"
 
 

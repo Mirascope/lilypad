@@ -512,7 +512,7 @@ def test_create_bulk_records_with_billing(
         MockBilling.return_value = mock_billing
         created_spans = service.create_bulk_records(
             spans_create,
-            test_project.uuid,
+            test_project.uuid,  # type: ignore[arg-type]
             test_project.organization_uuid,  # type: ignore
         )
 

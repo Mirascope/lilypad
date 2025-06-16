@@ -57,7 +57,7 @@ def test_organization_invite(
 def second_user(session: Session, test_user: UserTable) -> UserTable:
     """Create a second test user."""
     user = UserTable(
-        uuid=uuid4(),
+        uuid=uuid4(),  # type: ignore[call-arg]
         email="second@test.com",
         first_name="Second User",
         active_organization_uuid=test_user.active_organization_uuid,
