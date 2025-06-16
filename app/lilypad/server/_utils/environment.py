@@ -1,3 +1,5 @@
+"""Environment utilities for Lilypad server."""
+
 from typing import Annotated
 
 from fastapi import Depends, HTTPException

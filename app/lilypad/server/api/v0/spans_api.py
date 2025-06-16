@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -135,7 +135,6 @@ async def search_traces(
     """Search for traces in OpenSearch."""
     if not opensearch_service.is_enabled:
         return []
-
     hits = opensearch_service.search_traces(project_uuid, search_query)
     # Extract function UUIDs and fetch functions in batch
     function_uuids = {
@@ -152,25 +151,28 @@ async def search_traces(
     # Build spans from search results
     spans_by_id: dict[str, SpanPublic] = {}
     for hit in hits:
-        source = hit["_source"]
+        source: dict[str, Any] = hit["_source"]
         function_uuid_str = source.get("function_uuid")
-
+        if "organization_uuid" not in source or "span_id" not in source:
+            continue  # Skip if either key is missing
         span = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],
             project_uuid=project_uuid,
             span_id=source["span_id"],
-            parent_span_id=source["parent_span_id"],
+            parent_span_id=source.get("parent_span_id"),
             type=source["type"],
             function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
-            function=functions_by_id.get(function_uuid_str),
+            function=functions_by_id.get(function_uuid_str)
+            if function_uuid_str
+            else None,
             scope=Scope(source["scope"]) if source["scope"] else Scope.LILYPAD,
             cost=source["cost"],
-            input_tokens=source["input_tokens"],
-            output_tokens=source["output_tokens"],
-            duration_ms=source["duration_ms"],
-            created_at=source["created_at"],
-            data=source["data"],
+            input_tokens=source.get("input_tokens"),
+            output_tokens=source.get("output_tokens"),
+            duration_ms=source.get("duration_ms"),
+            created_at=source.get("created_at", datetime.now(timezone.utc)),
+            data=source.get("data", {}),
             child_spans=[],
         )
 

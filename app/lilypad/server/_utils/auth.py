@@ -1,3 +1,5 @@
+"""Auth utilities for Lilypad server."""
+
 import base64
 import hashlib
 import json

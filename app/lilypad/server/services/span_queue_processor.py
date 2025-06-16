@@ -13,12 +13,14 @@ from aiokafka.errors import KafkaError
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from .._utils.opensearch import index_traces_in_opensearch
 from ..db.session import create_session
 from ..models.spans import SpanTable
 from ..models.users import UserTable
 from ..schemas.spans import SpanCreate
 from ..settings import get_settings
 from .billing import BillingService
+from .opensearch import OpenSearchService
 from .projects import ProjectService
 from .spans import SpanService
 from .stripe_kafka_service import StripeKafkaService
@@ -409,7 +411,7 @@ class SpanQueueProcessor:
 
     def _process_trace_sync(
         self, trace_id: str, ordered_spans: list[dict[str, Any]]
-    ) -> tuple[list[SpanTable], UUID, UUID] | None:
+    ) -> tuple[list[SpanTable], UUID, UUID, UUID] | None:
         """Synchronous database operations for processing a trace.
 
         This method runs in a separate thread to avoid blocking the event loop.
@@ -453,47 +455,40 @@ class SpanQueueProcessor:
             logger.debug(f"User {user_id} not found for trace {trace_id}")
             return None
 
-        try:
-            project_service = ProjectService(self._session, user)  # pyright: ignore [reportArgumentType]
-            project = project_service.find_record_no_organization(project_uuid)
-            logger.debug(f"Found project: {project} for trace {trace_id}")
-            if not project:
-                logger.warning(
-                    f"Project {project_uuid} not found, skipping trace {trace_id} with {len(ordered_spans)} spans"
-                )
-                return None
-
-            # Create span service
-            span_service = SpanService(self._session, user)  # pyright: ignore [reportArgumentType]
-
-            # Convert to SpanCreate objects
-            span_creates = []
-            logger.debug(f"Converting {len(ordered_spans)} spans to SpanCreate objects")
-            for span_data in ordered_spans:
-                # Remove user_id from span data to avoid storing it
-                span_data.pop("user_id", None)
-                # Process span data similar to the original _process_span function
-                span_create = SpanQueueProcessor._convert_to_span_create(span_data)
-                span_creates.append(span_create)
-
-            # Create spans in bulk
-            spans = span_service.create_bulk_records(
-                span_creates,
-                project_uuid,
-                project.organization_uuid,
+        project_service = ProjectService(self._session, user)  # pyright: ignore [reportArgumentType]
+        project = project_service.find_record_no_organization(project_uuid)
+        logger.debug(f"Found project: {project} for trace {trace_id}")
+        if not project:
+            logger.warning(
+                f"Project {project_uuid} not found, skipping trace {trace_id} with {len(ordered_spans)} spans"
             )
-            # Commit the transaction
-            self._session.commit()
+            return None
 
-            logger.info(
-                f"Successfully saved trace to database - Trace ID: {trace_id}, "
-                f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
-            )
-            return spans, project.organization_uuid, user_id
+        # Create span service
+        span_service = SpanService(self._session, user)  # pyright: ignore [reportArgumentType]
 
-        except Exception as e:
-            self._session.rollback()
-            raise e
+        # Convert to SpanCreate objects
+        span_creates = []
+        logger.debug(f"Converting {len(ordered_spans)} spans to SpanCreate objects")
+        for span_data in ordered_spans:
+            # Remove user_id from span data to avoid storing it
+            span_data.pop("user_id", None)
+            # Process span data similar to the original _process_span function
+            span_create = SpanQueueProcessor._convert_to_span_create(span_data)
+            span_creates.append(span_create)
+
+        # Create spans in bulk
+        span = span_service.create_bulk_records(
+            span_creates,
+            project_uuid,
+            project.organization_uuid,
+        )
+        # Don't commit here - will be committed in _process_trace after all operations
+        logger.info(
+            f"Successfully saved trace to database - Trace ID: {trace_id}, "
+            f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
+        )
+        return span, project.organization_uuid, user_id, project_uuid
 
     async def _process_trace(self, trace_id: str, buffer: TraceBuffer) -> None:
         """Process a complete trace.
@@ -528,7 +523,13 @@ class SpanQueueProcessor:
             logger.debug(f"Trace {trace_id} processing completed in thread pool")
 
             if result:
-                spans, org_uuid, user_uuid = result
+                spans, org_uuid, user_uuid, project_uuid = result
+                opensearch_service = OpenSearchService()
+                if opensearch_service.is_enabled:
+                    trace_dicts = [span.model_dump() for span in spans]
+                    await index_traces_in_opensearch(
+                        project_uuid, trace_dicts, opensearch_service
+                    )
                 try:
                     user = self._get_cached_user(user_uuid)
 
@@ -554,11 +555,20 @@ class SpanQueueProcessor:
                     # if reporting fails, we don't want to fail the entire span creation
                     logger.error(f"Error reporting span usage: {e}")
 
+                # Commit the session after all operations are complete
+                if self._session:
+                    self._session.commit()
+                    logger.debug(f"Transaction committed for trace {trace_id}")
+
         except IntegrityError as e:
+            if self._session:
+                self._session.rollback()
             logger.error(
                 f"Integrity error processing trace {trace_id}: {e}. Likely parent span missing."
             )
         except Exception as e:
+            if self._session:
+                self._session.rollback()
             logger.error(f"Error processing trace {trace_id}: {e}")
 
     @staticmethod
