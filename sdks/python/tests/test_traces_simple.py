@@ -6,9 +6,9 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from lilypad.traces import Trace, AsyncTrace
-from lilypad.generated.types.paginated_span_public import PaginatedSpanPublic
-from lilypad.generated.types.span_public import SpanPublic
+from src.lilypad.traces import Trace, AsyncTrace
+from src.lilypad.generated.types.paginated_span_public import PaginatedSpanPublic
+from src.lilypad.generated.types.span_public import SpanPublic
 
 
 def test_get_span_uuid_success():
@@ -148,7 +148,7 @@ async def test_async_get_span_uuid_success():
 
 def test_assign_with_none_span_uuid_raises_span_not_found_error():
     """Fixed: assign() now raises SpanNotFoundError when span not found (instead of passing None to API)"""
-    from lilypad.exceptions import SpanNotFoundError
+    from src.lilypad.exceptions import SpanNotFoundError
 
     trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
 
@@ -165,7 +165,7 @@ def test_assign_with_none_span_uuid_raises_span_not_found_error():
 
 def test_tag_with_none_span_uuid_raises_span_not_found_error():
     """Fixed: tag() now raises SpanNotFoundError when span not found (instead of passing None to API)"""
-    from lilypad.exceptions import SpanNotFoundError
+    from src.lilypad.exceptions import SpanNotFoundError
 
     trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
 
@@ -182,8 +182,8 @@ def test_tag_with_none_span_uuid_raises_span_not_found_error():
 
 def test_annotate_with_none_span_uuid_raises_span_not_found_error():
     """Fixed: annotate() now raises SpanNotFoundError when span not found (instead of passing None to API)"""
-    from lilypad.exceptions import SpanNotFoundError
-    from lilypad.traces import Annotation
+    from src.lilypad.exceptions import SpanNotFoundError
+    from src.lilypad.traces import Annotation
 
     trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
 
@@ -249,8 +249,8 @@ def test_tag_with_empty_tags_returns_early():
 
     # Should not make any API calls when no tags provided
     with (
-        patch("lilypad.traces.get_settings") as mock_settings,
-        patch("lilypad.traces.get_sync_client") as mock_client,
+        patch("src.lilypad.traces.get_settings") as mock_settings,
+        patch("src.lilypad.traces.get_sync_client") as mock_client,
     ):
         result = trace.tag()
 

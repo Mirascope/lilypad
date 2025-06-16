@@ -7,9 +7,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from lilypad.spans import span, Span
-from lilypad._utils import json_dumps
-from lilypad.sessions import session
+from src.lilypad.spans import span, Span
+from src.lilypad._utils import json_dumps
+from src.lilypad.sessions import session
 
 dummy_spans: list["DummySpan"] = []
 
@@ -105,14 +105,14 @@ def reset_dummy_spans() -> Generator[None, None, None]:
 @pytest.fixture(autouse=True)
 def patch_get_tracer(monkeypatch) -> None:
     """Patch get_tracer to return a DummyTracer instance."""
-    monkeypatch.setattr("lilypad.spans.get_tracer", lambda _: DummyTracer())
+    monkeypatch.setattr("src.lilypad.spans.get_tracer", lambda _: DummyTracer())
     # Also patch get_tracer_provider to return a real TracerProvider instance
     from opentelemetry.sdk.trace import TracerProvider
 
     class MockTracerProvider(TracerProvider):
         pass
 
-    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider())
+    monkeypatch.setattr("src.lilypad.spans.get_tracer_provider", lambda: MockTracerProvider())
 
 
 def test_basic_sync_span() -> None:
@@ -213,7 +213,7 @@ def test_unconfigured_lilypad(monkeypatch) -> None:
     Span._warned_not_configured = False
 
     # Patch get_tracer_provider to return something that's not a TracerProvider
-    monkeypatch.setattr("lilypad.spans.get_tracer_provider", lambda: object())
+    monkeypatch.setattr("src.lilypad.spans.get_tracer_provider", lambda: object())
 
     # Create a span and verify it's a no-op
     with span("unconfigured test") as s:
@@ -250,7 +250,7 @@ def test_metadata_serialization_exception(monkeypatch) -> None:
             raise TypeError("Cannot serialize UnserializableObject")
         return json_dumps(obj)
 
-    monkeypatch.setattr("lilypad.spans.json_dumps", mock_json_dumps)
+    monkeypatch.setattr("src.lilypad.spans.json_dumps", mock_json_dumps)
 
     # Create a span and add metadata with the unserializable object
     with span("metadata exception test") as s:

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Iterator, AsyncIterator
 
 from pytest_asyncio import is_async_test
 
-from lilypad import Lilypad, AsyncLilypad
+from src.lilypad import Lilypad, AsyncLilypad
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest  # pyright: ignore[reportPrivateImportUsage]

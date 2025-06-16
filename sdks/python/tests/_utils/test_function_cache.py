@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 
-from lilypad._utils.function_cache import (
+from src.lilypad._utils.function_cache import (
     get_function_by_hash_sync,
     get_function_by_hash_async,
     get_function_by_version_sync,
@@ -20,8 +20,8 @@ from lilypad._utils.function_cache import (
     _hash_async_cache,
     _version_async_cache,
 )
-from lilypad.generated.types.function_public import FunctionPublic
-from lilypad._utils import Closure
+from src.lilypad.generated.types.function_public import FunctionPublic
+from src.lilypad._utils import Closure
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def test_expired():
     assert _expired(current - 1000, -1) is False
 
 
-@patch("lilypad._utils.function_cache.get_sync_client")
+@patch("src.lilypad._utils.function_cache.get_sync_client")
 def test_get_function_by_hash_sync(mock_get_client, mock_function):
     """Test synchronous function retrieval by hash."""
     # Setup mock client
@@ -87,7 +87,7 @@ def test_get_function_by_hash_sync(mock_get_client, mock_function):
 
 
 @pytest.mark.asyncio
-@patch("lilypad._utils.function_cache.get_async_client")
+@patch("src.lilypad._utils.function_cache.get_async_client")
 async def test_get_function_by_hash_async(mock_get_client, mock_function):
     """Test asynchronous function retrieval by hash."""
     # Setup mock client
@@ -109,7 +109,7 @@ async def test_get_function_by_hash_async(mock_get_client, mock_function):
     assert mock_client.projects.functions.get_by_hash.call_count == 1
 
 
-@patch("lilypad._utils.function_cache.get_sync_client")
+@patch("src.lilypad._utils.function_cache.get_sync_client")
 def test_get_function_by_version_sync(mock_get_client, mock_function):
     """Test synchronous function retrieval by version."""
     # Setup mock client
@@ -131,7 +131,7 @@ def test_get_function_by_version_sync(mock_get_client, mock_function):
 
 
 @pytest.mark.asyncio
-@patch("lilypad._utils.function_cache.get_async_client")
+@patch("src.lilypad._utils.function_cache.get_async_client")
 async def test_get_function_by_version_async(mock_get_client, mock_function):
     """Test asynchronous function retrieval by version."""
     # Setup mock client
@@ -152,8 +152,8 @@ async def test_get_function_by_version_async(mock_get_client, mock_function):
     assert mock_client.projects.functions.get_by_version.call_count == 1
 
 
-@patch("lilypad._utils.function_cache.get_sync_client")
-@patch("lilypad._utils.function_cache.time")
+@patch("src.lilypad._utils.function_cache.get_sync_client")
+@patch("src.lilypad._utils.function_cache.time")
 def test_get_deployed_function_sync(mock_time, mock_get_client, mock_function):
     """Test synchronous deployed function retrieval with TTL."""
     # Setup mock client
@@ -182,7 +182,7 @@ def test_get_deployed_function_sync(mock_time, mock_get_client, mock_function):
     assert mock_client.projects.functions.get_deployed_environments.call_count == 2
 
 
-@patch("lilypad._utils.function_cache.get_sync_client")
+@patch("src.lilypad._utils.function_cache.get_sync_client")
 def test_get_deployed_function_sync_force_refresh(mock_get_client, mock_function):
     """Test force refresh for deployed function."""
     # Setup mock client
@@ -202,8 +202,8 @@ def test_get_deployed_function_sync_force_refresh(mock_get_client, mock_function
 
 
 @pytest.mark.asyncio
-@patch("lilypad._utils.function_cache.get_async_client")
-@patch("lilypad._utils.function_cache.time")
+@patch("src.lilypad._utils.function_cache.get_async_client")
+@patch("src.lilypad._utils.function_cache.time")
 async def test_get_deployed_function_async(mock_time, mock_get_client, mock_function):
     """Test asynchronous deployed function retrieval with TTL."""
     # Setup mock client
@@ -324,7 +324,7 @@ async def test_get_function_by_hash_async_race_condition(mock_function):
     mock_client = Mock()
     mock_client.projects.functions.get_by_hash = AsyncMock(return_value=mock_function)
     
-    with patch("lilypad._utils.function_cache.get_async_client", return_value=mock_client):
+    with patch("src.lilypad._utils.function_cache.get_async_client", return_value=mock_client):
         # First call to populate cache
         result1 = await get_function_by_hash_async("project-123", "hash-abc")
         assert result1 == mock_function
@@ -356,7 +356,7 @@ async def test_get_function_by_version_async_race_condition(mock_function):
     mock_client = Mock()
     mock_client.projects.functions.get_by_version = AsyncMock(return_value=mock_function)
     
-    with patch("lilypad._utils.function_cache.get_async_client", return_value=mock_client):
+    with patch("src.lilypad._utils.function_cache.get_async_client", return_value=mock_client):
         # First call to populate cache
         result1 = await get_function_by_version_async("project-123", "my_func", 1)
         assert result1 == mock_function
@@ -388,8 +388,8 @@ async def test_get_deployed_function_async_with_ttl_and_force_refresh(mock_funct
     mock_client = Mock()
     mock_client.projects.functions.get_deployed_environments = AsyncMock(return_value=mock_function)
     
-    with patch("lilypad._utils.function_cache.get_async_client", return_value=mock_client):
-        with patch("lilypad._utils.function_cache.time") as mock_time:
+    with patch("src.lilypad._utils.function_cache.get_async_client", return_value=mock_client):
+        with patch("src.lilypad._utils.function_cache.time") as mock_time:
             mock_time.return_value = 1000.0
             
             # Test default TTL assignment (line 149)

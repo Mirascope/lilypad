@@ -12,7 +12,7 @@ import re
 
 from pydantic import BaseModel
 
-from lilypad._utils.json import (
+from src.lilypad._utils.json import (
     jsonable_encoder,
     json_dumps,
     fast_jsonable,
@@ -514,14 +514,14 @@ def test_to_json_serializable_global_serializers():
     # Test with working global serializer
     import unittest.mock
 
-    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
+    with unittest.mock.patch("src.lilypad._utils.json.get_serializer") as mock_get_serializer:
         mock_get_serializer.return_value = lambda obj: f"global_{obj.value}"
         obj = CustomType("test")
         result = _to_json_serializable(obj)
         assert result == "global_test"
 
     # Test with failing global serializer
-    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
+    with unittest.mock.patch("src.lilypad._utils.json.get_serializer") as mock_get_serializer:
         mock_get_serializer.return_value = lambda obj: 1 / 0  # Division by zero
         obj = CustomType("test")
         result = _to_json_serializable(obj)
@@ -561,7 +561,7 @@ def test_to_json_serializable_sequences():
 
 def test_any_to_text_error_handling():
     """Test _any_to_text error handling."""
-    from lilypad._utils.json import _any_to_text
+    from src.lilypad._utils.json import _any_to_text
 
     class UnserializableObject:
         def __repr__(self):
@@ -587,7 +587,7 @@ def test_any_to_text_error_handling():
 
 def test_any_to_text_primitive_passthrough():
     """Test _any_to_text with JSON-safe primitives."""
-    from lilypad._utils.json import _any_to_text
+    from src.lilypad._utils.json import _any_to_text
 
     # Test primitives that should be returned as-is
     assert _any_to_text("hello") == "hello"
@@ -636,7 +636,7 @@ def test_to_json_serializable_circular_reference_multiple_objects():
 
 def test_generate_encoders_by_class_tuples():
     """Test generate_encoders_by_class_tuples function."""
-    from lilypad._utils.json import generate_encoders_by_class_tuples
+    from src.lilypad._utils.json import generate_encoders_by_class_tuples
 
     # Use a single encoder function reference for multiple types
     def multiplier_encoder(x):
@@ -665,7 +665,7 @@ def test_generate_encoders_by_class_tuples():
 
 def test_map_standard_types():
     """Test MAP_STANDARD_TYPES constant."""
-    from lilypad._utils.json import MAP_STANDARD_TYPES
+    from src.lilypad._utils.json import MAP_STANDARD_TYPES
 
     assert MAP_STANDARD_TYPES["List"] == "list"
     assert MAP_STANDARD_TYPES["Dict"] == "dict"
@@ -787,7 +787,7 @@ def test_to_json_serializable_ipv4_ipv6_and_path():
 
 def test_jsonable_encoder_registered_encoder_check():
     """Test jsonable_encoder with registered encoder check - covers line 314."""
-    from lilypad._utils.json import jsonable_encoder
+    from src.lilypad._utils.json import jsonable_encoder
     from collections.abc import Mapping
     
     class CustomMapping(Mapping):

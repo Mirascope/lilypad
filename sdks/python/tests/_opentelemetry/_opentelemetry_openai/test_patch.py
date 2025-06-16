@@ -7,7 +7,7 @@ import pytest
 from opentelemetry.trace import StatusCode
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from lilypad._opentelemetry._opentelemetry_openai.patch import (
+from src.lilypad._opentelemetry._opentelemetry_openai.patch import (
     chat_completions_parse,
     chat_completions_create,
     chat_completions_parse_async,
@@ -296,3 +296,75 @@ async def test_chat_completions_parse_async_response_format_class(mock_tracer, m
     mock_tracer.start_as_current_span.assert_called_once()
     attributes = mock_tracer.start_as_current_span.call_args[1]["attributes"]
     assert attributes[gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT] == "AsyncParseDummyFormat"
+
+
+def test_chat_completions_create_openrouter_system(mock_tracer, mock_response):
+    """Test that openrouter system is detected correctly (line 64)."""
+    from src.lilypad._opentelemetry._opentelemetry_openai.patch import get_llm_request_attributes
+    from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
+    
+    from httpx import URL
+    
+    wrapped = Mock()
+    wrapped.return_value = mock_response
+    instance = Mock()
+    # Mock base URL to contain openrouter
+    instance._client = Mock()
+    # Create a real URL object for openrouter
+    instance._client.base_url = URL("https://openrouter.ai")
+    
+    kwargs = {
+        "model": "gpt-4",
+        "messages": [{"role": "user", "content": "Hello"}],
+    }
+
+    # Get attributes to check openrouter system detection
+    attributes = get_llm_request_attributes(kwargs, instance)
+    
+    # Check that openrouter is detected in the system attribute
+    assert attributes[gen_ai_attributes.GEN_AI_SYSTEM] == "openrouter"
+
+
+def test_chat_completions_create_streaming(mock_tracer, mock_response):
+    """Test streaming response returns StreamWrapper (line 100)."""
+    from src.lilypad._opentelemetry._utils import StreamWrapper
+    
+    wrapped = Mock()
+    wrapped.return_value = mock_response
+    instance = Mock()
+    kwargs = {
+        "model": "gpt-4",
+        "messages": [{"role": "user", "content": "Hello"}],
+        "stream": True,  # Enable streaming
+    }
+
+    decorator = chat_completions_create(mock_tracer)
+    result = decorator(wrapped, instance, (), kwargs)
+
+    # Verify StreamWrapper is returned for streaming
+    assert isinstance(result, StreamWrapper)
+    assert result.stream is mock_response
+    mock_tracer.start_as_current_span.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_chat_completions_create_async_streaming(mock_tracer, mock_response):
+    """Test async streaming response returns AsyncStreamWrapper (line 149)."""
+    from src.lilypad._opentelemetry._utils import AsyncStreamWrapper
+    
+    wrapped = AsyncMock()
+    wrapped.return_value = mock_response
+    instance = Mock()
+    kwargs = {
+        "model": "gpt-4",
+        "messages": [{"role": "user", "content": "Hello"}],
+        "stream": True,  # Enable streaming
+    }
+
+    decorator = chat_completions_create_async(mock_tracer)
+    result = await decorator(wrapped, instance, (), kwargs)
+
+    # Verify AsyncStreamWrapper is returned for streaming
+    assert isinstance(result, AsyncStreamWrapper)
+    assert result.stream is mock_response
+    mock_tracer.start_as_current_span.assert_called_once()

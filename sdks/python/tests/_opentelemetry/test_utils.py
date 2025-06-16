@@ -6,7 +6,7 @@ import pytest
 from httpx import URL
 from opentelemetry.trace import StatusCode
 
-from lilypad._opentelemetry._utils import (
+from src.lilypad._opentelemetry._utils import (
     ChoiceBuffer,
     StreamWrapper,
     ToolCallBuffer,

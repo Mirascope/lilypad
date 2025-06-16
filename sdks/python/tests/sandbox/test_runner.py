@@ -4,8 +4,8 @@ import pytest
 import orjson
 from unittest.mock import Mock
 
-from lilypad.sandbox.runner import SandboxRunner, Result, DependencyError
-from lilypad._utils import Closure
+from src.lilypad.sandbox.runner import SandboxRunner, Result, DependencyError
+from src.lilypad._utils import Closure
 
 
 class MockSandboxRunner(SandboxRunner):

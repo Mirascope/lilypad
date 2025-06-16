@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from lilypad._utils.json import fast_jsonable
-from lilypad._utils.serializer_registry import register_serializer, get_serializer
+from src.lilypad._utils.json import fast_jsonable
+from src.lilypad._utils.serializer_registry import register_serializer, get_serializer
 
 
 @dataclass

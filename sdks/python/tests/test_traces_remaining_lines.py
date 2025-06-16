@@ -3,15 +3,15 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 
-from lilypad.traces import trace, _register_decorated_function
-from lilypad.generated.errors.not_found_error import NotFoundError
+from src.lilypad.traces import trace, _register_decorated_function
+from src.lilypad.generated.errors.not_found_error import NotFoundError
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_async_client")
-@patch("lilypad.traces.get_function_by_hash_async")
-@patch("lilypad.traces.Closure")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_async_client")
+@patch("src.lilypad.traces.get_function_by_hash_async")
+@patch("src.lilypad.traces.Closure")
+@patch("src.lilypad.traces.Span")
 @pytest.mark.asyncio
 async def test_trace_decorator_async_versioning_function_not_found_creates_new(
     mock_span_class, mock_closure_class, mock_get_function_by_hash_async, 
@@ -57,11 +57,11 @@ async def test_trace_decorator_async_versioning_function_not_found_creates_new(
     assert result == "test"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_sync_client")
-@patch("lilypad.traces.get_function_by_hash_sync")
-@patch("lilypad.traces.Closure")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_sync_client")
+@patch("src.lilypad.traces.get_function_by_hash_sync")
+@patch("src.lilypad.traces.Closure")
+@patch("src.lilypad.traces.Span")
 def test_trace_decorator_sync_versioning_function_not_found_creates_new(
     mock_span_class, mock_closure_class, mock_get_function_by_hash_sync, 
     mock_get_sync_client, mock_get_settings
@@ -106,10 +106,10 @@ def test_trace_decorator_sync_versioning_function_not_found_creates_new(
     assert result == "test"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_function_by_version_async")
-@patch("lilypad.traces.get_cached_closure")
-@patch("lilypad.traces.SubprocessSandboxRunner")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_function_by_version_async")
+@patch("src.lilypad.traces.get_cached_closure")
+@patch("src.lilypad.traces.SubprocessSandboxRunner")
 @pytest.mark.asyncio
 async def test_trace_decorator_version_async_wrap_mode(
     mock_sandbox_runner, mock_get_cached_closure, mock_get_function_by_version_async, mock_get_settings
@@ -144,10 +144,10 @@ async def test_trace_decorator_version_async_wrap_mode(
     assert result.response == "sandbox_result"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_deployed_function_async")
-@patch("lilypad.traces.get_cached_closure")
-@patch("lilypad.traces.SubprocessSandboxRunner")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_deployed_function_async")
+@patch("src.lilypad.traces.get_cached_closure")
+@patch("src.lilypad.traces.SubprocessSandboxRunner")
 @pytest.mark.asyncio
 async def test_trace_decorator_remote_async_wrap_mode(
     mock_sandbox_runner, mock_get_cached_closure, mock_get_deployed_function_async, mock_get_settings
@@ -181,10 +181,10 @@ async def test_trace_decorator_remote_async_wrap_mode(
     assert result.response == "sandbox_result"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_function_by_version_sync")
-@patch("lilypad.traces.get_cached_closure")
-@patch("lilypad.traces.SubprocessSandboxRunner")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_function_by_version_sync")
+@patch("src.lilypad.traces.get_cached_closure")
+@patch("src.lilypad.traces.SubprocessSandboxRunner")
 def test_trace_decorator_version_sync_wrap_mode(
     mock_sandbox_runner, mock_get_cached_closure, mock_get_function_by_version_sync, mock_get_settings
 ):
@@ -218,10 +218,10 @@ def test_trace_decorator_version_sync_wrap_mode(
     assert result.response == "sandbox_result"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.get_deployed_function_sync")
-@patch("lilypad.traces.get_cached_closure")
-@patch("lilypad.traces.SubprocessSandboxRunner")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.get_deployed_function_sync")
+@patch("src.lilypad.traces.get_cached_closure")
+@patch("src.lilypad.traces.SubprocessSandboxRunner")
 def test_trace_decorator_remote_sync_wrap_mode(
     mock_sandbox_runner, mock_get_cached_closure, mock_get_deployed_function_sync, mock_get_settings
 ):
@@ -254,8 +254,8 @@ def test_trace_decorator_remote_sync_wrap_mode(
     assert result.response == "sandbox_result"
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 def test_trace_decorator_sync_with_trace_ctx_parameter(mock_span_class, mock_get_settings):
     """Test sync trace decorator when function accepts trace_ctx parameter."""
     mock_settings = Mock()
@@ -269,20 +269,26 @@ def test_trace_decorator_sync_with_trace_ctx_parameter(mock_span_class, mock_get
     mock_span_class.return_value.__enter__ = Mock(return_value=mock_span)
     mock_span_class.return_value.__exit__ = Mock(return_value=False)
     
-    @trace()
-    def test_sync_function_with_trace_ctx(trace_ctx, value):
-        # Function that accepts trace_ctx parameter
-        return f"trace_ctx: {trace_ctx}, value: {value}"
-    
-    result = test_sync_function_with_trace_ctx("test_value")
+    # Patch Closure.from_fn to prevent __qualname__ error
+    with patch("src.lilypad.traces.Closure") as mock_closure_class:
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure_class.from_fn.return_value = mock_closure
+        
+        @trace()
+        def test_sync_function_with_trace_ctx(trace_ctx, value):
+            # Function that accepts trace_ctx parameter
+            return f"trace_ctx: {trace_ctx}, value: {value}"
+        
+        result = test_sync_function_with_trace_ctx("test_value")
     
     # Should have injected the span as first argument
     assert "trace_ctx:" in result
     assert "value: test_value" in result
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 @pytest.mark.asyncio
 async def test_trace_decorator_async_with_trace_ctx_parameter(mock_span_class, mock_get_settings):
     """Test async trace decorator when function accepts trace_ctx parameter."""
@@ -297,20 +303,26 @@ async def test_trace_decorator_async_with_trace_ctx_parameter(mock_span_class, m
     mock_span_class.return_value.__aenter__ = AsyncMock(return_value=mock_span)
     mock_span_class.return_value.__aexit__ = AsyncMock(return_value=False)
     
-    @trace()
-    async def test_async_function_with_trace_ctx(trace_ctx, value):
-        # Function that accepts trace_ctx parameter
-        return f"trace_ctx: {trace_ctx}, value: {value}"
-    
-    result = await test_async_function_with_trace_ctx("test_value")
+    # Patch Closure.from_fn to prevent __qualname__ error
+    with patch("src.lilypad.traces.Closure") as mock_closure_class:
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure_class.from_fn.return_value = mock_closure
+        
+        @trace()
+        async def test_async_function_with_trace_ctx(trace_ctx, value):
+            # Function that accepts trace_ctx parameter
+            return f"trace_ctx: {trace_ctx}, value: {value}"
+        
+        result = await test_async_function_with_trace_ctx("test_value")
     
     # Should have injected the span as first argument
     assert "trace_ctx:" in result
     assert "value: test_value" in result
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 def test_trace_decorator_sync_with_user_provided_trace_ctx(mock_span_class, mock_get_settings):
     """Test sync trace decorator when user provides trace_ctx parameter."""
     mock_settings = Mock()
@@ -324,22 +336,28 @@ def test_trace_decorator_sync_with_user_provided_trace_ctx(mock_span_class, mock
     mock_span_class.return_value.__enter__ = Mock(return_value=mock_span)
     mock_span_class.return_value.__exit__ = Mock(return_value=False)
     
-    @trace()
-    def test_sync_function_with_trace_ctx(trace_ctx, value):
-        # Function that accepts trace_ctx parameter
-        return f"trace_ctx: {trace_ctx}, value: {value}"
-    
-    # User provides their own trace_ctx
-    user_trace_ctx = Mock()
-    result = test_sync_function_with_trace_ctx(user_trace_ctx, "test_value")
+    # Patch Closure.from_fn to prevent __qualname__ error
+    with patch("src.lilypad.traces.Closure") as mock_closure_class:
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure_class.from_fn.return_value = mock_closure
+        
+        @trace()
+        def test_sync_function_with_trace_ctx(trace_ctx, value):
+            # Function that accepts trace_ctx parameter
+            return f"trace_ctx: {trace_ctx}, value: {value}"
+        
+        # User provides their own trace_ctx
+        user_trace_ctx = Mock()
+        result = test_sync_function_with_trace_ctx(user_trace_ctx, "test_value")
     
     # Should use user-provided trace_ctx
     assert "trace_ctx:" in result
     assert "value: test_value" in result
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 @pytest.mark.asyncio
 async def test_trace_decorator_async_with_user_provided_trace_ctx(mock_span_class, mock_get_settings):
     """Test async trace decorator when user provides trace_ctx parameter."""
@@ -354,22 +372,28 @@ async def test_trace_decorator_async_with_user_provided_trace_ctx(mock_span_clas
     mock_span_class.return_value.__aenter__ = AsyncMock(return_value=mock_span)
     mock_span_class.return_value.__aexit__ = AsyncMock(return_value=False)
     
-    @trace()
-    async def test_async_function_with_trace_ctx(trace_ctx, value):
-        # Function that accepts trace_ctx parameter
-        return f"trace_ctx: {trace_ctx}, value: {value}"
-    
-    # User provides their own trace_ctx
-    user_trace_ctx = Mock()
-    result = await test_async_function_with_trace_ctx(user_trace_ctx, "test_value")
+    # Patch Closure.from_fn to prevent __qualname__ error
+    with patch("src.lilypad.traces.Closure") as mock_closure_class:
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure_class.from_fn.return_value = mock_closure
+        
+        @trace()
+        async def test_async_function_with_trace_ctx(trace_ctx, value):
+            # Function that accepts trace_ctx parameter
+            return f"trace_ctx: {trace_ctx}, value: {value}"
+        
+        # User provides their own trace_ctx
+        user_trace_ctx = Mock()
+        result = await test_async_function_with_trace_ctx(user_trace_ctx, "test_value")
     
     # Should use user-provided trace_ctx
     assert "trace_ctx:" in result
     assert "value: test_value" in result
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 def test_trace_decorator_sync_binding_error(mock_span_class, mock_get_settings):
     """Test sync trace decorator when signature binding fails."""
     mock_settings = Mock()
@@ -396,8 +420,8 @@ def test_trace_decorator_sync_binding_error(mock_span_class, mock_get_settings):
         pass
 
 
-@patch("lilypad.traces.get_settings")
-@patch("lilypad.traces.Span")
+@patch("src.lilypad.traces.get_settings")
+@patch("src.lilypad.traces.Span")
 @pytest.mark.asyncio
 async def test_trace_decorator_async_binding_error(mock_span_class, mock_get_settings):
     """Test async trace decorator when signature binding fails."""
@@ -440,7 +464,7 @@ def test_trace_decorator_with_prompt_template():
 
 def test_register_decorated_function_recording_disabled():
     """Test _register_decorated_function when recording is disabled (line 328)."""
-    with patch("lilypad.traces._RECORDING_ENABLED", False):
+    with patch("src.lilypad.traces._RECORDING_ENABLED", False):
         # When recording is disabled, the function should return early
         _register_decorated_function("test_decorator", lambda: None, "test_function")
         # If we get here without error, the early return worked
@@ -452,11 +476,11 @@ def test_register_decorated_function_inspection_error():
         pass
     
     # Mock inspect.getfile to raise TypeError
-    with patch("lilypad.traces.inspect.getfile", side_effect=TypeError("Cannot get file")):
+    with patch("src.lilypad.traces.inspect.getfile", side_effect=TypeError("Cannot get file")):
         # Should handle the exception gracefully
         _register_decorated_function("test_decorator", problematic_function, "test_function")
     
     # Mock inspect.getfile to raise OSError  
-    with patch("lilypad.traces.inspect.getfile", side_effect=OSError("File not found")):
+    with patch("src.lilypad.traces.inspect.getfile", side_effect=OSError("File not found")):
         # Should handle the exception gracefully
         _register_decorated_function("test_decorator", problematic_function, "test_function")

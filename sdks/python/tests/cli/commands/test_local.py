@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch, mock_open
 import pytest
 from typer.testing import CliRunner
 
-from lilypad.cli.commands.local import (
+from src.lilypad.cli.commands.local import (
     _start_lilypad,
     _wait_for_server,
     _terminate_process,
@@ -26,9 +26,10 @@ def runner():
 @pytest.fixture
 def mock_popen():
     """Create a mock subprocess.Popen object."""
-    mock = MagicMock(spec=subprocess.Popen)
-    mock.poll.return_value = None
-    mock.wait.return_value = 0
+    mock = MagicMock()
+    mock.poll = MagicMock(return_value=None)
+    mock.wait = MagicMock(return_value=0)
+    mock.terminate = MagicMock()
     return mock
 
 
@@ -116,11 +117,11 @@ def test_terminate_process_already_stopped():
 
 @patch("os.path.exists")
 @patch("typer.prompt")
-@patch("lilypad.cli.commands.local.get_sync_client")
-@patch("lilypad.cli.commands.local._start_lilypad")
-@patch("lilypad.cli.commands.local._wait_for_server")
-@patch("lilypad.cli.commands.local.get_and_create_config")
-@patch("lilypad.cli.commands.local.get_settings")
+@patch("src.lilypad.cli.commands.local.get_sync_client")
+@patch("src.lilypad.cli.commands.local._start_lilypad")
+@patch("src.lilypad.cli.commands.local._wait_for_server")
+@patch("src.lilypad.cli.commands.local.get_and_create_config")
+@patch("src.lilypad.cli.commands.local.get_settings")
 @patch("signal.signal")
 def test_local_command_new_project(
     mock_signal,
@@ -168,10 +169,10 @@ def test_local_command_new_project(
 
 
 @patch("os.path.exists")
-@patch("lilypad.cli.commands.local.get_sync_client")
-@patch("lilypad.cli.commands.local._start_lilypad")
-@patch("lilypad.cli.commands.local.get_and_create_config")
-@patch("lilypad.cli.commands.local.get_settings")
+@patch("src.lilypad.cli.commands.local.get_sync_client")
+@patch("src.lilypad.cli.commands.local._start_lilypad")
+@patch("src.lilypad.cli.commands.local.get_and_create_config")
+@patch("src.lilypad.cli.commands.local.get_settings")
 @patch("signal.signal")
 def test_local_command_existing_project(
     mock_signal,

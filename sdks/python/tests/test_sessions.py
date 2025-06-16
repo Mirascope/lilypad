@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from opentelemetry.sdk.trace import TracerProvider
 
-from lilypad.spans import span
-from lilypad.sessions import SESSION_CONTEXT, Session, session
+from src.lilypad.spans import span
+from src.lilypad.sessions import SESSION_CONTEXT, Session, session
 
 
 class DummyTracer:
@@ -47,8 +47,8 @@ def test_span_writes_run_id():
         pass
 
     with (
-        patch("lilypad.spans.get_tracer", lambda *_: tracer),
-        patch("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
+        patch("src.lilypad.spans.get_tracer", lambda *_: tracer),
+        patch("src.lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
         session(id="my-session-id"),
         span("test-span"),
     ):
@@ -66,8 +66,8 @@ def test_span_no_run_id_when_none():
         pass
 
     with (
-        patch("lilypad.spans.get_tracer", lambda *_: tracer),
-        patch("lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
+        patch("src.lilypad.spans.get_tracer", lambda *_: tracer),
+        patch("src.lilypad.spans.get_tracer_provider", lambda: MockTracerProvider()),
         session(id=None),
         span("test-span"),
     ):

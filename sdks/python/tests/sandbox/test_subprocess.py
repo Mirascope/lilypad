@@ -4,8 +4,8 @@ import os
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from lilypad.sandbox.subprocess import SubprocessSandboxRunner
-from lilypad._utils import Closure
+from src.lilypad.sandbox.subprocess import SubprocessSandboxRunner
+from src.lilypad._utils import Closure
 
 
 def test_subprocess_runner_initialization():
@@ -146,7 +146,7 @@ def test_execute_function_error_handling(mock_tempfile, mock_run, mock_unlink):
 
     # Execute and expect DependencyError
     runner = SubprocessSandboxRunner()
-    from lilypad.sandbox.runner import DependencyError
+    from src.lilypad.sandbox.runner import DependencyError
 
     with pytest.raises(DependencyError) as exc_info:
         runner.execute_function(closure)

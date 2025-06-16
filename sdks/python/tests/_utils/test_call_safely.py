@@ -2,9 +2,9 @@
 
 import pytest
 
-from lilypad.exceptions import LilypadException
-from lilypad.generated.core.api_error import ApiError
-from lilypad._utils.call_safely import call_safely
+from src.lilypad.exceptions import LilypadException
+from src.lilypad.generated.core.api_error import ApiError
+from src.lilypad._utils.call_safely import call_safely
 
 
 def test_call_safely() -> None:

@@ -5,7 +5,7 @@ import functools
 from typing import Awaitable, Coroutine, Any
 
 
-from lilypad._utils.fn_is_async import fn_is_async
+from src.lilypad._utils.fn_is_async import fn_is_async
 
 
 def test_sync_function():

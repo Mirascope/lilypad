@@ -7,7 +7,7 @@ import pytest
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.trace import ReadableSpan
 
-from lilypad._utils.otel_debug import wrap_batch_processor
+from src.lilypad._utils.otel_debug import wrap_batch_processor
 
 
 def test_wrap_batch_processor(caplog):
@@ -178,7 +178,7 @@ def test_wrap_batch_processor_exception_handling(caplog):
 
 def test_logger_configuration():
     """Test that the logger is properly configured."""
-    from lilypad._utils.otel_debug import log
+    from src.lilypad._utils.otel_debug import log
 
     # Check logger name and level
     assert log.name == "lilypad.otel-debug"

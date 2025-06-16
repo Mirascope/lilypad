@@ -4,7 +4,7 @@ import asyncio
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
 
-from lilypad._utils.client import (
+from src.lilypad._utils.client import (
     Lilypad,
     AsyncLilypad,
     get_sync_client,
@@ -16,8 +16,8 @@ from lilypad._utils.client import (
     _noop_fallback,
     _async_noop_fallback,
 )
-from lilypad.generated.core.api_error import ApiError
-from lilypad.generated.errors.not_found_error import NotFoundError
+from src.lilypad.generated.core.api_error import ApiError
+from src.lilypad.generated.errors.not_found_error import NotFoundError
 
 
 def test_safe_wrapper_api_error_404():
@@ -75,7 +75,7 @@ async def test_safe_async_wrapper_api_error_non_404():
 def test_lilypad_wrap_clients_without_projects():
     """Test Lilypad client when projects attribute doesn't exist (line 145)."""
     # Create a mock client without projects attribute by mocking hasattr
-    with patch("lilypad.generated.client.Lilypad") as mock_base:
+    with patch("src.lilypad.generated.client.Lilypad") as mock_base:
         mock_instance = Mock()
         mock_base.return_value = mock_instance
         
@@ -89,7 +89,7 @@ def test_lilypad_wrap_clients_without_projects():
 
 def test_lilypad_wrap_clients_exception_handling():
     """Test Lilypad client exception handling during wrapping (lines 148-149)."""
-    with patch("lilypad.generated.client.Lilypad") as mock_base:
+    with patch("src.lilypad.generated.client.Lilypad") as mock_base:
         mock_instance = Mock()
         mock_instance.projects = Mock()
         
@@ -99,8 +99,8 @@ def test_lilypad_wrap_clients_exception_handling():
         
         mock_base.return_value = mock_instance
         
-        with patch("lilypad._utils.client.Lilypad._wrap_raw_clients", side_effect=side_effect):
-            with patch("lilypad._utils.client.logger") as mock_logger:
+        with patch("src.lilypad._utils.client.Lilypad._wrap_raw_clients", side_effect=side_effect):
+            with patch("src.lilypad._utils.client.logger") as mock_logger:
                 # Should handle the exception gracefully
                 client = Lilypad(api_key="test-key")
                 mock_logger.error.assert_called_once()
@@ -109,7 +109,7 @@ def test_lilypad_wrap_clients_exception_handling():
 @pytest.mark.asyncio
 async def test_async_lilypad_wrap_clients_exception_handling():
     """Test AsyncLilypad client exception handling during wrapping."""
-    with patch("lilypad.generated.client.AsyncLilypad") as mock_base:
+    with patch("src.lilypad.generated.client.AsyncLilypad") as mock_base:
         mock_instance = Mock()
         mock_instance.projects = Mock()
         
@@ -119,8 +119,8 @@ async def test_async_lilypad_wrap_clients_exception_handling():
         
         mock_base.return_value = mock_instance
         
-        with patch("lilypad._utils.client.AsyncLilypad._wrap_raw_clients", side_effect=side_effect):
-            with patch("lilypad._utils.client.logger") as mock_logger:
+        with patch("src.lilypad._utils.client.AsyncLilypad._wrap_raw_clients", side_effect=side_effect):
+            with patch("src.lilypad._utils.client.logger") as mock_logger:
                 # Should handle the exception gracefully
                 client = AsyncLilypad(api_key="test-key")
                 mock_logger.error.assert_called_once()
@@ -129,7 +129,7 @@ async def test_async_lilypad_wrap_clients_exception_handling():
 @pytest.mark.asyncio
 async def test_async_lilypad_wrap_clients_success():
     """Test AsyncLilypad client successful wrapping - covers line 235."""
-    with patch("lilypad._utils.client.logger") as mock_logger:
+    with patch("src.lilypad._utils.client.logger") as mock_logger:
         # Create a real client to ensure the success path is tested
         client = AsyncLilypad(api_key="test-key")
         
@@ -142,7 +142,7 @@ async def test_async_lilypad_wrap_clients_success():
 
 def test_sync_lilypad_wrap_clients_success():
     """Test Lilypad client successful wrapping - covers line 146."""
-    with patch("lilypad._utils.client.logger") as mock_logger:
+    with patch("src.lilypad._utils.client.logger") as mock_logger:
         # Create a real client to ensure the success path is tested
         client = Lilypad(api_key="test-key")
         
@@ -254,7 +254,7 @@ async def test_async_wrapper_404_conversion():
     assert exc_info.value.body == "Not Found"
 
 
-@patch("lilypad._utils.client._BaseLilypad.__init__")
+@patch("src.lilypad._utils.client._BaseLilypad.__init__")
 def test_client_initialization(mock_super_init):
     """Test Lilypad client initialization."""
     mock_super_init.return_value = None
@@ -271,7 +271,7 @@ def test_client_initialization(mock_super_init):
     )
 
 
-@patch("lilypad._utils.client._BaseLilypad.__init__")
+@patch("src.lilypad._utils.client._BaseLilypad.__init__")
 def test_client_initialization_failure(mock_super_init):
     """Test client initialization with failure."""
     mock_super_init.side_effect = Exception("Init failed")
@@ -282,7 +282,7 @@ def test_client_initialization_failure(mock_super_init):
     assert "Client initialization failed" in str(exc_info.value)
 
 
-@patch("lilypad._utils.client._BaseLilypad.__init__")
+@patch("src.lilypad._utils.client._BaseLilypad.__init__")
 def test_wrap_raw_clients(mock_super_init):
     """Test _wrap_raw_clients method."""
     mock_super_init.return_value = None
@@ -306,7 +306,7 @@ def test_wrap_raw_clients(mock_super_init):
     assert isinstance(mock_functions._raw_client, _SafeRawClientWrapper)
 
 
-@patch("lilypad._utils.client._BaseAsyncLilypad.__init__")
+@patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__")
 def test_async_client_initialization(mock_super_init):
     """Test AsyncLilypad client initialization."""
     mock_super_init.return_value = None
@@ -323,8 +323,8 @@ def test_async_client_initialization(mock_super_init):
     )
 
 
-@patch("lilypad._utils.client.get_settings")
-@patch("lilypad._utils.client.Lilypad")
+@patch("src.lilypad._utils.client.get_settings")
+@patch("src.lilypad._utils.client.Lilypad")
 def test_get_sync_client_with_api_key(mock_lilypad, mock_get_settings):
     """Test get_sync_client with explicit API key."""
     mock_instance = Mock()
@@ -337,7 +337,7 @@ def test_get_sync_client_with_api_key(mock_lilypad, mock_get_settings):
     mock_get_settings.assert_not_called()
 
 
-@patch("lilypad._utils.client.get_settings")
+@patch("src.lilypad._utils.client.get_settings")
 def test_get_sync_client_no_api_key(mock_get_settings):
     """Test get_sync_client without API key."""
     mock_settings = Mock()
@@ -350,8 +350,8 @@ def test_get_sync_client_no_api_key(mock_get_settings):
     assert "API key not provided" in str(exc_info.value)
 
 
-@patch("lilypad._utils.client.get_settings")
-@patch("lilypad._utils.client._sync_singleton")
+@patch("src.lilypad._utils.client.get_settings")
+@patch("src.lilypad._utils.client._sync_singleton")
 def test_get_sync_client_from_env(mock_singleton, mock_get_settings):
     """Test get_sync_client using environment settings."""
     mock_settings = Mock()
@@ -380,8 +380,8 @@ async def test_get_async_client_outside_loop():
 
 
 @pytest.mark.asyncio
-@patch("lilypad._utils.client.get_settings")
-@patch("lilypad._utils.client._async_singleton")
+@patch("src.lilypad._utils.client.get_settings")
+@patch("src.lilypad._utils.client._async_singleton")
 async def test_get_async_client_success(mock_singleton, mock_get_settings):
     """Test successful async client creation."""
     mock_settings = Mock()
@@ -400,7 +400,7 @@ async def test_get_async_client_success(mock_singleton, mock_get_settings):
     mock_singleton.assert_called_once_with("test_key", id(loop), "https://test.com")
 
 
-@patch("lilypad._utils.client.Lilypad")
+@patch("src.lilypad._utils.client.Lilypad")
 def test_sync_singleton_caching(mock_lilypad):
     """Test that _sync_singleton caches clients."""
     mock_instance1 = Mock()
@@ -427,7 +427,7 @@ def test_sync_singleton_caching(mock_lilypad):
 
 
 @pytest.mark.asyncio
-@patch("lilypad._utils.client.AsyncLilypad")
+@patch("src.lilypad._utils.client.AsyncLilypad")
 async def test_async_singleton_caching(mock_async_lilypad):
     """Test that _async_singleton caches clients per loop."""
     mock_instance = Mock()
@@ -452,7 +452,7 @@ async def test_async_singleton_caching(mock_async_lilypad):
 
 def test_client_initialization_with_token():
     """Test client initialization with token parameter."""
-    with patch("lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = Lilypad(api_key="test_key", token="test_token")
@@ -469,7 +469,7 @@ def test_client_initialization_with_token():
 
 def test_client_initialization_with_all_params():
     """Test client initialization with all parameters."""
-    with patch("lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = Lilypad(
@@ -485,7 +485,7 @@ def test_client_initialization_with_all_params():
 
 def test_async_client_initialization_with_token():
     """Test async client initialization with token parameter."""
-    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = AsyncLilypad(api_key="test_key", token="test_token")
@@ -502,7 +502,7 @@ def test_async_client_initialization_with_token():
 
 def test_async_client_initialization_with_all_params():
     """Test async client initialization with all parameters."""
-    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = AsyncLilypad(
@@ -518,7 +518,7 @@ def test_async_client_initialization_with_all_params():
 
 def test_sync_client_initialization_missing_api_key():
     """Test sync client creation without API key."""
-    with patch("lilypad._utils.client.get_settings") as mock_get_settings:
+    with patch("src.lilypad._utils.client.get_settings") as mock_get_settings:
         mock_settings = Mock()
         mock_settings.api_key = None
         mock_get_settings.return_value = mock_settings
@@ -530,8 +530,8 @@ def test_sync_client_initialization_missing_api_key():
 def test_sync_client_with_custom_params():
     """Test sync client creation with custom parameters."""
     with (
-        patch("lilypad._utils.client.get_settings") as mock_get_settings,
-        patch("lilypad._utils.client.Lilypad") as mock_lilypad,
+        patch("src.lilypad._utils.client.get_settings") as mock_get_settings,
+        patch("src.lilypad._utils.client.Lilypad") as mock_lilypad,
     ):
         mock_settings = Mock()
         mock_settings.api_key = "env_key"
@@ -555,7 +555,7 @@ def test_sync_client_with_custom_params():
 @pytest.mark.asyncio
 async def test_async_client_initialization_missing_api_key():
     """Test async client creation without API key."""
-    with patch("lilypad._utils.client.get_settings") as mock_get_settings:
+    with patch("src.lilypad._utils.client.get_settings") as mock_get_settings:
         mock_settings = Mock()
         mock_settings.api_key = None
         mock_get_settings.return_value = mock_settings
@@ -568,8 +568,8 @@ async def test_async_client_initialization_missing_api_key():
 async def test_async_client_with_custom_params():
     """Test async client creation with custom parameters."""
     with (
-        patch("lilypad._utils.client.get_settings") as mock_get_settings,
-        patch("lilypad._utils.client.AsyncLilypad") as mock_async_lilypad,
+        patch("src.lilypad._utils.client.get_settings") as mock_get_settings,
+        patch("src.lilypad._utils.client.AsyncLilypad") as mock_async_lilypad,
     ):
         mock_settings = Mock()
         mock_settings.api_key = "env_key" 
@@ -592,7 +592,7 @@ async def test_async_client_with_custom_params():
 
 def test_wrap_raw_clients_recursive():
     """Test _wrap_raw_clients with nested clients."""
-    with patch("lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         # Create nested mock structure
@@ -614,7 +614,7 @@ def test_wrap_raw_clients_recursive():
         client._wrap_raw_clients(client.projects)
         
         # Should wrap all nested raw clients
-        from lilypad._utils.client import _SafeRawClientWrapper
+        from src.lilypad._utils.client import _SafeRawClientWrapper
         assert isinstance(mock_root._raw_client, _SafeRawClientWrapper)
         assert isinstance(mock_child1._raw_client, _SafeRawClientWrapper)
         assert isinstance(mock_child2._raw_client, _SafeRawClientWrapper)
@@ -622,7 +622,7 @@ def test_wrap_raw_clients_recursive():
 
 def test_async_wrap_raw_clients_recursive():
     """Test AsyncLilypad _wrap_raw_clients with nested clients."""
-    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         # Create nested mock structure
@@ -640,14 +640,14 @@ def test_async_wrap_raw_clients_recursive():
         client._wrap_raw_clients(client.projects)
         
         # Should wrap all nested raw clients
-        from lilypad._utils.client import _SafeAsyncRawClientWrapper
+        from src.lilypad._utils.client import _SafeAsyncRawClientWrapper
         assert isinstance(mock_root._raw_client, _SafeAsyncRawClientWrapper)
         assert isinstance(mock_child1._raw_client, _SafeAsyncRawClientWrapper)
 
 
 def test_sync_singleton_cache_different_base_urls():
     """Test _sync_singleton caches separately for different base URLs."""
-    with patch("lilypad._utils.client.Lilypad") as mock_lilypad:
+    with patch("src.lilypad._utils.client.Lilypad") as mock_lilypad:
         mock_instance1 = Mock()
         mock_instance2 = Mock()
         mock_lilypad.side_effect = [mock_instance1, mock_instance2]
@@ -670,7 +670,7 @@ async def test_async_singleton_cache_different_loops():
     """Test _async_singleton caches separately for different event loops."""
     import asyncio
     
-    with patch("lilypad._utils.client.AsyncLilypad") as mock_async_lilypad:
+    with patch("src.lilypad._utils.client.AsyncLilypad") as mock_async_lilypad:
         mock_instance1 = Mock()
         mock_instance2 = Mock()
         mock_async_lilypad.side_effect = [mock_instance1, mock_instance2]
@@ -698,7 +698,7 @@ async def test_async_singleton_cache_different_loops():
 
 def test_client_attribute_error_handling():
     """Test client handles missing attributes gracefully."""
-    with patch("lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = Lilypad(api_key="test_key")
@@ -711,7 +711,7 @@ def test_client_attribute_error_handling():
 
 def test_async_client_attribute_error_handling():
     """Test async client handles missing attributes gracefully."""
-    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
         mock_super_init.return_value = None
         
         client = AsyncLilypad(api_key="test_key")
@@ -724,7 +724,7 @@ def test_async_client_attribute_error_handling():
 
 def test_sync_singleton_creation_failure():
     """Test _sync_singleton handles client creation failure - covers lines 279-281."""
-    with patch("lilypad._utils.client.Lilypad") as mock_lilypad:
+    with patch("src.lilypad._utils.client.Lilypad") as mock_lilypad:
         mock_lilypad.side_effect = Exception("Client creation failed")
         
         # Clear cache first
@@ -737,7 +737,7 @@ def test_sync_singleton_creation_failure():
 @pytest.mark.asyncio
 async def test_async_singleton_creation_failure():
     """Test _async_singleton handles client creation failure - covers lines 330-332."""
-    with patch("lilypad._utils.client.AsyncLilypad") as mock_async_lilypad:
+    with patch("src.lilypad._utils.client.AsyncLilypad") as mock_async_lilypad:
         mock_async_lilypad.side_effect = Exception("Async client creation failed")
         
         # Clear cache first
@@ -751,7 +751,7 @@ async def test_async_singleton_creation_failure():
 
 def test_async_lilypad_init_error_handling():
     """Test error handling in AsyncLilypad.__init__ - covers lines 221-223."""
-    with patch("lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
+    with patch("src.lilypad._utils.client._BaseAsyncLilypad.__init__") as mock_super_init:
         # Mock super().__init__ to raise an exception
         mock_super_init.side_effect = Exception("Base initialization failed")
         

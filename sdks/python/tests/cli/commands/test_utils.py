@@ -4,7 +4,7 @@ import json
 from unittest.mock import patch, mock_open
 
 
-from lilypad.cli.commands._utils import get_and_create_config
+from src.lilypad.cli.commands._utils import get_and_create_config
 
 
 def test_get_and_create_config_existing_dir_and_file():

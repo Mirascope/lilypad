@@ -3,7 +3,7 @@
 from typing import Optional, Union, List, Dict, Any
 
 
-from lilypad._utils.functions import (
+from src.lilypad._utils.functions import (
     get_signature,
     _get_type_str,
     inspect_arguments,
@@ -235,8 +235,8 @@ def test_get_type_str_generic_no_args():
     from unittest.mock import patch
     
     # Mock a scenario where get_origin returns something but get_args returns empty
-    with patch('lilypad._utils.functions.get_origin') as mock_origin, \
-         patch('lilypad._utils.functions.get_args') as mock_args:
+    with patch('src.lilypad._utils.functions.get_origin') as mock_origin, \
+         patch('src.lilypad._utils.functions.get_args') as mock_args:
         
         # Create a mock origin that has __name__
         class MockOrigin:

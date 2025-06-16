@@ -130,12 +130,31 @@ class Span:
         """
         if self._span is None:
             return
-        if args and isinstance(args[0], dict):
-            data: dict[str, Any] = args[0].copy()
-            data |= kwargs
+        
+        # Handle positional arguments
+        if args:
+            if isinstance(args[0], dict):
+                # First arg is a dictionary, merge with kwargs
+                data: dict[str, Any] = args[0].copy()
+                data |= kwargs
+            else:
+                # Positional args that are not dicts - store as lilypad.metadata
+                try:
+                    args_json = json_dumps(list(args))
+                    self._span.set_attribute("lilypad.metadata", args_json)
+                except Exception:
+                    self._span.set_attribute("lilypad.metadata", str(list(args)))
+                # Also process kwargs normally
+                data = kwargs
         else:
-            data = kwargs
+            # Only kwargs, but also set empty lilypad.metadata for consistency
+            if kwargs:
+                data = kwargs
+            else:
+                # No args or kwargs
+                return
 
+        # Set individual attributes from data
         for key, value in data.items():
             if not isinstance(value, str | int | float | bool) and value is not None:
                 try:
@@ -143,20 +162,29 @@ class Span:
                 except Exception:
                     value = str(value)
             self._span.set_attribute(key, value)
+        
+        # For kwargs-only case, also set lilypad.metadata to empty list
+        if not args and kwargs:
+            self._span.set_attribute("lilypad.metadata", "[]")
 
     def finish(self) -> None:
         """Explicitly finish the span if it has not been ended yet."""
-        if not self._finished and self._span is not None:
-            self._span.end()
-
-            if self._token:
-                context_api.detach(self._token)
+        if not self._finished:
+            if self._span is not None:
+                self._span.end()
+                if self._token:
+                    context_api.detach(self._token)
             self._finished = True
 
     @property
     def span_id(self) -> int:
         """Return the span ID."""
-        return self._span_id if self._noop else self._span.get_span_context().span_id
+        if self._noop:
+            return self._span_id
+        elif self._span is None:
+            return 0
+        else:
+            return self._span.get_span_context().span_id
 
     @property
     def opentelemetry_span(self) -> OTSpan | None:
