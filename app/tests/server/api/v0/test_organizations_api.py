@@ -1,5 +1,6 @@
 """Comprehensive tests for the organizations API endpoints."""
 
+from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 from fastapi.testclient import TestClient
@@ -291,3 +292,188 @@ def test_delete_last_organization(
     data = response.json()
     assert "access_token" in data
     assert data["active_organization_uuid"] is None
+
+
+def test_delete_organization_not_found(
+    client: TestClient, session: Session, test_user: UserTable
+):
+    """Test deleting organization that doesn't exist or user doesn't have access to."""
+    # Type guard
+    assert test_user.uuid is not None
+
+    # Make sure user is owner
+    user_org = (
+        session.query(UserOrganizationTable)
+        .filter_by(
+            user_uuid=test_user.uuid,
+            organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
+        )
+        .first()
+    )
+    assert user_org is not None
+    user_org.role = UserRole.OWNER
+    session.commit()
+
+    # Mock the organization service to return False for delete
+    with patch(
+        "lilypad.server.services.organizations.OrganizationService.delete_record_by_uuid"
+    ) as mock_delete:
+        mock_delete.return_value = False
+
+        response = client.delete("/organizations")
+        assert response.status_code == 400
+        assert "Organization not found" in response.json()["detail"]
+
+
+def test_create_organization_with_stripe(
+    client: TestClient, session: Session, test_user: UserTable
+):
+    """Test creating organization with Stripe customer creation in cloud environment."""
+    org_data = {"name": "Stripe Test Organization"}
+
+    # Mock cloud environment and billing service
+    from lilypad.ee.server.require_license import is_lilypad_cloud
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.services.billing import BillingService
+
+    # Create mock billing service
+    mock_billing_service = MagicMock(spec=BillingService)
+    mock_billing_service.create_customer = MagicMock()
+
+    # Override dependencies
+    api.dependency_overrides[BillingService] = lambda: mock_billing_service
+    api.dependency_overrides[is_lilypad_cloud] = lambda: True
+
+    try:
+        response = client.post("/organizations", json=org_data)
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["name"] == "Stripe Test Organization"
+
+        # Verify Stripe customer was created
+        mock_billing_service.create_customer.assert_called_once()
+        call_args = mock_billing_service.create_customer.call_args[0]
+        assert call_args[0].name == "Stripe Test Organization"
+        assert call_args[1] == test_user.email
+    finally:
+        # Clean up overrides
+        api.dependency_overrides.pop(BillingService, None)
+        api.dependency_overrides.pop(is_lilypad_cloud, None)
+
+
+def test_delete_organization_with_stripe(
+    client: TestClient, session: Session, test_user: UserTable
+):
+    """Test deleting organization with Stripe customer deletion in cloud environment."""
+    # Type guard
+    assert test_user.uuid is not None
+
+    # Make sure user is owner
+    user_org = (
+        session.query(UserOrganizationTable)
+        .filter_by(
+            user_uuid=test_user.uuid,
+            organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
+        )
+        .first()
+    )
+    assert user_org is not None
+    user_org.role = UserRole.OWNER
+    session.commit()
+
+    # Mock cloud environment and billing service
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.services.billing import BillingService
+
+    # Create mock billing service
+    mock_billing_service = MagicMock(spec=BillingService)
+    mock_billing_service.delete_customer_and_billing = MagicMock()
+
+    # Override dependencies
+    api.dependency_overrides[BillingService] = lambda: mock_billing_service
+
+    # Mock is_lilypad_cloud to return True
+    with patch(
+        "lilypad.server.api.v0.organizations_api.is_lilypad_cloud"
+    ) as mock_is_cloud:
+        mock_is_cloud.return_value = True
+
+        try:
+            response = client.delete("/organizations")
+            assert response.status_code == 200
+
+            # Verify Stripe customer was deleted
+            mock_billing_service.delete_customer_and_billing.assert_called_once_with(
+                UUID("12345678-1234-1234-1234-123456789abc")
+            )
+        finally:
+            # Clean up overrides
+            api.dependency_overrides.pop(BillingService, None)
+
+
+def test_update_organization_with_stripe(
+    client: TestClient, session: Session, test_user: UserTable
+):
+    """Test updating organization with Stripe customer update in cloud environment."""
+    # Type guard
+    assert test_user.uuid is not None
+
+    # Make sure user is owner
+    user_org = (
+        session.query(UserOrganizationTable)
+        .filter_by(
+            user_uuid=test_user.uuid,
+            organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
+        )
+        .first()
+    )
+    assert user_org is not None
+    user_org.role = UserRole.OWNER
+    session.commit()
+
+    # Get organization and ensure it has billing
+    org = session.get(OrganizationTable, UUID("12345678-1234-1234-1234-123456789abc"))
+    assert org is not None
+
+    # Create billing entry for the organization
+    billing = BillingTable(
+        organization_uuid=org.uuid,  # type: ignore[arg-type]
+        stripe_customer_id="cus_test_update",
+    )
+    session.add(billing)
+    session.commit()
+
+    # Mock cloud environment and billing service
+    from lilypad.server.api.v0.main import api
+    from lilypad.server.services.billing import BillingService
+
+    # Create mock billing service
+    mock_billing_service = MagicMock(spec=BillingService)
+    mock_billing_service.update_customer = MagicMock()
+
+    # Override dependencies
+    api.dependency_overrides[BillingService] = lambda: mock_billing_service
+
+    update_data = {"name": "Updated Stripe Organization"}
+
+    # Mock is_lilypad_cloud to return True
+    with patch(
+        "lilypad.server.api.v0.organizations_api.is_lilypad_cloud"
+    ) as mock_is_cloud:
+        mock_is_cloud.return_value = True
+
+        try:
+            response = client.patch("/organizations", json=update_data)
+            assert response.status_code == 200
+
+            data = response.json()
+            assert data["name"] == "Updated Stripe Organization"
+
+            # Verify Stripe customer was updated
+            mock_billing_service.update_customer.assert_called_once_with(
+                "cus_test_update", "Updated Stripe Organization"
+            )
+        finally:
+            # Clean up overrides
+            api.dependency_overrides.pop(BillingService, None)

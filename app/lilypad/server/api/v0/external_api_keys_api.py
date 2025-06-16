@@ -25,10 +25,8 @@ async def store_external_api_key(
     ],
 ) -> ExternalAPIKeyPublic:
     """Store an external API key for a given service."""
-    external_api_key_service.store_api_key(
-        request.service_name, request.api_key
-    )  # pragma: no cover
-    return ExternalAPIKeyPublic(  # pragma: no cover
+    external_api_key_service.store_api_key(request.service_name, request.api_key)
+    return ExternalAPIKeyPublic(
         service_name=request.service_name, masked_api_key=request.api_key
     )
 
@@ -44,10 +42,8 @@ async def get_external_api_key(
     ],
 ) -> ExternalAPIKeyPublic:
     """Retrieve an external API key for a given service."""
-    api_key = external_api_key_service.get_api_key(service_name)  # pragma: no cover
-    return ExternalAPIKeyPublic(
-        service_name=service_name, masked_api_key=api_key
-    )  # pragma: no cover
+    api_key = external_api_key_service.get_api_key(service_name)
+    return ExternalAPIKeyPublic(service_name=service_name, masked_api_key=api_key)
 
 
 @external_api_key_router.patch(
@@ -62,11 +58,11 @@ async def update_external_api_key(
     external_api_key_update: ExternalAPIKeyUpdate,
 ) -> ExternalAPIKeyPublic:
     """Update users keys."""
-    external_api_key_service.update_api_key(  # pragma: no cover
+    external_api_key_service.update_api_key(
         service_name,
-        external_api_key_update.api_key,  # pragma: no cover
-    )  # pragma: no cover
-    return ExternalAPIKeyPublic(  # pragma: no cover
+        external_api_key_update.api_key,
+    )
+    return ExternalAPIKeyPublic(
         service_name=service_name, masked_api_key=external_api_key_update.api_key
     )
 
@@ -80,7 +76,7 @@ async def delete_external_api_key(
     ],
 ) -> bool:
     """Delete an external API key for a given service."""
-    return external_api_key_service.delete_api_key(service_name)  # pragma: no cover
+    return external_api_key_service.delete_api_key(service_name)
 
 
 @external_api_key_router.get(
@@ -93,7 +89,7 @@ async def list_external_api_keys(
     ],
 ) -> list[ExternalAPIKeyPublic]:
     """List all external API keys for the user with masked values."""
-    return [  # pragma: no cover
+    return [
         ExternalAPIKeyPublic(service_name=service_name, masked_api_key=secret)
         for service_name, secret in external_api_key_service.list_api_keys().items()
     ]

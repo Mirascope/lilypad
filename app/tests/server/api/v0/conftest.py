@@ -94,13 +94,16 @@ def get_test_current_user(test_user: UserTable):
     """
 
     def override_get_current_user():
-        return UserPublic(
+        user_public = UserPublic(
             uuid=test_user.uuid,  # type: ignore[arg-type]
             email=test_user.email,
             first_name=test_user.first_name,
             last_name=test_user.last_name,
             active_organization_uuid=test_user.active_organization_uuid,
         )
+        # Add default scopes for testing
+        user_public.scopes = ["user:read", "user:write", "vault:read", "vault:write"]  # type: ignore[misc]
+        return user_public
 
     return override_get_current_user
 

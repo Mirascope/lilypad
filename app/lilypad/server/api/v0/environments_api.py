@@ -29,7 +29,7 @@ async def get_environments(
     environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
 ) -> Sequence[EnvironmentTable]:
     """Get all environments for a project."""
-    return environment_service.find_all_records()  # pragma: no cover
+    return environment_service.find_all_records()
 
 
 @environments_router.post("/environments", response_model=EnvironmentPublic)
@@ -38,7 +38,7 @@ async def create_environment(
     environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
 ) -> EnvironmentTable:
     """Create a new environment."""
-    return environment_service.create_record(environment_create)  # pragma: no cover
+    return environment_service.create_record(environment_create)
 
 
 @environments_router.get(
@@ -50,7 +50,7 @@ async def get_environment(
     environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
 ) -> EnvironmentTable:
     """Get environment by UUID."""
-    return environment_service.find_record_by_uuid(environment_uuid)  # pragma: no cover
+    return environment_service.find_record_by_uuid(environment_uuid)
 
 
 @environments_router.delete("/environments/{environment_uuid}")
@@ -59,9 +59,7 @@ async def delete_environment(
     environment_service: Annotated[EnvironmentService, Depends(EnvironmentService)],
 ) -> bool:
     """Delete an environment."""
-    return environment_service.delete_record_by_uuid(
-        environment_uuid
-    )  # pragma: no cover
+    return environment_service.delete_record_by_uuid(environment_uuid)
 
 
 # Deployment endpoints
@@ -77,9 +75,7 @@ async def deploy_function(
     notes: str | None = None,
 ) -> DeploymentTable:
     """Deploy a function to an environment."""
-    return deployment_service.deploy_function(
-        environment_uuid, function_uuid, notes
-    )  # pragma: no cover
+    return deployment_service.deploy_function(environment_uuid, function_uuid, notes)
 
 
 @environments_router.get(
@@ -92,9 +88,7 @@ async def get_active_deployment(
     deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
 ) -> DeploymentTable:
     """Get active deployment for an environment."""
-    return deployment_service.get_active_deployment(
-        environment_uuid
-    )  # pragma: no cover
+    return deployment_service.get_active_deployment(environment_uuid)
 
 
 @environments_router.get(
@@ -107,9 +101,7 @@ async def get_environment_function(
     deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
 ) -> FunctionTable:
     """Get the currently active function for an environment."""
-    return deployment_service.get_function_for_environment(
-        environment_uuid
-    )  # pragma: no cover
+    return deployment_service.get_function_for_environment(environment_uuid)
 
 
 @environments_router.get(
@@ -122,6 +114,4 @@ async def get_deployment_history(
     deployment_service: Annotated[DeploymentService, Depends(DeploymentService)],
 ) -> Sequence[DeploymentTable]:
     """Get deployment history for an environment."""
-    return deployment_service.get_deployment_history(
-        environment_uuid
-    )  # pragma: no cover
+    return deployment_service.get_deployment_history(environment_uuid)

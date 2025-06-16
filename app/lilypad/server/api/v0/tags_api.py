@@ -19,7 +19,7 @@ async def get_tags(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> Sequence[TagTable]:
     """Get all tags."""
-    return tag_service.find_all_records()  # pragma: no cover
+    return tag_service.find_all_records()
 
 
 @tags_router.get("/projects/{project_uuid}/tags", response_model=Sequence[TagPublic])
@@ -28,7 +28,7 @@ async def get_tags_by_project(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> Sequence[TagTable]:
     """Get all tags by project."""
-    return tag_service.find_all_records(project_uuid=project_uuid)  # pragma: no cover
+    return tag_service.find_all_records(project_uuid=project_uuid)
 
 
 @tags_router.get("/tags/{tag_uuid}", response_model=TagPublic)
@@ -37,7 +37,7 @@ async def get_tag(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> TagTable:
     """Get a tag."""
-    return tag_service.find_record_by_uuid(tag_uuid)  # pragma: no cover
+    return tag_service.find_record_by_uuid(tag_uuid)
 
 
 @tags_router.post("/tags", response_model=TagPublic)
@@ -46,10 +46,10 @@ async def create_tag(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> TagTable:
     """Create a tag"""
-    try:  # pragma: no cover
-        return tag_service.create_record(tag_create)  # pragma: no cover
-    except IntegrityError:  # pragma: no cover
-        raise ValueError("Tag already exists")  # pragma: no cover
+    try:
+        return tag_service.create_record(tag_create)
+    except IntegrityError:
+        raise ValueError("Tag already exists")
 
 
 @tags_router.patch("/tags/{tag_uuid}", response_model=TagPublic)
@@ -59,7 +59,7 @@ async def patch_tag(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> TagTable:
     """Update a tag."""
-    return tag_service.update_record_by_uuid(  # pragma: no cover
+    return tag_service.update_record_by_uuid(
         tag_uuid, tag_create.model_dump(exclude_unset=True)
     )
 
@@ -70,7 +70,7 @@ async def delete_tag(
     tag_service: Annotated[TagService, Depends(TagService)],
 ) -> bool:
     """Delete a tag"""
-    return tag_service.delete_record_by_uuid(tag_uuid)  # pragma: no cover
+    return tag_service.delete_record_by_uuid(tag_uuid)
 
 
 __all__ = ["tags_router"]

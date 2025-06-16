@@ -257,9 +257,9 @@ async def archive_functions_by_name(
         )
         span_service.delete_records_by_function_name(project_uuid, function_name)
         if opensearch_service.is_enabled:
-            for function in archived_functions:  # pragma: no cover
-                if function.uuid:  # pragma: no cover
-                    opensearch_service.delete_traces_by_function_uuid(  # pragma: no cover
+            for function in archived_functions:
+                if function.uuid:
+                    opensearch_service.delete_traces_by_function_uuid(
                         project_uuid, function.uuid
                     )
     except Exception:
@@ -280,7 +280,7 @@ async def archive_function(
         function_service.archive_record_by_uuid(function_uuid)
         span_service.delete_records_by_function_uuid(project_uuid, function_uuid)
         if opensearch_service.is_enabled:
-            opensearch_service.delete_traces_by_function_uuid(  # pragma: no cover
+            opensearch_service.delete_traces_by_function_uuid(
                 project_uuid, function_uuid
             )
     except Exception:

@@ -2,6 +2,7 @@
 
 import hashlib
 import uuid
+from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -9,6 +10,8 @@ from sqlmodel import Session
 from lilypad.server.models import FunctionTable, ProjectTable
 from lilypad.server.models.deployments import DeploymentTable
 from lilypad.server.models.environments import EnvironmentTable
+from lilypad.server.services import get_opensearch_service
+from lilypad.server.services.opensearch import OpenSearchService
 
 
 def test_get_function_by_version(
@@ -552,3 +555,86 @@ def test_archive_function_with_opensearch_enabled(
 
     assert response.status_code == 200
     assert response.json() is True
+
+
+def test_archive_functions_by_name_with_opensearch_multiple_functions(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    session: Session,
+):
+    """Test archiving functions by name with OpenSearch when multiple functions exist."""
+    from lilypad.server.api.v0.main import api
+
+    # Create another function with the same name
+    another_function = FunctionTable(
+        name=test_function.name,
+        signature="def test(): pass",
+        code="def test(): pass",
+        hash="hash2",
+        project_uuid=test_project.uuid,
+        organization_uuid=test_project.organization_uuid,
+        version_num=2,
+    )
+    session.add(another_function)
+    session.commit()
+    session.refresh(another_function)
+
+    # Mock OpenSearch service
+    mock_opensearch = MagicMock(spec=OpenSearchService)
+    mock_opensearch.is_enabled = True
+    mock_opensearch.delete_traces_by_function_uuid = MagicMock()
+
+    # Override dependency
+    api.dependency_overrides[get_opensearch_service] = lambda: mock_opensearch
+
+    try:
+        response = client.delete(
+            f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+        )
+
+        assert response.status_code == 200
+        assert response.json() is True
+
+        # Verify OpenSearch delete was called for both functions
+        assert mock_opensearch.delete_traces_by_function_uuid.call_count == 2
+        mock_opensearch.delete_traces_by_function_uuid.assert_any_call(
+            test_project.uuid, test_function.uuid
+        )
+        mock_opensearch.delete_traces_by_function_uuid.assert_any_call(
+            test_project.uuid, another_function.uuid
+        )
+    finally:
+        api.dependency_overrides.pop(get_opensearch_service, None)
+
+
+def test_archive_function_by_uuid_with_opensearch_dependency_injection(
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test archiving function by UUID with OpenSearch using dependency injection."""
+    from lilypad.server.api.v0.main import api
+
+    # Mock OpenSearch service
+    mock_opensearch = MagicMock(spec=OpenSearchService)
+    mock_opensearch.is_enabled = True
+    mock_opensearch.delete_traces_by_function_uuid = MagicMock()
+
+    # Override dependency
+    api.dependency_overrides[get_opensearch_service] = lambda: mock_opensearch
+
+    try:
+        response = client.delete(
+            f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+        )
+
+        assert response.status_code == 200
+        assert response.json() is True
+
+        # Verify OpenSearch delete was called
+        mock_opensearch.delete_traces_by_function_uuid.assert_called_once_with(
+            test_project.uuid, test_function.uuid
+        )
+    finally:
+        api.dependency_overrides.pop(get_opensearch_service, None)
