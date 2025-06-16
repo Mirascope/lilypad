@@ -341,6 +341,7 @@ class TestSpanQueueProcessor:
                 "lilypad.server.services.span_queue_processor.AIOKafkaConsumer",
                 side_effect=Exception("Setup failed"),
             ),
+            patch("asyncio.sleep"),  # Mock sleep to avoid delays during retry logic
             patch("lilypad.server.services.span_queue_processor.logger"),
         ):
             result = await processor.initialize()

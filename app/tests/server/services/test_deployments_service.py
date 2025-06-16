@@ -384,11 +384,14 @@ def test_deploy_function_max_retries_exceeded(
     """Test that HTTPException is raised when max retries exceeded."""
     with patch.object(deployment_service, "create_record") as mock_create:
         # All calls raise IntegrityError
-        mock_create.side_effect = IntegrityError("statement", "params", Exception("orig"))  # type: ignore[arg-type]
+        mock_create.side_effect = IntegrityError(
+            "statement", "params", Exception("orig")
+        )  # type: ignore[arg-type]
 
         with pytest.raises(HTTPException) as exc_info:
             deployment_service.deploy_function(
-                environment_uuid=test_environment_uuid, function_uuid=test_function.uuid  # type: ignore[arg-type]
+                environment_uuid=test_environment_uuid,
+                function_uuid=test_function.uuid,  # type: ignore[arg-type]
             )
 
         assert exc_info.value.status_code == 409
@@ -466,7 +469,8 @@ def test_basic_deployment_service_operations(
 
     # Test update
     updated_deployment = deployment_service.update_record_by_uuid(
-        deployment.uuid, {"notes": "Updated deployment"}  # type: ignore[arg-type]
+        deployment.uuid,
+        {"notes": "Updated deployment"},  # type: ignore[arg-type]
     )
     assert updated_deployment.notes == "Updated deployment"
 

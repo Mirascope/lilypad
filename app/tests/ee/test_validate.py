@@ -545,7 +545,9 @@ class TestGenerateLicense:
         """Test generating license with invalid private key file."""
         with (
             patch("builtins.open", mock_open(read_data="invalid key data")),
-            pytest.raises((ValueError, TypeError, AttributeError)),  # Could be various crypto exceptions
+            pytest.raises(
+                (ValueError, TypeError, AttributeError)
+            ),  # Could be various crypto exceptions
         ):
             generate_license(
                 private_key_path="/fake/path/private.pem",

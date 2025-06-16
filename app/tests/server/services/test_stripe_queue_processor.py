@@ -246,6 +246,7 @@ class TestStripeQueueProcessor:
                 "lilypad.server.services.stripe_queue_processor.AIOKafkaConsumer",
                 side_effect=Exception("Failed"),
             ),
+            patch("asyncio.sleep"),  # Mock sleep to avoid delays during retry logic
             patch("lilypad.server.services.stripe_queue_processor.logger"),
         ):
             result = await processor.initialize()

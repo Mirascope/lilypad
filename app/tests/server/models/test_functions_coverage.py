@@ -98,7 +98,9 @@ class TestFunctionsModelCoverage:
         long_name = "f" * 513  # Over 512 characters
 
         # Pydantic will catch this before our validator runs, so we expect ValidationError
-        with pytest.raises((ValueError, TypeError)):  # Accept any exception for string too long
+        with pytest.raises(
+            (ValueError, TypeError)
+        ):  # Accept any exception for string too long
             FunctionCreate(
                 name=long_name,
                 signature="def test(): pass",

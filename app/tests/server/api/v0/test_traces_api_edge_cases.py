@@ -51,26 +51,26 @@ def test_traces_post_missing_attributes(client: TestClient, test_project: Projec
                 "lilypad.server.api.v0.traces_api.get_span_kafka_service"
             ) as mock_kafka,
         ):
-                    mock_kafka_service = Mock()
-                    mock_kafka_service.send_batch = AsyncMock(return_value=True)
-                    mock_kafka.return_value = mock_kafka_service
+            mock_kafka_service = Mock()
+            mock_kafka_service.send_batch = AsyncMock(return_value=True)
+            mock_kafka.return_value = mock_kafka_service
 
-                    # Send trace without attributes
-                    response = client.post(
-                        f"/projects/{test_project.uuid}/traces",
-                        json=[
-                            {
-                                "span_id": "test_span",
-                                "trace_id": "test_trace",
-                                "start_time": 1000,
-                                "end_time": 2000,
-                                "instrumentation_scope": {"name": "lilypad"},
-                                # No attributes field
-                            }
-                        ],
-                    )
+            # Send trace without attributes
+            response = client.post(
+                f"/projects/{test_project.uuid}/traces",
+                json=[
+                    {
+                        "span_id": "test_span",
+                        "trace_id": "test_trace",
+                        "start_time": 1000,
+                        "end_time": 2000,
+                        "instrumentation_scope": {"name": "lilypad"},
+                        # No attributes field
+                    }
+                ],
+            )
 
-                    assert response.status_code == 200
+            assert response.status_code == 200
 
     finally:
         api.dependency_overrides = original_overrides
@@ -101,42 +101,42 @@ def test_traces_with_parent_child_relationship(
                 "lilypad.server.api.v0.traces_api.get_span_kafka_service"
             ) as mock_kafka,
         ):
-                    # Force synchronous processing
-                    mock_kafka_service = Mock()
-                    mock_kafka_service.send_batch = AsyncMock(return_value=False)
-                    mock_kafka.return_value = mock_kafka_service
+            # Force synchronous processing
+            mock_kafka_service = Mock()
+            mock_kafka_service.send_batch = AsyncMock(return_value=False)
+            mock_kafka.return_value = mock_kafka_service
 
-                    with patch(
-                        "lilypad.server.services.spans.SpanService.create_bulk_records"
-                    ) as mock_create:
-                        mock_create.return_value = []
+            with patch(
+                "lilypad.server.services.spans.SpanService.create_bulk_records"
+            ) as mock_create:
+                mock_create.return_value = []
 
-                        with patch(
-                            "lilypad.server.services.billing.BillingService.report_span_usage_with_fallback"
-                        ):
-                            # Send parent and child spans
-                            response = client.post(
-                                f"/projects/{test_project.uuid}/traces",
-                                json=[
-                                    {
-                                        "span_id": "parent_span",
-                                        "trace_id": "test_trace",
-                                        "start_time": 1000,
-                                        "end_time": 3000,
-                                        "instrumentation_scope": {"name": "lilypad"},
-                                    },
-                                    {
-                                        "span_id": "child_span",
-                                        "trace_id": "test_trace",
-                                        "parent_span_id": "parent_span",
-                                        "start_time": 1500,
-                                        "end_time": 2500,
-                                        "instrumentation_scope": {"name": "lilypad"},
-                                    },
-                                ],
-                            )
+                with patch(
+                    "lilypad.server.services.billing.BillingService.report_span_usage_with_fallback"
+                ):
+                    # Send parent and child spans
+                    response = client.post(
+                        f"/projects/{test_project.uuid}/traces",
+                        json=[
+                            {
+                                "span_id": "parent_span",
+                                "trace_id": "test_trace",
+                                "start_time": 1000,
+                                "end_time": 3000,
+                                "instrumentation_scope": {"name": "lilypad"},
+                            },
+                            {
+                                "span_id": "child_span",
+                                "trace_id": "test_trace",
+                                "parent_span_id": "parent_span",
+                                "start_time": 1500,
+                                "end_time": 2500,
+                                "instrumentation_scope": {"name": "lilypad"},
+                            },
+                        ],
+                    )
 
-                            assert response.status_code == 200
+                    assert response.status_code == 200
 
     finally:
         api.dependency_overrides = original_overrides
@@ -167,37 +167,37 @@ def test_billing_service_exception_handling(
                 "lilypad.server.api.v0.traces_api.get_span_kafka_service"
             ) as mock_kafka,
         ):
-                    # Force synchronous processing
-                    mock_kafka_service = Mock()
-                    mock_kafka_service.send_batch = AsyncMock(return_value=False)
-                    mock_kafka.return_value = mock_kafka_service
+            # Force synchronous processing
+            mock_kafka_service = Mock()
+            mock_kafka_service.send_batch = AsyncMock(return_value=False)
+            mock_kafka.return_value = mock_kafka_service
 
-                    with patch(
-                        "lilypad.server.services.spans.SpanService.create_bulk_records"
-                    ) as mock_create:
-                        mock_create.return_value = []
+            with patch(
+                "lilypad.server.services.spans.SpanService.create_bulk_records"
+            ) as mock_create:
+                mock_create.return_value = []
 
-                        with patch(
-                            "lilypad.server.services.billing.BillingService.report_span_usage_with_fallback"
-                        ) as mock_billing:
-                            # Make billing service raise an exception
-                            mock_billing.side_effect = Exception("Billing error")
+                with patch(
+                    "lilypad.server.services.billing.BillingService.report_span_usage_with_fallback"
+                ) as mock_billing:
+                    # Make billing service raise an exception
+                    mock_billing.side_effect = Exception("Billing error")
 
-                            # This should not fail the request
-                            response = client.post(
-                                f"/projects/{test_project.uuid}/traces",
-                                json=[
-                                    {
-                                        "span_id": "test_span",
-                                        "trace_id": "test_trace",
-                                        "start_time": 1000,
-                                        "end_time": 2000,
-                                        "instrumentation_scope": {"name": "lilypad"},
-                                    }
-                                ],
-                            )
+                    # This should not fail the request
+                    response = client.post(
+                        f"/projects/{test_project.uuid}/traces",
+                        json=[
+                            {
+                                "span_id": "test_span",
+                                "trace_id": "test_trace",
+                                "start_time": 1000,
+                                "end_time": 2000,
+                                "instrumentation_scope": {"name": "lilypad"},
+                            }
+                        ],
+                    )
 
-                            assert response.status_code == 200
+                    assert response.status_code == 200
 
     finally:
         api.dependency_overrides = original_overrides

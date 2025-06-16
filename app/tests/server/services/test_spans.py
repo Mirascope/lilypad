@@ -511,7 +511,9 @@ def test_create_bulk_records_with_billing(
     with patch("lilypad.server.services.billing.BillingService") as MockBilling:
         MockBilling.return_value = mock_billing
         created_spans = service.create_bulk_records(
-            spans_create, test_project.uuid, test_project.organization_uuid  # type: ignore
+            spans_create,
+            test_project.uuid,
+            test_project.organization_uuid,  # type: ignore
         )
 
     assert len(created_spans) == 2

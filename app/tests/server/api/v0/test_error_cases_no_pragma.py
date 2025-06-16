@@ -96,46 +96,46 @@ class TestOpenSearchIntegration:
 
             with (
                 patch.object(
-                    ProjectService, "find_record_no_organization", return_value=test_project
+                    ProjectService,
+                    "find_record_no_organization",
+                    return_value=test_project,
                 ),
                 # Mock the background task to simulate OpenSearch being enabled
-                patch(
-                    "lilypad.server.api.v0.traces_api.index_traces_in_opensearch"
-                ),
+                patch("lilypad.server.api.v0.traces_api.index_traces_in_opensearch"),
                 patch(
                     "lilypad.server.api.v0.traces_api.get_opensearch_service"
                 ) as mock_get_service,
             ):
-                    mock_service = Mock()
-                    mock_service.is_enabled = True
-                    mock_get_service.return_value = mock_service
+                mock_service = Mock()
+                mock_service.is_enabled = True
+                mock_get_service.return_value = mock_service
 
-                    # Mock the service to return valid data
+                # Mock the service to return valid data
+                with patch(
+                    "lilypad.server.services.spans.SpanService.create_bulk_records"
+                ) as mock_create:
+                    mock_create.return_value = []
+
+                    # Mock span count for license check
                     with patch(
-                        "lilypad.server.services.spans.SpanService.create_bulk_records"
-                    ) as mock_create:
-                        mock_create.return_value = []
+                        "lilypad.server.services.spans.SpanService.count_by_current_month",
+                        return_value=0,
+                    ):
+                        response = client.post(
+                            f"/projects/{test_project.uuid}/traces",
+                            json=[
+                                {
+                                    "span_id": "test_span",
+                                    "trace_id": "test_trace",
+                                    "start_time": 1000,
+                                    "end_time": 2000,
+                                    "instrumentation_scope": {"name": "lilypad"},
+                                }
+                            ],
+                        )
 
-                        # Mock span count for license check
-                        with patch(
-                            "lilypad.server.services.spans.SpanService.count_by_current_month",
-                            return_value=0,
-                        ):
-                            response = client.post(
-                                f"/projects/{test_project.uuid}/traces",
-                                json=[
-                                    {
-                                        "span_id": "test_span",
-                                        "trace_id": "test_trace",
-                                        "start_time": 1000,
-                                        "end_time": 2000,
-                                        "instrumentation_scope": {"name": "lilypad"},
-                                    }
-                                ],
-                            )
-
-                            # Should succeed regardless of OpenSearch state
-                            assert response.status_code == 200
+                        # Should succeed regardless of OpenSearch state
+                        assert response.status_code == 200
         finally:
             # Restore original overrides
             api.dependency_overrides = original_overrides

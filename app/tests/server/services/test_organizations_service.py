@@ -332,7 +332,8 @@ def test_create_stripe_customer_already_has_customer(
     # Create organization with existing customer
     org = OrganizationTable(name="Has Customer Org")
     billing = BillingTable(
-        organization_uuid=org.uuid, stripe_customer_id="cust_existing789"  # type: ignore
+        organization_uuid=org.uuid,
+        stripe_customer_id="cust_existing789",  # type: ignore
     )
     db_session.add(org)
     db_session.add(billing)

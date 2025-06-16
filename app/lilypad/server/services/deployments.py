@@ -44,7 +44,8 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
                             self.table.organization_uuid
                             == self.user.active_organization_uuid,
                             self.table.environment_uuid == environment_uuid,
-                            self.table.is_active == True,  # Use == for SQLAlchemy boolean comparison  # Use explicit equality check
+                            self.table.is_active
+                            == True,  # Use == for SQLAlchemy boolean comparison  # Use explicit equality check
                         )
                     ).all()
 
@@ -92,7 +93,8 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
-                self.table.is_active == True,  # Use == for SQLAlchemy boolean comparison
+                self.table.is_active
+                == True,  # Use == for SQLAlchemy boolean comparison
             )
         ).first()
 

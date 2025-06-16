@@ -25,7 +25,9 @@ def test_database_session_error_handling():
 
         # Trigger cleanup with error
         with contextlib.suppress(Exception):
-            gen.throw(Exception("Test error"))  # Expected - this should trigger rollback error handling
+            gen.throw(
+                Exception("Test error")
+            )  # Expected - this should trigger rollback error handling
 
 
 def test_secret_manager_metrics_errors():
@@ -165,7 +167,9 @@ def test_ee_license_edge_cases():
 
         for license_info in invalid_licenses:
             with contextlib.suppress(Exception):
-                check_license_validity(license_info, required_tier="ENTERPRISE")  # Expected for invalid licenses
+                check_license_validity(
+                    license_info, required_tier="ENTERPRISE"
+                )  # Expected for invalid licenses
     except ImportError:
         # EE module not available, skip this test
         pass
