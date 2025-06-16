@@ -124,6 +124,7 @@ def test_get_class_from_qualname_isinstance_error():
     """Test getting class from qualified name when isinstance() fails."""
     from lilypad._utils.closure import _get_class_from_unbound_method
     import gc
+    from unittest.mock import patch
     
     # Create a method-like object with a qualname
     class TestClass:
@@ -133,25 +134,22 @@ def test_get_class_from_qualname_isinstance_error():
     # Get the unbound method
     test_method = TestClass.test_method
     
-    # Create a mock object that raises exception on isinstance()
-    class BadObject:
+    # Create a problematic object that will cause isinstance to fail
+    class ProblematicObject:
+        @property
         def __class__(self):
-            raise RuntimeError("Cannot check isinstance")
+            # This will cause isinstance() to fail
+            raise RuntimeError("Cannot access __class__")
     
-    # Temporarily modify gc.get_objects
-    original_get_objects = gc.get_objects
+    bad_obj = ProblematicObject()
     
+    # Mock gc.get_objects to return our problematic object
     def mock_get_objects():
-        # Return our bad object along with some normal objects
-        return [BadObject()] + [str, int, list, TestClass]
+        # Return the bad object first, then the real TestClass
+        return [bad_obj, TestClass]
     
-    gc.get_objects = mock_get_objects
-    
-    try:
+    with patch('gc.get_objects', mock_get_objects):
         # This should not raise an exception, just skip the bad object
         result = _get_class_from_unbound_method(test_method)
         # Should find TestClass despite the bad object
         assert result == TestClass
-    finally:
-        # Restore original function
-        gc.get_objects = original_get_objects
