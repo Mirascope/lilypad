@@ -572,36 +572,31 @@ class _DependencyCollector:
         )
         global_assignment_collector.visit(module_tree)
 
-        for global_assignment in global_assignment_collector.assignments:
-            tree = ast.parse(global_assignment)  # pragma: no cover
-            stmt = cast(ast.Assign | ast.AnnAssign, tree.body[0])  # pragma: no cover
-            if isinstance(stmt, ast.Assign):  # pragma: no cover
-                var_name = cast(ast.Name, stmt.targets[0]).id  # pragma: no cover
-            else:  # pragma: no cover
-                var_name = cast(ast.Name, stmt.target).id  # pragma: no cover
-            # pragma: no cover
-            # Skip global assignments that are used as function parameters.  # pragma: no cover
-            if var_name in parameter_names:  # pragma: no cover
-                continue  # pragma: no cover
-            # pragma: no cover
-            if (
-                var_name not in used_names or var_name in local_assignments
-            ):  # pragma: no cover
-                continue  # pragma: no cover
-            # pragma: no cover
-            self.assignments.append(global_assignment)  # pragma: no cover
-            # pragma: no cover
-            name_collector = _NameCollector()  # pragma: no cover
-            name_collector.visit(tree)  # pragma: no cover
-            import_collector = _ImportCollector(  # pragma: no cover
-                name_collector.used_names,
-                self.site_packages,  # pragma: no cover
-            )  # pragma: no cover
-            import_collector.visit(module_tree)  # pragma: no cover
-            self.imports.update(import_collector.imports)  # pragma: no cover
-            self.user_defined_imports.update(
-                import_collector.user_defined_imports
-            )  # pragma: no cover
+        for global_assignment in global_assignment_collector.assignments:  # pragma: no cover
+            tree = ast.parse(global_assignment)
+            stmt = cast(ast.Assign | ast.AnnAssign, tree.body[0])
+            if isinstance(stmt, ast.Assign):
+                var_name = cast(ast.Name, stmt.targets[0]).id
+            else:
+                var_name = cast(ast.Name, stmt.target).id
+
+            # Skip global assignments that are used as function parameters.
+            if var_name in parameter_names:
+                continue
+
+            if var_name not in used_names or var_name in local_assignments:
+                continue
+
+            self.assignments.append(global_assignment)
+
+            name_collector = _NameCollector()
+            name_collector.visit(tree)
+            import_collector = _ImportCollector(
+                name_collector.used_names, self.site_packages
+            )
+            import_collector.visit(module_tree)
+            self.imports.update(import_collector.imports)
+            self.user_defined_imports.update(import_collector.user_defined_imports)
 
     def _collect_imports_and_source_code(
         self, definition: Callable[..., Any] | type, include_source: bool
@@ -780,9 +775,9 @@ class _DependencyCollector:
 
         assignments = []
         for code in self.assignments:  # pragma: no cover
-            tree = cst.parse_module(code)  # pragma: no cover
-            new_tree = tree.visit(rewriter)  # pragma: no cover
-            assignments.append(new_tree.code)  # pragma: no cover
+            tree = cst.parse_module(code)
+            new_tree = tree.visit(rewriter)
+            assignments.append(new_tree.code)
 
         source_code = []
         for code in self.source_code:
