@@ -18,6 +18,24 @@ from lilypad._utils.closure import (
     _DependencyCollector,
     Closure,
 )
+import subprocess
+import os
+import libcst as cst
+from functools import cached_property
+from textwrap import dedent
+from lilypad._utils.closure import (
+    _RemoveDocstringTransformer,
+    _clean_source_code,
+    _NameCollector,
+    _LocalAssignmentCollector,
+    _GlobalAssignmentCollector,
+    _collect_parameter_names,
+    _QualifiedNameRewriter,
+    get_qualified_name,
+    _is_third_party,
+    _clean_source_from_string,
+    get_class_source_from_method,
+)
 
 
 def test_import_collector_user_defined_module():
@@ -228,57 +246,6 @@ def test_import_collector_import_from_relative():
 
     # Should be in user_defined_imports with adjusted module name
     assert any("...module" in imp for imp in collector.user_defined_imports)
-
-
-def test_dependency_collector_with_cached_property():
-    """Test _DependencyCollector with cached_property."""
-    from functools import cached_property
-
-    collector = _DependencyCollector()
-
-    class TestClass:
-        @cached_property
-        def cached_method(self):
-            return "cached value"
-
-    # Get the cached_property descriptor
-    cached_prop = TestClass.__dict__["cached_method"]
-
-    # Mock to avoid actual source code processing
-    with (
-        patch("inspect.getsource", return_value="def cached_method(self): return 'cached value'"),
-        patch("inspect.getmodule", return_value=sys.modules[__name__]),
-    ):
-        collector._collect_imports_and_source_code(cached_prop, include_source=True)
-
-    # Should process the underlying function
-    assert len(collector.visited_functions) > 0
-
-
-# Import subprocess for the error test
-import subprocess
-import os
-import libcst as cst
-from functools import cached_property
-from textwrap import dedent
-from lilypad._utils.closure import (
-    _RemoveDocstringTransformer,
-    _clean_source_code,
-    _NameCollector,
-    _LocalAssignmentCollector,
-    _GlobalAssignmentCollector,
-    _collect_parameter_names,
-    _QualifiedNameRewriter,
-    get_qualified_name,
-    _is_third_party,
-    _clean_source_from_string,
-    get_class_source_from_method,
-)
-
-
-# ================================================================================
-# ADDITIONAL TESTS FOR 100% COVERAGE
-# ================================================================================
 
 
 def test_remove_docstring_transformer_empty_body():

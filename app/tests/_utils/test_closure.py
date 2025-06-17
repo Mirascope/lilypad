@@ -1229,7 +1229,7 @@ def test_extract_types_with_annotated():
 
     from lilypad._utils.closure import _extract_types
 
-    # Test Annotated type - this should hit line 332
+    # Test Annotated type handling
     annotated_type = Annotated[str, "some annotation"]
     types_found = _extract_types(annotated_type)
     assert str in types_found
@@ -1353,7 +1353,7 @@ def test_dependency_collector_property_with_none_fget():
 
     collector = _DependencyCollector()
 
-    # This should trigger the "if definition.fget is None: return" path (line 607)
+    # This should trigger the "if definition.fget is None: return" path
     with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(TestClass.prop, True)  # type: ignore[arg-type]
 
@@ -1375,7 +1375,7 @@ def test_dependency_collector_wrapped_function():
 
     collector = _DependencyCollector()
 
-    # This should trigger the hasattr(definition, "func") and __name__ is None path (line 616)
+    # This should trigger the hasattr(definition, "func") and __name__ is None path
     with contextlib.suppress(OSError, TypeError, AttributeError):
         collector._collect_imports_and_source_code(wrapper, True)  # type: ignore[arg-type]
 
@@ -1389,7 +1389,7 @@ def test_dependency_collector_assignments_filtering():
 
     collector = _DependencyCollector()
 
-    # Try to trigger the assignment filtering paths (lines 584-599)
+    # Try to trigger the assignment filtering paths
     with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(func_with_complex_dependencies, True)
 
@@ -1436,7 +1436,7 @@ def test_dependency_collector_class_method_source():
 
 
 def test_import_collector_from_import_without_module():
-    """Test ImportCollector visit_ImportFrom where module is None (line 222)."""
+    """Test ImportCollector visit_ImportFrom where module is None."""
     import ast
 
     from lilypad._utils.closure import _ImportCollector
@@ -1461,7 +1461,7 @@ def test_extract_types_with_annotated_origin():
 
     from lilypad._utils.closure import _extract_types
 
-    # Test Annotated type - this should hit line 332 (Annotated handling)
+    # Test Annotated type handling (Annotated handling)
     annotated_type = Annotated[int, "some annotation"]
     types_found = _extract_types(annotated_type)
 
@@ -1502,7 +1502,7 @@ class TestClass:
 
 
 def test_definition_collector_name_node_handling():
-    """Test _DefinitionCollector _process_name_or_attribute with Name node (line 402)."""
+    """Test _DefinitionCollector _process_name_or_attribute with Name node."""
     import ast
     import types
 
@@ -1520,14 +1520,14 @@ def test_definition_collector_name_node_handling():
     # Create a Name node
     name_node = ast.Name(id="test_func")
 
-    # This should trigger line 402: self.definitions_to_include.append(obj)
+    # This should append the object to definitions_to_include
     collector._process_name_or_attribute(name_node)
 
     assert len(collector.definitions_to_include) >= 0
 
 
 def test_definition_collector_attribute_node_handling():
-    """Test _DefinitionCollector _process_name_or_attribute with Attribute node (line 417)."""
+    """Test _DefinitionCollector _process_name_or_attribute with Attribute node."""
     import ast
     import types
 
@@ -1545,14 +1545,14 @@ def test_definition_collector_attribute_node_handling():
     # Create an Attribute node: test_func.attr
     attr_node = ast.Attribute(value=ast.Name(id="test_func"), attr="attr")
 
-    # This should trigger line 417: self.definitions_to_include.append(definition)
+    # This should append the definition to definitions_to_include
     collector._process_name_or_attribute(attr_node)
 
     assert len(collector.definitions_to_include) >= 0
 
 
 def test_definition_collector_call_keyword_handling():
-    """Test _DefinitionCollector visit_Call keyword processing (line 424)."""
+    """Test _DefinitionCollector visit_Call keyword processing."""
     import ast
     import types
 
@@ -1574,14 +1574,14 @@ def test_definition_collector_call_keyword_handling():
         keywords=[ast.keyword(arg="param", value=ast.Name(id="test_func"))],
     )
 
-    # This should trigger line 424: self._process_name_or_attribute(keyword.value)
+    # This should process the keyword value
     collector.visit_Call(call_node)
 
     assert len(collector.definitions_to_include) >= 0
 
 
 def test_qualified_name_rewriter_local_name_simplification():
-    """Test _QualifiedNameRewriter leave_Attribute for local name (line 482)."""
+    """Test _QualifiedNameRewriter leave_Attribute for local name."""
     import libcst as cst
 
     from lilypad._utils.closure import _QualifiedNameRewriter
@@ -1599,12 +1599,12 @@ module.local_func()
     modified = tree.visit(rewriter)
 
     # Should simplify to just the local name
-    # This hits line 482: return cst.Name(value=node_name)
+    # This should return a Name node with the local name
     assert "local_func" in modified.code
 
 
 def test_get_class_from_unbound_method_exception_handling():
-    """Test _get_class_from_unbound_method with objects that raise exceptions (lines 517-519)."""
+    """Test _get_class_from_unbound_method with objects that raise exceptions."""
     from lilypad._utils.closure import _get_class_from_unbound_method
 
     def test_method():
@@ -1634,7 +1634,7 @@ def test_get_class_from_unbound_method_exception_handling():
 
 
 def test_dependency_collector_global_assignment_filtering():
-    """Test _DependencyCollector assignment filtering logic (lines 576-599)."""
+    """Test _DependencyCollector assignment filtering logic."""
 
     # Create a complex function with global dependencies
     def complex_function():
@@ -1651,7 +1651,7 @@ def test_dependency_collector_global_assignment_filtering():
         # Expected for some functions that don't have accessible source
         collector._collect_imports_and_source_code(complex_function, True)
 
-        # The logic in lines 576-599 filters assignments based on:
+        # The assignment filtering logic filters based on:
         # - Parameter names
         # - Used names
         # - Local assignments
@@ -1662,7 +1662,7 @@ def test_dependency_collector_global_assignment_filtering():
 
 
 def test_dependency_collector_visited_functions_check():
-    """Test _DependencyCollector visited functions check (line 630)."""
+    """Test _DependencyCollector visited functions check."""
 
     def test_function():
         return 42
@@ -1672,7 +1672,7 @@ def test_dependency_collector_visited_functions_check():
     # Add function to visited set first
     collector.visited_functions.add(test_function.__qualname__)
 
-    # Now try to collect it again - should return early due to line 630
+    # Now try to collect it again - should return early due to visited check
     with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(test_function, True)
 
@@ -1681,7 +1681,7 @@ def test_dependency_collector_visited_functions_check():
 
 
 def test_dependency_collector_third_party_module_check():
-    """Test _DependencyCollector third-party module check (line 640)."""
+    """Test _DependencyCollector third-party module check."""
 
     # Create a function that will be considered third-party
     def third_party_function():
@@ -1697,7 +1697,7 @@ def test_dependency_collector_third_party_module_check():
 
     collector = _DependencyCollector()
 
-    # This should trigger line 640: return (early exit for third-party modules)
+    # This should trigger early exit for third-party modules
     with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(third_party_function, True)
 
@@ -1706,7 +1706,7 @@ def test_dependency_collector_third_party_module_check():
 
 
 def test_dependency_collector_user_defined_import_replacement():
-    """Test _DependencyCollector user-defined import replacement (line 663)."""
+    """Test _DependencyCollector user-defined import replacement."""
 
     def test_function():
         # Simple function for testing
@@ -1721,7 +1721,7 @@ def test_dependency_collector_user_defined_import_replacement():
     test_source = "from my_module import some_func\ndef test():\n    return some_func()"
     collector.source_code.append(test_source)
 
-    # Manually trigger the replacement logic (line 663)
+    # Manually trigger the replacement logic
     source = test_source
     for user_defined_import in collector.user_defined_imports:
         source = source.replace(user_defined_import, "")
@@ -1731,7 +1731,7 @@ def test_dependency_collector_user_defined_import_replacement():
 
 
 def test_dependency_collector_recursive_collection():
-    """Test _DependencyCollector recursive definition collection (line 674)."""
+    """Test _DependencyCollector recursive definition collection."""
 
     def main_function():
         return helper_function()
@@ -1741,7 +1741,7 @@ def test_dependency_collector_recursive_collection():
 
     collector = _DependencyCollector()
 
-    # This should trigger recursive collection via line 674
+    # This should trigger recursive collection
     with contextlib.suppress(OSError, TypeError):
         collector._collect_imports_and_source_code(main_function, True)
 
@@ -1750,7 +1750,7 @@ def test_dependency_collector_recursive_collection():
 
 
 def test_dependency_collector_required_dependencies_coverage():
-    """Test _DependencyCollector _collect_required_dependencies edge cases (lines 697-718)."""
+    """Test _DependencyCollector _collect_required_dependencies edge cases."""
     collector = _DependencyCollector()
 
     # Test with imports that should hit various branches
@@ -1760,7 +1760,7 @@ def test_dependency_collector_required_dependencies_coverage():
         "import lilypad",  # special case for lilypad
     }
 
-    # This should exercise lines 697-718 (dependency collection logic)
+    # This should exercise dependency collection logic
     dependencies = collector._collect_required_dependencies(test_imports)
 
     # Should handle various dependency scenarios
@@ -1768,7 +1768,7 @@ def test_dependency_collector_required_dependencies_coverage():
 
 
 def test_dependency_collector_map_child_to_parent():
-    """Test _DependencyCollector _map_child_to_parent method (lines 776-778)."""
+    """Test _DependencyCollector _map_child_to_parent method."""
     import ast
 
     # Create a simple AST to test the mapping
@@ -1789,7 +1789,7 @@ def test_function():
 
 
 def test_remove_docstring_transformer_indented_block_check():
-    """Test _RemoveDocstringTransformer IndentedBlock check (line 108)."""
+    """Test _RemoveDocstringTransformer IndentedBlock check."""
     import libcst as cst
 
     from lilypad._utils.closure import _RemoveDocstringTransformer
@@ -1804,7 +1804,7 @@ def function_with_only_docstring():
     transformer = _RemoveDocstringTransformer(exclude_fn_body=False)
     modified = module.visit(transformer)
 
-    # This should trigger line 108: return node.with_changes(body=stmts[0])
+    # This should return node with changed body
     # when the body is an IndentedBlock and becomes empty after docstring removal
     modified_code = modified.code
 
@@ -1813,7 +1813,7 @@ def function_with_only_docstring():
 
 
 def test_import_collector_none_module_path():
-    """Test ImportCollector visit_ImportFrom with None module (line 222)."""
+    """Test ImportCollector visit_ImportFrom with None module."""
     import ast
 
     from lilypad._utils.closure import _ImportCollector
@@ -1833,7 +1833,7 @@ def test_import_collector_none_module_path():
 
 
 def test_extract_types_annotated_origin_coverage():
-    """Test _extract_types with Annotated type to cover line 332."""
+    """Test _extract_types with Annotated type handling.""
     from typing import Annotated
 
     from lilypad._utils.closure import _extract_types
@@ -1847,7 +1847,7 @@ def test_extract_types_annotated_origin_coverage():
 
 
 def test_definition_collector_attribute_path_coverage():
-    """Test _DefinitionCollector attribute path handling (line 417)."""
+    """Test _DefinitionCollector attribute path handling."""
     import ast
     import types
 
@@ -1873,7 +1873,7 @@ def test_definition_collector_attribute_path_coverage():
 
 
 def test_dependency_collector_complex_assignment_scenarios():
-    """Test complex assignment scenarios in _DependencyCollector (lines 576-599)."""
+    """Test complex assignment scenarios in _DependencyCollector.""
     import ast
 
     from lilypad._utils.closure import (
@@ -1915,7 +1915,7 @@ def test_func(param1, param2):
     global_collector = _GlobalAssignmentCollector(used_names, module_code)
     global_collector.visit(module_tree)
 
-    # This exercises the complex filtering logic in lines 576-599
+    # This exercises the complex filtering logic
     assignments = []
     for global_assignment in global_collector.assignments:
         tree = ast.parse(global_assignment)
@@ -1927,7 +1927,7 @@ def test_func(param1, param2):
         else:  # ast.AnnAssign
             var_name = stmt.target.id  # type: ignore[attr-defined]
 
-        # Test the filtering conditions from lines 584-588
+        # Test the filtering conditions
         if var_name in parameter_names:
             continue
         if var_name not in used_names or var_name in local_assignments:
@@ -1939,7 +1939,7 @@ def test_func(param1, param2):
 
 
 def test_dependency_collector_include_source_false_path():
-    """Test _DependencyCollector with include_source=False (line 663)."""
+    """Test _DependencyCollector with include_source=False."""
 
     def test_function():
         return 42
@@ -1958,7 +1958,7 @@ def test_dependency_collector_include_source_false_path():
 
 
 def test_dependency_collector_definitions_to_include_path():
-    """Test _DependencyCollector recursive collection (line 674)."""
+    """Test _DependencyCollector recursive collection."""
     import types
 
     def helper_func():
@@ -1982,14 +1982,14 @@ def test_dependency_collector_definitions_to_include_path():
 
 
 def test_dependency_collector_package_extras_logic():
-    """Test _DependencyCollector package extras detection (lines 704-718)."""
+    """Test _DependencyCollector package extras detection."""
     collector = _DependencyCollector()
 
     # Test the dependency collection with various import types
     test_imports = {"import pytest"}  # Use pytest as it likely has metadata
 
     try:
-        # This should trigger the complex extras detection logic in lines 704-718
+        # This should trigger the complex extras detection logic
         dependencies = collector._collect_required_dependencies(test_imports)
 
         # The logic should handle package extras and requirements
@@ -2001,7 +2001,7 @@ def test_dependency_collector_package_extras_logic():
 
 
 def test_dependency_collector_ast_mapping_branches():
-    """Test _DependencyCollector _map_child_to_parent different branches (lines 776-778)."""
+    """Test _DependencyCollector _map_child_to_parent different branches."""
     import ast
 
     # Create AST with different node types to trigger all branches
@@ -2016,7 +2016,7 @@ def func():
     child_to_parent = {}
     _DependencyCollector._map_child_to_parent(child_to_parent, tree)
 
-    # Should handle both list and single AST node cases in lines 776-778
+    # Should handle both list and single AST node cases
     assert len(child_to_parent) > 0
 
     # Verify the mapping includes various node types
@@ -2033,8 +2033,8 @@ def func():
     assert found_list_case or found_single_case
 
 
-def test_import_collector_user_defined_imports_line_222():
-    """Test ImportCollector user_defined_imports detection (line 222)."""
+def test_import_collector_detects_user_defined_imports():
+    """Test ImportCollector correctly identifies user-defined imports."""
     import ast
 
     from lilypad._utils.closure import _ImportCollector
@@ -2059,7 +2059,7 @@ import sys  # This is stdlib
 
 
 def test_extract_types_annotated():
-    """Test _extract_types with Annotated type (line 332)."""
+    """Test _extract_types with Annotated type."""
     from typing import Annotated
 
     from lilypad._utils.closure import _extract_types
@@ -2075,7 +2075,7 @@ def test_extract_types_annotated():
 
 
 def test_dependency_include_append():
-    """Test definition inclusion with __name__ attribute (line 417)."""
+    """Test definition inclusion with __name__ attribute.""
     import types
 
     from lilypad._utils.closure import _DefinitionCollector
@@ -2104,7 +2104,7 @@ def test_dependency_include_append():
 
 
 def test_global_assignment_processing():
-    """Test global assignment processing (lines 576-599)."""
+    """Test global assignment processing."""
     from lilypad._utils.closure import Closure
 
     # Create function with global assignments that should be processed
@@ -2119,7 +2119,7 @@ def test_global_assignment_processing():
         # This covers the complex assignment processing logic
         assert isinstance(closure.assignments, list)  # type: ignore
 
-        # If we have assignments, they were processed through lines 576-599
+        # If we have assignments, they were processed through assignment filtering
         if closure.assignments:  # type: ignore
             # Verify assignment processing worked
             assert all(
@@ -2133,7 +2133,7 @@ def test_global_assignment_processing():
 
 
 def test_global_assignment_with_annotations():
-    """Test global assignment processing with annotated assignments (lines 580-581)."""
+    """Test global assignment processing with annotated assignments."""
     import ast
 
     from lilypad._utils.closure import _LocalAssignmentCollector
@@ -2166,7 +2166,7 @@ z = "hello"
 
 
 def test_source_replacement_and_collection():
-    """Test source replacement and definition collection (lines 663, 674, 716)."""
+    """Test source replacement and definition collection.""
     from lilypad._utils.closure import Closure
 
     # Create a simple function to test closure source collection
@@ -2228,8 +2228,8 @@ def test_extract_types_annotated_specific():
     assert str in result
 
 
-def test_definition_collector_append_line_417():
-    """Test _DefinitionCollector to hit line 417."""
+def test_definition_collector_appends_named_definitions():
+    """Test _DefinitionCollector appends definitions with __name__ attribute."""
     import ast
     import types
 
@@ -2254,8 +2254,8 @@ def test_definition_collector_append_line_417():
     # Line 417: self.definitions_to_include.append(definition) should execute
 
 
-def test_dependency_collector_assignment_lines_576_599():
-    """Test _DependencyCollector assignment filtering lines 576-599."""
+def test_dependency_collector_filters_assignments():
+    """Test _DependencyCollector correctly filters assignments."""
 
     # Create function that will trigger assignment processing
     def func_with_globals():
@@ -2271,8 +2271,8 @@ def test_dependency_collector_assignment_lines_576_599():
     # The assignment filtering should have been executed
 
 
-def test_dependency_collector_source_replacement_line_663():
-    """Test _DependencyCollector source replacement line 663."""
+def test_dependency_collector_replaces_source_code():
+    """Test _DependencyCollector correctly replaces source code for dependencies."""
 
     def test_func():
         return 42
@@ -2286,7 +2286,7 @@ def test_dependency_collector_source_replacement_line_663():
     source_with_import = "import fake_module\ndef test(): return 42"
     collector.source_code.append(source_with_import)
 
-    # Manually trigger the replacement logic (line 663)
+    # Manually trigger the replacement logic
     if collector.user_defined_imports:
         for i, source in enumerate(collector.source_code):
             for user_defined_import in collector.user_defined_imports:
@@ -2296,8 +2296,8 @@ def test_dependency_collector_source_replacement_line_663():
     # Line 663 should have executed
 
 
-def test_dependency_collector_recursive_line_674():
-    """Test _DependencyCollector recursive collection line 674."""
+def test_dependency_collector_handles_recursive_collection():
+    """Test _DependencyCollector handles recursive dependency collection."""
     import sys
 
     # Create function with decorator to trigger line 674
@@ -2322,13 +2322,13 @@ def test_dependency_collector_recursive_line_674():
         # Expected for test coverage
 
 
-def test_dependency_collector_package_extras_line_716():
-    """Test _DependencyCollector package extras line 716."""
+def test_dependency_collector_handles_package_extras():
+    """Test _DependencyCollector correctly handles package extras."""
     from packaging.requirements import Requirement
 
     _DependencyCollector()
 
-    # Create requirement with extras to trigger line 716
+    # Create requirement with extras to trigger extras handling
     try:
         req = Requirement("pytest[testing]>=6.0")
         if req.extras:
@@ -2339,8 +2339,8 @@ def test_dependency_collector_package_extras_line_716():
         pass
 
 
-def test_dependency_collector_ast_mapping_lines_776_778():
-    """Test _DependencyCollector._map_child_to_parent lines 776-778."""
+def test_dependency_collector_maps_ast_to_strings():
+    """Test _DependencyCollector correctly maps AST nodes to strings."""
     import ast
 
     # Create AST with list children
@@ -2543,8 +2543,8 @@ def test_function_with_globals():
             pass
 
 
-def test_line_222_user_defined_imports():
-    """Force line 222: user_defined_imports.add() for non-third-party modules."""
+def test_import_collector_adds_non_third_party_modules():
+    """Test that ImportCollector adds non-third-party modules to user_defined_imports."""
     import ast
     import types
 
@@ -2580,8 +2580,8 @@ def test_line_222_user_defined_imports():
         sys.modules.update(original_modules)
 
 
-def test_line_332_annotated_type():
-    """Force line 332: Annotated type handling."""
+def test_extract_types_handles_annotated_types():
+    """Test that _extract_types correctly handles Annotated type hints."""
     from typing import Annotated, get_args, get_origin
 
     from lilypad._utils.closure import _extract_types
@@ -2601,8 +2601,8 @@ def test_line_332_annotated_type():
         assert str in result
 
 
-def test_line_417_definition_append():
-    """Force line 417: definitions_to_include.append()."""
+def test_definition_collector_processes_name_nodes():
+    """Test that _DefinitionCollector processes name nodes and appends definitions."""
     import ast
     import types
 
@@ -2629,8 +2629,8 @@ def test_line_417_definition_append():
     assert test_function in collector.definitions_to_include
 
 
-def test_lines_576_599_assignment_processing():
-    """Force lines 576-599: Global assignment processing logic."""
+def test_dependency_collector_assignment_filtering():
+    """Test dependency collector's assignment filtering logic."""
     import ast
 
     from lilypad._utils.closure import (
@@ -2698,8 +2698,8 @@ def test_lines_576_599_assignment_processing():
     assert len(dep_collector.assignments) > 0
 
 
-def test_line_663_source_replacement():
-    """Force line 663: Source replacement in user_defined_imports."""
+def test_dependency_collector_source_code_replacement():
+    """Test that source code replacement works for user-defined imports."""
     # Create dependency collector with user-defined imports
     collector = _DependencyCollector()
     collector.user_defined_imports.add("import user_module")
@@ -2716,8 +2716,8 @@ def test_line_663_source_replacement():
     assert "import user_module" not in collector.source_code[0]
 
 
-def test_line_674_recursive_collection():
-    """Force line 674: Recursive collection of definitions."""
+def test_dependency_collector_recursive_definition_collection():
+    """Test recursive collection of function definitions."""
     import types
 
     from lilypad._utils.closure import _DefinitionCollector
@@ -2746,13 +2746,13 @@ def test_line_674_recursive_collection():
     assert helper_function.__qualname__ in dep_collector.visited_functions
 
 
-def test_line_716_package_extras():
-    """Force line 716: Package extras handling."""
+def test_dependency_collector_package_with_extras():
+    """Test handling of package requirements with extras."""
     from packaging.requirements import Requirement
 
     collector = _DependencyCollector()
 
-    # Create requirement with extras to trigger line 716
+    # Create requirement with extras to trigger extras handling
     try:
         req = Requirement("pytest[testing,coverage]>=6.0")
 
@@ -2769,8 +2769,8 @@ def test_line_716_package_extras():
         pass
 
 
-def test_lines_776_778_ast_mapping():
-    """Force lines 776-778: AST child-to-parent mapping."""
+def test_dependency_collector_ast_node_mapping():
+    """Test mapping of AST nodes to string representations."""
     import ast
 
     # Create AST with various node types
@@ -2809,11 +2809,11 @@ def func():
 def test_comprehensive_integration_for_coverage():
     """Comprehensive integration test to achieve 100% closure.py coverage."""
     # Execute all the specific line tests
-    test_line_222_user_defined_imports()
-    test_line_332_annotated_type()
-    test_line_417_definition_append()
-    test_lines_576_599_assignment_processing()
-    test_line_663_source_replacement()
-    test_line_674_recursive_collection()
-    test_line_716_package_extras()
-    test_lines_776_778_ast_mapping()
+    test_import_collector_adds_non_third_party_modules()
+    test_extract_types_handles_annotated_types()
+    test_definition_collector_processes_name_nodes()
+    test_dependency_collector_assignment_filtering()
+    test_dependency_collector_source_code_replacement()
+    test_dependency_collector_recursive_definition_collection()
+    test_dependency_collector_package_with_extras()
+    test_dependency_collector_ast_node_mapping()
