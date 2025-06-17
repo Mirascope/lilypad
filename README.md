@@ -7,6 +7,7 @@
 
 <p align="center">
     <a href="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml" target="_blank"><img src="https://github.com/Mirascope/lilypad/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests"/></a>
+    <a href="https://codecov.io/github/Mirascope/lilypad" target="_blank"><img src="https://codecov.io/github/Mirascope/lilypad/graph/badge.svg?token=n9hOWO3hlx" alt="Coverage"/></a>
     <a href="https://mirascope.com/docs/lilypad" target="_blank"><img src="https://img.shields.io/badge/docs-available-brightgreen" alt="Docs"/></a>
     <a href="https://github.com/Mirascope/lilypad/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/Mirascope/lilypad.svg" alt="Stars"/></a>
 </p>
