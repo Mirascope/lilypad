@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from lilypad.ee.server.models import UserOrganizationTable, UserRole
 from lilypad.server.models import BillingTable, OrganizationTable, UserTable
@@ -29,11 +29,11 @@ def test_create_organization(
     assert db_org.name == "New Organization"
 
     # Verify user is added as OWNER
-    user_org = (
-        session.query(UserOrganizationTable)
-        .filter_by(organization_uuid=db_org.uuid)
-        .first()
-    )
+    user_org = session.exec(
+        select(UserOrganizationTable).where(
+            UserOrganizationTable.organization_uuid == db_org.uuid
+        )
+    ).first()
     assert user_org is not None
     assert user_org.role == UserRole.OWNER
 
@@ -72,14 +72,13 @@ def test_update_organization(
     assert test_user.uuid is not None
 
     # Change user role to OWNER
-    user_org = (
-        session.query(UserOrganizationTable)
-        .filter_by(
-            user_uuid=test_user.uuid,
-            organization_uuid=UUID("12345678-1234-1234-1234-123456789abc"),
+    user_org = session.exec(
+        select(UserOrganizationTable).where(
+            UserOrganizationTable.user_uuid == test_user.uuid,
+            UserOrganizationTable.organization_uuid
+            == UUID("12345678-1234-1234-1234-123456789abc"),
         )
-        .first()
-    )
+    ).first()
     assert user_org is not None
     user_org.role = UserRole.OWNER
     session.commit()

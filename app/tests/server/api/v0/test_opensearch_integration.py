@@ -6,8 +6,8 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from lilypad.server._utils.opensearch import index_traces_in_opensearch
 from lilypad.server.api.v0.spans_api import delete_span_in_opensearch
-from lilypad.server.api.v0.traces_api import index_traces_in_opensearch
 from lilypad.server.models import ProjectTable
 
 
@@ -38,7 +38,7 @@ class TestOpenSearchIndexing:
         mock_service = Mock()
         mock_service.bulk_index_traces.return_value = False
 
-        with patch("lilypad.server.api.v0.traces_api.logger") as mock_logger:
+        with patch("lilypad.server._utils.opensearch.logger") as mock_logger:
             await index_traces_in_opensearch(project_uuid, traces, mock_service)
 
             # Verify error was logged
@@ -54,7 +54,7 @@ class TestOpenSearchIndexing:
         mock_service = Mock()
         mock_service.bulk_index_traces.side_effect = Exception("OpenSearch error")
 
-        with patch("lilypad.server.api.v0.traces_api.logger") as mock_logger:
+        with patch("lilypad.server._utils.opensearch.logger") as mock_logger:
             await index_traces_in_opensearch(project_uuid, traces, mock_service)
 
             # Verify exception was logged

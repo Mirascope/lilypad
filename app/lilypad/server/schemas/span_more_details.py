@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from uuid import UUID
 
@@ -468,7 +468,9 @@ def _convert_timestamp(ns_timestamp: int) -> datetime:
     # Convert nanoseconds to seconds and maintain microsecond precision
     seconds = ns_timestamp // 1_000_000_000
     microseconds = (ns_timestamp % 1_000_000_000) // 1000
-    return datetime.fromtimestamp(seconds).replace(microsecond=microseconds)
+    return datetime.fromtimestamp(seconds, tz=timezone.utc).replace(
+        microsecond=microseconds
+    )
 
 
 def _extract_event_attribute(event: dict, field: str) -> str:

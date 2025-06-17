@@ -1,3 +1,5 @@
+"""PostHog utilities for Lilypad server."""
+
 import time
 from collections.abc import Awaitable, Callable
 from functools import lru_cache

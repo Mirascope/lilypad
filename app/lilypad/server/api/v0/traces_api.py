@@ -27,6 +27,7 @@ from ..._utils import (
     get_current_user,
     validate_api_key_project_strict,
 )
+from ..._utils.opensearch import index_traces_in_opensearch
 from ...models.spans import Scope, SpanTable
 from ...schemas.pagination import Paginated
 from ...schemas.span_more_details import calculate_openrouter_cost
@@ -184,26 +185,6 @@ async def _process_span(
     )
     span_creates.insert(0, span_create)
     return span_create
-
-
-async def index_traces_in_opensearch(
-    project_uuid: UUID,
-    traces: list[dict],
-    opensearch_service: OpenSearchService,
-) -> None:
-    """Index traces in OpenSearch."""
-    try:
-        success = opensearch_service.bulk_index_traces(project_uuid, traces)
-        if not success:
-            logger.error(
-                f"Failed to index {len(traces)} traces for project {project_uuid}"
-            )
-        else:
-            logger.info(
-                f"Successfully indexed {len(traces)} traces for project {project_uuid}"
-            )
-    except Exception as e:
-        logger.error(f"Exception during trace indexing: {str(e)}")
 
 
 @traces_router.post(

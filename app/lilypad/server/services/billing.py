@@ -37,6 +37,15 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
 
+    @property
+    def is_enabled(self) -> bool:
+        """Check if billing service is enabled (Stripe is configured).
+
+        Returns:
+            True if Stripe API key is configured, False otherwise
+        """
+        return bool(stripe.api_key)
+
     def get_tier_from_billing(self, organization_uuid: uuid.UUID) -> Tier:
         """Get the tier from the billing table for an organization.
 
