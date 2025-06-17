@@ -1001,3 +1001,251 @@ class TestEdgeCasesAndIntegration:
         for key, value in test_attributes.items():
             assert isinstance(key, str)
             assert value is not None
+
+
+# ===== Additional tests merged from test_span_more_details_simple.py =====
+
+
+def test_convert_timestamp():
+    """Test _convert_timestamp utility."""
+    from lilypad.server.schemas.span_more_details import _convert_timestamp
+
+    ns_timestamp = 1640995200000000000  # 2022-01-01 00:00:00 UTC in nanoseconds
+    result = _convert_timestamp(ns_timestamp)
+    assert isinstance(result, datetime)
+    assert result.year == 2022
+
+
+def test_extract_event_attribute():
+    """Test _extract_event_attribute utility."""
+    from lilypad.server.schemas.span_more_details import _extract_event_attribute
+
+    event = {
+        "name": "test.event",
+        "attributes": {"test.event.type": "info", "test.event.message": "Test message"},
+    }
+    assert _extract_event_attribute(event, "type") == "info"
+    assert _extract_event_attribute(event, "message") == "Test message"
+    assert _extract_event_attribute(event, "missing") == ""
+
+
+@pytest.mark.asyncio
+async def test_calculate_openrouter_cost_none_inputs():
+    """Test calculate_openrouter_cost with None inputs."""
+    from lilypad.server.schemas.span_more_details import calculate_openrouter_cost
+
+    # None inputs
+    cost = await calculate_openrouter_cost(None, 500, "test-model")
+    assert cost is None
+
+
+def test_parse_nested_json_dict_and_list_inputs():
+    """Test parse_nested_json with dict and list inputs."""
+    from lilypad.server.schemas.span_more_details import parse_nested_json
+
+    # Dict input
+    data = {"key": "value"}
+    result = parse_nested_json(data)
+    assert result == {"key": "value"}
+
+    # List input
+    data = ["item1", "item2"]
+    result = parse_nested_json(data)
+    assert result == ["item1", "item2"]
+
+
+def test_gemini_choice_processing():
+    """Test Gemini choice processing edge cases."""
+    from lilypad.server.schemas.span_more_details import convert_gemini_messages
+
+    # Test Gemini choice processing
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {"index": 0, "message": '{"content": ["response text"]}'},
+        }
+    ]
+    result = convert_gemini_messages(messages)
+    assert len(result) == 1
+    assert len(result[0].content) >= 1
+
+    # Test Gemini choice with tool calls
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {
+                "index": 0,
+                "message": '{"tool_calls": [{"function": {"name": "test", "arguments": {"x": 1}}}]}',
+            },
+        }
+    ]
+    result = convert_gemini_messages(messages)
+    assert len(result) == 1
+    assert len(result[0].content) >= 1
+
+
+def test_openai_fallback_to_text():
+    """Test OpenAI fallback to text when not image_url."""
+    from lilypad.server.schemas.span_more_details import convert_openai_messages
+
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": '[{"type": "other", "text": "Some text content"}]'
+            },
+        }
+    ]
+    result = convert_openai_messages(messages)
+    assert len(result) == 2
+    assert result[0].content[0].type == "text"
+    assert result[0].content[0].text == "Some text content"
+
+
+def test_azure_image_url_handling():
+    """Test Azure with image URL handling."""
+    from lilypad.server.schemas.span_more_details import convert_azure_messages
+
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": '[{"type": "image_url", "image_url": {"url": "data:image/png;base64,xyz789", "detail": "low"}}]'
+            },
+        }
+    ]
+    result = convert_azure_messages(messages)
+    assert len(result) == 2
+    assert result[0].content[0].type == "image"
+    assert result[0].content[0].detail == "low"
+
+
+def test_anthropic_image_content():
+    """Test Anthropic with image content."""
+    from lilypad.server.schemas.span_more_details import convert_anthropic_messages
+
+    messages = [
+        {
+            "name": "gen_ai.user.message",
+            "attributes": {
+                "content": '[{"type": "image", "source": {"media_type": "image/jpeg", "data": "imagedata"}}]'
+            },
+        }
+    ]
+    result = convert_anthropic_messages(messages)
+    assert len(result) == 2
+    assert result[0].content[0].type == "image"
+    assert result[0].content[0].media_type == "image/jpeg"
+
+
+def test_anthropic_choice_without_index():
+    """Test Anthropic choice without index."""
+    from lilypad.server.schemas.span_more_details import convert_anthropic_messages
+
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {"message": '{"content": "direct content"}'},
+        }
+    ]
+    result = convert_anthropic_messages(messages)
+    assert len(result) == 1
+
+
+def test_mirascope_content_types():
+    """Test Mirascope with different content types."""
+    from lilypad.server.schemas.span_more_details import convert_mirascope_messages
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Some text content"},
+                {"type": "tool_call", "name": "func", "args": {"param": "value"}},
+            ],
+        }
+    ]
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert len(result[0].content) == 2
+    assert result[0].content[0].type == "text"
+    assert result[0].content[1].type == "tool_call"
+
+
+def test_mirascope_string_content_items():
+    """Test Mirascope with string content items."""
+    from lilypad.server.schemas.span_more_details import convert_mirascope_messages
+
+    messages = [
+        {
+            "role": "assistant",
+            "content": ["string content", {"type": "text", "text": "object content"}],
+        }
+    ]
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 1
+    assert len(result[0].content) == 2
+    assert result[0].content[0].type == "text"
+    assert result[0].content[0].text == "string content"
+
+
+def test_mirascope_empty_content_list():
+    """Test Mirascope with empty content list."""
+    from lilypad.server.schemas.span_more_details import convert_mirascope_messages
+
+    messages = [{"role": "user", "content": []}]
+    result = convert_mirascope_messages(messages)
+    assert len(result) == 0  # No content parts added
+
+
+def test_mirascope_string_input():
+    """Test Mirascope with string input."""
+    from lilypad.server.schemas.span_more_details import convert_mirascope_messages
+
+    # String input
+    messages_str = '[{"role": "user", "content": "Hello"}]'
+    result = convert_mirascope_messages(messages_str)
+    assert len(result) == 1
+    assert result[0].role == "user"
+
+
+def test_openai_gen_ai_choice_with_content():
+    """Test OpenAI gen_ai.choice with content."""
+    from lilypad.server.schemas.span_more_details import convert_openai_messages
+
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {"index": 0, "message": '{"content": "response text"}'},
+        }
+    ]
+    result = convert_openai_messages(messages)
+    assert len(result) == 1
+
+
+def test_azure_gen_ai_choice():
+    """Test Azure gen_ai.choice similar to OpenAI."""
+    from lilypad.server.schemas.span_more_details import convert_azure_messages
+
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {"index": 0, "message": '{"content": "response text"}'},
+        }
+    ]
+    result = convert_azure_messages(messages)
+    assert len(result) == 1
+
+
+def test_anthropic_choice_with_index():
+    """Test Anthropic choice with index."""
+    from lilypad.server.schemas.span_more_details import convert_anthropic_messages
+
+    messages = [
+        {
+            "name": "gen_ai.choice",
+            "attributes": {"index": 0, "message": '{"content": ["response", "text"]}'},
+        }
+    ]
+    result = convert_anthropic_messages(messages)
+    assert len(result) == 1

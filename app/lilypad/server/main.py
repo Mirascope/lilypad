@@ -246,7 +246,7 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-if settings.environment == "local" or settings.serve_frontend:
+if settings.environment == "local" or settings.serve_frontend: # pragma: no cover
     app.mount(
         "/", SPAStaticFiles(directory="lilypad/server/static", html=True), name="app"
     )

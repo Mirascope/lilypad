@@ -572,7 +572,9 @@ class _DependencyCollector:
         )
         global_assignment_collector.visit(module_tree)
 
-        for global_assignment in global_assignment_collector.assignments:  # pragma: no cover
+        for (
+            global_assignment
+        ) in global_assignment_collector.assignments:  # pragma: no cover
             tree = ast.parse(global_assignment)
             stmt = cast(ast.Assign | ast.AnnAssign, tree.body[0])
             if isinstance(stmt, ast.Assign):
