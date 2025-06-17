@@ -1456,7 +1456,7 @@ def test_import_collector_from_import_without_module():
 
 
 def test_extract_types_with_annotated_origin():
-    """Test _extract_types with Annotated type to hit line 332."""
+    """Test _extract_types with Annotated type."""
     from typing import Annotated
 
     from lilypad._utils.closure import _extract_types
@@ -1470,7 +1470,7 @@ def test_extract_types_with_annotated_origin():
 
 
 def test_definition_collector_class_annotations_coverage():
-    """Test _DefinitionCollector to cover line 388 (class annotations handling)."""
+    """Test _DefinitionCollector class annotations handling."""
     import ast
     import types
 
@@ -1833,7 +1833,7 @@ def test_import_collector_none_module_path():
 
 
 def test_extract_types_annotated_origin_coverage():
-    """Test _extract_types with Annotated type handling.""
+    """Test _extract_types with Annotated type handling."""
     from typing import Annotated
 
     from lilypad._utils.closure import _extract_types
@@ -1873,7 +1873,7 @@ def test_definition_collector_attribute_path_coverage():
 
 
 def test_dependency_collector_complex_assignment_scenarios():
-    """Test complex assignment scenarios in _DependencyCollector.""
+    """Test complex assignment scenarios in _DependencyCollector."""
     import ast
 
     from lilypad._utils.closure import (
@@ -2075,7 +2075,7 @@ def test_extract_types_annotated():
 
 
 def test_dependency_include_append():
-    """Test definition inclusion with __name__ attribute.""
+    """Test definition inclusion with __name__ attribute."""
     import types
 
     from lilypad._utils.closure import _DefinitionCollector
@@ -2166,7 +2166,7 @@ z = "hello"
 
 
 def test_source_replacement_and_collection():
-    """Test source replacement and definition collection.""
+    """Test source replacement and definition collection."""
     from lilypad._utils.closure import Closure
 
     # Create a simple function to test closure source collection
@@ -2193,7 +2193,7 @@ def test_source_replacement_and_collection():
 
 
 def test_import_collector_none_module_specific():
-    """Test ImportCollector visit_ImportFrom with module=None to hit line 222."""
+    """Test ImportCollector visit_ImportFrom with module=None."""
     import ast
 
     from lilypad._utils.closure import _ImportCollector
@@ -2215,7 +2215,7 @@ def test_import_collector_none_module_specific():
 
 
 def test_extract_types_annotated_specific():
-    """Test _extract_types with Annotated to hit line 332."""
+    """Test _extract_types with Annotated type handling."""
     from typing import Annotated
 
     from lilypad._utils.closure import _extract_types
@@ -2223,7 +2223,7 @@ def test_extract_types_annotated_specific():
     # Create Annotated type where origin.__name__ == "Annotated"
     annotated_type = Annotated[str, "metadata"]
 
-    # This should trigger line 332: return cls._extract_types(type_args[0])
+    # This should trigger Annotated type extraction
     result = _extract_types(annotated_type)
     assert str in result
 
@@ -2356,8 +2356,8 @@ def test_dependency_collector_maps_ast_to_strings():
     assert len(child_to_parent) > 0
 
 
-def test_missing_lines_comprehensive():
-    """Comprehensive test to hit all remaining missing lines."""
+def test_comprehensive_coverage():
+    """Comprehensive test to ensure full code coverage."""
     import ast
     import types
     from typing import Annotated
@@ -2423,8 +2423,8 @@ def test_missing_lines_comprehensive():
     _DependencyCollector._map_child_to_parent(child_to_parent, tree)
 
 
-def test_force_missing_lines():
-    """Force execution of the specific missing lines using proper integration."""
+def test_complex_integration_coverage():
+    """Test complex integration scenarios for comprehensive coverage."""
     import ast
     import os
     import sys
@@ -2593,11 +2593,11 @@ def test_extract_types_handles_annotated_types():
     origin = get_origin(annotated_type)
 
     if origin and hasattr(origin, "__name__") and origin.__name__ == "Annotated":
-        # This call should trigger line 332
+        # This call should trigger Annotated type handling
         type_args = get_args(annotated_type)
         result = _extract_types(
             type_args[0]
-        )  # This is line 332: _extract_types(annotation.__args__[0])
+        )  # Extract the actual type from Annotated
         assert str in result
 
 
@@ -2630,7 +2630,7 @@ def test_definition_collector_processes_name_nodes():
 
 
 def test_dependency_collector_assignment_filtering():
-    """Test dependency collector's assignment filtering logic."""
+    """Test dependency collector assignment filtering logic."""
     import ast
 
     from lilypad._utils.closure import (
@@ -2756,8 +2756,8 @@ def test_dependency_collector_package_with_extras():
     try:
         req = Requirement("pytest[testing,coverage]>=6.0")
 
-        if req.extras:  # This is the condition before line 716
-            extras_list = list(req.extras)  # Line 716 equivalent
+        if req.extras:  # Check if package has extras
+            extras_list = list(req.extras)  # Convert extras to list
             assert len(extras_list) > 0
 
         # Test the full dependency collection with extras
@@ -2817,3 +2817,4 @@ def test_comprehensive_integration_for_coverage():
     test_dependency_collector_recursive_definition_collection()
     test_dependency_collector_package_with_extras()
     test_dependency_collector_ast_node_mapping()
+
