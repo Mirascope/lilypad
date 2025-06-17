@@ -14,10 +14,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .._utils.opensearch import index_traces_in_opensearch
+from .._utils.span_processing import create_span_from_data
 from ..db.session import create_session
 from ..models.spans import SpanTable
 from ..models.users import UserTable
-from ..schemas.spans import SpanCreate
 from ..settings import get_settings
 from .billing import BillingService
 from .opensearch import OpenSearchService
@@ -473,12 +473,11 @@ class SpanQueueProcessor:
         for span_data in ordered_spans:
             # Remove user_id from span data to avoid storing it
             span_data.pop("user_id", None)
-            # Process span data similar to the original _process_span function
-            span_create = SpanQueueProcessor._convert_to_span_create(span_data)
+            span_create = asyncio.run(create_span_from_data(span_data))
             span_creates.append(span_create)
 
         # Create spans in bulk
-        span = span_service.create_bulk_records(
+        spans = span_service.create_bulk_records(
             span_creates,
             project_uuid,
             project.organization_uuid,
@@ -488,7 +487,7 @@ class SpanQueueProcessor:
             f"Successfully saved trace to database - Trace ID: {trace_id}, "
             f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
         )
-        return span, project.organization_uuid, user_id, project_uuid
+        return spans, project.organization_uuid, user_id, project_uuid
 
     async def _process_trace(self, trace_id: str, buffer: TraceBuffer) -> None:
         """Process a complete trace.
@@ -570,33 +569,6 @@ class SpanQueueProcessor:
             if self._session:
                 self._session.rollback()
             logger.error(f"Error processing trace {trace_id}: {e}")
-
-    @staticmethod
-    def _convert_to_span_create(span_data: dict[str, Any]) -> SpanCreate:
-        """Convert raw span data to SpanCreate object."""
-        # This mirrors the logic from _process_span in traces_api.py
-        attributes = span_data.get("attributes", {})
-
-        # Calculate cost and tokens (simplified for now)
-        cost = span_data.get("cost", 0)
-        input_tokens = span_data.get("input_tokens")
-        output_tokens = span_data.get("output_tokens")
-
-        # Extract function UUID
-        function_uuid_str = attributes.get("lilypad.function.uuid")
-
-        return SpanCreate(
-            span_id=span_data["span_id"],
-            type=attributes.get("lilypad.type"),
-            function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
-            scope=span_data.get("scope", "llm"),
-            data=span_data,
-            parent_span_id=span_data.get("parent_span_id"),
-            cost=cost,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            duration_ms=span_data.get("duration_ms", 0),
-        )
 
     async def _cleanup_incomplete_traces(self) -> None:
         """Periodically cleanup incomplete traces that have timed out."""

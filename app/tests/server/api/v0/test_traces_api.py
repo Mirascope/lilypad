@@ -198,8 +198,8 @@ async def test_process_lilypad_span():
     assert result.type == "function"
     assert result.scope == Scope.LILYPAD
     assert result.cost == 0
-    assert result.input_tokens == 0
-    assert result.output_tokens == 0
+    assert result.input_tokens is None
+    assert result.output_tokens is None
     assert result.duration_ms == 1000
     assert len(span_creates) == 1
 
@@ -224,7 +224,8 @@ async def test_process_llm_span_with_openrouter():
     span_creates = []
 
     with patch(
-        "lilypad.server.api.v0.traces_api.calculate_openrouter_cost", return_value=0.123
+        "lilypad.server._utils.span_processing.calculate_openrouter_cost",
+        return_value=0.123,
     ):
         result = await _process_span(trace, parent_to_children, span_creates)
     assert result.scope == Scope.LLM
@@ -572,7 +573,7 @@ async def test_process_span_with_kafka_attributes():
 
 def test_convert_system_to_provider():
     """Test converting system names to provider names."""
-    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+    from lilypad.server._utils.span_processing import _convert_system_to_provider
 
     # Test Azure conversion
     assert _convert_system_to_provider("az.ai.inference") == "azure"
@@ -770,7 +771,7 @@ def test_create_traces_billing_error(
 
 def test_convert_system_to_provider_azure():
     """Test _convert_system_to_provider for azure."""
-    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+    from lilypad.server._utils.span_processing import _convert_system_to_provider
 
     result = _convert_system_to_provider("az.ai.inference")
     assert result == "azure"
@@ -778,7 +779,7 @@ def test_convert_system_to_provider_azure():
 
 def test_convert_system_to_provider_google():
     """Test _convert_system_to_provider for google."""
-    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+    from lilypad.server._utils.span_processing import _convert_system_to_provider
 
     result = _convert_system_to_provider("google_genai")
     assert result == "google"

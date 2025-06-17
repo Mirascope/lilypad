@@ -2,7 +2,7 @@
 
 import logging
 from collections import defaultdict
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import (
@@ -14,10 +14,6 @@ from fastapi import (
     Request,
     status,
 )
-from mirascope.core import Provider
-from mirascope.core.base.types import CostMetadata
-from mirascope.core.costs import calculate_cost
-from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ee.validate import LicenseInfo
 
@@ -28,9 +24,9 @@ from ..._utils import (
     validate_api_key_project_strict,
 )
 from ..._utils.opensearch import index_traces_in_opensearch
-from ...models.spans import Scope, SpanTable
+from ..._utils.span_processing import create_span_from_data
+from ...models.spans import SpanTable
 from ...schemas.pagination import Paginated
-from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...schemas.traces import TracesQueueResponse
 from ...schemas.users import UserPublic
@@ -48,14 +44,6 @@ from ...services.projects import ProjectService
 
 traces_router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-def _convert_system_to_provider(system: str) -> Provider:
-    if system == "az.ai.inference":
-        return "azure"
-    elif system == "google_genai":
-        return "google"
-    return cast(Provider, system)
 
 
 @traces_router.get(
@@ -121,7 +109,7 @@ async def _process_span(
     parent_to_children: dict[str, list[dict]],
     span_creates: list[SpanCreate],
 ) -> SpanCreate:
-    """Process a span and its children."""
+    """Process a span and its children"""
     # Process all children first (bottom-up approach)
     total_child_cost = 0
     total_input_tokens = 0
@@ -135,53 +123,11 @@ async def _process_span(
         if span.output_tokens is not None:
             total_output_tokens += span.output_tokens
 
-    if trace["instrumentation_scope"]["name"] == "lilypad":
-        scope = Scope.LILYPAD
-        span_cost = total_child_cost
-        input_tokens = total_input_tokens
-        output_tokens = total_output_tokens
-    else:
-        scope = Scope.LLM
-        attributes = trace.get("attributes", {})
-        span_cost = 0
-        input_tokens = attributes.get(gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS)
-        output_tokens = attributes.get(gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS)
-
-        if (system := attributes.get(gen_ai_attributes.GEN_AI_SYSTEM)) and (
-            model := attributes.get(gen_ai_attributes.GEN_AI_RESPONSE_MODEL)
-        ):
-            if system == "openrouter":
-                cost = await calculate_openrouter_cost(
-                    input_tokens, output_tokens, model
-                )
-            else:
-                # TODO: Add cached_tokens once it is added to OpenTelemetry GenAI spec
-                # https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/
-                cost_metadata = CostMetadata(
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                )
-                cost = calculate_cost(
-                    _convert_system_to_provider(system), model, metadata=cost_metadata
-                )
-            if cost is not None:
-                span_cost = cost
-
-    # Process attributes and create span
-    attributes = trace.get("attributes", {})
-    function_uuid_str = attributes.get("lilypad.function.uuid")
-
-    span_create = SpanCreate(
-        span_id=trace["span_id"],
-        type=attributes.get("lilypad.type"),
-        function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
-        scope=scope,
-        data=trace,
-        parent_span_id=trace.get("parent_span_id"),
-        cost=span_cost,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        duration_ms=trace["end_time"] - trace["start_time"],
+    span_create = await create_span_from_data(
+        trace,
+        child_costs=total_child_cost,
+        child_input_tokens=total_input_tokens,
+        child_output_tokens=total_output_tokens,
     )
     span_creates.insert(0, span_create)
     return span_create

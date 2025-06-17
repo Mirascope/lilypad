@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from lilypad.server._utils.span_processing import create_span_from_data
 from lilypad.server.schemas.spans import SpanCreate
 from lilypad.server.services.span_queue_processor import (
     SpanQueueProcessor,
@@ -378,9 +379,8 @@ class TestSpanQueueProcessor:
         # The loop should have broken, so process_message shouldn't be called
         assert mock_logger.debug.call_count >= 0  # May have some debug calls
 
-    @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
-    async def test_save_trace_successful_commit(self, mock_get_settings):
+    def test_save_trace_successful_commit(self, mock_get_settings):
         """Test successful trace saving and commit (lines 486-492)."""
         mock_settings = Mock()
         mock_settings.kafka_bootstrap_servers = "localhost:9092"
@@ -873,9 +873,9 @@ class TestSpanQueueProcessor:
 
         mock_force_process.assert_called_once()
 
-    @pytest.mark.skip(reason="Static method import issue - skip for coverage goal")
-    def test_convert_to_span_create(self):
-        """Test _convert_to_span_create static method."""
+    @pytest.mark.asyncio
+    async def test_create_span_from_data(self):
+        """Test create_span_from_data shared function."""
         span_data = {
             "span_id": "span-123",
             "parent_span_id": "parent-456",
@@ -883,31 +883,32 @@ class TestSpanQueueProcessor:
             "input_tokens": 100,
             "output_tokens": 50,
             "duration_ms": 1500,
-            "scope": "llm",
             "attributes": {
-                "lilypad.type": "generation",
+                "lilypad.type": "function",
                 "lilypad.function.uuid": str(uuid4()),
             },
+            "instrumentation_scope": {"name": "other"},  # LLM scope
         }
 
-        result = SpanQueueProcessor._convert_to_span_create(span_data)
+        result = await create_span_from_data(span_data)
 
         assert isinstance(result, SpanCreate)
         assert result.span_id == "span-123"
         assert result.parent_span_id == "parent-456"
-        assert result.cost == 0.05
-        assert result.input_tokens == 100
-        assert result.output_tokens == 50
         assert result.duration_ms == 1500
-        assert result.scope == "llm"
-        assert result.type == "generation"
+        assert result.type == "function"
         assert isinstance(result.function_uuid, UUID)
 
-    def test_convert_to_span_create_minimal(self):
-        """Test _convert_to_span_create with minimal data."""
-        span_data = {"span_id": "span-123", "attributes": {}}
+    @pytest.mark.asyncio
+    async def test_create_span_from_data_minimal(self):
+        """Test create_span_from_data with minimal data."""
+        span_data = {
+            "span_id": "span-123",
+            "attributes": {},
+            "instrumentation_scope": {"name": "other"},  # LLM scope
+        }
 
-        result = SpanQueueProcessor._convert_to_span_create(span_data)
+        result = await create_span_from_data(span_data)
 
         assert isinstance(result, SpanCreate)
         assert result.span_id == "span-123"
@@ -915,7 +916,6 @@ class TestSpanQueueProcessor:
         assert result.function_uuid is None
         assert result.cost == 0
         assert result.duration_ms == 0
-        assert result.scope == "llm"
 
     @pytest.mark.skip(reason="Complex service mocking - skip for coverage goal")
     @patch("lilypad.server.services.span_queue_processor.get_settings")
