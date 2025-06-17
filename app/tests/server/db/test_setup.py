@@ -143,23 +143,6 @@ class TestCreateTables:
         mock_metadata.create_all.assert_called_once_with(mock_engine)
 
 
-def test_main_execution_block():
-    """Test the main execution block."""
-    import subprocess
-    import sys
-
-    # Test by executing the module directly as a script
-    result = subprocess.run(
-        [sys.executable, "-m", "lilypad.server.db.setup"],
-        capture_output=True,
-        text=True,
-        cwd="/Users/koudai/PycharmProjects/lilypad/app",
-    )
-
-    # The main block should execute (may fail due to DB connection, but should reach the line)
-    assert result.returncode in [0, 1]  # 0 for success, 1 for expected DB error
-
-
 def test_imports_exist():
     """Test that all necessary imports are available."""
     # Test that we can import the required modules
