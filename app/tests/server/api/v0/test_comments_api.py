@@ -9,6 +9,7 @@ from sqlmodel import Session
 
 from lilypad.server.models import CommentTable, ProjectTable, SpanTable
 from lilypad.server.models.spans import Scope
+from lilypad.server.services import CommentService
 
 
 class TestCommentsAPI:
@@ -42,11 +43,15 @@ class TestCommentsAPI:
         self, session: Session, test_span: SpanTable, test_user
     ) -> CommentTable:
         """Create a test comment."""
+        # Create comment with explicit timezone-aware timestamps
+        now_utc = datetime.now(timezone.utc)
         comment = CommentTable(
             text="Test comment",
             span_uuid=test_span.uuid,  # type: ignore[arg-type]
             user_uuid=test_user.uuid,
             organization_uuid=test_span.organization_uuid,
+            created_at=now_utc,
+            updated_at=now_utc,
         )
         session.add(comment)
         session.commit()
@@ -69,11 +74,27 @@ class TestCommentsAPI:
         assert isinstance(data, list)
 
     def test_get_comments_with_data(
-        self, client: TestClient, test_comment: CommentTable, session: Session
+        self, client: TestClient, test_comment: CommentTable, session: Session, monkeypatch
     ):
         """Test getting comments with existing data."""
         # Force commit to ensure data is visible
         session.commit()
+        
+        # SQLite doesn't preserve timezone info, so we need to patch the service
+        # to ensure timezone-aware datetimes are returned
+        original_find_all = CommentService.find_all_records
+
+        def mock_find_all_records(self):
+            results = original_find_all(self)
+            # Fix timezone info for SQLite compatibility
+            for comment in results:
+                if comment.updated_at and comment.updated_at.tzinfo is None:
+                    comment.updated_at = comment.updated_at.replace(tzinfo=timezone.utc)
+                if comment.created_at and comment.created_at.tzinfo is None:
+                    comment.created_at = comment.created_at.replace(tzinfo=timezone.utc)
+            return results
+
+        monkeypatch.setattr(CommentService, "find_all_records", mock_find_all_records)
 
         response = client.get("/comments")
         assert response.status_code == 200
@@ -89,9 +110,24 @@ class TestCommentsAPI:
         assert found
 
     def test_get_comments_by_span(
-        self, client: TestClient, test_span: SpanTable, test_comment: CommentTable
+        self, client: TestClient, test_span: SpanTable, test_comment: CommentTable, monkeypatch
     ):
         """Test getting comments by span UUID."""
+        # SQLite doesn't preserve timezone info, so we need to patch the service
+        original_find_by_spans = CommentService.find_by_spans
+
+        def mock_find_by_spans(self, *args, **kwargs):
+            results = original_find_by_spans(self, *args, **kwargs)
+            # Fix timezone info for SQLite compatibility
+            for comment in results:
+                if comment.updated_at and comment.updated_at.tzinfo is None:
+                    comment.updated_at = comment.updated_at.replace(tzinfo=timezone.utc)
+                if comment.created_at and comment.created_at.tzinfo is None:
+                    comment.created_at = comment.created_at.replace(tzinfo=timezone.utc)
+            return results
+
+        monkeypatch.setattr(CommentService, "find_by_spans", mock_find_by_spans)
+        
         response = client.get(f"/spans/{test_span.uuid}/comments")
         assert response.status_code == 200
         data = response.json()
@@ -128,8 +164,22 @@ class TestCommentsAPI:
         data = response.json()
         assert data == []
 
-    def test_get_comment_by_uuid(self, client: TestClient, test_comment: CommentTable):
+    def test_get_comment_by_uuid(self, client: TestClient, test_comment: CommentTable, monkeypatch):
         """Test getting a specific comment by UUID."""
+        # SQLite doesn't preserve timezone info, so we need to patch the service
+        original_find_record = CommentService.find_record_by_uuid
+
+        def mock_find_record_by_uuid(self, *args, **kwargs):
+            result = original_find_record(self, *args, **kwargs)
+            # Fix timezone info for SQLite compatibility
+            if result and result.updated_at and result.updated_at.tzinfo is None:
+                result.updated_at = result.updated_at.replace(tzinfo=timezone.utc)
+            if result and result.created_at and result.created_at.tzinfo is None:
+                result.created_at = result.created_at.replace(tzinfo=timezone.utc)
+            return result
+
+        monkeypatch.setattr(CommentService, "find_record_by_uuid", mock_find_record_by_uuid)
+        
         response = client.get(f"/comments/{test_comment.uuid}")
         assert response.status_code == 200
         data = response.json()
@@ -142,8 +192,22 @@ class TestCommentsAPI:
         response = client.get(f"/comments/{fake_uuid}")
         assert response.status_code == 404
 
-    def test_create_comment(self, client: TestClient, test_span: SpanTable):
+    def test_create_comment(self, client: TestClient, test_span: SpanTable, monkeypatch):
         """Test creating a new comment."""
+        # SQLite doesn't preserve timezone info, so we need to patch the service
+        original_create_record = CommentService.create_record
+
+        def mock_create_record(self, *args, **kwargs):
+            result = original_create_record(self, *args, **kwargs)
+            # Fix timezone info for SQLite compatibility
+            if result.updated_at and result.updated_at.tzinfo is None:
+                result.updated_at = result.updated_at.replace(tzinfo=timezone.utc)
+            if result.created_at and result.created_at.tzinfo is None:
+                result.created_at = result.created_at.replace(tzinfo=timezone.utc)
+            return result
+
+        monkeypatch.setattr(CommentService, "create_record", mock_create_record)
+        
         comment_data = {
             "text": "New test comment",
             "span_uuid": str(test_span.uuid),
@@ -157,8 +221,22 @@ class TestCommentsAPI:
         assert "created_at" in data
         assert data["is_edited"] is False
 
-    def test_update_comment(self, client: TestClient, test_comment: CommentTable):
+    def test_update_comment(self, client: TestClient, test_comment: CommentTable, monkeypatch):
         """Test updating a comment."""
+        # SQLite doesn't preserve timezone info, so we need to patch the service
+        original_update_record = CommentService.update_record_by_uuid
+
+        def mock_update_record_by_uuid(self, *args, **kwargs):
+            result = original_update_record(self, *args, **kwargs)
+            # Fix timezone info for SQLite compatibility
+            if result.updated_at and result.updated_at.tzinfo is None:
+                result.updated_at = result.updated_at.replace(tzinfo=timezone.utc)
+            if result.created_at and result.created_at.tzinfo is None:
+                result.created_at = result.created_at.replace(tzinfo=timezone.utc)
+            return result
+
+        monkeypatch.setattr(CommentService, "update_record_by_uuid", mock_update_record_by_uuid)
+        
         update_data = {
             "text": "Updated comment text",
         }
