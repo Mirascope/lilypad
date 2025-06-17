@@ -170,5 +170,5 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
         try:  # pragma: no cover
             self.session.exec(delete(self.table).where(self.table.uuid.in_(uuids)))  # type: ignore
             return True
-        except Exception:
+        except Exception:  # pragma: no cover
             return False

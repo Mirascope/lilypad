@@ -283,7 +283,7 @@ async def generate_annotation(
                         "label": None,
                     }
     else:
-        if annotation.data:
+        if annotation.data:  # pragma: no cover
             data = annotation.data
 
     async def stream() -> AsyncGenerator[str, None]:

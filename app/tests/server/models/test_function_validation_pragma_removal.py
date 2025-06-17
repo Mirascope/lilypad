@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from lilypad.server.models.functions import _FunctionBase
 from lilypad.server.schemas.functions import FunctionCreate
 
 

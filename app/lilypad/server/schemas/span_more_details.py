@@ -600,7 +600,9 @@ class SpanMoreDetails(BaseModel):
             ):
                 messages = convert_openai_messages(data["events"])
             elif provider == Provider.ANTHROPIC.value:
-                messages = convert_anthropic_messages(data["events"])  # pragma: no cover
+                messages = convert_anthropic_messages(
+                    data["events"]
+                )  # pragma: no cover
         else:
             lilypad_type = attributes.get("lilypad.type")
             if lilypad_type:

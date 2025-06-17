@@ -123,7 +123,9 @@ class _FunctionBase(SQLModel):
     @field_validator("name")
     def validate_name(cls, value: str) -> str:
         if len(value) > 512:
-            raise ValueError("Name must be less than 512 characters.")  # pragma: no cover
+            raise ValueError(
+                "Name must be less than 512 characters."
+            )  # pragma: no cover
 
         if not value.isidentifier():
             raise ValueError("Name must be a valid Python identifier.")

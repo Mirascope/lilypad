@@ -1,13 +1,15 @@
 """Tests for the billing API endpoints."""
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from ee.validate import Tier
+from ee.validate import LicenseInfo, Tier
 from lilypad.ee.server.models.user_organizations import UserOrganizationTable, UserRole
+from lilypad.server.api.v0.main import api
 from lilypad.server.models import BillingTable, OrganizationTable, UserTable
 from lilypad.server.models.billing import SubscriptionStatus
 
@@ -444,3 +446,220 @@ def test_stripe_webhook_invalid_signature(
 
     assert response.status_code == 400
     assert "Webhook error" in response.json()["detail"]
+
+
+@patch("lilypad.server.api.v0.billing_api.get_settings")
+@patch("stripe.billing.Meter.list_event_summaries")
+def test_get_event_summaries_success(
+    mock_list_summaries,
+    mock_get_settings,
+    client: TestClient,
+    session: Session,
+    test_user: UserTable,
+):
+    """Test successful retrieval of event summaries."""
+    from lilypad.ee.server.require_license import (
+        get_organization_license,
+        is_lilypad_cloud,
+    )
+
+    # Mock settings
+    mock_settings = Mock()
+    mock_settings.stripe_spans_metering_id = "meter_test123"
+    mock_get_settings.return_value = mock_settings
+
+    # Override dependencies for cloud and license
+    def override_is_cloud():
+        return True
+
+    def override_get_license():
+        return LicenseInfo(
+            customer="test_customer",
+            license_id="test_license",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.PRO,
+            organization_uuid=test_user.active_organization_uuid,
+        )
+
+    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[get_organization_license] = override_get_license
+
+    try:
+        # Create organization with billing
+        org = test_user.user_organizations[0].organization
+        billing = BillingTable(
+            organization_uuid=org.uuid,  # pyright: ignore [reportArgumentType]
+            stripe_customer_id="cus_test123",
+        )
+        session.add(billing)
+        session.commit()
+
+        # Mock Stripe response
+        mock_summary = Mock()
+        mock_summary.aggregated_value = 50000
+        mock_list_summaries.return_value.data = [mock_summary]
+
+        response = client.get("/stripe/event-summaries")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["current_meter"] == 50000
+        assert data["monthly_total"] == 100_000  # PRO tier traces per month
+    finally:
+        # Clean up overrides
+        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[get_organization_license]
+
+
+def test_get_event_summaries_not_cloud(
+    client: TestClient,
+    session: Session,
+    test_user: UserTable,
+):
+    """Test event summaries endpoint when not on Lilypad Cloud."""
+    from lilypad.ee.server.require_license import is_lilypad_cloud
+
+    # Override dependency to return False for cloud check
+    def override_is_cloud():
+        return False
+
+    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+
+    try:
+        response = client.get("/stripe/event-summaries")
+        assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "This endpoint is only available for Lilypad Cloud users"
+        )
+    finally:
+        # Clean up override
+        del api.dependency_overrides[is_lilypad_cloud]
+
+
+@patch("lilypad.server.api.v0.billing_api.get_settings")
+@patch("stripe.billing.Meter.list_event_summaries")
+def test_get_event_summaries_no_data(
+    mock_list_summaries,
+    mock_get_settings,
+    client: TestClient,
+    session: Session,
+    test_user: UserTable,
+):
+    """Test event summaries when no data is returned from Stripe."""
+    from lilypad.ee.server.require_license import (
+        get_organization_license,
+        is_lilypad_cloud,
+    )
+
+    # Mock settings
+    mock_settings = Mock()
+    mock_settings.stripe_spans_metering_id = "meter_test123"
+    mock_get_settings.return_value = mock_settings
+
+    # Override dependencies for cloud and license
+    def override_is_cloud():
+        return True
+
+    def override_get_license():
+        return LicenseInfo(
+            customer="test_customer",
+            license_id="test_license",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            tier=Tier.FREE,
+            organization_uuid=test_user.active_organization_uuid,
+        )
+
+    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[get_organization_license] = override_get_license
+
+    try:
+        # Create organization with billing
+        org = test_user.user_organizations[0].organization
+        billing = BillingTable(
+            organization_uuid=org.uuid,  # pyright: ignore [reportArgumentType]
+            stripe_customer_id="cus_test123",
+        )
+        session.add(billing)
+        session.commit()
+
+        # Mock empty Stripe response
+        mock_list_summaries.return_value.data = []
+
+        response = client.get("/stripe/event-summaries")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["current_meter"] == 0
+        assert data["monthly_total"] == 30_000  # FREE tier traces per month
+    finally:
+        # Clean up overrides
+        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[get_organization_license]
+
+
+@patch("lilypad.server.api.v0.billing_api.get_settings")
+@patch("stripe.billing.Meter.list_event_summaries")
+def test_get_event_summaries_different_tiers(
+    mock_list_summaries,
+    mock_get_settings,
+    client: TestClient,
+    session: Session,
+    test_user: UserTable,
+):
+    """Test event summaries with different subscription tiers."""
+    from lilypad.ee.server.require_license import (
+        get_organization_license,
+        is_lilypad_cloud,
+    )
+
+    # Mock settings
+    mock_settings = Mock()
+    mock_settings.stripe_spans_metering_id = "meter_test123"
+    mock_get_settings.return_value = mock_settings
+
+    # Override dependencies for cloud
+    def override_is_cloud():
+        return True
+
+    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+
+    try:
+        # Create organization with billing
+        org = test_user.user_organizations[0].organization
+        billing = BillingTable(
+            organization_uuid=org.uuid,  # pyright: ignore [reportArgumentType]
+            stripe_customer_id="cus_test123",
+        )
+        session.add(billing)
+        session.commit()
+
+        # Mock Stripe response
+        mock_summary = Mock()
+        mock_summary.aggregated_value = 500000
+        mock_list_summaries.return_value.data = [mock_summary]
+
+        # Test TEAM tier
+        def override_get_license_team():
+            return LicenseInfo(
+                customer="test_customer",
+                license_id="test_license",
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                tier=Tier.TEAM,
+                organization_uuid=test_user.active_organization_uuid,
+            )
+
+        api.dependency_overrides[get_organization_license] = override_get_license_team
+
+        response = client.get("/stripe/event-summaries")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["current_meter"] == 500000
+        assert data["monthly_total"] == 1_000_000  # TEAM tier traces per month
+
+        # Note: Testing ENTERPRISE tier is skipped because it returns float("inf")
+        # which cannot be serialized to JSON. This is a known limitation of the API
+        # that would require a fix to handle unlimited values properly (e.g., using
+        # a special value like -1 or null to represent unlimited)
+    finally:
+        # Clean up overrides
+        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[get_organization_license]

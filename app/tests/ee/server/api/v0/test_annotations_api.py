@@ -43,7 +43,7 @@ def test_annotation(
         span_uuid=test_span.uuid,
         project_uuid=test_project.uuid,
         organization_uuid=test_project.organization_uuid,
-        assigned_to=[test_user.uuid],  # type: ignore[arg-type]
+        assigned_to=test_user.uuid,  # type: ignore[arg-type]
         data={
             "output": {
                 "idealOutput": "test",
@@ -481,52 +481,157 @@ class TestGenerateAnnotation:
         self,
         client: TestClient,
         test_project: ProjectTable,
+        test_annotation: AnnotationTable,
+        test_span: SpanTable,
     ):
-        """Test generating annotation when span doesn't exist."""
-        # Use a random UUID for a non-existent span
-        span_uuid = uuid4()
-
+        """Test generating annotation when annotation already exists."""
+        # Request annotation generation for a span that already has an annotation
         response = client.get(
-            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{test_span.uuid}/generate-annotation"
         )
 
-        # Should return 404 when span doesn't exist
-        assert response.status_code == 404
-        assert "not found" in response.json()["detail"]
+        # Should return 200 with a streaming response
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
 
+        # Parse the SSE response
+        content = response.text
+        lines = content.strip().split("\n")
+
+        # Should have at least one data line
+        data_lines = [line for line in lines if line.startswith("data: ")]
+        assert len(data_lines) > 0
+
+        # The response should contain annotation data (currently always generates new data)
+        assert "idealOutput" in content
+        assert "reasoning" in content
+        assert (
+            "results" in content
+        )  # The mock annotate_trace returns data in results wrapper
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace")
     def test_generate_annotation_with_span_string_output(
         self,
+        mock_annotate_trace,
         client: TestClient,
         test_project: ProjectTable,
+        session: Session,
     ):
-        """Test generating annotation when span doesn't exist."""
-        # Use a random UUID for a non-existent span
-        span_uuid = uuid4()
+        """Test generating annotation for span with string output."""
+        # Create a span with string output
+        span = SpanTable(
+            span_id="string_output_span",
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            scope="lilypad",  # pyright: ignore [reportArgumentType]
+            data={
+                "name": "test_string_span",
+                "attributes": {
+                    "lilypad.type": "llm",
+                    "lilypad.llm.output": "This is a test output string",
+                },
+            },
+        )
+        session.add(span)
+        session.commit()
+        session.refresh(span)
+
+        # Mock the annotate_trace async generator to return ResultsModel
+        from lilypad.ee.server.generations.annotate_trace import ResultsModel
+
+        async def mock_generator():
+            yield ResultsModel(
+                results={  # pyright: ignore [reportArgumentType]
+                    "output": {
+                        "idealOutput": "This is the ideal output",
+                        "reasoning": "Generated reasoning",
+                        "exact": False,
+                        "label": "pass",
+                    }
+                }
+            )
+
+        mock_annotate_trace.return_value = mock_generator()
 
         response = client.get(
-            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span.uuid}/generate-annotation"
         )
 
-        # Should return 404 when span doesn't exist
-        assert response.status_code == 404
-        assert "not found" in response.json()["detail"]
+        # Should return 200 with a streaming response
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
 
+        # Parse the SSE response
+        content = response.text
+        assert "data: " in content
+        # Since the annotate_trace function was mocked, check for our mocked data
+        assert "This is the ideal output" in content
+        assert "Generated reasoning" in content
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace")
     def test_generate_annotation_with_span_dict_output(
         self,
+        mock_annotate_trace,
         client: TestClient,
         test_project: ProjectTable,
+        session: Session,
     ):
-        """Test generating annotation when span doesn't exist."""
-        # Use a random UUID for a non-existent span
-        span_uuid = uuid4()
+        """Test generating annotation for span with dict output."""
+        # Create a span with dict output
+        span = SpanTable(
+            span_id="dict_output_span",
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            scope="lilypad",  # pyright: ignore [reportArgumentType]
+            data={
+                "name": "test_dict_span",
+                "attributes": {
+                    "lilypad.type": "json",
+                    "lilypad.json.output": {"key1": "value1", "key2": 42},
+                },
+            },
+        )
+        session.add(span)
+        session.commit()
+        session.refresh(span)
+
+        # Mock the annotate_trace async generator for dict output
+        from lilypad.ee.server.generations.annotate_trace import ResultsModel
+
+        async def mock_generator():
+            yield ResultsModel(
+                results={  # pyright: ignore [reportArgumentType]
+                    "key1": {
+                        "idealOutput": "ideal_value1",
+                        "reasoning": "reason1",
+                        "exact": False,
+                        "label": "pass",
+                    },
+                    "key2": {
+                        "idealOutput": "43",
+                        "reasoning": "reason2",
+                        "exact": False,
+                        "label": "number",
+                    },
+                }
+            )
+
+        mock_annotate_trace.return_value = mock_generator()
 
         response = client.get(
-            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/generate-annotation"
+            f"/ee/projects/{test_project.uuid}/spans/{span.uuid}/generate-annotation"
         )
 
-        # Should return 404 when span doesn't exist
-        assert response.status_code == 404
-        assert "not found" in response.json()["detail"]
+        # Should return 200 with a streaming response
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+
+        # Parse the SSE response
+        content = response.text
+        assert "data: " in content
+        # Since the annotate_trace function was mocked, check for our mocked data
+        assert "ideal_value1" in content or "key1" in content
+        assert "43" in content or "key2" in content
 
     def test_generate_annotation_span_not_found(
         self,
@@ -544,6 +649,162 @@ class TestGenerateAnnotation:
         # Should return 404 when span doesn't exist
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace")
+    def test_generate_annotation_with_tool_output(
+        self,
+        mock_annotate_trace,
+        client: TestClient,
+        test_project: ProjectTable,
+        session: Session,
+    ):
+        """Test generating annotation for span with tool output."""
+        # Create a span with tool output
+        span = SpanTable(
+            span_id="tool_output_span",
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            scope="lilypad",  # pyright: ignore [reportArgumentType]
+            data={
+                "name": "test_tool_span",
+                "attributes": {
+                    "lilypad.type": "tool",
+                    "lilypad.tool.output": {"result": "tool execution result"},
+                },
+            },
+        )
+        session.add(span)
+        session.commit()
+        session.refresh(span)
+
+        # Mock the annotate_trace async generator
+        from lilypad.ee.server.generations.annotate_trace import ResultsModel
+
+        async def mock_generator():
+            yield ResultsModel(
+                results={  # pyright: ignore [reportArgumentType]
+                    "result": {
+                        "idealOutput": '{"result": "ideal tool result"}',
+                        "reasoning": "Tool output reasoning",
+                        "exact": True,
+                        "label": "tool_result",
+                    }
+                }
+            )
+
+        mock_annotate_trace.return_value = mock_generator()
+
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{span.uuid}/generate-annotation"
+        )
+
+        # Should return 200 with a streaming response
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+
+        # Verify the annotate_trace was called once
+        mock_annotate_trace.assert_called_once()
+
+        # Parse the response to verify our mocked data is returned
+        content = response.text
+        assert "Tool output reasoning" in content
+        assert "tool_result" in content
+
+    @patch("lilypad.ee.server.api.v0.annotations_api.annotate_trace")
+    def test_generate_annotation_streaming_response(
+        self,
+        mock_annotate_trace,
+        client: TestClient,
+        test_project: ProjectTable,
+        session: Session,
+    ):
+        """Test that annotation generation properly streams responses."""
+        # Create a span
+        span = SpanTable(
+            span_id="streaming_span",
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            scope="lilypad",  # pyright: ignore [reportArgumentType]
+            data={
+                "name": "test_streaming",
+                "attributes": {
+                    "lilypad.type": "llm",
+                    "lilypad.llm.output": "Test streaming",
+                },
+            },
+        )
+        session.add(span)
+        session.commit()
+        session.refresh(span)
+
+        # Mock the annotate_trace async generator with a single yield (since ResultsModel is yielded once)
+        from lilypad.ee.server.generations.annotate_trace import ResultsModel
+
+        async def mock_generator():
+            yield ResultsModel(
+                results={  # pyright: ignore [reportArgumentType]
+                    "output": {
+                        "idealOutput": "Streamed ideal",
+                        "reasoning": "Streamed reasoning",
+                        "exact": False,
+                        "label": "pass",
+                    }
+                }
+            )
+
+        mock_annotate_trace.return_value = mock_generator()
+
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{span.uuid}/generate-annotation",
+            # Use stream=True to get the raw streaming response
+            headers={"Accept": "text/event-stream"},
+        )
+
+        # Should return 200 with a streaming response
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+
+        # Check that we received multiple data chunks
+        content = response.text
+        data_chunks = content.count("data: ")
+        assert data_chunks >= 1  # At least one data chunk
+
+    def test_generate_annotation_no_output_in_span(
+        self,
+        client: TestClient,
+        test_project: ProjectTable,
+        session: Session,
+    ):
+        """Test generating annotation for span without output attributes."""
+        # Create a span without output attributes
+        span = SpanTable(
+            span_id="no_output_span",
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            scope="lilypad",  # pyright: ignore [reportArgumentType]
+            data={
+                "name": "test_no_output",
+                "attributes": {
+                    "lilypad.type": "llm",
+                    # No output attributes
+                },
+            },
+        )
+        session.add(span)
+        session.commit()
+        session.refresh(span)
+
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/spans/{span.uuid}/generate-annotation"
+        )
+
+        # Should return 200 with annotation data (even without output, annotate_trace is called)
+        assert response.status_code == 200
+        content = response.text
+        assert "data: " in content
+        # The API still calls annotate_trace which returns the default mock data
+        assert "results" in content
+        assert "idealOutput" in content
 
 
 class TestAnnotationModels:
