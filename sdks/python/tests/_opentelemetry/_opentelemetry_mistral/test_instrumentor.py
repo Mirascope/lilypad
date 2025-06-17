@@ -213,7 +213,10 @@ class TestMistralInstrumentor:
         mock_chat_module.Chat = mock_chat
 
         # Patch the import to return our mock
-        with patch.dict("sys.modules", {"mistralai.chat": mock_chat_module}), pytest.raises(Exception, match="Unwrap error"):
+        with (
+            patch.dict("sys.modules", {"mistralai.chat": mock_chat_module}),
+            pytest.raises(Exception, match="Unwrap error"),
+        ):
             # Should raise exception when unwrap fails
             instrumentor._uninstrument()
 

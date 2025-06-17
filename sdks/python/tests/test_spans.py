@@ -464,7 +464,7 @@ def test_metadata_serialization_fallback() -> None:
             return "CustomObject representation"
 
     with patch("lilypad.spans.json_dumps", side_effect=Exception("JSON error")), span("metadata fallback test") as s:
-            s.metadata(custom=CustomObject())
+        s.metadata(custom=CustomObject())
 
     dummy = dummy_spans[0]
     assert dummy.attributes.get("custom") == "CustomObject representation"
@@ -655,31 +655,35 @@ def test_dummy_span_record_exception_directly() -> None:
 
 def test_span_context_activation() -> None:
     """Test span context activation and token attachment."""
-    with patch("lilypad.spans.get_tracer") as mock_get_tracer, patch("lilypad.spans.context_api") as mock_context_api, patch("lilypad.spans.set_span_in_context") as mock_set_span:
-                # Setup mocks
-                mock_otel_span = Mock()
-                mock_tracer = Mock()
-                mock_tracer.start_span.return_value = mock_otel_span
-                mock_get_tracer.return_value = mock_tracer
+    with (
+        patch("lilypad.spans.get_tracer") as mock_get_tracer,
+        patch("lilypad.spans.context_api") as mock_context_api,
+        patch("lilypad.spans.set_span_in_context") as mock_set_span,
+    ):
+        # Setup mocks
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_span.return_value = mock_otel_span
+        mock_get_tracer.return_value = mock_tracer
 
-                mock_context = Mock()
-                mock_context_api.get_current.return_value = mock_context
+        mock_context = Mock()
+        mock_context_api.get_current.return_value = mock_context
 
-                new_context = Mock()
-                mock_set_span.return_value = new_context
+        new_context = Mock()
+        mock_set_span.return_value = new_context
 
-                mock_token = "test-token"
-                mock_context_api.attach.return_value = mock_token
+        mock_token = "test-token"
+        mock_context_api.attach.return_value = mock_token
 
-                # Create and enter span
-                s = Span("context test")
-                s.__enter__()
+        # Create and enter span
+        s = Span("context test")
+        s.__enter__()
 
-                # Verify context operations
-                mock_context_api.get_current.assert_called_once()
-                mock_set_span.assert_called_once_with(mock_otel_span, mock_context)
-                mock_context_api.attach.assert_called_once_with(new_context)
-                assert s._token == mock_token
+        # Verify context operations
+        mock_context_api.get_current.assert_called_once()
+        mock_set_span.assert_called_once_with(mock_otel_span, mock_context)
+        mock_context_api.attach.assert_called_once_with(new_context)
+        assert s._token == mock_token
 
 
 # =============================================================================
@@ -709,7 +713,7 @@ def test_metadata_with_positional_args_exception() -> None:
             return "BadJson"
 
     with patch("lilypad.spans.json_dumps", side_effect=Exception("JSON error")), span("metadata args exception") as s:
-            s.metadata(BadJson(), another=BadJson())
+        s.metadata(BadJson(), another=BadJson())
 
     dummy = dummy_spans[0]
     # Should fallback to str() representation
@@ -726,10 +730,14 @@ def test_span_creation_with_real_tracer_provider() -> None:
     # Set up a real tracer provider
     provider = RealTracerProvider()
 
-    with patch("lilypad.spans.get_tracer_provider", return_value=provider), patch("lilypad.spans.get_tracer", side_effect=real_get_tracer), span("real tracer test") as s:
-                s.info("Using real tracer")
-                assert s._span is not None
-                assert s._noop is False
+    with (
+        patch("lilypad.spans.get_tracer_provider", return_value=provider),
+        patch("lilypad.spans.get_tracer", side_effect=real_get_tracer),
+        span("real tracer test") as s,
+    ):
+        s.info("Using real tracer")
+        assert s._span is not None
+        assert s._noop is False
 
 
 def test_span_type_attribute() -> None:

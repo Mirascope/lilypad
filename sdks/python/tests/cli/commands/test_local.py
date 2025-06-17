@@ -264,7 +264,16 @@ def test_local_command_signal_handler_setup():
     """Test that signal handler is properly set up in local_command - covers lines 128-130."""
     from lilypad.cli.commands.local import local_command
 
-    with patch("lilypad.cli.commands.local._start_lilypad") as mock_start, patch("lilypad.cli.commands.local._wait_for_server") as mock_wait, patch("lilypad.cli.commands.local.get_sync_client") as mock_client, patch("lilypad.cli.commands.local.get_settings") as mock_settings, patch("os.path.exists", return_value=True), patch("builtins.open", mock_open(read_data='{"project_uuid": "test"}')), patch("json.dump"), patch("signal.signal") as mock_signal:
+    with (
+        patch("lilypad.cli.commands.local._start_lilypad") as mock_start,
+        patch("lilypad.cli.commands.local._wait_for_server") as mock_wait,
+        patch("lilypad.cli.commands.local.get_sync_client") as mock_client,
+        patch("lilypad.cli.commands.local.get_settings") as mock_settings,
+        patch("os.path.exists", return_value=True),
+        patch("builtins.open", mock_open(read_data='{"project_uuid": "test"}')),
+        patch("json.dump"),
+        patch("signal.signal") as mock_signal,
+    ):
         # Setup mocks
         mock_settings.return_value = Mock(port=8000)
         mock_process = Mock()
@@ -281,9 +290,7 @@ def test_local_command_signal_handler_setup():
         # Verify SIGINT handler was set (it's a custom function, not SIG_IGN)
         mock_signal.assert_called()
         # Check that SIGINT was the first argument in one of the calls
-        sigint_calls = [
-            call for call in mock_signal.call_args_list if call[0][0] == sig.SIGINT
-        ]
+        sigint_calls = [call for call in mock_signal.call_args_list if call[0][0] == sig.SIGINT]
         assert len(sigint_calls) > 0, "SIGINT handler was not set"
 
 

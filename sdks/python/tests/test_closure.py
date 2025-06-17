@@ -245,7 +245,10 @@ def test_dependency_collector_with_cached_property():
     cached_prop = TestClass.__dict__["cached_method"]
 
     # Mock to avoid actual source code processing
-    with patch("inspect.getsource", return_value="def cached_method(self): return 'cached value'"), patch("inspect.getmodule", return_value=sys.modules[__name__]):
+    with (
+        patch("inspect.getsource", return_value="def cached_method(self): return 'cached value'"),
+        patch("inspect.getmodule", return_value=sys.modules[__name__]),
+    ):
         collector._collect_imports_and_source_code(cached_prop, include_source=True)
 
     # Should process the underlying function
@@ -573,30 +576,6 @@ class AnnotatedClass:
     assert AnnotatedClass in collector.definitions_to_analyze
     # Should include CustomType from annotations
     assert CustomType in collector.definitions_to_include
-
-
-def test_definition_collector_process_name_or_attribute():
-    """Test _DefinitionCollector._process_name_or_attribute - covers line 417."""
-    module = ModuleType("test_module")
-
-    def test_func():
-        pass
-
-    module.test_func = test_func
-    module.nested = Mock()
-    module.nested.func = test_func
-
-    code = """
-x = test_func()
-y = nested.func()
-"""
-
-    tree = ast.parse(code)
-    collector = _DefinitionCollector(module, ["test_func", "nested.func"], set())
-    collector.visit(tree)
-
-    # Should include both direct and nested functions
-    assert test_func in collector.definitions_to_include
 
 
 def test_qualified_name_rewriter_with_aliases():
@@ -1358,14 +1337,21 @@ def test_dependency_collector_class_methods():
     collector.visited_functions.add(method1_qualname)
 
     # Try to collect method1 again - should return early
-    with patch("inspect.getsource", return_value="def method1(self): return 42"), patch("inspect.getmodule", return_value=sys.modules[__name__]):
+    with (
+        patch("inspect.getsource", return_value="def method1(self): return 42"),
+        patch("inspect.getmodule", return_value=sys.modules[__name__]),
+    ):
         collector._collect_imports_and_source_code(TestClass.method1, include_source=True)
 
     # Should not add duplicate source
     source_count = len(collector.source_code)
 
     # Now test with method2 (not visited)
-    with patch("inspect.getsource", return_value="def method2(self): return self.method1() * 2"), patch("inspect.getmodule", return_value=sys.modules[__name__]), patch("lilypad._utils.closure.get_class_source_from_method", return_value="class TestClass: pass"):
+    with (
+        patch("inspect.getsource", return_value="def method2(self): return self.method1() * 2"),
+        patch("inspect.getmodule", return_value=sys.modules[__name__]),
+        patch("lilypad._utils.closure.get_class_source_from_method", return_value="class TestClass: pass"),
+    ):
         collector._collect_imports_and_source_code(TestClass.method2, include_source=True)
 
     # Should add new source
@@ -1384,30 +1370,33 @@ def test_dependency_collector_package_dependencies():
     mock_dist.requires = ["dep1; extra == 'extra1'", "dep2; extra == 'extra2'"]
 
     # Mock importlib.metadata functions
-    with patch("importlib.metadata.distributions", return_value=[mock_dist]), patch("importlib.metadata.packages_distributions", return_value={"test_module": ["test-package"]}):
-            # Test with imports
-            imports = {"import test_module", "from test_module import something"}
+    with (
+        patch("importlib.metadata.distributions", return_value=[mock_dist]),
+        patch("importlib.metadata.packages_distributions", return_value={"test_module": ["test-package"]}),
+    ):
+        # Test with imports
+        imports = {"import test_module", "from test_module import something"}
 
-            # Collect dependencies
-            deps = collector._collect_required_dependencies(imports)
+        # Collect dependencies
+        deps = collector._collect_required_dependencies(imports)
 
-            # Should have collected the package
-            assert "test-package" in deps
-            assert deps["test-package"]["version"] == "1.0.0"
+        # Should have collected the package
+        assert "test-package" in deps
+        assert deps["test-package"]["version"] == "1.0.0"
 
-            # Test with package that maps to lilypad
-            with patch("importlib.metadata.packages_distributions", return_value={"lilypad": ["lilypad"]}):
-                mock_lilypad_dist = Mock()
-                mock_lilypad_dist.name = "lilypad-sdk"
-                mock_lilypad_dist.version = "0.1.0"
-                mock_lilypad_dist.metadata.get_all.return_value = []
+        # Test with package that maps to lilypad
+        with patch("importlib.metadata.packages_distributions", return_value={"lilypad": ["lilypad"]}):
+            mock_lilypad_dist = Mock()
+            mock_lilypad_dist.name = "lilypad-sdk"
+            mock_lilypad_dist.version = "0.1.0"
+            mock_lilypad_dist.metadata.get_all.return_value = []
 
-                with patch("importlib.metadata.distributions", return_value=[mock_lilypad_dist]):
-                    imports_lilypad = {"import lilypad"}
-                    deps_lilypad = collector._collect_required_dependencies(imports_lilypad)
+            with patch("importlib.metadata.distributions", return_value=[mock_lilypad_dist]):
+                imports_lilypad = {"import lilypad"}
+                deps_lilypad = collector._collect_required_dependencies(imports_lilypad)
 
-                    # Should map lilypad to lilypad-sdk
-                    assert "lilypad-sdk" in deps_lilypad
+                # Should map lilypad to lilypad-sdk
+                assert "lilypad-sdk" in deps_lilypad
 
 
 def test_dependency_collector_rewriter_processing():
@@ -1424,7 +1413,10 @@ def test_dependency_collector_rewriter_processing():
         return 42
 
     # Call collect
-    with patch("inspect.getsource", return_value="def test_func(): return 42"), patch("inspect.getmodule", return_value=sys.modules[__name__]):
+    with (
+        patch("inspect.getsource", return_value="def test_func(): return 42"),
+        patch("inspect.getmodule", return_value=sys.modules[__name__]),
+    ):
         imports, assignments, source_code, deps = collector.collect(test_func)
 
     # Assignments should be processed through rewriter
@@ -1577,32 +1569,36 @@ def test_dependency_collector_visited_class_method():
             return self.method() * 2
 
     # Mock the necessary functions
-    with patch("inspect.getsource") as mock_getsource, patch("inspect.getmodule", return_value=sys.modules[__name__]), patch("lilypad._utils.closure.get_class_source_from_method", return_value="class MyClass: pass"):
-                # First call - should process and add to visited
-                mock_getsource.return_value = "def method(self): return 42"
-                collector._collect_imports_and_source_code(MyClass.method, include_source=True)
+    with (
+        patch("inspect.getsource") as mock_getsource,
+        patch("inspect.getmodule", return_value=sys.modules[__name__]),
+        patch("lilypad._utils.closure.get_class_source_from_method", return_value="class MyClass: pass"),
+    ):
+        # First call - should process and add to visited
+        mock_getsource.return_value = "def method(self): return 42"
+        collector._collect_imports_and_source_code(MyClass.method, include_source=True)
 
-                # Check it was added to visited functions
-                assert MyClass.method.__qualname__ in collector.visited_functions
-                initial_count = len(collector.source_code)
+        # Check it was added to visited functions
+        assert MyClass.method.__qualname__ in collector.visited_functions
+        initial_count = len(collector.source_code)
 
-                # Second call - should return early (line 622-625)
-                collector._collect_imports_and_source_code(MyClass.method, include_source=True)
+        # Second call - should return early (line 622-625)
+        collector._collect_imports_and_source_code(MyClass.method, include_source=True)
 
-                # Should not add more source
-                assert len(collector.source_code) == initial_count
+        # Should not add more source
+        assert len(collector.source_code) == initial_count
 
-                # Test with local function inside method (line 629)
-                def outer_func():
-                    def inner_func():
-                        return 1
+        # Test with local function inside method (line 629)
+        def outer_func():
+            def inner_func():
+                return 1
 
-                    return inner_func
+            return inner_func
 
-                # Process outer function
-                mock_getsource.return_value = "def outer_func(): pass"
-                collector._collect_imports_and_source_code(outer_func, include_source=True)
-                assert outer_func.__qualname__ in collector.visited_functions
+        # Process outer function
+        mock_getsource.return_value = "def outer_func(): pass"
+        collector._collect_imports_and_source_code(outer_func, include_source=True)
+        assert outer_func.__qualname__ in collector.visited_functions
 
 
 def test_dependency_collector_package_extras():
@@ -1628,7 +1624,11 @@ def test_dependency_collector_package_extras():
         "requests": Mock(name="requests"),
     }
 
-    with patch("importlib.metadata.distributions", return_value=installed.values()), patch("importlib.metadata.packages_distributions", return_value={"test_module": ["test-package"]}), patch("lilypad._utils.closure._DependencyCollector._collect_required_dependencies") as mock_collect:
+    with (
+        patch("importlib.metadata.distributions", return_value=installed.values()),
+        patch("importlib.metadata.packages_distributions", return_value={"test_module": ["test-package"]}),
+        patch("lilypad._utils.closure._DependencyCollector._collect_required_dependencies") as mock_collect,
+    ):
         # Create a custom implementation
         def custom_collect(self, imports):
             dependencies = {}

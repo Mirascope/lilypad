@@ -388,44 +388,47 @@ async def test_get_deployed_function_async_with_ttl_and_force_refresh(mock_funct
     mock_client = Mock()
     mock_client.projects.functions.get_deployed_environments = AsyncMock(return_value=mock_function)
 
-    with patch("lilypad._utils.function_cache.get_async_client", return_value=mock_client), patch("lilypad._utils.function_cache.time") as mock_time:
-            mock_time.return_value = 1000.0
+    with (
+        patch("lilypad._utils.function_cache.get_async_client", return_value=mock_client),
+        patch("lilypad._utils.function_cache.time") as mock_time,
+    ):
+        mock_time.return_value = 1000.0
 
-            # Test default TTL assignment (line 149)
-            result1 = await get_deployed_function_async("project-123", "my_func")  # No TTL provided
-            assert result1 == mock_function
-            assert mock_client.projects.functions.get_deployed_environments.call_count == 1
+        # Test default TTL assignment (line 149)
+        result1 = await get_deployed_function_async("project-123", "my_func")  # No TTL provided
+        assert result1 == mock_function
+        assert mock_client.projects.functions.get_deployed_environments.call_count == 1
 
-            # Second call within default TTL - should use cache (test lines 152-154)
-            mock_time.return_value = 1020.0  # 20 seconds later (within default 30s TTL)
-            result2 = await get_deployed_function_async("project-123", "my_func")
-            assert result2 == mock_function
-            assert mock_client.projects.functions.get_deployed_environments.call_count == 1
+        # Second call within default TTL - should use cache (test lines 152-154)
+        mock_time.return_value = 1020.0  # 20 seconds later (within default 30s TTL)
+        result2 = await get_deployed_function_async("project-123", "my_func")
+        assert result2 == mock_function
+        assert mock_client.projects.functions.get_deployed_environments.call_count == 1
 
-            # Clear cache and manually add entry to test race condition inside lock (line 161)
-            _deployed_cache.clear()
-            key = ("project-123", "my_func")
+        # Clear cache and manually add entry to test race condition inside lock (line 161)
+        _deployed_cache.clear()
+        key = ("project-123", "my_func")
 
-            # Set up a scenario where another coroutine has filled the cache during lock acquisition
-            # Reset call count
-            mock_client.projects.functions.get_deployed_environments.reset_mock()
+        # Set up a scenario where another coroutine has filled the cache during lock acquisition
+        # Reset call count
+        mock_client.projects.functions.get_deployed_environments.reset_mock()
 
-            # Call function - first call will fetch from API
-            mock_time.return_value = 2000.0
-            result3 = await get_deployed_function_async("project-123", "my_func", ttl=30)
-            assert result3 == mock_function
+        # Call function - first call will fetch from API
+        mock_time.return_value = 2000.0
+        result3 = await get_deployed_function_async("project-123", "my_func", ttl=30)
+        assert result3 == mock_function
 
-            # Manually add same entry to cache (simulating another coroutine)
-            _deployed_cache[key] = (2000.0, mock_function)
+        # Manually add same entry to cache (simulating another coroutine)
+        _deployed_cache[key] = (2000.0, mock_function)
 
-            # Call again with force_refresh=False - should find cache entry inside lock (line 161)
-            mock_time.return_value = 2010.0  # Within TTL
-            result4 = await get_deployed_function_async("project-123", "my_func", ttl=30, force_refresh=False)
-            assert result4 == mock_function
+        # Call again with force_refresh=False - should find cache entry inside lock (line 161)
+        mock_time.return_value = 2010.0  # Within TTL
+        result4 = await get_deployed_function_async("project-123", "my_func", ttl=30, force_refresh=False)
+        assert result4 == mock_function
 
-            # Test force_refresh=True (should bypass cache)
-            result5 = await get_deployed_function_async("project-123", "my_func", ttl=30, force_refresh=True)
-            assert result5 == mock_function
+        # Test force_refresh=True (should bypass cache)
+        result5 = await get_deployed_function_async("project-123", "my_func", ttl=30, force_refresh=True)
+        assert result5 == mock_function
 
 
 @pytest.mark.asyncio
@@ -448,16 +451,19 @@ async def test_get_function_by_hash_async_race_condition_2():
         # Simulate another coroutine filling the cache
         _hash_async_cache[key] = mock_function
 
-    with patch.object(_hash_async_lock, "acquire", mock_acquire), patch("lilypad._utils.function_cache.get_async_client") as mock_get_client:
-            mock_client = Mock()
-            mock_client.projects.functions.get_by_hash = AsyncMock()
-            mock_get_client.return_value = mock_client
+    with (
+        patch.object(_hash_async_lock, "acquire", mock_acquire),
+        patch("lilypad._utils.function_cache.get_async_client") as mock_get_client,
+    ):
+        mock_client = Mock()
+        mock_client.projects.functions.get_by_hash = AsyncMock()
+        mock_get_client.return_value = mock_client
 
-            result = await get_function_by_hash_async("project-123", "hash-abc")
+        result = await get_function_by_hash_async("project-123", "hash-abc")
 
-            # Should return cached value without calling API
-            assert result == mock_function
-            mock_client.projects.functions.get_by_hash.assert_not_called()
+        # Should return cached value without calling API
+        assert result == mock_function
+        mock_client.projects.functions.get_by_hash.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -480,16 +486,19 @@ async def test_get_function_by_version_async_race_condition_2():
         # Simulate another coroutine filling the cache
         _version_async_cache[key] = mock_function
 
-    with patch.object(_version_async_lock, "acquire", mock_acquire), patch("lilypad._utils.function_cache.get_async_client") as mock_get_client:
-            mock_client = Mock()
-            mock_client.projects.functions.get_by_version = AsyncMock()
-            mock_get_client.return_value = mock_client
+    with (
+        patch.object(_version_async_lock, "acquire", mock_acquire),
+        patch("lilypad._utils.function_cache.get_async_client") as mock_get_client,
+    ):
+        mock_client = Mock()
+        mock_client.projects.functions.get_by_version = AsyncMock()
+        mock_get_client.return_value = mock_client
 
-            result = await get_function_by_version_async("project-123", "test_func", 1)
+        result = await get_function_by_version_async("project-123", "test_func", 1)
 
-            # Should return cached value without calling API
-            assert result == mock_function
-            mock_client.projects.functions.get_by_version.assert_not_called()
+        # Should return cached value without calling API
+        assert result == mock_function
+        mock_client.projects.functions.get_by_version.assert_not_called()
 
 
 @pytest.mark.asyncio

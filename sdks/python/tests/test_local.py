@@ -42,7 +42,11 @@ def test_terminate_process_timeout():
 def test_local_command_keyboard_interrupt():
     """Test local_command handling KeyboardInterrupt - covers lines 128-130."""
     # Mock the necessary components
-    with patch("os.path.exists", return_value=False), patch("typer.prompt", return_value="test-project"), patch("lilypad.cli.commands.local.get_settings") as mock_settings:
+    with (
+        patch("os.path.exists", return_value=False),
+        patch("typer.prompt", return_value="test-project"),
+        patch("lilypad.cli.commands.local.get_settings") as mock_settings,
+    ):
         settings = Mock()
         settings.port = 52415
         mock_settings.return_value = settings
@@ -50,7 +54,10 @@ def test_local_command_keyboard_interrupt():
         with patch("lilypad.cli.commands.local.get_and_create_config") as mock_config:
             mock_config.return_value = {"base_url": "http://localhost:8000"}
 
-            with patch("builtins.open", new_callable=mock_open), patch("lilypad.cli.commands.local.get_sync_client") as mock_client_getter:
+            with (
+                patch("builtins.open", new_callable=mock_open),
+                patch("lilypad.cli.commands.local.get_sync_client") as mock_client_getter,
+            ):
                 mock_client = Mock()
                 mock_client_getter.return_value = mock_client
 
@@ -59,9 +66,7 @@ def test_local_command_keyboard_interrupt():
                     mock_start.return_value = mock_process
 
                     with (
-                        patch(
-                            "lilypad.cli.commands.local._wait_for_server", side_effect=KeyboardInterrupt()
-                        ),
+                        patch("lilypad.cli.commands.local._wait_for_server", side_effect=KeyboardInterrupt()),
                         patch("lilypad.cli.commands.local._terminate_process") as mock_terminate,
                     ):
                         # Run the command - should handle KeyboardInterrupt gracefully

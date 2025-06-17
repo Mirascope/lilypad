@@ -651,13 +651,16 @@ class TestSyncCommand:
         """Test sync command when module import fails."""
         mock_find_files.return_value = ["bad_file.py"]
 
-        with patch("lilypad.cli.commands.sync._import_module_safely", return_value=False), patch("builtins.print"):  # Suppress print output
-                result = sync_command(
-                    directory=Path("."),
-                    exclude=None,
-                    verbose=True,  # Test verbose output
-                    debug=False,
-                )
+        with (
+            patch("lilypad.cli.commands.sync._import_module_safely", return_value=False),
+            patch("builtins.print"),
+        ):  # Suppress print output
+            result = sync_command(
+                directory=Path("."),
+                exclude=None,
+                verbose=True,  # Test verbose output
+                debug=False,
+            )
 
     def test_sync_command_exclude_parsing(self):
         """Test sync command with exclude parameter parsing."""

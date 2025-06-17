@@ -874,6 +874,8 @@ def test_parse_parameters_exception_handling():
             assert result == []
     finally:
         sync_module.DEBUG = original_debug
+
+
 #
 #
 # @patch("lilypad.cli.commands.sync.get_settings")
@@ -1741,13 +1743,16 @@ def test_parse_return_type_debug_exception():
     try:
         sync_module.DEBUG = True
 
-        with patch("ast.parse", side_effect=Exception("Parse error")), patch("lilypad.cli.commands.sync.print") as mock_print:
-                result = _parse_return_type("invalid")
-                assert result == "Any"
-                # Check that debug error message was printed
-                mock_print.assert_called()
-                call_args = mock_print.call_args[0][0]
-                assert "[DEBUG] Error parsing return type" in call_args
+        with (
+            patch("ast.parse", side_effect=Exception("Parse error")),
+            patch("lilypad.cli.commands.sync.print") as mock_print,
+        ):
+            result = _parse_return_type("invalid")
+            assert result == "Any"
+            # Check that debug error message was printed
+            mock_print.assert_called()
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG] Error parsing return type" in call_args
     finally:
         sync_module.DEBUG = original_debug
 
@@ -1970,51 +1975,62 @@ def test_sync_command_no_versions_and_exceptions():
     from lilypad.cli.commands.sync import sync_command
     from unittest.mock import Mock, patch
 
-    with patch("lilypad.cli.commands.sync._find_python_files") as mock_find, patch("lilypad.cli.commands.sync.get_decorated_functions") as mock_get_funcs, patch("lilypad.cli.commands.sync.get_settings") as mock_settings, patch("lilypad.cli.commands.sync.get_sync_client") as mock_client, patch("lilypad.cli.commands.sync.enable_recording"), patch("lilypad.cli.commands.sync.disable_recording"), patch("lilypad.cli.commands.sync.clear_registry"), patch("importlib.import_module") as mock_import, patch("lilypad.cli.commands.sync.Closure") as mock_closure, patch("pathlib.Path"):
-                                            # Setup mocks
-                                            mock_settings.return_value = Mock(api_key="test", project_id="test")
+    with (
+        patch("lilypad.cli.commands.sync._find_python_files") as mock_find,
+        patch("lilypad.cli.commands.sync.get_decorated_functions") as mock_get_funcs,
+        patch("lilypad.cli.commands.sync.get_settings") as mock_settings,
+        patch("lilypad.cli.commands.sync.get_sync_client") as mock_client,
+        patch("lilypad.cli.commands.sync.enable_recording"),
+        patch("lilypad.cli.commands.sync.disable_recording"),
+        patch("lilypad.cli.commands.sync.clear_registry"),
+        patch("importlib.import_module") as mock_import,
+        patch("lilypad.cli.commands.sync.Closure") as mock_closure,
+        patch("pathlib.Path"),
+    ):
+        # Setup mocks
+        mock_settings.return_value = Mock(api_key="test", project_id="test")
 
-                                            # Mock client that returns no versions
-                                            client_instance = Mock()
-                                            client_instance.projects.functions.get_by_name.return_value = []
-                                            mock_client.return_value = client_instance
+        # Mock client that returns no versions
+        client_instance = Mock()
+        client_instance.projects.functions.get_by_name.return_value = []
+        mock_client.return_value = client_instance
 
-                                            mock_find.return_value = ["test1.py", "test2.py"]
-                                            mock_get_funcs.return_value = {
-                                                "lilypad.traces": [
-                                                    ("test1.py", "func1", 1, "module1", None),
-                                                    ("test2.py", "func2", 2, "module2", {"mode": "wrap"}),
-                                                ]
-                                            }
+        mock_find.return_value = ["test1.py", "test2.py"]
+        mock_get_funcs.return_value = {
+            "lilypad.traces": [
+                ("test1.py", "func1", 1, "module1", None),
+                ("test2.py", "func2", 2, "module2", {"mode": "wrap"}),
+            ]
+        }
 
-                                            # Mock import success for first, failure for second
-                                            mock_module = Mock()
-                                            mock_module.func1 = lambda: None
+        # Mock import success for first, failure for second
+        mock_module = Mock()
+        mock_module.func1 = lambda: None
 
-                                            def import_side_effect(name):
-                                                if name == "module1":
-                                                    return mock_module
-                                                else:
-                                                    raise ImportError("Mock import error")
+        def import_side_effect(name):
+            if name == "module1":
+                return mock_module
+            else:
+                raise ImportError("Mock import error")
 
-                                            mock_import.side_effect = import_side_effect
+        mock_import.side_effect = import_side_effect
 
-                                            # Mock closure that raises exception for func2
-                                            def closure_side_effect(fn):
-                                                if fn == mock_module.func1:
-                                                    closure = Mock()
-                                                    closure.name = "func1"
-                                                    return closure
-                                                else:
-                                                    raise RuntimeError("Mock closure error")
+        # Mock closure that raises exception for func2
+        def closure_side_effect(fn):
+            if fn == mock_module.func1:
+                closure = Mock()
+                closure.name = "func1"
+                return closure
+            else:
+                raise RuntimeError("Mock closure error")
 
-                                            mock_closure.from_fn.side_effect = closure_side_effect
+        mock_closure.from_fn.side_effect = closure_side_effect
 
-                                            # Run sync_command - should handle exceptions gracefully
-                                            sync_command(directory=Path("."), verbose=False)
+        # Run sync_command - should handle exceptions gracefully
+        sync_command(directory=Path("."), verbose=False)
 
-                                            # Verify it attempted to get versions for func1
-                                            client_instance.projects.functions.get_by_name.assert_called()
+        # Verify it attempted to get versions for func1
+        client_instance.projects.functions.get_by_name.assert_called()
 
 
 def test_sync_command_async_with_wrap_mode():
@@ -2022,70 +2038,66 @@ def test_sync_command_async_with_wrap_mode():
     from lilypad.cli.commands.sync import sync_command
     from unittest.mock import Mock, patch
 
-    with patch("lilypad.cli.commands.sync._find_python_files") as mock_find, patch("lilypad.cli.commands.sync.get_decorated_functions") as mock_get_funcs, patch("lilypad.cli.commands.sync.get_settings") as mock_settings, patch("lilypad.cli.commands.sync.get_sync_client") as mock_client, patch("lilypad.cli.commands.sync.enable_recording"), patch("lilypad.cli.commands.sync.disable_recording"), patch("lilypad.cli.commands.sync.clear_registry"), patch("importlib.import_module") as mock_import, patch("lilypad.cli.commands.sync.Closure") as mock_closure, patch(
-                                            "lilypad.cli.commands.sync._generate_protocol_stub_content"
-                                        ) as mock_gen_stub, patch("lilypad.cli.commands.sync._run_ruff") as mock_ruff:
-                                                # Setup mocks
-                                                mock_settings.return_value = Mock(api_key="test", project_id="test")
+    with (
+        patch("lilypad.cli.commands.sync._find_python_files") as mock_find,
+        patch("lilypad.cli.commands.sync.get_decorated_functions") as mock_get_funcs,
+        patch("lilypad.cli.commands.sync.get_settings") as mock_settings,
+        patch("lilypad.cli.commands.sync.get_sync_client") as mock_client,
+        patch("lilypad.cli.commands.sync.enable_recording"),
+        patch("lilypad.cli.commands.sync.disable_recording"),
+        patch("lilypad.cli.commands.sync.clear_registry"),
+        patch("importlib.import_module") as mock_import,
+        patch("lilypad.cli.commands.sync.Closure") as mock_closure,
+        patch("lilypad.cli.commands.sync._generate_protocol_stub_content") as mock_gen_stub,
+        patch("lilypad.cli.commands.sync._run_ruff") as mock_ruff,
+    ):
+        # Setup mocks
+        mock_settings.return_value = Mock(api_key="test", project_id="test")
 
-                                                # Mock client with versions
-                                                client_instance = Mock()
-                                                mock_version = Mock(version_num=1, signature="async def func(): pass")
-                                                client_instance.projects.functions.get_by_name.return_value = [
-                                                    mock_version
-                                                ]
-                                                mock_client.return_value = client_instance
+        # Mock client with versions
+        client_instance = Mock()
+        mock_version = Mock(version_num=1, signature="async def func(): pass")
+        client_instance.projects.functions.get_by_name.return_value = [mock_version]
+        mock_client.return_value = client_instance
 
-                                                mock_find.return_value = ["test.py"]
-                                                # Async function with wrap mode
-                                                mock_get_funcs.return_value = {
-                                                    "lilypad.traces": [
-                                                        ("test.py", "async_func", 1, "module", {"mode": "wrap"})
-                                                    ]
-                                                }
+        mock_find.return_value = ["test.py"]
+        # Async function with wrap mode
+        mock_get_funcs.return_value = {"lilypad.traces": [("test.py", "async_func", 1, "module", {"mode": "wrap"})]}
 
-                                                # Mock import
-                                                mock_module = Mock()
+        # Mock import
+        mock_module = Mock()
 
-                                                async def async_func():
-                                                    pass
+        async def async_func():
+            pass
 
-                                                mock_module.async_func = async_func
-                                                mock_import.return_value = mock_module
+        mock_module.async_func = async_func
+        mock_import.return_value = mock_module
 
-                                                # Mock closure
-                                                mock_closure_inst = Mock()
-                                                mock_closure_inst.name = "async_func"
-                                                mock_closure.from_fn.return_value = mock_closure_inst
+        # Mock closure
+        mock_closure_inst = Mock()
+        mock_closure_inst.name = "async_func"
+        mock_closure.from_fn.return_value = mock_closure_inst
 
-                                                # Mock stub with Coroutine
-                                                mock_gen_stub.return_value = (
-                                                    "from typing import Coroutine\nclass AsyncFunc(Protocol): pass"
-                                                )
-                                                mock_ruff.return_value = (
-                                                    "from typing import Coroutine\nclass AsyncFunc(Protocol): pass"
-                                                )
+        # Mock stub with Coroutine
+        mock_gen_stub.return_value = "from typing import Coroutine\nclass AsyncFunc(Protocol): pass"
+        mock_ruff.return_value = "from typing import Coroutine\nclass AsyncFunc(Protocol): pass"
 
-                                                # Create directory first to avoid mkdir issues
-                                                import tempfile
+        # Create directory first to avoid mkdir issues
+        import tempfile
 
-                                                with tempfile.TemporaryDirectory() as tmpdir:
-                                                    stub_file = Path(tmpdir) / "test.pyi"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            stub_file = Path(tmpdir) / "test.pyi"
 
-                                                    # Update the test file path to be in temp directory
-                                                    test_file = str(Path(tmpdir) / "test.py")
-                                                    mock_find.return_value = [test_file]
-                                                    mock_get_funcs.return_value = {
-                                                        "lilypad.traces": [
-                                                            (test_file, "async_func", 1, "module", {"mode": "wrap"})
-                                                        ]
-                                                    }
+            # Update the test file path to be in temp directory
+            test_file = str(Path(tmpdir) / "test.py")
+            mock_find.return_value = [test_file]
+            mock_get_funcs.return_value = {"lilypad.traces": [(test_file, "async_func", 1, "module", {"mode": "wrap"})]}
 
-                                                    # Run sync_command
-                                                    sync_command(directory=Path(tmpdir), verbose=False)
+            # Run sync_command
+            sync_command(directory=Path(tmpdir), verbose=False)
 
-                                                    # Verify stub file was created
-                                                    assert stub_file.exists()
-                                                    content = stub_file.read_text()
-                                                    assert "from lilypad.traces import AsyncTrace" in content
-                                                    assert "Coroutine" in content
+            # Verify stub file was created
+            assert stub_file.exists()
+            content = stub_file.read_text()
+            assert "from lilypad.traces import AsyncTrace" in content
+            assert "Coroutine" in content

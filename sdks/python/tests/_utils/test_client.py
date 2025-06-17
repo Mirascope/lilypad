@@ -99,10 +99,13 @@ def test_lilypad_wrap_clients_exception_handling():
 
         mock_base.return_value = mock_instance
 
-        with patch("lilypad._utils.client.Lilypad._wrap_raw_clients", side_effect=side_effect), patch("lilypad._utils.client.logger") as mock_logger:
-                # Should handle the exception gracefully
-                client = Lilypad(api_key="test-key")
-                mock_logger.error.assert_called_once()
+        with (
+            patch("lilypad._utils.client.Lilypad._wrap_raw_clients", side_effect=side_effect),
+            patch("lilypad._utils.client.logger") as mock_logger,
+        ):
+            # Should handle the exception gracefully
+            client = Lilypad(api_key="test-key")
+            mock_logger.error.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -118,10 +121,13 @@ async def test_async_lilypad_wrap_clients_exception_handling():
 
         mock_base.return_value = mock_instance
 
-        with patch("lilypad._utils.client.AsyncLilypad._wrap_raw_clients", side_effect=side_effect), patch("lilypad._utils.client.logger") as mock_logger:
-                # Should handle the exception gracefully
-                client = AsyncLilypad(api_key="test-key")
-                mock_logger.error.assert_called_once()
+        with (
+            patch("lilypad._utils.client.AsyncLilypad._wrap_raw_clients", side_effect=side_effect),
+            patch("lilypad._utils.client.logger") as mock_logger,
+        ):
+            # Should handle the exception gracefully
+            client = AsyncLilypad(api_key="test-key")
+            mock_logger.error.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -372,7 +378,10 @@ def test_get_sync_client_from_env(mock_singleton, mock_get_settings):
 async def test_get_async_client_outside_loop():
     """Test get_async_client called outside event loop."""
     # Simulate being outside an event loop
-    with patch("asyncio.get_running_loop", side_effect=RuntimeError("No running loop")), pytest.raises(RuntimeError) as exc_info:
+    with (
+        patch("asyncio.get_running_loop", side_effect=RuntimeError("No running loop")),
+        pytest.raises(RuntimeError) as exc_info,
+    ):
         get_async_client(api_key="test_key")
 
     assert "must be called from within an active event loop" in str(exc_info.value)
@@ -745,4 +754,3 @@ def test_async_lilypad_init_error_handling():
         # Should catch exception and re-raise as RuntimeError
         with pytest.raises(RuntimeError, match="Async client initialization failed: Base initialization failed"):
             AsyncLilypad(api_key="test-key")
-

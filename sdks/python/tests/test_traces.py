@@ -61,12 +61,16 @@ def disable_trace_recording():
 @pytest.fixture(autouse=True)
 def mock_network_operations():
     """Mock all network operations to prevent hanging."""
-    with patch("lilypad._utils.client.get_sync_client") as mock_sync, patch("lilypad._utils.client.get_async_client") as mock_async, patch("lilypad._utils.settings.get_settings") as mock_settings:
-                # Return mock clients that won't make real network calls
-                mock_sync.return_value = Mock()
-                mock_async.return_value = AsyncMock()
-                mock_settings.return_value = Mock(api_key=None, project_id=None)
-                yield
+    with (
+        patch("lilypad._utils.client.get_sync_client") as mock_sync,
+        patch("lilypad._utils.client.get_async_client") as mock_async,
+        patch("lilypad._utils.settings.get_settings") as mock_settings,
+    ):
+        # Return mock clients that won't make real network calls
+        mock_sync.return_value = Mock()
+        mock_async.return_value = AsyncMock()
+        mock_settings.return_value = Mock(api_key=None, project_id=None)
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -334,12 +338,12 @@ def test_trace_tag_empty_returns_early():
     trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
 
     with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-            result = trace.tag()
+        result = trace.tag()
 
-            # Verify no API calls were made
-            mock_settings.assert_not_called()
-            mock_client.assert_not_called()
-            assert result is None
+        # Verify no API calls were made
+        mock_settings.assert_not_called()
+        mock_client.assert_not_called()
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -438,31 +442,34 @@ def test_trace_with_versioning():
     with patch("lilypad.traces.get_settings") as mock_settings:
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-        with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Closure") as mock_closure_class:
-                mock_closure = Mock(hash="test-hash", code="code", name="func", signature="sig", dependencies=[])
-                mock_closure_class.from_fn.return_value = mock_closure
+        with (
+            patch("lilypad.traces.get_sync_client") as mock_client,
+            patch("lilypad.traces.Closure") as mock_closure_class,
+        ):
+            mock_closure = Mock(hash="test-hash", code="code", name="func", signature="sig", dependencies=[])
+            mock_closure_class.from_fn.return_value = mock_closure
 
-                with patch("lilypad.traces.get_function_by_hash_sync") as mock_get_hash:
-                    mock_get_hash.return_value = Mock(uuid_="existing-id")
+            with patch("lilypad.traces.get_function_by_hash_sync") as mock_get_hash:
+                mock_get_hash.return_value = Mock(uuid_="existing-id")
 
-                    with patch("lilypad.traces.Span") as mock_span_class:
-                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
-                        mock_span_context = Mock()
-                        mock_span_context.__enter__ = Mock(return_value=mock_span)
-                        mock_span_context.__exit__ = Mock(return_value=None)
-                        mock_span_class.return_value = mock_span_context
+                with patch("lilypad.traces.Span") as mock_span_class:
+                    mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+                    mock_span_context = Mock()
+                    mock_span_context.__enter__ = Mock(return_value=mock_span)
+                    mock_span_context.__exit__ = Mock(return_value=None)
+                    mock_span_class.return_value = mock_span_context
 
-                        # Apply decorator after mocks are set up
-                        @trace(versioning="automatic")
-                        def versioned_func():
-                            return "versioned"
+                    # Apply decorator after mocks are set up
+                    @trace(versioning="automatic")
+                    def versioned_func():
+                        return "versioned"
 
-                        # Test version method exists
-                        assert hasattr(versioned_func, "version")
-                        assert hasattr(versioned_func, "remote")
+                    # Test version method exists
+                    assert hasattr(versioned_func, "version")
+                    assert hasattr(versioned_func, "remote")
 
-                        result = versioned_func()
-                        assert result == "versioned"
+                    result = versioned_func()
+                    assert result == "versioned"
 
 
 def test_trace_with_wrap_mode():
@@ -471,24 +478,24 @@ def test_trace_with_wrap_mode():
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
         with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Span") as mock_span_class:
-                mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
-                mock_span_context = Mock()
-                mock_span_context.__enter__ = Mock(return_value=mock_span)
-                mock_span_context.__exit__ = Mock(return_value=None)
-                mock_span_class.return_value = mock_span_context
+            mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+            mock_span_context = Mock()
+            mock_span_context.__enter__ = Mock(return_value=mock_span)
+            mock_span_context.__exit__ = Mock(return_value=None)
+            mock_span_class.return_value = mock_span_context
 
-                # Mock other required functions
-                with mock_trace_decorator_context():
-                    # Apply decorator after mocks are set up
-                    @trace(mode="wrap")
-                    def wrapped_func():
-                        return "wrapped"
+            # Mock other required functions
+            with mock_trace_decorator_context():
+                # Apply decorator after mocks are set up
+                @trace(mode="wrap")
+                def wrapped_func():
+                    return "wrapped"
 
-                    result = wrapped_func()
+                result = wrapped_func()
 
-                # In wrap mode, should return Trace object
-                assert isinstance(result, Trace)
-                assert result.response == "wrapped"
+            # In wrap mode, should return Trace object
+            assert isinstance(result, Trace)
+            assert result.response == "wrapped"
 
 
 def test_trace_with_mirascope():
@@ -496,62 +503,65 @@ def test_trace_with_mirascope():
     with patch("lilypad.traces.get_settings") as mock_settings:
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-        with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Closure") as mock_closure_class:
-                mock_closure = Mock(hash="test-hash", code="code", name="func", signature="sig", dependencies=[])
-                mock_closure_class.from_fn.return_value = mock_closure
+        with (
+            patch("lilypad.traces.get_sync_client") as mock_client,
+            patch("lilypad.traces.Closure") as mock_closure_class,
+        ):
+            mock_closure = Mock(hash="test-hash", code="code", name="func", signature="sig", dependencies=[])
+            mock_closure_class.from_fn.return_value = mock_closure
 
-                with patch("lilypad.traces.get_function_by_hash_sync") as mock_get_hash:
-                    mock_get_hash.return_value = Mock(uuid_="existing-id")
+            with patch("lilypad.traces.get_function_by_hash_sync") as mock_get_hash:
+                mock_get_hash.return_value = Mock(uuid_="existing-id")
 
-                    with patch("lilypad.traces.create_mirascope_middleware") as mock_mirascope:
-                        # The middleware should return a function that calls the original function
-                        def mock_middleware(
-                            function,
-                            arg_types,
-                            arg_values,
-                            is_async,
-                            prompt_template,
-                            project_id,
-                            current_span,
-                            decorator_tags=None,
-                        ):
-                            def decorator(fn):
-                                def wrapper(*args, **kwargs):
-                                    return fn(*args, **kwargs)
+                with patch("lilypad.traces.create_mirascope_middleware") as mock_mirascope:
+                    # The middleware should return a function that calls the original function
+                    def mock_middleware(
+                        function,
+                        arg_types,
+                        arg_values,
+                        is_async,
+                        prompt_template,
+                        project_id,
+                        current_span,
+                        decorator_tags=None,
+                    ):
+                        def decorator(fn):
+                            def wrapper(*args, **kwargs):
+                                return fn(*args, **kwargs)
 
-                                return wrapper
+                            return wrapper
 
-                            return decorator
+                        return decorator
 
-                        mock_mirascope.side_effect = mock_middleware
+                    mock_mirascope.side_effect = mock_middleware
 
-                        with patch("lilypad.traces.Span") as mock_span_class:
-                            mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
-                            mock_span_context = Mock()
-                            mock_span_context.__enter__ = Mock(return_value=mock_span)
-                            mock_span_context.__exit__ = Mock(return_value=None)
-                            mock_span_class.return_value = mock_span_context
+                    with patch("lilypad.traces.Span") as mock_span_class:
+                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+                        mock_span_context = Mock()
+                        mock_span_context.__enter__ = Mock(return_value=mock_span)
+                        mock_span_context.__exit__ = Mock(return_value=None)
+                        mock_span_class.return_value = mock_span_context
 
-                            # Mock get_qualified_name
-                            with mock_trace_decorator_context():
-                                # Create function with mirascope attributes first
-                                def mirascope_func():
-                                    return "mirascope"
+                        # Mock get_qualified_name
+                        with mock_trace_decorator_context():
+                            # Create function with mirascope attributes first
+                            def mirascope_func():
+                                return "mirascope"
 
-                                # Add mirascope attributes before decoration
-                                mirascope_func.__mirascope_call__ = True
-                                mirascope_func._prompt_template = "Test prompt"
+                            # Add mirascope attributes before decoration
+                            mirascope_func.__mirascope_call__ = True
+                            mirascope_func._prompt_template = "Test prompt"
 
-                                # Apply decorator after attributes are set
-                                decorated_func = trace(versioning="automatic")(mirascope_func)
+                            # Apply decorator after attributes are set
+                            decorated_func = trace(versioning="automatic")(mirascope_func)
 
-                                # Test that the function still returns its original result
-                                # The middleware is applied but we're testing the decorator itself
-                                result = decorated_func()
-                                assert result == "mirascope"
+                            # Test that the function still returns its original result
+                            # The middleware is applied but we're testing the decorator itself
+                            result = decorated_func()
+                            assert result == "mirascope"
 
-                                # Verify mirascope middleware was called
-                                mock_mirascope.assert_called_once()
+                            # Verify mirascope middleware was called
+                            mock_mirascope.assert_called_once()
 
 
 def test_trace_with_tags():
@@ -560,31 +570,31 @@ def test_trace_with_tags():
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
         with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Span") as mock_span_class:
-                mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
-                mock_span_context = Mock()
-                mock_span_context.__enter__ = Mock(return_value=mock_span)
-                mock_span_context.__exit__ = Mock(return_value=None)
-                mock_span_class.return_value = mock_span_context
+            mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+            mock_span_context = Mock()
+            mock_span_context.__enter__ = Mock(return_value=mock_span)
+            mock_span_context.__exit__ = Mock(return_value=None)
+            mock_span_class.return_value = mock_span_context
 
-                with patch("lilypad.traces._set_span_attributes") as mock_set_attrs:
-                    mock_ctx = Mock()
-                    mock_ctx.__enter__ = Mock()
-                    mock_ctx.__exit__ = Mock(return_value=None)
-                    mock_set_attrs.return_value = mock_ctx
+            with patch("lilypad.traces._set_span_attributes") as mock_set_attrs:
+                mock_ctx = Mock()
+                mock_ctx.__enter__ = Mock()
+                mock_ctx.__exit__ = Mock(return_value=None)
+                mock_set_attrs.return_value = mock_ctx
 
-                    # Mock other required functions
-                    with mock_trace_decorator_context():
-                        # Apply decorator after mocks are set up
-                        @trace(tags=["tag1", "tag2"])
-                        def tagged_func():
-                            return "tagged"
+                # Mock other required functions
+                with mock_trace_decorator_context():
+                    # Apply decorator after mocks are set up
+                    @trace(tags=["tag1", "tag2"])
+                    def tagged_func():
+                        return "tagged"
 
-                        result = tagged_func()
-                    assert result == "tagged"
+                    result = tagged_func()
+                assert result == "tagged"
 
-                    # Check tags were passed
-                    call_args = mock_set_attrs.call_args
-                    assert call_args[1]["decorator_tags"] == ["tag1", "tag2"]
+                # Check tags were passed
+                call_args = mock_set_attrs.call_args
+                assert call_args[1]["decorator_tags"] == ["tag1", "tag2"]
 
 
 # =============================================================================
@@ -745,25 +755,34 @@ def test_version_with_wrap_mode():
 def test_register_decorated_function_errors():
     """Test _register_decorated_function error handling."""
     # Test with TypeError from getfile
-    with patch("lilypad.traces._RECORDING_ENABLED", True), patch("lilypad.traces._DECORATOR_REGISTRY", {}), patch("inspect.getfile", side_effect=TypeError("Cannot get file")):
-            result = _register_decorated_function(
-                decorator_name="test",
-                fn=print,  # Built-in function
-                function_name="print",
-                context=None,
-            )
-            assert result is None
+    with (
+        patch("lilypad.traces._RECORDING_ENABLED", True),
+        patch("lilypad.traces._DECORATOR_REGISTRY", {}),
+        patch("inspect.getfile", side_effect=TypeError("Cannot get file")),
+    ):
+        result = _register_decorated_function(
+            decorator_name="test",
+            fn=print,  # Built-in function
+            function_name="print",
+            context=None,
+        )
+        assert result is None
 
     # Test with OSError from abspath
-    with patch("lilypad.traces._RECORDING_ENABLED", True), patch("lilypad.traces._DECORATOR_REGISTRY", {}), patch("inspect.getfile", return_value="/test/file.py"), patch("os.path.abspath", side_effect=OSError("Path error")):
+    with (
+        patch("lilypad.traces._RECORDING_ENABLED", True),
+        patch("lilypad.traces._DECORATOR_REGISTRY", {}),
+        patch("inspect.getfile", return_value="/test/file.py"),
+        patch("os.path.abspath", side_effect=OSError("Path error")),
+    ):
 
-                def test_func():
-                    pass
+        def test_func():
+            pass
 
-                result = _register_decorated_function(
-                    decorator_name="test", fn=test_func, function_name="test_func", context=None
-                )
-                assert result is None
+        result = _register_decorated_function(
+            decorator_name="test", fn=test_func, function_name="test_func", context=None
+        )
+        assert result is None
 
 
 def test_set_span_attributes_error_handling():
@@ -813,20 +832,18 @@ def test_trace_with_exception():
 
                 # Mock other required functions
                 with mock_trace_decorator_context(), patch("lilypad.traces.Closure") as mock_closure_class:
-                        mock_closure = Mock(
-                            hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
-                        )
-                        mock_closure_class.from_fn.return_value = mock_closure
+                    mock_closure = Mock(hash="test-hash", code="code", name="func", signature="sig", dependencies=[])
+                    mock_closure_class.from_fn.return_value = mock_closure
 
-                        # Apply decorator after mocks are set up
-                        @trace()
-                        def failing_func():
-                            raise ValueError("Test error")
+                    # Apply decorator after mocks are set up
+                    @trace()
+                    def failing_func():
+                        raise ValueError("Test error")
 
-                        with pytest.raises(ValueError) as exc_info:
-                            failing_func()
+                    with pytest.raises(ValueError) as exc_info:
+                        failing_func()
 
-                        assert str(exc_info.value) == "Test error"
+                    assert str(exc_info.value) == "Test error"
 
 
 def test_trace_fallback_on_error():
@@ -853,19 +870,19 @@ def test_trace_fallback_on_error():
                     mock_span_class.return_value = mock_span_context
 
                     with mock_trace_decorator_context(), patch("lilypad.traces.Closure") as mock_closure_class:
-                            mock_closure = Mock(
-                                hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
-                            )
-                            mock_closure_class.from_fn.return_value = mock_closure
+                        mock_closure = Mock(
+                            hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
+                        )
+                        mock_closure_class.from_fn.return_value = mock_closure
 
-                            # Apply decorator after mock is set up
-                            @trace(versioning="automatic")
-                            def fallback_func(x: int) -> int:
-                                return x + 1000
+                        # Apply decorator after mock is set up
+                        @trace(versioning="automatic")
+                        def fallback_func(x: int) -> int:
+                            return x + 1000
 
-                            # Function should raise error when registration fails
-                            with pytest.raises(Exception, match="Registration failed"):
-                                result = fallback_func(1)
+                        # Function should raise error when registration fails
+                        with pytest.raises(Exception, match="Registration failed"):
+                            result = fallback_func(1)
 
 
 @pytest.mark.asyncio
@@ -893,19 +910,19 @@ async def test_async_trace_fallback():
                     mock_span_class.return_value = mock_span_context
 
                     with mock_trace_decorator_context(), patch("lilypad.traces.Closure") as mock_closure_class:
-                            mock_closure = Mock(
-                                hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
-                            )
-                            mock_closure_class.from_fn.return_value = mock_closure
+                        mock_closure = Mock(
+                            hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
+                        )
+                        mock_closure_class.from_fn.return_value = mock_closure
 
-                            # Apply decorator after mock is set up
-                            @trace(versioning="automatic")
-                            async def async_fallback_func(x: int) -> int:
-                                return x + 2000
+                        # Apply decorator after mock is set up
+                        @trace(versioning="automatic")
+                        async def async_fallback_func(x: int) -> int:
+                            return x + 2000
 
-                            # Function should raise error when registration fails
-                            with pytest.raises(Exception, match="Async registration failed"):
-                                result = await async_fallback_func(1)
+                        # Function should raise error when registration fails
+                        with pytest.raises(Exception, match="Async registration failed"):
+                            result = await async_fallback_func(1)
 
 
 def test_trace_with_trace_ctx_parameter():
@@ -992,20 +1009,20 @@ def test_trace_with_binding_error():
 
                         # Mock other required functions
                         with mock_trace_decorator_context(), patch("lilypad.traces.Closure") as mock_closure_class:
-                                mock_closure = Mock(
-                                    hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
-                                )
-                                mock_closure_class.from_fn.return_value = mock_closure
+                            mock_closure = Mock(
+                                hash="test-hash", code="code", name="func", signature="sig", dependencies=[]
+                            )
+                            mock_closure_class.from_fn.return_value = mock_closure
 
-                                # Apply decorator after mocks are set up
-                                @trace()
-                                def bind_error_func(x: int) -> int:
-                                    # Simple function without trace_ctx
-                                    return x * 2
+                            # Apply decorator after mocks are set up
+                            @trace()
+                            def bind_error_func(x: int) -> int:
+                                # Simple function without trace_ctx
+                                return x * 2
 
-                                # Call normally - bind will fail but function should still work
-                                result = bind_error_func(10)
-                                assert result == 20
+                            # Call normally - bind will fail but function should still work
+                            result = bind_error_func(10)
+                            assert result == 20
 
 
 def test_function_creation_when_not_found():
@@ -1070,18 +1087,21 @@ def test_remote_function_error():
                         with patch("lilypad.traces.get_function_by_hash_sync") as mock_get_hash:
                             mock_get_hash.return_value = Mock(uuid_="existing-id")
 
-                            with patch("lilypad.traces.get_qualified_name", return_value="error_func"), patch("lilypad.traces.get_signature") as mock_sig:
-                                    mock_sig.return_value = Mock(parameters={})
+                            with (
+                                patch("lilypad.traces.get_qualified_name", return_value="error_func"),
+                                patch("lilypad.traces.get_signature") as mock_sig,
+                            ):
+                                mock_sig.return_value = Mock(parameters={})
 
-                                    # Apply decorator after mocks are set up
-                                    @trace(versioning="automatic")
-                                    def error_func():
-                                        return "error"
+                                # Apply decorator after mocks are set up
+                                @trace(versioning="automatic")
+                                def error_func():
+                                    return "error"
 
-                                    with pytest.raises(RemoteFunctionError) as exc_info:
-                                        error_func.remote()
+                                with pytest.raises(RemoteFunctionError) as exc_info:
+                                    error_func.remote()
 
-                                    assert "Test execution error" in str(exc_info.value)
+                                assert "Test execution error" in str(exc_info.value)
 
 
 # =============================================================================
@@ -1133,59 +1153,36 @@ def test_trace_annotate_no_annotations():
             result.annotate()
 
 
-def test_trace_annotate_span_not_found():
-    """Test trace.annotate when span is not found - covers lines 147-150."""
-    with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-            # Setup mocks
-            mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
-            client_instance = Mock()
-            # Mock the list_paginated response to return empty items
-            mock_response = Mock()
-            mock_response.items = []
-            client_instance.projects.functions.spans.list_paginated.return_value = mock_response
-            mock_client.return_value = client_instance
-
-            # Create a trace instance with wrap mode to get Trace object
-            @trace(mode="wrap")
-            def test_func():
-                return "result"
-
-            # Call the function to get a trace
-            result = test_func()
-
-            # Try to annotate when span is not found
-            with pytest.raises(SpanNotFoundError, match="Cannot annotate: span not found"):
-                result.annotate(Annotation(data={"test": "value"}, label=None, reasoning=None, type=None))
-
-
 def test_trace_automatic_versioning_with_recording_enabled():
     """Test trace decorator with automatic versioning and recording enabled - covers lines 712-715."""
     # Enable recording
     enable_recording()
 
     try:
-        with patch("lilypad.traces._register_decorated_function") as mock_register:
-            with patch("lilypad.traces.Closure") as mock_closure_class:
-                # Mock the Closure.from_fn to return a mock with name attribute
-                mock_closure_instance = Mock()
-                mock_closure_instance.name = "test_func"
-                mock_closure_class.from_fn.return_value = mock_closure_instance
-                
-                # Create a function with automatic versioning
-                @trace(versioning="automatic")
-                def test_func():
-                    return "result"
+        with (
+            patch("lilypad.traces._register_decorated_function") as mock_register,
+            patch("lilypad.traces.Closure") as mock_closure_class,
+        ):
+            # Mock the Closure.from_fn to return a mock with name attribute
+            mock_closure_instance = Mock()
+            mock_closure_instance.name = "test_func"
+            mock_closure_class.from_fn.return_value = mock_closure_instance
 
-                # Verify registration was called
-                mock_register.assert_called_once()
-                call_args = mock_register.call_args
-                assert call_args[0][0] == "lilypad.traces"  # decorator name (TRACE_MODULE_NAME)
-                assert callable(call_args[0][1])  # function object
-                assert call_args[0][1].__name__ == "test_func"  # verify it's our function
-                assert call_args[0][2] == "test_func"  # function name from Closure
-                # Check the context dictionary
-                assert call_args[0][3]["mode"] is None  # default mode
-                assert call_args[0][3]["tags"] is None  # no tags provided
+            # Create a function with automatic versioning
+            @trace(versioning="automatic")
+            def test_func():
+                return "result"
+
+            # Verify registration was called
+            mock_register.assert_called_once()
+            call_args = mock_register.call_args
+            assert call_args[0][0] == "lilypad.traces"  # decorator name (TRACE_MODULE_NAME)
+            assert callable(call_args[0][1])  # function object
+            assert call_args[0][1].__name__ == "test_func"  # verify it's our function
+            assert call_args[0][2] == "test_func"  # function name from Closure
+            # Check the context dictionary
+            assert call_args[0][3]["mode"] is None  # default mode
+            assert call_args[0][3]["tags"] is None  # no tags provided
     finally:
         # Disable recording
         disable_recording()
@@ -1237,17 +1234,17 @@ def test_trace_automatic_versioning_with_tags():
 def test_trace_error_handling_lines():
     """Test various error handling lines in traces.py."""
     with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-            # Setup mocks
-            mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
+        # Setup mocks
+        mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-            # Test function that raises an exception
-            @trace()
-            def test_func():
-                raise RuntimeError("Test error")
+        # Test function that raises an exception
+        @trace()
+        def test_func():
+            raise RuntimeError("Test error")
 
-            # Call should raise the exception
-            with pytest.raises(RuntimeError, match="Test error"):
-                test_func()
+        # Call should raise the exception
+        with pytest.raises(RuntimeError, match="Test error"):
+            test_func()
 
 
 def test_async_trace_error_handling():
@@ -1255,18 +1252,21 @@ def test_async_trace_error_handling():
     import asyncio
 
     async def run_test():
-        with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-                # Setup mocks
-                mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
+        with (
+            patch("lilypad.traces.get_settings") as mock_settings,
+            patch("lilypad.traces.get_sync_client") as mock_client,
+        ):
+            # Setup mocks
+            mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-                # Test async function that raises an exception
-                @trace()
-                async def test_func():
-                    raise RuntimeError("Async test error")
+            # Test async function that raises an exception
+            @trace()
+            async def test_func():
+                raise RuntimeError("Async test error")
 
-                # Call should raise the exception
-                with pytest.raises(RuntimeError, match="Async test error"):
-                    await test_func()
+            # Call should raise the exception
+            with pytest.raises(RuntimeError, match="Async test error"):
+                await test_func()
 
     asyncio.run(run_test())
 
@@ -1309,26 +1309,26 @@ def test_async_trace_with_disabled_telemetry():
 def test_trace_assign_span_not_found():
     """Test trace.assign when span is not found - covers lines 165-167."""
     with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-            # Setup mocks
-            mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
-            client_instance = Mock()
-            # Mock the list_paginated response to return empty items
-            mock_response = Mock()
-            mock_response.items = []
-            client_instance.projects.functions.spans.list_paginated.return_value = mock_response
-            mock_client.return_value = client_instance
+        # Setup mocks
+        mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
+        client_instance = Mock()
+        # Mock the list_paginated response to return empty items
+        mock_response = Mock()
+        mock_response.items = []
+        client_instance.projects.functions.spans.list_paginated.return_value = mock_response
+        mock_client.return_value = client_instance
 
-            # Create a trace instance with wrap mode to get Trace object
-            @trace(mode="wrap")
-            def test_func():
-                return "result"
+        # Create a trace instance with wrap mode to get Trace object
+        @trace(mode="wrap")
+        def test_func():
+            return "result"
 
-            # Call the function to get a trace
-            result = test_func()
+        # Call the function to get a trace
+        result = test_func()
 
-            # Try to assign when span is not found
-            with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found"):
-                result.assign("test@example.com")
+        # Try to assign when span is not found
+        with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found"):
+            result.assign("test@example.com")
 
 
 # =============================================================================
@@ -1467,35 +1467,38 @@ def test_sync_remote_with_wrap_mode():
     with patch("lilypad.traces.get_settings") as mock_settings:
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-        with patch("lilypad.traces.get_deployed_function_sync") as mock_get_deployed, patch("lilypad.traces.get_cached_closure") as mock_get_closure:
-                # Mock deployed function
-                mock_function = Mock(uuid_="deployed-uuid")
-                mock_get_deployed.return_value = mock_function
+        with (
+            patch("lilypad.traces.get_deployed_function_sync") as mock_get_deployed,
+            patch("lilypad.traces.get_cached_closure") as mock_get_closure,
+        ):
+            # Mock deployed function
+            mock_function = Mock(uuid_="deployed-uuid")
+            mock_get_deployed.return_value = mock_function
 
-                # Mock closure
-                mock_closure = Mock()
-                mock_get_closure.return_value = mock_closure
+            # Mock closure
+            mock_closure = Mock()
+            mock_get_closure.return_value = mock_closure
 
-                # Create traced function with versioning and wrap mode
-                @trace(versioning="automatic", mode="wrap")
-                def test_func(x: int) -> int:
-                    return x * 2
+            # Create traced function with versioning and wrap mode
+            @trace(versioning="automatic", mode="wrap")
+            def test_func(x: int) -> int:
+                return x * 2
 
-                # Mock sandbox execution to return expected result format
-                with patch.object(SubprocessSandboxRunner, "execute_function") as mock_execute:
-                    mock_execute.return_value = {
-                        "result": 10,
-                        "trace_context": {"span_id": 12345, "function_uuid": "deployed-uuid"},
-                    }
+            # Mock sandbox execution to return expected result format
+            with patch.object(SubprocessSandboxRunner, "execute_function") as mock_execute:
+                mock_execute.return_value = {
+                    "result": 10,
+                    "trace_context": {"span_id": 12345, "function_uuid": "deployed-uuid"},
+                }
 
-                    # Call remote method
-                    result = test_func.remote(5)
+                # Call remote method
+                result = test_func.remote(5)
 
-                    # Should return a Trace object
-                    assert isinstance(result, Trace)
-                    assert result.response == 10
-                    assert result.formated_span_id == "0000000000003039"  # format_span_id(12345)
-                    assert result.function_uuid == "deployed-uuid"
+                # Should return a Trace object
+                assert isinstance(result, Trace)
+                assert result.response == 10
+                assert result.formated_span_id == "0000000000003039"  # format_span_id(12345)
+                assert result.function_uuid == "deployed-uuid"
 
 
 @pytest.mark.asyncio
@@ -1505,35 +1508,38 @@ async def test_async_remote_with_wrap_mode():
     with patch("lilypad.traces.get_settings") as mock_settings:
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-        with patch("lilypad.traces.get_deployed_function_async") as mock_get_deployed, patch("lilypad.traces.get_cached_closure") as mock_get_closure:
-                # Mock deployed function
-                mock_function = Mock(uuid_="deployed-uuid-async")
-                mock_get_deployed.return_value = mock_function
+        with (
+            patch("lilypad.traces.get_deployed_function_async") as mock_get_deployed,
+            patch("lilypad.traces.get_cached_closure") as mock_get_closure,
+        ):
+            # Mock deployed function
+            mock_function = Mock(uuid_="deployed-uuid-async")
+            mock_get_deployed.return_value = mock_function
 
-                # Mock closure
-                mock_closure = Mock()
-                mock_get_closure.return_value = mock_closure
+            # Mock closure
+            mock_closure = Mock()
+            mock_get_closure.return_value = mock_closure
 
-                # Create traced async function with versioning and wrap mode
-                @trace(versioning="automatic", mode="wrap")
-                async def test_func(x: int) -> int:
-                    return x * 3
+            # Create traced async function with versioning and wrap mode
+            @trace(versioning="automatic", mode="wrap")
+            async def test_func(x: int) -> int:
+                return x * 3
 
-                # Mock sandbox execution to return expected result format
-                with patch.object(SubprocessSandboxRunner, "execute_function") as mock_execute:
-                    mock_execute.return_value = {
-                        "result": 15,
-                        "trace_context": {"span_id": 67890, "function_uuid": "deployed-uuid-async"},
-                    }
+            # Mock sandbox execution to return expected result format
+            with patch.object(SubprocessSandboxRunner, "execute_function") as mock_execute:
+                mock_execute.return_value = {
+                    "result": 15,
+                    "trace_context": {"span_id": 67890, "function_uuid": "deployed-uuid-async"},
+                }
 
-                    # Call remote method
-                    result = await test_func.remote(5)
+                # Call remote method
+                result = await test_func.remote(5)
 
-                    # Should return an AsyncTrace object
-                    assert isinstance(result, AsyncTrace)
-                    assert result.response == 15
-                    assert result.formated_span_id == "0000000000010932"  # format_span_id(67890)
-                    assert result.function_uuid == "deployed-uuid-async"
+                # Should return an AsyncTrace object
+                assert isinstance(result, AsyncTrace)
+                assert result.response == 15
+                assert result.formated_span_id == "0000000000010932"  # format_span_id(67890)
+                assert result.function_uuid == "deployed-uuid-async"
 
 
 # =============================================================================
@@ -1682,26 +1688,30 @@ def test_register_decorated_function_full_flow():
             pass
 
         # Mock inspect functions to return known values
-        with patch("lilypad.traces.inspect.getfile") as mock_getfile, patch("lilypad.traces.inspect.getsourcelines") as mock_getsourcelines, patch("lilypad.traces.os.path.abspath") as mock_abspath:
-                    mock_getfile.return_value = "/path/to/test.py"
-                    mock_abspath.return_value = "/abs/path/to/test.py"
-                    mock_getsourcelines.return_value = (["def test_func():\n", "    pass\n"], 42)
-                    test_func.__module__ = "test_module"
+        with (
+            patch("lilypad.traces.inspect.getfile") as mock_getfile,
+            patch("lilypad.traces.inspect.getsourcelines") as mock_getsourcelines,
+            patch("lilypad.traces.os.path.abspath") as mock_abspath,
+        ):
+            mock_getfile.return_value = "/path/to/test.py"
+            mock_abspath.return_value = "/abs/path/to/test.py"
+            mock_getsourcelines.return_value = (["def test_func():\n", "    pass\n"], 42)
+            test_func.__module__ = "test_module"
 
-                    # Register the function
-                    _register_decorated_function("test_decorator", test_func, "test_func", {"mode": "wrap"})
+            # Register the function
+            _register_decorated_function("test_decorator", test_func, "test_func", {"mode": "wrap"})
 
-                    # Verify registration
-                    registry = get_decorated_functions()
-                    assert "test_decorator" in registry
-                    assert len(registry["test_decorator"]) == 1
+            # Verify registration
+            registry = get_decorated_functions()
+            assert "test_decorator" in registry
+            assert len(registry["test_decorator"]) == 1
 
-                    func_info = registry["test_decorator"][0]
-                    assert func_info[0] == "/abs/path/to/test.py"  # file path
-                    assert func_info[1] == "test_func"  # function name
-                    assert func_info[2] == 42  # line number
-                    assert func_info[3] == "test_module"  # module name
-                    assert func_info[4] == {"mode": "wrap"}  # context
+            func_info = registry["test_decorator"][0]
+            assert func_info[0] == "/abs/path/to/test.py"  # file path
+            assert func_info[1] == "test_func"  # function name
+            assert func_info[2] == 42  # line number
+            assert func_info[3] == "test_module"  # module name
+            assert func_info[4] == {"mode": "wrap"}  # context
     finally:
         disable_recording()
         clear_registry()
@@ -2087,6 +2097,7 @@ def test_protocol_ellipsis_evaluation():
 
     # TraceDecorator methods
     import contextlib
+
     with contextlib.suppress(Exception):
         trace_call = TraceDecorator.__call__
         assert trace_call is not None
