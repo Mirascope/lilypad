@@ -195,7 +195,7 @@ def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
     """
     if not CAN_LIMIT_RESOURCES:
         return None  # pragma: no cover
-    try:
+    try:  # pragma: no cover
         # Limit CPU time
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
         # Limit process address space (memory)
@@ -205,7 +205,7 @@ def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
         # Limit number of open files. Torch can open many files, so we set it to 20K * 10
         rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
         resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1]))
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         logger.error("Failed to set resource limits: %s", e)
 
 

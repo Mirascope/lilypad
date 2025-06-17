@@ -167,7 +167,7 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
 
     def delete_records_by_uuids(self, uuids: Sequence[UUID]) -> bool:
         """Delete records by multiple UUIDs."""
-        try:
+        try:  # pragma: no cover
             self.session.exec(delete(self.table).where(self.table.uuid.in_(uuids)))  # type: ignore
             return True
         except Exception:

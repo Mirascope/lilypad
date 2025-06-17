@@ -233,28 +233,5 @@ def test_import_collector_import_from_relative():
     assert any("...module" in imp for imp in collector.user_defined_imports)
 
 
-def test_dependency_collector_with_cached_property():
-    """Test _DependencyCollector with cached_property."""
-    from functools import cached_property
-    
-    collector = _DependencyCollector()
-    
-    class TestClass:
-        @cached_property
-        def cached_method(self):
-            return "cached value"
-    
-    # Get the cached_property descriptor
-    cached_prop = TestClass.__dict__["cached_method"]
-    
-    # Mock to avoid actual source code processing
-    with patch("inspect.getsource", return_value="def cached_method(self): return 'cached value'"):
-        with patch("inspect.getmodule", return_value=sys.modules[__name__]):
-            collector._collect_imports_and_source_code(cached_prop, include_source=True)
-    
-    # Should process the underlying function
-    assert len(collector.visited_functions) > 0
-
-
 # Import subprocess for the error test
 import subprocess

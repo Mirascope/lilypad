@@ -165,12 +165,12 @@ def get_event_summaries(
     is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
 ) -> EventSummaryResponse:
     if not is_lilypad_cloud:
-        raise HTTPException(  # pragma: no cover
+        raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This endpoint is only available for Lilypad Cloud users",
         )
-    if not user.active_organization_uuid:
-        raise HTTPException(  # pragma: no cover
+    if not user.active_organization_uuid:  # pragma: no cover
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User does not have an active organization",
         )

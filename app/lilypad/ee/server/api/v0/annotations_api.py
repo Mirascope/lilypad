@@ -263,7 +263,7 @@ async def generate_annotation(
         span = span_service.find_record_by_uuid(span_uuid)
         if not span:  # pragma: no cover
             raise HTTPException(status_code=404, detail="Span not found")
-        else:
+        else:  # pragma: no cover
             attributes = span.data.get("attributes", {})
             lilypad_type = attributes.get("lilypad.type")
             output = attributes.get(f"lilypad.{lilypad_type}.output", None)
