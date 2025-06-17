@@ -132,7 +132,7 @@ class TestOutlinesInstrumentor:
         )
 
     @patch("lilypad._opentelemetry._opentelemetry_outlines.unwrap")
-    @patch("builtins.__import__")
+    @patch("lilypad._opentelemetry._opentelemetry_outlines.__import__", create=True)
     def test_uninstrument_basic(self, mock_import, mock_unwrap):
         """Test basic _uninstrument functionality."""
         # Clear and populate patched targets
@@ -147,8 +147,10 @@ class TestOutlinesInstrumentor:
 
         instrumentor = OutlinesInstrumentor()
 
-        # Mock the import function
+        # Mock the import function and set up class attributes
         mock_module = Mock()
+        mock_module.ExLlamaV2Model = Mock()
+        mock_module.LlamaCpp = Mock()
         mock_import.return_value = mock_module
 
         # Call _uninstrument
@@ -156,6 +158,9 @@ class TestOutlinesInstrumentor:
 
         # Verify unwrap was called for each patched target in reverse order
         assert mock_unwrap.call_count == 3
+        mock_unwrap.assert_any_call(mock_module.LlamaCpp, "generate")
+        mock_unwrap.assert_any_call(mock_module.ExLlamaV2Model, "stream")
+        mock_unwrap.assert_any_call(mock_module.ExLlamaV2Model, "generate")
 
         # Verify imports were made with correct fromlist
         assert mock_import.call_count == 3
@@ -166,7 +171,7 @@ class TestOutlinesInstrumentor:
         assert len(_patched_targets) == 0
 
     @patch("lilypad._opentelemetry._opentelemetry_outlines.unwrap", side_effect=Exception("Unwrap error"))
-    @patch("builtins.__import__")
+    @patch("lilypad._opentelemetry._opentelemetry_outlines.__import__", create=True)
     def test_uninstrument_with_errors(self, mock_import, mock_unwrap):
         """Test _uninstrument suppresses exceptions."""
         # Clear and populate patched targets
@@ -182,6 +187,8 @@ class TestOutlinesInstrumentor:
 
         # Mock the import function
         mock_module = Mock()
+        mock_module.ExLlamaV2Model = Mock()
+        mock_module.LlamaCpp = Mock()
         mock_import.return_value = mock_module
 
         # Call _uninstrument - should not raise despite unwrap errors
@@ -342,7 +349,11 @@ class TestOutlinesInstrumentor:
         assert "__call__" in tracked_methods  # For OpenAI
 
     @patch("lilypad._opentelemetry._opentelemetry_outlines.unwrap")
-    @patch("builtins.__import__", side_effect=ImportError("Module not found"))
+    @patch(
+        "lilypad._opentelemetry._opentelemetry_outlines.__import__",
+        side_effect=ImportError("Module not found"),
+        create=True,
+    )
     def test_uninstrument_import_error(self, mock_import, mock_unwrap):
         """Test _uninstrument handles import errors gracefully."""
         # Clear and populate patched targets
@@ -359,7 +370,7 @@ class TestOutlinesInstrumentor:
         instrumentor._uninstrument()
 
         # Verify import was attempted
-        mock_import.assert_called_once()
+        mock_import.assert_called_once_with("nonexistent.module", fromlist=["Class"])
 
         # Verify unwrap was not called (due to import error)
         mock_unwrap.assert_not_called()

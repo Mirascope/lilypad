@@ -1985,7 +1985,6 @@ def test_sync_command_no_versions_and_exceptions():
         patch("lilypad.cli.commands.sync.clear_registry"),
         patch("importlib.import_module") as mock_import,
         patch("lilypad.cli.commands.sync.Closure") as mock_closure,
-        patch("pathlib.Path"),
     ):
         # Setup mocks
         mock_settings.return_value = Mock(api_key="test", project_id="test")
