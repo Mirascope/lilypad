@@ -3,7 +3,7 @@
 import contextlib
 import json
 from datetime import datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, Mock
 from uuid import uuid4
 
 import pytest
@@ -221,7 +221,7 @@ async def test_fetch_with_memory_cache():
     """Test fetch_with_memory_cache."""
     with patch("httpx.AsyncClient") as mock_client:
         # Success case
-        mock_response = AsyncMock()
+        mock_response = Mock()
         mock_response.json.return_value = {"test": "data"}
 
         mock_instance = AsyncMock()

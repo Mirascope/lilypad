@@ -566,7 +566,7 @@ class TestFetchWithMemoryCache:
     @patch("httpx.AsyncClient")
     async def test_fetch_with_memory_cache_success(self, mock_client):
         """Test successful fetch with memory cache."""
-        mock_response = AsyncMock()
+        mock_response = Mock()
         mock_response.json.return_value = {"test": "data"}
 
         mock_instance = AsyncMock()
@@ -605,7 +605,7 @@ class TestFetchWithMemoryCache:
         fetch_with_memory_cache.cache_clear()  # type: ignore[attr-defined]
 
         with patch("httpx.AsyncClient") as mock_client:
-            mock_response = AsyncMock()
+            mock_response = Mock()
             mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
 
             mock_instance = AsyncMock()

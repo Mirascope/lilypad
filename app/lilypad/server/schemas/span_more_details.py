@@ -496,7 +496,7 @@ async def fetch_with_memory_cache(url: str) -> dict:
     """Fetch data from a URL and cache it in memory for 24 hours."""
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
-        return await response.json()
+        return response.json()
 
 
 async def calculate_openrouter_cost(

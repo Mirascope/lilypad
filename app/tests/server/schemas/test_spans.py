@@ -2,6 +2,7 @@
 
 import base64
 import json
+from unittest.mock import Mock
 
 import pytest
 
@@ -1377,7 +1378,7 @@ async def test_fetch_with_memory_cache():
     from lilypad.server.schemas.span_more_details import fetch_with_memory_cache
 
     mock_response = AsyncMock()
-    mock_response.json = AsyncMock(return_value={"test": "data"})
+    mock_response.json = Mock(return_value={"test": "data"})
 
     with patch("httpx.AsyncClient") as mock_client_class:
         mock_client = AsyncMock()
