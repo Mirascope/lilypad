@@ -1,7 +1,6 @@
 """Tests for the main FastAPI application."""
 
 import asyncio
-import os
 import subprocess
 from unittest.mock import AsyncMock, Mock, patch
 
