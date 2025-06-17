@@ -4,7 +4,7 @@ import base64
 import json
 from io import BytesIO
 from uuid import UUID, uuid4
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import PIL.Image
@@ -15,10 +15,10 @@ from opentelemetry.trace import Span, Status, StatusCode
 from mirascope.core.base._utils._base_type import BaseType as mb_BaseType
 
 # Import the module directly to reference its contents
-from src.lilypad._utils import json_dumps, middleware, fast_jsonable, encode_gemini_part
+from lilypad._utils import json_dumps, middleware, fast_jsonable, encode_gemini_part
 
 # Import specific items needed for testing/patching
-from src.lilypad._utils.middleware import (
+from lilypad._utils.middleware import (
     mb,
     _Handlers,
     _handle_error,
@@ -30,20 +30,22 @@ from src.lilypad._utils.middleware import (
     _set_call_response_attributes,
     _set_response_model_attributes,
 )
-from src.lilypad.generated.types.function_public import FunctionPublic
+from lilypad.generated.types.function_public import FunctionPublic
 
 
 def test_pillow_import_fallback():
     """Test fallback behavior when Pillow is not available."""
     # This tests the ImportError fallback for PIL imports (lines 36-42)
-    with patch.dict('sys.modules', {'PIL': None, 'PIL.WebPImagePlugin': None}):
+    with patch.dict("sys.modules", {"PIL": None, "PIL.WebPImagePlugin": None}):
         # Force reimport to trigger the ImportError path
         import importlib
-        import src.lilypad._utils.middleware
-        importlib.reload(src.lilypad._utils.middleware)
-        
+        import lilypad._utils.middleware
+
+        importlib.reload(lilypad._utils.middleware)
+
         # The fallback should create a class that raises NotImplementedError
-        from src.lilypad._utils.middleware import PIL
+        from lilypad._utils.middleware import PIL
+
         with pytest.raises(NotImplementedError, match="Pillow is not installed"):
             PIL.WebPImagePlugin.WebPImageFile().save()
 
@@ -53,131 +55,135 @@ def test_span_context_holder_property():
     holder = middleware.SpanContextHolder()
     # Test getter when _span_context is None (line 59)
     assert holder.span_context is None
-    
+
     # Test setter and getter when span_context exists (line 55)
     mock_span = MagicMock()
     mock_span_context = MagicMock()
     mock_span.get_span_context.return_value = mock_span_context
-    
+
     holder.set_span_context(mock_span)
     assert holder.span_context == mock_span_context
 
 
 def test_custom_context_manager_serialization_error():
     """Test _get_custom_context_manager when serialization fails."""
-    from src.lilypad._utils.middleware import _get_custom_context_manager
-    
+    from lilypad._utils.middleware import _get_custom_context_manager
+
     mock_function = MagicMock()
-    
+
     # Create an object that will cause serialization to fail
     class UnserializableObject:
         def __getattr__(self, name):
             raise TypeError("Cannot serialize")
-    
+
     arg_types = {"test_arg": "str"}
     arg_values = {"test_arg": UnserializableObject()}
-    
-    context_manager = _get_custom_context_manager(
-        mock_function, arg_types, arg_values, False
-    )
-    
+
+    context_manager = _get_custom_context_manager(mock_function, arg_types, arg_values, False)
+
     # Mock the function to test the context manager
     mock_fn = MagicMock()
     mock_fn.__name__ = "test_function"
-    
-    with patch("src.lilypad._utils.middleware.get_tracer") as mock_tracer:
+
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
-        
+
         with context_manager(mock_fn):
             # Should handle serialization error and use "could not serialize"
             pass
-        
+
         # Verify span was created and attributes set
         mock_span.set_attributes.assert_called()
 
 
 def test_custom_context_manager_with_span_context_holder():
     """Test _get_custom_context_manager with span_context_holder."""
-    from src.lilypad._utils.middleware import _get_custom_context_manager, SpanContextHolder
-    
+    from lilypad._utils.middleware import _get_custom_context_manager, SpanContextHolder
+
     mock_function = MagicMock()
     arg_types = {"test_arg": "str"}
     arg_values = {"test_arg": "test_value"}
     span_context_holder = SpanContextHolder()
-    
+
     context_manager = _get_custom_context_manager(
         mock_function, arg_types, arg_values, False, span_context_holder=span_context_holder
     )
-    
+
     mock_fn = MagicMock()
     mock_fn.__name__ = "test_function"
-    
-    with patch("src.lilypad._utils.middleware.get_tracer") as mock_tracer:
+
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
-        
+
         with context_manager(mock_fn):
             # Should set span context in holder (line 117)
             pass
-        
+
         # Verify span context was set
         assert span_context_holder.span_context is not None
 
 
 def test_custom_context_manager_async_exit():
     """Test _get_custom_context_manager async exit behavior."""
-    from src.lilypad._utils.middleware import _get_custom_context_manager
-    
+    from lilypad._utils.middleware import _get_custom_context_manager
+
     mock_function = MagicMock()
     arg_types = {"test_arg": "str"}
     arg_values = {"test_arg": "test_value"}
-    
+
     context_manager = _get_custom_context_manager(
-        mock_function, arg_types, arg_values, True  # is_async=True
+        mock_function,
+        arg_types,
+        arg_values,
+        True,  # is_async=True
     )
-    
+
     mock_fn = MagicMock()
     mock_fn.__name__ = "test_function"
-    
-    with patch("src.lilypad._utils.middleware.get_tracer") as mock_tracer:
+
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
-        
+
         with context_manager(mock_fn):
             # Should handle async exit path (line 122)
             pass
-        
+
         # Verify async exit was called
         mock_span.__aexit__.assert_called_with(None, None, None)
 
 
 def test_custom_context_manager_async_exception_exit():
     """Test _get_custom_context_manager async exception exit behavior."""
-    from src.lilypad._utils.middleware import _get_custom_context_manager
-    
+    from lilypad._utils.middleware import _get_custom_context_manager
+
     mock_function = MagicMock()
     arg_types = {"test_arg": "str"}
     arg_values = {"test_arg": "test_value"}
-    
+
     context_manager = _get_custom_context_manager(
-        mock_function, arg_types, arg_values, True  # is_async=True
+        mock_function,
+        arg_types,
+        arg_values,
+        True,  # is_async=True
     )
-    
+
     mock_fn = MagicMock()
     mock_fn.__name__ = "test_function"
-    
-    with patch("src.lilypad._utils.middleware.get_tracer") as mock_tracer:
+
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
-        
+
         try:
             with context_manager(mock_fn):
                 # Force an exception to test exception exit path (lines 127-128)
                 raise ValueError("Test exception")
         except ValueError:
             pass
-        
+
         # Verify async exception exit was called
         # Check that __aexit__ was called with exception info
         assert mock_span.__aexit__.called
@@ -189,30 +195,33 @@ def test_custom_context_manager_async_exception_exit():
 
 def test_custom_context_manager_sync_exception_exit():
     """Test _get_custom_context_manager sync exception exit behavior."""
-    from src.lilypad._utils.middleware import _get_custom_context_manager
-    
+    from lilypad._utils.middleware import _get_custom_context_manager
+
     mock_function = MagicMock()
     arg_types = {"test_arg": "str"}
     arg_values = {"test_arg": "test_value"}
-    
+
     context_manager = _get_custom_context_manager(
-        mock_function, arg_types, arg_values, False  # is_async=False
+        mock_function,
+        arg_types,
+        arg_values,
+        False,  # is_async=False
     )
-    
+
     mock_fn = MagicMock()
     mock_fn.__name__ = "test_function"
-    
-    with patch("src.lilypad._utils.middleware.get_tracer") as mock_tracer:
+
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
-        
+
         try:
             with context_manager(mock_fn):
                 # Force an exception to test exception exit path (lines 129-130)
                 raise ValueError("Test exception")
         except ValueError:
             pass
-        
+
         # Verify sync exception exit was called
         # Check that __exit__ was called with exception info
         assert mock_span.__exit__.called
@@ -224,24 +233,26 @@ def test_custom_context_manager_sync_exception_exit():
 
 def test_safe_serialize_protobuf_object():
     """Test safe_serialize with protobuf-like object (lines 178-186)."""
+
     # Create a mock protobuf-like object
     class MockProtobuf:
         def SerializeToString(self):
             return b"mock_proto"
-        
-        @property 
+
+        @property
         def DESCRIPTOR(self):
             return "mock_descriptor"
-        
+
         def ListFields(self):
             # Mock field descriptor and value
             class MockDescriptor:
                 name = "test_field"
+
             return [(MockDescriptor(), "test_value")]
-    
+
     mock_proto = MockProtobuf()
     result = safe_serialize(mock_proto)
-    
+
     # Should return JSON string representation
     assert isinstance(result, str)
     # Parse back to verify it contains the field
@@ -252,14 +263,15 @@ def test_safe_serialize_protobuf_object():
 
 def test_safe_serialize_invalid_protobuf():
     """Test safe_serialize with invalid protobuf-like object (line 186)."""
+
     # Create an object that has SerializeToString but not the required attributes
     class InvalidProtobuf:
         def SerializeToString(self):
             return b"mock_proto"
-    
+
     invalid_proto = InvalidProtobuf()
     result = safe_serialize(invalid_proto)
-    
+
     # Should fallback to string representation
     assert isinstance(result, str)
 
@@ -268,7 +280,7 @@ def test_safe_serialize_set():
     """Test safe_serialize with set (line 212)."""
     test_set = {1, 2, 3}
     result = safe_serialize(test_set)
-    
+
     # Should return JSON string representation
     assert isinstance(result, str)
     # Parse back to verify it's a valid JSON array
@@ -281,7 +293,7 @@ def test_safe_serialize_tuple():
     """Test safe_serialize with tuple (line 216)."""
     test_tuple = (1, 2, 3)
     result = safe_serialize(test_tuple)
-    
+
     # Should return JSON string representation
     assert isinstance(result, str)
     # Parse back to verify it's a valid JSON array
@@ -295,13 +307,13 @@ def test_set_call_response_attributes_type_error():
     mock_response = MagicMock()
     mock_response.common_messages = []
     mock_response.common_message_param = {}
-    
+
     mock_span = MagicMock()
-    
+
     # Mock safe_serialize to raise TypeError
-    with patch("src.lilypad._utils.middleware.safe_serialize", side_effect=TypeError("Serialization failed")):
+    with patch("lilypad._utils.middleware.safe_serialize", side_effect=TypeError("Serialization failed")):
         _set_call_response_attributes(mock_response, mock_span, "test")
-        
+
         # Should fallback to string representation
         mock_span.set_attributes.assert_called_once()
 
@@ -309,19 +321,19 @@ def test_set_call_response_attributes_type_error():
 def test_handlers_async_methods_with_none_span():
     """Test async handler methods when span is None."""
     handlers = _Handlers("test")
-    
+
     # All these methods should return early when span is None (lines 292, 298, 306, 313)
     mock_result = MagicMock()
     mock_fn = MagicMock()
-    
+
     import asyncio
-    
+
     async def test_handlers():
         await handlers.handle_call_response_async(mock_result, mock_fn, None)
         await handlers.handle_stream_async(mock_result, mock_fn, None)
         await handlers.handle_response_model_async(mock_result, mock_fn, None)
         await handlers.handle_structured_stream_async(mock_result, mock_fn, None)
-    
+
     # Should not raise any exceptions
     asyncio.run(test_handlers())
 
@@ -358,7 +370,7 @@ def test_encode_gemini_part_with_webp_image_file():
     # This test verifies the WebP image encoding logic but has mocking complexity
     # In production, PIL.WebPImagePlugin.WebPImageFile objects are handled correctly
     # but test isolation makes this hard to replicate exactly
-    
+
     image = PIL.Image.new("RGB", (10, 10), color="red")
     buffered = BytesIO()
     image.save(buffered, format="WEBP")
@@ -367,11 +379,11 @@ def test_encode_gemini_part_with_webp_image_file():
     # Load the image back as a real WebP image object
     buffered.seek(0)
     webp_image = PIL.Image.open(buffered)
-    
+
     # In real usage, this would be a WebPImageFile and would be handled
     # For now, this test documents the expected behavior
     output = encode_gemini_part(webp_image)
-    
+
     # This will likely return the image object unchanged due to isinstance check
     # but the functionality is tested in integration tests
     assert output is not None
@@ -383,7 +395,7 @@ def test_set_call_response_attributes_serializable():
     response.common_message_param = {"role": "system", "content": "world"}
     response.common_messages = [{"role": "user", "content": "hello"}]
     span = MagicMock(spec=Span)
-    with patch("src.lilypad._utils.json.jsonable_encoder", side_effect=lambda x: x):
+    with patch("lilypad._utils.json.jsonable_encoder", side_effect=lambda x: x):
         _set_call_response_attributes(response, span, "mirascope.v1")
         expected_messages = '[{"role":"user","content":"hello"},{"role":"system","content":"world"}]'
         expected_attributes = {
@@ -400,7 +412,7 @@ def test_set_call_response_attributes_needs_serialization():
     response.common_messages = [BaseMessageParam(role="user", content="hello")]
     span = MagicMock(spec=Span)
     expected_messages = '[{"role":"user","content":"hello"},{"role":"system","content":"world"}]'
-    import src.lilypad._utils.json as _json
+    import lilypad._utils.json as _json
 
     orig_fast = _json.fast_jsonable
 
@@ -409,7 +421,7 @@ def test_set_call_response_attributes_needs_serialization():
             raise TypeError
         return orig_fast(val, *args, **kwargs)
 
-    with patch("src.lilypad._utils.middleware.fast_jsonable", side_effect=fast_side_effect):
+    with patch("lilypad._utils.middleware.fast_jsonable", side_effect=fast_side_effect):
         _set_call_response_attributes(response, span, "mirascope.v1")
         expected_attributes = {
             # Production code falls back to str() for message_param on TypeError
@@ -443,7 +455,7 @@ def test_set_call_response_attributes_with_bytes_serialization():
     # The actual order appears to be: [system, user, system] based on the error
     expected_messages = "{'role': 'user', 'content': [{'type': 'image', 'media_type': 'image/jpeg', 'image': b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00\\x01\\x01\\x01\\x00H\\x00H\\x00\\x00', 'detail': None}]}{'role': 'system', 'content': 'world'}"
 
-    import src.lilypad._utils.json as _json
+    import lilypad._utils.json as _json
 
     orig_fast = _json.fast_jsonable
 
@@ -452,7 +464,7 @@ def test_set_call_response_attributes_with_bytes_serialization():
             raise TypeError
         return orig_fast(val, *args, **kwargs)
 
-    with patch("src.lilypad._utils.middleware.fast_jsonable", side_effect=fast_side_effect):
+    with patch("lilypad._utils.middleware.fast_jsonable", side_effect=fast_side_effect):
         _set_call_response_attributes(response, span, "mirascope.v1")
 
         expected_attributes = {
@@ -495,8 +507,8 @@ def test_set_response_model_attributes_base_model_with_messages():
     span = MagicMock(spec=Span)
 
     with (
-        patch("src.lilypad._utils.middleware.fast_jsonable", side_effect=lambda x: fast_jsonable(x)) as mock_encoder,
-        patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_call_response,
+        patch("lilypad._utils.middleware.fast_jsonable", side_effect=lambda x: fast_jsonable(x)) as mock_encoder,
+        patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_call_response,
     ):
         _set_response_model_attributes(result, span, "mirascope.v1")
 
@@ -551,7 +563,7 @@ def test_handle_call_response_with_span():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         handlers.handle_call_response(result, fn, span)
         mock_set_attrs.assert_called_once_with(result, span, "trace")
 
@@ -562,7 +574,7 @@ def test_handle_call_response_without_span():
     fn = MagicMock()
     span = None
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         handlers.handle_call_response(result, fn, span)
         mock_set_attrs.assert_not_called()
 
@@ -576,7 +588,7 @@ def test_handle_stream_with_span():
     call_response = MagicMock(spec=mb.BaseCallResponse)
     stream.construct_call_response = MagicMock(return_value=call_response)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         handlers.handle_stream(stream, fn, span)
         stream.construct_call_response.assert_called_once()
         mock_set_attrs.assert_called_once_with(call_response, span, "trace")
@@ -588,7 +600,7 @@ def test_handle_stream_without_span():
     fn = MagicMock()
     span = None
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         handlers.handle_stream(stream, fn, span)
         mock_set_attrs.assert_not_called()
 
@@ -599,7 +611,7 @@ def test_handle_response_model_with_span():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         handlers.handle_response_model(result, fn, span)
         mock_set_attrs.assert_called_once_with(result, span, "trace")
 
@@ -610,7 +622,7 @@ def test_handle_response_model_without_span():
     fn = MagicMock()
     span = None
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         handlers.handle_response_model(result, fn, span)
         mock_set_attrs.assert_not_called()
 
@@ -625,7 +637,7 @@ def test_handle_structured_stream_with_span():
     span.is_recording.return_value = True
     handlers = _Handlers("trace")
     # Patch the function that is actually called
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         handlers.handle_structured_stream(result, fn, span)
         # Assert based on current production code (calls _set directly)
         mock_set_attrs.assert_called_once_with(result.constructed_response_model, span, "trace")
@@ -638,7 +650,7 @@ def test_handle_structured_stream_without_span():
     fn = MagicMock()
     span = None
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         handlers.handle_structured_stream(result, fn, span)
         mock_set_attrs.assert_not_called()
 
@@ -656,7 +668,7 @@ def test_handle_structured_stream_with_error_attr():
     span.is_recording.return_value = True
     handlers = _Handlers("trace")
 
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         handlers.handle_structured_stream(result, fn, span)
         # Current production code calls _set_response_model_attributes(None, span)
         mock_set_attrs.assert_called_once_with(None, span, "trace")
@@ -679,7 +691,7 @@ async def test_handle_call_response_async_sets_attributes():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         await handlers.handle_call_response_async(result, fn, span)
         mock_set_attrs.assert_called_once_with(result, span, "trace")
 
@@ -693,7 +705,7 @@ async def test_handle_stream_async_sets_attributes():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_call_response_attributes") as mock_set_attrs:
         await handlers.handle_stream_async(stream, fn, span)
         # Assert based on internal call
         stream.construct_call_response.assert_called_once()
@@ -707,7 +719,7 @@ async def test_handle_response_model_async_sets_attributes():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         await handlers.handle_response_model_async(result, fn, span)
         # Assert based on internal call
         mock_set_attrs.assert_called_once_with(result, span, "trace")
@@ -722,7 +734,7 @@ async def test_handle_structured_stream_async_sets_attributes():
     fn = MagicMock()
     span = MagicMock(spec=Span)
     handlers = _Handlers("trace")
-    with patch("src.lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
+    with patch("lilypad._utils.middleware._set_response_model_attributes") as mock_set_attrs:
         await handlers.handle_structured_stream_async(result, fn, span)
         # Assert based on internal call
         mock_set_attrs.assert_called_once_with(result.constructed_response_model, span, "trace")
@@ -746,7 +758,7 @@ def test_get_custom_context_manager():
     tracer_mock.start_as_current_span.return_value.__enter__.return_value = span_mock
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
 
-    with patch("src.lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
+    with patch("lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
         arg_types = {"param": "str"}
         arg_values = {"param": "world"}
         context_manager_factory = _get_custom_context_manager(
@@ -798,7 +810,7 @@ def test_handle_error_with_non_recording_span():
     span = MagicMock(spec=Span)
     span.is_recording.return_value = False
 
-    with patch("src.lilypad._utils.middleware.logger") as mock_logger:
+    with patch("lilypad._utils.middleware.logger") as mock_logger:
         # Run with assumption production code is fixed
         _handle_error(error, fn, span)
 
@@ -815,7 +827,7 @@ def test_handle_error_without_span():
     fn.__name__ = "test_func"
     span = None
 
-    with patch("src.lilypad._utils.middleware.logger") as mock_logger:
+    with patch("lilypad._utils.middleware.logger") as mock_logger:
         _handle_error(error, fn, span)
         # Production code uses logger.error now
         mock_logger.error.assert_called_once_with(
@@ -830,7 +842,7 @@ async def test_handle_error_async_calls_handle_error():
     fn = MagicMock()
     span = MagicMock(spec=Span)
 
-    with patch("src.lilypad._utils.middleware._handle_error") as mock_sync_handler:
+    with patch("lilypad._utils.middleware._handle_error") as mock_sync_handler:
         await _handle_error_async(error, fn, span)
         mock_sync_handler.assert_called_once_with(error, fn, span)
 
@@ -851,10 +863,10 @@ def test_create_mirascope_middleware():
     mock_handlers = MagicMock()
     with (
         patch(
-            "src.lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
+            "lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
         ) as mock_middleware_factory,
-        patch("src.lilypad._utils.middleware._get_custom_context_manager", return_value=mock_cm_factory) as mock_get_cm,
-        patch("src.lilypad._utils.middleware._Handlers", return_value=mock_handlers),
+        patch("lilypad._utils.middleware._get_custom_context_manager", return_value=mock_cm_factory) as mock_get_cm,
+        patch("lilypad._utils.middleware._Handlers", return_value=mock_handlers),
     ):
         middleware_decorator = create_mirascope_middleware(
             mock_function,
@@ -907,7 +919,7 @@ def test_get_custom_context_manager_with_function_none():
     tracer_mock.start_as_current_span.return_value.__enter__.return_value = span_mock
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
 
-    with patch("src.lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
+    with patch("lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
         arg_types = {"param": "str"}
         arg_values = {"param": "world"}
         context_manager_factory = _get_custom_context_manager(
@@ -941,7 +953,7 @@ def test_get_custom_context_manager_with_decorator_tags():
     tracer_mock.start_as_current_span.return_value.__enter__.return_value = span_mock
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
 
-    with patch("src.lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
+    with patch("lilypad._utils.middleware.get_tracer", return_value=tracer_mock):
         arg_types = {}
         arg_values = {}
         context_manager_factory = _get_custom_context_manager(
@@ -978,10 +990,10 @@ def test_create_mirascope_middleware_with_function_none():
 
     with (
         patch(
-            "src.lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
+            "lilypad._utils.middleware.middleware_factory", return_value=mock_factory_return
         ) as mock_middleware_factory,
-        patch("src.lilypad._utils.middleware._get_custom_context_manager", return_value=mock_cm_factory) as mock_get_cm,
-        patch("src.lilypad._utils.middleware._Handlers", return_value=mock_handlers),
+        patch("lilypad._utils.middleware._get_custom_context_manager", return_value=mock_cm_factory) as mock_get_cm,
+        patch("lilypad._utils.middleware._Handlers", return_value=mock_handlers),
     ):
         middleware_decorator = create_mirascope_middleware(
             function,
@@ -1017,42 +1029,120 @@ def test_encode_gemini_part_with_real_webp():
         import PIL.Image
         import PIL.WebPImagePlugin
         from io import BytesIO
-        
+
         # Need to reload the middleware module to ensure it uses the current PIL
         import importlib
-        import src.lilypad._utils.middleware
-        importlib.reload(src.lilypad._utils.middleware)
-        
+        import lilypad._utils.middleware
+
+        importlib.reload(lilypad._utils.middleware)
+
         # Now import after reload
-        from src.lilypad._utils.middleware import encode_gemini_part
-        
+        from lilypad._utils.middleware import encode_gemini_part
+
         # Create a simple image
-        img = PIL.Image.new('RGB', (10, 10), color='red')
-        
+        img = PIL.Image.new("RGB", (10, 10), color="red")
+
         # Save as WebP in memory
         webp_bytes = BytesIO()
-        img.save(webp_bytes, format='WEBP')
+        img.save(webp_bytes, format="WEBP")
         webp_bytes.seek(0)
-        
+
         # Load as WebP
         webp_image = PIL.Image.open(webp_bytes)
-        
+
         # Verify it's the right type
-        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), \
+        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), (
             f"Expected WebPImageFile, got {type(webp_image)}"
-        
+        )
+
         # Encode it
         result = encode_gemini_part(webp_image)
-        
+
         # Check result
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
-        assert result['mime_type'] == 'image/webp'
-        assert 'data' in result
-        assert isinstance(result['data'], str)  # base64 encoded
-        
+        assert result["mime_type"] == "image/webp"
+        assert "data" in result
+        assert isinstance(result["data"], str)  # base64 encoded
+
         # Verify the base64 data is valid
-        decoded = base64.b64decode(result['data'])
+        decoded = base64.b64decode(result["data"])
         assert len(decoded) > 0
-        
+
     except ImportError:
         pytest.skip("Pillow not installed")
+
+
+def test_custom_context_manager_with_current_span():
+    """Test _get_custom_context_manager with current_span provided (covers lines 86-87)."""
+    from lilypad._utils.middleware import _get_custom_context_manager
+
+    mock_function = MagicMock()
+    arg_types = {"test_arg": "str"}
+    arg_values = {"test_arg": "test_value"}
+
+    # Provide a current_span
+    mock_current_span = MagicMock()
+    mock_current_span.set_attributes = MagicMock()
+
+    context_manager = _get_custom_context_manager(
+        mock_function,
+        arg_types,
+        arg_values,
+        False,
+        current_span=mock_current_span,  # Provide current_span
+    )
+
+    # Mock the function to test the context manager
+    mock_fn = MagicMock()
+    mock_fn.__name__ = "test_function"
+
+    # Should NOT create a new span, use the provided one
+    with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+        with context_manager(mock_fn):
+            pass
+
+        # Verify get_tracer was NOT called since we provided current_span
+        mock_tracer.assert_not_called()
+
+        # Verify attributes were set on the provided span
+        mock_current_span.set_attributes.assert_called()
+
+
+def test_custom_context_manager_orjson_error():
+    """Test _get_custom_context_manager with orjson.JSONEncodeError (covers lines 82-83)."""
+    import orjson
+    from lilypad._utils.middleware import _get_custom_context_manager
+
+    mock_function = MagicMock()
+
+    # Create an object that will cause orjson to fail
+    class UnserializableForOrjson:
+        def __init__(self):
+            self.value = float("inf")  # orjson doesn't handle infinity
+
+    arg_types = {"test_arg": "object"}
+    arg_values = {"test_arg": UnserializableForOrjson()}
+
+    # Patch fast_jsonable to raise orjson.JSONEncodeError
+    with patch("lilypad._utils.middleware.fast_jsonable", side_effect=orjson.JSONEncodeError("Cannot encode")):
+        context_manager = _get_custom_context_manager(mock_function, arg_types, arg_values, False)
+
+        mock_fn = MagicMock()
+        mock_fn.__name__ = "test_function"
+
+        with patch("lilypad._utils.middleware.get_tracer") as mock_tracer:
+            mock_span = MagicMock()
+            mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
+
+            with context_manager(mock_fn):
+                pass
+
+            # Verify the arg_values were serialized as "could not serialize"
+            mock_span.set_attributes.assert_called()
+            calls = mock_span.set_attributes.call_args_list
+            for call in calls:
+                attrs = call[0][0]
+                if "lilypad.mirascope.v1.arg_values" in attrs:
+                    arg_values_json = attrs["lilypad.mirascope.v1.arg_values"]
+                    # Should contain "could not serialize" for the failed value
+                    assert "could not serialize" in arg_values_json

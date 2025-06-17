@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch
 from collections.abc import Collection
 
-from src.lilypad._opentelemetry._opentelemetry_azure import AzureInstrumentor
+from lilypad._opentelemetry._opentelemetry_azure import AzureInstrumentor
 
 
 class TestAzureInstrumentor:
@@ -24,10 +24,10 @@ class TestAzureInstrumentor:
         assert len(dependencies) == 1
         assert "azure-ai-inference>=1.0.0b9,<2.0" in dependencies
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
     def test_instrument_basic(
         self,
         mock_complete_async,
@@ -45,7 +45,7 @@ class TestAzureInstrumentor:
         # Mock patch functions
         mock_complete_wrapper = Mock()
         mock_complete_async_wrapper = Mock()
-        
+
         mock_complete.return_value = mock_complete_wrapper
         mock_complete_async.return_value = mock_complete_async_wrapper
 
@@ -54,7 +54,7 @@ class TestAzureInstrumentor:
 
         # Verify get_tracer was called correctly
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_azure",
+            "lilypad._opentelemetry._opentelemetry_azure",
             "0.1.0",
             None,
             schema_url="https://opentelemetry.io/schemas/1.28.0",
@@ -80,10 +80,10 @@ class TestAzureInstrumentor:
             assert call_kwargs["name"] == name
             assert call_kwargs["wrapper"] == wrapper
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
     def test_instrument_with_tracer_provider(
         self,
         mock_complete_async,
@@ -108,13 +108,13 @@ class TestAzureInstrumentor:
 
         # Verify get_tracer was called with custom tracer_provider
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_azure",
+            "lilypad._opentelemetry._opentelemetry_azure",
             "0.1.0",
             mock_tracer_provider,
             schema_url="https://opentelemetry.io/schemas/1.28.0",
         )
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.unwrap")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.unwrap")
     def test_uninstrument_basic(self, mock_unwrap):
         """Test basic _uninstrument functionality."""
         instrumentor = AzureInstrumentor()
@@ -149,7 +149,7 @@ class TestAzureInstrumentor:
             for i, expected_call in enumerate(expected_calls):
                 assert actual_calls[i][0] == expected_call
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.unwrap")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.unwrap")
     def test_uninstrument_with_kwargs(self, mock_unwrap):
         """Test _uninstrument with additional kwargs."""
         instrumentor = AzureInstrumentor()
@@ -175,11 +175,11 @@ class TestAzureInstrumentor:
             assert mock_unwrap.call_count == 2
 
     @patch(
-        "src.lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper",
+        "lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper",
         side_effect=Exception("Wrapper error"),
     )
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
     def test_instrument_wrapper_error(self, mock_complete, mock_get_tracer, mock_wrap_function_wrapper):
         """Test _instrument handling of wrapper errors."""
         instrumentor = AzureInstrumentor()
@@ -203,7 +203,7 @@ class TestAzureInstrumentor:
         ):
             instrumentor._uninstrument()
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.unwrap", side_effect=Exception("Unwrap error"))
+    @patch("lilypad._opentelemetry._opentelemetry_azure.unwrap", side_effect=Exception("Unwrap error"))
     def test_uninstrument_unwrap_error(self, mock_unwrap):
         """Test _uninstrument handling of unwrap errors."""
         instrumentor = AzureInstrumentor()
@@ -221,10 +221,9 @@ class TestAzureInstrumentor:
         mock_modules["azure.ai.inference.aio"].ChatCompletionsClient = mock_async_client
 
         # Patch the imports
-        with patch.dict("sys.modules", mock_modules):
+        with patch.dict("sys.modules", mock_modules), pytest.raises(Exception, match="Unwrap error"):
             # Should raise exception when unwrap fails
-            with pytest.raises(Exception, match="Unwrap error"):
-                instrumentor._uninstrument()
+            instrumentor._uninstrument()
 
     def test_inheritance(self):
         """Test that AzureInstrumentor properly inherits from BaseInstrumentor."""
@@ -241,10 +240,10 @@ class TestAzureInstrumentor:
         assert callable(instrumentor._uninstrument)
         assert callable(instrumentor.instrumentation_dependencies)
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
     def test_instrument_tracer_version_and_schema(
         self,
         mock_complete_async,
@@ -264,16 +263,16 @@ class TestAzureInstrumentor:
 
         # Verify tracer was created with correct parameters
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_azure",
+            "lilypad._opentelemetry._opentelemetry_azure",
             "0.1.0",  # Instrumentor version
             None,  # tracer_provider (default)
             schema_url="https://opentelemetry.io/schemas/1.28.0",  # Schema URL
         )
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
-    @patch("src.lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete")
+    @patch("lilypad._opentelemetry._opentelemetry_azure.chat_completions_complete_async")
     def test_instrument_multiple_calls(
         self,
         mock_complete_async,

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch
 from typer.testing import CliRunner
 
-from src.lilypad.cli.main import app
+from lilypad.cli.main import app
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def test_version_command(runner):
 
 def test_local_command_exists(runner):
     """Test that the local command is registered."""
-    with patch("src.lilypad.cli.commands.local_command") as mock_local:
+    with patch("lilypad.cli.commands.local_command") as mock_local:
         mock_local.return_value = None
 
         result = runner.invoke(app, ["local", "--help"])
@@ -38,7 +38,7 @@ def test_local_command_exists(runner):
 
 def test_sync_command_exists(runner):
     """Test that the sync command is registered."""
-    with patch("src.lilypad.cli.commands.sync.sync_command") as mock_sync:
+    with patch("lilypad.cli.commands.sync.sync_command") as mock_sync:
         mock_sync.return_value = None
 
         result = runner.invoke(app, ["sync", "--help"])

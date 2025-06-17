@@ -130,7 +130,7 @@ class Span:
         """
         if self._span is None:
             return
-        
+
         # Handle positional arguments
         if args:
             if isinstance(args[0], dict):
@@ -162,7 +162,7 @@ class Span:
                 except Exception:
                     value = str(value)
             self._span.set_attribute(key, value)
-        
+
         # For kwargs-only case, also set lilypad.metadata to empty list
         if not args and kwargs:
             self._span.set_attribute("lilypad.metadata", "[]")

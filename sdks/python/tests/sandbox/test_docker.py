@@ -5,8 +5,8 @@ import tarfile
 from unittest.mock import Mock, patch
 import pytest
 
-from src.lilypad.sandbox.docker import DockerSandboxRunner, _DEFAULT_IMAGE
-from src.lilypad._utils import Closure
+from lilypad.sandbox.docker import DockerSandboxRunner, _DEFAULT_IMAGE
+from lilypad._utils import Closure
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ class TestDockerSandboxRunner:
             content = file_info.read().decode("utf-8")
             assert content == "print('Hello 世界 🌍')"
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_success(self, mock_docker, mock_closure):
         """Test successful function execution."""
         # Setup mocks
@@ -98,7 +98,7 @@ class TestDockerSandboxRunner:
 
         runner = DockerSandboxRunner()
         runner.generate_script = Mock(return_value="test script")
-        from src.lilypad.sandbox.runner import Result
+        from lilypad.sandbox.runner import Result
 
         expected_result: Result = {"result": "success"}
         runner.parse_execution_result = Mock(return_value=expected_result)
@@ -137,7 +137,7 @@ class TestDockerSandboxRunner:
 
         assert result == expected_result
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_with_custom_environment(self, mock_docker, mock_closure):
         """Test function execution with custom environment."""
         custom_env = {"MY_VAR": "my_value"}
@@ -164,7 +164,7 @@ class TestDockerSandboxRunner:
             environment=custom_env,
         )
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_with_custom_image(self, mock_docker, mock_closure):
         """Test function execution with custom Docker image."""
         custom_image = "python:3.11-alpine"
@@ -191,7 +191,7 @@ class TestDockerSandboxRunner:
             environment=runner.environment,
         )
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_with_all_options(self, mock_docker, mock_closure):
         """Test function execution with all optional parameters."""
         mock_client = Mock()
@@ -228,7 +228,7 @@ class TestDockerSandboxRunner:
             extra_imports=extra_imports,
         )
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_container_cleanup_on_success(self, mock_docker, mock_closure):
         """Test container cleanup happens even on successful execution."""
         mock_client = Mock()
@@ -246,7 +246,7 @@ class TestDockerSandboxRunner:
         # Verify container was stopped
         mock_container.stop.assert_called_once()
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_container_cleanup_on_exception(self, mock_docker, mock_closure):
         """Test container cleanup happens even when exception occurs."""
         mock_client = Mock()
@@ -264,7 +264,7 @@ class TestDockerSandboxRunner:
         # Verify container was still stopped despite exception
         mock_container.stop.assert_called_once()
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_no_container_cleanup_if_no_container(self, mock_docker, mock_closure):
         """Test no container cleanup if container creation fails."""
         mock_client = Mock()
@@ -279,7 +279,7 @@ class TestDockerSandboxRunner:
 
         # No container.stop() should be called since container is None
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_suppresses_stop_exception(self, mock_docker, mock_closure):
         """Test that exceptions during container.stop() are suppressed."""
         mock_client = Mock()
@@ -299,7 +299,7 @@ class TestDockerSandboxRunner:
         assert result == {"result": "success"}
         mock_container.stop.assert_called_once()
 
-    @patch("src.lilypad.sandbox.docker.docker")
+    @patch("lilypad.sandbox.docker.docker")
     def test_execute_function_none_stdout_stderr(self, mock_docker, mock_closure):
         """Test function execution when stdout/stderr are None."""
         mock_client = Mock()

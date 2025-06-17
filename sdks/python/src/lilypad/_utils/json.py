@@ -334,8 +334,11 @@ def jsonable_encoder(
                 data = vars(obj)
             else:
                 # For type objects without __dict__, try to get relevant attributes
-                data = {attr: getattr(obj, attr) for attr in dir(obj) 
-                       if not attr.startswith('_') and not callable(getattr(obj, attr))}
+                data = {
+                    attr: getattr(obj, attr)
+                    for attr in dir(obj)
+                    if not attr.startswith("_") and not callable(getattr(obj, attr))
+                }
         except Exception as e:
             errors.append(e)
             raise ValueError(errors) from e

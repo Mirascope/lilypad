@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.lilypad._utils.config import load_config
+from lilypad._utils.config import load_config
 
 
 @pytest.fixture

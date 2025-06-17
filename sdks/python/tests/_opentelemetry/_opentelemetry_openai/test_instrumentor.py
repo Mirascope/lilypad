@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch
 from collections.abc import Collection
 
-from src.lilypad._opentelemetry._opentelemetry_openai import OpenAIInstrumentor
+from lilypad._opentelemetry._opentelemetry_openai import OpenAIInstrumentor
 
 
 class TestOpenAIInstrumentor:
@@ -24,12 +24,12 @@ class TestOpenAIInstrumentor:
         assert len(dependencies) == 1
         assert "openai>=1.6.0,<2" in dependencies
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
     def test_instrument_basic(
         self,
         mock_parse_async,
@@ -51,7 +51,7 @@ class TestOpenAIInstrumentor:
         mock_create_async_wrapper = Mock()
         mock_parse_wrapper = Mock()
         mock_parse_async_wrapper = Mock()
-        
+
         mock_create.return_value = mock_create_wrapper
         mock_create_async.return_value = mock_create_async_wrapper
         mock_parse.return_value = mock_parse_wrapper
@@ -62,7 +62,7 @@ class TestOpenAIInstrumentor:
 
         # Verify get_tracer was called correctly
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_openai",
+            "lilypad._opentelemetry._opentelemetry_openai",
             "0.1.0",
             None,
             schema_url="https://opentelemetry.io/schemas/1.28.0",
@@ -92,12 +92,12 @@ class TestOpenAIInstrumentor:
             assert call_kwargs["name"] == name
             assert call_kwargs["wrapper"] == wrapper
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
     def test_instrument_with_tracer_provider(
         self,
         mock_parse_async,
@@ -126,13 +126,13 @@ class TestOpenAIInstrumentor:
 
         # Verify get_tracer was called with custom tracer_provider
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_openai",
+            "lilypad._opentelemetry._opentelemetry_openai",
             "0.1.0",
             mock_tracer_provider,
             schema_url="https://opentelemetry.io/schemas/1.28.0",
         )
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.unwrap")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.unwrap")
     def test_uninstrument_basic(self, mock_unwrap):
         """Test basic _uninstrument functionality."""
         instrumentor = OpenAIInstrumentor()
@@ -143,7 +143,7 @@ class TestOpenAIInstrumentor:
         mock_async_completions = Mock(spec=["create"])
         mock_beta_completions = Mock(spec=["parse"])
         mock_beta_async_completions = Mock(spec=["parse"])
-        
+
         mock_openai.resources.chat.completions.Completions = mock_completions
         mock_openai.resources.chat.completions.AsyncCompletions = mock_async_completions
         mock_openai.resources.beta.chat.completions.Completions = mock_beta_completions
@@ -161,11 +161,11 @@ class TestOpenAIInstrumentor:
             method_names = []
             for call in mock_unwrap.call_args_list:
                 method_names.append(call[0][1])  # Second argument is method name
-            
+
             expected_methods = ["create", "create", "parse", "parse"]
             assert method_names == expected_methods
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.unwrap")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.unwrap")
     def test_uninstrument_with_kwargs(self, mock_unwrap):
         """Test _uninstrument with additional kwargs."""
         instrumentor = OpenAIInstrumentor()
@@ -176,7 +176,7 @@ class TestOpenAIInstrumentor:
         mock_async_completions = Mock(spec=["create"])
         mock_beta_completions = Mock(spec=["parse"])
         mock_beta_async_completions = Mock(spec=["parse"])
-        
+
         mock_openai.resources.chat.completions.Completions = mock_completions
         mock_openai.resources.chat.completions.AsyncCompletions = mock_async_completions
         mock_openai.resources.beta.chat.completions.Completions = mock_beta_completions
@@ -191,11 +191,11 @@ class TestOpenAIInstrumentor:
             assert mock_unwrap.call_count == 4
 
     @patch(
-        "src.lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper",
+        "lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper",
         side_effect=Exception("Wrapper error"),
     )
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
     def test_instrument_wrapper_error(self, mock_create, mock_get_tracer, mock_wrap_function_wrapper):
         """Test _instrument handling of wrapper errors."""
         instrumentor = OpenAIInstrumentor()
@@ -219,7 +219,7 @@ class TestOpenAIInstrumentor:
         ):
             instrumentor._uninstrument()
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.unwrap", side_effect=Exception("Unwrap error"))
+    @patch("lilypad._opentelemetry._opentelemetry_openai.unwrap", side_effect=Exception("Unwrap error"))
     def test_uninstrument_unwrap_error(self, mock_unwrap):
         """Test _uninstrument handling of unwrap errors."""
         instrumentor = OpenAIInstrumentor()
@@ -230,17 +230,16 @@ class TestOpenAIInstrumentor:
         mock_async_completions = Mock(spec=["create"])
         mock_beta_completions = Mock(spec=["parse"])
         mock_beta_async_completions = Mock(spec=["parse"])
-        
+
         mock_openai.resources.chat.completions.Completions = mock_completions
         mock_openai.resources.chat.completions.AsyncCompletions = mock_async_completions
         mock_openai.resources.beta.chat.completions.Completions = mock_beta_completions
         mock_openai.resources.beta.chat.completions.AsyncCompletions = mock_beta_async_completions
 
         # Patch the import to return our mock
-        with patch.dict("sys.modules", {"openai": mock_openai}):
+        with patch.dict("sys.modules", {"openai": mock_openai}), pytest.raises(Exception, match="Unwrap error"):
             # Should raise exception when unwrap fails
-            with pytest.raises(Exception, match="Unwrap error"):
-                instrumentor._uninstrument()
+            instrumentor._uninstrument()
 
     def test_inheritance(self):
         """Test that OpenAIInstrumentor properly inherits from BaseInstrumentor."""
@@ -257,12 +256,12 @@ class TestOpenAIInstrumentor:
         assert callable(instrumentor._uninstrument)
         assert callable(instrumentor.instrumentation_dependencies)
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
     def test_instrument_tracer_version_and_schema(
         self,
         mock_parse_async,
@@ -286,18 +285,18 @@ class TestOpenAIInstrumentor:
 
         # Verify tracer was created with correct parameters
         mock_get_tracer.assert_called_once_with(
-            "src.lilypad._opentelemetry._opentelemetry_openai",
+            "lilypad._opentelemetry._opentelemetry_openai",
             "0.1.0",  # Instrumentor version
             None,  # tracer_provider (default)
             schema_url="https://opentelemetry.io/schemas/1.28.0",  # Schema URL
         )
 
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.get_tracer")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
-    @patch("src.lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.get_tracer")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_create_async")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.chat_completions_parse_async")
     def test_instrument_multiple_calls(
         self,
         mock_parse_async,

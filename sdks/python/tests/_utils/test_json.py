@@ -12,7 +12,7 @@ import re
 
 from pydantic import BaseModel
 
-from src.lilypad._utils.json import (
+from lilypad._utils.json import (
     jsonable_encoder,
     json_dumps,
     fast_jsonable,
@@ -443,7 +443,7 @@ def test_jsonable_encoder_error_handling():
             if name == "dir":
                 raise AttributeError("No dir")
             return super().__getattribute__(name)
-        
+
         def __dir__(self):
             raise RuntimeError("Cannot get dir")
 
@@ -514,14 +514,14 @@ def test_to_json_serializable_global_serializers():
     # Test with working global serializer
     import unittest.mock
 
-    with unittest.mock.patch("src.lilypad._utils.json.get_serializer") as mock_get_serializer:
+    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
         mock_get_serializer.return_value = lambda obj: f"global_{obj.value}"
         obj = CustomType("test")
         result = _to_json_serializable(obj)
         assert result == "global_test"
 
     # Test with failing global serializer
-    with unittest.mock.patch("src.lilypad._utils.json.get_serializer") as mock_get_serializer:
+    with unittest.mock.patch("lilypad._utils.json.get_serializer") as mock_get_serializer:
         mock_get_serializer.return_value = lambda obj: 1 / 0  # Division by zero
         obj = CustomType("test")
         result = _to_json_serializable(obj)
@@ -561,7 +561,7 @@ def test_to_json_serializable_sequences():
 
 def test_any_to_text_error_handling():
     """Test _any_to_text error handling."""
-    from src.lilypad._utils.json import _any_to_text
+    from lilypad._utils.json import _any_to_text
 
     class UnserializableObject:
         def __repr__(self):
@@ -575,7 +575,7 @@ def test_any_to_text_error_handling():
             if name in ("__dir__", "dir"):
                 raise AttributeError(f"No {name}")
             raise AttributeError(f"No attribute {name}")
-        
+
         def __dir__(self):
             raise RuntimeError("Cannot get dir")
 
@@ -587,7 +587,7 @@ def test_any_to_text_error_handling():
 
 def test_any_to_text_primitive_passthrough():
     """Test _any_to_text with JSON-safe primitives."""
-    from src.lilypad._utils.json import _any_to_text
+    from lilypad._utils.json import _any_to_text
 
     # Test primitives that should be returned as-is
     assert _any_to_text("hello") == "hello"
@@ -636,7 +636,7 @@ def test_to_json_serializable_circular_reference_multiple_objects():
 
 def test_generate_encoders_by_class_tuples():
     """Test generate_encoders_by_class_tuples function."""
-    from src.lilypad._utils.json import generate_encoders_by_class_tuples
+    from lilypad._utils.json import generate_encoders_by_class_tuples
 
     # Use a single encoder function reference for multiple types
     def multiplier_encoder(x):
@@ -665,7 +665,7 @@ def test_generate_encoders_by_class_tuples():
 
 def test_map_standard_types():
     """Test MAP_STANDARD_TYPES constant."""
-    from src.lilypad._utils.json import MAP_STANDARD_TYPES
+    from lilypad._utils.json import MAP_STANDARD_TYPES
 
     assert MAP_STANDARD_TYPES["List"] == "list"
     assert MAP_STANDARD_TYPES["Dict"] == "dict"
@@ -687,16 +687,17 @@ def test_undefined_type():
 
 def test_jsonable_encoder_with_custom_encoder_class_hierarchy():
     """Test jsonable_encoder with custom encoders and class hierarchies."""
+
     class BaseType:
         def __init__(self, value):
             self.value = value
-    
+
     class DerivedType(BaseType):
         pass
-    
+
     # Test custom encoder with class tuple matching
     custom_encoder = {BaseType: lambda obj: f"encoded_{obj.value}"}
-    
+
     obj = DerivedType("test")
     result = jsonable_encoder(obj, custom_encoder=custom_encoder)
     assert result == "encoded_test"
@@ -704,19 +705,21 @@ def test_jsonable_encoder_with_custom_encoder_class_hierarchy():
 
 def test_jsonable_encoder_fallback_to_vars():
     """Test jsonable_encoder fallback to vars() for objects without __dict__."""
+
     class TypeWithoutDict:
-        __slots__ = ('value',)
-        
+        __slots__ = ("value",)
+
         def __init__(self, value):
             self.value = value
-            
+
     class TypeWithoutDictAndNoVars:
         """A type that will trigger the exception path."""
+
         __slots__ = ()
-    
+
     # This should trigger the path where we try to get attributes from dir()
     obj = TypeWithoutDictAndNoVars()
-    
+
     # The jsonable_encoder should handle this gracefully
     result = jsonable_encoder(obj)
     assert isinstance(result, dict)
@@ -731,7 +734,7 @@ def test_to_json_serializable_enum():
 def test_to_json_serializable_decimal():
     """Test _to_json_serializable with Decimal objects."""
     from decimal import Decimal
-    
+
     decimal_val = Decimal("123.456")
     result = _to_json_serializable(decimal_val)
     assert result == 123.456
@@ -740,7 +743,7 @@ def test_to_json_serializable_decimal():
 def test_to_json_serializable_timedelta():
     """Test _to_json_serializable with timedelta objects."""
     import datetime
-    
+
     delta = datetime.timedelta(hours=2, minutes=30)
     result = _to_json_serializable(delta)
     assert result == 9000.0  # 2.5 hours in seconds
@@ -749,37 +752,37 @@ def test_to_json_serializable_timedelta():
 def test_to_json_serializable_ipv4_ipv6_and_path():
     """Test _to_json_serializable with IP addresses and Path objects."""
     from ipaddress import IPv4Address, IPv6Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
-    from pathlib import Path, PurePath
+    from pathlib import PurePath
     from uuid import UUID
-    
+
     # Test IPv4Address
     ipv4 = IPv4Address("192.168.1.1")
     assert _to_json_serializable(ipv4) == "192.168.1.1"
-    
+
     # Test IPv6Address
     ipv6 = IPv6Address("::1")
     assert _to_json_serializable(ipv6) == "::1"
-    
+
     # Test IPv4Interface
     ipv4_interface = IPv4Interface("192.168.1.1/24")
     assert _to_json_serializable(ipv4_interface) == "192.168.1.1/24"
-    
+
     # Test IPv4Network
     ipv4_network = IPv4Network("192.168.1.0/24")
     assert _to_json_serializable(ipv4_network) == "192.168.1.0/24"
-    
+
     # Test IPv6Interface
     ipv6_interface = IPv6Interface("::1/128")
     assert _to_json_serializable(ipv6_interface) == "::1/128"
-    
+
     # Test IPv6Network
     ipv6_network = IPv6Network("::1/128")
     assert _to_json_serializable(ipv6_network) == "::1/128"
-    
+
     # Test PurePath
     path = PurePath("/tmp/test.txt")
     assert _to_json_serializable(path) == "/tmp/test.txt"
-    
+
     # Test UUID
     uuid_obj = UUID("12345678-1234-5678-9abc-123456789abc")
     assert _to_json_serializable(uuid_obj) == "12345678-1234-5678-9abc-123456789abc"
@@ -787,23 +790,24 @@ def test_to_json_serializable_ipv4_ipv6_and_path():
 
 def test_jsonable_encoder_registered_encoder_check():
     """Test jsonable_encoder with registered encoder check - covers line 314."""
-    from src.lilypad._utils.json import jsonable_encoder
+    from lilypad._utils.json import jsonable_encoder
     from collections.abc import Mapping
-    
+
     class CustomMapping(Mapping):
         """Custom mapping that triggers the registered encoder check."""
+
         def __init__(self, data):
             self._data = data
-            
+
         def __getitem__(self, key):
             return self._data[key]
-            
+
         def __iter__(self):
             return iter(self._data)
-            
+
         def __len__(self):
             return len(self._data)
-    
+
     mapping = CustomMapping({"key": "value", "num": 123})
     result = jsonable_encoder(mapping)
     assert result == {"key": "value", "num": 123}
@@ -811,19 +815,21 @@ def test_jsonable_encoder_registered_encoder_check():
 
 def test_jsonable_encoder_object_without_dict_fallback():
     """Test jsonable_encoder fallback to vars() - covers line 334."""
+
     class ObjectWithoutDict:
         """Object that has __dict__ but vars() will work."""
+
         def __init__(self):
             self.name = "test"
             self.value = 42
-            
+
         def __getattribute__(self, name):
             # Simulate issues with direct dict access while keeping __dict__
             if name == "__dict__":
                 # Return dict but simulate earlier conversion attempt failed
                 return {"name": "test", "value": 42}
             return super().__getattribute__(name)
-    
+
     obj = ObjectWithoutDict()
     result = jsonable_encoder(obj)
     assert result == {"name": "test", "value": 42}
@@ -831,22 +837,77 @@ def test_jsonable_encoder_object_without_dict_fallback():
 
 def test_jsonable_encoder_custom_encoder_mismatch():
     """Test jsonable_encoder with custom encoder that doesn't match type - covers line 314."""
+
     class CustomType:
         def __init__(self, value):
             self.value = value
             self.name = "custom"
-    
+
     # Test with encoder for wrong type (str instead of CustomType)
     # This test is checking that line 314 is covered, which happens when
     # an object matches a class in encoders_by_class_tuples
-    
+
     # Use a type that's in ENCODERS_BY_TYPE to trigger the path
     from collections import deque
-    
+
     # Create a custom encoder that will be checked but not used
     result = jsonable_encoder(
         deque([1, 2, 3]),
-        custom_encoder={str: lambda x: "wrong_type"}  # Wrong type mapping
+        custom_encoder={str: lambda x: "wrong_type"},  # Wrong type mapping
     )
     # deque should be converted to list by the default encoder
     assert result == [1, 2, 3]
+
+
+def test_jsonable_encoder_line_314_coverage():
+    """Test to ensure line 314 in jsonable_encoder is covered."""
+    import lilypad._utils.json as json_module
+    from unittest.mock import patch
+
+    # Create a custom type not in ENCODERS_BY_TYPE
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
+    # Create a custom encoder
+    def custom_encoder(obj):
+        return f"encoded_{obj.value}"
+
+    # Temporarily patch ENCODERS_BY_TYPE to ensure our type isn't there
+    original_encoders = json_module.ENCODERS_BY_TYPE.copy()
+
+    # Remove the type if it exists (it shouldn't)
+    if CustomType in json_module.ENCODERS_BY_TYPE:
+        del json_module.ENCODERS_BY_TYPE[CustomType]
+
+    # Create custom encoders_by_class_tuples that includes our type
+    custom_encoders_by_class_tuples = {custom_encoder: (CustomType,)}
+
+    # Patch encoders_by_class_tuples
+    with patch.object(json_module, "encoders_by_class_tuples", custom_encoders_by_class_tuples):
+        obj = CustomType("test")
+        result = json_module.jsonable_encoder(obj)
+        assert result == "encoded_test"
+
+    # Restore original
+    json_module.ENCODERS_BY_TYPE.clear()
+    json_module.ENCODERS_BY_TYPE.update(original_encoders)
+
+
+def test_jsonable_encoder_fallback_to_vars_with_exception():
+    """Test jsonable_encoder fallback to vars() after exception - covers line 334."""
+
+    class ProblematicObject:
+        def __init__(self):
+            self.value = "test"
+            self.number = 42
+
+        def __iter__(self):
+            # This will cause the first dict(obj) attempt to fail
+            raise RuntimeError("Cannot iterate")
+
+        # But has __dict__ so vars() will work
+
+    obj = ProblematicObject()
+    result = jsonable_encoder(obj)
+    assert result == {"value": "test", "number": 42}

@@ -1,15 +1,9 @@
 """Comprehensive tests to achieve 100% coverage for sync.py."""
 
-import pytest
-import os
-import ast
-import sys
-import json
-from unittest.mock import Mock, patch, MagicMock, mock_open
+from unittest.mock import Mock, patch, mock_open
 from pathlib import Path
-from typing import Any
 
-from src.lilypad.cli.commands.sync import (
+from lilypad.cli.commands.sync import (
     _find_python_files,
     _module_path_from_file,
     _import_module_safely,
@@ -23,15 +17,15 @@ from src.lilypad.cli.commands.sync import (
     _format_return_type,
     _generate_protocol_stub_content,
     sync_command,
-    app
+    app,
 )
-from src.lilypad.generated.types.function_public import FunctionPublic
+from lilypad.generated.types.function_public import FunctionPublic
 
 
 class TestFindPythonFiles:
     """Tests for _find_python_files function."""
-    
-    @patch('src.lilypad.cli.commands.sync.os.walk')
+
+    @patch("lilypad.cli.commands.sync.os.walk")
     def test_find_python_files_basic(self, mock_walk):
         """Test basic file finding functionality."""
         # Mock directory structure
@@ -39,30 +33,31 @@ class TestFindPythonFiles:
             ("/root", ["subdir"], ["file1.py", "file2.txt", "file3.py"]),
             ("/root/subdir", [], ["file4.py"]),
         ]
-        
+
         result = _find_python_files("/root")
-        
+
         expected = ["/root/file1.py", "/root/file3.py", "/root/subdir/file4.py"]
         assert result == expected
 
     def test_find_python_files_with_exclude(self):
         """Test file finding with excluded directories."""
+
         # Create a custom mock that behaves like os.walk with proper directory filtering
         def mock_walk(top):
-            # Mock the initial directory structure  
+            # Mock the initial directory structure
             if top == "/root":
                 # The function will modify dirs to exclude 'venv'
                 # So we only return the entries that would remain after filtering
                 yield ("/root", ["good_dir"], ["file1.py"])  # venv is excluded
                 yield ("/root/good_dir", [], ["included.py"])
-            
-        with patch('src.lilypad.cli.commands.sync.os.walk', side_effect=mock_walk):
+
+        with patch("lilypad.cli.commands.sync.os.walk", side_effect=mock_walk):
             result = _find_python_files("/root", exclude_dirs={"venv"})
-            
+
         expected = ["/root/file1.py", "/root/good_dir/included.py"]
         assert result == expected
 
-    @patch('src.lilypad.cli.commands.sync.os.walk')
+    @patch("lilypad.cli.commands.sync.os.walk")
     def test_find_python_files_default_excludes(self, mock_walk):
         """Test file finding with default exclude directories."""
         # Mock directory structure
@@ -75,16 +70,16 @@ class TestFindPythonFiles:
             ("/root/__pycache__", [], ["excluded5.py"]),
             ("/root/good", [], ["included.py"]),
         ]
-        
+
         result = _find_python_files("/root")
-        
+
         expected = ["/root/file1.py", "/root/good/included.py"]
         assert result == expected
 
 
 class TestModulePathFromFile:
     """Tests for _module_path_from_file function."""
-    
+
     def test_module_path_from_file_basic(self):
         """Test basic module path conversion."""
         result = _module_path_from_file("/project/src/my_module.py", "/project")
@@ -108,48 +103,48 @@ class TestModulePathFromFile:
 
 class TestImportModuleSafely:
     """Tests for _import_module_safely function."""
-    
-    @patch('importlib.import_module')
+
+    @patch("importlib.import_module")
     def test_import_module_safely_success(self, mock_import):
         """Test successful module import."""
         mock_import.return_value = Mock()
-        
+
         result = _import_module_safely("valid.module")
-        
+
         assert result is True
         mock_import.assert_called_once_with("valid.module")
 
-    @patch('importlib.import_module')
+    @patch("importlib.import_module")
     def test_import_module_safely_import_error(self, mock_import):
         """Test module import with ImportError."""
         mock_import.side_effect = ImportError("Module not found")
-        
+
         result = _import_module_safely("invalid.module")
-        
+
         assert result is False
 
-    @patch('importlib.import_module')
+    @patch("importlib.import_module")
     def test_import_module_safely_syntax_error(self, mock_import):
         """Test module import with SyntaxError."""
         mock_import.side_effect = SyntaxError("Invalid syntax")
-        
+
         result = _import_module_safely("broken.module")
-        
+
         assert result is False
 
-    @patch('importlib.import_module')
+    @patch("importlib.import_module")
     def test_import_module_safely_generic_exception(self, mock_import):
         """Test module import with generic exception."""
         mock_import.side_effect = RuntimeError("Unexpected error")
-        
+
         result = _import_module_safely("problematic.module")
-        
+
         assert result is False
 
 
 class TestNormalizeSignature:
     """Tests for _normalize_signature function."""
-    
+
     def test_normalize_signature_basic(self):
         """Test basic signature normalization."""
         signature = "def func(a: int, b: str) -> bool:"
@@ -184,7 +179,7 @@ class TestNormalizeSignature:
 
 class TestParseParametersFromSignature:
     """Tests for _parse_parameters_from_signature function."""
-    
+
     def test_parse_parameters_simple(self):
         """Test parsing simple parameters."""
         signature = "def func(a: int, b: str) -> bool:"
@@ -230,7 +225,7 @@ class TestParseParametersFromSignature:
 
 class TestExtractTypeFromParam:
     """Tests for _extract_type_from_param function."""
-    
+
     def test_extract_type_basic(self):
         """Test extracting type from basic parameter."""
         result = _extract_type_from_param("x: int")
@@ -264,12 +259,12 @@ class TestExtractTypeFromParam:
 
 class TestMergeParameters:
     """Tests for _merge_parameters function."""
-    
+
     def test_merge_parameters_matching(self):
         """Test merging parameters when signature and arg_types match."""
         signature = "def func(a: int, b: str) -> bool:"
         arg_types = {"a": "int", "b": "str"}
-        
+
         result = _merge_parameters(signature, arg_types)
         expected = ["a: int", "b: str"]
         assert result == expected
@@ -278,7 +273,7 @@ class TestMergeParameters:
         """Test merging parameters when some types are missing."""
         signature = "def func(a, b: str, c) -> bool:"
         arg_types = {"a": "int", "c": "float"}
-        
+
         result = _merge_parameters(signature, arg_types)
         expected = ["a: int", "b: str", "c: float"]
         assert result == expected
@@ -287,7 +282,7 @@ class TestMergeParameters:
         """Test merging parameters with extra types in arg_types."""
         signature = "def func(a: int, b: str) -> bool:"
         arg_types = {"a": "int", "b": "str", "c": "float"}  # Extra 'c'
-        
+
         result = _merge_parameters(signature, arg_types)
         expected = ["a: int", "b: str"]
         assert result == expected
@@ -295,7 +290,7 @@ class TestMergeParameters:
     def test_merge_parameters_no_arg_types(self):
         """Test merging parameters when arg_types is None."""
         signature = "def func(a: int, b: str) -> bool:"
-        
+
         result = _merge_parameters(signature, None)
         expected = ["a: int", "b: str"]
         assert result == expected
@@ -304,7 +299,7 @@ class TestMergeParameters:
         """Test merging parameters with malformed signature."""
         signature = "not a valid function signature"
         arg_types = {"a": "int"}
-        
+
         result = _merge_parameters(signature, arg_types)
         expected = []
         assert result == expected
@@ -312,7 +307,7 @@ class TestMergeParameters:
 
 class TestParseReturnType:
     """Tests for _parse_return_type function."""
-    
+
     def test_parse_return_type_basic(self):
         """Test parsing basic return type."""
         signature = "def func(a: int) -> str:"
@@ -346,7 +341,7 @@ class TestParseReturnType:
 
 class TestExtractParameterTypes:
     """Tests for _extract_parameter_types function."""
-    
+
     def test_extract_parameter_types_basic(self):
         """Test extracting parameter types."""
         params = ["a: int", "b: str", "c: bool"]
@@ -378,7 +373,7 @@ class TestExtractParameterTypes:
 
 class TestGetDeployedVersion:
     """Tests for _get_deployed_version function."""
-    
+
     def test_get_deployed_version_single(self):
         """Test getting deployed version with single function."""
         function = Mock(spec=FunctionPublic)
@@ -386,10 +381,10 @@ class TestGetDeployedVersion:
         function.version_num = 1
         function.is_deployed = True
         function.archived = False
-        
+
         versions = [function]
         result = _get_deployed_version(versions)
-        
+
         assert result == function
 
     def test_get_deployed_version_multiple(self):
@@ -399,22 +394,22 @@ class TestGetDeployedVersion:
         function1.version_num = 1
         function1.is_deployed = False
         function1.archived = False
-        
+
         function2 = Mock(spec=FunctionPublic)
-        function2.version = "2.0.0" 
+        function2.version = "2.0.0"
         function2.version_num = 2
         function2.is_deployed = True
         function2.archived = False
-        
+
         function3 = Mock(spec=FunctionPublic)
         function3.version = "3.0.0"
         function3.version_num = 3
         function3.is_deployed = False
         function3.archived = False
-        
+
         versions = [function1, function2, function3]
         result = _get_deployed_version(versions)
-        
+
         assert result == function3  # Should return highest version_num not archived
 
     def test_get_deployed_version_none_deployed(self):
@@ -424,23 +419,23 @@ class TestGetDeployedVersion:
         function1.version_num = 1
         function1.is_deployed = False
         function1.archived = False
-        
+
         function2 = Mock(spec=FunctionPublic)
         function2.version = "2.0.0"
         function2.version_num = 2
         function2.is_deployed = False
         function2.archived = False
-        
+
         versions = [function1, function2]
         result = _get_deployed_version(versions)
-        
+
         # Should return the highest version_num when none are deployed
         assert result == function2
 
 
 class TestFormatReturnType:
     """Tests for _format_return_type function."""
-    
+
     def test_format_return_type_sync(self):
         """Test formatting return type for sync function."""
         result = _format_return_type("str", is_async=False, wrapped=False)
@@ -474,11 +469,11 @@ class TestFormatReturnType:
 
 class TestGenerateProtocolStubContent:
     """Tests for _generate_protocol_stub_content function."""
-    
+
     def test_generate_protocol_stub_content_basic(self):
         """Test generating basic protocol stub content."""
-        from src.lilypad.generated.types.function_public import FunctionPublic
-        
+        from lilypad.generated.types.function_public import FunctionPublic
+
         # Create mock FunctionPublic objects
         version1 = FunctionPublic(
             uuid_="func-uuid",
@@ -486,16 +481,13 @@ class TestGenerateProtocolStubContent:
             signature="def test_func(x: int, y: str) -> bool: pass",
             code="def test_func(x: int, y: str) -> bool: return True",
             hash="hash123",
-            version_num=1
+            version_num=1,
         )
-        
+
         result = _generate_protocol_stub_content(
-            func_name="test_func",
-            versions=[version1],
-            is_async=False,
-            wrapped=False
+            func_name="test_func", versions=[version1], is_async=False, wrapped=False
         )
-        
+
         # Should contain class definition and function signature
         assert "class TestFunc(Protocol):" in result
         assert "def __call__(self, x: int, y: str) -> bool:" in result
@@ -503,149 +495,136 @@ class TestGenerateProtocolStubContent:
 
     def test_generate_protocol_stub_content_async(self):
         """Test generating protocol stub content for async function."""
-        from src.lilypad.generated.types.function_public import FunctionPublic
-        
+        from lilypad.generated.types.function_public import FunctionPublic
+
         # Create async function version
         async_version = FunctionPublic(
             uuid_="async-func-uuid",
-            name="async_test_func", 
+            name="async_test_func",
             signature="async def async_test_func(x: int) -> str: pass",
             code="async def async_test_func(x: int) -> str: return str(x)",
             hash="async_hash123",
-            version_num=1
+            version_num=1,
         )
-        
+
         result = _generate_protocol_stub_content(
-            func_name="async_test_func",
-            versions=[async_version],
-            is_async=True,
-            wrapped=False
+            func_name="async_test_func", versions=[async_version], is_async=True, wrapped=False
         )
-        
+
         # Should contain async function
         assert "class AsyncTestFunc(Protocol):" in result
         assert "def __call__(self, x: int) -> Coroutine[Any, Any, str]:" in result
 
     def test_generate_protocol_stub_content_no_params(self):
         """Test generating protocol stub content with no parameters."""
-        from src.lilypad.generated.types.function_public import FunctionPublic
-        
+        from lilypad.generated.types.function_public import FunctionPublic
+
         no_param_version = FunctionPublic(
             uuid_="no-param-uuid",
             name="no_param_func",
             signature="def no_param_func() -> None: pass",
             code="def no_param_func() -> None: pass",
             hash="no_param_hash",
-            version_num=1
+            version_num=1,
         )
-        
+
         result = _generate_protocol_stub_content(
-            func_name="no_param_func",
-            versions=[no_param_version],
-            is_async=False,
-            wrapped=False
+            func_name="no_param_func", versions=[no_param_version], is_async=False, wrapped=False
         )
-        
+
         assert "def __call__(self) -> None:" in result
 
     def test_generate_protocol_stub_content_complex_params(self):
         """Test generating protocol stub content with complex parameters."""
-        from src.lilypad.generated.types.function_public import FunctionPublic
-        
+        from lilypad.generated.types.function_public import FunctionPublic
+
         complex_version = FunctionPublic(
             uuid_="complex-uuid",
             name="complex_func",
             signature="def complex_func(*args: Any, **kwargs: Dict[str, Any]) -> List[str]: pass",
             code="def complex_func(*args: Any, **kwargs: Dict[str, Any]) -> List[str]: return []",
             hash="complex_hash",
-            version_num=1
+            version_num=1,
         )
-        
+
         result = _generate_protocol_stub_content(
-            func_name="complex_func",
-            versions=[complex_version],
-            is_async=False,
-            wrapped=False
+            func_name="complex_func", versions=[complex_version], is_async=False, wrapped=False
         )
-        
+
         assert "def __call__(self, *args: Any, **kwargs: Dict[str, Any]) -> List[str]:" in result
 
 
 class TestSyncCommand:
     """Tests for sync_command function."""
-    
-    @patch('src.lilypad.cli.commands.sync._find_python_files')
-    @patch('src.lilypad.cli.commands.sync._import_module_safely')
-    @patch('src.lilypad.cli.commands.sync.get_decorated_functions')
-    @patch('src.lilypad.cli.commands.sync.enable_recording')
-    @patch('src.lilypad.cli.commands.sync.clear_registry')
-    @patch('src.lilypad.cli.commands.sync.disable_recording')
+
+    @patch("lilypad.cli.commands.sync._find_python_files")
+    @patch("lilypad.cli.commands.sync._import_module_safely")
+    @patch("lilypad.cli.commands.sync.get_decorated_functions")
+    @patch("lilypad.cli.commands.sync.enable_recording")
+    @patch("lilypad.cli.commands.sync.clear_registry")
+    @patch("lilypad.cli.commands.sync.disable_recording")
     def test_sync_command_no_functions_found(
-        self, 
-        mock_disable, mock_clear, mock_enable, 
-        mock_get_functions, mock_import, mock_find_files
+        self, mock_disable, mock_clear, mock_enable, mock_get_functions, mock_import, mock_find_files
     ):
         """Test sync command when no decorated functions are found."""
         # Setup mocks
         mock_find_files.return_value = ["test_file.py"]
         mock_import.return_value = True
         mock_get_functions.return_value = {}
-        
+
         # Call sync_command
-        with patch('builtins.print'):  # Suppress print output
-            result = sync_command(
-                directory=Path("."),
-                exclude=None,
-                verbose=False,
-                debug=False
-            )
-        
+        with patch("builtins.print"):  # Suppress print output
+            result = sync_command(directory=Path("."), exclude=None, verbose=False, debug=False)
+
         # Verify calls
         mock_enable.assert_called_once()
         mock_clear.assert_called_once()
         mock_disable.assert_called_once()
         mock_find_files.assert_called_once()
 
-    @patch('src.lilypad.cli.commands.sync._find_python_files')
-    @patch('src.lilypad.cli.commands.sync._import_module_safely')
-    @patch('src.lilypad.cli.commands.sync.get_decorated_functions')
-    @patch('src.lilypad.cli.commands.sync.get_sync_client')
-    @patch('src.lilypad.cli.commands.sync.get_settings')
-    @patch('src.lilypad.cli.commands.sync.enable_recording')
-    @patch('src.lilypad.cli.commands.sync.clear_registry')
-    @patch('src.lilypad.cli.commands.sync.disable_recording')
-    @patch('builtins.open', new_callable=mock_open)
+    @patch("lilypad.cli.commands.sync._find_python_files")
+    @patch("lilypad.cli.commands.sync._import_module_safely")
+    @patch("lilypad.cli.commands.sync.get_decorated_functions")
+    @patch("lilypad.cli.commands.sync.get_sync_client")
+    @patch("lilypad.cli.commands.sync.get_settings")
+    @patch("lilypad.cli.commands.sync.enable_recording")
+    @patch("lilypad.cli.commands.sync.clear_registry")
+    @patch("lilypad.cli.commands.sync.disable_recording")
+    @patch("builtins.open", new_callable=mock_open)
     def test_sync_command_with_functions(
         self,
         mock_file,
-        mock_disable, mock_clear, mock_enable,
-        mock_settings, mock_client, mock_get_functions,
-        mock_import, mock_find_files
+        mock_disable,
+        mock_clear,
+        mock_enable,
+        mock_settings,
+        mock_client,
+        mock_get_functions,
+        mock_import,
+        mock_find_files,
     ):
         """Test sync command when decorated functions are found."""
         # Setup mocks
         mock_find_files.return_value = ["test_file.py"]
         mock_import.return_value = True
-        
+
         # Mock decorated functions
         mock_function_info = (
             "test_function",  # function_name
             "def test_function(x: int) -> str: ...",  # signature
             12345,  # line_number
-            "test_file.py"  # file_path
+            "test_file.py",  # file_path
         )
-        mock_get_functions.return_value = {
-            "trace": {"test_module.test_function": mock_function_info}
-        }
-        
+        mock_get_functions.return_value = {"trace": {"test_module.test_function": mock_function_info}}
+
         # Mock settings and client
         mock_settings_obj = Mock()
         mock_settings_obj.api_key = "test-api-key"
         mock_settings.return_value = mock_settings_obj
-        
+
         mock_client_obj = Mock()
         mock_client.return_value = mock_client_obj
-        
+
         # Mock function versions from API
         mock_function_version = Mock(spec=FunctionPublic)
         mock_function_version.uuid_ = "func-uuid"
@@ -654,54 +633,54 @@ class TestSyncCommand:
         mock_function_version.signature = "def test_function(x: int) -> str: ..."
         mock_function_version.is_deployed = True
         mock_function_version.arg_types = {"x": "int"}
-        
+
         mock_client_obj.projects.functions.list.return_value = [mock_function_version]
-        
+
         # Call sync_command
-        with patch('builtins.print'):  # Suppress print output
-            result = sync_command(
-                directory=Path("."),
-                exclude=None,
-                verbose=False,
-                debug=False
-            )
-        
+        with patch("builtins.print"):  # Suppress print output
+            result = sync_command(directory=Path("."), exclude=None, verbose=False, debug=False)
+
         # Verify recording functions were called (these may fail due to mock path issues)
         # For now, we just verify the command completed without crashing
-        
+
         # Test completed successfully - sync_command ran without crashing
         # and all the expected mock calls were made
 
-    @patch('src.lilypad.cli.commands.sync._find_python_files')
+    @patch("lilypad.cli.commands.sync._find_python_files")
     def test_sync_command_import_failure(self, mock_find_files):
         """Test sync command when module import fails."""
         mock_find_files.return_value = ["bad_file.py"]
-        
-        with patch('src.lilypad.cli.commands.sync._import_module_safely', return_value=False):
-            with patch('builtins.print'):  # Suppress print output
+
+        with patch("lilypad.cli.commands.sync._import_module_safely", return_value=False), patch("builtins.print"):  # Suppress print output
                 result = sync_command(
                     directory=Path("."),
                     exclude=None,
                     verbose=True,  # Test verbose output
-                    debug=False
+                    debug=False,
                 )
 
     def test_sync_command_exclude_parsing(self):
         """Test sync command with exclude parameter parsing."""
-        with patch('src.lilypad.cli.commands.sync._find_python_files') as mock_find:
+        with patch("lilypad.cli.commands.sync._find_python_files") as mock_find:
             mock_find.return_value = []
-            
-            with patch('builtins.print'):
+
+            with patch("builtins.print"):
                 sync_command(
                     directory=Path("."),
                     exclude=["venv", ".git", "dist"],  # List of excludes
                     verbose=False,
-                    debug=False
+                    debug=False,
                 )
-            
+
             # Verify exclude dirs were parsed correctly
             call_args = mock_find.call_args
-            exclude_dirs = call_args[1]['exclude_dirs'] if len(call_args) > 1 and 'exclude_dirs' in call_args[1] else call_args[0][1] if len(call_args[0]) > 1 else None
+            exclude_dirs = (
+                call_args[1]["exclude_dirs"]
+                if len(call_args) > 1 and "exclude_dirs" in call_args[1]
+                else call_args[0][1]
+                if len(call_args[0]) > 1
+                else None
+            )
             # sync_command adds default excludes plus the provided ones
             expected_excludes = {"venv", ".venv", "env", ".git", ".github", "__pycache__", "build", "dist"}
             assert exclude_dirs == expected_excludes
@@ -709,43 +688,46 @@ class TestSyncCommand:
 
 class TestAppTyper:
     """Tests for the Typer app configuration."""
-    
+
     def test_app_is_typer_instance(self):
         """Test that app is a Typer instance."""
-        assert hasattr(app, 'command')
-        assert hasattr(app, 'callback')
+        assert hasattr(app, "command")
+        assert hasattr(app, "callback")
 
     def test_sync_command_registered(self):
         """Test that sync_command is registered with the app."""
         # The sync_command should be registered as a command
         assert callable(sync_command)
-        
+
 
 class TestModuleLevelVariables:
     """Tests for module-level variables and constants."""
-    
+
     def test_debug_default_value(self):
         """Test DEBUG variable default value."""
-        from src.lilypad.cli.commands.sync import DEBUG
+        from lilypad.cli.commands.sync import DEBUG
+
         assert DEBUG is False
 
     def test_default_directory_type(self):
         """Test DEFAULT_DIRECTORY is properly configured."""
-        from src.lilypad.cli.commands.sync import DEFAULT_DIRECTORY
+        from lilypad.cli.commands.sync import DEFAULT_DIRECTORY
+
         # Should be a typer.Argument with Path
-        assert hasattr(DEFAULT_DIRECTORY, 'default')
+        assert hasattr(DEFAULT_DIRECTORY, "default")
 
     def test_console_instance(self):
         """Test console is Rich Console instance."""
-        from src.lilypad.cli.commands.sync import console
-        assert hasattr(console, 'print')
-        assert hasattr(console, 'log')
+        from lilypad.cli.commands.sync import console
+
+        assert hasattr(console, "print")
+        assert hasattr(console, "log")
 
 
 class TestMainExecution:
     """Tests for main module execution."""
-    
-    @patch('sys.argv', ['sync.py'])
+
+    @patch("sys.argv", ["sync.py"])
     def test_main_execution_path(self):
         """Test the main execution path when script is run directly."""
         # Test that the if __name__ == "__main__" block would work
@@ -755,7 +737,7 @@ class TestMainExecution:
 
 class TestEdgeCasesAndErrorHandling:
     """Tests for edge cases and error handling."""
-    
+
     def test_normalize_signature_empty_string(self):
         """Test normalize signature with empty string."""
         result = _normalize_signature("")
@@ -771,10 +753,10 @@ class TestEdgeCasesAndErrorHandling:
         """Test type extraction edge cases."""
         # Test with weird spacing
         assert _extract_type_from_param("  x  :  int  ") == "int"
-        
+
         # Test with multiple colons - should return the full type
         assert _extract_type_from_param("x: Dict[str: int]") == "Dict[str: int]"
-        
+
         # Test empty parameter
         assert _extract_type_from_param("") == "Any"
 
@@ -795,25 +777,21 @@ class TestEdgeCasesAndErrorHandling:
 
 class TestIntegrationScenarios:
     """Integration tests for complex scenarios."""
-    
-    @patch('src.lilypad.cli.commands.sync._find_python_files')
-    @patch('src.lilypad.cli.commands.sync._import_module_safely')
-    @patch('src.lilypad.cli.commands.sync.get_decorated_functions')
-    @patch('src.lilypad.cli.commands.sync.get_sync_client')
-    @patch('src.lilypad.cli.commands.sync.get_settings')
-    @patch('builtins.open', new_callable=mock_open)
+
+    @patch("lilypad.cli.commands.sync._find_python_files")
+    @patch("lilypad.cli.commands.sync._import_module_safely")
+    @patch("lilypad.cli.commands.sync.get_decorated_functions")
+    @patch("lilypad.cli.commands.sync.get_sync_client")
+    @patch("lilypad.cli.commands.sync.get_settings")
+    @patch("builtins.open", new_callable=mock_open)
     def test_full_workflow_integration(
-        self, mock_file, mock_settings, mock_client, 
-        mock_get_functions, mock_import, mock_find_files
+        self, mock_file, mock_settings, mock_client, mock_get_functions, mock_import, mock_find_files
     ):
         """Test full workflow from file discovery to stub generation."""
         # Setup realistic test scenario
-        mock_find_files.return_value = [
-            "/project/src/module1.py",
-            "/project/src/package/module2.py"
-        ]
+        mock_find_files.return_value = ["/project/src/module1.py", "/project/src/package/module2.py"]
         mock_import.return_value = True
-        
+
         # Mock multiple decorated functions
         mock_get_functions.return_value = {
             "trace": {
@@ -821,25 +799,25 @@ class TestIntegrationScenarios:
                     "function_a",
                     "def function_a(x: int, y: str = 'default') -> List[str]:",
                     10,
-                    "/project/src/module1.py"
+                    "/project/src/module1.py",
                 ),
                 "package.module2.function_b": (
-                    "function_b", 
+                    "function_b",
                     "async def function_b(data: Dict[str, Any]) -> Coroutine[Any, Any, bool]:",
                     25,
-                    "/project/src/package/module2.py"
+                    "/project/src/package/module2.py",
                 ),
             }
         }
-        
+
         # Mock API responses
         mock_settings_obj = Mock()
         mock_settings_obj.api_key = "test-key"
         mock_settings.return_value = mock_settings_obj
-        
+
         mock_client_obj = Mock()
         mock_client.return_value = mock_client_obj
-        
+
         # Mock function versions
         func_a = Mock(spec=FunctionPublic)
         func_a.name = "function_a"
@@ -847,25 +825,20 @@ class TestIntegrationScenarios:
         func_a.signature = "def function_a(x: int, y: str = 'default') -> List[str]:"
         func_a.is_deployed = True
         func_a.arg_types = {"x": "int", "y": "str"}
-        
+
         func_b = Mock(spec=FunctionPublic)
         func_b.name = "function_b"
         func_b.version = "2.0.0"
         func_b.signature = "async def function_b(data: Dict[str, Any]) -> bool:"
         func_b.is_deployed = True
         func_b.arg_types = {"data": "Dict[str, Any]"}
-        
+
         mock_client_obj.projects.functions.list.return_value = [func_a, func_b]
-        
+
         # Execute full workflow
-        with patch('builtins.print'):
-            sync_command(
-                directory=Path("/project"),
-                exclude=["tests", "__pycache__"],
-                verbose=True,
-                debug=False
-            )
-        
+        with patch("builtins.print"):
+            sync_command(directory=Path("/project"), exclude=["tests", "__pycache__"], verbose=True, debug=False)
+
         # Verify comprehensive behavior
         mock_find_files.assert_called_once()
         # Note: The actual sync_command doesn't make API calls or write files
@@ -877,11 +850,11 @@ def test_module_path_from_file_without_base_dir():
     # Test with absolute path and no base_dir
     result = _module_path_from_file("/absolute/path/to/module.py", None)
     assert result == ".absolute.path.to.module"
-    
+
     # Test with relative path and no base_dir
     result = _module_path_from_file("relative/path/module.py", None)
     assert result == "relative.path.module"
-    
+
     # Test with simple filename and no base_dir
     result = _module_path_from_file("module.py", None)
     assert result == "module"
@@ -897,7 +870,7 @@ def test_func(
     arg2: int = 5
 ) -> bool:
     pass"""
-    
+
     result = _normalize_signature(signature)
     # Should contain normalized function definition without decorators
     assert "def test_func" in result
@@ -905,14 +878,56 @@ def test_func(
     assert "arg2: int = 5" in result
     assert "@decorator" not in result
     assert "@another_decorator" not in result
-    
+
     # Test with only decorators (no function) - covers lines 128-130
     signature = """@decorator
 @another_decorator
 # Just decorators and comments, no function"""
-    
+
     result = _normalize_signature(signature)
     # Should not contain decorators, and should be empty or minimal
     assert "@decorator" not in result
     assert "@another_decorator" not in result
     assert "def" not in result
+
+
+# Tests merged from coverage files
+def test_normalize_signature_multiline_params_continued():
+    """Test _normalize_signature with parameters continued on next line - covers line 124."""
+    # Test a multiline function where a parameter continues on the next line
+    sig = """def func(
+        x: int,
+        y: Dict[str, 
+               Any],
+        z: str
+    ) -> bool:"""
+
+    result = _normalize_signature(sig)
+    assert "def func" in result
+    assert result.count(":") >= 1  # Should have proper formatting
+
+
+def test_normalize_signature_complex_multiline():
+    """Test _normalize_signature with complex multiline function - covers line 124."""
+    # Test a function with continuation that triggers line 124
+    sig = """def complex_func(
+        x: int,
+        y: str,
+        z: List[Dict[str, Any]] = None
+    ) -> Optional[bool]:"""
+
+    result = _normalize_signature(sig)
+    assert "def complex_func" in result
+    assert "x: int" in result
+    assert "y: str" in result
+
+
+def test_merge_parameters_no_type_annotation():
+    """Test _merge_parameters without type annotation - covers line 267."""
+    # Test parameter without type annotation (no colon)
+    sig = "def func(x, y: str):"
+    arg_types = {"x": "int"}
+
+    merged = _merge_parameters(sig, arg_types)
+    assert "x: int" in merged[0]  # Type from arg_types
+    assert "y: str" in merged[1]  # Original type

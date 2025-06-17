@@ -5,7 +5,7 @@ import functools
 from typing import Awaitable, Coroutine, Any
 
 
-from src.lilypad._utils.fn_is_async import fn_is_async
+from lilypad._utils.fn_is_async import fn_is_async
 
 
 def test_sync_function():
@@ -191,26 +191,26 @@ def test_partial_functions():
 
 def test_direct_async_function_detection():
     """Test that async functions are detected directly (line 13)."""
-    
+
     async def simple_async_func():
         return 42
-    
+
     # This should trigger line 13 (direct async function detection)
     assert fn_is_async(simple_async_func) is True
 
 
 def test_wrapped_async_function_detection():
     """Test that wrapped async functions are detected (line 20)."""
-    
+
     async def original_async():
         return 42
-    
+
     def wrapper_func():
         return 42
-    
+
     # Manually set __wrapped__ to test the unwrapping logic
     wrapper_func.__wrapped__ = original_async
-    
+
     # This should trigger line 20 (wrapped async function detection)
     assert fn_is_async(wrapper_func) is True
 

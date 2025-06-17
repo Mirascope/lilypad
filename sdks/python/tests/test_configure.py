@@ -6,13 +6,13 @@ import pytest
 from opentelemetry import trace
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 
-from src.lilypad._configure import (
+from lilypad._configure import (
     CryptoIdGenerator,
     _JSONSpanExporter,
     configure,
     lilypad_config,
 )
-from src.lilypad.exceptions import LilypadException
+from lilypad.exceptions import LilypadException
 
 
 def test_generate_span_id():
@@ -49,7 +49,7 @@ def test_generate_trace_id():
     assert all(0 < tid < 2**128 for tid in trace_ids)
 
 
-@patch("src.lilypad._configure.token_bytes")
+@patch("lilypad._configure.token_bytes")
 def test_regenerate_invalid_ids(mock_token_bytes):
     """Test that invalid IDs are regenerated."""
     generator = CryptoIdGenerator()
@@ -65,8 +65,8 @@ def test_regenerate_invalid_ids(mock_token_bytes):
     assert mock_token_bytes.call_count == 2
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_init(mock_get_settings, mock_get_client):
     """Test exporter initialization."""
     mock_settings = Mock(api_key="test-key", project_id="test-project")
@@ -79,8 +79,8 @@ def test_init(mock_get_settings, mock_get_client):
     assert isinstance(exporter._logged_trace_ids, set)
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_export_empty_spans(mock_get_settings, mock_get_client):
     """Test exporting empty span list."""
     mock_get_settings.return_value = Mock(api_key="test-key")
@@ -90,8 +90,8 @@ def test_export_empty_spans(mock_get_settings, mock_get_client):
     assert result.name == "SUCCESS"
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_export_success(mock_get_settings, mock_get_client):
     """Test successful span export."""
     mock_settings = Mock(api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com")
@@ -129,8 +129,8 @@ def test_export_success(mock_get_settings, mock_get_client):
     mock_client.projects.traces.create.assert_called_once()
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_export_failure(mock_get_settings, mock_get_client):
     """Test span export failure."""
     mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project")
@@ -165,7 +165,7 @@ def test_export_failure(mock_get_settings, mock_get_client):
 
 def test_shutdown():
     """Test exporter shutdown."""
-    with patch("src.lilypad._configure.get_sync_client"), patch("src.lilypad._configure.get_settings"):
+    with patch("lilypad._configure.get_sync_client"), patch("lilypad._configure.get_settings"):
         exporter = _JSONSpanExporter()
         # Should not raise any exceptions
         exporter.shutdown()
@@ -173,7 +173,7 @@ def test_shutdown():
 
 def test_force_flush():
     """Test exporter force flush."""
-    with patch("src.lilypad._configure.get_sync_client"), patch("src.lilypad._configure.get_settings"):
+    with patch("lilypad._configure.get_sync_client"), patch("lilypad._configure.get_settings"):
         exporter = _JSONSpanExporter()
         assert exporter.force_flush() is True
         assert exporter.force_flush(5000) is True
@@ -186,8 +186,8 @@ def reset_tracer_provider():
     trace._TRACER_PROVIDER = None
 
 
-@patch("src.lilypad._configure._set_settings")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure._set_settings")
+@patch("lilypad._configure.get_settings")
 def test_configure_basic(mock_get_settings, mock_set_settings):
     """Test basic configuration."""
     mock_current = Mock(api_key="old-key", project_id="old-project", base_url="old-url")
@@ -204,7 +204,7 @@ def test_configure_basic(mock_get_settings, mock_set_settings):
     mock_set_settings.assert_called_once_with(mock_new)
 
 
-@patch("src.lilypad._configure.trace")
+@patch("lilypad._configure.trace")
 def test_configure_tracer_already_initialized(mock_trace):
     """Test configuration when tracer is already initialized."""
     # Mock tracer already initialized
@@ -213,9 +213,9 @@ def test_configure_tracer_already_initialized(mock_trace):
     mock_trace.get_tracer_provider.return_value = mock_provider
 
     with (
-        patch("src.lilypad._configure.get_settings"),
-        patch("src.lilypad._configure._set_settings"),
-        patch("src.lilypad._configure.logging.getLogger") as mock_logger,
+        patch("lilypad._configure.get_settings"),
+        patch("lilypad._configure._set_settings"),
+        patch("lilypad._configure.logging.getLogger") as mock_logger,
     ):
         logger_instance = Mock()
         mock_logger.return_value = logger_instance
@@ -225,10 +225,10 @@ def test_configure_tracer_already_initialized(mock_trace):
         logger_instance.error.assert_called_once_with("TracerProvider already initialized.")
 
 
-@patch("src.lilypad._configure.trace")
-@patch("src.lilypad._configure.TracerProvider")
-@patch("src.lilypad._configure.BatchSpanProcessor")
-@patch("src.lilypad._configure._JSONSpanExporter")
+@patch("lilypad._configure.trace")
+@patch("lilypad._configure.TracerProvider")
+@patch("lilypad._configure.BatchSpanProcessor")
+@patch("lilypad._configure._JSONSpanExporter")
 def test_configure_with_logging(mock_exporter_class, mock_processor_class, mock_provider_class, mock_trace):
     """Test configuration with custom logging settings."""
     # Mock not already initialized
@@ -246,7 +246,7 @@ def test_configure_with_logging(mock_exporter_class, mock_processor_class, mock_
     # Custom log handler
     custom_handler = logging.StreamHandler()
 
-    with patch("src.lilypad._configure.get_settings"), patch("src.lilypad._configure._set_settings"):
+    with patch("lilypad._configure.get_settings"), patch("lilypad._configure._set_settings"):
         configure(log_level=logging.DEBUG, log_format="%(message)s", log_handlers=[custom_handler])
 
         # Verify tracer setup
@@ -256,8 +256,8 @@ def test_configure_with_logging(mock_exporter_class, mock_processor_class, mock_
         mock_trace.set_tracer_provider.assert_called_once_with(mock_provider)
 
 
-@patch("src.lilypad._configure.importlib.util.find_spec")
-@patch("src.lilypad._configure.trace")
+@patch("lilypad._configure.importlib.util.find_spec")
+@patch("lilypad._configure.trace")
 def test_configure_auto_llm(mock_trace, mock_find_spec):
     """Test auto_llm instrumentation."""
     # Mock not already initialized
@@ -283,18 +283,18 @@ def test_configure_auto_llm(mock_trace, mock_find_spec):
     mock_find_spec.side_effect = find_spec_side_effect
 
     with (
-        patch("src.lilypad._configure.get_settings"),
-        patch("src.lilypad._configure._set_settings"),
-        patch("src.lilypad._configure.TracerProvider"),
-        patch("src.lilypad._configure.BatchSpanProcessor"),
-        patch("src.lilypad._configure._JSONSpanExporter"),
-        patch("src.lilypad._opentelemetry.OpenAIInstrumentor") as mock_openai,
-        patch("src.lilypad._opentelemetry.AnthropicInstrumentor") as mock_anthropic,
-        patch("src.lilypad._opentelemetry.AzureInstrumentor") as mock_azure,
-        patch("src.lilypad._opentelemetry.GoogleGenAIInstrumentor") as mock_google,
-        patch("src.lilypad._opentelemetry.BedrockInstrumentor") as mock_bedrock,
-        patch("src.lilypad._opentelemetry.MistralInstrumentor", create=True) as mock_mistral,
-        patch("src.lilypad._opentelemetry.OutlinesInstrumentor") as mock_outlines,
+        patch("lilypad._configure.get_settings"),
+        patch("lilypad._configure._set_settings"),
+        patch("lilypad._configure.TracerProvider"),
+        patch("lilypad._configure.BatchSpanProcessor"),
+        patch("lilypad._configure._JSONSpanExporter"),
+        patch("lilypad._opentelemetry.OpenAIInstrumentor") as mock_openai,
+        patch("lilypad._opentelemetry.AnthropicInstrumentor") as mock_anthropic,
+        patch("lilypad._opentelemetry.AzureInstrumentor") as mock_azure,
+        patch("lilypad._opentelemetry.GoogleGenAIInstrumentor") as mock_google,
+        patch("lilypad._opentelemetry.BedrockInstrumentor") as mock_bedrock,
+        patch("lilypad._opentelemetry.MistralInstrumentor", create=True) as mock_mistral,
+        patch("lilypad._opentelemetry.OutlinesInstrumentor") as mock_outlines,
     ):
         configure(auto_llm=True)
 
@@ -308,8 +308,8 @@ def test_configure_auto_llm(mock_trace, mock_find_spec):
         mock_outlines.return_value.instrument.assert_called_once()
 
 
-@patch("src.lilypad._configure._current_settings")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure._current_settings")
+@patch("lilypad._configure.get_settings")
 def test_lilypad_config_context(mock_get_settings, mock_current_settings):
     """Test lilypad_config context manager."""
     # Setup base settings
@@ -334,8 +334,8 @@ def test_lilypad_config_context(mock_get_settings, mock_current_settings):
     mock_current_settings.reset.assert_called_once_with(mock_token)
 
 
-@patch("src.lilypad._configure._current_settings")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure._current_settings")
+@patch("lilypad._configure.get_settings")
 def test_lilypad_config_exception(mock_get_settings, mock_current_settings):
     """Test lilypad_config handles exceptions properly."""
     base_settings = Mock()
@@ -354,8 +354,8 @@ def test_lilypad_config_exception(mock_get_settings, mock_current_settings):
     mock_current_settings.reset.assert_called_once_with(mock_token)
 
 
-@patch("src.lilypad._configure._current_settings")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure._current_settings")
+@patch("lilypad._configure.get_settings")
 def test_lilypad_config_no_token(mock_get_settings, mock_current_settings):
     """Test lilypad_config when token is None."""
     base_settings = Mock()
@@ -371,8 +371,8 @@ def test_lilypad_config_no_token(mock_get_settings, mock_current_settings):
     mock_current_settings.reset.assert_not_called()
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_span_to_dict_full(mock_get_settings, mock_get_client):
     """Test converting a fully populated span to dict."""
     mock_get_settings.return_value = Mock(api_key="test-key")
@@ -429,8 +429,8 @@ def test_span_to_dict_full(mock_get_settings, mock_get_client):
     assert result["links"][0]["context"]["trace_id"] == "0000000000000000abcdef1234567890"
 
 
-@patch("src.lilypad._configure.get_sync_client")
-@patch("src.lilypad._configure.get_settings")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
 def test_span_to_dict_minimal(mock_get_settings, mock_get_client):
     """Test converting a minimal span to dict."""
     mock_get_settings.return_value = Mock(api_key="test-key")

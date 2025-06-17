@@ -3,7 +3,7 @@
 import pytest
 from httpx import HTTPError, RequestError, TimeoutException
 
-from src.lilypad.exceptions import (
+from lilypad.exceptions import (
     LilypadException,
     LicenseError,
     RemoteFunctionError,

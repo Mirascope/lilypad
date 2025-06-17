@@ -4,8 +4,8 @@ import pytest
 import orjson
 from unittest.mock import Mock
 
-from src.lilypad.sandbox.runner import SandboxRunner, Result, DependencyError
-from src.lilypad._utils import Closure
+from lilypad.sandbox.runner import SandboxRunner, Result, DependencyError
+from lilypad._utils import Closure
 
 
 class MockSandboxRunner(SandboxRunner):
@@ -133,6 +133,51 @@ def test_parse_execution_result_runtime_error():
     assert "Process exited with non-zero status" in str(exc_info.value)
     assert "Invalid JSON output" in str(exc_info.value)
     assert "Error occurred" in str(exc_info.value)
+
+
+def test_parse_execution_result_json_decode_error_then_success():
+    """Test parse_execution_result when first JSON parse fails but returncode is 0 - covers line 90."""
+    import orjson
+
+    # Create result that will succeed on second parse
+    result_data = {"status": "success", "value": 100}
+    stdout = orjson.dumps(result_data)
+    stderr = b""
+    returncode = 0
+
+    # Mock orjson.loads to fail first time, succeed second time
+    original_loads = orjson.loads
+    call_count = 0
+
+    def mock_loads(data):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            # First call fails - create proper JSONDecodeError
+            # orjson.JSONDecodeError needs msg, doc, and pos arguments
+            raise orjson.JSONDecodeError("Mock error", data.decode(), 0)
+        else:
+            # Second call succeeds
+            return original_loads(data)
+
+    # Patch orjson.loads
+    import lilypad.sandbox.runner
+
+    original_runner_loads = lilypad.sandbox.runner.orjson.loads
+    lilypad.sandbox.runner.orjson.loads = mock_loads
+
+    try:
+        # Call parse_execution_result
+        result = SandboxRunner.parse_execution_result(stdout, stderr, returncode)
+
+        # Should return the parsed JSON from line 90
+        assert result == result_data
+        assert result["status"] == "success"
+        assert result["value"] == 100
+        assert call_count == 2  # Verify it was called twice
+    finally:
+        # Restore original
+        lilypad.sandbox.runner.orjson.loads = original_runner_loads
 
 
 def test_generate_script_sync_function():

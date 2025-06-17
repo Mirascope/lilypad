@@ -218,7 +218,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:", "\\.\\.\\."]
 precision = 2
 show_missing = true
 

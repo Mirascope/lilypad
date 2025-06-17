@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Iterator, AsyncIterator
 
 from pytest_asyncio import is_async_test
 
-from src.lilypad import Lilypad, AsyncLilypad
+from lilypad import Lilypad, AsyncLilypad
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest  # pyright: ignore[reportPrivateImportUsage]
@@ -21,11 +21,12 @@ pytest.register_assert_rewrite("tests.utils")
 logging.getLogger("lilypad").setLevel(logging.DEBUG)
 
 # Disable trace recording during test collection to prevent hanging
-os.environ['LILYPAD_TRACE_RECORDING_DISABLED'] = '1'
+os.environ["LILYPAD_TRACE_RECORDING_DISABLED"] = "1"
 
 # Import traces module early and disable recording
 try:
-    import src.lilypad.traces as traces_module
+    import lilypad.traces as traces_module
+
     traces_module._RECORDING_ENABLED = False
 except ImportError:
     pass
@@ -36,8 +37,9 @@ def pytest_configure(config):
     """Configure pytest before collection."""
     # Ensure trace recording is disabled before any test modules are imported
     import sys
-    if 'src.lilypad.traces' in sys.modules:
-        sys.modules['src.lilypad.traces']._RECORDING_ENABLED = False
+
+    if "lilypad.traces" in sys.modules:
+        sys.modules["lilypad.traces"]._RECORDING_ENABLED = False
 
 
 # automatically add `pytest.mark.asyncio()` to all of our async tests
@@ -72,12 +74,3 @@ async def async_client(request: FixtureRequest) -> AsyncIterator[AsyncLilypad]:
 
     async with AsyncLilypad(base_url=base_url, api_key=api_key, _strict_response_validation=strict) as client:
         yield client
-
-
-
-def pytest_configure(config: pytest.Config):
-    """Configure pytest."""
-    os.environ["LILYPAD_ENVIRONMENT"] = "test"
-    os.environ["LILYPAD_API_KEY"] = api_key
-    # Dummy project ID as UUID4
-    os.environ["LILYPAD_PROJECT_ID"] = "f1b9b1b4-4b3b-4b3b-8b3b-4b3b4b3b4b3b"

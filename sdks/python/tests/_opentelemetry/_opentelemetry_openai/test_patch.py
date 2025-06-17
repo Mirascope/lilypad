@@ -7,7 +7,7 @@ import pytest
 from opentelemetry.trace import StatusCode
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from src.lilypad._opentelemetry._opentelemetry_openai.patch import (
+from lilypad._opentelemetry._opentelemetry_openai.patch import (
     chat_completions_parse,
     chat_completions_create,
     chat_completions_parse_async,
@@ -300,11 +300,11 @@ async def test_chat_completions_parse_async_response_format_class(mock_tracer, m
 
 def test_chat_completions_create_openrouter_system(mock_tracer, mock_response):
     """Test that openrouter system is detected correctly (line 64)."""
-    from src.lilypad._opentelemetry._opentelemetry_openai.patch import get_llm_request_attributes
+    from lilypad._opentelemetry._opentelemetry_openai.patch import get_llm_request_attributes
     from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
-    
+
     from httpx import URL
-    
+
     wrapped = Mock()
     wrapped.return_value = mock_response
     instance = Mock()
@@ -312,7 +312,7 @@ def test_chat_completions_create_openrouter_system(mock_tracer, mock_response):
     instance._client = Mock()
     # Create a real URL object for openrouter
     instance._client.base_url = URL("https://openrouter.ai")
-    
+
     kwargs = {
         "model": "gpt-4",
         "messages": [{"role": "user", "content": "Hello"}],
@@ -320,15 +320,15 @@ def test_chat_completions_create_openrouter_system(mock_tracer, mock_response):
 
     # Get attributes to check openrouter system detection
     attributes = get_llm_request_attributes(kwargs, instance)
-    
+
     # Check that openrouter is detected in the system attribute
     assert attributes[gen_ai_attributes.GEN_AI_SYSTEM] == "openrouter"
 
 
 def test_chat_completions_create_streaming(mock_tracer, mock_response):
     """Test streaming response returns StreamWrapper (line 100)."""
-    from src.lilypad._opentelemetry._utils import StreamWrapper
-    
+    from lilypad._opentelemetry._utils import StreamWrapper
+
     wrapped = Mock()
     wrapped.return_value = mock_response
     instance = Mock()
@@ -350,8 +350,8 @@ def test_chat_completions_create_streaming(mock_tracer, mock_response):
 @pytest.mark.asyncio
 async def test_chat_completions_create_async_streaming(mock_tracer, mock_response):
     """Test async streaming response returns AsyncStreamWrapper (line 149)."""
-    from src.lilypad._opentelemetry._utils import AsyncStreamWrapper
-    
+    from lilypad._opentelemetry._utils import AsyncStreamWrapper
+
     wrapped = AsyncMock()
     wrapped.return_value = mock_response
     instance = Mock()

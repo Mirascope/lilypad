@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 from pydantic import BaseModel
 
-from src.lilypad._opentelemetry._opentelemetry_azure.utils import (
+from lilypad._opentelemetry._opentelemetry_azure.utils import (
     AzureMetadata,
     AzureChunkHandler,
     default_azure_cleanup,
@@ -12,7 +12,7 @@ from src.lilypad._opentelemetry._opentelemetry_azure.utils import (
     get_choice_event,
     set_response_attributes,
 )
-from src.lilypad._opentelemetry._utils import ChoiceBuffer
+from lilypad._opentelemetry._utils import ChoiceBuffer
 
 
 class TestAzureMetadata:
@@ -606,7 +606,7 @@ class TestSetMessageEvent:
         mock_span = Mock()
         message = {"role": "user", "content": {"type": "text", "text": "Hello"}}
 
-        with patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps:
+        with patch("lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps:
             mock_json_dumps.return_value = '{"type": "text", "text": "Hello"}'
             set_message_event(mock_span, message)
 
@@ -623,7 +623,7 @@ class TestSetMessageEvent:
             ],
         }
 
-        with patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps:
+        with patch("lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps:
             mock_json_dumps.return_value = '[{"id": "call_123"}]'
             set_message_event(mock_span, message)
 
@@ -673,8 +673,8 @@ class TestGetChoiceEvent:
         mock_choice.finish_reason.value = "stop"
 
         with (
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=None),
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=None),
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
         ):
             mock_json_dumps.return_value = '{"role": "assistant", "content": "Hello world"}'
 
@@ -699,8 +699,8 @@ class TestGetChoiceEvent:
         mock_tool_calls = [{"id": "call_123", "type": "function"}]
 
         with (
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=mock_tool_calls),
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=mock_tool_calls),
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
         ):
             mock_json_dumps.return_value = '{"role": "assistant", "tool_calls": [{"id": "call_123"}]}'
 
@@ -721,8 +721,8 @@ class TestGetChoiceEvent:
         mock_choice.finish_reason = None
 
         with (
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=None),
-            patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_tool_calls", return_value=None),
+            patch("lilypad._opentelemetry._opentelemetry_azure.utils.json_dumps") as mock_json_dumps,
         ):
             mock_json_dumps.return_value = '{"role": "assistant", "content": "Hello"}'
 
@@ -761,7 +761,7 @@ class TestSetResponseAttributes:
         mock_response.id = "response-123"
         mock_response.usage = mock_usage
 
-        with patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
+        with patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
             mock_get_choice.return_value = {"test": "attributes"}
 
             set_response_attributes(mock_span, mock_response)
@@ -805,7 +805,7 @@ class TestSetResponseAttributes:
         if hasattr(mock_response, "usage"):
             delattr(mock_response, "usage")
 
-        with patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
+        with patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
             mock_get_choice.return_value = {"test": "attributes"}
 
             set_response_attributes(mock_span, mock_response)
@@ -835,7 +835,7 @@ class TestSetResponseAttributes:
         if hasattr(mock_response, "usage"):
             delattr(mock_response, "usage")
 
-        with patch("src.lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
+        with patch("lilypad._opentelemetry._opentelemetry_azure.utils.get_choice_event") as mock_get_choice:
             mock_get_choice.return_value = {"test": "attributes"}
 
             set_response_attributes(mock_span, mock_response)
