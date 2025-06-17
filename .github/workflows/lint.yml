@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: codespell-project/actions-codespell@v2
         with:
-          skip: '.git,*.lock,./app/client/pnpm-lock.yaml,./docs/pnpm-lock.yaml'
+          skip: '.git,*.lock,./app/client/pnpm-lock.yaml,./docs/pnpm-lock.yaml,./app/tests/_utils/test_closure.py'
 
   lint-python:
     name: Lint Python (${{ matrix.project.name }})

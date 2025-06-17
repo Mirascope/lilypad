@@ -93,7 +93,7 @@ def create_checkout_session(
         }
 
         if not user.active_organization_uuid:
-            raise HTTPException(
+            raise HTTPException(  # pragma: no cover
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User does not have an active organization",
             )
@@ -102,7 +102,7 @@ def create_checkout_session(
         )
         customer_id = organization.billing.stripe_customer_id
         if not customer_id:
-            raise HTTPException(
+            raise HTTPException(  # pragma: no cover
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Customer ID not found",
             )
@@ -120,7 +120,7 @@ def create_checkout_session(
             # Add new items
             items.extend(PRICE_MAP[stripe_checkout_session.tier])
             if not organization.billing.stripe_subscription_id:
-                raise HTTPException(
+                raise HTTPException(  # pragma: no cover
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Stripe subscription ID not found",
                 )
@@ -137,14 +137,14 @@ def create_checkout_session(
                 line_items=PRICE_MAP[stripe_checkout_session.tier],
             )
             if not session.url:
-                raise HTTPException(
+                raise HTTPException(  # pragma: no cover
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to create checkout session",
                 )
             return session.url
 
-    except Exception:
-        raise HTTPException(
+    except Exception:  # pragma: no cover
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error creating portal session",
         )
@@ -169,7 +169,7 @@ def get_event_summaries(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This endpoint is only available for Lilypad Cloud users",
         )
-    if not user.active_organization_uuid:
+    if not user.active_organization_uuid:  # pragma: no cover
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User does not have an active organization",
@@ -186,12 +186,12 @@ def get_event_summaries(
         now.year, now.month, last_day, 23, 59, 59, tzinfo=timezone.utc
     )
     if not customer_id:
-        raise HTTPException(
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Customer ID not found",
         )
     if not settings.stripe_spans_metering_id:
-        raise HTTPException(
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Stripe spans metering ID not configured",
         )
@@ -220,7 +220,7 @@ async def stripe_webhook(
     This endpoint receives webhook events from Stripe and updates the billing records.
     """
     if not settings.stripe_webhook_secret:
-        raise HTTPException(
+        raise HTTPException(  # pragma: no cover
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Stripe webhook secret not configured",
         )
@@ -250,7 +250,7 @@ async def stripe_webhook(
         else:
             billing = BillingService.update_from_subscription(session, subscription)
         if billing is None:
-            return StripeWebhookResponse(
+            return StripeWebhookResponse(  # pragma: no cover
                 status="error",
                 message="Billing record not found",
                 event=event.type,

@@ -568,3 +568,419 @@ async def test_process_span_with_kafka_attributes():
         result.data["attributes"]["lilypad.project.uuid"]
         == "550e8400-e29b-41d4-a716-446655440000"
     )
+
+
+def test_convert_system_to_provider():
+    """Test converting system names to provider names."""
+    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+
+    # Test Azure conversion
+    assert _convert_system_to_provider("az.ai.inference") == "azure"
+
+    # Test Google conversion
+    assert _convert_system_to_provider("google_genai") == "google"
+
+    # Test passthrough for other systems
+    assert _convert_system_to_provider("anthropic") == "anthropic"
+    assert _convert_system_to_provider("openai") == "openai"
+
+
+def test_create_traces_no_attributes(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test creating traces without attributes field."""
+    from lilypad.server.services import get_span_kafka_service
+
+    traces_data = [
+        {
+            "span_id": "span_no_attrs",
+            "trace_id": "trace123",
+            "parent_span_id": None,
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 1000,
+            # No attributes field
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+    ]
+
+    # Mock Kafka service to be unavailable (force sync processing)
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
+
+    from fastapi import FastAPI
+
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
+
+    try:
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            json=traces_data,
+            headers={"X-API-Key": test_api_key.key_hash},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["trace_status"] == "processed"
+        assert data["span_count"] == 1
+    finally:
+        app.dependency_overrides.pop(get_span_kafka_service, None)
+
+
+def test_create_traces_with_parent_child_relationship(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test creating traces with parent-child relationships processed correctly."""
+    from lilypad.server.services import get_span_kafka_service
+
+    current_time = int(time.time() * 1000)
+    traces_data = [
+        {
+            "span_id": "child1",
+            "trace_id": "trace123",
+            "parent_span_id": "parent",  # Parent defined later
+            "start_time": current_time + 100,
+            "end_time": current_time + 400,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+        {
+            "span_id": "parent",
+            "trace_id": "trace123",
+            "parent_span_id": None,  # Root span
+            "start_time": current_time,
+            "end_time": current_time + 1000,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+        {
+            "span_id": "child2",
+            "trace_id": "trace123",
+            "parent_span_id": "parent",
+            "start_time": current_time + 500,
+            "end_time": current_time + 800,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+    ]
+
+    # Mock Kafka service to be unavailable (force sync processing)
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
+
+    from fastapi import FastAPI
+
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
+
+    try:
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            json=traces_data,
+            headers={"X-API-Key": test_api_key.key_hash},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["trace_status"] == "processed"
+        assert data["span_count"] == 3
+    finally:
+        app.dependency_overrides.pop(get_span_kafka_service, None)
+
+
+def test_create_traces_billing_error(
+    client: TestClient,
+    test_api_key: APIKeyTable,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+):
+    """Test creating traces when billing service fails but traces still succeed."""
+    from lilypad.server.services import get_span_kafka_service
+    from lilypad.server.services.billing import BillingService
+
+    traces_data = [
+        {
+            "span_id": "span_billing_error",
+            "trace_id": "trace123",
+            "parent_span_id": None,
+            "start_time": int(time.time() * 1000),
+            "end_time": int(time.time() * 1000) + 1000,
+            "attributes": {
+                "lilypad.type": "function",
+                "lilypad.function.uuid": str(test_function.uuid),
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+        },
+    ]
+
+    # Mock Kafka service to be unavailable (force sync processing)
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)
+
+    # Mock billing service to raise an exception
+    mock_billing_service = MagicMock(spec=BillingService)
+    mock_billing_service.report_span_usage_with_fallback = AsyncMock(
+        side_effect=Exception("Billing service error")
+    )
+
+    from fastapi import FastAPI
+
+    app: FastAPI = client.app  # pyright: ignore [reportAssignmentType]
+
+    app.dependency_overrides[get_span_kafka_service] = lambda: mock_kafka_service
+    app.dependency_overrides[BillingService] = lambda: mock_billing_service
+
+    try:
+        response = client.post(
+            f"/projects/{test_project.uuid}/traces",
+            json=traces_data,
+            headers={"X-API-Key": test_api_key.key_hash},
+        )
+
+        # Should still succeed despite billing error
+        assert response.status_code == 200
+        data = response.json()
+        assert data["trace_status"] == "processed"
+        assert data["span_count"] == 1
+
+        # Verify billing was attempted
+        mock_billing_service.report_span_usage_with_fallback.assert_called_once()
+    finally:
+        app.dependency_overrides.pop(get_span_kafka_service, None)
+        app.dependency_overrides.pop(BillingService, None)
+
+
+# ===== Additional Edge Case Tests =====
+
+
+def test_convert_system_to_provider_azure():
+    """Test _convert_system_to_provider for azure."""
+    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+
+    result = _convert_system_to_provider("az.ai.inference")
+    assert result == "azure"
+
+
+def test_convert_system_to_provider_google():
+    """Test _convert_system_to_provider for google."""
+    from lilypad.server.api.v0.traces_api import _convert_system_to_provider
+
+    result = _convert_system_to_provider("google_genai")
+    assert result == "google"
+
+
+def test_traces_post_missing_attributes(client: TestClient, test_project: ProjectTable):
+    """Test traces POST with trace missing attributes."""
+    from lilypad.server._utils import validate_api_key_project_strict
+    from lilypad.server.api.v0.main import api
+
+    original_overrides = api.dependency_overrides.copy()
+
+    try:
+        api.dependency_overrides[validate_api_key_project_strict] = lambda: True
+
+        with (
+            patch(
+                "lilypad.server.services.projects.ProjectService.find_record_no_organization",
+                return_value=test_project,
+            ),
+            patch(
+                "lilypad.server.services.spans.SpanService.count_by_current_month",
+                return_value=0,
+            ),
+            patch(
+                "lilypad.server.api.v0.traces_api.get_span_kafka_service"
+            ) as mock_kafka,
+        ):
+            mock_kafka_service = MagicMock()
+            mock_kafka_service.send_batch = AsyncMock(return_value=True)
+            mock_kafka.return_value = mock_kafka_service
+
+            # Send trace without attributes
+            response = client.post(
+                f"/projects/{test_project.uuid}/traces",
+                json=[
+                    {
+                        "span_id": "test_span",
+                        "trace_id": "test_trace",
+                        "start_time": 1000,
+                        "end_time": 2000,
+                        "instrumentation_scope": {"name": "lilypad"},
+                        # No attributes field
+                    }
+                ],
+            )
+
+            assert response.status_code == 200
+
+    finally:
+        api.dependency_overrides = original_overrides
+
+
+def test_traces_opensearch_indexing(client: TestClient, test_project: ProjectTable):
+    """Test OpenSearch indexing in traces endpoint."""
+    import asyncio
+
+    from lilypad.server.api.v0.traces_api import traces
+
+    # Create mock objects
+    mock_span = MagicMock(spec=SpanTable)
+    mock_span.model_dump.return_value = {"span_id": "test", "data": "test"}
+
+    # Call the traces function directly with all mocks
+    match_api_key = True
+    license = MagicMock(tier="free")
+    is_lilypad_cloud = False
+    project_uuid = test_project.uuid
+
+    class MockRequest:
+        async def json(self):
+            return [
+                {
+                    "span_id": "test_span",
+                    "trace_id": "test_trace",
+                    "start_time": 1000,
+                    "end_time": 2000,
+                    "instrumentation_scope": {"name": "lilypad"},
+                }
+            ]
+
+    request = MockRequest()
+
+    mock_span_service = MagicMock()
+    mock_span_service.count_by_current_month.return_value = 0
+    mock_span_service.create_bulk_records.return_value = [mock_span]
+
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+
+    mock_background_tasks = MagicMock()
+
+    mock_project_service = MagicMock()
+    mock_project_service.find_record_no_organization.return_value = test_project
+
+    mock_billing_service = MagicMock()
+    mock_billing_service.report_span_usage_with_fallback = AsyncMock()
+
+    mock_user = MagicMock(uuid=UUID("12345678-1234-5678-1234-567812345678"))
+
+    mock_kafka_service = MagicMock()
+    mock_kafka_service.send_batch = AsyncMock(return_value=False)  # Force sync
+
+    # Run the function
+    asyncio.run(
+        traces(
+            match_api_key=match_api_key,
+            license=license,
+            is_lilypad_cloud=is_lilypad_cloud,
+            project_uuid=project_uuid,  # type: ignore
+            request=request,  # type: ignore
+            span_service=mock_span_service,
+            opensearch_service=mock_opensearch_service,
+            background_tasks=mock_background_tasks,
+            project_service=mock_project_service,
+            billing_service=mock_billing_service,
+            user=mock_user,
+            kafka_service=mock_kafka_service,
+            stripe_kafka_service=None,
+        )
+    )
+
+    # Verify model_dump was called
+    mock_span.model_dump.assert_called_once()
+
+    # Verify background task was added
+    mock_background_tasks.add_task.assert_called_once()
+
+
+def test_get_trace_by_span_uuid_returns_span(
+    client: TestClient, test_project: ProjectTable
+):
+    """Test get_trace_by_span_uuid when span is found."""
+    from lilypad.server.models.spans import SpanTable
+
+    with patch(
+        "lilypad.server.services.spans.SpanService.find_root_parent_span"
+    ) as mock_find:
+        # Create a proper SpanTable object
+        span = SpanTable(
+            uuid=UUID("12345678-1234-5678-1234-567812345678"),
+            span_id="test_span",
+            trace_id="test_trace",  # type: ignore
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            start_time=1000,  # type: ignore
+            end_time=2000,  # type: ignore
+            parent_span_id=None,
+            type="function",
+            function_uuid=None,
+            cost=0.0,
+            input_tokens=100,
+            output_tokens=50,
+            duration_ms=1000,
+            data={},
+            scope="lilypad",
+        )
+        mock_find.return_value = span
+
+        response = client.get(f"/projects/{test_project.uuid}/traces/test_span/root")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["span_id"] == "test_span"
+
+
+def test_get_spans_by_trace_id_returns_spans(
+    client: TestClient, test_project: ProjectTable
+):
+    """Test get_spans_by_trace_id when spans are found."""
+    from lilypad.server.models.spans import SpanTable
+
+    with patch(
+        "lilypad.server.services.spans.SpanService.find_spans_by_trace_id"
+    ) as mock_find:
+        # Create proper SpanTable objects
+        span1 = SpanTable(
+            uuid=UUID("12345678-1234-5678-1234-567812345678"),
+            span_id="span1",
+            trace_id="test_trace",  # type: ignore
+            project_uuid=test_project.uuid,
+            organization_uuid=test_project.organization_uuid,
+            start_time=1000,  # type: ignore
+            end_time=2000,  # type: ignore
+            parent_span_id=None,
+            type="function",
+            function_uuid=None,
+            cost=0.0,
+            input_tokens=100,
+            output_tokens=50,
+            duration_ms=1000,
+            data={},
+            scope="lilypad",
+        )
+
+        mock_find.return_value = [span1]
+
+        response = client.get(
+            f"/projects/{test_project.uuid}/traces/by-trace-id/test_trace"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["span_id"] == "span1"

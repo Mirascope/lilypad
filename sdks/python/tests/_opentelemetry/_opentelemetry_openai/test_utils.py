@@ -176,3 +176,182 @@ def test_default_openai_cleanup(mock_chunk):
 
     assert span.set_attributes.called
     assert span.add_event.called
+
+
+def test_process_chunk_no_choices():
+    """Test line 52: early return when chunk has no choices attribute."""
+    handler = OpenAIChunkHandler()
+    chunk = Mock()
+    # Remove choices attribute to trigger early return
+    delattr(chunk, "choices") if hasattr(chunk, "choices") else None
+    buffers = []
+
+    # This should return early and not modify buffers
+    handler.process_chunk(chunk, buffers)
+    assert len(buffers) == 0
+
+
+def test_process_chunk_no_delta():
+    """Test line 56: continue when choice.delta is None."""
+    handler = OpenAIChunkHandler()
+    chunk = Mock()
+
+    choice = Mock()
+    choice.index = 0
+    choice.delta = None  # This should trigger continue
+    choice.finish_reason = None
+
+    chunk.choices = [choice]
+    buffers = []
+
+    handler.process_chunk(chunk, buffers)
+    # No buffer should be created since we continue early when delta is None
+    assert len(buffers) == 0
+
+
+def test_process_chunk_with_tool_calls():
+    """Test lines 69-70: tool call processing loop."""
+    handler = OpenAIChunkHandler()
+    chunk = Mock()
+
+    # Create mock tool calls - tool_call.index is critical for append_tool_call
+    tool_call1 = Mock()
+    tool_call1.index = 0  # This is required for ToolCallBuffer indexing
+    tool_call1.id = "call_1"
+    tool_call1.function = Mock()
+    tool_call1.function.name = "test_func"
+    tool_call1.function.arguments = '{"arg": "value"}'
+
+    tool_call2 = Mock()
+    tool_call2.index = 1  # Different index for second tool call
+    tool_call2.id = "call_2"
+    tool_call2.function = Mock()
+    tool_call2.function.name = "another_func"
+    tool_call2.function.arguments = '{"arg2": "value2"}'
+
+    choice = Mock()
+    choice.index = 0
+    choice.delta = Mock()
+    choice.delta.content = None
+    choice.delta.tool_calls = [tool_call1, tool_call2]
+    choice.finish_reason = None
+
+    chunk.choices = [choice]
+    buffers = []
+
+    handler.process_chunk(chunk, buffers)
+    assert len(buffers) == 1
+    assert len(buffers[0].tool_calls_buffers) == 2
+
+
+def test_default_cleanup_with_tool_calls():
+    """Test lines 95-107: tool calls processing in cleanup."""
+    from lilypad._opentelemetry._utils import ChoiceBuffer, ToolCallBuffer
+
+    span = Mock()
+    metadata = OpenAIMetadata(response_model="gpt-4")
+
+    # Create buffer with tool calls
+    buffer = ChoiceBuffer(0)
+    buffer.text_content = ["Some text"]
+
+    # Create tool call buffers - need index, tool_call_id, function_name
+    tool_call1 = ToolCallBuffer(0, "call_1", "test_func")
+    tool_call1.arguments = ["arg1", "arg2"]
+
+    tool_call2 = ToolCallBuffer(1, "call_2", "another_func")
+    tool_call2.arguments = ["arg3"]
+
+    buffer.tool_calls_buffers = [tool_call1, tool_call2]
+    buffers = [buffer]
+
+    default_openai_cleanup(span, metadata, buffers)
+
+    # Verify span.add_event was called for choice with tool calls
+    assert span.add_event.called
+    call_args = span.add_event.call_args[1]["attributes"]
+    message_data = json.loads(call_args["message"])
+    assert "tool_calls" in message_data
+    assert len(message_data["tool_calls"]) == 2
+    assert message_data["tool_calls"][0]["id"] == "call_1"
+    assert message_data["tool_calls"][0]["function"]["name"] == "test_func"
+    assert message_data["tool_calls"][0]["function"]["arguments"] == "arg1arg2"
+
+
+def test_set_message_event_non_string_content():
+    """Test line 151: non-string content JSON conversion."""
+    span = Mock()
+    # Test with dict content (non-string)
+    message = {"role": "user", "content": {"type": "text", "text": "Hello"}}
+    set_message_event(span, message)
+
+    call_args = span.add_event.call_args[1]["attributes"]
+    # Content should be JSON string of the dict (compact JSON format)
+    assert '"type":"text"' in call_args["content"]
+    assert '"text":"Hello"' in call_args["content"]
+
+
+def test_set_message_event_assistant_with_tool_calls():
+    """Test lines 153-154: assistant role with tool calls."""
+    span = Mock()
+    message = {
+        "role": "assistant",
+        "content": None,  # No content, but has tool calls
+        "tool_calls": [
+            {"id": "call_123", "type": "function", "function": {"name": "test_func", "arguments": '{"arg": "value"}'}}
+        ],
+    }
+    set_message_event(span, message)
+
+    call_args = span.add_event.call_args[1]["attributes"]
+    assert "tool_calls" in call_args
+    tool_calls_data = json.loads(call_args["tool_calls"])
+    assert len(tool_calls_data) == 1
+    assert tool_calls_data[0]["id"] == "call_123"
+
+
+def test_set_message_event_tool_role():
+    """Test lines 155-156: tool role with tool_call_id."""
+    span = Mock()
+    # Test tool role WITHOUT content to hit the elif branch (lines 155-156)
+    message = {"role": "tool", "tool_call_id": "call_456"}
+    set_message_event(span, message)
+
+    call_args = span.add_event.call_args[1]["attributes"]
+    # Should have id attribute when no content (elif branch)
+    assert call_args["id"] == "call_456"
+    assert "content" not in call_args
+
+
+def test_set_message_event_tool_role_with_content():
+    """Test tool role with content (takes first if branch, not elif)."""
+    span = Mock()
+    message = {"role": "tool", "content": "Tool response", "tool_call_id": "call_456"}
+    set_message_event(span, message)
+
+    call_args = span.add_event.call_args[1]["attributes"]
+    # When there's content, it takes the first if branch, not the elif
+    assert call_args["content"] == "Tool response"
+    # The tool_call_id is NOT set because elif is not reached
+    assert "id" not in call_args
+
+
+def test_get_choice_event_with_tool_calls():
+    """Test line 176: tool calls processing in get_choice_event."""
+    # Create mock message with tool calls
+    message = DictLikeMock(
+        role="assistant",
+        content=None,
+        tool_calls=[
+            {"id": "call_789", "type": "function", "function": {"name": "my_func", "arguments": '{"test": "data"}'}}
+        ],
+    )
+
+    choice = DictLikeMock(message=message, index=0, finish_reason="tool_calls")
+
+    event_attrs = get_choice_event(choice)
+    message_data = json.loads(event_attrs["message"])
+
+    assert "tool_calls" in message_data
+    assert len(message_data["tool_calls"]) == 1
+    assert message_data["tool_calls"][0]["id"] == "call_789"

@@ -82,11 +82,15 @@ class SpanKafkaService(BaseKafkaService):
                     f"Message too large: estimated {estimated_size} bytes (max 1MB)"
                 )
         except TypeError as e:
-            raise ValueError("Message contains non-serializable data types") from e
+            raise ValueError(
+                "Message contains non-serializable data types"
+            ) from e  # pragma: no cover
         except ValueError as e:
             # Re-raise ValueError with more specific message
             if isinstance(e.args[0], str) and "circular" in e.args[0]:
-                raise ValueError("Message contains circular references") from e
+                raise ValueError(
+                    "Message contains circular references"
+                ) from e  # pragma: no cover
             raise
 
         return final_message

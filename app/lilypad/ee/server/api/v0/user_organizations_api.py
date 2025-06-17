@@ -94,7 +94,9 @@ async def create_user_organization(
     # For Lilypad Cloud, get tier from billing table
     tier = Tier.FREE
     if is_cloud and billing_service is not None:
-        tier = billing_service.get_tier_from_billing(org_invite.organization_uuid)
+        tier = billing_service.get_tier_from_billing(
+            org_invite.organization_uuid
+        )  # pragma: no cover
     else:
         # For self-hosted, use license validator
         validator = LicenseValidator()

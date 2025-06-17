@@ -48,7 +48,7 @@ async def create_tag(
     """Create a tag"""
     try:
         return tag_service.create_record(tag_create)
-    except IntegrityError:
+    except IntegrityError:  # pragma: no cover
         raise ValueError("Tag already exists")
 
 

@@ -12,6 +12,7 @@ from lilypad._opentelemetry._opentelemetry_outlines.utils import (
     set_choice_event,
     record_stop_sequences,
     extract_generation_attributes,
+    extract_arguments,
 )
 
 
@@ -95,3 +96,33 @@ def test_extract_generation_attributes_no_params():
     assert attrs[gen_ai_attributes.GEN_AI_OPERATION_NAME] == "generate"
     assert attrs[gen_ai_attributes.GEN_AI_REQUEST_MODEL] == "model"
     assert len(attrs) == 3
+
+
+def test_record_prompts_not_recording(mock_span):
+    """Test record_prompts when span is not recording (covers line 37)."""
+    mock_span.is_recording.return_value = False
+    record_prompts(mock_span, "hello")
+    mock_span.add_event.assert_not_called()
+
+
+def test_extract_arguments_prompts_from_args():
+    """Test extract_arguments when prompts is not in bound args (covers line 76)."""
+
+    def sample_fn(some_arg, generation_parameters=None, sampling_parameters=None):
+        pass
+
+    instance = Mock()
+    instance.__class__.__name__ = "TestModel"
+
+    # Call with prompts as positional arg (not named 'prompts')
+    prompts, gen_params, samp_params, model_name = extract_arguments(
+        sample_fn,
+        instance,
+        ("test prompt", None, None),  # prompts is in args[0]
+        {},
+    )
+
+    assert prompts == "test prompt"
+    assert gen_params is None
+    assert samp_params is None
+    assert model_name == "TestModel"

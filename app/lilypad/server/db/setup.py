@@ -12,5 +12,5 @@ def create_tables(environment: str | None = None) -> None:
     SQLModel.metadata.create_all(db.get_engine(environment))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     create_tables()

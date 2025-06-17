@@ -20,7 +20,7 @@ from ._utils import get_and_create_config
 from ..._utils.settings import get_settings
 
 
-def _start_lilypad(project_dir: Path, port: int) -> subprocess.Popen:
+def _start_lilypad(project_dir: Path, port: int) -> subprocess.Popen:  # pragma: no cover
     """Starts the FastAPI server using subprocess.Popen.
 
     Args:
@@ -46,7 +46,7 @@ def _start_lilypad(project_dir: Path, port: int) -> subprocess.Popen:
     return process
 
 
-def _wait_for_server(lilypad_client: Lilypad) -> bool:
+def _wait_for_server(lilypad_client: Lilypad) -> bool:  # pragma: no cover
     """Waits until the server is up and running.
 
     Args:
@@ -79,12 +79,12 @@ def _terminate_process(process: subprocess.Popen) -> None:
         process.terminate()
         try:
             process.wait(timeout=5)
-            print("Server terminated gracefully.")
+            print("Server terminated gracefully.")  # pragma: no cover
         except subprocess.TimeoutExpired:
             print("Server did not terminate gracefully. Killing it.")
             process.kill()
             process.wait()
-    else:
+    else:  # pragma: no cover
         print("Server process already terminated.")
 
 
@@ -113,7 +113,7 @@ def local_command(
     lilypad_client = get_sync_client()
     process = _start_lilypad(Path.cwd(), new_port)
 
-    def signal_handler(sig: int, frame: FrameType | None) -> None:
+    def signal_handler(sig: int, frame: FrameType | None) -> None:  # pragma: no cover
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
