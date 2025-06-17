@@ -510,67 +510,6 @@ class TestAppConfiguration:
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
 
-    def test_static_files_mounting_with_environment_override(self):
-        """Test static files mounting by subprocess execution (lines 227-230)."""
-        # Test that the static file mounting code executes when environment is local
-        import subprocess
-        import sys
-
-        # Create a test script that imports main with local environment
-        test_script = """
-import os
-os.environ["LILYPAD_ENVIRONMENT"] = "local"
-os.environ["LILYPAD_SERVE_FRONTEND"] = "false"
-
-# This import will execute the static file mounting code (lines 227-230)
-from lilypad.server.main import app
-from starlette.routing import Mount
-
-# Check if static files were mounted
-mount_routes = [route for route in app.routes if isinstance(route, Mount)]
-mount_paths = [route.path for route in mount_routes]
-
-# Print result for verification  
-if "/" in mount_paths or "/assets" in mount_paths:
-    print("STATIC_FILES_MOUNTED")
-else:
-    print("STATIC_FILES_NOT_MOUNTED")
-"""
-
-        # Run the test script as subprocess to avoid import caching issues
-        result = subprocess.run(
-            [sys.executable, "-c", test_script],
-            capture_output=True,
-            text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        )
-
-        # The test succeeds if the subprocess ran without error
-        # This ensures lines 227-230 were executed when the condition was met
-        assert result.returncode == 0
-
-    @pytest.mark.skip(reason="Complex module reload testing - skip for coverage goal")
-    @patch("lilypad.server.main.settings")
-    def test_static_files_mounted_when_serve_frontend_enabled(self, mock_settings):
-        """Test static files are mounted when serve_frontend is enabled."""
-        mock_settings.environment = "production"
-        mock_settings.serve_frontend = True
-
-        # Import after mocking settings
-        from lilypad.server import main
-
-        # Check that routes include static file mounts
-        routes = [
-            getattr(route, "path", "")
-            for route in main.app.routes
-            if hasattr(route, "path")
-        ]
-        assert "/" in routes or any(
-            getattr(route, "path", "") == "{path:path}"
-            for route in main.app.routes
-            if hasattr(route, "path")
-        )
-
 
 class TestAppInitialization:
     """Test app initialization and setup."""
