@@ -1,4 +1,5 @@
 """Tests for the span queue processor service."""
+
 import asyncio
 import contextlib
 import time
@@ -445,8 +446,6 @@ class TestSpanQueueProcessor:
             # Call the sync method that contains the commit logic
             result = processor._process_trace_sync(trace_id, ordered_spans)
 
-            # Verify commit was called (line 486)
-            mock_session.commit.assert_called_once()
             assert result is not None
 
     @pytest.mark.asyncio
@@ -480,7 +479,7 @@ class TestSpanQueueProcessor:
         )
 
         # Mock the _process_trace_sync to return successful result
-        mock_result = (mock_spans, mock_org_uuid, mock_user_id)
+        mock_result = (mock_spans, mock_org_uuid, mock_user_id, test_project_uuid)
 
         # Mock executor and external dependencies
         with (
@@ -1027,6 +1026,8 @@ class TestSpanQueueProcessor:
 
         processor = SpanQueueProcessor()
 
+        mock_session = Mock()
+        processor._session = mock_session
         buffer = TraceBuffer("trace-123")
         buffer.add_span({"span_id": "span-1", "parent_span_id": None})
 
@@ -1036,9 +1037,18 @@ class TestSpanQueueProcessor:
         ):
             mock_loop = Mock()
             mock_get_loop.return_value = mock_loop
-            mock_loop.run_in_executor = AsyncMock()
+            mock_loop.run_in_executor = AsyncMock(
+                return_value=(
+                    ["span1", "span2"],  # spans
+                    "org-uuid-123",  # org_uuid
+                    "user-uuid-123",  # user_uuid
+                    "project-uuid-123",  # project_uuid
+                )
+            )
+
             await processor._process_trace("trace-123", buffer)
 
+        mock_session.commit.assert_called_once()
         mock_loop.run_in_executor.assert_called_once()
 
     @pytest.mark.asyncio
@@ -1788,13 +1798,10 @@ class TestAdditionalCoverage:
         assert result is None
         mock_logger.error.assert_called_with("Database session not initialized")
 
+    @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
-    @patch("lilypad.server.services.span_queue_processor.ProjectService")
-    @patch("lilypad.server.services.span_queue_processor.SpanService")
-    def test_process_trace_sync_exception_rollback(
-        self, mock_span_service_class, mock_project_service_class, mock_get_settings
-    ):
-        """Test _process_trace_sync rolls back on exception."""
+    async def test_process_trace_exception_rollback(self, mock_get_settings):
+        """Test _process_trace rolls back on exception."""
         mock_settings = Mock()
         mock_settings.kafka_db_thread_pool_size = 4
         mock_get_settings.return_value = mock_settings
@@ -1805,37 +1812,28 @@ class TestAdditionalCoverage:
         mock_session = Mock()
         processor._session = mock_session
 
-        # Mock user
-        mock_user = Mock()
-        mock_user.uuid = uuid4()
-        processor._get_cached_user = Mock(return_value=mock_user)
+        # Create buffer with spans
+        buffer = TraceBuffer("trace-123")
+        buffer.add_span({"span_id": "span-1", "parent_span_id": None})
 
-        # Mock project service
-        mock_project = Mock()
-        mock_project.organization_uuid = uuid4()
-        mock_project_service = Mock()
-        mock_project_service.find_record_no_organization.return_value = mock_project
-        mock_project_service_class.return_value = mock_project_service
+        with (
+            patch("asyncio.get_event_loop") as mock_get_loop,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            mock_loop = Mock()
+            mock_get_loop.return_value = mock_loop
+            # Mock executor to raise exception
+            mock_loop.run_in_executor = AsyncMock(
+                side_effect=Exception("Processing failed")
+            )
 
-        # Mock span service to raise exception
-        mock_span_service = Mock()
-        mock_span_service.create_bulk_records.side_effect = Exception("Creation failed")
-        mock_span_service_class.return_value = mock_span_service
+            await processor._process_trace("trace-123", buffer)
 
-        user_id = uuid4()
-        project_uuid = uuid4()
-        ordered_spans = [
-            {
-                "span_id": "span-1",
-                "user_id": str(user_id),
-                "attributes": {"lilypad.project.uuid": str(project_uuid)},
-            }
-        ]
-
-        with pytest.raises(Exception, match="Creation failed"):
-            processor._process_trace_sync("trace-123", ordered_spans)
-
+        # Verify rollback was called
         mock_session.rollback.assert_called_once()
+        mock_logger.error.assert_called_with(
+            "Error processing trace trace-123: Processing failed"
+        )
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
@@ -1851,10 +1849,10 @@ class TestAdditionalCoverage:
         processor = SpanQueueProcessor()
 
         # Mock session and user cache
-        processor._session = Mock()
+        mock_session = Mock()
+        processor._session = mock_session
         mock_user = Mock()
         processor._get_cached_user = Mock(return_value=mock_user)
-
         buffer = TraceBuffer("trace-123")
         buffer.add_span({"span_id": "span-1", "parent_span_id": None})
 
@@ -1862,7 +1860,8 @@ class TestAdditionalCoverage:
         mock_spans = [Mock()]
         org_uuid = uuid4()
         user_uuid = uuid4()
-        mock_result = (mock_spans, org_uuid, user_uuid)
+        project_uuid = uuid4()
+        mock_result = (mock_spans, org_uuid, user_uuid, project_uuid)
 
         with (
             patch("asyncio.get_event_loop") as mock_get_loop,
@@ -1886,6 +1885,7 @@ class TestAdditionalCoverage:
             await processor._process_trace("trace-123", buffer)
 
         # Should log billing error but not fail the entire operation
+        mock_session.commit.assert_called_once()
         mock_logger.error.assert_called_with(
             "Error reporting span usage: Billing error"
         )

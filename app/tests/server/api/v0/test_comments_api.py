@@ -74,12 +74,16 @@ class TestCommentsAPI:
         assert isinstance(data, list)
 
     def test_get_comments_with_data(
-        self, client: TestClient, test_comment: CommentTable, session: Session, monkeypatch
+        self,
+        client: TestClient,
+        test_comment: CommentTable,
+        session: Session,
+        monkeypatch,
     ):
         """Test getting comments with existing data."""
         # Force commit to ensure data is visible
         session.commit()
-        
+
         # SQLite doesn't preserve timezone info, so we need to patch the service
         # to ensure timezone-aware datetimes are returned
         original_find_all = CommentService.find_all_records
@@ -110,7 +114,11 @@ class TestCommentsAPI:
         assert found
 
     def test_get_comments_by_span(
-        self, client: TestClient, test_span: SpanTable, test_comment: CommentTable, monkeypatch
+        self,
+        client: TestClient,
+        test_span: SpanTable,
+        test_comment: CommentTable,
+        monkeypatch,
     ):
         """Test getting comments by span UUID."""
         # SQLite doesn't preserve timezone info, so we need to patch the service
@@ -127,7 +135,7 @@ class TestCommentsAPI:
             return results
 
         monkeypatch.setattr(CommentService, "find_by_spans", mock_find_by_spans)
-        
+
         response = client.get(f"/spans/{test_span.uuid}/comments")
         assert response.status_code == 200
         data = response.json()
@@ -164,7 +172,9 @@ class TestCommentsAPI:
         data = response.json()
         assert data == []
 
-    def test_get_comment_by_uuid(self, client: TestClient, test_comment: CommentTable, monkeypatch):
+    def test_get_comment_by_uuid(
+        self, client: TestClient, test_comment: CommentTable, monkeypatch
+    ):
         """Test getting a specific comment by UUID."""
         # SQLite doesn't preserve timezone info, so we need to patch the service
         original_find_record = CommentService.find_record_by_uuid
@@ -178,8 +188,10 @@ class TestCommentsAPI:
                 result.created_at = result.created_at.replace(tzinfo=timezone.utc)
             return result
 
-        monkeypatch.setattr(CommentService, "find_record_by_uuid", mock_find_record_by_uuid)
-        
+        monkeypatch.setattr(
+            CommentService, "find_record_by_uuid", mock_find_record_by_uuid
+        )
+
         response = client.get(f"/comments/{test_comment.uuid}")
         assert response.status_code == 200
         data = response.json()
@@ -192,7 +204,9 @@ class TestCommentsAPI:
         response = client.get(f"/comments/{fake_uuid}")
         assert response.status_code == 404
 
-    def test_create_comment(self, client: TestClient, test_span: SpanTable, monkeypatch):
+    def test_create_comment(
+        self, client: TestClient, test_span: SpanTable, monkeypatch
+    ):
         """Test creating a new comment."""
         # SQLite doesn't preserve timezone info, so we need to patch the service
         original_create_record = CommentService.create_record
@@ -207,7 +221,7 @@ class TestCommentsAPI:
             return result
 
         monkeypatch.setattr(CommentService, "create_record", mock_create_record)
-        
+
         comment_data = {
             "text": "New test comment",
             "span_uuid": str(test_span.uuid),
@@ -221,7 +235,9 @@ class TestCommentsAPI:
         assert "created_at" in data
         assert data["is_edited"] is False
 
-    def test_update_comment(self, client: TestClient, test_comment: CommentTable, monkeypatch):
+    def test_update_comment(
+        self, client: TestClient, test_comment: CommentTable, monkeypatch
+    ):
         """Test updating a comment."""
         # SQLite doesn't preserve timezone info, so we need to patch the service
         original_update_record = CommentService.update_record_by_uuid
@@ -235,8 +251,10 @@ class TestCommentsAPI:
                 result.created_at = result.created_at.replace(tzinfo=timezone.utc)
             return result
 
-        monkeypatch.setattr(CommentService, "update_record_by_uuid", mock_update_record_by_uuid)
-        
+        monkeypatch.setattr(
+            CommentService, "update_record_by_uuid", mock_update_record_by_uuid
+        )
+
         update_data = {
             "text": "Updated comment text",
         }
