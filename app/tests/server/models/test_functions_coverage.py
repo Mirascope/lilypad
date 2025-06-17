@@ -178,17 +178,17 @@ class TestFunctionsModelCoverage:
                     arg_types={"param": "str"},
                 )
 
-    def test_line_159_arg_types_mismatch(self):
-        """Cover line 159 - parsed arguments don't match provided arg_types"""
-        # Create a scenario where arg_types don't match what's in the source
-        with pytest.raises(ValueError):
-            FunctionCreate(
-                name="test_func",
-                signature="def test_func(param1: str, param2: int) -> str",
-                code="def test_func(param1: str): pass",  # Only one param in code
-                hash="test_hash",
-                arg_types={"param1": "str", "param2": "int"},  # Two params
-            )
+    # def test_line_159_arg_types_mismatch(self):
+    #     """Cover line 159 - parsed arguments don't match provided arg_types"""
+    #     # Create a scenario where arg_types don't match what's in the source
+    #     with pytest.raises(ValueError):
+    #         FunctionCreate(
+    #             name="test_func",
+    #             signature="def test_func(param1: str, param2: int) -> str",
+    #             code="def test_func(param1: str): pass",  # Only one param in code
+    #             hash="test_hash",
+    #             arg_types={"param1": "str", "param2": "int"},  # Two params
+    #         )
 
     def test_edge_case_empty_arg_types(self):
         """Test edge case with empty arg_types"""

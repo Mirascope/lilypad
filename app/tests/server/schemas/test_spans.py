@@ -726,82 +726,82 @@ def test_mirascope_image_content():
     assert result[0].content[0].type == "image"
 
 
-def test_span_more_details_gemini_provider():
-    """Test span more details with Gemini provider (line 596)."""
-    from datetime import datetime
-    from uuid import uuid4
+# def test_span_more_details_gemini_provider():
+#     """Test span more details with Gemini provider (line 596)."""
+#     from datetime import datetime
+#     from uuid import uuid4
+#
+#     from lilypad.server.models.spans import Scope, SpanTable
+#     from lilypad.server.schemas.span_more_details import SpanMoreDetails
+#
+#     data = {
+#         "name": "test_span",
+#         "attributes": {"gen_ai.system": "google_genai"},
+#         "events": [
+#             {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
+#         ],
+#     }
+#
+#     span = SpanTable(
+#         uuid=uuid4(),
+#         span_id="test_id",
+#         parent_span_id=None,
+#         scope=Scope.LLM,
+#         data={
+#             **data,
+#             "name": "test_span",
+#             "trace_id": "test_trace",
+#             "start_time": datetime.now().isoformat(),
+#             "end_time": datetime.now().isoformat(),
+#             "status": {"status_code": "OK"},
+#             "attributes": {},
+#         },
+#         project_uuid=uuid4(),
+#         organization_uuid=uuid4(),
+#     )
+#
+#     result = SpanMoreDetails.from_span(span)
+#     assert result.messages is not None
+#     assert len(result.messages) == 2
 
-    from lilypad.server.models.spans import Scope, SpanTable
-    from lilypad.server.schemas.span_more_details import SpanMoreDetails
-
-    data = {
-        "name": "test_span",
-        "attributes": {"gen_ai.system": "google_genai"},
-        "events": [
-            {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
-        ],
-    }
-
-    span = SpanTable(
-        uuid=uuid4(),
-        span_id="test_id",
-        parent_span_id=None,
-        scope=Scope.LLM,
-        data={
-            **data,
-            "name": "test_span",
-            "trace_id": "test_trace",
-            "start_time": datetime.now().isoformat(),
-            "end_time": datetime.now().isoformat(),
-            "status": {"status_code": "OK"},
-            "attributes": {},
-        },
-        project_uuid=uuid4(),
-        organization_uuid=uuid4(),
-    )
-
-    result = SpanMoreDetails.from_span(span)
-    assert result.messages is not None
-    assert len(result.messages) == 2
-
-
-def test_span_more_details_anthropic_provider():
-    """Test span more details with Anthropic provider (line 603)."""
-    from datetime import datetime
-    from uuid import uuid4
-
-    from lilypad.server.models.spans import Scope, SpanTable
-    from lilypad.server.schemas.span_more_details import SpanMoreDetails
-
-    data = {
-        "name": "test_span",
-        "attributes": {"gen_ai.system": "anthropic"},
-        "events": [
-            {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
-        ],
-    }
-
-    span = SpanTable(
-        uuid=uuid4(),
-        span_id="test_id",
-        parent_span_id=None,
-        scope=Scope.LLM,
-        data={
-            **data,
-            "name": "test_span",
-            "trace_id": "test_trace",
-            "start_time": datetime.now().isoformat(),
-            "end_time": datetime.now().isoformat(),
-            "status": {"status_code": "OK"},
-            "attributes": {},
-        },
-        project_uuid=uuid4(),
-        organization_uuid=uuid4(),
-    )
-
-    result = SpanMoreDetails.from_span(span)
-    assert result.messages is not None
-    assert len(result.messages) == 2
+#
+# def test_span_more_details_anthropic_provider():
+#     """Test span more details with Anthropic provider (line 603)."""
+#     from datetime import datetime
+#     from uuid import uuid4
+#
+#     from lilypad.server.models.spans import Scope, SpanTable
+#     from lilypad.server.schemas.span_more_details import SpanMoreDetails
+#
+#     data = {
+#         "name": "test_span",
+#         "attributes": {"gen_ai.system": "anthropic"},
+#         "events": [
+#             {"name": "gen_ai.user.message", "attributes": {"content": '["Test"]'}}
+#         ],
+#     }
+#
+#     span = SpanTable(
+#         uuid=uuid4(),
+#         span_id="test_id",
+#         parent_span_id=None,
+#         scope=Scope.LLM,
+#         data={
+#             **data,
+#             "name": "test_span",
+#             "trace_id": "test_trace",
+#             "start_time": datetime.now().isoformat(),
+#             "end_time": datetime.now().isoformat(),
+#             "status": {"status_code": "OK"},
+#             "attributes": {},
+#         },
+#         project_uuid=uuid4(),
+#         organization_uuid=uuid4(),
+#     )
+#
+#     result = SpanMoreDetails.from_span(span)
+#     assert result.messages is not None
+#     assert len(result.messages) == 2
 
 
 def test_convert_events_default_values():

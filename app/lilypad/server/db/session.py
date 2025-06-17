@@ -62,13 +62,13 @@ def get_session() -> Generator[Session, None, None]:
     engine = db.get_engine()
     with Session(engine) as session:
         yield session
-        try:  # pragma: no cover
-            session.flush()  # pragma: no cover
-        except Exception:  # pragma: no cover
-            session.rollback()  # pragma: no cover
-            raise  # pragma: no cover
-        else:  # pragma: no cover
-            session.commit()  # pragma: no cover
+        try:
+            session.flush()
+        except Exception:
+            session.rollback()
+            raise
+        else:
+            session.commit()
 
 
 def create_session() -> Session:

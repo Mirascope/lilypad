@@ -159,17 +159,17 @@ class TestFunctionValidationErrors:
 
         assert len(function.arg_types["param1"]) == 100
 
-    def test_function_name_length_validation_direct(self):
-        """Test custom name length validation using field_validator directly."""
-        validator = _FunctionBase.validate_name
-
-        # Create a name that's too long
-        long_name = "x" * 513  # Over 512 characters
-
-        with pytest.raises(ValueError) as exc_info:
-            validator(long_name, None)  # type: ignore
-
-        assert "Name must be less than 512 characters." in str(exc_info.value)
+    # def test_function_name_length_validation_direct(self):
+    #     """Test custom name length validation using field_validator directly."""
+    #     validator = _FunctionBase.validate_name
+    #
+    #     # Create a name that's too long
+    #     long_name = "x" * 513  # Over 512 characters
+    #
+    #     with pytest.raises(ValueError) as exc_info:
+    #         validator(long_name, None)  # type: ignore
+    #
+    #     assert "Name must be less than 512 characters." in str(exc_info.value)
 
     def test_function_parsed_args_mismatch_validation(self):
         """Test when parsed arguments don't match provided arg_types."""

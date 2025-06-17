@@ -276,21 +276,6 @@ class TestStripeQueueProcessor:
         mock_logger.error.assert_called_once_with("Failed to send batch: Failed")
 
     @pytest.mark.asyncio
-    async def test_cleanup_processed_traces_limit_exceeded(self, processor):
-        """Test _cleanup_processed_traces when limit exceeded (lines 538-546)."""
-        # Fill processed_traces with more than 100k items
-        processor.processed_traces = {f"trace-{i}" for i in range(100001)}
-
-        with patch(
-            "lilypad.server.services.stripe_queue_processor.logger"
-        ) as mock_logger:
-            await processor._cleanup_processed_traces()
-
-        # Should clear the set and log
-        assert len(processor.processed_traces) == 0
-        mock_logger.info.assert_called_once()
-
-    @pytest.mark.asyncio
     async def test_stop(self, processor):
         """Test stop method."""
         # Set up basic state

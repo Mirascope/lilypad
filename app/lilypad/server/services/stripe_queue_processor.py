@@ -536,14 +536,14 @@ class StripeQueueProcessor:
             await asyncio.sleep(300)  # Every 5 minutes
 
             async with self._batch_lock:  # pragma: no cover
-                # Keep only last 100k traces  # pragma: no cover
-                if len(self.processed_traces) > 100000:  # pragma: no cover
-                    # Convert to list, sort by insertion order (not possible with set)  # pragma: no cover
-                    # Instead, just clear and start fresh  # pragma: no cover
-                    logger.info(  # pragma: no cover
-                        f"Clearing processed traces set (was {len(self.processed_traces)} traces)"  # pragma: no cover
-                    )  # pragma: no cover
-                    self.processed_traces.clear()  # pragma: no cover
+                # Keep only last 100k traces
+                if len(self.processed_traces) > 100000:
+                    # Convert to list, sort by insertion order (not possible with set)
+                    # Instead, just clear and start fresh
+                    logger.info(
+                        f"Clearing processed traces set (was {len(self.processed_traces)} traces)"
+                    )
+                    self.processed_traces.clear()
 
 
 # Singleton instance

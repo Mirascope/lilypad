@@ -103,11 +103,9 @@ def _validate_python_identifier(name: str) -> bool:
         return False
 
     # Check if it's not a Python built-in
-    if name in dir(__builtins__):
-        logger.warning(
-            f"Python built-in cannot be used as identifier: {name}"
-        )  # pragma: no cover
-        return False  # pragma: no cover
+    if name in dir(__builtins__):  # pragma: no cover
+        logger.warning(f"Python built-in cannot be used as identifier: {name}")
+        return False
 
     return True
 
@@ -205,10 +203,8 @@ def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
             resource.RLIMIT_AS, (memory * 1024 * 1024, memory * 1024 * 1024)
         )
         # Limit number of open files. Torch can open many files, so we set it to 20K * 10
-        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)  # pragma: no cover
-        resource.setrlimit(
-            resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1])
-        )  # pragma: no cover
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1]))
     except Exception as e:
         logger.error("Failed to set resource limits: %s", e)
 
@@ -496,10 +492,10 @@ finally:
         try:
             formatted_wrapper_code = run_ruff(full_wrapper_code)
         except Exception as format_error:  # pragma: no cover
-            logger.warning(  # pragma: no cover
-                f"Ruff formatting failed: {format_error}. Proceeding with unformatted code."  # pragma: no cover
-            )  # pragma: no cover
-            formatted_wrapper_code = full_wrapper_code  # pragma: no cover
+            logger.warning(
+                f"Ruff formatting failed: {format_error}. Proceeding with unformatted code."
+            )
+            formatted_wrapper_code = full_wrapper_code
 
         external_api_keys = {}
         try:
