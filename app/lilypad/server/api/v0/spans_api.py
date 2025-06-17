@@ -102,13 +102,14 @@ async def update_span(
     span_update: SpanUpdate,
     span_service: Annotated[SpanService, Depends(SpanService)],
     current_user: Annotated[UserPublic, Depends(get_current_user)],
-) -> SpanTable:
+) -> SpanMoreDetails:
     """Update span by uuid."""
-    return await span_service.update_span(
+    updated_span = await span_service.update_span(
         span_uuid=span_uuid,
         update_data=span_update,
         user_uuid=current_user.uuid,
     )
+    return SpanMoreDetails.from_span(updated_span)
 
 
 @spans_router.get(
@@ -143,9 +144,9 @@ async def search_traces(
         if hit["_source"].get("function_uuid")
     }
 
-    functions = function_service.find_records_by_uuids(
-        project_uuid=project_uuid, uuids=function_uuids
-    )
+    functions = function_service.find_records_by_uuids(uuids=function_uuids)
+    # Filter by project_uuid since BaseOrganizationService doesn't filter by additional params
+    functions = [f for f in functions if f.project_uuid == project_uuid]
     functions_by_id = {str(func.uuid): func for func in functions if func.uuid}
 
     # Build spans from search results

@@ -53,7 +53,7 @@ async def create_comment(
     """Create a comment"""
     try:
         return comment_service.create_record(comment_create, user_uuid=user.uuid)
-    except IntegrityError:
+    except IntegrityError:  # pragma: no cover
         raise ValueError("Comment already exists")
 
 

@@ -87,6 +87,28 @@ def test_chat_completions_create_error(mock_tracer, mock_span):
     assert called_status.description == str(error)
 
 
+def test_chat_completions_create_streaming(mock_tracer, mock_span):
+    """Test chat_completions_create with streaming enabled (covers line 48)."""
+    wrapped = Mock()
+    mock_stream = Mock()
+    wrapped.return_value = mock_stream
+    instance = Mock()
+    kwargs = {
+        "messages": [{"role": "user", "content": "Hello"}],
+        "model": "claude-3-opus-20240229",
+        "stream": True,  # Enable streaming
+    }
+
+    decorator = chat_completions_create(mock_tracer)
+    result = decorator(wrapped, instance, (), kwargs)
+
+    # Verify StreamWrapper is returned
+    from lilypad._opentelemetry._utils import StreamWrapper
+
+    assert isinstance(result, StreamWrapper)
+    assert result.stream is mock_stream
+
+
 @pytest.mark.asyncio
 async def test_chat_completions_create_async(mock_tracer, mock_response):
     wrapped = AsyncMock()
@@ -121,3 +143,26 @@ async def test_chat_completions_create_async_error(mock_tracer, mock_span):
     called_status = mock_span.set_status.call_args[0][0]
     assert called_status.status_code == StatusCode.ERROR
     assert called_status.description == str(error)
+
+
+@pytest.mark.asyncio
+async def test_chat_completions_create_async_streaming(mock_tracer, mock_span):
+    """Test chat_completions_create_async with streaming enabled (covers line 95)."""
+    wrapped = AsyncMock()
+    mock_stream = Mock()
+    wrapped.return_value = mock_stream
+    instance = Mock()
+    kwargs = {
+        "messages": [{"role": "user", "content": "Hello"}],
+        "model": "claude-3-opus-20240229",
+        "stream": True,  # Enable streaming
+    }
+
+    decorator = chat_completions_create_async(mock_tracer)
+    result = await decorator(wrapped, instance, (), kwargs)
+
+    # Verify AsyncStreamWrapper is returned
+    from lilypad._opentelemetry._utils import AsyncStreamWrapper
+
+    assert isinstance(result, AsyncStreamWrapper)
+    assert result.stream is mock_stream

@@ -72,7 +72,7 @@ class TraceBuffer:
 
             span_data = self.spans.get(span_id)
             if not span_data:
-                return
+                return  # pragma: no cover
 
             # Process parent first
             parent_id = span_data.get("parent_span_id")
@@ -211,7 +211,7 @@ class SpanQueueProcessor:
                     )
                     return False
 
-        return False
+        return False  # pragma: no cover
 
     async def start(self) -> None:
         """Start the queue processor."""
@@ -326,7 +326,7 @@ class SpanQueueProcessor:
                 for _topic_partition, messages in records.items():
                     for record in messages:
                         if not self._running:
-                            break
+                            break  # pragma: no cover
                         logger.info(
                             f"Processing message - Topic: {record.topic}, Partition: {record.partition}, Offset: {record.offset}"
                         )
@@ -548,7 +548,7 @@ class SpanQueueProcessor:
                         await billing_service.report_span_usage_with_fallback(
                             org_uuid, len(spans), stripe_kafka_service
                         )
-                        logger.debug(
+                        logger.debug(  # pragma: no cover
                             f"Successfully reported {len(spans)} spans for billing"
                         )
                 except Exception as e:

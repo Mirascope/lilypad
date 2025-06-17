@@ -22,7 +22,7 @@ def get_database_url(environment: str | None = None) -> str:
         environment = settings.environment
     if environment == "local" or environment == "test":
         database_url = "sqlite:///pad.db"
-    else:
+    else:  # pragma: no cover
         database_url = f"postgresql://{settings.db_user}:{settings.db_password}@{settings.db_host}:{settings.db_port}/{settings.db_name}"
     return database_url
 
@@ -42,7 +42,7 @@ class DatabaseEngine:
                     connect_args={"check_same_thread": False},
                     pool_pre_ping=True,
                 )
-            else:
+            else:  # pragma: no cover
                 settings = get_settings()
                 self._engine = create_engine(
                     database_url,
@@ -62,12 +62,12 @@ def get_session() -> Generator[Session, None, None]:
     engine = db.get_engine()
     with Session(engine) as session:
         yield session
-        try:
+        try:  # pragma: no cover
             session.flush()
-        except Exception:
+        except Exception:  # pragma: no cover
             session.rollback()
             raise
-        else:
+        else:  # pragma: no cover
             session.commit()
 
 

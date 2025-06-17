@@ -204,5 +204,23 @@ include = [
     "tests/*",
 ]
 
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["src/lilypad"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/generated/*",
+]
+
+[tool.coverage.report]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:", "\\.\\.\\."]
+precision = 2
+show_missing = true
+
 [project.scripts]
 lilypad = "lilypad.cli.main:app"

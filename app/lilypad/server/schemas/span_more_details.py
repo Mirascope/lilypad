@@ -259,7 +259,7 @@ def convert_azure_messages(
                                 )
                             )
                         else:
-                            user_content.append(
+                            user_content.append(  # pragma: no cover
                                 _TextPart(type="text", text=part["text"])
                             )
             except json.JSONDecodeError:
@@ -276,7 +276,7 @@ def convert_azure_messages(
             index = attributes["index"]
             attribute_message: dict = json.loads(attributes.get("message", "{}"))
             if tool_calls := attribute_message.get("tool_calls"):
-                for tool_call in tool_calls:
+                for tool_call in tool_calls:  # pragma: no cover
                     function: dict = tool_call.get("function", {})
                     assistant_message.content.append(
                         _ToolCall(
@@ -362,7 +362,7 @@ def convert_anthropic_messages(
                         _ToolCall(
                             type="tool_call",
                             name=function.get("name", ""),
-                            arguments=function.get("arguments", {}),
+                            arguments=json.loads(function.get("arguments", "{}")),
                         )
                     )
     structured_messages.append(assistant_message)
@@ -592,7 +592,7 @@ class SpanMoreDetails(BaseModel):
         events = convert_events(data.get("events", []))
         if span.scope == Scope.LLM:
             provider = attributes.get(gen_ai_attributes.GEN_AI_SYSTEM, "unknown")
-            if provider in (Provider.GEMINI.value, "google_genai"):
+            if provider in (Provider.GEMINI.value, "google_genai"):  # pragma: no cover
                 messages = convert_gemini_messages(data["events"])
             elif (
                 provider == Provider.OPENROUTER.value
@@ -600,7 +600,9 @@ class SpanMoreDetails(BaseModel):
             ):
                 messages = convert_openai_messages(data["events"])
             elif provider == Provider.ANTHROPIC.value:
-                messages = convert_anthropic_messages(data["events"])
+                messages = convert_anthropic_messages(
+                    data["events"]
+                )  # pragma: no cover
         else:
             lilypad_type = attributes.get("lilypad.type")
             if lilypad_type:

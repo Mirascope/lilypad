@@ -186,15 +186,26 @@ line-ending = "auto"
 
 [tool.pyright]
 exclude = ["examples"]
-include = ["lilypad", "ee"]
+include = ["lilypad", "ee", "tests"]
 venvPath = "."
 venv = ".venv"
 
 [tool.codespell]
 skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml", "./client/bun.lock"]
 
+[tool.coverage.run]
+source = ["lilypad", "ee"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
+precision = 2
+show_missing = true
 
 [build-system]
 requires = ["hatchling"]

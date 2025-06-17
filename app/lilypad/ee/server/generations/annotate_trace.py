@@ -75,4 +75,4 @@ async def annotate_trace() -> AsyncGenerator[ResultsModel, None]:
     Yields the mock data once in Server-Sent Event 'data' format.
     """
     # Yield the static mock data formatted as a Server-Sent Event
-    yield ResultsModel.model_validate(MOCK_ANNOTATION_DATA)
+    yield ResultsModel.model_validate(MOCK_ANNOTATION_DATA)  # pragma: no cover

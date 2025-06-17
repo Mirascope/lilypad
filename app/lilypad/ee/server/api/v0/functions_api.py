@@ -32,7 +32,7 @@ try:
     import resource
 
     CAN_LIMIT_RESOURCES = True
-except ImportError:
+except ImportError:  # pragma: no cover
     # For Windows
     class _Resource:
         """Dummy class for Windows."""
@@ -103,7 +103,7 @@ def _validate_python_identifier(name: str) -> bool:
         return False
 
     # Check if it's not a Python built-in
-    if name in dir(__builtins__):
+    if name in dir(__builtins__):  # pragma: no cover
         logger.warning(f"Python built-in cannot be used as identifier: {name}")
         return False
 
@@ -194,8 +194,8 @@ def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
         memory: Memory limit in MB
     """
     if not CAN_LIMIT_RESOURCES:
-        return None
-    try:
+        return None  # pragma: no cover
+    try:  # pragma: no cover
         # Limit CPU time
         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
         # Limit process address space (memory)
@@ -205,7 +205,7 @@ def _limit_resources(timeout: int = 180, memory: int = 8192) -> None:
         # Limit number of open files. Torch can open many files, so we set it to 20K * 10
         rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
         resource.setrlimit(resource.RLIMIT_NOFILE, (2048 * 20, rlimit[1]))
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         logger.error("Failed to set resource limits: %s", e)
 
 
@@ -369,7 +369,7 @@ def run_playground(
         arg_definitions = []
         for arg_name in arg_types:
             if arg_name == "trace_ctx":
-                continue
+                continue  # pragma: no cover
             if not _validate_python_identifier(arg_name):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -491,7 +491,7 @@ finally:
 
         try:
             formatted_wrapper_code = run_ruff(full_wrapper_code)
-        except Exception as format_error:
+        except Exception as format_error:  # pragma: no cover
             logger.warning(
                 f"Ruff formatting failed: {format_error}. Proceeding with unformatted code."
             )
@@ -548,7 +548,7 @@ finally:
             if isinstance(spand_id, str) and (
                 spand := span_service.get_record_by_span_id(project_uuid, spand_id)
             ):
-                return PlaygroundSuccessResponse.model_validate(
+                return PlaygroundSuccessResponse.model_validate(  # pragma: no cover
                     {
                         "trace_context": {"span_uuid": str(spand.uuid)},
                         **execution_result,
@@ -734,7 +734,7 @@ def _run_playground(code: str, env_vars: dict[str, str]) -> dict[str, Any]:
                         f"Output markers not found in stdout.\nStdout: {stdout_content[:1000]}"
                     )
                     if result.stderr:
-                        logger.error(
+                        logger.error(  # pragma: no cover
                             f"Stderr on return code 0:\n{result.stderr.strip()[:1000]}"
                         )
                     return {

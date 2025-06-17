@@ -8,7 +8,7 @@
 # Stripe
 .PHONY: dev-stripe-webhook
 # Testing & Quality
-.PHONY: test test-watch lint typecheck format fix
+.PHONY: test test-watch test-coverage lint typecheck format fix
 
 # Database
 .PHONY: db-migrate db-rollback db-reset db-revision
@@ -33,6 +33,7 @@ help:
 	@echo "  setup-kafka-prod  - Set up Kafka topics for production"
 	@echo "  test-kafka        - Test Kafka connection"
 	@echo "  test              - Run tests"
+	@echo "  test-coverage     - Run tests with coverage report"
 	@echo "  lint              - Run linter"
 	@echo "  typecheck         - Run type checker"
 	@echo "  format            - Format code"
@@ -110,6 +111,9 @@ test:
 test-watch:
 	@command -v pytest-watch >/dev/null 2>&1 || uv add --dev pytest-watch
 	uv run pytest-watch
+
+test-coverage:
+	uv run pytest --cov=lilypad --cov=ee --cov-report=html --cov-report=term --cov-report=term-missing
 
 lint:
 	uv run ruff check .
