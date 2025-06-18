@@ -83,11 +83,37 @@ def get_test_session(
 
 
 @pytest.fixture
+def get_test_current_user(test_user: UserTable):
+    """Override the get_current_user dependency for FastAPI.
+
+    Args:
+        test_user: The test user
+
+    Returns:
+        Callable: Function that returns UserPublic
+    """
+
+    def override_get_current_user():
+        user_public = UserPublic(
+            uuid=test_user.uuid,  # type: ignore[arg-type]
+            email=test_user.email,
+            first_name=test_user.first_name,
+            last_name=test_user.last_name,
+            active_organization_uuid=test_user.active_organization_uuid,
+        )
+        # Add default scopes for testing
+        user_public.scopes = ["user:read", "user:write", "vault:read", "vault:write"]  # type: ignore[misc]
+        return user_public
+
+    return override_get_current_user
+
+
+@pytest.fixture
 def get_test_organization_license():
     """Override the get_organization_license dependency for FastAPI.
 
     Returns:
-        UserPublic: Test user
+        Callable: Function that returns LicenseInfo
     """
 
     def override_get_organization_license():
@@ -107,10 +133,14 @@ async def reset_singletons():
     """Reset service singletons after each test."""
     yield
     # Reset the Kafka producer after test
-    import lilypad.server.services.kafka_producer
+    try:
+        import lilypad.server.services.kafka_producer
 
-    # Close Kafka producer if it exists
-    await lilypad.server.services.kafka_producer.close_kafka_producer()
+        # Close Kafka producer if it exists
+        await lilypad.server.services.kafka_producer.close_kafka_producer()
+    except Exception:
+        # Ignore errors during cleanup
+        pass
 
 
 @pytest.fixture
@@ -143,20 +173,38 @@ def client(
 
 
 @pytest.fixture
-def test_user(session: Session) -> Generator[UserTable, None, None]:
-    """Create a test user.
+def test_organization(session: Session) -> Generator[OrganizationTable, None, None]:
+    """Create a test organization.
 
     Args:
         session: Database session
 
     Yields:
-        UserTable: Test user
+        OrganizationTable: Test organization
     """
-    user_uuid = uuid4()
     organization = OrganizationTable(
         uuid=ORGANIZATION_UUID, name="Test Organization", license="123456"
     )
     session.add(organization)
+    session.commit()
+    session.refresh(organization)
+    yield organization
+
+
+@pytest.fixture
+def test_user(
+    session: Session, test_organization: OrganizationTable
+) -> Generator[UserTable, None, None]:
+    """Create a test user.
+
+    Args:
+        session: Database session
+        test_organization: Test organization
+
+    Yields:
+        UserTable: Test user
+    """
+    user_uuid = uuid4()
     user = UserTable(
         uuid=user_uuid,
         email="test@test.com",
@@ -168,7 +216,7 @@ def test_user(session: Session) -> Generator[UserTable, None, None]:
         user_uuid=user_uuid,
         organization_uuid=ORGANIZATION_UUID,
         role=UserRole.ADMIN,
-        organization=organization,
+        organization=test_organization,
     )
     session.add(user_org)
     session.commit()
@@ -244,10 +292,18 @@ def test_api_key(
         name="test_key",
         project_uuid=test_project.uuid,
         environment_uuid=test_environment.uuid,  # pyright: ignore [reportArgumentType]
+        expires_at=datetime.now(timezone.utc) + timedelta(days=365),
     )
     session.add(api_key)
     session.commit()
     session.refresh(api_key)
+
+    # SQLite workaround: ensure timezone info is preserved
+    if api_key.expires_at and api_key.expires_at.tzinfo is None:
+        # Manually set timezone-aware datetime for testing
+        api_key.expires_at = api_key.expires_at.replace(tzinfo=timezone.utc)
+        # Don't save to DB since SQLite will strip it again
+
     yield api_key
 
 
@@ -272,6 +328,7 @@ def test_function(
         hash="test_hash",
         arg_types={},
         organization_uuid=test_project.organization_uuid,
+        version_num=1,
     )
     session.add(function)
     session.commit()

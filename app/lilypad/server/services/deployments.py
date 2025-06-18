@@ -31,14 +31,20 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
         attempt = 0
         while attempt < max_retries:
             try:
-                with self.session.begin():
+                # Use nested transaction if one is already active
+                if self.session.in_transaction():
+                    transaction_context = self.session.begin_nested()
+                else:
+                    transaction_context = self.session.begin()
+
+                with transaction_context:
                     # Deactivate any existing active deployments for this environment
                     existing_deployments = self.session.exec(
                         select(self.table).where(
                             self.table.organization_uuid
                             == self.user.active_organization_uuid,
                             self.table.environment_uuid == environment_uuid,
-                            self.table.is_active is True,  # Use explicit equality check
+                            self.table.is_active == True,  # noqa: E712
                         )
                     ).all()
 
@@ -86,7 +92,7 @@ class DeploymentService(BaseOrganizationService[DeploymentTable, DeploymentCreat
             select(self.table).where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.environment_uuid == environment_uuid,
-                self.table.is_active is True,
+                self.table.is_active == True,  # noqa: E712
             )
         ).first()
 

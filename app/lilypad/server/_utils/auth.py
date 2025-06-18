@@ -1,3 +1,5 @@
+"""Auth utilities for Lilypad server."""
+
 import base64
 import hashlib
 import json
@@ -118,7 +120,7 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
         user_public = UserPublic.model_validate(api_key_row.user)
-        user_public.scopes = DEFAULT_SCOPES
+        user_public.scopes = DEFAULT_SCOPES  # type: ignore[misc]
         request.state.user = user_public
         return user_public
 
@@ -137,7 +139,7 @@ async def get_current_user(
             user = session.exec(select(UserTable).where(UserTable.uuid == uuid)).first()
             if user:
                 user_public = UserPublic.model_validate(user)
-                user_public.scopes = payload.get("scopes", DEFAULT_SCOPES)
+                user_public.scopes = payload.get("scopes", DEFAULT_SCOPES)  # type: ignore[misc]
                 request.state.user = user_public
                 return user_public
     except (JWTError, KeyError, ValidationError) as e:
@@ -157,7 +159,7 @@ def require_scopes(
         user: Annotated[UserPublic, Depends(get_current_user)],
     ) -> UserPublic:
         if not hasattr(user, "scopes") or user.scopes is None:
-            user.scopes = DEFAULT_SCOPES
+            user.scopes = DEFAULT_SCOPES  # type: ignore[misc]
 
         missing_scopes = [
             scope for scope in required_scopes if scope not in user.scopes

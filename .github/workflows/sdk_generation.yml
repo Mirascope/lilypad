@@ -5,15 +5,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'app/**'
-      - 'sdks/fern/**'
   pull_request:
     branches:
       - main
-    paths:
-      - 'app/**'
-      - 'sdks/fern/**'
 
 jobs:
   check-openapi-generation:

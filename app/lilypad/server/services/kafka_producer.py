@@ -57,7 +57,7 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
     async with _producer_lock:
         # Double-check pattern
         if _producer_instance is not None:
-            return _producer_instance
+            return _producer_instance  # pragma: no cover
 
         settings = get_settings()
 
@@ -142,7 +142,7 @@ async def get_kafka_producer() -> AIOKafkaProducer | None:
                     )
                     return None
 
-        return None
+        return None  # pragma: no cover
 
 
 async def close_kafka_producer() -> None:

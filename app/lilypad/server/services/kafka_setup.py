@@ -3,6 +3,7 @@
 import asyncio
 import contextlib
 import logging
+from dataclasses import dataclass
 
 from aiokafka.admin import AIOKafkaAdminClient, NewTopic
 from aiokafka.errors import KafkaError, TopicAlreadyExistsError
@@ -12,12 +13,52 @@ from lilypad.server.settings import Settings
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class TopicConfig:
+    """Configuration for a Kafka topic."""
+
+    name: str
+    num_partitions: int = 6
+    replication_factor: int = 1
+    configs: dict[str, str] | None = None
+
+    def __post_init__(self) -> None:
+        if self.configs is None:
+            self.configs = {
+                "retention.ms": "604800000",  # 7 days
+                "retention.bytes": "1073741824",  # 1GB
+            }
+
+
 class KafkaSetupService:
     """Service to setup Kafka topics on application startup."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.admin_client: AIOKafkaAdminClient | None = None
+
+        # Define all topics to be created
+        self.topics_to_create = [
+            TopicConfig(
+                name=self.settings.kafka_topic_span_ingestion,
+                num_partitions=6,
+                replication_factor=1,
+                configs={
+                    "retention.ms": "604800000",  # 7 days
+                    "retention.bytes": "1073741824",  # 1GB
+                },
+            ),
+            TopicConfig(
+                name=self.settings.kafka_topic_stripe_ingestion,  # Add this to your Settings
+                num_partitions=6,
+                replication_factor=1,
+                configs={
+                    "retention.ms": "604800000",  # 7 days
+                    "retention.bytes": "1073741824",  # 1GB
+                },
+            ),
+            # Add more topics here as needed
+        ]
 
     async def setup_topics(self) -> bool:
         """Create required Kafka topics if they don't exist.
@@ -35,7 +76,44 @@ class KafkaSetupService:
             logger.info("Kafka auto-setup disabled, skipping topic setup")
             return True
 
-        # Retry logic for Kafka connection
+        # Connect to Kafka
+        if not await self._connect_to_kafka():
+            return False
+
+        try:
+            # Create all topics
+            success = await self._create_all_topics()
+
+            # Verify all topics
+            if success:
+                await self._verify_all_topics()
+
+            return success
+
+        except KafkaError as e:
+            # Log error but don't fail startup
+            logger.error(f"Kafka setup error (non-fatal): {e}")
+            return True
+        except Exception as e:
+            logger.error(
+                f"Unexpected error during Kafka setup (non-fatal): {e}", exc_info=True
+            )
+            return True
+        finally:
+            if self.admin_client:
+                with contextlib.suppress(Exception):
+                    await self.admin_client.close()
+
+    async def _connect_to_kafka(self) -> bool:
+        """Connect to Kafka with retry logic.
+
+        Returns:
+            bool: True if connected successfully, False otherwise
+        """
+        if not self.settings.kafka_bootstrap_servers:
+            logger.error("Kafka bootstrap servers not configured")  # pragma: no cover
+            return False  # pragma: no cover
+
         max_retries = 5
         retry_delay = 2  # Start with 2 seconds
 
@@ -57,7 +135,7 @@ class KafkaSetupService:
                 # Start the admin client
                 await self.admin_client.start()
                 logger.info("Kafka admin client connected successfully")
-                break  # Connection successful, exit retry loop
+                return True  # Connection successful
 
             except Exception as e:
                 if attempt < max_retries - 1:
@@ -73,114 +151,88 @@ class KafkaSetupService:
                     )
                     return False
 
-        # Check if admin client was successfully created
+        return False  # pragma: no cover
+
+    async def _create_all_topics(self) -> bool:
+        """Create all configured topics.
+
+        Returns:
+            bool: True if all topics created successfully
+        """
         if not self.admin_client:
             logger.error("Admin client is not initialized")
             return False
 
-        try:
-            # Define topic
-            topic = NewTopic(
-                name=self.settings.kafka_topic_span_ingestion,
-                num_partitions=6,
-                replication_factor=1,
-                topic_configs={
-                    "retention.ms": "604800000",  # 7 days
-                    "retention.bytes": "1073741824",  # 1GB
-                },
+        # Create NewTopic objects for all topics
+        new_topics = []
+        for topic_config in self.topics_to_create:
+            new_topic = NewTopic(
+                name=topic_config.name,
+                num_partitions=topic_config.num_partitions,
+                replication_factor=topic_config.replication_factor,
+                topic_configs=topic_config.configs,
             )
+            new_topics.append(new_topic)
 
-            # Create topic
+        # Create topics one by one to handle individual errors
+        all_successful = True
+        for new_topic in new_topics:
             try:
                 logger.info(
-                    f"Creating topic '{self.settings.kafka_topic_span_ingestion}' with 6 partitions..."
+                    f"Creating topic '{new_topic.name}' with {new_topic.num_partitions} partitions..."
                 )
-                await self.admin_client.create_topics([topic])
-                logger.info(
-                    f"Topic '{self.settings.kafka_topic_span_ingestion}' created successfully"
-                )
+                await self.admin_client.create_topics([new_topic])
+                logger.info(f"Topic '{new_topic.name}' created successfully")
 
             except TopicAlreadyExistsError:
-                logger.info(
-                    f"Topic '{self.settings.kafka_topic_span_ingestion}' already exists"
-                )
+                logger.info(f"Topic '{new_topic.name}' already exists")
             except Exception as e:
                 if "already exists" in str(e).lower():
-                    logger.info(
-                        f"Topic '{self.settings.kafka_topic_span_ingestion}' already exists"
-                    )
+                    logger.info(f"Topic '{new_topic.name}' already exists")
                 else:
-                    logger.error(f"Failed to create topic: {e}")
-                    raise
+                    logger.error(f"Failed to create topic '{new_topic.name}': {e}")
+                    all_successful = False
 
-            # Verify the specific topic exists
-            try:
-                # Describe the specific topic we just created
-                topic_metadata_list = await self.admin_client.describe_topics(
-                    [self.settings.kafka_topic_span_ingestion]
+        return all_successful
+
+    async def _verify_all_topics(self) -> None:
+        """Verify all topics were created successfully."""
+        if not self.admin_client:
+            return  # pragma: no cover
+
+        # Get list of topic names
+        topic_names = [topic.name for topic in self.topics_to_create]
+
+        try:
+            # Describe all topics at once
+            topic_metadata_list = await self.admin_client.describe_topics(topic_names)
+
+            # Create a set of successfully verified topics
+            verified_topics = set()
+
+            for topic_metadata in topic_metadata_list:
+                if isinstance(topic_metadata, dict):
+                    topic_name = topic_metadata.get("topic")
+                    partitions = topic_metadata.get("partitions", [])
+                    partition_count = len(partitions)
+
+                    if topic_name in topic_names:
+                        logger.info(
+                            f"✓ Topic '{topic_name}' confirmed to exist "
+                            f"with {partition_count} partitions"
+                        )
+                        verified_topics.add(topic_name)
+                    else:
+                        logger.warning(f"⚠ Unexpected topic '{topic_name}' in metadata")
+
+            # Check for any topics that weren't verified
+            unverified_topics = set(topic_names) - verified_topics
+            for topic_name in unverified_topics:
+                logger.warning(
+                    f"⚠ Topic '{topic_name}' verification failed - "
+                    f"not found in metadata"
                 )
 
-                if topic_metadata_list and len(topic_metadata_list) > 0:
-                    topic_metadata = topic_metadata_list[0]
-
-                    # Handle dict response (aiokafka returns dicts, not objects)
-                    if isinstance(topic_metadata, dict):
-                        topic_name = topic_metadata.get("topic")
-                        partitions = topic_metadata.get("partitions", [])
-                        partition_count = len(partitions)
-
-                        if topic_name == self.settings.kafka_topic_span_ingestion:
-                            logger.info(
-                                f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist "
-                                f"with {partition_count} partitions"
-                            )
-                        else:
-                            logger.warning(
-                                f"⚠ Topic metadata returned but name doesn't match: "
-                                f"expected '{self.settings.kafka_topic_span_ingestion}', got '{topic_name}'"
-                            )
-                    else:
-                        # Fallback for object-based response (if aiokafka changes in future)
-                        if (
-                            hasattr(topic_metadata, "topic")
-                            and topic_metadata.topic
-                            == self.settings.kafka_topic_span_ingestion
-                        ):
-                            partition_count = (
-                                len(topic_metadata.partitions)
-                                if hasattr(topic_metadata, "partitions")
-                                else 0
-                            )
-                            logger.info(
-                                f"✓ Topic '{self.settings.kafka_topic_span_ingestion}' confirmed to exist "
-                                f"with {partition_count} partitions"
-                            )
-                        else:
-                            logger.warning(
-                                "⚠ Topic metadata returned but doesn't match expected format"
-                            )
-                else:
-                    logger.warning(
-                        f"⚠ Topic '{self.settings.kafka_topic_span_ingestion}' verification failed - "
-                        f"no metadata returned"
-                    )
-
-            except Exception as e:
-                logger.warning(f"Failed to verify topic: {e}")
-                # Not critical - topic creation already succeeded or existed
-
-            return True
-
-        except KafkaError as e:
-            # Log error but don't fail startup
-            logger.error(f"Kafka setup error (non-fatal): {e}")
-            return True
         except Exception as e:
-            logger.error(
-                f"Unexpected error during Kafka setup (non-fatal): {e}", exc_info=True
-            )
-            return True
-        finally:
-            if self.admin_client:
-                with contextlib.suppress(Exception):
-                    await self.admin_client.close()
+            logger.warning(f"Failed to verify topics: {e}")
+            # Not critical - topic creation already succeeded or existed

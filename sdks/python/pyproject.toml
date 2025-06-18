@@ -1,6 +1,6 @@
 [project]
 name = "lilypad-sdk"
-version = "0.6.0"
+version = "0.8.0"
 description = "The official Python library for the Lilypad API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -70,10 +70,10 @@ azure = ["azure-ai-inference>=1.0.0b9,<2.0", "aiohttp>=3.10.5,<4.0"]
 gemini = ["google-generativeai>=0.4.0,<1", "pillow>=10.4.0,<11"]
 google = ["google-genai>=1.7.0,<2", "pillow>=10.4.0,<11", "proto-plus>=1.24.0"]
 bedrock = [
-    "aioboto3>=13.2.0",
-    "boto3>=1.35.36",
-    "boto3-stubs[bedrock-runtime]>=1.35.82",
-    "types-aioboto3[bedrock-runtime]>=13.2.0.post3",
+    "boto3>=1.34.70,<2",
+    "aioboto3>=13.1.1,<14",
+    "boto3-stubs[bedrock-runtime]>=1.35.32,<2",
+    "types-aioboto3[bedrock-runtime]>=13.1.1,<14",
 ]
 mistral = ["mistralai>=1.0.0,<2"]
 outlines = ["outlines>=0.1.11"]
@@ -205,6 +205,24 @@ include = [
     "src/*",
     "tests/*",
 ]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["src/lilypad"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/generated/*",
+]
+
+[tool.coverage.report]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:", "\\.\\.\\."]
+precision = 2
+show_missing = true
 
 [project.scripts]
 lilypad = "lilypad.cli.main:app"

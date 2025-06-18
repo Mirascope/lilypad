@@ -141,6 +141,35 @@ def test_model_generate_stream_error(mock_tracer, mock_span):
     mock_span.end.assert_called_once()
 
 
+def test_model_generate_stream_immediate_error(mock_tracer, mock_span):
+    """Test model_generate_stream when wrapped function raises error immediately (covers lines 110-114)."""
+
+    class ImmediateErrorMockModel(MockModel):
+        def immediate_error_stream(self, prompts, **kwargs):
+            # Raise error before returning generator
+            raise Exception("Immediate stream error")
+
+    decorated_error = model_generate_stream(mock_tracer)
+    gp = FakeGenerationParameters(stop_at="STOP", max_tokens=100, seed=42)
+    mock_model = ImmediateErrorMockModel()
+
+    with pytest.raises(Exception) as exc_info:
+        decorated_error(
+            mock_model.immediate_error_stream,
+            mock_model,
+            ("prompt",),
+            {"generation_parameters": gp},
+        )
+
+    assert str(exc_info.value) == "Immediate stream error"
+    mock_span.set_status.assert_called_once()
+    status_call = mock_span.set_status.call_args[0][0]
+    assert status_call.status_code == StatusCode.ERROR
+    assert status_call.description == "Immediate stream error"
+    mock_span.record_exception.assert_called_once()
+    mock_span.end.assert_called_once()
+
+
 @pytest.mark.asyncio
 async def test_model_generate_async(mock_tracer, mock_span):
     decorated = model_generate_async(mock_tracer)

@@ -29,19 +29,29 @@ export const callbackCodeQueryOptions = (provider: string, code?: string) =>
     enabled: Boolean(code),
   });
 
+interface PolicyData {
+  type: string;
+  path: string;
+  route: string;
+  title: string;
+  description: string;
+  slug: string;
+  lastUpdated: string;
+}
 export const fetchVersions = async () => {
   try {
-    const response = await fetch("https://mirascope.com/static/content-meta/policy/index.json");
+    const response = await api.get<object[]>(
+      "https://mirascope.com/static/content-meta/policy/index.json"
+    );
 
-    if (!response.ok) {
+    if (response.status < 200 || response.status >= 300) {
       throw new Error(`Failed to fetch policy data: ${response.status}`);
     }
 
-    const policyData = await response.json();
-
+    const policyData = response.data as PolicyData[];
     // Find the privacy policy and terms of service entries
-    const privacyPolicy = policyData.find((policy: any) => policy.slug === "privacy");
-    const termsOfService = policyData.find((policy: any) => policy.slug === "service");
+    const privacyPolicy = policyData.find((policy) => policy.slug === "privacy");
+    const termsOfService = policyData.find((policy) => policy.slug === "service");
 
     if (!privacyPolicy || !termsOfService) {
       throw new Error("Could not find required policy information");

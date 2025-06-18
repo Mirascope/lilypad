@@ -54,7 +54,7 @@ async def create_organization(
             status_code=status.HTTP_409_CONFLICT,
             detail="Name already exists",
         )
-    if is_lilypad_cloud and billing_service and user.email:
+    if is_lilypad_cloud and billing_service.is_enabled and user.email:
         billing_service.create_customer(organization, user.email)
     user_service.update_user_active_organization_uuid(organization.uuid)
     user_organization = UserOrganizationCreate(
@@ -92,7 +92,7 @@ async def delete_organization(
         )
 
     is_cloud = request is not None and is_lilypad_cloud(request)
-    if is_cloud:
+    if is_cloud and billing_service.is_enabled:
         # Order matters, we need to grab billing info before deleting the organization
         billing_service.delete_customer_and_billing(user.active_organization_uuid)
     deleted = organization_service.delete_record_by_uuid(user.active_organization_uuid)
@@ -156,7 +156,12 @@ async def update_organization(
         user.active_organization_uuid, organization
     )
     is_cloud = request is not None and is_lilypad_cloud(request)
-    if is_cloud and updated_org.billing.stripe_customer_id:
+    if (
+        is_cloud
+        and billing_service.is_enabled
+        and updated_org.billing
+        and updated_org.billing.stripe_customer_id
+    ):
         billing_service.update_customer(
             updated_org.billing.stripe_customer_id, updated_org.name
         )

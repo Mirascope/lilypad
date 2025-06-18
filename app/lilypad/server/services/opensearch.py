@@ -147,7 +147,6 @@ class OpenSearchService:
             return False
 
         index_name = self.get_index_name(project_uuid)
-
         # Prepare bulk indexing actions
         actions = []
         for trace_dict in traces:
@@ -164,7 +163,6 @@ class OpenSearchService:
         if actions:
             try:
                 response = self.client.bulk(body=actions)
-
                 # Check for errors in the response
                 if response.get("errors", False):
                     error_items = [

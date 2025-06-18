@@ -5,8 +5,10 @@
 # Kafka
 .PHONY: setup-kafka setup-kafka-prod test-kafka
 
+# Stripe
+.PHONY: dev-stripe-webhook
 # Testing & Quality
-.PHONY: test test-watch lint typecheck format fix
+.PHONY: test test-watch test-coverage lint typecheck format fix
 
 # Database
 .PHONY: db-migrate db-rollback db-reset db-revision
@@ -20,6 +22,7 @@ help:
 	@echo "  dev               - Start development environment (all in Docker)"
 	@echo "  dev-services      - Start only dependency services in Docker"
 	@echo "  dev-local         - Start services in Docker, app/client locally"
+	@echo "  dev-stripe-webhook - Start Stripe webhook listener"
 	@echo "  dev-local-app     - Start backend app locally (requires dev-services)"
 	@echo "  dev-local-client  - Start frontend client locally (requires dev-services)"
 	@echo "  dev-build-backend - Start backend services with watch mode"
@@ -30,6 +33,7 @@ help:
 	@echo "  setup-kafka-prod  - Set up Kafka topics for production"
 	@echo "  test-kafka        - Test Kafka connection"
 	@echo "  test              - Run tests"
+	@echo "  test-coverage     - Run tests with coverage report"
 	@echo "  lint              - Run linter"
 	@echo "  typecheck         - Run type checker"
 	@echo "  format            - Format code"
@@ -77,6 +81,9 @@ dev-local-client:
 	@echo "Starting frontend client locally..."
 	$(MAKE) -C client dev
 
+dev-stripe-webhook:
+	stripe listen --forward-to localhost:8000/v0/webhooks/stripe
+	
 prod:
 	docker compose up -d
 
@@ -96,7 +103,7 @@ test-kafka:
 	uv run python scripts/test_kafka_connection.py
 
 dev-build-backend:
-	docker compose --env-file .env.dev -f docker-compose.dev.yml up postgres lilypad opensearch --watch --build
+	docker compose --env-file .env.dev -f docker-compose.dev.yml up postgres lilypad opensearch opensearch-dashboards kafka kafka-ui --watch --build
 
 test:
 	uv run pytest
@@ -104,6 +111,9 @@ test:
 test-watch:
 	@command -v pytest-watch >/dev/null 2>&1 || uv add --dev pytest-watch
 	uv run pytest-watch
+
+test-coverage:
+	uv run pytest --cov=lilypad --cov=ee --cov-report=html --cov-report=term --cov-report=term-missing
 
 lint:
 	uv run ruff check .

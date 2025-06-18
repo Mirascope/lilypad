@@ -14,7 +14,7 @@ import orjson
 from pydantic import BaseModel
 from mirascope.core import base as mb
 from opentelemetry.trace import Span, Status, StatusCode, SpanContext, get_tracer
-from mirascope.integrations import middleware_factory
+from .mirascope_middleware_factory import middleware_factory
 from opentelemetry.util.types import AttributeValue
 from mirascope.integrations._middleware_factory import SyncFunc, AsyncFunc
 
@@ -60,7 +60,7 @@ class SpanContextHolder:
 
 
 def _get_custom_context_manager(
-    function: FunctionPublic,
+    function: FunctionPublic | None,
     arg_types: ArgTypes,
     arg_values: ArgValues,
     is_async: bool,
@@ -97,15 +97,16 @@ def _get_custom_context_manager(
             }
             if decorator_tags is not None:
                 attributes["lilypad.trace.tags"] = decorator_tags
-            attribute_type = "mirascope.v1"
-            attributes["lilypad.function.uuid"] = str(function.uuid_)
-            attributes["lilypad.function.name"] = fn.__name__
-            attributes["lilypad.function.signature"] = function.signature
-            attributes["lilypad.function.code"] = function.code
-            attributes["lilypad.function.arg_types"] = json_dumps(arg_types)
-            attributes["lilypad.function.arg_values"] = json_dumps(jsonable_arg_values)
-            attributes["lilypad.function.prompt_template"] = prompt_template or ""
-            attributes["lilypad.function.version"] = function.version_num if function.version_num else -1
+            attribute_type = "mirascope.v1" if function else "trace"
+            if function:
+                attributes["lilypad.function.uuid"] = str(function.uuid_)
+                attributes["lilypad.function.name"] = fn.__name__
+                attributes["lilypad.function.signature"] = function.signature
+                attributes["lilypad.function.code"] = function.code
+                attributes["lilypad.function.arg_types"] = json_dumps(arg_types)
+                attributes["lilypad.function.arg_values"] = json_dumps(jsonable_arg_values)
+                attributes["lilypad.function.prompt_template"] = prompt_template or ""
+                attributes["lilypad.function.version"] = function.version_num if function.version_num else -1
             attributes["lilypad.type"] = attribute_type
             attributes[f"lilypad.{attribute_type}.arg_types"] = json_dumps(arg_types)
             attributes[f"lilypad.{attribute_type}.arg_values"] = json_dumps(jsonable_arg_values)

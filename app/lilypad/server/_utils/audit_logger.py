@@ -1,6 +1,7 @@
 """Audit logger for secret management operations."""
 
 import datetime
+import json
 import logging
 from enum import Enum
 from typing import Any
@@ -59,4 +60,4 @@ class AuditLogger:
             log_data["additional_info"] = safe_info
 
         # Log to file/stream
-        audit_logger.info(f"AUDIT: {log_data}")
+        audit_logger.info(f"AUDIT: {json.dumps(log_data)}")

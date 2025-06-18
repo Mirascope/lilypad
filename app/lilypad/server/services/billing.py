@@ -16,6 +16,7 @@ from ee import Tier
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
+from ..services.stripe_kafka_service import StripeKafkaService
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 
@@ -35,6 +36,15 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     table: type[BillingTable] = BillingTable
     create_model: type[BillingCreate] = BillingCreate
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if billing service is enabled (Stripe is configured).
+
+        Returns:
+            True if Stripe API key is configured, False otherwise
+        """
+        return bool(stripe.api_key)
 
     def get_tier_from_billing(self, organization_uuid: uuid.UUID) -> Tier:
         """Get the tier from the billing table for an organization.
@@ -210,13 +220,17 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             )
 
     def report_span_usage(
-        self, organization_uuid: uuid.UUID, quantity: int = 1
+        self,
+        organization_uuid: uuid.UUID,
+        quantity: int = 1,
+        idempotency_key: str | None = None,
     ) -> None:
         """Report span usage to Stripe.
 
         Args:
             organization_uuid: The UUID of the organization
             quantity: The number of spans to report (default: 1)
+            idempotency_key: Optional idempotency key for the request
         """
         if not stripe.api_key:
             # Skip reporting if Stripe is not configured
@@ -240,7 +254,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 "value": str(quantity),
                 "stripe_customer_id": str(organization.billing.stripe_customer_id),
             },
-            identifier=str(uuid.uuid4()),
+            identifier=idempotency_key or str(uuid.uuid4()),
             timestamp=int(time.time()),
         )
 
@@ -313,6 +327,67 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         session.add(billing)
         session.flush()
         return billing
+
+    async def report_span_usage_with_fallback(
+        self,
+        organization_uuid: uuid.UUID,
+        quantity: int,
+        stripe_kafka_service: StripeKafkaService | None = None,
+    ) -> None:
+        """Report span usage to Stripe Kafka queue with fallback to direct API.
+
+        Args:
+            organization_uuid: The organization UUID
+            quantity: Number of spans to report
+            stripe_kafka_service: Optional StripeKafkaService for async processing
+        """
+        # Try to send to Kafka queue first if service is available
+        if stripe_kafka_service:
+            usage_data = {
+                "organization_uuid": str(organization_uuid),
+                "quantity": quantity,
+                "event_type": "span_usage",
+                "user_uuid": str(self.user.uuid),
+                "trace_id": str(uuid.uuid4()),  # Generate a trace_id for Kafka
+            }
+
+            try:
+                kafka_available = await stripe_kafka_service.send_batch([usage_data])
+                if kafka_available:
+                    logger.info(
+                        f"Successfully queued span usage to Kafka - Org: {organization_uuid}, Quantity: {quantity}"
+                    )
+                    return
+                else:
+                    logger.warning(
+                        "Kafka not available for span usage, falling back to direct Stripe reporting"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to queue span usage to Kafka: {e}, falling back to direct Stripe reporting"
+                )
+
+        # Fallback to direct Stripe reporting
+        try:
+            self.report_span_usage(organization_uuid, quantity=quantity)
+        except _CustomerNotFound:
+            # We don't expect this to happen, but if it does, we need to create a customer
+            logger.info(f"Creating customer for organization {organization_uuid}")
+            organization = self.session.exec(
+                select(OrganizationTable).where(
+                    OrganizationTable.uuid == organization_uuid
+                )
+            ).first()
+
+            if not organization:
+                logger.error(f"Organization {organization_uuid} not found")
+                return
+
+            email = self.user.email
+
+            self.create_customer(organization, email)
+
+            self.report_span_usage(organization_uuid, quantity=quantity)
 
     @classmethod
     def update_from_subscription(

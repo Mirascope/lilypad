@@ -66,3 +66,29 @@ def test_get_nonexistent_project(client: TestClient):
     project_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
     response = client.get(f"/projects/{project_uuid}")
     assert response.status_code == 404
+
+
+def test_patch_project(client: TestClient, test_project: ProjectTable):
+    """Test updating a project."""
+    update_data = {"name": "updated_project_name"}
+    response = client.patch(f"/projects/{test_project.uuid}", json=update_data)
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["name"] == "updated_project_name"
+    assert updated_project["uuid"] == str(test_project.uuid)
+
+
+def test_patch_nonexistent_project(client: TestClient):
+    """Test updating nonexistent project returns 404."""
+    project_uuid = UUID("123e4567-e89b-12d3-a456-426614174001")
+    update_data = {"name": "updated_name"}
+    response = client.patch(f"/projects/{project_uuid}", json=update_data)
+    assert response.status_code == 404
+
+
+def test_create_project_validation_error(client: TestClient):
+    """Test creating a project with invalid data returns validation error."""
+    # Try to create a project without a name
+    project_data = {}
+    response = client.post("/projects/", json=project_data)
+    assert response.status_code == 422  # Validation error

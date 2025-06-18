@@ -2,7 +2,7 @@
 
 import logging
 from collections import defaultdict
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import (
@@ -14,10 +14,6 @@ from fastapi import (
     Request,
     status,
 )
-from mirascope.core import Provider
-from mirascope.core.base.types import CostMetadata
-from mirascope.core.costs import calculate_cost
-from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ee.validate import LicenseInfo
 
@@ -27,9 +23,10 @@ from ..._utils import (
     get_current_user,
     validate_api_key_project_strict,
 )
-from ...models.spans import Scope, SpanTable
+from ..._utils.opensearch import index_traces_in_opensearch
+from ..._utils.span_processing import create_span_from_data
+from ...models.spans import SpanTable
 from ...schemas.pagination import Paginated
-from ...schemas.span_more_details import calculate_openrouter_cost
 from ...schemas.spans import SpanCreate, SpanPublic
 from ...schemas.traces import TracesQueueResponse
 from ...schemas.users import UserPublic
@@ -37,22 +34,16 @@ from ...services import (
     OpenSearchService,
     SpanKafkaService,
     SpanService,
+    StripeKafkaService,
     get_opensearch_service,
     get_span_kafka_service,
+    get_stripe_kafka_service,
 )
 from ...services.billing import BillingService
 from ...services.projects import ProjectService
 
 traces_router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-def _convert_system_to_provider(system: str) -> Provider:
-    if system == "az.ai.inference":
-        return "azure"
-    elif system == "google_genai":
-        return "google"
-    return cast(Provider, system)
 
 
 @traces_router.get(
@@ -118,7 +109,7 @@ async def _process_span(
     parent_to_children: dict[str, list[dict]],
     span_creates: list[SpanCreate],
 ) -> SpanCreate:
-    """Process a span and its children."""
+    """Process a span and its children"""
     # Process all children first (bottom-up approach)
     total_child_cost = 0
     total_input_tokens = 0
@@ -132,76 +123,14 @@ async def _process_span(
         if span.output_tokens is not None:
             total_output_tokens += span.output_tokens
 
-    if trace["instrumentation_scope"]["name"] == "lilypad":
-        scope = Scope.LILYPAD
-        span_cost = total_child_cost
-        input_tokens = total_input_tokens
-        output_tokens = total_output_tokens
-    else:
-        scope = Scope.LLM
-        attributes = trace.get("attributes", {})
-        span_cost = 0
-        input_tokens = attributes.get(gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS)
-        output_tokens = attributes.get(gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS)
-
-        if (system := attributes.get(gen_ai_attributes.GEN_AI_SYSTEM)) and (
-            model := attributes.get(gen_ai_attributes.GEN_AI_RESPONSE_MODEL)
-        ):
-            if system == "openrouter":
-                cost = await calculate_openrouter_cost(
-                    input_tokens, output_tokens, model
-                )
-            else:
-                # TODO: Add cached_tokens once it is added to OpenTelemetry GenAI spec
-                # https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/
-                cost_metadata = CostMetadata(
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                )
-                cost = calculate_cost(
-                    _convert_system_to_provider(system), model, metadata=cost_metadata
-                )
-            if cost is not None:
-                span_cost = cost
-
-    # Process attributes and create span
-    attributes = trace.get("attributes", {})
-    function_uuid_str = attributes.get("lilypad.function.uuid")
-
-    span_create = SpanCreate(
-        span_id=trace["span_id"],
-        type=attributes.get("lilypad.type"),
-        function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
-        scope=scope,
-        data=trace,
-        parent_span_id=trace.get("parent_span_id"),
-        cost=span_cost,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        duration_ms=trace["end_time"] - trace["start_time"],
+    span_create = await create_span_from_data(
+        trace,
+        child_costs=total_child_cost,
+        child_input_tokens=total_input_tokens,
+        child_output_tokens=total_output_tokens,
     )
     span_creates.insert(0, span_create)
     return span_create
-
-
-async def index_traces_in_opensearch(
-    project_uuid: UUID,
-    traces: list[dict],
-    opensearch_service: OpenSearchService,
-) -> None:
-    """Index traces in OpenSearch."""
-    try:
-        success = opensearch_service.bulk_index_traces(project_uuid, traces)
-        if not success:
-            logger.error(
-                f"Failed to index {len(traces)} traces for project {project_uuid}"
-            )
-        else:
-            logger.info(
-                f"Successfully indexed {len(traces)} traces for project {project_uuid}"
-            )
-    except Exception as e:
-        logger.error(f"Exception during trace indexing: {str(e)}")
 
 
 @traces_router.post(
@@ -220,6 +149,9 @@ async def traces(
     billing_service: Annotated[BillingService, Depends(BillingService)],
     user: Annotated[UserPublic, Depends(get_current_user)],
     kafka_service: Annotated[SpanKafkaService, Depends(get_span_kafka_service)],
+    stripe_kafka_service: Annotated[
+        StripeKafkaService | None, Depends(get_stripe_kafka_service)
+    ],
 ) -> TracesQueueResponse:
     """Create span traces using queue-based processing."""
     if is_lilypad_cloud:
@@ -267,7 +199,7 @@ async def traces(
         logger.info(
             f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
         )
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="queued",
             span_count=len(traces_json),
             message="Spans queued for processing",
@@ -296,10 +228,16 @@ async def traces(
         project = project_service.find_record_no_organization(project_uuid)
         span_tables = span_service.create_bulk_records(
             span_creates,
-            billing_service if is_lilypad_cloud else None,
             project_uuid,
             project.organization_uuid,
         )
+        try:
+            await billing_service.report_span_usage_with_fallback(
+                project.organization_uuid, len(span_creates), stripe_kafka_service
+            )
+        except Exception as e:
+            # if reporting fails, we don't want to fail the entire span creation
+            logger.error("Error reporting span usage: %s", e)
         if opensearch_service.is_enabled:
             trace_dicts = [span.model_dump() for span in span_tables]
             background_tasks.add_task(
@@ -310,12 +248,13 @@ async def traces(
             )
 
         # Return consistent response format
-        return TracesQueueResponse(
+        traces_queue_response = TracesQueueResponse(
             trace_status="processed",
             span_count=len(span_tables),
             message="Spans processed synchronously",
             trace_ids=trace_ids,
         )
+    return traces_queue_response
 
 
 __all__ = ["traces_router"]
