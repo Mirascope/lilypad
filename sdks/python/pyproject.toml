@@ -215,6 +215,7 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.coverage.run]
 source = ["src/lilypad"]
 omit = [
+    "*/examples/*",
     "*/tests/*",
     "*/test_*.py",
     "*/__pycache__/*",
