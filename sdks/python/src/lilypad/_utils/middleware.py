@@ -14,7 +14,7 @@ import orjson
 from pydantic import BaseModel
 from mirascope.core import base as mb
 from opentelemetry.trace import Span, Status, StatusCode, SpanContext, get_tracer
-from mirascope.integrations import middleware_factory
+from .mirascope_middleware_factory import middleware_factory
 from opentelemetry.util.types import AttributeValue
 from mirascope.integrations._middleware_factory import SyncFunc, AsyncFunc
 
