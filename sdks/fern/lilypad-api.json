@@ -6990,6 +6990,28 @@
           "experimental": {
             "type": "boolean",
             "title": "Experimental"
+          },
+          "privacy_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Version"
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Version"
           }
         },
         "type": "object",
@@ -6999,9 +7021,12 @@
           "github_client_id",
           "google_client_id",
           "environment",
-          "experimental"
+          "experimental",
+          "privacy_version",
+          "terms_version"
         ],
-        "title": "SettingsPublic"
+        "title": "SettingsPublic",
+        "description": "Public settings model for client-side access."
       },
       "SpanMoreDetails": {
         "properties": {

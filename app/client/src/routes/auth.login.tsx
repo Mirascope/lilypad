@@ -10,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { fetchVersions } from "@/src/utils/auth";
+import { settingsQueryOptions } from "@/src/utils/settings";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 interface LoginSearchParam {
@@ -38,24 +39,22 @@ const LoginComponent = () => {
   const { redirect } = Route.useSearch();
   const [showModal, setShowModal] = useState<boolean>(false);
   const { loadPrivacyPolicyVersion, loadTermsVersion } = useAuth();
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const { privacy_version, terms_version } = settings;
   useEffect(() => {
-    const checkVersions = async () => {
-      try {
-        const { privacyVersion, termsVersion } = await fetchVersions();
-        const storedPrivacyVersion = loadPrivacyPolicyVersion();
-        const storedTermsVersion = loadTermsVersion();
+    try {
+      const storedPrivacyVersion = loadPrivacyPolicyVersion();
+      const storedTermsVersion = loadTermsVersion();
 
-        const versionsChanged =
-          storedPrivacyVersion !== privacyVersion || storedTermsVersion !== termsVersion;
+      const versionsChanged =
+        (privacy_version && storedPrivacyVersion !== privacy_version) ||
+        (terms_version && storedTermsVersion !== terms_version);
 
-        setShowModal(!!versionsChanged);
-      } catch (error) {
-        console.error("Error checking versions:", error);
-        setShowModal(false);
-      }
-    };
-
-    checkVersions();
+      setShowModal(!!versionsChanged);
+    } catch (error) {
+      console.error("Error checking versions:", error);
+      setShowModal(false);
+    }
   }, []);
   return (
     <div className="flex h-screen items-center justify-center">

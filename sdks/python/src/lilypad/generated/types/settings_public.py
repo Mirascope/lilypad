@@ -8,12 +8,18 @@ from ..core.unchecked_base_model import UncheckedBaseModel
 
 
 class SettingsPublic(UncheckedBaseModel):
+    """
+    Public settings model for client-side access.
+    """
+
     remote_client_url: str
     remote_api_url: str
     github_client_id: str
     google_client_id: str
     environment: str
     experimental: bool
+    privacy_version: typing.Optional[str] = None
+    terms_version: typing.Optional[str] = None
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2

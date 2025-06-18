@@ -1054,7 +1054,10 @@ export interface RecentSpansResponse {
   project_uuid: string;
 }
 
-/** SettingsPublic */
+/**
+ * SettingsPublic
+ * Public settings model for client-side access.
+ */
 export interface SettingsPublic {
   /** Remote Client Url */
   remote_client_url: string;
@@ -1068,6 +1071,10 @@ export interface SettingsPublic {
   environment: string;
   /** Experimental */
   experimental: boolean;
+  /** Privacy Version */
+  privacy_version: string | null;
+  /** Terms Version */
+  terms_version: string | null;
 }
 
 /**

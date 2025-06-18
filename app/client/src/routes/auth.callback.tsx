@@ -1,6 +1,6 @@
 import { useAuth } from "@/src/auth";
-import { UserConsentUpdate } from "@/src/types/types";
-import { callbackCodeQueryOptions, fetchVersions } from "@/src/utils/auth";
+import { callbackCodeQueryOptions } from "@/src/utils/auth";
+import { settingsQueryOptions } from "@/src/utils/settings";
 import {
   useCreateUserConsentMutation,
   useUpdateUserConsentMutation,
@@ -40,6 +40,9 @@ const CallbackPage = () => {
   const navigate = useNavigate();
   const { code, state } = Route.useSearch();
   const { setPrivacyPolicyVersion, setTermsVersion } = useAuth();
+  const { data: settings } = useSuspenseQuery(settingsQueryOptions());
+  const createUserConsent = useCreateUserConsentMutation();
+  const updateUserConsent = useUpdateUserConsentMutation();
   let stateJson: State = {};
 
   if (state) {
@@ -50,10 +53,8 @@ const CallbackPage = () => {
     }
   }
   const activeProvider = stateJson.provider ?? "github";
-
   const { data: session } = useSuspenseQuery(callbackCodeQueryOptions(activeProvider, code));
-  const createUserConsent = useCreateUserConsentMutation();
-  const updateUserConsent = useUpdateUserConsentMutation();
+
   useEffect(() => {
     if (session) {
       auth.setSession(session);
@@ -62,47 +63,41 @@ const CallbackPage = () => {
 
   useEffect(() => {
     if (!auth.user) return;
-    const run = async () => {
-      const { privacyVersion, termsVersion } = await fetchVersions();
-      setPrivacyPolicyVersion(privacyVersion);
-      setTermsVersion(termsVersion);
 
-      if (auth.user) {
-        if (!auth.user.user_consents) {
-          if (!createUserConsent.isPending) {
-            createUserConsent
-              .mutateAsync({
-                privacy_policy_version: privacyVersion,
-                tos_version: termsVersion,
-              })
-              .catch(() => toast.error("Failed to save privacy and terms"));
-          }
-        } else {
-          const updates: UserConsentUpdate = {};
-          if (auth.user.user_consents.privacy_policy_version !== privacyVersion) {
-            updates.privacy_policy_version = privacyVersion;
-          }
-          if (auth.user.user_consents.tos_version !== termsVersion) {
-            updates.tos_version = termsVersion;
-          }
-          if (Object.keys(updates).length > 0) {
-            updateUserConsent
-              .mutateAsync({
-                userConsentUuid: auth.user.user_consents.uuid,
-                userConsentUpdate: updates,
-              })
-              .catch(() => toast.error("Failed to update privacy and terms"));
-          }
+    const { privacy_version, terms_version } = settings;
+    const { user_consents } = auth.user;
+
+    if (privacy_version && terms_version) {
+      if (!user_consents && !createUserConsent.isPending) {
+        createUserConsent
+          .mutateAsync({ privacy_policy_version: privacy_version, tos_version: terms_version })
+          .catch(() => toast.error("Failed to save privacy and terms"));
+      } else if (user_consents) {
+        const updates = {
+          ...(user_consents.privacy_policy_version !== privacy_version && {
+            privacy_policy_version: privacy_version,
+          }),
+          ...(user_consents.tos_version !== terms_version && { tos_version: terms_version }),
+        };
+
+        if (Object.keys(updates).length > 0) {
+          updateUserConsent
+            .mutateAsync({
+              userConsentUuid: user_consents.uuid,
+              userConsentUpdate: updates,
+            })
+            .catch(() => toast.error("Failed to update privacy and terms"));
         }
-        navigate({
-          to: stateJson?.redirect ?? "/projects",
-          from: "/",
-        }).catch(() => {
-          toast.error("Failed to navigate after login.");
-        });
       }
-    };
-    run();
+
+      setPrivacyPolicyVersion(privacy_version);
+      setTermsVersion(terms_version);
+    }
+
+    navigate({
+      to: stateJson?.redirect ?? "/projects",
+      from: "/",
+    }).catch(() => toast.error("Failed to navigate after login."));
   }, [stateJson?.redirect, auth.user]);
 
   return (
