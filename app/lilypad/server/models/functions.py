@@ -26,8 +26,8 @@ if TYPE_CHECKING:
     from .projects import ProjectTable
     from .spans import SpanTable
 
-MAX_ARG_NAME_LENGTH = 100
-MAX_TYPE_NAME_LENGTH = 100
+MAX_ARG_NAME_LENGTH = 1000
+MAX_TYPE_NAME_LENGTH = 1000
 
 # Avoid overwriting built-in special names like __import__.
 ALLOWED_NAME_REGEX = re.compile(r"^(?!__)[A-Za-z_][A-Za-z0-9_]*$")
