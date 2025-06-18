@@ -1,23 +1,21 @@
 """The `middleware_factory` method for handling the call response."""
 
-from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
-from contextlib import AbstractContextManager, contextmanager
-from functools import wraps
 from typing import (
     Any,
-    ParamSpec,
     TypeVar,
+    ParamSpec,
     cast,
     overload,
 )
+from functools import wraps
+from contextlib import AbstractContextManager, contextmanager
+from collections.abc import Callable, Awaitable, Generator, AsyncGenerator
 
 from pydantic import BaseModel
-
-from mirascope.core.base._utils._base_type import BaseType
-
 from mirascope.core.base._utils import fn_is_async
-from mirascope.core.base.call_response import BaseCallResponse
 from mirascope.core.base.stream import BaseStream
+from mirascope.core.base.call_response import BaseCallResponse
+from mirascope.core.base._utils._base_type import BaseType
 from mirascope.core.base.structured_stream import BaseStructuredStream
 
 _BaseCallResponseT = TypeVar("_BaseCallResponseT", bound=BaseCallResponse)
@@ -126,7 +124,7 @@ def middleware_factory(
                             raise
                         else:
                             # Exception was handled, exit context manager and continue
-                            context_manager.__exit__(None, None, None)
+                            context_manager.__exit__(type(e), e, e.__traceback__)
                             raise
                     else:
                         # No handle_error_async provided, exit context manager with exception and re-raise
@@ -155,7 +153,7 @@ def middleware_factory(
                                         context_manager.__exit__(type(new_e), new_e, new_e.__traceback__)
                                         raise
                                     else:
-                                        context_manager.__exit__(None, None, None)
+                                        context_manager.__exit__(type(e), e, e.__traceback__)
                                         return
                                 else:
                                     context_manager.__exit__(type(e), e, e.__traceback__)
