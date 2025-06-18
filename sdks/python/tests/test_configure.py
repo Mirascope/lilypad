@@ -464,3 +464,55 @@ def test_span_to_dict_minimal(mock_get_settings, mock_get_client):
     assert result["events"] == []
     assert result["links"] == []
     assert result["instrumentation_scope"]["name"] is None
+
+
+@patch("lilypad._configure.trace")
+def test_configure_instrument_with_modules(mock_trace):
+    """Test instrument parameter with module objects."""
+    # Mock not already initialized
+    mock_trace.get_tracer_provider.return_value = Mock(__class__=Mock(__name__="DefaultTracerProvider"))
+
+    # Create mock modules
+    mock_requests = Mock(__name__="requests")
+    mock_httpx = Mock(__name__="httpx")
+
+    with (
+        patch("lilypad._configure.get_settings"),
+        patch("lilypad._configure._set_settings"),
+        patch("lilypad._configure.TracerProvider"),
+        patch("lilypad._configure.BatchSpanProcessor"),
+        patch("lilypad._configure._JSONSpanExporter"),
+        patch("lilypad._opentelemetry.http.instrument_requests") as mock_inst_requests,
+        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_inst_httpx,
+    ):
+        configure(instrument=[mock_requests, mock_httpx])
+
+        # Verify correct instrumentation functions were called
+        mock_inst_requests.assert_called_once()
+        mock_inst_httpx.assert_called_once()
+
+
+@patch("lilypad._configure.trace")
+def test_configure_instrument_with_unknown_module(mock_trace):
+    """Test instrument parameter with unknown module."""
+    # Mock not already initialized
+    mock_trace.get_tracer_provider.return_value = Mock(__class__=Mock(__name__="DefaultTracerProvider"))
+
+    # Create mock unknown module
+    mock_unknown = Mock(__name__="unknown_module")
+
+    with (
+        patch("lilypad._configure.get_settings"),
+        patch("lilypad._configure._set_settings"),
+        patch("lilypad._configure.TracerProvider"),
+        patch("lilypad._configure.BatchSpanProcessor"),
+        patch("lilypad._configure._JSONSpanExporter"),
+        patch("lilypad._configure.logging.getLogger") as mock_logger,
+    ):
+        logger_instance = Mock()
+        mock_logger.return_value = logger_instance
+
+        configure(instrument=[mock_unknown])
+
+        # Verify warning was logged
+        logger_instance.warning.assert_called_once_with("Unknown HTTP client module: unknown_module")

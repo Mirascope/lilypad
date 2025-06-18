@@ -69,15 +69,20 @@ class ContextPropagator:
     - "composite": All formats (for maximum compatibility)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, set_global: bool = True) -> None:
         """Initialize the context propagator.
 
-        WARNING: This sets the global OpenTelemetry propagator, affecting
-        all trace context propagation in the current process.
+        Args:
+            set_global: Whether to set the global OpenTelemetry propagator.
+                       Default is True for backward compatibility.
+
+        WARNING: If set_global is True, this sets the global OpenTelemetry
+        propagator, affecting all trace context propagation in the current process.
         """
         self.propagator = get_propagator()
         # Set the global propagator - this affects the entire process
-        propagate.set_global_textmap(self.propagator)
+        if set_global:
+            propagate.set_global_textmap(self.propagator)
 
     def extract_context(self, carrier: dict[str, Any]) -> context.Context:
         """Extract trace context from a carrier (e.g., HTTP headers).
@@ -126,8 +131,21 @@ class ContextPropagator:
             context.detach(token)
 
 
-# Global instance for convenience
-_propagator = ContextPropagator()
+# Global instance for convenience - created lazily
+_propagator: ContextPropagator | None = None
+
+
+def _get_propagator() -> ContextPropagator:
+    """Get or create the global propagator instance."""
+    global _propagator
+    if _propagator is None:
+        # Check if we should set global propagator
+        # This is controlled by whether configure() has been called
+        import os
+
+        set_global = os.environ.get("_LILYPAD_PROPAGATOR_SET_GLOBAL", "true").lower() == "true"
+        _propagator = ContextPropagator(set_global=set_global)
+    return _propagator
 
 
 def extract_context(carrier: dict[str, Any]) -> context.Context:
@@ -223,7 +241,7 @@ def extract_context(carrier: dict[str, Any]) -> context.Context:
 
         If no valid trace context is found, returns an empty context.
     """
-    return _propagator.extract_context(carrier)
+    return _get_propagator().extract_context(carrier)
 
 
 def inject_context(carrier: MutableMapping[str, str], context: context.Context | None = None) -> None:
@@ -304,7 +322,7 @@ def inject_context(carrier: MutableMapping[str, str], context: context.Context |
         - B3: adds 'b3' header (single format) or 'x-b3-*' headers (multi format)
         - Jaeger: adds 'uber-trace-id' header
     """
-    _propagator.inject_context(carrier, context)
+    _get_propagator().inject_context(carrier, context)
 
 
 def with_extracted_context(carrier: dict[str, Any]) -> tuple[context.Context, object | None]:
@@ -316,7 +334,7 @@ def with_extracted_context(carrier: dict[str, Any]) -> tuple[context.Context, ob
     Returns:
         Tuple of (extracted context, detach token)
     """
-    return _propagator.with_extracted_context(carrier)
+    return _get_propagator().with_extracted_context(carrier)
 
 
 def detach_context(token: object | None) -> None:
@@ -325,4 +343,4 @@ def detach_context(token: object | None) -> None:
     Args:
         token: The token returned from attach operation
     """
-    _propagator.detach_context(token)
+    _get_propagator().detach_context(token)

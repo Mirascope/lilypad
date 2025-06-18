@@ -7,20 +7,18 @@ propagated without code changes.
 
 import asyncio
 from typing import List, Any
-import requests
 
-# Enable automatic instrumentation at the start
-from lilypad.integrations import instrument_http_clients
-from lilypad import trace, configure
+import lilypad
 
-# Enable automatic trace propagation for ALL HTTP calls
-instrument_http_clients()
-
-# Configure Lilypad
-configure(
+# Configure Lilypad with automatic HTTP instrumentation
+lilypad.configure(
     # api_key="your-api-key",
-    # project_id="your-project-id"
+    # project_id="your-project-id",
+    auto_http=True  # Enable automatic trace propagation for ALL HTTP calls
 )
+
+# Import HTTP libraries after configuration for auto-instrumentation
+import requests
 
 
 # Example: Document retrieval service (runs on separate server)
@@ -35,21 +33,21 @@ class Document:
 
 
 # This would be on the retrieval server
-@trace()
+@lilypad.trace()
 def lexical_retr(query: str, k: int) -> List[Document]:
     """Lexical retrieval using BM25 or similar."""
     # Simulate lexical search
     return [Document(f"lex_{i}", f"Lexical result {i} for: {query}") for i in range(k)]
 
 
-@trace()
+@lilypad.trace()
 def semantic_retr(query: str, k: int) -> List[Document]:
     """Semantic retrieval using embeddings."""
     # Simulate semantic search
     return [Document(f"sem_{i}", f"Semantic result {i} for: {query}") for i in range(k)]
 
 
-@trace()
+@lilypad.trace()
 def rerank(query: str, docs: List[Document]) -> List[Document]:
     """Rerank documents by relevance."""
     # Simulate reranking
@@ -58,7 +56,7 @@ def rerank(query: str, docs: List[Document]) -> List[Document]:
     return sorted(docs, key=lambda d: d.score, reverse=True)
 
 
-@trace()
+@lilypad.trace()
 def retr(query: str, k: int) -> List[Document]:
     """Main retrieval function that orchestrates the retrieval pipeline."""
     lexdocs = lexical_retr(query, k)
@@ -94,14 +92,14 @@ class RetrievalClient:
 
 
 # This is on the caller process
-@trace()
+@lilypad.trace()
 def generate(query: str, docs: List[Document]) -> str:
     """Generate answer based on retrieved documents."""
     context = "\n".join(doc.content for doc in docs)
     return f"Based on the search for '{query}', here's what I found: {context[:200]}..."
 
 
-@trace()
+@lilypad.trace()
 def rag(query: str) -> dict[str, Any]:
     """RAG pipeline that makes remote calls.
 
@@ -126,7 +124,7 @@ def rag(query: str) -> dict[str, Any]:
 class HTTPBasedRPCExample:
     """Example showing how HTTP-based RPC clients work automatically."""
 
-    @trace()
+    @lilypad.trace()
     def call_json_rpc_service(self, method: str, params: dict) -> Any:
         # JSON-RPC clients that use requests/httpx internally
         # will automatically propagate trace context!
@@ -139,7 +137,7 @@ class HTTPBasedRPCExample:
 
 
 # Example with async clients
-@trace()
+@lilypad.trace()
 async def async_rag(query: str) -> dict[str, Any]:
     """Async version using httpx (also automatically instrumented)."""
     import httpx
@@ -155,7 +153,7 @@ async def async_rag(query: str) -> dict[str, Any]:
     return {"query": query, "answer": answer}
 
 
-@trace()
+@lilypad.trace()
 async def async_generate(query: str, docs: list) -> str:
     """Async document generation."""
     await asyncio.sleep(0.1)  # Simulate async work
@@ -174,17 +172,20 @@ class RetrieveRequest(BaseModel):
     k: int
 
 
+# Define the handler function at module level
+@lilypad.trace()
+def handle_retrieve(query: str, k: int) -> List[Document]:
+    # This span is automatically a child of the caller's span!
+    return retr(query, k)
+
+
 @app.post("/retrieve")
 async def retrieve_endpoint(request: Request, data: RetrieveRequest) -> dict[str, list[dict[str, Any]]]:
     """Server endpoint that extracts trace context from headers."""
 
-    # Extract trace context from incoming headers
-    @trace(extract_from=dict(request.headers))
-    def handle_retrieve() -> List[Document]:
-        # This span is automatically a child of the caller's span!
-        return retr(data.query, data.k)
-
-    docs = handle_retrieve()
+    # Use context manager to extract trace context from incoming headers
+    with lilypad.propagated_context(dict(request.headers)):
+        docs = handle_retrieve(data.query, data.k)
 
     return {"documents": [{"id": doc.id, "content": doc.content, "score": doc.score} for doc in docs]}
 

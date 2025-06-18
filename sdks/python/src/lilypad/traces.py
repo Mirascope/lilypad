@@ -23,7 +23,6 @@ from collections.abc import Callable, Coroutine, Generator
 
 import orjson
 from pydantic import BaseModel
-from opentelemetry import context as context_api
 from opentelemetry.trace import format_span_id, get_tracer_provider
 from opentelemetry.util.types import AttributeValue
 
@@ -54,7 +53,6 @@ from ._utils.function_cache import (
 )
 from .generated.types.label import Label
 from ._utils.serializer_registry import SerializerMap
-from ._utils.context_propagation import extract_context, detach_context
 from .generated.types.evaluation_type import EvaluationType
 from .generated.types.function_public import FunctionPublic
 from .generated.errors.not_found_error import NotFoundError
@@ -74,38 +72,6 @@ def _get_trace_type(function: FunctionPublic | None) -> Literal["trace", "functi
     if function:
         return "function"
     return "trace"
-
-
-def _handle_context_propagation(
-    extract_from: dict[str, Any] | None, parent_context: context_api.Context | None
-) -> object | None:
-    """Handle context propagation for distributed tracing.
-
-    Args:
-        extract_from: Dictionary (e.g., HTTP headers) to extract context from
-        parent_context: Explicit parent context to use
-
-    Returns:
-        Token for detaching context, or None if no context was attached
-    """
-    if not (extract_from or parent_context):
-        return None
-
-    try:
-        if extract_from:
-            # Extract context from carrier (e.g., HTTP headers)
-            ctx = extract_context(extract_from)
-            token = context_api.attach(ctx)
-        elif parent_context:
-            # Use explicitly provided parent context
-            token = context_api.attach(parent_context)
-        else:
-            token = None
-        return token
-    except Exception as e:
-        # Log error but continue with trace
-        logger.warning(f"Failed to propagate context: {e}")
-        return None
 
 
 class Annotation(BaseModel):
@@ -667,8 +633,6 @@ def trace(
     mode: None = None,
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
-    parent_context: context_api.Context | None = None,
-    extract_from: dict[str, Any] | None = None,
 ) -> TraceDecorator: ...
 
 
@@ -680,8 +644,6 @@ def trace(
     mode: None = None,
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
-    parent_context: context_api.Context | None = None,
-    extract_from: dict[str, Any] | None = None,
 ) -> VersionedFunctionTraceDecorator: ...
 
 
@@ -693,8 +655,6 @@ def trace(
     mode: Literal["wrap"],
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
-    parent_context: context_api.Context | None = None,
-    extract_from: dict[str, Any] | None = None,
 ) -> WrappedTraceDecorator: ...
 
 
@@ -706,8 +666,6 @@ def trace(
     mode: Literal["wrap"],
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
-    parent_context: context_api.Context | None = None,
-    extract_from: dict[str, Any] | None = None,
 ) -> WrappedVersionedFunctionTraceDecorator: ...
 
 
@@ -718,8 +676,6 @@ def trace(
     mode: Literal["wrap"] | None = None,
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
-    parent_context: context_api.Context | None = None,
-    extract_from: dict[str, Any] | None = None,
 ) -> TraceDecorator | VersionedFunctionTraceDecorator:
     """Decorator for tracing function execution with distributed tracing support.
 
@@ -734,10 +690,6 @@ def trace(
         mode: If "wrap", returns a Trace object with the response and annotation methods.
         tags: List of tags to attach to spans created by this function.
         serializers: Custom serializers for function arguments and return values.
-        parent_context: Explicit parent context for distributed tracing. Use this when
-                       you have a context object from another service/thread.
-        extract_from: Dictionary (typically HTTP headers) to extract parent context from.
-                     Used for distributed tracing across services.
 
     Returns:
         A decorator that instruments the function with tracing capabilities.
@@ -764,28 +716,38 @@ def trace(
 
         ```python
         from fastapi import FastAPI, Request
-        from lilypad import trace
+        from lilypad import trace, propagated_context
 
         app = FastAPI()
 
 
+        @trace()
+        def process_request(data: dict) -> dict:
+            # This function is defined at module level
+            result = heavy_processing(data)
+            return {"status": "success", "result": result}
+
+
         @app.post("/process")
         async def api_endpoint(request: Request, data: dict):
-            # Extract trace context from incoming HTTP headers
-            @trace(extract_from=dict(request.headers))
-            async def process_request(data: dict) -> dict:
-                # This span will be a child of the incoming trace
-                result = await heavy_processing(data)
-                return {"status": "success", "result": result}
-
-            return await process_request(data)
+            # Use context manager to propagate trace context
+            with propagated_context(dict(request.headers)):
+                # process_request will be a child of the incoming trace
+                return await process_request(data)
         ```
 
         Using with explicit parent context:
 
         ```python
         from opentelemetry import context as otel_context
+        from lilypad import trace, context
         import threading
+
+
+        @trace()
+        def process_in_thread(data: dict):
+            # This function is defined at module level
+            return transform_data(data)
 
 
         # In main thread
@@ -801,12 +763,10 @@ def trace(
 
         # In worker thread
         def worker_process(data: dict, parent_ctx):
-            @trace(parent_context=parent_ctx)
-            def process_in_thread(data: dict):
+            # Use context manager for parent context
+            with context(parent=parent_ctx):
                 # This span is a child of main_process span
-                return transform_data(data)
-
-            return process_in_thread(data)
+                return process_in_thread(data)
         ```
 
         With versioning and tags:
@@ -825,9 +785,9 @@ def trace(
         ```
 
     Note:
-        - Only one of `parent_context` or `extract_from` should be provided
+        - For distributed tracing, use the `propagated_context` or `context` context managers
         - Context extraction supports multiple propagation formats (W3C, B3, Jaeger)
-        - The distributed tracing modifies global OpenTelemetry state
+        - Configure propagation format using `lilypad.configure(propagator="...")`
     """
 
     decorator_tags = sorted(set(tags)) if tags else None
@@ -878,89 +838,82 @@ def trace(
             @call_safely(execute_user_function_only)
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                # Handle context propagation
-                token = _handle_context_propagation(extract_from, parent_context)
+                with Span(trace_name) as span:
+                    final_args = args
+                    final_kwargs = kwargs
+                    needs_trace_ctx = "trace_ctx" in signature.parameters
+                    has_user_provided_trace_ctx = False
+                    try:
+                        bound_call_args = signature.bind(*args, **kwargs)
+                        has_user_provided_trace_ctx = "trace_ctx" in bound_call_args.arguments
+                    except TypeError:
+                        pass
+                    if needs_trace_ctx and not has_user_provided_trace_ctx:
+                        final_args = (span, *args)
+                    arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
+                    arg_values.pop("trace_ctx", None)
+                    arg_types.pop("trace_ctx", None)
 
-                try:
-                    with Span(trace_name) as span:
-                        final_args = args
-                        final_kwargs = kwargs
-                        needs_trace_ctx = "trace_ctx" in signature.parameters
-                        has_user_provided_trace_ctx = False
+                    async_lilypad_client = get_async_client(api_key=settings.api_key)
+
+                    closure = Closure.from_fn(fn)
+
+                    async def get_or_create_function_async() -> FunctionPublic | None:
                         try:
-                            bound_call_args = signature.bind(*args, **kwargs)
-                            has_user_provided_trace_ctx = "trace_ctx" in bound_call_args.arguments
-                        except TypeError:
-                            pass
-                        if needs_trace_ctx and not has_user_provided_trace_ctx:
-                            final_args = (span, *args)
-                        arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
-                        arg_values.pop("trace_ctx", None)
-                        arg_types.pop("trace_ctx", None)
-
-                        async_lilypad_client = get_async_client(api_key=settings.api_key)
-
-                        closure = Closure.from_fn(fn)
-
-                        async def get_or_create_function_async() -> FunctionPublic | None:
-                            try:
-                                return await get_function_by_hash_async(
-                                    project_uuid=settings.project_id, function_hash=closure.hash
-                                )
-                            except NotFoundError:
-                                return await async_lilypad_client.projects.functions.create(
-                                    project_uuid_=settings.project_id,
-                                    project_uuid=settings.project_id,
-                                    code=closure.code,
-                                    hash=closure.hash,
-                                    name=closure.name,
-                                    signature=closure.signature,
-                                    arg_types=arg_types,
-                                    dependencies=closure.dependencies,
-                                    is_versioned=True,
-                                    prompt_template=prompt_template,
-                                )
-
-                        if versioning == "automatic":
-                            function = await get_or_create_function_async()
-                        else:
-                            function = None
-
-                        function_uuid = function.uuid_ if function else None
-
-                        trace_attribute = _construct_trace_attributes(
-                            trace_type=_get_trace_type(function),
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            serializers=local_serializers,
-                        )
-
-                        if is_mirascope_call:  # pragma: no cover
-                            decorator_inner = create_mirascope_middleware(
-                                function,
-                                arg_types,
-                                arg_values,
-                                True,
-                                prompt_template,
-                                settings.project_id,
-                                current_span=span.opentelemetry_span,
+                            return await get_function_by_hash_async(
+                                project_uuid=settings.project_id, function_hash=closure.hash
                             )
-                            output = await decorator_inner(fn)(*final_args, **final_kwargs)
-                        else:
-                            with _set_span_attributes(
-                                span, trace_attribute, is_async=True, function=function, serializers=local_serializers
-                            ) as result_holder:
-                                output = await fn(*final_args, **final_kwargs)
-                                result_holder.set_result(output)
-                        span_id = span.span_id
-                        _set_trace_context({"span_id": span_id, "function_uuid": function_uuid})
+                        except NotFoundError:
+                            return await async_lilypad_client.projects.functions.create(
+                                project_uuid_=settings.project_id,
+                                project_uuid=settings.project_id,
+                                code=closure.code,
+                                hash=closure.hash,
+                                name=closure.name,
+                                signature=closure.signature,
+                                arg_types=arg_types,
+                                dependencies=closure.dependencies,
+                                is_versioned=True,
+                                prompt_template=prompt_template,
+                            )
 
-                    if mode == "wrap":
-                        return AsyncTrace(response=output, span_id=span_id, function_uuid=function_uuid)
-                    return output  # pyright: ignore [reportReturnType]
-                finally:
-                    if token:
-                        detach_context(token)
+                    if versioning == "automatic":
+                        function = await get_or_create_function_async()
+                    else:
+                        function = None
+
+                    function_uuid = function.uuid_ if function else None
+
+                    trace_attribute = _construct_trace_attributes(
+                        trace_type=_get_trace_type(function),
+                        arg_types=arg_types,
+                        arg_values=arg_values,
+                        serializers=local_serializers,
+                    )
+
+                    if is_mirascope_call:  # pragma: no cover
+                        decorator_inner = create_mirascope_middleware(
+                            function,
+                            arg_types,
+                            arg_values,
+                            True,
+                            prompt_template,
+                            settings.project_id,
+                            current_span=span.opentelemetry_span,
+                        )
+                        output = await decorator_inner(fn)(*final_args, **final_kwargs)
+                    else:
+                        with _set_span_attributes(
+                            span, trace_attribute, is_async=True, function=function, serializers=local_serializers
+                        ) as result_holder:
+                            output = await fn(*final_args, **final_kwargs)
+                            result_holder.set_result(output)
+                    span_id = span.span_id
+                    _set_trace_context({"span_id": span_id, "function_uuid": function_uuid})
+
+                if mode == "wrap":
+                    return AsyncTrace(response=output, span_id=span_id, function_uuid=function_uuid)
+                return output  # pyright: ignore [reportReturnType]
 
             if versioning is None:
                 return inner_async
@@ -1056,93 +1009,86 @@ def trace(
             @call_safely(execute_user_function_only)
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-                # Handle context propagation
-                token = _handle_context_propagation(extract_from, parent_context)
+                with Span(trace_name) as span:
+                    final_args = args
+                    final_kwargs = kwargs
+                    needs_trace_ctx = "trace_ctx" in signature.parameters
+                    has_user_provided_trace_ctx = False
+                    try:
+                        bound_call_args = signature.bind(*args, **kwargs)
+                        has_user_provided_trace_ctx = "trace_ctx" in bound_call_args.arguments
+                    except TypeError:
+                        pass
 
-                try:
-                    with Span(trace_name) as span:
-                        final_args = args
-                        final_kwargs = kwargs
-                        needs_trace_ctx = "trace_ctx" in signature.parameters
-                        has_user_provided_trace_ctx = False
+                    if needs_trace_ctx and not has_user_provided_trace_ctx:
+                        final_args = (span, *args)
+                    arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
+                    arg_values.pop("trace_ctx", None)
+                    arg_types.pop("trace_ctx", None)
+
+                    lilypad_client = get_sync_client(api_key=settings.api_key)
+
+                    closure = Closure.from_fn(fn)
+
+                    def get_or_create_function_sync() -> FunctionPublic | None:
                         try:
-                            bound_call_args = signature.bind(*args, **kwargs)
-                            has_user_provided_trace_ctx = "trace_ctx" in bound_call_args.arguments
-                        except TypeError:
-                            pass
-
-                        if needs_trace_ctx and not has_user_provided_trace_ctx:
-                            final_args = (span, *args)
-                        arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
-                        arg_values.pop("trace_ctx", None)
-                        arg_types.pop("trace_ctx", None)
-
-                        lilypad_client = get_sync_client(api_key=settings.api_key)
-
-                        closure = Closure.from_fn(fn)
-
-                        def get_or_create_function_sync() -> FunctionPublic | None:
-                            try:
-                                return get_function_by_hash_sync(
-                                    project_uuid=settings.project_id, function_hash=closure.hash
-                                )
-                            except NotFoundError:
-                                return lilypad_client.projects.functions.create(
-                                    project_uuid_=settings.project_id,
-                                    project_uuid=settings.project_id,
-                                    code=closure.code,
-                                    hash=closure.hash,
-                                    name=closure.name,
-                                    signature=closure.signature,
-                                    arg_types=arg_types,
-                                    dependencies=closure.dependencies,
-                                    is_versioned=True,
-                                    prompt_template=prompt_template,
-                                )
-
-                        function = get_or_create_function_sync() if versioning == "automatic" else None
-
-                        function_uuid = function.uuid_ if function else None
-
-                        trace_attribute = _construct_trace_attributes(
-                            trace_type=_get_trace_type(function),
-                            arg_types=arg_types,
-                            arg_values=arg_values,
-                            serializers=local_serializers,
-                        )
-
-                        if is_mirascope_call:
-                            decorator_inner = create_mirascope_middleware(
-                                function,
-                                arg_types,
-                                arg_values,
-                                False,
-                                prompt_template,
-                                settings.project_id,
-                                current_span=span.opentelemetry_span,
-                                decorator_tags=decorator_tags,
+                            return get_function_by_hash_sync(
+                                project_uuid=settings.project_id, function_hash=closure.hash
                             )
-                            output = decorator_inner(fn)(*final_args, **final_kwargs)
-                        else:
-                            with _set_span_attributes(
-                                span,
-                                trace_attribute,
-                                is_async=False,
-                                function=function,
-                                decorator_tags=decorator_tags,
-                                serializers=local_serializers,
-                            ) as result_holder:
-                                output = fn(*final_args, **final_kwargs)
-                                result_holder.set_result(output)
-                        span_id = span.span_id
-                        _set_trace_context({"span_id": span_id, "function_uuid": function_uuid})
+                        except NotFoundError:
+                            return lilypad_client.projects.functions.create(
+                                project_uuid_=settings.project_id,
+                                project_uuid=settings.project_id,
+                                code=closure.code,
+                                hash=closure.hash,
+                                name=closure.name,
+                                signature=closure.signature,
+                                arg_types=arg_types,
+                                dependencies=closure.dependencies,
+                                is_versioned=True,
+                                prompt_template=prompt_template,
+                            )
 
-                    if mode == "wrap":
-                        return Trace(response=output, span_id=span_id, function_uuid=function_uuid)
-                    return output  # pyright: ignore [reportReturnType]
-                finally:
-                    if token:
-                        detach_context(token)
+                    function = get_or_create_function_sync() if versioning == "automatic" else None
+
+                    function_uuid = function.uuid_ if function else None
+
+                    trace_attribute = _construct_trace_attributes(
+                        trace_type=_get_trace_type(function),
+                        arg_types=arg_types,
+                        arg_values=arg_values,
+                        serializers=local_serializers,
+                    )
+
+                    if is_mirascope_call:
+                        decorator_inner = create_mirascope_middleware(
+                            function,
+                            arg_types,
+                            arg_values,
+                            False,
+                            prompt_template,
+                            settings.project_id,
+                            current_span=span.opentelemetry_span,
+                            decorator_tags=decorator_tags,
+                        )
+                        output = decorator_inner(fn)(*final_args, **final_kwargs)
+                    else:
+                        with _set_span_attributes(
+                            span,
+                            trace_attribute,
+                            is_async=False,
+                            function=function,
+                            decorator_tags=decorator_tags,
+                            serializers=local_serializers,
+                        ) as result_holder:
+                            output = fn(*final_args, **final_kwargs)
+                            result_holder.set_result(output)
+                    span_id = span.span_id
+                    _set_trace_context({"span_id": span_id, "function_uuid": function_uuid})
+
+                if mode == "wrap":
+                    return Trace(response=output, span_id=span_id, function_uuid=function_uuid)
+                return output  # pyright: ignore [reportReturnType]
 
             if versioning is None:
                 return inner  # pyright: ignore [reportReturnType]

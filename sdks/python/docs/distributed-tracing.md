@@ -6,12 +6,26 @@ Lilypad supports distributed tracing using OpenTelemetry context propagation, al
 
 **WARNING**: Lilypad's context propagation modifies the global OpenTelemetry propagator by calling `propagate.set_global_textmap()`. This affects all OpenTelemetry instrumentation in your process. If you have other OpenTelemetry integrations, they will use Lilypad's configured propagator.
 
-You can control the propagator type via the `LILYPAD_PROPAGATOR` environment variable:
-- `tracecontext` (default): W3C Trace Context
-- `b3`: B3 Single Format
-- `b3multi`: B3 Multi Format
-- `jaeger`: Jaeger format
-- `composite`: All formats for maximum compatibility
+You can control the propagator type and preserve existing propagators using the `configure()` function:
+
+```python
+import lilypad
+
+# Use a specific propagator
+lilypad.configure(
+    api_key="your-api-key",
+    project_id="your-project-id",
+    propagator="tracecontext"  # or "b3", "b3multi", "jaeger", "composite"
+)
+
+# Preserve existing OpenTelemetry propagator
+lilypad.configure(
+    api_key="your-api-key",
+    project_id="your-project-id",
+    propagator="tracecontext",
+    preserve_existing_propagator=True  # Combines with existing propagator
+)
+```
 
 ## Overview
 
@@ -35,15 +49,19 @@ lilypad.configure(
 )
 ```
 
-### 2. Automatic Instrumentation (Recommended)
+### 2. Automatic HTTP Instrumentation (Recommended)
 
 The easiest way to enable distributed tracing is using automatic instrumentation:
 
 ```python
-from lilypad.integrations import instrument_http_clients
+import lilypad
 
-# Enable at application startup
-instrument_http_clients()
+# Configure and enable automatic HTTP instrumentation
+lilypad.configure(
+    api_key="your-api-key",
+    project_id="your-project-id",
+    auto_http=True  # Enable automatic HTTP client instrumentation
+)
 
 # Now ALL HTTP calls will automatically propagate trace context!
 import requests
@@ -55,43 +73,59 @@ def my_service():
     return response.json()
 ```
 
-This approach works with any HTTP-based RPC client that uses standard libraries internally:
+You can also selectively instrument specific HTTP clients:
 
 ```python
-# Enable auto-instrumentation once
-instrument_http_clients()
+import requests
+import httpx
 
-# Your RPC client (gRPC, JSON-RPC, custom client, etc.)
-from my_api import Client
+lilypad.configure(
+    api_key="your-api-key",
+    project_id="your-project-id",
+    instrument=[requests, httpx]  # Pass module objects to instrument specific clients
+)
+```
 
-@lilypad.trace()
-def rag(query: str):
-    client = Client("https://api.example.com")
-    # The underlying HTTP calls automatically include trace context!
-    docs = client.retrieve(query, k=5)
-    return generate_answer(query, docs)
+Or manually instrument after configuration:
+
+```python
+import lilypad
+
+lilypad.configure(api_key="your-key", project_id="your-project")
+
+# Instrument specific clients
+lilypad.instrument_requests()
+lilypad.instrument_httpx()
+lilypad.instrument_aiohttp()
+lilypad.instrument_urllib3()
+
+# Or instrument all at once
+lilypad.instrument_http_clients()
 ```
 
 ### 3. Server-Side Context Extraction
 
-On the receiving service, extract trace context from incoming requests:
+On the receiving service, use context managers to extract trace context from incoming requests:
 
 ```python
 from fastapi import FastAPI, Request
-from lilypad import trace
+import lilypad
 
 app = FastAPI()
 
+# Define traced functions at module level
+@lilypad.trace()
+def process_data(data: dict) -> dict:
+    # This function is traced
+    result = heavy_processing(data)
+    return {"status": "success", "result": result}
+
 @app.post("/api/process")
 async def process_request(request: Request, data: dict):
-    # Extract trace context from HTTP headers
-    @trace(extract_from=dict(request.headers))
-    async def process_data(data: dict) -> dict:
-        # This span will be a child of the caller's span
-        result = await heavy_processing(data)
-        return {"status": "success", "result": result}
-    
-    return await process_data(data)
+    # Use context manager to propagate trace context
+    with lilypad.propagated_context(dict(request.headers)):
+        # process_data will be a child of the caller's span
+        return await process_data(data)
 ```
 
 ## Complete Example: Distributed RAG System
@@ -102,14 +136,16 @@ Here's a complete example showing automatic trace propagation across services:
 
 ```python
 # main_app.py
-from lilypad import trace, configure
-from lilypad.integrations import instrument_http_clients
+import lilypad
 
-# Enable automatic instrumentation
-instrument_http_clients()
+# Configure with automatic HTTP instrumentation
+lilypad.configure(
+    api_key="your-key",
+    project_id="your-project",
+    auto_http=True  # Enable automatic HTTP instrumentation
+)
 
-# Configure Lilypad
-configure(api_key="your-key", project_id="your-project")
+import requests  # Import after configure for auto-instrumentation
 
 # Your API client that uses requests/httpx internally
 class RetrievalClient:
@@ -118,14 +154,13 @@ class RetrievalClient:
     
     def retrieve(self, query: str, k: int) -> list:
         # Standard HTTP call - trace context added automatically!
-        import requests
         response = requests.post(
             f"{self.base_url}/retrieve",
             json={"query": query, "k": k}
         )
         return response.json()["documents"]
 
-@trace()
+@lilypad.trace()
 def rag_pipeline(query: str):
     # Initialize client
     client = RetrievalClient("http://retrieval-service:8000")
@@ -138,7 +173,7 @@ def rag_pipeline(query: str):
     
     return {"query": query, "answer": answer}
 
-@trace()
+@lilypad.trace()
 def generate_answer(query: str, docs: list) -> str:
     # LLM generation logic here
     return f"Answer based on {len(docs)} documents..."
@@ -149,50 +184,52 @@ def generate_answer(query: str, docs: list) -> str:
 ```python
 # retrieval_service.py
 from flask import Flask, request, jsonify
-from lilypad import trace, configure
-from lilypad.integrations import instrument_http_clients
-
-# Enable automatic instrumentation for outgoing calls
-instrument_http_clients()
+import lilypad
 
 # Configure Lilypad
-configure(api_key="your-key", project_id="your-project")
+lilypad.configure(
+    api_key="your-key",
+    project_id="your-project",
+    auto_http=True  # Also enable here for outgoing calls
+)
 
 app = Flask(__name__)
+
+# Define traced functions at module level
+@lilypad.trace()
+def lexical_search(query: str, k: int) -> list:
+    # BM25 or similar
+    return [...]
+
+@lilypad.trace()
+def semantic_search(query: str, k: int) -> list:
+    # Vector search
+    return [...]
+
+@lilypad.trace()
+def rerank(query: str, docs: list) -> list:
+    # Re-ranking logic
+    return sorted(docs, key=lambda d: d.score, reverse=True)
+
+@lilypad.trace()
+def handle_retrieve(query: str, k: int):
+    # These spans are children of the caller's span
+    lexical_docs = lexical_search(query, k)
+    semantic_docs = semantic_search(query, k)
+    ranked_docs = rerank(query, lexical_docs + semantic_docs)
+    return ranked_docs[:k]
 
 @app.route("/retrieve", methods=["POST"])
 def retrieve_endpoint():
     data = request.json
     
-    # Extract trace context from incoming headers
-    @trace(extract_from=dict(request.headers))
-    def handle_retrieve(query: str, k: int):
-        # These spans are children of the caller's span
-        lexical_docs = lexical_search(query, k)
-        semantic_docs = semantic_search(query, k)
-        ranked_docs = rerank(query, lexical_docs + semantic_docs)
-        return ranked_docs[:k]
-    
-    documents = handle_retrieve(data["query"], data["k"])
+    # Extract trace context using context manager
+    with lilypad.propagated_context(dict(request.headers)):
+        documents = handle_retrieve(data["query"], data["k"])
     
     return jsonify({
         "documents": [doc.to_dict() for doc in documents]
     })
-
-@trace()
-def lexical_search(query: str, k: int) -> list:
-    # BM25 or similar
-    return [...]
-
-@trace()
-def semantic_search(query: str, k: int) -> list:
-    # Vector search
-    return [...]
-
-@trace()
-def rerank(query: str, docs: list) -> list:
-    # Re-ranking logic
-    return sorted(docs, key=lambda d: d.score, reverse=True)
 ```
 
 ### The Result
@@ -211,53 +248,21 @@ rag_pipeline()                          [Service A]
 
 All trace context propagation happens automatically!
 
-## Manual HTTP Client Integration
-
-If you prefer explicit control or automatic instrumentation doesn't work for your use case:
-
-### Using Traced HTTP Clients
-
-```python
-# Using pre-built traced clients
-from lilypad.integrations.http_client import TracedRequestsSession
-
-@trace()
-def fetch_data():
-    with TracedRequestsSession() as session:
-        # Trace context automatically added
-        response = session.get("https://api.example.com/data")
-        return response.json()
-```
-
-### Manual Context Injection
-
-```python
-from lilypad._utils.context_propagation import inject_context
-import httpx
-
-@trace()
-async def manual_propagation():
-    headers = {}
-    # Manually inject trace context
-    inject_context(headers)
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            "https://api.example.com/data",
-            headers=headers
-        )
-        return response.json()
-```
-
 ## Advanced Usage
 
 ### Cross-Thread Context Propagation
 
 ```python
 from opentelemetry import context as otel_context
+import lilypad
 import threading
 
-@trace()
+@lilypad.trace()
+def process_in_thread(data: dict):
+    # This function is defined at module level
+    return transform_data(data)
+
+@lilypad.trace()
 def main_process(data: dict):
     # Capture current context
     current_ctx = otel_context.get_current()
@@ -270,22 +275,25 @@ def main_process(data: dict):
     thread.start()
 
 def worker_process(data: dict, parent_ctx):
-    @trace(parent_context=parent_ctx)
-    def process_in_thread(data: dict):
+    # Use context manager for parent context
+    with lilypad.context(parent=parent_ctx):
         # This span is a child of main_process
-        return transform_data(data)
-    
-    return process_in_thread(data)
+        return process_in_thread(data)
 ```
 
 ### Message Queue Integration
 
 ```python
+import lilypad
+
 # Producer
-@trace()
+@lilypad.trace()
 def send_message(message: dict):
     headers = {}
-    inject_context(headers)
+    # Context is automatically injected if auto_http is enabled
+    # Otherwise, manually inject:
+    from opentelemetry import propagate
+    propagate.inject(headers)
     
     # Include headers in message metadata
     queue.send({
@@ -294,49 +302,148 @@ def send_message(message: dict):
     })
 
 # Consumer
+@lilypad.trace()
+def handle_message(data: dict):
+    # Process the message
+    return process(data)
+
 def process_message(message: dict):
-    @trace(extract_from=message["headers"])
-    def handle_message(data: dict):
+    # Use context manager to extract context
+    with lilypad.context(extract_from=message["headers"]):
         # Maintains trace context from producer
-        return process(data)
-    
-    return handle_message(message["data"])
+        return handle_message(message["data"])
 ```
 
-## Environment Variables
+## Configuration Options
 
-- `LILYPAD_PROPAGATOR`: Set propagation format (tracecontext, b3, jaeger, composite)
-- `LILYPAD_HTTP_CLIENT`: Preferred HTTP client for `get_traced_http_client()` (requests, httpx, aiohttp)
+### Propagator Types
+
+Configure the propagation format based on your infrastructure:
+
+```python
+# W3C Trace Context (default) - Standard format
+lilypad.configure(propagator="tracecontext")
+
+# B3 Single Format - For Zipkin/Jaeger compatibility
+lilypad.configure(propagator="b3")
+
+# B3 Multi Format - Legacy B3 format
+lilypad.configure(propagator="b3multi")
+
+# Jaeger Format - For Jaeger native format
+lilypad.configure(propagator="jaeger")
+
+# Composite - Supports all formats
+lilypad.configure(propagator="composite")
+```
+
+### HTTP Client Instrumentation Options
+
+```python
+# Option 1: Auto-instrument all HTTP clients
+lilypad.configure(auto_http=True)
+
+# Option 2: Selectively instrument specific clients
+import requests
+import httpx
+lilypad.configure(instrument=[requests, httpx])
+
+# Option 3: Manual instrumentation after configuration
+lilypad.configure(...)
+lilypad.instrument_requests()  # Just requests
+lilypad.instrument_httpx()      # Just httpx (sync and async)
+lilypad.instrument_http_clients()  # All clients
+```
 
 ## Best Practices
 
-1. **Use Automatic Instrumentation**: Call `instrument_http_clients()` once at startup for transparent tracing
-2. **Consistent Propagation**: Use the same propagation format across all services
-3. **Extract at Service Boundaries**: Always extract context from incoming requests in server handlers
-4. **Error Handling**: Both automatic and manual approaches handle propagation errors gracefully
+1. **Use Automatic Instrumentation**: Enable `auto_http=True` in configure for transparent tracing
+2. **Define Traced Functions at Module Level**: Don't define traced functions inside request handlers
+3. **Consistent Propagation**: Use the same propagation format across all services
+4. **Use Context Managers**: Use `propagated_context()` and `context()` for special cases
 5. **Performance**: Context propagation adds minimal overhead (typically < 1ms)
 
 ## Troubleshooting
 
 ### Traces Not Connecting
 
-1. Verify automatic instrumentation is enabled on both services
-2. Check that trace context headers are being passed (look for `traceparent` header)
+1. Verify automatic instrumentation is enabled on both services:
+   ```python
+   lilypad.configure(auto_http=True)
+   ```
+
+2. Check that trace context headers are being passed:
+   - Look for `traceparent` header (W3C)
+   - Look for `b3` or `x-b3-*` headers (B3)
+   - Look for `uber-trace-id` header (Jaeger)
+
 3. Ensure both services are configured with the same Lilypad project
+
 4. Verify the same propagation format is used across services
 
 ### Missing Spans
 
-1. Verify the @trace decorator is applied to all relevant functions
-2. For server handlers, ensure you're extracting context with `extract_from`
+1. Ensure functions are decorated with `@lilypad.trace()`
+2. For server handlers, use context managers to extract context
 3. Check that Lilypad is configured before making traced calls
 
 ### Automatic Instrumentation Not Working
 
-1. Ensure `instrument_http_clients()` is called before importing HTTP libraries
-2. Some custom HTTP clients may not use standard libraries internally
-3. Fall back to manual traced clients or context injection if needed
+Some scenarios where automatic instrumentation might not work:
+
+1. **Import Order**: HTTP libraries imported before `lilypad.configure()`
+   ```python
+   # Wrong
+   import requests
+   lilypad.configure(auto_http=True)
+   
+   # Correct
+   lilypad.configure(auto_http=True)
+   import requests
+   ```
+
+2. **Custom HTTP Clients**: Libraries that don't use standard HTTP clients internally
+3. **Subclassed Clients**: Custom subclasses of HTTP clients may not be instrumented
+
+In these cases, you may need to manually propagate context:
+```python
+from opentelemetry import propagate
+
+headers = {}
+propagate.inject(headers)
+response = custom_client.request("GET", url, headers=headers)
+```
+
+## Environment Variables
+
+- `LILYPAD_PROPAGATOR`: Set default propagation format (can be overridden in configure())
+
+## Future Roadmap
+
+### FastAPI Instrumentation (Coming Soon)
+
+Native FastAPI instrumentation is planned for a future release. This will provide automatic context extraction and span creation for FastAPI applications:
+
+```python
+# Future API (not yet available)
+import lilypad
+from fastapi import FastAPI
+
+app = FastAPI()
+lilypad.instrument_fastapi(app)
+
+# This will automatically:
+# - Extract trace context from incoming requests
+# - Create spans for each endpoint
+# - Propagate context to traced functions
+@app.post("/api/process")
+async def process_request(data: dict):
+    # Automatically wrapped in proper trace context
+    return await process_data(data)
+```
+
+Until this feature is available, use the `propagated_context()` context manager as shown in the examples above.
 
 ## Example: Complete RAG System
 
-See the [auto instrumentation example](../examples/auto_instrumentation_example.py) for a complete example of a distributed RAG system with automatic trace propagation.
+See the [examples directory](../examples/) for complete examples of distributed RAG systems with automatic trace propagation.

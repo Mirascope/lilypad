@@ -3,21 +3,18 @@
 This example shows how trace context is automatically propagated without any code changes.
 """
 
-# Enable auto-instrumentation BEFORE importing HTTP libraries
-from lilypad.integrations import instrument_http_clients
-
-instrument_http_clients()
-
-# Now import the rest
 from typing import List, Any
-import requests
-from lilypad import trace, configure
+import lilypad
 
-# Configure Lilypad
-configure(
+# Configure Lilypad with auto-instrumentation
+lilypad.configure(
     # api_key="your-api-key",
-    # project_id="your-project-id"
+    # project_id="your-project-id",
+    auto_http=True  # Enable auto-instrumentation for HTTP libraries
 )
+
+# Now import HTTP libraries - they will be automatically instrumented
+import requests
 
 
 class Document:
@@ -64,7 +61,7 @@ requests.adapters.HTTPAdapter.send = patched_send
 
 
 # Example 1: Simple traced function making HTTP call
-@trace()
+@lilypad.trace()
 def fetch_data(url: str) -> dict:
     """Make a simple HTTP request - trace context is added automatically!"""
     # Just a normal requests call - no special tracing code!
@@ -87,7 +84,7 @@ class APIClient:
         return [Document(**doc) for doc in data.get("documents", [])]
 
 
-@trace()
+@lilypad.trace()
 def rag_pipeline(query: str) -> dict:
     """RAG pipeline using RPC client - trace propagates automatically."""
     # Create client
@@ -103,7 +100,7 @@ def rag_pipeline(query: str) -> dict:
 
 
 # Example 3: Service-to-service communication
-@trace()
+@lilypad.trace()
 def microservice_a(data: dict) -> dict:
     """Service A calls Service B - trace context flows automatically."""
 
