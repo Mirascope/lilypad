@@ -143,6 +143,8 @@ class OutlinesInstrumentor(BaseInstrumentor):
         """Disable the instrumentation by restoring original methods."""
         for module_name, class_name, method_name in reversed(_patched_targets):
             with suppress(Exception):
-                unwrap(__import__(module_name, fromlist=[class_name]), method_name)
+                module = __import__(module_name, fromlist=[class_name])
+                cls = getattr(module, class_name)
+                unwrap(cls, method_name)
 
         _patched_targets.clear()

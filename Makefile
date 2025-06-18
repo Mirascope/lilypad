@@ -9,7 +9,7 @@
 .PHONY: dev-stripe-webhook
 
 # Testing
-.PHONY: test test-app test-sdk test-watch
+.PHONY: test test-app test-sdk test-watch test-coverage test-coverage-app test-coverage-sdk
 
 # Code quality
 .PHONY: lint lint-app lint-sdk lint-client
@@ -41,8 +41,11 @@ help:
 	@echo "  setup-kafka-prod  - Set up Kafka topics for production"
 	@echo "  test-kafka        - Test Kafka connection"
 	@echo "  test              - Run all tests"
+	@echo "  test-coverage     - Run all tests with coverage report"
 	@echo "  test-app          - Run app tests only"
+	@echo "  test-coverage-app - Run app tests with coverage report"
 	@echo "  test-sdk          - Run SDK tests only"
+	@echo "  test-coverage-sdk - Run SDK tests with coverage report"
 	@echo "  lint              - Run all linters"
 	@echo "  lint-app          - Run app linter"
 	@echo "  lint-sdk          - Run SDK linter"
@@ -128,11 +131,19 @@ test-kafka:
 # Testing
 test: test-app test-sdk
 
+test-coverage: test-coverage-app test-coverage-sdk
+
 test-app:
 	+$(MAKE) -C app test
 
+test-coverage-app:
+	+$(MAKE) -C app test-coverage
+
 test-sdk:
 	+$(MAKE) -C sdks/python test
+
+test-coverage-sdk:
+	+$(MAKE) -C sdks/python test-coverage
 
 test-watch:
 	+$(MAKE) -C app test-watch
@@ -223,7 +234,7 @@ logs-services:
 	+$(MAKE) -C app logs-services
 
 # Combined checks
-check: lint typecheck test
+check: lint typecheck test-coverage
 	@echo "All checks passed!"
 
 # Dependency management

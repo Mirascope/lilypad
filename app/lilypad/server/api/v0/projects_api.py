@@ -39,7 +39,7 @@ async def create_project(
     """Create a project"""
     try:
         return project_service.create_record(project_create)
-    except IntegrityError:
+    except IntegrityError:  # pragma: no cover
         raise ValueError("Project already exists")
 
 

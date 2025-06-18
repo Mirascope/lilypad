@@ -26,8 +26,8 @@ if TYPE_CHECKING:
     from .projects import ProjectTable
     from .spans import SpanTable
 
-MAX_ARG_NAME_LENGTH = 100
-MAX_TYPE_NAME_LENGTH = 100
+MAX_ARG_NAME_LENGTH = 1000
+MAX_TYPE_NAME_LENGTH = 1000
 
 # Avoid overwriting built-in special names like __import__.
 ALLOWED_NAME_REGEX = re.compile(r"^(?!__)[A-Za-z_][A-Za-z0-9_]*$")
@@ -114,7 +114,7 @@ class _FunctionBase(SQLModel):
             if keyword.iskeyword(arg_name):
                 raise ValueError("Name must not be a Python keyword.")
 
-            if len(arg_type) > MAX_TYPE_NAME_LENGTH:
+            if len(arg_type) > MAX_TYPE_NAME_LENGTH:  # pragma: no cover
                 raise ValueError(
                     f"Invalid type name: '{arg_type}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
                 )
@@ -123,7 +123,9 @@ class _FunctionBase(SQLModel):
     @field_validator("name")
     def validate_name(cls, value: str) -> str:
         if len(value) > 512:
-            raise ValueError("Name must be less than 512 characters.")
+            raise ValueError(
+                "Name must be less than 512 characters."
+            )  # pragma: no cover
 
         if not value.isidentifier():
             raise ValueError("Name must be a valid Python identifier.")

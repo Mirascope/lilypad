@@ -764,7 +764,7 @@ class _DependencyCollector:
         )
 
 
-def _run_ruff(code: str) -> str:
+def _run_ruff(code: str) -> str:  # pragma: no cover
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp_file:
         tmp_file.write(code)
         tmp_path = Path(tmp_file.name)

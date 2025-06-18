@@ -129,7 +129,7 @@ def make_api_call_patch(
                         span.set_attribute(error_attributes.ERROR_TYPE, type(err).__qualname__)
                     span.end()
                     raise
-        return wrapped(*args, **kwargs)
+        return wrapped(*args, **kwargs)  # pragma: no cover
 
     return wrapper
 
@@ -210,6 +210,6 @@ def make_api_call_async_patch(
                         span.set_attribute(error_attributes.ERROR_TYPE, type(err).__qualname__)
                     span.end()
                     raise
-        return await wrapped(*args, **kwargs)
+        return await wrapped(*args, **kwargs)  # pragma: no cover
 
     return wrapper

@@ -1,3 +1,5 @@
+"""Playground utilities for Lilypad server."""
+
 from textwrap import dedent
 
 from ..._utils import run_ruff

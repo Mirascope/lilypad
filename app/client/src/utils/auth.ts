@@ -40,15 +40,14 @@ interface PolicyData {
 }
 export const fetchVersions = async () => {
   try {
-    const response = await api.get<object[]>(
-      "https://mirascope.com/static/content-meta/policy/index.json"
-    );
+    const response = await fetch("https://mirascope.com/cf/content-meta/policy/index.json");
 
-    if (response.status < 200 || response.status >= 300) {
+    if (!response.ok) {
       throw new Error(`Failed to fetch policy data: ${response.status}`);
     }
 
-    const policyData = response.data as PolicyData[];
+    const policyData = (await response.json()) as PolicyData[];
+
     // Find the privacy policy and terms of service entries
     const privacyPolicy = policyData.find((policy) => policy.slug === "privacy");
     const termsOfService = policyData.find((policy) => policy.slug === "service");

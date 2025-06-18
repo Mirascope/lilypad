@@ -174,3 +174,40 @@ async def test_mistral_stream_async_patch_success(mock_tracer, mock_span):
     # Check that start_as_current_span was called
     mock_tracer.start_as_current_span.assert_called_once()
     mock_span.end.assert_called_once()
+
+
+def test_mistral_stream_patch_error(mock_tracer, mock_span):
+    """Test mistral_stream_patch error handling (covers lines 102-107)."""
+    error = Exception("Stream error")
+    wrapped = Mock(side_effect=error)
+    decorator = mistral_stream_patch(mock_tracer)
+
+    with pytest.raises(Exception) as exc_info:
+        decorator(wrapped, None, (), {"model": "mistral-large-latest"})
+
+    assert exc_info.value is error
+    mock_span.set_status.assert_called_once()
+    status_call = mock_span.set_status.call_args[0][0]
+    assert status_call.status_code == StatusCode.ERROR
+    assert status_call.description == "Stream error"
+    mock_span.set_attribute.assert_called_with("error.type", "Exception")
+    mock_span.end.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_mistral_stream_async_patch_error(mock_tracer, mock_span):
+    """Test mistral_stream_async_patch error handling (covers lines 140-145)."""
+    error = Exception("Async stream error")
+    wrapped = AsyncMock(side_effect=error)
+    decorator = mistral_stream_async_patch(mock_tracer)
+
+    with pytest.raises(Exception) as exc_info:
+        await decorator(wrapped, None, (), {"model": "mistral-large-latest"})
+
+    assert str(exc_info.value) == "Async stream error"
+    mock_span.set_status.assert_called_once()
+    status_call = mock_span.set_status.call_args[0][0]
+    assert status_call.status_code == StatusCode.ERROR
+    assert status_call.description == "Async stream error"
+    mock_span.set_attribute.assert_called_with("error.type", "Exception")
+    mock_span.end.assert_called_once()

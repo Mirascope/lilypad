@@ -59,7 +59,8 @@ async def update_external_api_key(
 ) -> ExternalAPIKeyPublic:
     """Update users keys."""
     external_api_key_service.update_api_key(
-        service_name, external_api_key_update.api_key
+        service_name,
+        external_api_key_update.api_key,
     )
     return ExternalAPIKeyPublic(
         service_name=service_name, masked_api_key=external_api_key_update.api_key

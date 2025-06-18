@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -102,13 +102,14 @@ async def update_span(
     span_update: SpanUpdate,
     span_service: Annotated[SpanService, Depends(SpanService)],
     current_user: Annotated[UserPublic, Depends(get_current_user)],
-) -> SpanTable:
+) -> SpanMoreDetails:
     """Update span by uuid."""
-    return await span_service.update_span(
+    updated_span = await span_service.update_span(
         span_uuid=span_uuid,
         update_data=span_update,
         user_uuid=current_user.uuid,
     )
+    return SpanMoreDetails.from_span(updated_span)
 
 
 @spans_router.get(
@@ -135,7 +136,6 @@ async def search_traces(
     """Search for traces in OpenSearch."""
     if not opensearch_service.is_enabled:
         return []
-
     hits = opensearch_service.search_traces(project_uuid, search_query)
     # Extract function UUIDs and fetch functions in batch
     function_uuids = {
@@ -144,33 +144,36 @@ async def search_traces(
         if hit["_source"].get("function_uuid")
     }
 
-    functions = function_service.find_records_by_uuids(
-        project_uuid=project_uuid, uuids=function_uuids
-    )
+    functions = function_service.find_records_by_uuids(uuids=function_uuids)
+    # Filter by project_uuid since BaseOrganizationService doesn't filter by additional params
+    functions = [f for f in functions if f.project_uuid == project_uuid]
     functions_by_id = {str(func.uuid): func for func in functions if func.uuid}
 
     # Build spans from search results
     spans_by_id: dict[str, SpanPublic] = {}
     for hit in hits:
-        source = hit["_source"]
+        source: dict[str, Any] = hit["_source"]
         function_uuid_str = source.get("function_uuid")
-
+        if "organization_uuid" not in source or "span_id" not in source:
+            continue  # Skip if either key is missing
         span = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],
             project_uuid=project_uuid,
             span_id=source["span_id"],
-            parent_span_id=source["parent_span_id"],
+            parent_span_id=source.get("parent_span_id"),
             type=source["type"],
             function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
-            function=functions_by_id.get(function_uuid_str),
+            function=functions_by_id.get(function_uuid_str)
+            if function_uuid_str
+            else None,
             scope=Scope(source["scope"]) if source["scope"] else Scope.LILYPAD,
             cost=source["cost"],
-            input_tokens=source["input_tokens"],
-            output_tokens=source["output_tokens"],
-            duration_ms=source["duration_ms"],
-            created_at=source["created_at"],
-            data=source["data"],
+            input_tokens=source.get("input_tokens"),
+            output_tokens=source.get("output_tokens"),
+            duration_ms=source.get("duration_ms"),
+            created_at=source.get("created_at", datetime.now(timezone.utc)),
+            data=source.get("data", {}),
             child_spans=[],
         )
 

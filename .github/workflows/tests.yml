@@ -72,6 +72,12 @@ jobs:
         with:
           working-directory: ${{ matrix.project.directory }}
           flags: ${{ matrix.project.name }}-${{ matrix.os }}-python${{ matrix.python-version }}
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+          files: ./coverage.xml,!./cache
+          name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
 
       - name: Minimize uv cache
         run: uv cache prune --ci
