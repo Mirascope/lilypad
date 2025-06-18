@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
+from lilypad.server.models.functions import MAX_TYPE_NAME_LENGTH
 from lilypad.server.schemas.functions import FunctionCreate
 
 
@@ -35,7 +36,7 @@ class TestFunctionValidationErrors:
         Since arg_type and value[arg_name] are the same value in the loop,
         the first check (line 107) will always trigger before line 118.
         """
-        long_type = "x" * 101  # Over MAX_TYPE_NAME_LENGTH (100)
+        long_type = "x" * (MAX_TYPE_NAME_LENGTH + 1)  # Over MAX_TYPE_NAME_LENGTH
 
         with pytest.raises(ValidationError) as exc_info:
             FunctionCreate(
@@ -47,7 +48,7 @@ class TestFunctionValidationErrors:
             )
 
         assert (
-            f"Invalid type name: '{long_type}'. Must be less than 100 characters."
+            f"Invalid type name: '{long_type}'. Must be less than {MAX_TYPE_NAME_LENGTH} characters."
             in str(exc_info.value)
         )
 
