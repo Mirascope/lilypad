@@ -101,6 +101,58 @@ def test_patch_requests_no_headers():
         del sys.modules["requests"]
 
 
+def test_patch_requests_none_headers():
+    """Test patching requests when headers is None."""
+    mock_requests = Mock()
+    mock_session = Mock()
+    mock_requests.Session = mock_session
+    original_request = Mock()
+    mock_session.request = original_request
+
+    sys.modules["requests"] = mock_requests
+
+    try:
+        _patch_requests()
+        patched_request = mock_session.request
+
+        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+            # Pass headers=None explicitly
+            patched_request(mock_session, "GET", "http://example.com", headers=None)
+            # Should create empty dict when headers is None
+            mock_inject.assert_called_once_with({})
+
+    finally:
+        del sys.modules["requests"]
+
+
+def test_patch_requests_already_patched():
+    """Test patching requests when already patched."""
+    import lilypad._opentelemetry.http.auto_instrument as auto_instrument
+    
+    # Mock requests module
+    mock_requests = Mock()
+    mock_session = Mock()
+    mock_requests.Session = mock_session
+    original_request = Mock()
+    mock_session.request = original_request
+
+    sys.modules["requests"] = mock_requests
+
+    try:
+        # Mark as already patched
+        auto_instrument._ORIGINAL_METHODS["requests.Session.request"] = original_request
+        
+        # This should return early
+        _patch_requests()
+        
+        # Verify request method was NOT replaced
+        assert mock_session.request == original_request
+
+    finally:
+        del sys.modules["requests"]
+        auto_instrument._ORIGINAL_METHODS.clear()
+
+
 def test_patch_requests_not_installed():
     """Test patching when requests is not installed."""
     # Ensure requests is not in sys.modules
@@ -171,6 +223,89 @@ async def test_patch_httpx_async():
         del sys.modules["httpx"]
 
 
+def test_patch_httpx_none_headers():
+    """Test patching httpx when headers is None."""
+    mock_httpx = Mock()
+    mock_client = Mock()
+    mock_httpx.Client = mock_client
+    original_request = Mock()
+    mock_client.request = original_request
+
+    sys.modules["httpx"] = mock_httpx
+
+    try:
+        _patch_httpx()
+        patched_request = mock_client.request
+
+        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+            # Pass headers=None explicitly
+            patched_request(mock_client, "GET", "http://example.com", headers=None)
+            # Should create empty dict when headers is None
+            mock_inject.assert_called_once_with({})
+
+    finally:
+        del sys.modules["httpx"]
+
+
+@pytest.mark.asyncio
+async def test_patch_httpx_async_none_headers():
+    """Test patching httpx async client when headers is None."""
+    mock_httpx = Mock()
+    mock_async_client = Mock()
+    mock_httpx.AsyncClient = mock_async_client
+
+    # Create async mock
+    async def async_request_mock(*args, **kwargs):
+        return Mock()
+
+    original_async_request = MagicMock()
+    original_async_request.side_effect = async_request_mock
+    mock_async_client.request = original_async_request
+
+    sys.modules["httpx"] = mock_httpx
+
+    try:
+        _patch_httpx()
+        patched_request = mock_async_client.request
+
+        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+            # Pass headers=None explicitly
+            await patched_request(mock_async_client, "GET", "http://example.com", headers=None)
+            # Should create empty dict when headers is None
+            mock_inject.assert_called_once_with({})
+
+    finally:
+        del sys.modules["httpx"]
+
+
+def test_patch_httpx_already_patched():
+    """Test patching httpx when already patched."""
+    import lilypad._opentelemetry.http.auto_instrument as auto_instrument
+    
+    # Mock httpx module
+    mock_httpx = Mock()
+    mock_client = Mock()
+    mock_httpx.Client = mock_client
+    original_request = Mock()
+    mock_client.request = original_request
+
+    sys.modules["httpx"] = mock_httpx
+
+    try:
+        # Mark as already patched
+        auto_instrument._ORIGINAL_METHODS["httpx.Client.request"] = original_request
+        
+        # This should return early
+        _patch_httpx()
+        
+        # Verify request method was NOT replaced
+        assert mock_client.request == original_request
+
+    finally:
+        del sys.modules["httpx"]
+        auto_instrument._ORIGINAL_METHODS.clear()
+
+
 def test_patch_httpx_not_installed():
     """Test patching when httpx is not installed."""
     if "httpx" in sys.modules:
@@ -211,6 +346,65 @@ async def test_patch_aiohttp():
         del sys.modules["aiohttp"]
 
 
+@pytest.mark.asyncio
+async def test_patch_aiohttp_none_headers():
+    """Test patching aiohttp when headers is None."""
+    mock_aiohttp = Mock()
+    mock_session = Mock()
+    mock_aiohttp.ClientSession = mock_session
+
+    # Create async mock for _request
+    async def async_request_mock(*args, **kwargs):
+        return Mock()
+
+    original_request = MagicMock()
+    original_request.side_effect = async_request_mock
+    mock_session._request = original_request
+
+    sys.modules["aiohttp"] = mock_aiohttp
+
+    try:
+        _patch_aiohttp()
+        patched_request = mock_session._request
+
+        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+            # Pass headers=None explicitly
+            await patched_request(mock_session, "GET", "http://example.com", headers=None)
+            # Should create empty dict when headers is None
+            mock_inject.assert_called_once_with({})
+
+    finally:
+        del sys.modules["aiohttp"]
+
+
+def test_patch_aiohttp_already_patched():
+    """Test patching aiohttp when already patched."""
+    import lilypad._opentelemetry.http.auto_instrument as auto_instrument
+    
+    # Mock aiohttp module
+    mock_aiohttp = Mock()
+    mock_session = Mock()
+    mock_aiohttp.ClientSession = mock_session
+    original_request = Mock()
+    mock_session._request = original_request
+
+    sys.modules["aiohttp"] = mock_aiohttp
+
+    try:
+        # Mark as already patched
+        auto_instrument._ORIGINAL_METHODS["aiohttp.ClientSession._request"] = original_request
+        
+        # This should return early
+        _patch_aiohttp()
+        
+        # Verify request method was NOT replaced
+        assert mock_session._request == original_request
+
+    finally:
+        del sys.modules["aiohttp"]
+        auto_instrument._ORIGINAL_METHODS.clear()
+
+
 def test_patch_aiohttp_not_installed():
     """Test patching when aiohttp is not installed."""
     if "aiohttp" in sys.modules:
@@ -245,6 +439,58 @@ def test_patch_urllib3():
 
     finally:
         del sys.modules["urllib3"]
+
+
+def test_patch_urllib3_none_headers():
+    """Test patching urllib3 when headers is None."""
+    mock_urllib3 = Mock()
+    mock_pool = Mock()
+    mock_urllib3.HTTPConnectionPool = mock_pool
+    original_urlopen = Mock()
+    mock_pool.urlopen = original_urlopen
+
+    sys.modules["urllib3"] = mock_urllib3
+
+    try:
+        _patch_urllib3()
+        patched_urlopen = mock_pool.urlopen
+
+        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+            # Pass headers=None explicitly
+            patched_urlopen(mock_pool, "GET", "/path", headers=None)
+            # Should create empty dict when headers is None
+            mock_inject.assert_called_once_with({})
+
+    finally:
+        del sys.modules["urllib3"]
+
+
+def test_patch_urllib3_already_patched():
+    """Test patching urllib3 when already patched."""
+    import lilypad._opentelemetry.http.auto_instrument as auto_instrument
+    
+    # Mock urllib3 module
+    mock_urllib3 = Mock()
+    mock_pool = Mock()
+    mock_urllib3.HTTPConnectionPool = mock_pool
+    original_urlopen = Mock()
+    mock_pool.urlopen = original_urlopen
+
+    sys.modules["urllib3"] = mock_urllib3
+
+    try:
+        # Mark as already patched
+        auto_instrument._ORIGINAL_METHODS["urllib3.HTTPConnectionPool.urlopen"] = original_urlopen
+        
+        # This should return early
+        _patch_urllib3()
+        
+        # Verify urlopen method was NOT replaced
+        assert mock_pool.urlopen == original_urlopen
+
+    finally:
+        del sys.modules["urllib3"]
+        auto_instrument._ORIGINAL_METHODS.clear()
 
 
 def test_patch_urllib3_not_installed():
