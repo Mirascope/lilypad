@@ -1258,6 +1258,58 @@ class TestSpanQueueProcessor:
 
     @pytest.mark.asyncio
     @patch("lilypad.server.services.span_queue_processor.get_settings")
+    async def test_force_process_incomplete_trace_parent_in_db(
+        self, mock_get_settings, db_session: Session, test_user, test_project
+    ):
+        """Test _force_process_incomplete_trace when parent exists in DB (line 667)."""
+        mock_settings = Mock()
+        mock_settings.kafka_db_thread_pool_size = 4
+        mock_get_settings.return_value = mock_settings
+
+        # Create a parent span in the database
+        parent_span = SpanTable(
+            span_id="db-parent-span",
+            trace_id="trace-123",
+            organization_uuid=test_project.organization_uuid,
+            project_uuid=test_project.uuid,
+            scope=Scope.LILYPAD,
+            data={},
+        )
+        db_session.add(parent_span)
+        db_session.commit()
+
+        processor = SpanQueueProcessor()
+        processor._session = db_session
+
+        # Create buffer with span that references the DB parent
+        buffer = TraceBuffer("trace-123", session=db_session)
+        span_data = {
+            "span_id": "child-span",
+            "parent_span_id": "db-parent-span",  # This parent exists in DB
+            "trace_id": "trace-123",
+        }
+        buffer.add_span(span_data)
+        processor.trace_buffers["trace-123"] = buffer
+
+        with (
+            patch.object(processor, "_process_trace") as mock_process_trace,
+            patch("lilypad.server.services.span_queue_processor.logger") as mock_logger,
+        ):
+            await processor._force_process_incomplete_trace("trace-123")
+
+        # Check that logger.info was called with the expected message (line 667)
+        expected_log_call = (
+            "Parent db-parent-span found in DB for span child-span, keeping parent_span_id"
+        )
+        mock_logger.info.assert_any_call(expected_log_call)
+
+        # Verify that parent_span_id was NOT set to None
+        mock_process_trace.assert_called_once()
+        _, buffer_arg = mock_process_trace.call_args[0]
+        assert buffer_arg.spans["child-span"]["parent_span_id"] == "db-parent-span"
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.services.span_queue_processor.get_settings")
     async def test_force_process_oldest_trace(self, mock_get_settings):
         """Test _force_process_oldest_trace method."""
         mock_settings = Mock()
