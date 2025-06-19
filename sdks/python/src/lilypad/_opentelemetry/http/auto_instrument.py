@@ -32,7 +32,7 @@ from contextlib import suppress
 import functools
 from typing import Any
 
-from ..._utils.context_propagation import inject_context
+from ..._utils.context_propagation import _inject_context
 
 # Track if we've already instrumented to avoid double-patching
 _INSTRUMENTED = False
@@ -63,7 +63,7 @@ def _patch_requests() -> None:
                 headers = {}
 
             # Inject trace context
-            inject_context(headers)
+            _inject_context(headers)
             kwargs["headers"] = headers
 
             # Call original method
@@ -91,7 +91,7 @@ def _patch_httpx() -> None:
             headers = kwargs.get("headers", {})
             if headers is None:
                 headers = {}
-            inject_context(headers)
+            _inject_context(headers)
             kwargs["headers"] = headers
             return _original_request(self, method, url, **kwargs)
 
@@ -108,7 +108,7 @@ def _patch_httpx() -> None:
             headers = kwargs.get("headers", {})
             if headers is None:
                 headers = {}
-            inject_context(headers)
+            _inject_context(headers)
             kwargs["headers"] = headers
             return await _original_async_request(self, method, url, **kwargs)
 
@@ -134,7 +134,7 @@ def _patch_aiohttp() -> None:
             headers = kwargs.get("headers", {})
             if headers is None:
                 headers = {}
-            inject_context(headers)
+            _inject_context(headers)
             kwargs["headers"] = headers
             return await _original_request(self, method, str_or_url, **kwargs)
 
@@ -158,7 +158,7 @@ def _patch_urllib3() -> None:
             headers = kwargs.get("headers", {})
             if headers is None:
                 headers = {}
-            inject_context(headers)
+            _inject_context(headers)
             kwargs["headers"] = headers
             return _original_urlopen(self, method, url, **kwargs)
 

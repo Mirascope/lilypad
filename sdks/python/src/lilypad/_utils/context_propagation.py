@@ -148,7 +148,7 @@ def _get_propagator() -> ContextPropagator:
     return _propagator
 
 
-def extract_context(carrier: dict[str, Any]) -> context.Context:
+def _extract_context(carrier: dict[str, Any]) -> context.Context:
     """Extract trace context from a carrier (e.g., HTTP headers).
 
     This function extracts OpenTelemetry trace context from a carrier object,
@@ -244,7 +244,7 @@ def extract_context(carrier: dict[str, Any]) -> context.Context:
     return _get_propagator().extract_context(carrier)
 
 
-def inject_context(carrier: MutableMapping[str, str], context: context.Context | None = None) -> None:
+def _inject_context(carrier: MutableMapping[str, str], context: context.Context | None = None) -> None:
     """Inject current trace context into a carrier (e.g., HTTP headers).
 
     This function injects the current OpenTelemetry trace context into a carrier

@@ -11,7 +11,7 @@ from typing import Any, Generator
 
 from opentelemetry import context as otel_context
 
-from ._utils.context_propagation import extract_context
+from ._utils.context_propagation import _extract_context
 
 
 @contextmanager
@@ -50,7 +50,7 @@ def propagated_context(carrier: dict[str, Any]) -> Generator[None, None, None]:
         ensuring proper cleanup when the context exits.
     """
     # Extract context from carrier
-    ctx = extract_context(carrier)
+    ctx = _extract_context(carrier)
 
     # Attach the context
     token = otel_context.attach(ctx)
@@ -109,7 +109,7 @@ def context(
 
     if extract_from:
         # Extract context from carrier
-        ctx = extract_context(extract_from)
+        ctx = _extract_context(extract_from)
         token = otel_context.attach(ctx)
     elif parent:
         # Use explicitly provided parent context
