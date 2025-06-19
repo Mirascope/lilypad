@@ -86,6 +86,7 @@ async def create_span_from_data(
 
     return SpanCreate(
         span_id=span_data["span_id"],
+        trace_id=span_data["trace_id"],
         type=attributes.get("lilypad.type"),
         function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
         scope=scope,

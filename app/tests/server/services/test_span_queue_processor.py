@@ -878,6 +878,7 @@ class TestSpanQueueProcessor:
         """Test create_span_from_data shared function."""
         span_data = {
             "span_id": "span-123",
+            "trace_id": "trace-456",
             "parent_span_id": "parent-456",
             "cost": 0.05,
             "input_tokens": 100,
@@ -904,6 +905,7 @@ class TestSpanQueueProcessor:
         """Test create_span_from_data with minimal data."""
         span_data = {
             "span_id": "span-123",
+            "trace_id": "trace-789",
             "attributes": {},
             "instrumentation_scope": {"name": "other"},  # LLM scope
         }

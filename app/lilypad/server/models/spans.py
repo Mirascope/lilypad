@@ -42,6 +42,7 @@ class SpanBase(SQLModel):
     """Span base model"""
 
     span_id: str = Field(nullable=False, index=True, unique=True)
+    trace_id: str | None = Field(nullable=True, index=True)
     function_uuid: UUID | None = Field(
         default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
