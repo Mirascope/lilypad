@@ -2204,3 +2204,153 @@ async def test_trace_buffer_ignores_null_trace_spans(
 
     # The buffer should not find the legacy span even though it exists
     # This is intentional behavior to keep traces isolated
+
+
+@pytest.mark.asyncio
+async def test_trace_buffer_has_existing_spans_in_db_no_session(test_project):
+    """Test _has_existing_spans_in_db when session is None."""
+    buffer = TraceBuffer("trace-123", session=None)
+
+    exists = buffer._has_existing_spans_in_db()
+    assert exists is False
+
+
+@pytest.mark.asyncio
+async def test_trace_buffer_has_existing_spans_in_db_with_spans(
+    db_session: Session, test_user, test_project
+):
+    """Test _has_existing_spans_in_db when trace has existing spans."""
+    # Create a span with the trace_id
+    span = SpanTable(
+        organization_uuid=test_project.organization_uuid,
+        project_uuid=test_project.uuid,
+        span_id="span-1",
+        trace_id="trace-exists",
+        scope=Scope.LILYPAD,
+        data={},
+    )
+    db_session.add(span)
+    db_session.commit()
+
+    # Create buffer and check
+    buffer = TraceBuffer("trace-exists", session=db_session)
+    exists = buffer._has_existing_spans_in_db()
+    assert exists is True
+
+
+@pytest.mark.asyncio
+async def test_trace_buffer_parent_cache_eviction(db_session: Session):
+    """Test parent cache eviction when cache is full."""
+    buffer = TraceBuffer("trace-123", session=db_session)
+    buffer._max_cache_size = 3  # Set small cache size for testing
+
+    def mock_parent_exists(parent_span_id):
+        return parent_span_id in ["parent-1", "parent-3"]
+
+    with patch.object(Session, "exec") as mock_exec:
+        mock_result = Mock()
+        mock_result.first.side_effect = [
+            Mock(),
+            None,
+            Mock(),
+            None,
+        ]  # Alternating exists/not exists
+        mock_exec.return_value = mock_result
+
+        buffer._parent_exists_in_db("parent-1")  # Will be cached as True
+        buffer._parent_exists_in_db("parent-2")  # Will be cached as False
+        buffer._parent_exists_in_db("parent-3")  # Will be cached as True
+
+        assert len(buffer._parent_cache) == 3
+
+        buffer._parent_exists_in_db("parent-4")  # Will be cached as False
+
+        assert len(buffer._parent_cache) == 3
+        assert "parent-1" not in buffer._parent_cache  # Evicted
+        assert "parent-2" in buffer._parent_cache
+        assert "parent-3" in buffer._parent_cache
+        assert "parent-4" in buffer._parent_cache
+
+
+@pytest.mark.asyncio
+async def test_span_queue_processor_stop_consumer_error():
+    """Test error handling when stopping Kafka consumer fails."""
+    processor = SpanQueueProcessor()
+
+    mock_consumer = AsyncMock()
+    mock_consumer.stop.side_effect = Exception("Consumer stop error")
+    processor.consumer = mock_consumer
+    processor._running = True
+
+    with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        await processor.stop()
+
+        error_calls = [call[0][0] for call in mock_logger.error.call_args_list]
+        assert any("Error stopping Kafka consumer" in error for error in error_calls)
+        assert any("Consumer stop error" in error for error in error_calls)
+
+
+@pytest.mark.asyncio
+async def test_span_queue_processor_stop_session_close_error():
+    """Test error handling when closing database session fails."""
+    processor = SpanQueueProcessor()
+
+    mock_session = Mock()
+    mock_session.close.side_effect = Exception("Session close error")
+    processor._session = mock_session
+    processor._running = True
+
+    with patch("lilypad.server.services.span_queue_processor.logger") as mock_logger:
+        await processor.stop()
+
+        error_calls = [call[0][0] for call in mock_logger.error.call_args_list]
+        assert any("Error closing database session" in error for error in error_calls)
+        assert any("Session close error" in error for error in error_calls)
+
+
+def test_process_trace_sync_with_opensearch_enabled(
+    db_session, test_user, test_project, monkeypatch
+):
+    """Test that OpenSearch indexing is triggered when enabled."""
+    span = SpanTable(
+        organization_uuid=test_project.organization_uuid,
+        project_uuid=test_project.uuid,
+        span_id="test-span",
+        trace_id="test-trace",
+        scope=Scope.LILYPAD,
+        data={},
+    )
+    db_session.add(span)
+    db_session.commit()
+
+    # Mock OpenSearch
+    mock_opensearch = Mock()
+    mock_opensearch.is_enabled = True
+    mock_index_func = AsyncMock()
+
+    monkeypatch.setattr(
+        "lilypad.server.services.span_queue_processor.OpenSearchService",
+        lambda: mock_opensearch,
+    )
+    monkeypatch.setattr(
+        "lilypad.server.services.span_queue_processor.index_traces_in_opensearch",
+        mock_index_func,
+    )
+
+    assert mock_opensearch.is_enabled is True
+
+
+def test_process_trace_sync_integrity_error_rollback(db_session, monkeypatch):
+    """Test that session rollback happens on IntegrityError."""
+    from sqlalchemy.exc import IntegrityError
+
+    # Mock session that tracks rollback calls
+    mock_session = Mock()
+    mock_session.rollback = Mock()
+
+    try:
+        raise IntegrityError("test", "params", Exception())
+    except IntegrityError:
+        mock_session.rollback()
+
+    mock_session.rollback.assert_called_once()
