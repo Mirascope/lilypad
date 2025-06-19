@@ -2140,8 +2140,8 @@ async def test_query_spans_with_null_trace_id(
 
     # Query spans with NULL trace_id
     stmt = select(SpanTable).where(
-        SpanTable.trace_id is None,
-        SpanTable.project_uuid == test_project.uuid,  # noqa: E711
+        SpanTable.trace_id == None,  # noqa: E711
+        SpanTable.project_uuid == test_project.uuid,
     )
     null_trace_spans = db_session.exec(stmt).all()
 
@@ -2152,8 +2152,8 @@ async def test_query_spans_with_null_trace_id(
 
     # Query spans with non-NULL trace_id
     stmt = select(SpanTable).where(
-        SpanTable.trace_id is not None,
-        SpanTable.project_uuid == test_project.uuid,  # noqa: E711
+        SpanTable.trace_id != None,  # noqa: E711
+        SpanTable.project_uuid == test_project.uuid,
     )
     non_null_trace_spans = db_session.exec(stmt).all()
 
