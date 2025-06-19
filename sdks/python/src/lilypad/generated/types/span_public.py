@@ -23,6 +23,7 @@ class SpanPublic(UncheckedBaseModel):
     """
 
     span_id: str
+    trace_id: typing.Optional[str] = None
     function_uuid: typing.Optional[str] = None
     type: typing.Optional[SpanType] = None
     cost: typing.Optional[float] = None
