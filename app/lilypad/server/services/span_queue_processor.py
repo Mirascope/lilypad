@@ -36,7 +36,9 @@ class TraceBuffer:
         self.spans: dict[str, dict[str, Any]] = {}  # span_id -> span data
         self.created_at = time.time()
         self._session = session
-        self._db_span_cache: set[str] = set()
+        # Create instance-specific cache to avoid memory leaks and ensure isolation
+        self._parent_cache: dict[str, bool] = {}
+        self._max_cache_size = 1000
 
     def add_span(self, span_data: dict[str, Any]) -> None:
         """Add a span to the buffer."""
@@ -82,17 +84,17 @@ class TraceBuffer:
         exists = result is not None
         
         return exists
-    
+
     def _parent_exists_in_db(self, parent_span_id: str) -> bool:
         """Check if a parent span exists in the database."""
+        # Check cache first
+        if parent_span_id in self._parent_cache:
+            return self._parent_cache[parent_span_id]
+        
         if not self._session:
             return False
         
-        # Check cache first
-        if parent_span_id in self._db_span_cache:
-            return True
-        
-        # Query DB using both trace_id and span_id for efficiency
+        # Query database
         stmt = select(SpanTable).where(
             SpanTable.trace_id == self.trace_id,
             SpanTable.span_id == parent_span_id
@@ -100,9 +102,13 @@ class TraceBuffer:
         result = self._session.exec(stmt).first()
         exists = result is not None
         
-        if exists:
-            self._db_span_cache.add(parent_span_id)
+        # Add to cache with size limit
+        if len(self._parent_cache) >= self._max_cache_size:
+            # Remove oldest entry (FIFO)
+            oldest_key = next(iter(self._parent_cache))
+            del self._parent_cache[oldest_key]
         
+        self._parent_cache[parent_span_id] = exists
         return exists
 
     def get_dependency_order(self) -> list[dict[str, Any]]:

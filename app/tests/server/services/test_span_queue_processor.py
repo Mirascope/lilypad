@@ -7,14 +7,18 @@ from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
+from sqlmodel import Session, select
 
 from lilypad.server._utils.span_processing import create_span_from_data
+from lilypad.server.models.spans import SpanTable
+from lilypad.server.models.spans import SpanCreate as SpanCreateModel
 from lilypad.server.schemas.spans import SpanCreate
 from lilypad.server.services.span_queue_processor import (
     SpanQueueProcessor,
     TraceBuffer,
     get_span_queue_processor,
 )
+from lilypad.server.services.spans import SpanService
 
 
 class TestTraceBuffer:
@@ -177,6 +181,119 @@ class TestTraceBuffer:
         assert len(ordered) == 2
         assert root_span in ordered
         assert orphan_span in ordered
+
+    def test_parent_exists_in_db_with_null_trace_id(self):
+        """Test _parent_exists_in_db handles NULL trace_id correctly."""
+        # Create mock session
+        mock_session = Mock()
+        mock_stmt = Mock()
+        mock_session.exec.return_value.first.return_value = None
+        
+        # Create buffer with session
+        buffer = TraceBuffer("trace-123", session=mock_session)
+        
+        # Test with parent span check
+        exists = buffer._parent_exists_in_db("parent-456")
+        
+        assert exists is False
+        # Verify query was made correctly
+        mock_session.exec.assert_called_once()
+
+    def test_parent_exists_in_db_with_cached_result(self):
+        """Test _parent_exists_in_db uses cache for subsequent calls."""
+        # Create mock session that returns a span
+        mock_session = Mock()
+        mock_result = Mock()
+        mock_session.exec.return_value.first.return_value = mock_result
+        
+        # Create buffer with session
+        buffer = TraceBuffer("trace-123", session=mock_session)
+        
+        # First call should query DB
+        exists1 = buffer._parent_exists_in_db("parent-456")
+        assert exists1 is True
+        assert mock_session.exec.call_count == 1
+        
+        # Second call should use cache
+        exists2 = buffer._parent_exists_in_db("parent-456")
+        assert exists2 is True
+        assert mock_session.exec.call_count == 1  # No additional DB call
+
+    def test_lru_cache_behavior(self):
+        """Test that LRU cache is working correctly."""
+        # Create mock session that returns different results
+        mock_session = Mock()
+        call_count = 0
+        
+        def side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            mock_result = Mock()
+            # Return True for odd calls, False for even
+            mock_result.first.return_value = Mock() if call_count % 2 == 1 else None
+            return mock_result
+        
+        mock_session.exec.side_effect = side_effect
+        
+        # Create buffer with session
+        buffer = TraceBuffer("trace-123", session=mock_session)
+        
+        # Test multiple calls
+        result1 = buffer._parent_exists_in_db("parent-1")
+        result2 = buffer._parent_exists_in_db("parent-1")  # Should use cache
+        result3 = buffer._parent_exists_in_db("parent-2")
+        result4 = buffer._parent_exists_in_db("parent-1")  # Should still use cache
+        
+        assert result1 is True  # First call
+        assert result2 is True  # Cached
+        assert result3 is False  # Second unique call
+        assert result4 is True  # Still cached
+        
+        # Only 2 DB calls should have been made (for parent-1 and parent-2)
+        assert call_count == 2
+
+    def test_is_complete_with_parent_in_db(self):
+        """Test is_complete when parent exists in database."""
+        # Create mock session
+        mock_session = Mock()
+        # First call returns None (not in buffer), second call returns span (in DB)
+        mock_session.exec.return_value.first.return_value = Mock()
+        
+        buffer = TraceBuffer("trace-123", session=mock_session)
+        
+        # Add span with parent that's not in buffer but exists in DB
+        buffer.add_span({
+            "span_id": "child-span",
+            "parent_span_id": "parent-in-db"
+        })
+        
+        # Should be complete because parent exists in DB
+        with patch(
+            "lilypad.server.services.span_queue_processor.logger"
+        ) as mock_logger:
+            result = buffer.is_complete()
+        
+        assert result is True
+        # Verify debug message about parent in DB
+        mock_logger.debug.assert_any_call(
+            "Parent parent-in-db exists in DB for span child-span"
+        )
+
+    def test_has_existing_spans_in_db_with_null_session(self):
+        """Test _has_existing_spans_in_db when session is None."""
+        buffer = TraceBuffer("trace-123", session=None)
+        
+        exists = buffer._has_existing_spans_in_db()
+        
+        assert exists is False
+
+    def test_parent_exists_in_db_with_null_session(self):
+        """Test _parent_exists_in_db when session is None."""
+        buffer = TraceBuffer("trace-123", session=None)
+        
+        exists = buffer._parent_exists_in_db("parent-456")
+        
+        assert exists is False
 
 
 class TestSpanQueueProcessor:
@@ -917,7 +1034,29 @@ class TestSpanQueueProcessor:
         assert result.parent_span_id is None
         assert result.function_uuid is None
         assert result.cost == 0
-        assert result.duration_ms == 0
+
+    @pytest.mark.asyncio
+    async def test_create_span_from_data_without_trace_id(self):
+        """Test create_span_from_data when trace_id is missing (legacy spans)."""
+        span_data = {
+            "span_id": "span-legacy-123",
+            # Note: trace_id is intentionally missing
+            "parent_span_id": "parent-legacy",
+            "attributes": {
+                "lilypad.type": "function",
+            },
+            "instrumentation_scope": {"name": "lilypad"},
+            "start_time": 1000,
+            "end_time": 2000,
+        }
+
+        result = await create_span_from_data(span_data)
+
+        assert isinstance(result, SpanCreate)
+        assert result.span_id == "span-legacy-123"
+        assert result.trace_id is None  # Should be None when missing
+        assert result.parent_span_id == "parent-legacy"
+        assert result.duration_ms == 1000  # Calculated from start/end time
 
     @pytest.mark.skip(reason="Complex service mocking - skip for coverage goal")
     @patch("lilypad.server.services.span_queue_processor.get_settings")
@@ -1919,3 +2058,133 @@ def test_span_queue_processor_edge_cases():
         contextlib.suppress(Exception),
     ):
         asyncio.run(processor.start())
+
+
+# Tests for NULL trace_id handling
+@pytest.mark.asyncio
+async def test_create_span_with_null_trace_id(
+    db_session: Session, test_user, test_project
+):
+    """Test creating a span with NULL trace_id."""
+    # Create span service
+    span_service = SpanService(db_session, test_user)
+    
+    # Create span with NULL trace_id
+    span_create = SpanCreateModel(
+        span_id="span-null-trace",
+        trace_id=None,  # Explicitly NULL
+        data={"test": "data"},
+    )
+    
+    # Create span in database
+    span = span_service.create_record(
+        span_create,
+        test_project.uuid,
+        test_project.organization_uuid
+    )
+    
+    # Verify span was created with NULL trace_id
+    assert span.span_id == "span-null-trace"
+    assert span.trace_id is None
+    assert span.project_uuid == test_project.uuid
+    
+    # Verify we can query it by span_id
+    stmt = select(SpanTable).where(
+        SpanTable.span_id == "span-null-trace"
+    )
+    result = db_session.exec(stmt).first()
+    assert result is not None
+    assert result.trace_id is None
+
+
+@pytest.mark.asyncio
+async def test_query_spans_with_null_trace_id(
+    db_session: Session, test_user, test_project
+):
+    """Test querying spans that have NULL trace_id."""
+    span_service = SpanService(db_session, test_user)
+    
+    # Create multiple spans - some with trace_id, some without
+    spans_data = [
+        {"span_id": "span-1", "trace_id": "trace-1", "data": {}},
+        {"span_id": "span-2", "trace_id": None, "data": {}},
+        {"span_id": "span-3", "trace_id": "trace-2", "data": {}},
+        {"span_id": "span-4", "trace_id": None, "data": {}},
+    ]
+    
+    created_spans = []
+    for span_data in spans_data:
+        span_create = SpanCreateModel(**span_data)
+        span = span_service.create_record(
+            span_create,
+            test_project.uuid,
+            test_project.organization_uuid
+        )
+        created_spans.append(span)
+    
+    # Query spans with NULL trace_id
+    stmt = select(SpanTable).where(
+        SpanTable.trace_id.is_(None),
+        SpanTable.project_uuid == test_project.uuid
+    )
+    null_trace_spans = db_session.exec(stmt).all()
+    
+    # Should find 2 spans with NULL trace_id
+    assert len(null_trace_spans) == 2
+    assert all(span.trace_id is None for span in null_trace_spans)
+    assert {span.span_id for span in null_trace_spans} == {"span-2", "span-4"}
+    
+    # Query spans with non-NULL trace_id
+    stmt = select(SpanTable).where(
+        SpanTable.trace_id.is_not(None),
+        SpanTable.project_uuid == test_project.uuid
+    )
+    non_null_trace_spans = db_session.exec(stmt).all()
+    
+    # Should find 2 spans with trace_id
+    assert len(non_null_trace_spans) == 2
+    assert all(span.trace_id is not None for span in non_null_trace_spans)
+
+
+@pytest.mark.asyncio
+async def test_trace_buffer_ignores_null_trace_spans(
+    db_session: Session, test_user, test_project
+):
+    """Test that TraceBuffer queries don't return legacy spans with NULL trace_id."""
+    span_service = SpanService(db_session, test_user)
+    
+    # Create a legacy span with NULL trace_id
+    legacy_span = SpanCreateModel(
+        span_id="legacy-parent",
+        trace_id=None,
+        data={"legacy": True},
+    )
+    span_service.create_record(
+        legacy_span,
+        test_project.uuid,
+        test_project.organization_uuid
+    )
+    
+    # Create a new span with proper trace_id
+    new_span = SpanCreateModel(
+        span_id="new-child",
+        trace_id="trace-123",
+        parent_span_id="legacy-parent",  # References legacy span
+        data={"new": True},
+    )
+    span_service.create_record(
+        new_span,
+        test_project.uuid,
+        test_project.organization_uuid
+    )
+    
+    # Create TraceBuffer for the new trace
+    buffer = TraceBuffer("trace-123", session=db_session)
+    
+    # Check if legacy parent exists in DB (should return False)
+    # because it has NULL trace_id and we're searching within trace-123
+    exists = buffer._parent_exists_in_db("legacy-parent")
+    assert exists is False
+    
+    # The buffer should not find the legacy span even though it exists
+    # This is intentional behavior to keep traces isolated

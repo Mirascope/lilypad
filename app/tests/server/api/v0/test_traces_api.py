@@ -209,6 +209,32 @@ async def test_process_lilypad_span():
 
 
 @pytest.mark.asyncio
+async def test_process_span_without_trace_id():
+    """Test processing a span without trace_id (legacy span)"""
+    trace = {
+        "span_id": "span-legacy",
+        # Note: trace_id is intentionally missing
+        "start_time": 1000,
+        "end_time": 2000,
+        "attributes": {
+            "lilypad.type": "function",
+        },
+        "instrumentation_scope": {"name": "lilypad"},
+    }
+    parent_to_children = {"span-legacy": []}
+    span_creates = []
+
+    result = await _process_span(trace, parent_to_children, span_creates)
+
+    assert result.span_id == "span-legacy"
+    assert result.trace_id is None  # Should handle missing trace_id gracefully
+    assert result.type == "function"
+    assert result.scope == Scope.LILYPAD
+    assert result.duration_ms == 1000
+    assert len(span_creates) == 1
+
+
+@pytest.mark.asyncio
 async def test_process_llm_span_with_openrouter():
     """Test processing an LLM span using openrouter"""
     trace = {
