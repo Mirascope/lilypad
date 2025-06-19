@@ -250,6 +250,24 @@ All trace context propagation happens automatically!
 
 ## Advanced Usage
 
+### Manual Context Extraction
+
+While automatic instrumentation handles context injection, you may need to manually extract context in special cases. Use Lilypad's context managers for this:
+
+```python
+# Use Lilypad's context managers for extraction
+with lilypad.propagated_context(dict(request.headers)):
+    # Your traced functions here will be children of the incoming trace
+    process_data(data)
+
+# Or for more control
+with lilypad.context(extract_from=message["headers"]):
+    # Extract context from custom message headers
+    handle_message(data)
+```
+
+These context managers handle the complexity of attach/detach automatically.
+
 ### Cross-Thread Context Propagation
 
 ```python
@@ -283,22 +301,20 @@ def worker_process(data: dict, parent_ctx):
 
 ### Message Queue Integration
 
+For message queues and other non-HTTP communication, you'll need to handle context propagation:
+
 ```python
 import lilypad
 
-# Producer
+# Producer - context needs to be manually included in message
 @lilypad.trace()
 def send_message(message: dict):
-    headers = {}
-    # Context is automatically injected if auto_http is enabled
-    # Otherwise, manually inject:
-    from opentelemetry import propagate
-    propagate.inject(headers)
-    
-    # Include headers in message metadata
+    # When using message queues, you'll need to ensure trace headers
+    # are included in your message metadata. The exact mechanism
+    # depends on your message queue system.
     queue.send({
         "data": message,
-        "headers": headers
+        # Include trace context in your message format
     })
 
 # Consumer
@@ -308,11 +324,13 @@ def handle_message(data: dict):
     return process(data)
 
 def process_message(message: dict):
-    # Use context manager to extract context
-    with lilypad.context(extract_from=message["headers"]):
+    # Use context manager to extract context from message headers
+    with lilypad.context(extract_from=message.get("headers", {})):
         # Maintains trace context from producer
         return handle_message(message["data"])
 ```
+
+Note: Automatic instrumentation currently works for HTTP clients only. For message queues, you'll need to ensure trace context is preserved in your message format.
 
 ## Configuration Options
 
@@ -360,8 +378,9 @@ lilypad.instrument_http_clients()  # All clients
 1. **Use Automatic Instrumentation**: Enable `auto_http=True` in configure for transparent tracing
 2. **Define Traced Functions at Module Level**: Don't define traced functions inside request handlers
 3. **Consistent Propagation**: Use the same propagation format across all services
-4. **Use Context Managers**: Use `propagated_context()` and `context()` for special cases
-5. **Performance**: Context propagation adds minimal overhead (typically < 1ms)
+4. **Use Context Managers**: Use `propagated_context()` and `context()` for manual context management
+5. **Rely on Automatic Instrumentation**: Let Lilypad handle context propagation automatically
+6. **Performance**: Context propagation adds minimal overhead (typically < 1ms)
 
 ## Troubleshooting
 
@@ -405,14 +424,10 @@ Some scenarios where automatic instrumentation might not work:
 2. **Custom HTTP Clients**: Libraries that don't use standard HTTP clients internally
 3. **Subclassed Clients**: Custom subclasses of HTTP clients may not be instrumented
 
-In these cases, you may need to manually propagate context:
-```python
-from opentelemetry import propagate
-
-headers = {}
-propagate.inject(headers)
-response = custom_client.request("GET", url, headers=headers)
-```
+In these cases, automatic instrumentation may not work. Consider:
+1. Using a supported HTTP client (requests, httpx, aiohttp, urllib3)
+2. Wrapping your custom client with a supported HTTP client
+3. Ensuring HTTP libraries are imported after `lilypad.configure()`
 
 ## Environment Variables
 
