@@ -20,6 +20,7 @@ class TestCommentsAPI:
         """Create a test span for comments."""
         span = SpanTable(
             span_id="test_span_id",
+            trace_id="test_trace",
             parent_span_id=None,
             scope=Scope.LLM,
             data={
@@ -150,6 +151,7 @@ class TestCommentsAPI:
         # Create a new span without comments
         new_span = SpanTable(
             span_id="empty_span_id",
+            trace_id="empty_trace",
             parent_span_id=None,
             scope=Scope.LLM,
             data={

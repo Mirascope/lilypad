@@ -17,7 +17,7 @@ def test_propagated_context_extracts_and_attaches():
     mock_token = Mock()
 
     with (
-        patch("lilypad.context_managers.extract_context") as mock_extract,
+        patch("lilypad.context_managers._extract_context") as mock_extract,
         patch.object(otel_context, "attach") as mock_attach,
         patch.object(otel_context, "detach") as mock_detach,
     ):
@@ -43,7 +43,7 @@ def test_propagated_context_with_empty_headers():
     mock_token = Mock()
 
     with (
-        patch("lilypad.context_managers.extract_context") as mock_extract,
+        patch("lilypad.context_managers._extract_context") as mock_extract,
         patch.object(otel_context, "attach") as mock_attach,
         patch.object(otel_context, "detach") as mock_detach,
     ):
@@ -65,7 +65,7 @@ def test_propagated_context_detaches_on_exception():
     mock_token = Mock()
 
     with (
-        patch("lilypad.context_managers.extract_context"),
+        patch("lilypad.context_managers._extract_context"),
         patch.object(otel_context, "attach", return_value=mock_token),
         patch.object(otel_context, "detach") as mock_detach,
     ):
@@ -100,7 +100,7 @@ def test_context_with_extract_from():
     mock_token = Mock()
 
     with (
-        patch("lilypad.context_managers.extract_context") as mock_extract,
+        patch("lilypad.context_managers._extract_context") as mock_extract,
         patch.object(otel_context, "attach") as mock_attach,
         patch.object(otel_context, "detach") as mock_detach,
     ):
@@ -161,7 +161,7 @@ def test_context_detaches_on_exception_with_extract_from():
     mock_token = Mock()
 
     with (
-        patch("lilypad.context_managers.extract_context"),
+        patch("lilypad.context_managers._extract_context"),
         patch.object(otel_context, "attach", return_value=mock_token),
         patch.object(otel_context, "detach") as mock_detach,
     ):

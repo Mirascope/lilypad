@@ -63,26 +63,24 @@ class TraceBuffer:
                         f"Parent {parent_id} exists in DB for span {span_data.get('span_id')}"
                     )
                     continue
-                
+
                 logger.debug(
                     f"Trace {self.trace_id} incomplete: span {span_data.get('span_id')} "
                     f"waiting for parent {parent_id}"
                 )
                 return False  # Missing parent
         return True
-    
+
     def _has_existing_spans_in_db(self) -> bool:
         """Check if this trace already has spans in the database."""
         if not self._session:
             return False
-        
+
         # Check if any spans exist for this trace_id
-        stmt = select(SpanTable).where(
-            SpanTable.trace_id == self.trace_id
-        ).limit(1)
+        stmt = select(SpanTable).where(SpanTable.trace_id == self.trace_id).limit(1)
         result = self._session.exec(stmt).first()
         exists = result is not None
-        
+
         return exists
 
     def _parent_exists_in_db(self, parent_span_id: str) -> bool:
@@ -90,24 +88,27 @@ class TraceBuffer:
         # Check cache first
         if parent_span_id in self._parent_cache:
             return self._parent_cache[parent_span_id]
-        
+
         if not self._session:
             return False
-        
+
         # Query database
-        stmt = select(SpanTable).where(
-            SpanTable.trace_id == self.trace_id,
-            SpanTable.span_id == parent_span_id
-        ).limit(1)
+        stmt = (
+            select(SpanTable)
+            .where(
+                SpanTable.trace_id == self.trace_id, SpanTable.span_id == parent_span_id
+            )
+            .limit(1)
+        )
         result = self._session.exec(stmt).first()
         exists = result is not None
-        
+
         # Add to cache with size limit
         if len(self._parent_cache) >= self._max_cache_size:
             # Remove oldest entry (FIFO)
             oldest_key = next(iter(self._parent_cache))
             del self._parent_cache[oldest_key]
-        
+
         self._parent_cache[parent_span_id] = exists
         return exists
 

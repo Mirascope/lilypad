@@ -65,7 +65,7 @@ def test_patch_requests():
         original_request.return_value = mock_response
 
         # Call patched method
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             result = patched_request(mock_session, "GET", "http://example.com", headers={"test": "header"})
 
             # Verify inject_context was called
@@ -93,7 +93,7 @@ def test_patch_requests_no_headers():
         _patch_requests()
         patched_request = mock_session.request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             patched_request(mock_session, "GET", "http://example.com")
             mock_inject.assert_called_once_with({})
 
@@ -115,7 +115,7 @@ def test_patch_requests_none_headers():
         _patch_requests()
         patched_request = mock_session.request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Pass headers=None explicitly
             patched_request(mock_session, "GET", "http://example.com", headers=None)
             # Should create empty dict when headers is None
@@ -128,7 +128,7 @@ def test_patch_requests_none_headers():
 def test_patch_requests_already_patched():
     """Test patching requests when already patched."""
     import lilypad._opentelemetry.http.auto_instrument as auto_instrument
-    
+
     # Mock requests module
     mock_requests = Mock()
     mock_session = Mock()
@@ -141,10 +141,10 @@ def test_patch_requests_already_patched():
     try:
         # Mark as already patched
         auto_instrument._ORIGINAL_METHODS["requests.Session.request"] = original_request
-        
+
         # This should return early
         _patch_requests()
-        
+
         # Verify request method was NOT replaced
         assert mock_session.request == original_request
 
@@ -178,7 +178,7 @@ def test_patch_httpx_sync():
         patched_request = mock_client.request
 
         # Test sync client
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             mock_response = Mock()
             original_request.return_value = mock_response
 
@@ -212,7 +212,7 @@ async def test_patch_httpx_async():
         _patch_httpx()
         patched_request = mock_async_client.request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Call the patched async method
             result = await patched_request(mock_async_client, "GET", "http://example.com")
 
@@ -237,7 +237,7 @@ def test_patch_httpx_none_headers():
         _patch_httpx()
         patched_request = mock_client.request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Pass headers=None explicitly
             patched_request(mock_client, "GET", "http://example.com", headers=None)
             # Should create empty dict when headers is None
@@ -268,7 +268,7 @@ async def test_patch_httpx_async_none_headers():
         _patch_httpx()
         patched_request = mock_async_client.request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Pass headers=None explicitly
             await patched_request(mock_async_client, "GET", "http://example.com", headers=None)
             # Should create empty dict when headers is None
@@ -281,7 +281,7 @@ async def test_patch_httpx_async_none_headers():
 def test_patch_httpx_already_patched():
     """Test patching httpx when already patched."""
     import lilypad._opentelemetry.http.auto_instrument as auto_instrument
-    
+
     # Mock httpx module
     mock_httpx = Mock()
     mock_client = Mock()
@@ -294,10 +294,10 @@ def test_patch_httpx_already_patched():
     try:
         # Mark as already patched
         auto_instrument._ORIGINAL_METHODS["httpx.Client.request"] = original_request
-        
+
         # This should return early
         _patch_httpx()
-        
+
         # Verify request method was NOT replaced
         assert mock_client.request == original_request
 
@@ -336,7 +336,7 @@ async def test_patch_aiohttp():
         _patch_aiohttp()
         patched_request = mock_session._request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             result = await patched_request(mock_session, "GET", "http://example.com", headers={"test": "header"})
 
             mock_inject.assert_called_once()
@@ -367,7 +367,7 @@ async def test_patch_aiohttp_none_headers():
         _patch_aiohttp()
         patched_request = mock_session._request
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Pass headers=None explicitly
             await patched_request(mock_session, "GET", "http://example.com", headers=None)
             # Should create empty dict when headers is None
@@ -380,7 +380,7 @@ async def test_patch_aiohttp_none_headers():
 def test_patch_aiohttp_already_patched():
     """Test patching aiohttp when already patched."""
     import lilypad._opentelemetry.http.auto_instrument as auto_instrument
-    
+
     # Mock aiohttp module
     mock_aiohttp = Mock()
     mock_session = Mock()
@@ -393,10 +393,10 @@ def test_patch_aiohttp_already_patched():
     try:
         # Mark as already patched
         auto_instrument._ORIGINAL_METHODS["aiohttp.ClientSession._request"] = original_request
-        
+
         # This should return early
         _patch_aiohttp()
-        
+
         # Verify request method was NOT replaced
         assert mock_session._request == original_request
 
@@ -428,7 +428,7 @@ def test_patch_urllib3():
         _patch_urllib3()
         patched_urlopen = mock_pool.urlopen
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             mock_response = Mock()
             original_urlopen.return_value = mock_response
 
@@ -455,7 +455,7 @@ def test_patch_urllib3_none_headers():
         _patch_urllib3()
         patched_urlopen = mock_pool.urlopen
 
-        with patch("lilypad._opentelemetry.http.auto_instrument.inject_context") as mock_inject:
+        with patch("lilypad._opentelemetry.http.auto_instrument._inject_context") as mock_inject:
             # Pass headers=None explicitly
             patched_urlopen(mock_pool, "GET", "/path", headers=None)
             # Should create empty dict when headers is None
@@ -468,7 +468,7 @@ def test_patch_urllib3_none_headers():
 def test_patch_urllib3_already_patched():
     """Test patching urllib3 when already patched."""
     import lilypad._opentelemetry.http.auto_instrument as auto_instrument
-    
+
     # Mock urllib3 module
     mock_urllib3 = Mock()
     mock_pool = Mock()
@@ -481,10 +481,10 @@ def test_patch_urllib3_already_patched():
     try:
         # Mark as already patched
         auto_instrument._ORIGINAL_METHODS["urllib3.HTTPConnectionPool.urlopen"] = original_urlopen
-        
+
         # This should return early
         _patch_urllib3()
-        
+
         # Verify urlopen method was NOT replaced
         assert mock_pool.urlopen == original_urlopen
 

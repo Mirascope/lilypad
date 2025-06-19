@@ -7,8 +7,8 @@ import pytest
 from lilypad._utils.context_propagation import (
     get_propagator,
     ContextPropagator,
-    extract_context,
-    inject_context,
+    _extract_context as extract_context,
+    _inject_context as inject_context,
     with_extracted_context,
     detach_context,
 )
@@ -232,39 +232,39 @@ def test_detach_context_function():
 def test_get_propagator_creates_new_instance():
     """Test _get_propagator creates new instance when _propagator is None."""
     import lilypad._utils.context_propagation as context_prop
-    
+
     # Save original state
     original_propagator = context_prop._propagator
     original_env = os.environ.get("_LILYPAD_PROPAGATOR_SET_GLOBAL")
-    
+
     try:
         # Reset _propagator to None to trigger creation
         context_prop._propagator = None
-        
+
         # Test with default (set_global=True)
         if "_LILYPAD_PROPAGATOR_SET_GLOBAL" in os.environ:
             del os.environ["_LILYPAD_PROPAGATOR_SET_GLOBAL"]
-        
+
         propagator1 = context_prop._get_propagator()
         assert propagator1 is not None
         assert isinstance(propagator1, ContextPropagator)
-        
+
         # Reset again and test with set_global=False
         context_prop._propagator = None
         os.environ["_LILYPAD_PROPAGATOR_SET_GLOBAL"] = "false"
-        
+
         propagator2 = context_prop._get_propagator()
         assert propagator2 is not None
         assert isinstance(propagator2, ContextPropagator)
-        
+
         # Reset again and test with set_global=true (lowercase)
         context_prop._propagator = None
         os.environ["_LILYPAD_PROPAGATOR_SET_GLOBAL"] = "true"
-        
+
         propagator3 = context_prop._get_propagator()
         assert propagator3 is not None
         assert isinstance(propagator3, ContextPropagator)
-        
+
     finally:
         # Restore original state
         context_prop._propagator = original_propagator

@@ -130,7 +130,6 @@ def test_post_traces(
             {
                 "span_id": "test_span_2",
                 "trace_id": "test_trace_2",
-
                 "instrumentation_scope": {"name": "lilypad"},
                 "start_time": current_time,
                 "end_time": current_time + 100,

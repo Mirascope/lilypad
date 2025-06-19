@@ -17,6 +17,7 @@ def test_span(session: Session, test_project: ProjectTable) -> SpanTable:
     """Create a test span."""
     span = SpanTable(
         span_id="test_span_id",
+        trace_id=None,
         project_uuid=test_project.uuid,
         organization_uuid=test_project.organization_uuid,
         scope="lilypad",  # type: ignore[arg-type]  # Required field
@@ -521,6 +522,7 @@ class TestGenerateAnnotation:
         # Create a span with string output
         span = SpanTable(
             span_id="string_output_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             scope="lilypad",  # pyright: ignore [reportArgumentType]
@@ -580,6 +582,7 @@ class TestGenerateAnnotation:
         # Create a span with dict output
         span = SpanTable(
             span_id="dict_output_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             scope="lilypad",  # pyright: ignore [reportArgumentType]
@@ -662,6 +665,7 @@ class TestGenerateAnnotation:
         # Create a span with tool output
         span = SpanTable(
             span_id="tool_output_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             scope="lilypad",  # pyright: ignore [reportArgumentType]
@@ -722,6 +726,7 @@ class TestGenerateAnnotation:
         # Create a span
         span = SpanTable(
             span_id="streaming_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             scope="lilypad",  # pyright: ignore [reportArgumentType]
@@ -779,6 +784,7 @@ class TestGenerateAnnotation:
         # Create a span without output attributes
         span = SpanTable(
             span_id="no_output_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             scope="lilypad",  # pyright: ignore [reportArgumentType]
