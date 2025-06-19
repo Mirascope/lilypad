@@ -4,7 +4,11 @@ from unittest.mock import patch
 
 import pytest
 
-from lilypad.server.models.functions import extract_function_info
+from lilypad.server.models.functions import (
+    MAX_ARG_NAME_LENGTH,
+    MAX_TYPE_NAME_LENGTH,
+    extract_function_info,
+)
 from lilypad.server.schemas.functions import FunctionCreate
 
 
@@ -32,7 +36,7 @@ class TestFunctionsModelCoverage:
     def test_line_103_arg_name_too_long(self):
         """Cover line 103 - argument name too long"""
         # Create a very long argument name (over MAX_ARG_NAME_LENGTH)
-        long_name = "a" * 513  # MAX_ARG_NAME_LENGTH is typically 512
+        long_name = "a" * (MAX_ARG_NAME_LENGTH + 1)
 
         with pytest.raises(ValueError, match="Invalid argument name"):
             FunctionCreate(
@@ -46,7 +50,7 @@ class TestFunctionsModelCoverage:
     def test_line_107_type_name_too_long_in_validation(self):
         """Cover line 107 - type name too long in validate_arg_types"""
         # Create a very long type name
-        long_type = "VeryLongTypeName" * 50  # Over MAX_TYPE_NAME_LENGTH
+        long_type = "a" * (MAX_TYPE_NAME_LENGTH + 1)  # Over MAX_TYPE_NAME_LENGTH
 
         with pytest.raises(ValueError, match="Invalid type name"):
             FunctionCreate(
@@ -82,7 +86,9 @@ class TestFunctionsModelCoverage:
     def test_line_118_type_name_too_long_second_check(self):
         """Cover line 118 - duplicate type name length check"""
         # This tests the second check for type name length
-        very_long_type = "x" * 1000  # Definitely over MAX_TYPE_NAME_LENGTH
+        very_long_type = "x" * (
+            MAX_TYPE_NAME_LENGTH + 1
+        )  # Definitely over MAX_TYPE_NAME_LENGTH
 
         with pytest.raises(ValueError, match="Invalid type name"):
             FunctionCreate(
