@@ -7250,6 +7250,17 @@
             "type": "string",
             "title": "Span Id"
           },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
           "function_uuid": {
             "anyOf": [
               {
@@ -7428,6 +7439,7 @@
         "type": "object",
         "required": [
           "span_id",
+          "trace_id",
           "scope",
           "uuid",
           "project_uuid",

@@ -133,6 +133,7 @@ def test_span_models() -> None:
     # Test SpanCreate
     span_create = SpanCreate(
         span_id="span123",
+        trace_id=None,
         project_uuid=uuid4(),
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -145,6 +146,7 @@ def test_span_models() -> None:
     lilypad_span = SpanTable(
         organization_uuid=ORGANIZATION_UUID,
         span_id="span123",
+        trace_id=None,
         project_uuid=uuid4(),
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -163,6 +165,7 @@ def test_span_models() -> None:
     llm_span = SpanTable(
         organization_uuid=ORGANIZATION_UUID,
         span_id="span456",
+        trace_id=None,
         project_uuid=uuid4(),
         function_uuid=uuid4(),
         type=SpanType.FUNCTION,
@@ -183,6 +186,7 @@ def test_span_model_has_session_id() -> None:
     """Test Span model session_id field."""
     span = SpanTable(  # pyright: ignore [reportCallIssue]
         span_id="s1",
+        trace_id=None,
         project_uuid=uuid4(),
         scope=Scope.LILYPAD,
         session_id="RUN-XYZ",

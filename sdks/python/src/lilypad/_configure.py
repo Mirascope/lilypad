@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 import importlib.util
-from typing import Any
+from typing import Any, Literal
 from secrets import token_bytes
 from contextlib import contextmanager
 from collections.abc import Sequence, Generator
 
-from opentelemetry import trace
+from opentelemetry import trace, propagate
+from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import (
@@ -180,11 +181,31 @@ def configure(
     log_format: str | None = None,
     log_handlers: list[logging.Handler] | None = None,
     auto_llm: bool = False,
+    propagator: Literal["tracecontext", "b3", "b3multi", "jaeger", "composite"] | None = None,
+    auto_http: bool = False,
+    preserve_existing_propagator: bool = False,
 ) -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
 
     The user can configure log level, format, and output destination via the parameters.
     This allows adjusting log outputs for local runtimes or different environments.
+
+    Args:
+        api_key: Your Lilypad API key
+        project_id: Your Lilypad project ID
+        base_url: Base URL for Lilypad API (defaults to hosted service)
+        log_level: Logging level (e.g., logging.INFO, logging.DEBUG)
+        log_format: Custom log format string
+        log_handlers: Custom log handlers
+        auto_llm: Automatically instrument LLM libraries (OpenAI, Anthropic, etc.)
+        propagator: Trace propagation format. Valid values:
+            - 'tracecontext': W3C Trace Context (default)
+            - 'b3': Zipkin B3 Single Format
+            - 'b3multi': Zipkin B3 Multi Format
+            - 'jaeger': Jaeger format
+            - 'composite': All formats for maximum compatibility
+        auto_http: Automatically instrument all HTTP clients
+        preserve_existing_propagator: If True, preserve existing OpenTelemetry propagator settings
     """
 
     current = get_settings()
@@ -216,6 +237,60 @@ def configure(
         wrap_batch_processor(processor)
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
+
+    # Configure propagator
+    if propagator or auto_http:
+        from ._utils.context_propagation import get_propagator
+        import os
+
+        # Get existing propagator BEFORE creating ContextPropagator
+        existing_propagator = None
+        if propagator and preserve_existing_propagator:
+            existing_propagator = propagate.get_global_textmap()
+
+        # Set environment variable for propagator type if specified
+        if propagator:
+            os.environ["LILYPAD_PROPAGATOR"] = propagator
+
+        # Initialize the propagator (needed for HTTP instrumentation to work properly)
+        # When preserve_existing_propagator is True, we need to control propagator creation
+        if propagator and preserve_existing_propagator:
+            # Temporarily disable automatic global propagator setting
+            os.environ["_LILYPAD_PROPAGATOR_SET_GLOBAL"] = "false"
+            try:
+                lilypad_propagator = get_propagator()
+                # Now create composite and set it manually
+                composite = CompositePropagator([existing_propagator, lilypad_propagator])
+                propagate.set_global_textmap(composite)
+            finally:
+                # Reset the environment variable
+                del os.environ["_LILYPAD_PROPAGATOR_SET_GLOBAL"]
+        else:
+            # Normal case - let ContextPropagator set the global propagator
+            get_propagator()
+
+    # Handle HTTP instrumentation
+    if auto_http:
+        # Check and instrument each HTTP client library if available
+        if importlib.util.find_spec("requests") is not None:
+            from ._opentelemetry.http import instrument_requests
+
+            instrument_requests()
+
+        if importlib.util.find_spec("httpx") is not None:
+            from ._opentelemetry.http import instrument_httpx
+
+            instrument_httpx()
+
+        if importlib.util.find_spec("aiohttp") is not None:
+            from ._opentelemetry.http import instrument_aiohttp
+
+            instrument_aiohttp()
+
+        if importlib.util.find_spec("urllib3") is not None:
+            from ._opentelemetry.http import instrument_urllib3
+
+            instrument_urllib3()
 
     if not auto_llm:
         return

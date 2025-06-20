@@ -161,6 +161,7 @@ async def search_traces(
             organization_uuid=source["organization_uuid"],
             project_uuid=project_uuid,
             span_id=source["span_id"],
+            trace_id=source.get("trace_id"),
             parent_span_id=source.get("parent_span_id"),
             type=source["type"],
             function_uuid=UUID(function_uuid_str) if function_uuid_str else None,

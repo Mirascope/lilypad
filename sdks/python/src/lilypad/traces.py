@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import inspect
+import logging
 from types import MappingProxyType
 from typing import (
     Any,
@@ -64,6 +65,7 @@ _T = TypeVar("_T")
 
 
 TRACE_MODULE_NAME = "lilypad.traces"
+logger = logging.getLogger(__name__)
 
 
 def _get_trace_type(function: FunctionPublic | None) -> Literal["trace", "function"]:
@@ -675,10 +677,117 @@ def trace(
     tags: list[str] | None = None,
     serializers: SerializerMap | None = None,
 ) -> TraceDecorator | VersionedFunctionTraceDecorator:
-    """The tracing LLM generations.
+    """Decorator for tracing function execution with distributed tracing support.
 
-    The decorated function will trace and log automatically.
-    If mode="wrap" is set, the function will return a Trace[_R] object with a 'response' property containing the original function's response and an 'annotate' method.
+    This decorator instruments functions to create OpenTelemetry spans, enabling
+    distributed tracing across service boundaries. It supports automatic context
+    propagation for maintaining trace continuity in microservices architectures.
+
+    Args:
+        name: Optional custom name for the span. If None, uses the function's
+              qualified name.
+        versioning: If "automatic", enables function versioning to track code changes.
+        mode: If "wrap", returns a Trace object with the response and annotation methods.
+        tags: List of tags to attach to spans created by this function.
+        serializers: Custom serializers for function arguments and return values.
+
+    Returns:
+        A decorator that instruments the function with tracing capabilities.
+
+    Example:
+        Basic usage:
+
+        ```python
+        from lilypad import trace
+
+
+        @trace()
+        def process_data(data: dict) -> dict:
+            # Function is automatically traced
+            result = {"processed": True, "count": len(data)}
+            return result
+
+
+        # When called, creates a span with timing and metadata
+        result = process_data({"items": [1, 2, 3]})
+        ```
+
+        Distributed tracing with HTTP services:
+
+        ```python
+        from fastapi import FastAPI, Request
+        from lilypad import trace, propagated_context
+
+        app = FastAPI()
+
+
+        @trace()
+        def process_request(data: dict) -> dict:
+            # This function is defined at module level
+            result = heavy_processing(data)
+            return {"status": "success", "result": result}
+
+
+        @app.post("/process")
+        async def api_endpoint(request: Request, data: dict):
+            # Use context manager to propagate trace context
+            with propagated_context(extract_from=dict(request.headers)):
+                # process_request will be a child of the incoming trace
+                return await process_request(data)
+        ```
+
+        Using with explicit parent context:
+
+        ```python
+        from opentelemetry import context as otel_context
+        from lilypad import trace, propagated_context
+        import threading
+
+
+        @trace()
+        def process_in_thread(data: dict):
+            # This function is defined at module level
+            return transform_data(data)
+
+
+        # In main thread
+        @trace()
+        def main_process(data: dict):
+            # Capture current context
+            current_ctx = otel_context.get_current()
+
+            # Pass to worker thread
+            thread = threading.Thread(target=worker_process, args=(data, current_ctx))
+            thread.start()
+
+
+        # In worker thread
+        def worker_process(data: dict, parent_ctx):
+            # Use context manager for parent context
+            with propagated_context(parent=parent_ctx):
+                # This span is a child of main_process span
+                return process_in_thread(data)
+        ```
+
+        With versioning and tags:
+
+        ```python
+        @trace(versioning="automatic", tags=["production", "critical"], mode="wrap")
+        def ml_inference(input_data: dict) -> dict:
+            prediction = model.predict(input_data)
+            return {"prediction": prediction, "confidence": 0.95}
+
+
+        # Returns a Trace object
+        result = ml_inference({"features": [1, 2, 3]})
+        print(result.response)  # Access the actual result
+        result.annotate(...)  # Add annotations to the trace
+        ```
+
+    Note:
+        - For distributed tracing, use the `propagated_context` context manager with `extract_from` parameter
+        - Context extraction supports multiple propagation formats (W3C, B3, Jaeger)
+        - Configure propagation format using `lilypad.configure(propagator="...")`
     """
 
     decorator_tags = sorted(set(tags)) if tags else None

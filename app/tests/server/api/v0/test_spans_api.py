@@ -13,6 +13,7 @@ from lilypad.server.models import (
     ProjectTable,
     Scope,
     SpanTable,
+    SpanType,
 )
 
 
@@ -36,7 +37,7 @@ def test_spans(
             span_id=f"span_root_{i}",
             trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=None,
-            type="function",
+            type=SpanType.FUNCTION,
             function_uuid=test_function.uuid,
             scope=Scope.LILYPAD,
             cost=0.001 * (i + 1),
@@ -63,7 +64,7 @@ def test_spans(
             span_id=f"span_child_{i}",
             trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=f"span_root_{i}",
-            type="function",
+            type=SpanType.FUNCTION,
             function_uuid=test_function.uuid,
             scope=Scope.LLM,
             cost=0.0005 * (i + 1),

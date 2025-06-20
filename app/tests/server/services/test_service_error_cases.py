@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from sqlmodel import Session
 
+from lilypad.server.models.spans import Scope
 from lilypad.server.schemas.spans import SpanCreate
 from lilypad.server.services.spans import SpanService
 
@@ -49,7 +50,7 @@ class TestSpanServiceErrors:
         mock_session.commit = Mock()
 
         span_creates = [
-            SpanCreate(span_id="test_span", scope="lilypad", type="function", data={})  # type: ignore
+            SpanCreate(span_id="test_span", trace_id=None, scope=Scope.LILYPAD, data={})
         ]
 
         project_uuid = uuid4()

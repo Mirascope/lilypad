@@ -35,6 +35,7 @@ def test_find_records_by_version_uuid(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -69,6 +70,7 @@ def test_count_no_parent_spans(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"root_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
@@ -83,6 +85,7 @@ def test_count_no_parent_spans(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"child_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
@@ -111,6 +114,7 @@ def test_find_all_no_parent_spans(
         span = SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"root_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
@@ -152,6 +156,7 @@ def test_find_root_parent_span(
     grandparent = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="grandparent",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -162,6 +167,7 @@ def test_find_root_parent_span(
     parent = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="parent",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -172,6 +178,7 @@ def test_find_root_parent_span(
     child = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="child",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -211,6 +218,7 @@ def test_get_record_by_span_id(
     span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="test_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -242,6 +250,7 @@ def test_get_aggregated_metrics_lifetime(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -289,6 +298,7 @@ def test_get_aggregated_metrics_by_timeframe(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id="span_today",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -303,6 +313,7 @@ def test_get_aggregated_metrics_by_timeframe(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id="span_yesterday",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -341,6 +352,7 @@ def test_get_aggregated_metrics_all_functions(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id="span_1",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function1_uuid,
             scope=Scope.LILYPAD,
@@ -351,6 +363,7 @@ def test_get_aggregated_metrics_all_functions(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id="span_2",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function2_uuid,
             scope=Scope.LILYPAD,
@@ -393,6 +406,7 @@ def test_delete_records_by_function_name(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function.uuid,
             scope=Scope.LILYPAD,
@@ -427,6 +441,7 @@ def test_count_by_current_month(
     current_month_span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="current_month",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -442,6 +457,7 @@ def test_count_by_current_month(
     prev_month_span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="prev_month",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -465,6 +481,7 @@ def test_create_bulk_records_with_tags(
     spans_create = [
         SpanCreate(
             span_id=f"bulk_span_{i}",
+            trace_id=None,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
             data={"attributes": {"lilypad.trace.tags": ["tag1", "tag2"]}},
@@ -500,6 +517,7 @@ def test_create_bulk_records_with_billing(
     spans_create = [
         SpanCreate(
             span_id=f"billing_span_{i}",
+            trace_id=None,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
             data={"attributes": {}},
@@ -539,6 +557,7 @@ def test_create_bulk_records_customer_not_found(
     spans_create = [
         SpanCreate(
             span_id="customer_not_found_span",
+            trace_id=None,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
             data={"attributes": {}},
@@ -564,6 +583,7 @@ def test_create_bulk_records_billing_error_handling(
     spans_create = [
         SpanCreate(
             span_id="error_span",
+            trace_id=None,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
             data={"attributes": {}},
@@ -594,6 +614,7 @@ def test_get_spans_since(
     old_span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="old_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -605,6 +626,7 @@ def test_get_spans_since(
     new_span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="new_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -635,6 +657,7 @@ def test_delete_records_by_function_uuid(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -665,6 +688,7 @@ async def test_update_span_with_tags(
     span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="update_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -711,6 +735,7 @@ async def test_update_span_with_tag_uuids(
     span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="update_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -742,6 +767,7 @@ def test_count_records_by_function_uuid(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"root_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -756,6 +782,7 @@ def test_count_records_by_function_uuid(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"child_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -783,6 +810,7 @@ def test_find_spans_by_trace_id(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=trace_id,
             project_uuid=test_project.uuid,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
@@ -795,6 +823,7 @@ def test_find_spans_by_trace_id(
     other_span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="other_span",
+        trace_id="other_trace",
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -825,6 +854,7 @@ def test_find_records_by_function_uuid_paged(
         span = SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -882,6 +912,7 @@ def test_find_aggregate_data_by_function_uuid(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -962,6 +993,7 @@ def test_get_aggregated_metrics_week_timeframe(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -1017,6 +1049,7 @@ def test_get_aggregated_metrics_month_timeframe(
         SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id=f"span_{i}",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=function_uuid,
             scope=Scope.LILYPAD,
@@ -1078,6 +1111,7 @@ def test_count_by_current_month_december_edge_case(
         span = SpanTable(
             organization_uuid=test_project.organization_uuid,
             span_id="december_span",
+            trace_id=None,
             project_uuid=test_project.uuid,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
@@ -1102,6 +1136,7 @@ def test_create_bulk_records_with_invalid_tags(
     spans_create = [
         SpanCreate(
             span_id="invalid_tags_span",
+            trace_id=None,
             function_uuid=uuid4(),
             scope=Scope.LILYPAD,
             data={
@@ -1138,6 +1173,7 @@ async def test_update_span_no_tag_changes(
     span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="no_tags_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
@@ -1167,6 +1203,7 @@ def test_sync_span_tags_remove_existing_tags(
     span = SpanTable(
         organization_uuid=test_project.organization_uuid,
         span_id="remove_tags_span",
+        trace_id=None,
         project_uuid=test_project.uuid,
         function_uuid=uuid4(),
         scope=Scope.LILYPAD,
