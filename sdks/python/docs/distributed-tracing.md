@@ -55,6 +55,7 @@ The easiest way to enable distributed tracing is using automatic instrumentation
 
 ```python
 import lilypad
+import requests
 
 # Configure and enable automatic HTTP instrumentation
 lilypad.configure(
@@ -63,8 +64,6 @@ lilypad.configure(
     auto_http=True  # Enable automatic HTTP client instrumentation
 )
 
-# Now ALL HTTP calls will automatically propagate trace context!
-import requests
 
 @lilypad.trace()
 def my_service():
