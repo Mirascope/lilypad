@@ -15,7 +15,7 @@ from ._utils.context_propagation import _extract_context
 
 
 @contextmanager
-def context(
+def propagated_context(
     *, parent: otel_context.Context | None = None, extract_from: dict[str, Any] | None = None
 ) -> Generator[None, None, None]:
     """Context manager for OpenTelemetry trace context propagation.
@@ -27,15 +27,15 @@ def context(
     Examples:
         ```python
         # Extract from HTTP request headers
-        with lilypad.context(extract_from=dict(request.headers)):
+        with lilypad.propagated_context(extract_from=dict(request.headers)):
             process_data()
 
         # Cross-thread propagation
-        with lilypad.context(parent=parent_ctx):
+        with lilypad.propagated_context(parent=parent_ctx):
             process_in_thread()
 
         # Extract from custom message headers
-        with lilypad.context(extract_from=message["headers"]):
+        with lilypad.propagated_context(extract_from=message["headers"]):
             handle_message(message["data"])
         ```
 

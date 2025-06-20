@@ -716,7 +716,7 @@ def trace(
 
         ```python
         from fastapi import FastAPI, Request
-        from lilypad import trace, context
+        from lilypad import trace, propagated_context
 
         app = FastAPI()
 
@@ -731,7 +731,7 @@ def trace(
         @app.post("/process")
         async def api_endpoint(request: Request, data: dict):
             # Use context manager to propagate trace context
-            with context(extract_from=dict(request.headers)):
+            with propagated_context(extract_from=dict(request.headers)):
                 # process_request will be a child of the incoming trace
                 return await process_request(data)
         ```
@@ -740,7 +740,7 @@ def trace(
 
         ```python
         from opentelemetry import context as otel_context
-        from lilypad import trace, context
+        from lilypad import trace, propagated_context
         import threading
 
 
@@ -764,7 +764,7 @@ def trace(
         # In worker thread
         def worker_process(data: dict, parent_ctx):
             # Use context manager for parent context
-            with context(parent=parent_ctx):
+            with propagated_context(parent=parent_ctx):
                 # This span is a child of main_process span
                 return process_in_thread(data)
         ```
@@ -785,7 +785,7 @@ def trace(
         ```
 
     Note:
-        - For distributed tracing, use the `context` context manager with `extract_from` parameter
+        - For distributed tracing, use the `propagated_context` context manager with `extract_from` parameter
         - Context extraction supports multiple propagation formats (W3C, B3, Jaeger)
         - Configure propagation format using `lilypad.configure(propagator="...")`
     """

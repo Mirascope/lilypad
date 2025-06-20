@@ -33,7 +33,7 @@ from ._opentelemetry.http import (
     uninstrument_aiohttp,
     uninstrument_urllib3,
 )
-from .context_managers import context
+from .context_managers import propagated_context
 
 __all__ = [
     "AsyncLilypad",
@@ -47,7 +47,6 @@ __all__ = [
     "auth",
     "comments",
     "configure",
-    "context",
     "ee",
     "environments",
     "external_api_keys",
@@ -58,6 +57,7 @@ __all__ = [
     "lilypad_config",
     "organizations",
     "projects",
+    "propagated_context",
     "register_serializer",
     "session",
     "settings",

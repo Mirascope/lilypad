@@ -107,7 +107,7 @@ async def process_data(data: dict) -> dict:
 @app.post("/api/process")
 async def process_request(request: Request, data: dict):
     # Use context manager to propagate trace context
-    with lilypad.context(extract_from=dict(request.headers)):
+    with lilypad.propagated_context(extract_from=dict(request.headers)):
         # process_data will be a child of the upstream service's span
         # Note: Without FastAPI instrumentation, process_request itself won't be traced
         return await process_data(data)
@@ -210,7 +210,7 @@ def retrieve_endpoint():
     data = request.json
     
     # Extract trace context using context manager
-    with lilypad.context(extract_from=dict(request.headers)):
+    with lilypad.propagated_context(extract_from=dict(request.headers)):
         documents = handle_retrieve(data["query"], data["k"])
     
     return jsonify({
@@ -242,12 +242,12 @@ While automatic instrumentation handles context injection, you may need to manua
 
 ```python
 # Use Lilypad's context manager for extraction
-with lilypad.context(extract_from=dict(request.headers)):
+with lilypad.propagated_context(extract_from=dict(request.headers)):
     # Your traced functions here will be children of the incoming trace
     process_data(data)
 
 # Or for custom message headers
-with lilypad.context(extract_from=message["headers"]):
+with lilypad.propagated_context(extract_from=message["headers"]):
     # Extract context from custom message headers
     handle_message(data)
 ```
@@ -280,7 +280,7 @@ def main_process(data: dict):
 
 def worker_process(data: dict, parent_ctx):
     # Use context manager for parent context
-    with lilypad.context(parent=parent_ctx):
+    with lilypad.propagated_context(parent=parent_ctx):
         # This span is a child of main_process
         return process_in_thread(data)
 ```
@@ -311,7 +311,7 @@ def handle_message(data: dict):
 
 def process_message(message: dict):
     # Use context manager to extract context from message headers
-    with lilypad.context(extract_from=message.get("headers", {})):
+    with lilypad.propagated_context(extract_from=message.get("headers", {})):
         # Maintains trace context from producer
         return handle_message(message["data"])
 ```
@@ -360,7 +360,7 @@ lilypad.instrument_urllib3()     # Just urllib3
 1. **Use Automatic Instrumentation**: Enable `auto_http=True` in configure for transparent tracing
 2. **Define Traced Functions at Module Level**: Don't define traced functions inside request handlers
 3. **Consistent Propagation**: Use the same propagation format across all services
-4. **Use Context Manager**: Use `context()` for manual context management
+4. **Use Context Manager**: Use `propagated_context()` for manual context management
 5. **Rely on Automatic Instrumentation**: Let Lilypad handle context propagation automatically
 6. **Performance**: Context propagation adds minimal overhead (typically < 1ms)
 
@@ -428,7 +428,7 @@ async def process_request(data: dict):
     return await process_data(data)
 ```
 
-Until this feature is available, use the `context()` context manager as shown in the examples above.
+Until this feature is available, use the `propagated_context()` context manager as shown in the examples above.
 
 ## Example: Complete RAG System
 

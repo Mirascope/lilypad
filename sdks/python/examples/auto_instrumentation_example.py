@@ -182,7 +182,7 @@ async def retrieve_endpoint(request: Request, data: RetrieveRequest) -> dict[str
     """Server endpoint that extracts trace context from headers."""
 
     # Use context manager to extract trace context from incoming headers
-    with lilypad.context(extract_from=dict(request.headers)):
+    with lilypad.propagated_context(extract_from=dict(request.headers)):
         docs = handle_retrieve(data.query, data.k)
 
     return {"documents": [{"id": doc.id, "content": doc.content, "score": doc.score} for doc in docs]}
