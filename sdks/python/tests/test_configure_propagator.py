@@ -3,7 +3,6 @@
 import os
 from unittest.mock import Mock, patch
 import pytest
-from types import ModuleType
 
 from lilypad._configure import configure
 
@@ -71,7 +70,10 @@ def test_configure_with_auto_http_triggers_propagator_init():
     """Test that auto_http=True triggers propagator initialization."""
     with (
         patch("lilypad._utils.context_propagation.get_propagator") as mock_get_propagator,
-        patch("lilypad._opentelemetry.http.instrument_http_clients") as mock_instrument,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_requests") as mock_requests,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_httpx") as mock_httpx,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_aiohttp") as mock_aiohttp,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_urllib3") as mock_urllib3,
     ):
         mock_propagator = Mock()
         mock_get_propagator.return_value = mock_propagator
@@ -80,94 +82,14 @@ def test_configure_with_auto_http_triggers_propagator_init():
 
         # Should initialize propagator even without explicit propagator param
         mock_get_propagator.assert_called_once()
-        # Should instrument HTTP clients
-        mock_instrument.assert_called_once()
-
-
-def test_configure_with_instrument_list():
-    """Test configure with instrument parameter."""
-    with (
-        patch("lilypad._utils.context_propagation.get_propagator") as mock_get_propagator,
-        patch("lilypad._opentelemetry.http.instrument_requests") as mock_req,
-        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_httpx,
-        patch("lilypad._opentelemetry.http.instrument_aiohttp") as mock_aio,
-        patch("lilypad._opentelemetry.http.instrument_urllib3") as mock_urllib,
-    ):
-        mock_propagator = Mock()
-        mock_get_propagator.return_value = mock_propagator
-
-        # Create mock module objects with the expected __name__ attributes
-        mock_requests_module = Mock(spec=ModuleType)
-        mock_requests_module.__name__ = "requests"
-        mock_httpx_module = Mock(spec=ModuleType)
-        mock_httpx_module.__name__ = "httpx"
-
-        configure(
-            api_key="test-key",
-            project_id="test-project",
-            instrument=[mock_requests_module, mock_httpx_module],
-        )
-
-        # Should initialize propagator
-        mock_get_propagator.assert_called_once()
-        # Should only instrument specified clients
-        mock_req.assert_called_once()
+        # Should instrument all HTTP clients
+        mock_requests.assert_called_once()
         mock_httpx.assert_called_once()
-        mock_aio.assert_not_called()
-        mock_urllib.assert_not_called()
+        mock_aiohttp.assert_called_once()
+        mock_urllib3.assert_called_once()
 
 
-def test_configure_with_unknown_instrument_client():
-    """Test configure with unknown client in instrument list."""
-    with (
-        patch("lilypad._utils.context_propagation.get_propagator") as mock_get_propagator,
-        patch("logging.getLogger") as mock_get_logger,
-    ):
-        mock_logger = Mock()
-        mock_get_logger.return_value = mock_logger
-        mock_propagator = Mock()
-        mock_get_propagator.return_value = mock_propagator
-
-        # Create mock module with unknown name
-        mock_unknown_module = Mock(spec=ModuleType)
-        mock_unknown_module.__name__ = "unknown_client"
-
-        configure(api_key="test-key", project_id="test-project", instrument=[mock_unknown_module])
-
-        # Should log warning
-        mock_logger.warning.assert_called_once_with("Unknown HTTP client module: unknown_client")
-
-
-def test_configure_all_instrument_clients():
-    """Test configure with all supported clients in instrument list."""
-    with (
-        patch("lilypad._utils.context_propagation.get_propagator"),
-        patch("lilypad._opentelemetry.http.instrument_requests") as mock_req,
-        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_httpx,
-        patch("lilypad._opentelemetry.http.instrument_aiohttp") as mock_aio,
-        patch("lilypad._opentelemetry.http.instrument_urllib3") as mock_urllib,
-    ):
-        # Create mock modules for all supported clients
-        mock_requests = Mock(spec=ModuleType)
-        mock_requests.__name__ = "requests"
-        mock_httpx_module = Mock(spec=ModuleType)
-        mock_httpx_module.__name__ = "httpx"
-        mock_aiohttp = Mock(spec=ModuleType)
-        mock_aiohttp.__name__ = "aiohttp"
-        mock_urllib3 = Mock(spec=ModuleType)
-        mock_urllib3.__name__ = "urllib3"
-
-        configure(
-            api_key="test-key",
-            project_id="test-project",
-            instrument=[mock_requests, mock_httpx_module, mock_aiohttp, mock_urllib3],
-        )
-
-        # All should be called
-        mock_req.assert_called_once()
-        mock_httpx.assert_called_once()
-        mock_aio.assert_called_once()
-        mock_urllib.assert_called_once()
+# Tests for instrument parameter have been removed as the parameter is no longer supported
 
 
 def test_configure_without_propagator_or_http():
@@ -196,24 +118,23 @@ def test_configure_propagator_without_preserve_existing():
         mock_get_propagator.assert_called_once()
 
 
-def test_configure_auto_http_and_instrument_together():
-    """Test that auto_http takes precedence over instrument."""
+def test_configure_auto_http():
+    """Test that auto_http enables all HTTP clients."""
     with (
         patch("lilypad._utils.context_propagation.get_propagator"),
-        patch("lilypad._opentelemetry.http.instrument_http_clients") as mock_all,
-        patch("lilypad._opentelemetry.http.instrument_requests") as mock_req,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_requests") as mock_requests,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_httpx") as mock_httpx,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_aiohttp") as mock_aiohttp,
+        patch("lilypad._opentelemetry.http.auto_instrument.instrument_urllib3") as mock_urllib3,
     ):
-        # Create mock module
-        mock_requests = Mock(spec=ModuleType)
-        mock_requests.__name__ = "requests"
-
         configure(
             api_key="test-key",
             project_id="test-project",
             auto_http=True,
-            instrument=[mock_requests],  # Should be ignored
         )
 
-        # Should call instrument_http_clients, not individual
-        mock_all.assert_called_once()
-        mock_req.assert_not_called()
+        # Should call all individual instrument functions
+        mock_requests.assert_called_once()
+        mock_httpx.assert_called_once()
+        mock_aiohttp.assert_called_once()
+        mock_urllib3.assert_called_once()

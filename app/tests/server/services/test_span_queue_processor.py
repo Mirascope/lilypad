@@ -1298,9 +1298,7 @@ class TestSpanQueueProcessor:
             await processor._force_process_incomplete_trace("trace-123")
 
         # Check that logger.info was called with the expected message (line 667)
-        expected_log_call = (
-            "Parent db-parent-span found in DB for span child-span, keeping parent_span_id"
-        )
+        expected_log_call = "Parent db-parent-span found in DB for span child-span, keeping parent_span_id"
         mock_logger.info.assert_any_call(expected_log_call)
 
         # Verify that parent_span_id was NOT set to None
