@@ -70,10 +70,10 @@ def test_configure_with_auto_http_triggers_propagator_init():
     """Test that auto_http=True triggers propagator initialization."""
     with (
         patch("lilypad._utils.context_propagation.get_propagator") as mock_get_propagator,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_requests") as mock_requests,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_httpx") as mock_httpx,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_aiohttp") as mock_aiohttp,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_urllib3") as mock_urllib3,
+        patch("lilypad._opentelemetry.http.instrument_requests") as mock_requests,
+        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_httpx,
+        patch("lilypad._opentelemetry.http.instrument_aiohttp") as mock_aiohttp,
+        patch("lilypad._opentelemetry.http.instrument_urllib3") as mock_urllib3,
     ):
         mock_propagator = Mock()
         mock_get_propagator.return_value = mock_propagator
@@ -122,10 +122,10 @@ def test_configure_auto_http():
     """Test that auto_http enables all HTTP clients."""
     with (
         patch("lilypad._utils.context_propagation.get_propagator"),
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_requests") as mock_requests,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_httpx") as mock_httpx,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_aiohttp") as mock_aiohttp,
-        patch("lilypad._opentelemetry.http.auto_instrument.instrument_urllib3") as mock_urllib3,
+        patch("lilypad._opentelemetry.http.instrument_requests") as mock_requests,
+        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_httpx,
+        patch("lilypad._opentelemetry.http.instrument_aiohttp") as mock_aiohttp,
+        patch("lilypad._opentelemetry.http.instrument_urllib3") as mock_urllib3,
     ):
         configure(
             api_key="test-key",
