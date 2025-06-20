@@ -24,12 +24,10 @@ from .sessions import Session, session
 from ._configure import configure, lilypad_config
 from .exceptions import RemoteFunctionError
 from ._opentelemetry.http import (
-    instrument_http_clients,
     instrument_requests,
     instrument_httpx,
     instrument_aiohttp,
     instrument_urllib3,
-    uninstrument_http_clients,
     uninstrument_requests,
     uninstrument_httpx,
     uninstrument_aiohttp,
@@ -54,7 +52,6 @@ __all__ = [
     "environments",
     "external_api_keys",
     "instrument_aiohttp",
-    "instrument_http_clients",
     "instrument_httpx",
     "instrument_requests",
     "instrument_urllib3",
@@ -71,7 +68,6 @@ __all__ = [
     "trace",
     "types",
     "uninstrument_aiohttp",
-    "uninstrument_http_clients",
     "uninstrument_httpx",
     "uninstrument_requests",
     "uninstrument_urllib3",

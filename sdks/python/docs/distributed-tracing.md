@@ -73,20 +73,7 @@ def my_service():
     return response.json()
 ```
 
-You can also selectively instrument specific HTTP clients:
-
-```python
-import requests
-import httpx
-
-lilypad.configure(
-    api_key="your-api-key",
-    project_id="your-project-id",
-    instrument=[requests, httpx]  # Pass module objects to instrument specific clients
-)
-```
-
-Or manually instrument after configuration:
+You can also manually instrument specific HTTP clients after configuration:
 
 ```python
 import lilypad
@@ -98,9 +85,6 @@ lilypad.instrument_requests()
 lilypad.instrument_httpx()
 lilypad.instrument_aiohttp()
 lilypad.instrument_urllib3()
-
-# Or instrument all at once
-lilypad.instrument_http_clients()
 ```
 
 ### 3. Server-Side Context Extraction
@@ -115,18 +99,21 @@ app = FastAPI()
 
 # Define traced functions at module level
 @lilypad.trace()
-def process_data(data: dict) -> dict:
+async def process_data(data: dict) -> dict:
     # This function is traced
-    result = heavy_processing(data)
+    result = await heavy_processing(data)
     return {"status": "success", "result": result}
 
 @app.post("/api/process")
 async def process_request(request: Request, data: dict):
     # Use context manager to propagate trace context
     with lilypad.propagated_context(dict(request.headers)):
-        # process_data will be a child of the caller's span
+        # process_data will be a child of the upstream service's span
+        # Note: Without FastAPI instrumentation, process_request itself won't be traced
         return await process_data(data)
 ```
+
+> **Note**: This PR does not include automatic FastAPI instrumentation. The FastAPI endpoint (`process_request`) itself won't create a span. Only functions decorated with `@lilypad.trace()` will be traced as children of the upstream service's span.
 
 ## Complete Example: Distributed RAG System
 
@@ -145,7 +132,7 @@ lilypad.configure(
     auto_http=True  # Enable automatic HTTP instrumentation
 )
 
-import requests  # Import after configure for auto-instrumentation
+import requests  # Can be imported before or after configure()
 
 # Your API client that uses requests/httpx internally
 class RetrievalClient:
@@ -361,16 +348,12 @@ lilypad.configure(propagator="composite")
 # Option 1: Auto-instrument all HTTP clients
 lilypad.configure(auto_http=True)
 
-# Option 2: Selectively instrument specific clients
-import requests
-import httpx
-lilypad.configure(instrument=[requests, httpx])
-
-# Option 3: Manual instrumentation after configuration
+# Option 2: Selective manual instrumentation after configuration
 lilypad.configure(...)
-lilypad.instrument_requests()  # Just requests
-lilypad.instrument_httpx()      # Just httpx (sync and async)
-lilypad.instrument_http_clients()  # All clients
+lilypad.instrument_requests()    # Just requests
+lilypad.instrument_httpx()       # Just httpx (sync and async)
+lilypad.instrument_aiohttp()     # Just aiohttp
+lilypad.instrument_urllib3()     # Just urllib3
 ```
 
 ## Best Practices
@@ -410,24 +393,25 @@ lilypad.instrument_http_clients()  # All clients
 
 Some scenarios where automatic instrumentation might not work:
 
-1. **Import Order**: HTTP libraries imported before `lilypad.configure()`
-   ```python
-   # Wrong
-   import requests
-   lilypad.configure(auto_http=True)
-   
-   # Correct
-   lilypad.configure(auto_http=True)
-   import requests
-   ```
-
-2. **Custom HTTP Clients**: Libraries that don't use standard HTTP clients internally
-3. **Subclassed Clients**: Custom subclasses of HTTP clients may not be instrumented
+1. **Custom HTTP Clients**: Libraries that don't use standard HTTP clients internally
+2. **Subclassed Clients**: Custom subclasses of HTTP clients may not be instrumented
 
 In these cases, automatic instrumentation may not work. Consider:
 1. Using a supported HTTP client (requests, httpx, aiohttp, urllib3)
 2. Wrapping your custom client with a supported HTTP client
-3. Ensuring HTTP libraries are imported after `lilypad.configure()`
+
+Note: As of the latest version, import order no longer matters! HTTP libraries can be imported before or after `lilypad.configure()`:
+```python
+# Both of these work now:
+
+# Option 1: Import before configure
+import requests
+lilypad.configure(auto_http=True)
+
+# Option 2: Import after configure
+lilypad.configure(auto_http=True)
+import requests
+```
 
 ## Environment Variables
 

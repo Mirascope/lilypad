@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import importlib.util
 from typing import Any, Literal
-from types import ModuleType
 from secrets import token_bytes
 from contextlib import contextmanager
 from collections.abc import Sequence, Generator
@@ -184,7 +183,6 @@ def configure(
     auto_llm: bool = False,
     propagator: Literal["tracecontext", "b3", "b3multi", "jaeger", "composite"] | None = None,
     auto_http: bool = False,
-    instrument: list[ModuleType] | None = None,
     preserve_existing_propagator: bool = False,
 ) -> None:
     """Initialize the OpenTelemetry instrumentation for Lilypad and configure log outputs.
@@ -207,17 +205,6 @@ def configure(
             - 'jaeger': Jaeger format
             - 'composite': All formats for maximum compatibility
         auto_http: Automatically instrument all HTTP clients
-        instrument: List of HTTP client modules to instrument. Pass actual imported module objects.
-            Example:
-                import lilypad
-                import requests
-                import httpx
-
-                lilypad.configure(
-                    instrument=[requests, httpx]
-                )
-
-            Supported modules: requests, httpx, aiohttp, urllib3
         preserve_existing_propagator: If True, preserve existing OpenTelemetry propagator settings
     """
 
@@ -252,7 +239,7 @@ def configure(
     trace.set_tracer_provider(provider)
 
     # Configure propagator
-    if propagator or auto_http or instrument:
+    if propagator or auto_http:
         from ._utils.context_propagation import get_propagator
         import os
 
@@ -283,32 +270,19 @@ def configure(
             get_propagator()
 
     # Handle HTTP instrumentation
-    if auto_http or instrument:
+    if auto_http:
         from ._opentelemetry.http import (
-            instrument_http_clients,
             instrument_requests,
             instrument_httpx,
             instrument_aiohttp,
             instrument_urllib3,
         )
 
-        if auto_http:
-            # Instrument all HTTP clients
-            instrument_http_clients()
-        elif instrument:
-            # Instrument specific clients
-            for module in instrument:
-                module_name = module.__name__
-                if module_name == "requests":
-                    instrument_requests()
-                elif module_name == "httpx":
-                    instrument_httpx()
-                elif module_name == "aiohttp":
-                    instrument_aiohttp()
-                elif module_name == "urllib3":
-                    instrument_urllib3()
-                else:
-                    logger.warning(f"Unknown HTTP client module: {module_name}")
+        # Instrument all HTTP clients (handles both already-imported and future imports)
+        instrument_requests()
+        instrument_httpx()
+        instrument_aiohttp()
+        instrument_urllib3()
 
     if not auto_llm:
         return
